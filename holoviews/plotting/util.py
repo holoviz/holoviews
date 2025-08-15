@@ -968,8 +968,7 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
             palette = None
     if not isinstance(palette, list):
         raise TypeError(f"cmap argument {cmap} expects a list, Cycle or valid {providers_checked} colormap or palette.")
-    if ncolors and len(palette) != ncolors:
-        n_palette = len(palette)
+    if ncolors and (n_palette := len(palette)) != ncolors:
         return [palette[i%n_palette] for i in range(ncolors)]
     return palette
 
