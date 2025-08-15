@@ -46,9 +46,7 @@ class PathPlot(ColorbarPlot):
         # a Dimension from the color style when no explicit color_index is set.
         color_style = style.get('color')
         if cdim is None and isinstance(color_style, str):
-            _cd = element.get_dimension(color_style)
-            if _cd is not None:
-                cdim = _cd
+            cdim = element.get_dimension(color_style)
 
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)

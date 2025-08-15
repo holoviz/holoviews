@@ -104,7 +104,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
             not (not isinstance(v, dim) and v == color and s == 'color')}
         mapping = dict(self._mapping)
 
-        if (not cdim) and not style_mapping and 'hover' not in self.handles:
+        if not (cdim or style_mapping or 'hover' in self.handles):
             if self.static_source:
                 data = {}
             else:
