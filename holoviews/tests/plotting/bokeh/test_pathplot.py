@@ -2,7 +2,12 @@ import datetime as dt
 
 import numpy as np
 import pandas as pd
-from bokeh.models import CategoricalColorMapper, LinearColorMapper
+from bokeh.models import (
+    CategoricalColorMapper,
+    LinearColorMapper,
+    MultiPolygons,
+    Patches,
+)
 
 from holoviews.core import HoloMap, NdOverlay
 from holoviews.core.options import Cycle
@@ -440,7 +445,6 @@ class TestPolygonPlot(TestBokehPlot):
         self.assertEqual(cds.data['line_width'], np.array([7, 3]))
 
     def test_polygons_holes_initialize(self):
-        from bokeh.models import MultiPolygons
         xs = [1, 2, 3, np.nan, 6, 7, 3]
         ys = [2, 0, 7, np.nan, 7, 5, 2]
         holes = [
@@ -455,7 +459,6 @@ class TestPolygonPlot(TestBokehPlot):
         self.assertIsInstance(glyph, MultiPolygons)
 
     def test_polygons_no_holes_with_draw_tool(self):
-        from bokeh.models import Patches
         xs = [1, 2, 3, np.nan, 6, 7, 3]
         ys = [2, 0, 7, np.nan, 7, 5, 2]
         holes = [
