@@ -42,6 +42,14 @@ class PathPlot(ColorbarPlot):
     def get_data(self, element, ranges, style):
         cdim = element.get_dimension(self.color_index)
 
+        # Support style-mapped color (e.g. .opts(color='c')) by resolving
+        # a Dimension from the color style when no explicit color_index is set.
+        color_style = style.get('color')
+        if cdim is None and isinstance(color_style, str):
+            _cd = element.get_dimension(color_style)
+            if _cd is not None:
+                cdim = _cd
+
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
 
@@ -63,17 +71,25 @@ class PathPlot(ColorbarPlot):
                 yarr = date2num(yarr)
                 dims[1] = ydim(value_format=DateFormatter(dt_format))
             arr = np.column_stack([xarr, yarr])
-            if not (self.color_index is not None or style_mapping):
+            # If neither color_index nor array-style mapping nor a color dimension is present,
+            # keep whole paths; otherwise, segment into (len(x)-1) segments for correct mapping.
+            if not (self.color_index is not None or style_mapping or cdim):
                 paths.append(arr)
                 continue
             length = len(xarr)
             for (s1, s2) in zip(range(length-1), range(1, length+1), strict=None):
-                if cdim:
-                    cvals.append(path[cdim.name])
+                if cdim is not None:
+                    pv = path[cdim.name]
+                    if isinstance(pv, util.arraylike_types) and len(pv) == length:
+                        # per-vertex values -> one value per segment (drop last)
+                        cvals.append(pv[s1])
+                    else:
+                        # scalar per geometry -> repeat for each segment
+                        cvals.append(pv)
                 paths.append(arr[s1:s2+1])
         if self.invert_axes:
             paths = [p[::-1] for p in paths]
-        if not (self.color_index or style_mapping):
+        if not (self.color_index or style_mapping or cdim):
             if cdim:
                 style['array'] = style.pop('c')
                 style['clim'] = style.pop('vmin', None), style.pop('vmax', None)
@@ -81,6 +97,8 @@ class PathPlot(ColorbarPlot):
         if cdim:
             self._norm_kwargs(element, ranges, style, cdim)
             style['array'] = np.array(cvals)
+            # When mapping color via array/cmap, drop scalar 'color' so it doesn't override
+            style.pop('color', None)
         return (paths,), style, {'dimensions': dims}
 
     def update_handles(self, key, axis, element, ranges, style):
