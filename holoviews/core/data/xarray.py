@@ -7,9 +7,12 @@ from .. import util
 from ..dimension import Dimension, asdim, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
+from ..util.dependencies import _no_import_version
 from .grid import GridInterface
 from .interface import DataError, Interface
 from .util import dask_array_module, finite_range
+
+XARRAY_VERSION = _no_import_version("xarray")
 
 
 def is_cupy(array):
@@ -512,8 +515,13 @@ class XArrayInterface(GridInterface):
     @classmethod
     def concat_dim(cls, datasets, dim, vdims):
         import xarray as xr
-        return xr.concat([ds.assign_coords(**{dim.name: c}) for c, ds in datasets.items()],
-                         dim=dim.name)
+        concat_kwargs = {"dim": dim.name}
+        if XARRAY_VERSION >= (2025, 8, 0):
+            concat_kwargs["join"] = "outer"
+        return xr.concat(
+            [ds.assign_coords(**{dim.name: c}) for c, ds in datasets.items()],
+            **concat_kwargs
+        )
 
     @classmethod
     def redim(cls, dataset, dimensions):
