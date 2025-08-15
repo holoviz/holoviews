@@ -21,6 +21,7 @@ from .util import (
     BOKEH_GE_3_3_0,
     BOKEH_GE_3_4_0,
     BOKEH_GE_3_7_0,
+    BOKEH_GE_3_8_0,
     BOKEH_VERSION,
     colormesh,
 )
@@ -86,7 +87,6 @@ class ServerHoverMixin(param.Parameterized):
 
         # Get dimensions
         coords, vars = list(data.coords), list(data.data_vars)
-        vars.remove("__index__")
         ht = self.hover_tooltips or {}
         if ht:
             ht = [ht] if isinstance(ht, str) else ht
@@ -115,7 +115,7 @@ class ServerHoverMixin(param.Parameterized):
                 Span(children=[f"{ht.get(attr, attr)}:"], style={"color": "#26aae1", "text_align": "right"}),
                 Span(children=[ValueOf(obj=hover_model, attr="data", **kwargs)], style={"text_align": "left"}),
             )
-        children = [el for dim in dims for el in _create_row(dim)]
+        children = [el for dim in dims for el in _create_row(dim) if dim != "__index__"]
 
         # Add a horizontal ruler and show the selector if available
         selector_columns = data.attrs["selector_columns"]
@@ -154,6 +154,12 @@ class ServerHoverMixin(param.Parameterized):
             args={"position": hover_model},
             code="export default ({position}, _, {geometry: {x, y}}) => {position.xy = [x, y]}",
         )
+
+        if BOKEH_GE_3_8_0:
+            hover.filters = {"": CustomJS(
+                args=dict(hover_model=hover_model),
+                code="""export default ({hover_model}) => hover_model.data["__index__"] != -1"""
+            )}
 
         def on_change(attr, old, new):
             if np.isinf(new).all():
