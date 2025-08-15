@@ -229,15 +229,15 @@ class TestPathPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
 
         # Expect 5 * (3-1) = 10 segments
-        self.assertEqual(len(source.data['xs']), 10)
-        self.assertEqual(len(source.data['ys']), 10)
+        assert len(source.data['xs']) == 10
+        assert len(source.data['ys']) == 10
         # Color column should be present and aligned to segments
-        self.assertIn('c', source.data)
-        self.assertEqual(len(source.data['c']), 10)
+        assert 'c' in source.data
+        assert len(source.data['c']) == 10
         # line_color should map to the 'c' field with a transform
         from holoviews.plotting.bokeh.util import property_to_dict
-        self.assertEqual(property_to_dict(glyph.line_color).get('field'), 'c')
-        self.assertIn('transform', property_to_dict(glyph.line_color))
+        assert property_to_dict(glyph.line_color).get('field') == 'c'
+        assert 'transform' in property_to_dict(glyph.line_color)
 
     def test_path_style_mapped_per_vertex_segments_lengths_match(self):
         # Five paths, per-vertex 'c' values; style-mapped color
@@ -253,10 +253,10 @@ class TestPathPlot(TestBokehPlot):
         source = plot.handles['source']
 
         # Expect 5 * (7-1) = 30 segments
-        self.assertEqual(len(source.data['xs']), 30)
-        self.assertEqual(len(source.data['ys']), 30)
-        self.assertIn('c', source.data)
-        self.assertEqual(len(source.data['c']), 30)
+        assert len(source.data['xs']) == 30
+        assert len(source.data['ys']) == 30
+        assert 'c' in source.data
+        assert len(source.data['c']) == 30
 
 
 class TestPolygonPlot(TestBokehPlot):

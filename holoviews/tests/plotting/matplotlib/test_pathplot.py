@@ -72,15 +72,15 @@ class TestPathPlot(TestMPLPlot):
         artist = plot.handles['artist']
 
         # Must have a colormap and a data array
-        self.assertIsNotNone(artist.get_cmap())
+        assert artist.get_cmap() is not None
         arr = artist.get_array()
-        self.assertIsNotNone(arr)
+        assert arr is not None
 
         # Expect 5 * (3-1) = 10 segment values
-        self.assertEqual(len(arr), 10)
+        assert len(arr) == 10
         # Value range should reflect our scalar-per-geometry inputs (0-40)
-        self.assertEqual(float(arr.min()), 0.0)
-        self.assertEqual(float(arr.max()), 40.0)
+        assert float(arr.min()) == 0.0
+        assert float(arr.max()) == 40.0
 
     def test_path_style_mapped_per_vertex_color_segments_array(self):
         # Five paths, per-vertex 'c' values; style-mapped color
@@ -96,12 +96,12 @@ class TestPathPlot(TestMPLPlot):
         artist = plot.handles['artist']
 
         arr = artist.get_array()
-        self.assertIsNotNone(arr)
+        assert arr is not None
         # Expect 5 * (7-1) = 30 segment values
-        self.assertEqual(len(arr), 30)
+        assert len(arr) == 30
         # Range again spans 0-40 for these inputs
-        self.assertEqual(float(arr.min()), 0.0)
-        self.assertEqual(float(arr.max()), 40.0)
+        assert float(arr.min()) == 0.0
+        assert float(arr.max()) == 40.0
 
 
 class TestPolygonPlot(TestMPLPlot):
