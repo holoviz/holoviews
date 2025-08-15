@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from bokeh.models import CustomJSHover, HoverTool
 
-from holoviews.element import RGB, Image, ImageStack, Raster
+from holoviews.element import RGB, Image, ImageStack, Points, Raster
 from holoviews.plotting.bokeh.raster import ImageStackPlot
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0
 
@@ -473,3 +473,39 @@ class TestImageStackUneven2(_ImageStackBase):
         self.ysize = 3
         self.xsize = 4
         super().setUp()
+
+
+class TestSyntheticLegendPlot(TestBokehPlot):
+    __test__ = True
+
+    def setUp(self):
+        super().setUp()
+        ds = pytest.importorskip("datashader")
+
+        from holoviews.operation.datashader import datashade, rasterize
+        points = Points([(0, 0, 'A'), (1, 1, 'B'), (2, 2, 'C')], vdims=['Label'])
+        kwargs = dict(aggregator=ds.by('Label'), dynamic=False, width=10, height=10)
+        self.img_stack = rasterize(points, **kwargs).opts(show_legend=True)
+        self.rgb = datashade(points, **kwargs).opts(show_legend=True)
+
+    def test_image_stack_legend(self):
+        plot = bokeh_renderer.get_plot(self.img_stack)
+        mapper = plot.handles['synthetic_color_mapper']
+        assert mapper.factors == ['A', 'B', 'C']
+        glyph = plot._legend_plot.handles['glyph']
+        assert glyph.fill_color.field == 'color'
+        assert glyph.fill_color.transform is mapper
+
+    def test_image_stack_legend_with_cmap(self):
+        self.img_stack.opts(cmap=["red"])
+        plot = bokeh_renderer.get_plot(self.img_stack)
+        mapper = plot.handles['synthetic_color_mapper']
+        assert mapper.palette == ["red", "red", "red"]
+
+    def test_rgb_legend(self):
+        plot = bokeh_renderer.get_plot(self.rgb)
+        mapper = plot.handles['synthetic_color_mapper']
+        assert mapper.factors == ['A', 'B', 'C']
+        glyph = plot._legend_plot.handles['glyph']
+        assert glyph.fill_color.field == 'color'
+        assert glyph.fill_color.transform is mapper
