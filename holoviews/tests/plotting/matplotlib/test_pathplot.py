@@ -58,6 +58,51 @@ class TestPathPlot(TestMPLPlot):
         plot.update((1,))
         self.assertEqual(artist.get_linewidths(), [3, 8, 2, 3])
 
+    def test_path_style_mapped_scalar_color_segments_array_and_cmap(self):
+        # Five paths, scalar 'c' per geometry; style-mapped color
+        n_pts = 3
+        data = [
+            {'x': np.arange(n_pts) + x,
+             'y': np.arange(n_pts) + 1,
+             'c': x * 10}
+            for x in range(5)
+        ]
+        path = Path(data, vdims=['c']).opts(color='c', cmap='viridis', colorbar=True)
+        plot = mpl_renderer.get_plot(path)
+        artist = plot.handles['artist']
+
+        # Must have a colormap and a data array
+        self.assertIsNotNone(artist.get_cmap())
+        arr = artist.get_array()
+        self.assertIsNotNone(arr)
+
+        # Expect 5 * (3-1) = 10 segment values
+        self.assertEqual(len(arr), 10)
+        # Value range should reflect our scalar-per-geometry inputs (0-40)
+        self.assertEqual(float(arr.min()), 0.0)
+        self.assertEqual(float(arr.max()), 40.0)
+
+    def test_path_style_mapped_per_vertex_color_segments_array(self):
+        # Five paths, per-vertex 'c' values; style-mapped color
+        n_pts = 7
+        data = [
+            {'x': np.arange(n_pts) + x,
+             'y': np.arange(n_pts) + 1,
+             'c': np.full(n_pts, x * 10)}  # per-vertex constant per geometry
+            for x in range(5)
+        ]
+        path = Path(data, vdims=['c']).opts(color='c', cmap='viridis', colorbar=True)
+        plot = mpl_renderer.get_plot(path)
+        artist = plot.handles['artist']
+
+        arr = artist.get_array()
+        self.assertIsNotNone(arr)
+        # Expect 5 * (7-1) = 30 segment values
+        self.assertEqual(len(arr), 30)
+        # Range again spans 0-40 for these inputs
+        self.assertEqual(float(arr.min()), 0.0)
+        self.assertEqual(float(arr.max()), 40.0)
+
 
 class TestPolygonPlot(TestMPLPlot):
 
