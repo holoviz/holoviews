@@ -306,8 +306,13 @@ class SyntheticLegendMixin(LegendPlot):
         if not ('holoviews.operation.datashader' in sys.modules and self.show_legend):
             return
         try:
-            style = self.lookup_options(element, 'style')
-            legend = categorical_legend(element, backend=self.backend, cmap=style.options.get('cmap'))
+            cmap = self.lookup_options(element, 'style').options.get("cmap")
+            legend = categorical_legend(
+                element,
+                backend=self.backend,
+                # Only adding if it not None to not overwrite the default
+                **({"cmap": cmap} if cmap else {})
+            )
         except Exception:
             return
         if legend is None:

@@ -496,6 +496,12 @@ class TestSyntheticLegendPlot(TestBokehPlot):
         assert glyph.fill_color.field == 'color'
         assert glyph.fill_color.transform is mapper
 
+    def test_image_stack_legend_with_cmap(self):
+        self.img_stack.opts(cmap=["red"])
+        plot = bokeh_renderer.get_plot(self.img_stack)
+        mapper = plot.handles['synthetic_color_mapper']
+        assert mapper.palette == ["red", "red", "red"]
+
     def test_rgb_legend(self):
         plot = bokeh_renderer.get_plot(self.rgb)
         mapper = plot.handles['synthetic_color_mapper']
