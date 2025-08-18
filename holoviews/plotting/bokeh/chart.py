@@ -57,6 +57,12 @@ class SizeBarMixin(LegendPlot):
 
         The sizebar_alpha is only used if sizebar is True.""")
 
+    sizebar_bounds = param.NumericTuple(default=None, length=2, doc="""
+        Bounds of the sizebar, default to None which will automatically
+        determine the bounds based on the data.
+
+        The sizebar_bounds is only used if sizebar is True.""")
+
     sizebar_opts = param.Dict(
         default={}, doc="""
         Allows setting specific styling options for the sizebar.
@@ -91,7 +97,16 @@ class SizeBarMixin(LegendPlot):
             orientation=self.sizebar_orientation,
             glyph_fill_color=self.sizebar_color,
             glyph_fill_alpha=self.sizebar_alpha,
+            bounds=self.sizebar_bounds or "auto",
         )
+
+        if "width" not in sizebar_kwargs:  # Width is the primary axis
+            match (self.sizebar_location, self.sizebar_orientation):
+                case ("above" | "below", "horizontal"):
+                    sizebar_kwargs['width'] = "max"
+                case ("left" | "right", "vertical"):
+                    sizebar_kwargs['width'] = "max"
+
         sizebar = SizeBar(**sizebar_kwargs)
         plot.add_layout(sizebar, self.sizebar_location)
         self.handles['sizebar'] = sizebar
