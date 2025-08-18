@@ -651,3 +651,24 @@ class TestSizeBar:
                     assert width == 216
                 else:
                     assert width != "max"
+
+    def test_overlay(self):
+        # Mainly just to check it does not raise an exception
+        p1 = self.plot.opts(sizebar=True)
+        p2 = hv.Curve([1, 2, 3])
+        combined = p1 * p2
+
+        bk_element = hv.render(combined)
+        assert len(bk_element.renderers) == 2  # the two plots
+        assert len(bk_element.below) == 2  # axis and sizebar
+
+    def test_layout(self):
+        # Mainly just to check it does not raise an exception
+        p1 = self.plot.opts(sizebar=True)
+        p2 = hv.Curve([1, 2, 3])
+        combined = p1 + p2
+
+        bk_element = hv.render(combined)
+        assert len(bk_element.children) == 2
+        assert len(bk_element.children[0][0].below) == 2
+        assert len(bk_element.children[1][0].below) == 1
