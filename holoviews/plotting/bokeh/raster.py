@@ -131,7 +131,6 @@ class ServerHoverMixin(param.Parameterized):
         else:
             divider = ()
 
-
         if first_selector is not None and data.attrs.get("selector") and self.selector_in_hovertool:
             selector_row = (
                 Span(children=["Selector:"], style={"color": "#26aae1", "font-weight": "bold", "text_align": "right"}),
@@ -306,7 +305,33 @@ class RasterPlot(ServerHoverMixin, ColorbarPlot):
         return (data, mapping, style)
 
 
-class RGBPlot(ServerHoverMixin, LegendPlot):
+class SyntheticLegendMixin(LegendPlot):
+
+    def _init_glyphs(self, plot, element, ranges, source):
+        super()._init_glyphs(plot, element, ranges, source)
+        if not ('holoviews.operation.datashader' in sys.modules and self.show_legend):
+            return
+        try:
+            cmap = self.lookup_options(element, 'style').options.get("cmap")
+            legend = categorical_legend(
+                element,
+                backend=self.backend,
+                # Only adding if it not None to not overwrite the default
+                **({"cmap": cmap} if cmap else {})
+            )
+        except Exception:
+            return
+        if legend is None:
+            return
+        legend_params = {k: v for k, v in self.param.values().items()
+                         if k.startswith('legend')}
+        self._legend_plot = PointPlot(legend, keys=[], overlaid=1, **legend_params)
+        self._legend_plot.initialize_plot(plot=plot)
+        self._legend_plot.handles['glyph_renderer'].tags.append('hv_legend')
+        self.handles['synthetic_color_mapper'] = self._legend_plot.handles['color_color_mapper']
+
+
+class RGBPlot(ServerHoverMixin, SyntheticLegendMixin):
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
@@ -326,23 +351,6 @@ class RGBPlot(ServerHoverMixin, LegendPlot):
         xdim, ydim = element.kdims
         return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y'),
                 ('RGBA', '@image')], {}
-
-    def _init_glyphs(self, plot, element, ranges, source):
-        super()._init_glyphs(plot, element, ranges, source)
-        if not ('holoviews.operation.datashader' in sys.modules and self.show_legend):
-            return
-        try:
-            legend = categorical_legend(element, backend=self.backend)
-        except Exception:
-            return
-        if legend is None:
-            return
-        legend_params = {k: v for k, v in self.param.values().items()
-                         if k.startswith('legend')}
-        self._legend_plot = PointPlot(legend, keys=[], overlaid=1, **legend_params)
-        self._legend_plot.initialize_plot(plot=plot)
-        self._legend_plot.handles['glyph_renderer'].tags.append('hv_legend')
-        self.handles['rgb_color_mapper'] = self._legend_plot.handles['color_color_mapper']
 
     def get_data(self, element, ranges, style):
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
@@ -398,7 +406,7 @@ class RGBPlot(ServerHoverMixin, LegendPlot):
         return (data, mapping, style)
 
 
-class ImageStackPlot(RasterPlot):
+class ImageStackPlot(RasterPlot, SyntheticLegendMixin):
 
     _plot_methods = dict(single='image_stack')
 
