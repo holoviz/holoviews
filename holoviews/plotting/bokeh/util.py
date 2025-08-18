@@ -68,6 +68,7 @@ BOKEH_GE_3_4_0 = BOKEH_VERSION >= (3, 4, 0)
 BOKEH_GE_3_5_0 = BOKEH_VERSION >= (3, 5, 0)
 BOKEH_GE_3_6_0 = BOKEH_VERSION >= (3, 6, 0)
 BOKEH_GE_3_7_0 = BOKEH_VERSION >= (3, 7, 0)
+BOKEH_GE_3_8_0 = BOKEH_VERSION >= (3, 8, 0)
 
 TOOL_TYPES = {
     'pan': tools.PanTool,

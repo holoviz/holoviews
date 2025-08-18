@@ -441,7 +441,7 @@ class MultiDimensionalMapping(Dimensioned):
         old_kdims = [d.name for d in self.kdims]
         if not isinstance(kdims, list):
             kdims = [kdims]
-        elif not len(kdims):
+        elif not kdims:
             kdims = [d for d in old_kdims
                      if not len(set(self.dimension_values(d))) == 1]
         indices = [self.get_dimension_index(el) for el in kdims]

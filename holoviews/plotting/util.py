@@ -968,8 +968,8 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
             palette = None
     if not isinstance(palette, list):
         raise TypeError(f"cmap argument {cmap} expects a list, Cycle or valid {providers_checked} colormap or palette.")
-    if ncolors and len(palette) != ncolors:
-        return [palette[i%len(palette)] for i in range(ncolors)]
+    if ncolors and (n_palette := len(palette)) != ncolors:
+        return [palette[i%n_palette] for i in range(ncolors)]
     return palette
 
 
@@ -1339,6 +1339,16 @@ fire_colors = linear_kryw_0_100_c71 = [\
 fire = [f'#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}'
         for r,g,b in fire_colors]
 
+# Qualitative color maps, for use in colorizing categories
+# Originally from Cynthia Brewer (http://colorbrewer2.org), via Bokeh
+# Sets 1, 2, and 3 combined, minus indistinguishable colors
+# Copied from datashader.colors
+Sets1to3 = [
+    '#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628',
+    '#f781bf', '#999999', '#66c2a5', '#fc8d62', '#8da0cb', '#a6d854', '#ffd92f',
+    '#e5c494', '#ffffb3', '#fb8072', '#fdb462', '#fccde5', '#d9d9d9', '#ccebc5',
+    '#ffed6f',
+]
 
 class categorical_legend(Operation):
     """Generates a Points element which contains information for generating
@@ -1346,18 +1356,18 @@ class categorical_legend(Operation):
 
     """
 
-    backend = param.String()
+    backend = param.String(doc="Backend to use for rendering the categorical legend.")
+
+    cmap = param.Parameter(default=Sets1to3, allow_None=False, doc="""
+        Colormap used to color the categories in the legend.
+    """)
 
     def _process(self, element, key=None):
         import datashader as ds
 
         from ..operation.datashader import datashade, rasterize, shade
         rasterize_op = element.pipeline.find(rasterize, skip_nonlinked=False)
-        if isinstance(rasterize_op, datashade):
-            shade_op = rasterize_op
-        else:
-            shade_op = element.pipeline.find(shade, skip_nonlinked=False)
-        if None in (shade_op, rasterize_op):
+        if rasterize_op is None:
             return None
         hvds = element.dataset
         input_el = element.pipeline.operations[0](hvds)
@@ -1371,14 +1381,25 @@ class categorical_legend(Operation):
             except TypeError:
                 # Issue #5619, cudf.core.index.StringIndex is not iterable.
                 cats = list(hvds.data.dtypes[column].categories.to_pandas())
+            except AttributeError:
+                cats = list(unique_iterator(hvds.data[column]))
             if cats == ['__UNKNOWN_CATEGORIES__']:
                 cats = list(hvds.data[column].cat.as_known().categories)
         else:
             cats = list(hvds.dimension_values(column, expanded=False))
-        colors = shade_op.color_key or ds.colors.Sets1to3
+
+        if isinstance(rasterize_op, datashade):
+            shade_op = rasterize_op
+        else:
+            shade_op = element.pipeline.find(shade, skip_nonlinked=False)
+        if shade_op is None:
+            colors = process_cmap(self.p.cmap, ncolors=len(cats), categorical=True)
+        else:
+            colors = shade_op.color_key or self.p.cmap
         color_data = [(0, 0, cat) for cat in cats]
         if isinstance(colors, list):
-            cat_colors = {cat: colors[i] for i, cat in enumerate(cats)}
+            ncolors = len(colors)
+            cat_colors = {cat: colors[i % ncolors] for i, cat in enumerate(cats)}
         else:
             cat_colors = {cat: colors[cat] for cat in cats}
         cmap = {}
