@@ -479,8 +479,8 @@ class TestSyntheticLegendPlot(TestBokehPlot):
     __test__ = True
 
     def setUp(self):
-        super().setUp()
         ds = pytest.importorskip("datashader")
+        super().setUp()
 
         from holoviews.operation.datashader import datashade, rasterize
         points = Points([(0, 0, 'A'), (1, 1, 'B'), (2, 2, 'C')], vdims=['Label'])
