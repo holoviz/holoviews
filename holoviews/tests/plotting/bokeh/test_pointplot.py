@@ -2,6 +2,7 @@ import datetime as dt
 
 import numpy as np
 import pandas as pd
+import pytest
 from bokeh.models import (
     CategoricalColorMapper,
     Circle,
@@ -14,7 +15,7 @@ import holoviews as hv
 from holoviews.core import NdOverlay
 from holoviews.core.options import Cycle
 from holoviews.element import Points
-from holoviews.plotting.bokeh.util import property_to_dict
+from holoviews.plotting.bokeh.util import BOKEH_GE_3_8_0, property_to_dict
 from holoviews.streams import Stream
 
 from ..utils import ParamLogStream
@@ -581,3 +582,30 @@ class TestPointPlot(TestBokehPlot):
         handles = bokeh_renderer.get_plot(plot).handles
         glyph = handles["glyph"]
         assert isinstance(glyph, Circle)
+
+
+@pytest.mark.skipif(not BOKEH_GE_3_8_0, reason="Needs Bokeh 3.8")
+class TestSizeBar(TestBokehPlot):
+
+    def setUp(self):
+        super().setUp()
+
+        np.random.seed(1)
+        N = 100
+        x = np.random.random(size=N) * 100
+        y = np.random.random(size=N) * 100
+        radii = np.random.random(size=N) * 10
+        self.plot = hv.Points((x, y, radii), vdims=["radii"]).opts(radius="radii")
+
+    def get_sizebar(self):
+        return bokeh_renderer.get_plot(self.plot).handles.get("sizebar")
+
+    def test_sizebar_init(self):
+        from bokeh.models import SizeBar
+
+        sizebar = self.get_sizebar()
+        assert sizebar is None
+
+        self.plot.opts(sizebar=True)
+        sizebar = self.get_sizebar()
+        assert isinstance(sizebar, SizeBar)
