@@ -15,6 +15,7 @@ import holoviews as hv
 from holoviews.core import NdOverlay
 from holoviews.core.options import Cycle
 from holoviews.element import Points
+from holoviews.plotting.bokeh.chart import SizebarMixin
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_8_0, property_to_dict
 from holoviews.streams import Stream
 
@@ -585,11 +586,9 @@ class TestPointPlot(TestBokehPlot):
 
 
 @pytest.mark.skipif(not BOKEH_GE_3_8_0, reason="Needs Bokeh 3.8")
-class TestSizeBar(TestBokehPlot):
+class TestSizeBar:
 
-    def setUp(self):
-        super().setUp()
-
+    def setup_method(self):
         np.random.seed(1)
         N = 100
         x = np.random.random(size=N) * 100
@@ -597,15 +596,58 @@ class TestSizeBar(TestBokehPlot):
         radii = np.random.random(size=N) * 10
         self.plot = hv.Points((x, y, radii), vdims=["radii"]).opts(radius="radii")
 
-    def get_sizebar(self):
-        return bokeh_renderer.get_plot(self.plot).handles.get("sizebar")
+    def get_handles(self):
+        return bokeh_renderer.get_plot(self.plot).handles
 
-    def test_sizebar_init(self):
+    def get_sizebar(self):
+        return self.get_handles().get("sizebar")
+
+    def test_init(self):
         from bokeh.models import SizeBar
 
-        sizebar = self.get_sizebar()
-        assert sizebar is None
+        assert self.get_sizebar() is None
 
         self.plot.opts(sizebar=True)
+        assert isinstance(self.get_sizebar(), SizeBar)
+
+    @pytest.mark.parametrize("location", [SizebarMixin.param.sizebar_location.default])
+    def test_location(self, location):
+        self.plot.opts(sizebar=True, sizebar_location=location)
+        handles = self.get_handles()
+        assert handles["sizebar"] in getattr(handles["plot"], location)
+
+    @pytest.mark.parametrize("orientation", [SizebarMixin.param.sizebar_orientation.default])
+    def test_orientation(self, orientation):
+        self.plot.opts(sizebar=True, sizebar_orientation=orientation)
+        assert self.get_sizebar().orientation == orientation
+
+    def test_style(self):
+        self.plot.opts(sizebar=True, sizebar_color="red", sizebar_alpha = 0.1)
         sizebar = self.get_sizebar()
-        assert isinstance(sizebar, SizeBar)
+        assert sizebar.glyph_fill_alpha == 0.1
+        assert sizebar.glyph_fill_color == "red"
+
+    @pytest.mark.parametrize("bounds", [(0, 10), (0, float("inf"))])
+    def test_bounds(self, bounds):
+        self.plot.opts(sizebar=True, sizebar_bounds=bounds)
+        assert self.get_sizebar().bounds == bounds
+
+    @pytest.mark.parametrize("location", [SizebarMixin.param.sizebar_location.default])
+    @pytest.mark.parametrize("orientation", [SizebarMixin.param.sizebar_orientation.default])
+    @pytest.mark.parametrize("set_width", [True, False])
+    def test_max_size(self, location, orientation, set_width):
+        self.plot.opts(sizebar=True, sizebar_location=location, sizebar_orientation=orientation)
+        if set_width:
+            self.plot.opts(sizebar_opts={"width": 216})  # Using 216 as it will never be a default
+
+        width = self.get_sizebar().width
+        match (location, orientation, set_width):
+            case ("above" | "below", "horizontal", False):
+                assert width == "max"
+            case ("left" | "right", "vertical", False):
+                assert width == "max"
+            case _:
+                if set_width:
+                    assert width == 216
+                else:
+                    assert width != "max"

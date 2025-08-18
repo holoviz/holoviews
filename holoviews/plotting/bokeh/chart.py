@@ -28,7 +28,7 @@ from .styles import (
 from .util import BOKEH_GE_3_8_0, categorize_array
 
 
-class SizeBarMixin(LegendPlot):
+class SizebarMixin(LegendPlot):
 
     sizebar = param.Boolean(default=False, doc="""
         Whether to display a sizebar.""")
@@ -37,7 +37,7 @@ class SizeBarMixin(LegendPlot):
         default="below",
         objects=["above", "below", "left", "right", "center"],
         doc="""
-        Location anchor for positioning scale bar, default to 'below.
+        Location anchor for positioning scale bar, default to 'below'.
 
         The sizebar_location is only used if sizebar is True.""")
 
@@ -103,16 +103,16 @@ class SizeBarMixin(LegendPlot):
         if "width" not in sizebar_kwargs:  # Width is the primary axis
             match (self.sizebar_location, self.sizebar_orientation):
                 case ("above" | "below", "horizontal"):
-                    sizebar_kwargs['width'] = "max"
+                    sizebar_kwargs["width"] = "max"
                 case ("left" | "right", "vertical"):
-                    sizebar_kwargs['width'] = "max"
+                    sizebar_kwargs["width"] = "max"
 
         sizebar = SizeBar(**sizebar_kwargs)
         plot.add_layout(sizebar, self.sizebar_location)
         self.handles['sizebar'] = sizebar
 
 
-class PointPlot(SizeBarMixin, ColorbarPlot):
+class PointPlot(SizebarMixin, ColorbarPlot):
 
     jitter = param.Number(default=None, bounds=(0, None), doc="""
       The amount of jitter to apply to offset the points along the x-axis.""")
