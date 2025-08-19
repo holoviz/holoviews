@@ -87,12 +87,16 @@ TOOL_TYPES = {
     'yzoom_out': tools.ZoomOutTool,
     'click': tools.TapTool,
     'tap': tools.TapTool,
+    'doubletap': tools.TapTool,
     'crosshair': tools.CrosshairTool,
+    'xcrosshair': tools.CrosshairTool,
+    'ycrosshair': tools.CrosshairTool,
     'box_select': tools.BoxSelectTool,
     'xbox_select': tools.BoxSelectTool,
     'ybox_select': tools.BoxSelectTool,
     'poly_select': tools.PolySelectTool,
     'lasso_select': tools.LassoSelectTool,
+    'auto_box_zoom': tools.BoxZoomTool,
     'box_zoom': tools.BoxZoomTool,
     'xbox_zoom': tools.BoxZoomTool,
     'ybox_zoom': tools.BoxZoomTool,
@@ -106,8 +110,24 @@ TOOL_TYPES = {
     'point_draw': tools.PointDrawTool,
     'poly_draw': tools.PolyDrawTool,
     'poly_edit': tools.PolyEditTool,
-    'freehand_draw': tools.FreehandDrawTool
+    'freehand_draw': tools.FreehandDrawTool,
+    'copy': tools.CopyTool,
+    'examine': tools.ExamineTool,
+    'fullscreen': tools.FullscreenTool,
+    'line_edit': tools.LineEditTool,
 }
+
+if BOKEH_GE_3_6_0:
+    TOOL_TYPES.update({
+        'pan_down': tools.ClickPanTool,
+        'pan_east': tools.ClickPanTool,
+        'pan_left': tools.ClickPanTool,
+        'pan_north': tools.ClickPanTool,
+        'pan_right': tools.ClickPanTool,
+        'pan_south': tools.ClickPanTool,
+        'pan_up': tools.ClickPanTool,
+        'pan_west': tools.ClickPanTool,
+    })
 
 
 def convert_timestamp(timestamp):
