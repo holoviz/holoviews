@@ -45,7 +45,7 @@ class PathPlot(ColorbarPlot):
         # Support style-mapped color (e.g. .opts(color='c')) by resolving
         # a Dimension from the color style when no explicit color_index is set.
         color_style = style.get('color')
-        if cdim is None and isinstance(color_style, str):
+        if cdim is None and isinstance(color_style, (str, Dimension)):
             cdim = element.get_dimension(color_style)
 
         with abbreviated_exception():
