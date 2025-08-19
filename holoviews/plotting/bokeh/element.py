@@ -2823,7 +2823,13 @@ class ColorbarPlot(ElementPlot):
                     util.is_int(dhigh)):
                     low, high = int(low), int(high)
             elif isinstance(eldim, dim):
-                low, high = np.nan, np.nan
+                # For dim objects, check if the referenced dimension has an explicit range
+                actual_dim = element.get_dimension(eldim.dimension)
+                if actual_dim and actual_dim.range != (None, None):
+                    low, high = actual_dim.range
+                # Fallback to data range if dimension lookup fails
+                else:
+                    low, high = element.range(eldim.dimension.name)
             else:
                 low, high = element.range(eldim.name)
             if self.symmetric:

@@ -5,6 +5,7 @@ import param
 from bokeh.models import FactorRange
 
 from ...core import util
+from ...core.dimension import Dimension
 from ...element import Contours, Polygons
 from ...util.transform import dim
 from .callbacks import PolyDrawCallback, PolyEditCallback
@@ -94,14 +95,17 @@ class PathPlot(LegendPlot, ColorbarPlot):
         cdim = None
         if isinstance(color, str) and not validate('color', color):
             cdim = element.get_dimension(color)
+        elif isinstance(color, Dimension):
+            # Handle hv.Dimension() objects directly
+            cdim = element.get_dimension(color.name) if color.name in element else color
         elif self.color_index is not None:
             cdim = element.get_dimension(self.color_index)
 
         scalar = element.interface.isunique(element, cdim, per_geom=True) if cdim else False
         style_mapping = {
             (s, v) for s, v in style.items() if (s not in self._nonvectorized_styles) and
-            ((isinstance(v, str) and v in element) or isinstance(v, dim)) and
-            not (not isinstance(v, dim) and v == color and s == 'color')}
+            ((isinstance(v, str) and v in element) or isinstance(v, dim) or isinstance(v, Dimension)) and
+            not (not isinstance(v, (dim, Dimension)) and v == color and s == 'color')}
         mapping = dict(self._mapping)
 
         if not (cdim or style_mapping or 'hover' in self.handles):
