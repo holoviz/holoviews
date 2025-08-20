@@ -102,9 +102,7 @@ class SizebarMixin(LegendPlot):
 
         if "width" not in sizebar_kwargs:  # Width is the primary axis
             match (self.sizebar_location, self.sizebar_orientation):
-                case ("above" | "below", "horizontal"):
-                    sizebar_kwargs["width"] = "max"
-                case ("left" | "right", "vertical"):
+                case (("above" | "below"), "horizontal") | (("left" | "right"), "vertical"):
                     sizebar_kwargs["width"] = "max"
 
         sizebar = SizeBar(**sizebar_kwargs)
