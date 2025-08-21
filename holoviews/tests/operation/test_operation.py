@@ -719,6 +719,7 @@ class OperationTests(ComparisonTestCase):
         operation._preprocess_hooks = pre_backup
         operation._postprocess_hooks = post_backup
 
+    @pytest.mark.usefixtures("bokeh_backend")
     def test_decimate_ordering(self):
         x = np.linspace(0, 10, 100)
         y = np.sin(x)
@@ -729,6 +730,16 @@ class OperationTests(ComparisonTestCase):
         index = decimated.data[()].data.index
         assert np.all(index == np.sort(index))
 
+    @pytest.mark.usefixtures("bokeh_backend")
+    def test_decimate_same_y(self):
+        data = pd.DataFrame({'x': np.arange(10), 'y': np.ones(10)})
+        points = Points(data, kdims=['x', 'y']).opts(xlim=(0, 10))
+        decimated = decimate(points)
+
+        renderer("bokeh").get_plot(decimated)
+        output = decimated.data[()].data
+        pd.testing.assert_series_equal(data["x"], output["x"])
+        pd.testing.assert_series_equal(data["y"], output["y"])
 
 class TestDendrogramOperation:
 
