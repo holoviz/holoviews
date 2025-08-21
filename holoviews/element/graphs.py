@@ -7,7 +7,7 @@ import param
 from ..core import Dataset, Dimension, Element2D
 from ..core.accessors import Redim
 from ..core.operation import Operation
-from ..core.util import is_dataframe, max_range, search_indices
+from ..core.util import _LazyModule, is_dataframe, max_range, search_indices
 from .chart import Points
 from .path import Path
 from .util import (
@@ -17,6 +17,12 @@ from .util import (
     quadratic_bezier,
     split_path,
 )
+
+TYPE_CHECKING = False
+if TYPE_CHECKING:
+    import pandas as pd
+else:
+    pd = _LazyModule("pandas", bool_use_sys_modules=True)
 
 
 class RedimGraph(Redim):
@@ -95,6 +101,11 @@ class Nodes(Points):
                                 Dimension('index')], bounds=(3, 3))
 
     group = param.String(default='Nodes', constant=True)
+
+    def __init__(self, data, **params):
+        if pd and isinstance(data, pd.DataFrame) and len(data.columns) == 2:
+            data["index"] = data.index.copy()
+        super().__init__(data, **params)
 
 
 class EdgePaths(Path):
