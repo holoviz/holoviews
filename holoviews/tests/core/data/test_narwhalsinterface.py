@@ -193,6 +193,58 @@ class DaskNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
         return dd.from_pandas(pd.DataFrame(*args, **kwargs), npartitions=2)
 
 
+class IbisNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
+    __test__ = True
+    narwhals_backend = "pyarrow"
+
+    def setUp(self):
+        ibis = pytest.importorskip("ibis")
+        super().setUp()
+        ibis.set_backend("sqlite")
+
+    def tearDown(self):
+        import ibis
+
+        ibis.set_backend(None)
+        super().tearDown()
+
+    def frame(self, *args, **kwargs):
+        import ibis
+
+        return ibis.memtable(*args, **kwargs)
+
+    def test_dataset_nodata_range(self):
+        with pytest.raises(NotImplementedError):
+            super().test_dataset_nodata_range()
+
+    def test_dataset_range(self):
+        with pytest.raises(NotImplementedError):
+            return super().test_dataset_range()
+
+    @pytest.mark.xfail(reason="need to investigate failure")
+    def test_dataset_get_dframe_by_dimension(self):
+        df = self.dataset_hm.dframe(["x"])
+        assert isinstance(df, nw.LazyFrame)
+
+        expected = self.frame({"x": self.xs})
+        assert df.to_native() == expected
+
+    @pytest.mark.xfail(reason="need to investigate failure")
+    def test_dataset_aggregate_ht(self):
+        # raises AttributeError: 'StringColumn' object has no attribute 'mean'
+        return super().test_dataset_aggregate_ht()
+
+    @pytest.mark.xfail(reason="need to investigate failure")
+    def test_dataset_aggregate_ht_alias(self):
+        # raises AttributeError: 'StringColumn' object has no attribute 'mean'
+        return super().test_dataset_aggregate_ht_alias()
+
+    @pytest.mark.xfail(reason="need to investigate failure")
+    def test_dataset_aggregate_string_types(self):
+        # raises AttributeError: 'StringColumn' object has no attribute 'mean'
+        return super().test_dataset_aggregate_string_types()
+
+
 @pytest.mark.gpu
 class CudfNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
     __test__ = True

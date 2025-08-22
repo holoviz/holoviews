@@ -36,7 +36,8 @@ _AGG_FUNC_LOOKUP = {
 }
 
 _EAGER_TYPE = {
-    nw.Implementation.DASK: nw.Implementation.PANDAS
+    nw.Implementation.DASK: nw.Implementation.PANDAS,
+    nw.Implementation.IBIS: nw.Implementation.PYARROW,
 }
 
 
