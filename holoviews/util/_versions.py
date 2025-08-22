@@ -11,6 +11,7 @@ PACKAGES = [
     "cupy",
     "dask",
     "dask-expr",
+    "duckdb",
     "ibis-framework",
     "narwhals",
     "networkx",

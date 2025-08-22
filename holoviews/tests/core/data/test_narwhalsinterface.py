@@ -245,6 +245,47 @@ class IbisNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
         return super().test_dataset_aggregate_string_types()
 
 
+class DuckdbNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
+    __test__ = True
+    narwhals_backend = "pandas"
+
+    def setUp(self):
+        pytest.importorskip("duckdb")
+        super().setUp()
+
+    def frame(self, *args, **kwargs):
+        import duckdb
+        import pandas as pd
+
+        return duckdb.from_df(pd.DataFrame(*args, **kwargs))
+
+    def test_dataset_nodata_range(self):
+        with pytest.raises(NotImplementedError):
+            super().test_dataset_nodata_range()
+
+    def test_dataset_range(self):
+        with pytest.raises(NotImplementedError):
+            return super().test_dataset_range()
+
+    @pytest.mark.xfail(reason="need to investigate failure")
+    def test_dataset_add_dimensions_values_hm(self):
+        # raises TypeError: 'int' object is not iterable
+        return super().test_dataset_add_dimensions_values_hm()
+
+    @pytest.mark.xfail(reason="need to investigate failure")
+    def test_dataset_add_dimensions_values_ht(self):
+        # raises TypeError: 'int' object is not iterable
+        return super().test_dataset_add_dimensions_values_ht()
+
+    @pytest.mark.xfail(reason="need to investigate failure")
+    def test_dataset_get_dframe_by_dimension(self):
+        df = self.dataset_hm.dframe(["x"])
+        assert isinstance(df, nw.LazyFrame)
+
+        expected = self.frame({"x": self.xs})
+        assert df.to_native() == expected
+
+
 @pytest.mark.gpu
 class CudfNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
     __test__ = True

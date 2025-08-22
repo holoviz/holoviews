@@ -32,6 +32,7 @@ classifiers = [
 dependencies = [
     "bokeh >=3.1",
     "colorcet",
+    "narwhals",
     "numpy >=1.21",
     "packaging",
     "pandas >=1.3",
