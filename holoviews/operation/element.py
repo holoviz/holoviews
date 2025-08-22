@@ -1289,16 +1289,22 @@ class dendrogram(Operation):
 
         arrays, labels = [], []
         for k, v in dataset.groupby(dim, container_type=list, group_type=Dataset):
+            if isinstance(k, tuple) and len(k) == 1:
+                k = k[0]
             labels.append(k)
             arrays.append(v.dimension_values(vdim))
 
         X = np.vstack(arrays)
-        Z = linkage(
-            X,
-            method=self.p.linkage_method,
-            metric=self.p.linkage_metric,
-            optimal_ordering=self.p.optimal_ordering
-        )
+        try:
+            Z = linkage(
+                X,
+                method=self.p.linkage_method,
+                metric=self.p.linkage_metric,
+                optimal_ordering=self.p.optimal_ordering
+            )
+        except ValueError as e:
+            msg = "Could not calculate linkage for dendrogram, try changing 'linkage_metric' or 'linkage_method'."
+            raise ValueError(msg) from e
         return dendrogram(Z, labels=labels, no_plot=True)
 
     def _process(self, element, key=None):
