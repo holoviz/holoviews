@@ -221,13 +221,12 @@ class IbisNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
         with pytest.raises(NotImplementedError):
             return super().test_dataset_range()
 
-    @pytest.mark.xfail(reason="need to investigate failure")
     def test_dataset_get_dframe_by_dimension(self):
         df = self.dataset_hm.dframe(["x"])
         assert isinstance(df, nw.LazyFrame)
 
         expected = self.frame({"x": self.xs})
-        assert df.to_native() == expected
+        assert df.to_native().to_pyarrow() == expected.to_pyarrow()
 
     @pytest.mark.xfail(reason="need to investigate failure")
     def test_dataset_aggregate_ht(self):
@@ -247,7 +246,7 @@ class IbisNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
 
 class DuckdbNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     __test__ = True
-    narwhals_backend = "pandas"
+    narwhals_backend = "pyarrow"
 
     def setUp(self):
         pytest.importorskip("duckdb")
@@ -255,9 +254,9 @@ class DuckdbNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
 
     def frame(self, *args, **kwargs):
         import duckdb
-        import pandas as pd
+        import pyarrow as pa
 
-        return duckdb.from_df(pd.DataFrame(*args, **kwargs))
+        return duckdb.from_arrow(pa.table(*args, **kwargs))
 
     def test_dataset_nodata_range(self):
         with pytest.raises(NotImplementedError):
@@ -267,23 +266,12 @@ class DuckdbNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
         with pytest.raises(NotImplementedError):
             return super().test_dataset_range()
 
-    @pytest.mark.xfail(reason="need to investigate failure")
-    def test_dataset_add_dimensions_values_hm(self):
-        # raises TypeError: 'int' object is not iterable
-        return super().test_dataset_add_dimensions_values_hm()
-
-    @pytest.mark.xfail(reason="need to investigate failure")
-    def test_dataset_add_dimensions_values_ht(self):
-        # raises TypeError: 'int' object is not iterable
-        return super().test_dataset_add_dimensions_values_ht()
-
-    @pytest.mark.xfail(reason="need to investigate failure")
     def test_dataset_get_dframe_by_dimension(self):
         df = self.dataset_hm.dframe(["x"])
         assert isinstance(df, nw.LazyFrame)
 
         expected = self.frame({"x": self.xs})
-        assert df.to_native() == expected
+        assert df.to_native().to_arrow_table() == expected.to_arrow_table()
 
 
 @pytest.mark.gpu

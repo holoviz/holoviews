@@ -38,7 +38,7 @@ _AGG_FUNC_LOOKUP = {
 _EAGER_TYPE = {
     nw.Implementation.DASK: nw.Implementation.PANDAS,
     nw.Implementation.IBIS: nw.Implementation.PYARROW,
-    nw.Implementation.DUCKDB: nw.Implementation.PANDAS,
+    nw.Implementation.DUCKDB: nw.Implementation.PYARROW,
 }
 
 
