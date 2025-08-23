@@ -213,14 +213,6 @@ class IbisNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
 
         return ibis.memtable(*args, **kwargs)
 
-    def test_dataset_nodata_range(self):
-        with pytest.raises(NotImplementedError):
-            super().test_dataset_nodata_range()
-
-    def test_dataset_range(self):
-        with pytest.raises(NotImplementedError):
-            return super().test_dataset_range()
-
     def test_dataset_get_dframe_by_dimension(self):
         df = self.dataset_hm.dframe(["x"])
         assert isinstance(df, nw.LazyFrame)
@@ -257,14 +249,6 @@ class DuckdbNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
         import pyarrow as pa
 
         return duckdb.from_arrow(pa.table(*args, **kwargs))
-
-    def test_dataset_nodata_range(self):
-        with pytest.raises(NotImplementedError):
-            super().test_dataset_nodata_range()
-
-    def test_dataset_range(self):
-        with pytest.raises(NotImplementedError):
-            return super().test_dataset_range()
 
     def test_dataset_get_dframe_by_dimension(self):
         df = self.dataset_hm.dframe(["x"])

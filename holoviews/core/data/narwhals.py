@@ -41,6 +41,9 @@ _EAGER_TYPE = {
     nw.Implementation.DUCKDB: nw.Implementation.PYARROW,
 }
 
+# Does not support drop_nulls
+_NO_DROP_NULL = [nw.Implementation.DUCKDB, nw.Implementation.IBIS]
+
 
 class NarwhalsDtype:
     __slots__ = ("dtype",)
@@ -185,10 +188,11 @@ class NarwhalsInterface(Interface):
                     .alias(name)
                 )
                 df_column = df_column.select(expr)
-            df_column = df_column.select(
-                cmin=nw.col(name).drop_nulls().min(),
-                cmax=nw.col(name).drop_nulls().max(),
-            )
+            if dataset.data.implementation in _NO_DROP_NULL:
+                col = nw.col(name)
+            else:
+                col = nw.col(name).drop_nulls()
+            df_column = df_column.select(cmin=col.min(), cmax=col.max())
             if is_lazy:
                 df_column = df_column.collect()
             if not len(df_column):
