@@ -275,7 +275,7 @@ class Element(ViewableElement, Composable, Overlayable):
 
         columns, types = [], []
         for dim in dims:
-            column = self.dimension_values(dim)
+            column = np.asanyarray(self.dimension_values(dim))
             columns.append(column)
             types.append(column.dtype.kind)
         if len(set(types)) > 1:
