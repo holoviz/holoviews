@@ -1289,8 +1289,6 @@ class dendrogram(Operation):
 
         arrays, labels = [], []
         for k, v in dataset.groupby(dim, container_type=list, group_type=Dataset):
-            if isinstance(k, tuple) and len(k) == 1:
-                k = k[0]
             labels.append(k)
             arrays.append(v.dimension_values(vdim))
 
@@ -1311,7 +1309,11 @@ class dendrogram(Operation):
         if self.p.main_dim is None:
             raise TypeError("'main_dim' cannot be None")
         element_kdims = element.kdims
-        dataset = Dataset(element)
+        if element.interface.gridded:
+            dims = {element.get_dimension(k, strict=True) for k in (*element_kdims, *self.p.adjoint_dims, self.p.main_dim)}
+            dataset = Dataset(element.dframe(dimensions=list(dims)))
+        else:
+            dataset = Dataset(element)
         sign = -1 if self.p.invert else 1
         sort_dims, dendros = [], {}
         for d in self.p.adjoint_dims:
