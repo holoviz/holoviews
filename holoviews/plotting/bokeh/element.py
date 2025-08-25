@@ -197,7 +197,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     scalebar = param.Boolean(default=False, doc="""
         Whether to display a scalebar.""")
 
-    scalebar_range =param.Selector(default="x", objects=["x", "y"], doc="""
+    scalebar_range = param.Selector(default="x", objects=["x", "y"], doc="""
         Whether to have the scalebar on the x or y axis.""")
 
     scalebar_unit = param.ClassSelector(default=None, class_=(str, tuple), doc="""

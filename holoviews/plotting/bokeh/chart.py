@@ -12,6 +12,7 @@ from ...core.dimension import dimension_name
 from ...core.util import dimension_sanitizer, isdatetime, isfinite
 from ...operation import interpolate_curve
 from ...util.transform import dim
+from ...util.warnings import warn
 from ..mixins import AreaMixin, BarsMixin, SpikesMixin
 from ..util import compute_sizes, get_min_distance
 from .element import ColorbarPlot, ElementPlot, LegendPlot, OverlayPlot
@@ -24,10 +25,92 @@ from .styles import (
     mpl_to_bokeh,
     rgb2hex,
 )
-from .util import categorize_array
+from .util import BOKEH_GE_3_8_0, categorize_array
 
 
-class PointPlot(LegendPlot, ColorbarPlot):
+class SizebarMixin(LegendPlot):
+
+    sizebar = param.Boolean(default=False, doc="""
+        Whether to display a sizebar.""")
+
+    sizebar_location = param.Selector(
+        default="below",
+        objects=["above", "below", "left", "right", "center"],
+        doc="""
+        Location anchor for positioning scale bar, default to 'below'.
+
+        The sizebar_location is only used if sizebar is True.""")
+
+    sizebar_orientation = param.Selector(default="horizontal", objects=["horizontal", "vertical"], doc="""
+        Orientation of the sizebar, default to 'horizontal'.
+
+        The sizebar_orientation is only used if sizebar is True.
+    """)
+
+    sizebar_color = param.String(default="black", doc="""
+        Color of the glyph in the sizebar, default to 'black'.
+
+        The sizebar_color is only used if sizebar is True.""")
+
+    sizebar_alpha = param.Number(default=0.6, bounds=(0, 1), doc="""
+        Alpha value of the glyph in the sizebar, default to 0.6.
+
+        The sizebar_alpha is only used if sizebar is True.""")
+
+    sizebar_bounds = param.NumericTuple(default=None, length=2, doc="""
+        Bounds of the sizebar, default to None which will automatically
+        determine the bounds based on the data.
+
+        The sizebar_bounds is only used if sizebar is True.""")
+
+    sizebar_opts = param.Dict(
+        default={}, doc="""
+        Allows setting specific styling options for the sizebar.
+        See https://docs.bokeh.org/en/latest/docs/reference/models/annotations.html#bokeh.models.SizeBar
+        for more information.
+
+        The sizebar_opts is only used if sizebar is True.""")
+
+    def _init_glyph(self, plot, mapping, properties):
+        renderer, glyph = super()._init_glyph(plot, mapping, properties)
+        if self.sizebar:
+            self._draw_sizebar(plot, renderer, glyph)
+        return renderer, glyph
+
+    def _draw_sizebar(self, plot, renderer, glyph):
+        if not BOKEH_GE_3_8_0:
+            raise RuntimeError("Sizebar requires Bokeh >= 3.8.0")
+
+        from bokeh.models import SizeBar
+        from bokeh.models.glyph import RadialGlyph
+
+        if not isinstance(glyph, RadialGlyph):
+            if isinstance(self, PointPlot):
+                # PointPlot have both Scatter and Circle plot methods
+                msg = "For sizebar to work you need to have radius set"
+                warn(msg, category=RuntimeWarning)
+            return
+
+        sizebar_kwargs = dict(
+            self.sizebar_opts,
+            renderer=renderer,
+            orientation=self.sizebar_orientation,
+            glyph_fill_color=self.sizebar_color,
+            glyph_fill_alpha=self.sizebar_alpha,
+            bounds=self.sizebar_bounds or "auto",
+        )
+
+        if "width" not in sizebar_kwargs:  # Width is the primary axis
+            match (self.sizebar_location, self.sizebar_orientation):
+                case (("above" | "below"), "horizontal") | (("left" | "right"), "vertical"):
+                    sizebar_kwargs["width"] = "max"
+
+        sizebar = SizeBar(**sizebar_kwargs)
+        plot.add_layout(sizebar, self.sizebar_location)
+        self.handles['sizebar'] = sizebar
+
+
+class PointPlot(SizebarMixin, ColorbarPlot):
 
     jitter = param.Number(default=None, bounds=(0, None), doc="""
       The amount of jitter to apply to offset the points along the x-axis.""")
