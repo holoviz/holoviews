@@ -256,7 +256,7 @@ class NarwhalsInterface(Interface):
         expr = expr(ddof=0) if function == "var" else expr()
         if len(dimensions):
             columns = reindexed.collect_schema()
-            if function in [np.size]:
+            if function in ["len"]:
                 numeric_cols = [c for c in columns if c not in cols]
             else:
                 numeric_cols = [
