@@ -23,6 +23,7 @@ class DaskDatasetTest(BasePandasInterfaceTests):
 
     datatype = 'dask'
     data_type = dd.DataFrame
+    force_sort = True
 
     __test__ = True
 
@@ -131,14 +132,6 @@ class DaskDatasetTest(BasePandasInterfaceTests):
         # Make sure that selecting by expression didn't cause evaluation
         self.assertIsInstance(new_ds.data, dd.DataFrame)
         self.assertEqual(new_ds.data.compute(), df[df.b == 10])
-
-    def test_dataset_groupby(self):
-        # Dask-expr unique sort the order when running unique on column
-        super().test_dataset_groupby(sort=True)
-
-    def test_dataset_groupby_second_dim(self):
-        # Dask-expr unique sort the order when running unique on column
-        return super().test_dataset_groupby_second_dim(sort=True)
 
     def test_dataset_get_dframe_by_dimension(self):
         df = self.dataset_hm.dframe(['x'])
