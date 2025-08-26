@@ -272,11 +272,6 @@ class CudfNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
         expected = self.frame({"x": self.xs})
         np.testing.assert_array_equal(df.to_numpy(), expected.to_numpy())
 
-    def test_dataset_aggregate_string_types_size(self):
-        msg = "object type does not support size operations"
-        with pytest.raises(TypeError, match=re.escape(msg)):
-            super().test_dataset_aggregate_string_types_size()
-
     def test_dataset_groupby_dynamic(self):
         msg = "Series object is not iterable."
         with pytest.raises(TypeError, match=re.escape(msg)):
