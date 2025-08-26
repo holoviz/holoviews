@@ -648,40 +648,40 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         aggregated = Dataset([], kdims=self.kdims[:1], vdims=[d for vd in self.vdims for d in [vd, vd+'_std']])
         self.compare_dataset(dataset.aggregate(['Gender'], np.mean, np.std), aggregated)
 
-    def test_dataset_groupby(self, sort=False):
+    def test_dataset_groupby(self):
         group1 = self.frame({'Age':[10,16], 'Weight':[15,18], 'Height':[0.8,0.6]})
         group2 = self.frame({'Age':[12], 'Weight':[10], 'Height':[0.8]})
         grouped = HoloMap([('M', Dataset(group1, kdims=['Age'], vdims=self.vdims)),
                            ('F', Dataset(group2, kdims=['Age'], vdims=self.vdims))],
-                          kdims=['Gender'], sort=sort)
+                          kdims=['Gender'], sort=self.force_sort)
         output = self.table.groupby(['Gender'])
-        if sort:
+        if self.force_sort:
             output = output.select(Gender=["F", "M"])
         self.assertEqual(output, grouped)
 
-    def test_dataset_groupby_alias(self, sort=False):
+    def test_dataset_groupby_alias(self):
         group1 = self.frame({'age':[10,16], 'weight':[15,18], 'height':[0.8,0.6]})
         group2 = self.frame({'age':[12], 'weight':[10], 'height':[0.8]})
         grouped = HoloMap([('M', Dataset(group1, kdims=[('age', 'Age')],
                                          vdims=self.alias_vdims)),
                            ('F', Dataset(group2, kdims=[('age', 'Age')],
                                          vdims=self.alias_vdims))],
-                          kdims=[('gender', 'Gender')], sort=sort)
+                          kdims=[('gender', 'Gender')], sort=self.force_sort)
         output = self.alias_table.groupby('Gender')
-        if sort:
+        if self.force_sort:
             output = output.select(Gender=["F", "M"])
         self.assertEqual(output, grouped)
 
-    def test_dataset_groupby_second_dim(self, sort=False):
+    def test_dataset_groupby_second_dim(self):
         group1 = self.frame({'Gender':['M'], 'Weight':[15], 'Height':[0.8]})
         group2 = self.frame({'Gender':['M'], 'Weight':[18], 'Height':[0.6]})
         group3 = self.frame({'Gender':['F'], 'Weight':[10], 'Height':[0.8]})
         grouped = HoloMap([(10, Dataset(group1, kdims=['Gender'], vdims=self.vdims)),
                            (16, Dataset(group2, kdims=['Gender'], vdims=self.vdims)),
                            (12, Dataset(group3, kdims=['Gender'], vdims=self.vdims))],
-                          kdims=['Age'], sort=self.force_sort or sort)
+                          kdims=['Age'], sort=self.force_sort)
         output = self.table.groupby(['Age'])
-        if self.force_sort or sort:
+        if self.force_sort:
             output = output.select(Age=[10, 12, 16])
         self.assertEqual(output, grouped)
 
