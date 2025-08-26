@@ -80,6 +80,8 @@ class HomogeneousColumnTests:
 
     frame = dict
 
+    force_sort = False  # If the backend does not maintain order
+
     def init_column_data(self):
         self.xs = np.array(range(11))
         self.xs_2 = self.xs**2
@@ -277,8 +279,12 @@ class HomogeneousColumnTests:
         z_ints = [el**2 for el in self.y_ints]
         dataset = Dataset(self.frame({'x':self.xs, 'y':self.y_ints, 'z':z_ints}),
                           kdims=['x', 'y'], vdims=['z'])
-        self.assertEqual(dataset.aggregate(['x'], np.mean),
-                         Dataset({'x':self.xs, 'z':z_ints}, kdims=['x'], vdims=['z']))
+        agg = dataset.aggregate(['x'], np.mean)
+        if self.force_sort:
+            agg = agg.sort("x")
+
+        expected = Dataset({'x':self.xs, 'z':z_ints}, kdims=['x'], vdims=['z'])
+        self.assertEqual(agg, expected),
 
     # Indexing
 
@@ -550,9 +556,13 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         self.assertEqual(np.array([0, 0.5, 1]), samples)
 
     def test_dataset_reduce_ht(self):
-        reduced = Dataset(self.frame({'Age':self.age, 'Weight':self.weight, 'Height':self.height}),
+        expected = Dataset(self.frame({'Age':self.age, 'Weight':self.weight, 'Height':self.height}),
                           kdims=self.kdims[1:], vdims=self.vdims)
-        self.assertEqual(self.table.reduce(['Gender'], np.mean), reduced)
+        reduced = self.table.reduce(['Gender'], np.mean)
+        if self.force_sort:
+            reduced = reduced.sort("Age")
+            expected = expected.sort("Age")
+        self.assertEqual(reduced, expected)
 
     def test_dataset_1D_reduce_ht(self):
         self.assertEqual(self.dataset_ht.reduce('x', np.mean), np.float64(0.5))
@@ -565,23 +575,35 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
     def test_dataset_2D_partial_reduce_ht(self):
         dataset = Dataset(self.frame({'x':self.xs, 'y':self.ys, 'z':self.zs}),
                           kdims=['x', 'y'], vdims=['z'])
-        reduced = Dataset({'x':self.xs, 'z':self.zs},
+        expected = Dataset({'x':self.xs, 'z':self.zs},
                           kdims=['x'], vdims=['z'])
-        self.assertEqual(dataset.reduce(['y'], np.mean), reduced)
+        reduced = dataset.reduce(['y'], np.mean)
+        if self.force_sort:
+            reduced = reduced.sort("x")
+        self.assertEqual(reduced, expected)
 
     def test_dataset_2D_aggregate_spread_fn_with_duplicates(self):
         dataset = Dataset(self.frame({'x': np.array([0, 0, 1, 1]), 'y': np.array([0, 1, 2, 3]),
                            'z': np.array([1, 2, 3, 4])}),
                           kdims=['x', 'y'], vdims=['z'])
         agg = dataset.aggregate('x', function=np.mean, spreadfn=np.var)
-        self.assertEqual(agg, Dataset({'x': np.array([0, 1]), 'z': np.array([1.5, 3.5]),
-                                       'z_var': np.array([0.25, 0.25])},
-                                      kdims=['x'], vdims=['z', 'z_var']))
+        if self.force_sort:
+            agg = agg.sort("x")
+        expected = Dataset({
+            'x': np.array([0, 1]),
+            'z': np.array([1.5, 3.5]),
+            'z_var': np.array([0.25, 0.25]),
+        }, kdims=['x'], vdims=['z', 'z_var'])
+        self.assertEqual(agg, expected)
 
     def test_dataset_aggregate_ht(self):
-        aggregated = Dataset(self.frame({'Gender':['M', 'F'], 'Weight':[16.5, 10], 'Height':[0.7, 0.8]}),
+        expected = Dataset(self.frame({'Gender':['M', 'F'], 'Weight':[16.5, 10], 'Height':[0.7, 0.8]}),
                              kdims=self.kdims[:1], vdims=self.vdims)
-        self.compare_dataset(self.table.aggregate(['Gender'], np.mean), aggregated)
+        aggregated = self.table.aggregate(['Gender'], np.mean)
+        if self.force_sort:
+            aggregated = aggregated.sort("Gender")
+            expected = expected.sort("Gender")
+        self.compare_dataset(aggregated, expected)
 
     def test_dataset_aggregate_string_types(self):
         ds = Dataset(self.frame({'Gender':['M', 'M'], 'Weight':[20, 10], 'Name':['Peter', 'Matt']}),
@@ -598,16 +620,23 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         self.compare_dataset(ds.aggregate(['Gender'], np.size), aggregated)
 
     def test_dataset_aggregate_ht_alias(self):
-        aggregated = Dataset(self.frame({'gender':['M', 'F'], 'weight':[16.5, 10], 'height':[0.7, 0.8]}),
+        expected = Dataset(self.frame({'gender':['M', 'F'], 'weight':[16.5, 10], 'height':[0.7, 0.8]}),
                              kdims=self.alias_kdims[:1], vdims=self.alias_vdims)
-        self.compare_dataset(self.alias_table.aggregate('Gender', np.mean), aggregated)
+        aggregated = self.alias_table.aggregate('Gender', np.mean)
+        if self.force_sort:
+            aggregated = aggregated.sort("Gender")
+            expected = expected.sort("Gender")
+        self.compare_dataset(aggregated, expected)
 
     def test_dataset_2D_aggregate_partial_ht(self):
         dataset = Dataset(self.frame({'x':self.xs, 'y':self.ys, 'z':self.zs}),
                           kdims=['x', 'y'], vdims=['z'])
-        reduced = Dataset({'x':self.xs, 'z':self.zs},
+        expected = Dataset({'x':self.xs, 'z':self.zs},
                           kdims=['x'], vdims=['z'])
-        self.assertEqual(dataset.aggregate(['x'], np.mean), reduced)
+        aggregated = dataset.aggregate(['x'], np.mean)
+        if self.force_sort:
+            aggregated = aggregated.sort("x")
+        self.assertEqual(aggregated, expected)
 
     def test_dataset_empty_aggregate(self):
         dataset = Dataset([], kdims=self.kdims, vdims=self.vdims)
@@ -650,9 +679,9 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         grouped = HoloMap([(10, Dataset(group1, kdims=['Gender'], vdims=self.vdims)),
                            (16, Dataset(group2, kdims=['Gender'], vdims=self.vdims)),
                            (12, Dataset(group3, kdims=['Gender'], vdims=self.vdims))],
-                          kdims=['Age'], sort=sort)
+                          kdims=['Age'], sort=self.force_sort or sort)
         output = self.table.groupby(['Age'])
-        if sort:
+        if self.force_sort or sort:
             output = output.select(Age=[10, 12, 16])
         self.assertEqual(output, grouped)
 

@@ -150,6 +150,7 @@ class PandasNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
 class PolarsNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
     __test__ = True
     narwhals_backend = "polars"
+    force_sort = True
 
 
 class PyarrowNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
@@ -172,6 +173,7 @@ class BaseNarwhalsLazyInterfaceTests(BaseNarwhalsInterfaceTests):
 class PolarsNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     __test__ = True
     narwhals_backend = "polars"
+    force_sort = True
 
     def frame(self, *args, **kwargs):
         pl = pytest.importorskip("polars")
@@ -181,6 +183,7 @@ class PolarsNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
 class DaskNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     __test__ = True
     narwhals_backend = "pandas"
+    force_sort = True
 
     def setUp(self):
         pytest.importorskip("dask.dataframe")
@@ -196,6 +199,7 @@ class DaskNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
 class IbisNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     __test__ = True
     narwhals_backend = "pyarrow"
+    force_sort = True
 
     def setUp(self):
         ibis = pytest.importorskip("ibis")
@@ -239,6 +243,7 @@ class IbisNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
 class DuckdbNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     __test__ = True
     narwhals_backend = "pyarrow"
+    force_sort = True
 
     def setUp(self):
         pytest.importorskip("duckdb")
@@ -262,6 +267,7 @@ class DuckdbNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
 class CudfNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
     __test__ = True
     narwhals_backend = "cudf"
+    force_sort = True
 
     def frame(self, *args, **kwargs):
         import cudf
