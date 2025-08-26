@@ -104,7 +104,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
         scalar = element.interface.isunique(element, cdim, per_geom=True) if cdim else False
         style_mapping = {
             (s, v) for s, v in style.items() if (s not in self._nonvectorized_styles) and
-            ((isinstance(v, str) and v in element) or isinstance(v, dim) or isinstance(v, Dimension)) and
+            (isinstance(v, str) and v in element) or isinstance(v, (dim, Dimension)) and
             not (not isinstance(v, (dim, Dimension)) and v == color and s == 'color')}
         mapping = dict(self._mapping)
 

@@ -203,10 +203,7 @@ class MultiInterface(Interface):
         combined = []
         for d in dataset.data:
             ds.data = d
-            # Handle case where dim is a Dimension object but inner datasets only have string keys
-            # Convert Dimension objects to string names for compatibility with raw data dictionaries
-            dim_key = dim.name if hasattr(dim, "name") else dim
-            values = ds.interface.values(ds, dim_key, expanded=False)
+            values = ds.interface.values(ds, str(dim), expanded=False)
             unique = list(util.unique_iterator(values))
             if len(unique) > 1:
                 return False

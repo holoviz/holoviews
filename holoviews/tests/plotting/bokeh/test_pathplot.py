@@ -262,29 +262,28 @@ class TestPathPlot(TestBokehPlot):
         assert 'c' in source.data
         assert len(source.data['c']) == 30
 
-    def test_path_categorical_color_mapper_matches_mapping(self):
-        # Use categorical mapping so expected colors are exact
+    def test_path_color_mapping(self):
         n_pts = 3
-        cats = ['A','B','C','D','E']
-        cmap = {'A': "#1616C8", 'B': "#DC1212", 'C': "#1E8E2F", 'D': "#C0E178", 'E': "#EFE6E6"}
         data = [
-            {'x': np.arange(n_pts) + i,
+            {'x': np.arange(n_pts) + x,
              'y': np.arange(n_pts) + 1,
-             'c': cats[i]}
-            for i in range(5)
+             'c': x * 10}
+            for x in range(5)
         ]
-        path = Path(data, vdims=['c']).opts(color='c', cmap=cmap, colorbar=False)
+        path = Path(data, vdims=["c"]).opts(color="c", cmap="Turbo", colorbar=True)
+
         plot = bokeh_renderer.get_plot(path)
+        source = plot.handles['source']
+        output = source.data["c"]
+        expected = np.array([0, 0, 10, 10, 20, 20, 30, 30, 40, 40])
+        np.testing.assert_array_equal(output, expected)
 
         glyph = plot.handles['glyph']
         prop = property_to_dict(glyph.line_color)
         assert prop.get('field') == 'c'
         assert 'transform' in prop
         cmapper = prop['transform']
-        assert isinstance(cmapper, CategoricalColorMapper)
-        # The order of factors should match encountered categories
-        assert cmapper.factors == cats
-        assert list(cmapper.palette) == [cmap[k] for k in cats]
+        assert isinstance(cmapper, LinearColorMapper)
 
 class TestPolygonPlot(TestBokehPlot):
 
