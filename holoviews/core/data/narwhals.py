@@ -192,6 +192,8 @@ class NarwhalsInterface(Interface):
                 col = nw.col(name)
             else:
                 col = nw.col(name).drop_nulls()
+            # NOTE: Some narwhals backends (duckdb) will return nan as
+            # the max value
             df_column = df_column.select(cmin=col.min(), cmax=col.max())
             if is_lazy:
                 df_column = df_column.collect()
