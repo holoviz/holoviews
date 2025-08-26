@@ -251,7 +251,9 @@ class NarwhalsInterface(Interface):
         cols = [d.name for d in dataset.kdims if d in dimensions]
         vdims = dataset.dimensions("value", label="name")
         reindexed = cls.dframe(dataset, dimensions=cols + vdims)
-        expr = getattr(nw.all(), _AGG_FUNC_LOOKUP.get(function, function))()
+        function = _AGG_FUNC_LOOKUP.get(function, function)
+        expr = getattr(nw.all(), function)
+        expr = expr(ddof=0) if function == "var" else expr()
         if len(dimensions):
             columns = reindexed.collect_schema()
             if function in [np.size]:
