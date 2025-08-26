@@ -549,7 +549,7 @@ class Comparison(ComparisonInterface):
                 )
                 raise cls.failureException(failure_msg)
             if d1.dtype.kind in 'SUOV':
-                if list(d1) == list(d2):
+                if list(d1) != list(d2):
                     failure_msg = f"{msg} along dimension {dim.pprint_label} not equal."
                     raise cls.failureException(failure_msg)
             else:
