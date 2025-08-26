@@ -103,6 +103,29 @@ class TestPathPlot(TestMPLPlot):
         assert float(arr.min()) == 0.0
         assert float(arr.max()) == 40.0
 
+    def test_path_color_mapping(self):
+        n_pts = 3
+        data = [
+            {'x': np.arange(n_pts) + x,
+             'y': np.arange(n_pts) + 1,
+             'c': x * 10}
+            for x in range(5)
+        ]
+        path = Path(data, vdims=["c"]).opts(color="c", cmap="viridis", colorbar=True)
+
+        plot = mpl_renderer.get_plot(path)
+        artist = plot.handles['artist']
+
+        # Check that the color array has the expected values
+        arr = artist.get_array()
+        expected = np.array([0, 0, 10, 10, 20, 20, 30, 30, 40, 40])
+        np.testing.assert_array_equal(arr, expected)
+
+        # Check that colormap is properly set
+        assert artist.get_cmap() is not None
+        # Check color limits span the full range
+        assert artist.get_clim() == (0, 40)
+
 
 class TestPolygonPlot(TestMPLPlot):
 
