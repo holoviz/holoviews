@@ -489,6 +489,33 @@ class Graph(Dataset, Element2D):
         # Construct graph
         return cls((edge_data, nodes), vdims=edge_vdims)
 
+    @classmethod
+    def from_sparse(cls, edges, nodes, **params):
+        from scipy.sparse import issparse
+
+        if not issparse(edges):
+            msg = "edges expected to be a scipy.sparse array"
+            raise TypeError(msg)
+
+        keys = [*map(str, cls.kdims), "data"]
+        if kdims := params.get('kdims'):
+            if isinstance(kdims, str):
+                keys[0] = kdims
+            else:
+                keys[:len(kdims)] = kdims
+        if vdims := params.get('vdims'):
+            if isinstance(vdims, str):
+                keys[2] = vdims
+            else:
+                keys[2] = vdims[0]
+        else:
+            params["vdims"] = "data"
+
+        edges = edges.tocoo()
+        values = [edges.row, edges.col, edges.data]
+        edges_data = dict(zip(keys, values, strict=True))
+        return cls((edges_data, nodes), **params)
+
 
 class TriMesh(Graph):
     """A TriMesh represents a mesh of triangles represented as the
