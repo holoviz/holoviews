@@ -184,7 +184,6 @@ class TestPointPlot(TestBokehPlot):
                 with self.subTest(marker=marker):
                     self._test_native_marker_legend(marker)
 
-    @pytest.mark.xfail(reason='Holoviews converts "x" marker to angled "cross".')
     def test_x_native_marker_legend(self):
         """When one plots with a native bokeh marker, the legend uses that marker."""
         self._test_native_marker_legend("x")
