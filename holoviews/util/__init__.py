@@ -842,16 +842,13 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
         if formats[-1] in supported:
             filename = '.'.join(formats[:-1])
     if backend == "bokeh":
-        try:
-            # Suppress only the specific Bokeh validator that warns when sizing_mode='fixed'
-            # but width/height are not both set.
-            from bokeh.core.validation.warnings import FIXED_SIZING_MODE
+        # Suppress only the specific Bokeh validator that warns when sizing_mode='fixed'
+        # but width/height are not both set.
+        from bokeh.core.validation.warnings import FIXED_SIZING_MODE
 
-            from ..plotting.bokeh.util import silence_warnings
-            with silence_warnings(FIXED_SIZING_MODE):
-                return renderer_obj.save(obj, filename, fmt=fmt, resources=resources, title=title)
-        except Exception as e:
-            param.main.param.warning(f"Could not silence Bokeh FIXED_SIZING_MODE: {e}")
+        from ..plotting.bokeh.util import silence_warnings
+        with silence_warnings(FIXED_SIZING_MODE):
+            return renderer_obj.save(obj, filename, fmt=fmt, resources=resources, title=title)
     return renderer_obj.save(obj, filename, fmt=fmt, resources=resources, title=title)
 
 

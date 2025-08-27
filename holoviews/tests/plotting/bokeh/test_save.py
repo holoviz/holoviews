@@ -1,8 +1,8 @@
+import logging
+
 import pytest
 
 import holoviews as hv
-
-hv.extension("bokeh")
 
 
 @pytest.mark.usefixtures("bokeh_backend")
@@ -17,12 +17,9 @@ def test_save_suppresses_bokeh_fixed_sizing_mode(tmp_path, caplog, opts):
     curve = hv.Curve([1, 2, 3]).opts(**opts, backend="bokeh")
 
     out = tmp_path / "curve.html"
-    with caplog.at_level("WARNING", logger="bokeh.core.validation.check"):
-        hv.save(curve, str(out), backend="bokeh")
+    logging.getLogger("bokeh").propagate = True
+    with caplog.at_level(logging.WARNING):
+        hv.save(curve, out)
 
     assert out.exists()
-    assert not any(
-        "FIXED_SIZING_MODE"
-        in (r.getMessage() if hasattr(r, "getMessage") else str(r.msg))
-        for r in caplog.records
-    )
+    assert all(["FIXED_SIZING_MODE" not in e.msg for e in caplog.records])
