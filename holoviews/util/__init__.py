@@ -842,8 +842,9 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
         if formats[-1] in supported:
             filename = '.'.join(formats[:-1])
     if backend == "bokeh":
-        # Suppress only the specific Bokeh validator that warns when sizing_mode='fixed'
-        # but width/height are not both set.
+        # Suppress only the specific validator that warns when `sizing_mode='fixed'`
+        # but width/height are not both set on a Bokeh Plot, this happens in HoloViews
+        # when `.opts(fixed_{width,height}=...)` are set,  which sets width/height to `None`.
         from bokeh.core.validation.warnings import FIXED_SIZING_MODE
 
         from ..plotting.bokeh.util import silence_warnings

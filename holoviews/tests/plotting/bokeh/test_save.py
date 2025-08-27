@@ -11,6 +11,8 @@ import holoviews as hv
     [
         {"frame_width": 200},
         {"frame_height": 200},
+        {"frame_height": 200, "frame_width": 200},
+        {},
     ],
 )
 def test_save_suppresses_bokeh_fixed_sizing_mode(tmp_path, caplog, opts):
