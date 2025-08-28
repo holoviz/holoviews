@@ -5,6 +5,7 @@ from unittest import SkipTest
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from holoviews.core.data import Dataset
 from holoviews.element.chart import Points
@@ -127,6 +128,100 @@ class GraphTests(ComparisonTestCase):
         redimmed = graph.redim(x='x2', y='y2')
         self.assertEqual(redimmed.nodes, graph.nodes.redim(x='x2', y='y2'))
         self.assertEqual(redimmed.edgepaths, graph.edgepaths.redim(x='x2', y='y2'))
+
+
+class TestFromSparse:
+
+    def setup_method(self):
+        pytest.importorskip('scipy')
+
+    def test_from_sparse_basic(self):
+        import scipy.sparse as sp
+
+        row = np.array([0, 0, 1, 2])
+        col = np.array([1, 2, 2, 0])
+        data = np.array([1.0, 2.0, 3.0, 4.0])
+        sparse_array = sp.coo_array((data, (row, col)), shape=(3, 3))
+        nodes_data = {'x': [0.0, 1.0, 0.5], 'y': [0.0, 0.0, 1.0], 'index': [0, 1, 2]}
+        graph = Graph.from_sparse(sparse_array, nodes_data)
+
+        assert len(graph.dimension_values('start')) == 4
+        expected_source = [0, 0, 1, 2]
+        expected_target = [1, 2, 2, 0]
+        expected_data = [1.0, 2.0, 3.0, 4.0]
+        np.testing.assert_array_equal(graph.dimension_values('start'), expected_source)
+        np.testing.assert_array_equal(graph.dimension_values('end'), expected_target)
+        np.testing.assert_array_equal(graph.dimension_values('data'), expected_data)
+
+        assert len(graph.nodes) == 3
+        np.testing.assert_array_equal(graph.nodes.dimension_values('x'), [0.0, 1.0, 0.5])
+        np.testing.assert_array_equal(graph.nodes.dimension_values('y'), [0.0, 0.0, 1.0])
+        np.testing.assert_array_equal(graph.nodes.dimension_values('index'), [0, 1, 2])
+
+        # Test equivalence with direct Graph construction
+        edges_dict = {'start': expected_source, 'end': expected_target, 'data': expected_data}
+        direct_graph = Graph((edges_dict, nodes_data), vdims=['data'])
+
+        np.testing.assert_array_equal(graph.dimension_values('start'), direct_graph.dimension_values('start'))
+        np.testing.assert_array_equal(graph.dimension_values('end'), direct_graph.dimension_values('end'))
+        np.testing.assert_array_equal(graph.dimension_values('data'), direct_graph.dimension_values('data'))
+        assert len(graph.nodes) == len(direct_graph.nodes)
+        assert len(graph.vdims) == len(direct_graph.vdims)
+
+    def test_from_sparse_with_vdims(self):
+        import scipy.sparse as sp
+
+        row = np.array([0, 1])
+        col = np.array([1, 0])
+        data = np.array([0.5, 0.8])
+        sparse_array = sp.csr_array((data, (row, col)), shape=(2, 2))
+        nodes_data = {'x': [0.0, 1.0], 'y': [0.0, 1.0], 'index': [0, 1]}
+        graph = Graph.from_sparse(sparse_array, nodes_data, vdims=['weight'])
+
+        assert graph.vdims[0].name == 'weight'
+        np.testing.assert_array_equal(graph.dimension_values('weight'), [0.5, 0.8])
+
+        edges_dict = {'start': [0, 1], 'end': [1, 0], 'weight': [0.5, 0.8]}
+        direct_graph = Graph((edges_dict, nodes_data), vdims=['weight'])
+
+        np.testing.assert_array_equal(graph.dimension_values('start'), direct_graph.dimension_values('start'))
+        np.testing.assert_array_equal(graph.dimension_values('end'), direct_graph.dimension_values('end'))
+        np.testing.assert_array_equal(graph.dimension_values('weight'), direct_graph.dimension_values('weight'))
+        assert graph.vdims[0].name == direct_graph.vdims[0].name
+
+    def test_from_sparse_with_custom_kdims(self):
+        import scipy.sparse as sp
+
+        row = np.array([0, 1])
+        col = np.array([1, 0])
+        data = np.array([1.0, 2.0])
+        sparse_array = sp.coo_array((data, (row, col)), shape=(2, 2))
+        nodes_data = {'x': [0.0, 1.0], 'y': [0.0, 1.0], 'index': [0, 1]}
+        graph = Graph.from_sparse(sparse_array, nodes_data, kdims=['source', 'target'])
+
+        assert graph.kdims[0].name == 'source'
+        assert graph.kdims[1].name == 'target'
+        np.testing.assert_array_equal(graph.dimension_values('source'), [0, 1])
+        np.testing.assert_array_equal(graph.dimension_values('target'), [1, 0])
+
+        # Test equivalence with direct Graph construction
+        edges_dict = {'source': [0, 1], 'target': [1, 0], 'data': [1.0, 2.0]}
+        direct_graph = Graph((edges_dict, nodes_data), kdims=['source', 'target'], vdims=['data'])
+
+        np.testing.assert_array_equal(graph.dimension_values('source'), direct_graph.dimension_values('source'))
+        np.testing.assert_array_equal(graph.dimension_values('target'), direct_graph.dimension_values('target'))
+        np.testing.assert_array_equal(graph.dimension_values('data'), direct_graph.dimension_values('data'))
+        assert graph.kdims[0].name == direct_graph.kdims[0].name
+        assert graph.kdims[1].name == direct_graph.kdims[1].name
+        assert len(graph.vdims) == len(direct_graph.vdims)
+
+    def test_from_sparse_invalid_input(self):
+        regular_array = np.array([[1, 2], [3, 4]])
+        nodes_data = {'x': [0.0, 1.0], 'y': [0.0, 1.0], 'index': [0, 1]}
+
+        with pytest.raises(TypeError, match="edges expected to be a scipy.sparse array"):
+            Graph.from_sparse(regular_array, nodes_data)
+
 
 class FromNetworkXTests(ComparisonTestCase):
 
