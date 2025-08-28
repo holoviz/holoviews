@@ -3,6 +3,7 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 import pytest
+from bokeh.core.enums import MarkerType
 from bokeh.models import (
     CategoricalColorMapper,
     Circle,
@@ -165,6 +166,17 @@ class TestPointPlot(TestBokehPlot):
         plot.initialize_plot()
         fig = plot.state
         self.assertEqual(len(fig.legend), 0)
+
+    def test_native_marker_legend(self):
+        """When one plots with a native bokeh marker, the legend uses that marker."""
+        for marker in MarkerType:
+            with self.subTest(marker=marker):
+                # Plot with a categorical color mapper solely to obtain a legend.
+                points = Points([(0, 0, "A"), (0, 1, "B")], vdims="color").opts(
+                    color="color", marker=marker
+                )
+                plot = bokeh_renderer.get_plot(points)
+                assert plot.state.legend[0].items[0].renderers[0].glyph.marker == marker
 
     def test_points_non_numeric_size_warning(self):
         data = (np.arange(10), np.arange(10), list(map(chr, range(94,104))))
