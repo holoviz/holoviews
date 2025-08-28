@@ -176,9 +176,7 @@ class TestPointPlot(TestBokehPlot):
                     color="color", marker=marker
                 )
                 plot = bokeh_renderer.get_plot(points)
-                self.assertEqual(
-                    plot.state.legend[0].items[0].renderers[0].glyph.marker, marker
-                )
+                assert plot.state.legend[0].items[0].renderers[0].glyph.marker == marker
 
     def test_points_non_numeric_size_warning(self):
         data = (np.arange(10), np.arange(10), list(map(chr, range(94,104))))
