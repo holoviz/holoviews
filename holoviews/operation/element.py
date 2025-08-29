@@ -1293,19 +1293,30 @@ class dendrogram(Operation):
             arrays.append(v.dimension_values(vdim))
 
         X = np.vstack(arrays)
-        Z = linkage(
-            X,
-            method=self.p.linkage_method,
-            metric=self.p.linkage_metric,
-            optimal_ordering=self.p.optimal_ordering
-        )
+        try:
+            Z = linkage(
+                X,
+                method=self.p.linkage_method,
+                metric=self.p.linkage_metric,
+                optimal_ordering=self.p.optimal_ordering
+            )
+        except ValueError as e:
+            msg = "Could not calculate linkage for dendrogram, try changing 'linkage_metric' or 'linkage_method'."
+            raise ValueError(msg) from e
         return dendrogram(Z, labels=labels, no_plot=True)
 
     def _process(self, element, key=None):
         if self.p.main_dim is None:
             raise TypeError("'main_dim' cannot be None")
-        element_kdims = element.kdims
-        dataset = Dataset(element)
+        element_kdims, element_vdims = element.kdims, element.vdims
+        if element.interface.gridded:
+            dims = {
+                element.get_dimension(k, strict=True)
+                for k in (*element_kdims, *element_vdims, *self.p.adjoint_dims, self.p.main_dim)
+            }
+            dataset = Dataset(element.dframe(dimensions=list(dims)))
+        else:
+            dataset = Dataset(element)
         sign = -1 if self.p.invert else 1
         sort_dims, dendros = [], {}
         for d in self.p.adjoint_dims:
@@ -1330,7 +1341,7 @@ class dendrogram(Operation):
             else:
                 return Layout(dendros.values())
 
-        vdims = [dataset.get_dimension(self.p.main_dim), *[vd for vd in dataset.vdims if vd != self.p.main_dim]]
+        vdims = element_vdims or self.p.main_dim
         # Adding non_sort_dims to handle unstable sorting algorithms, which can differ between OSs
         # https://github.com/holoviz/holoviews/pull/6625#issuecomment-2981268665
         non_sort_dims = [d for d in element_kdims[:2] if str(d) not in self.p.adjoint_dims]

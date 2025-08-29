@@ -884,3 +884,25 @@ class TestDendrogramOperation:
                 assert main1.x_range.factors == main2.x_range.factors
             case ["gene"]:
                 assert main1.y_range.factors == main2.y_range.factors
+
+    @pytest.mark.parametrize(
+        "adjoint_dims",
+        (["cluster"], ["gene"], ["gene", "cluster"]),
+        ids=["right", "top", "both"],
+    )
+    def test_gridded_dataset(self, adjoint_dims, rng):
+        xr = pytest.importorskip("xarray")
+
+        N = 10
+        da = xr.DataArray(
+            rng.normal(size=(N, N)),
+            name="main",
+            dims=("cluster", "gene"),
+            coords={
+                "cluster": [f"c{i}" for i in range(N)],
+                "gene": [f"g{j}" for j in range(N)],
+            },
+        )
+
+        dendro = dendrogram(Dataset(da), adjoint_dims=adjoint_dims, main_dim="main")
+        assert isinstance(dendro, AdjointLayout)
