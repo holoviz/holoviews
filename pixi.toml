@@ -33,7 +33,7 @@ features = ["required", "py313", "optional", "test-core", "test-example", "test-
 no-default-feature = true
 
 [environments.test-ui]
-features = ["required", "py312", "optional", "test-core", "test-ui"]
+features = ["required", "py313", "optional", "test-core", "test-ui"]
 no-default-feature = true
 
 [environments.test-core]
