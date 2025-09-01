@@ -18,6 +18,7 @@ from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting import Renderer
 from holoviews.plotting.bokeh.callbacks import Callback, RangeXYCallback, ResetCallback
 from holoviews.plotting.bokeh.renderer import BokehRenderer
+from holoviews.plotting.bokeh.util import BOKEH_GE_3_8_0
 from holoviews.streams import PlotReset, RangeXY, Stream
 
 bokeh_renderer = BokehRenderer.instance(mode='server')
@@ -48,8 +49,12 @@ class TestBokehServerSetup(ComparisonTestCase):
     def test_render_server_doc_element(self):
         obj = Curve([])
         doc = bokeh_renderer.server_doc(obj)
-        self.assertIs(doc, curdoc())
-        self.assertIs(bokeh_renderer.last_plot.document, curdoc())
+        if not BOKEH_GE_3_8_0:
+            # Updating the config which is introduced in Bokeh 3.8 changes the curdoc()
+            # Something like this is done in Panel:
+            # curdoc().config.update(notifications=None)
+            assert doc == curdoc()
+        assert bokeh_renderer.last_plot.document == doc
 
     def test_render_explicit_server_doc_element(self):
         obj = Curve([])
