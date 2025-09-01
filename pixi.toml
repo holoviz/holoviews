@@ -114,7 +114,7 @@ pillow = "*"
 plotly = ">=4.0"
 pooch = "*"
 pyarrow = "*"
-pyparsing = "!=3.2.2" # Pinned 2025-03
+pyparsing = "*"
 scikit-image = "*"
 scipy = "*"
 selenium = "*"
@@ -144,7 +144,7 @@ pytest = "*"
 pytest-asyncio = "*"
 pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
-pytest-rerunfailures = "*"
+pytest-rerunfailures = "!=16.0.0" # https://github.com/pytest-dev/pytest-rerunfailures/issues/303
 pytest-xdist = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-gpu + test-ui environment
@@ -160,7 +160,7 @@ nbval = "*"
 channels = ["microsoft"]
 
 [feature.test-ui.dependencies]
-playwright = { version = "!=1.51.0", channel = "microsoft" } # https://github.com/microsoft/playwright-python/issues/2791
+playwright = { version = "*", channel = "microsoft" }
 pytest-playwright = { version = "*", channel = "microsoft" }
 
 [feature.test-ui.tasks]
