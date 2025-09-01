@@ -1838,6 +1838,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 ds = Dataset({d.name: v for d, v in self.overlay_dims.items()},
                              list(self.overlay_dims))
                 val = v.apply(ds, ranges=ranges, flat=True)[0]
+            elif 'node' in k:
+                val = v.apply(element.nodes)
             else:
                 val = self._element_transform(v, element, ranges)
 

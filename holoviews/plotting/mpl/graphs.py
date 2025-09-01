@@ -54,7 +54,9 @@ class GraphPlot(GraphMixin, ColorbarPlot):
         color = elstyle.kwargs.get('node_color')
         cdim = element.nodes.get_dimension(self.color_index)
         cmap = elstyle.kwargs.get('cmap', 'tab20')
-        if cdim:
+        if color and 'node_color' in style:
+            style['node_facecolors'] = style.pop('node_color')
+        elif cdim:
             cs = element.nodes.dimension_values(self.color_index)
             # Check if numeric otherwise treat as categorical
             if cs.dtype.kind == 'f':
@@ -72,8 +74,6 @@ class GraphPlot(GraphMixin, ColorbarPlot):
                 style.pop('node_color', None)
             if 'node_c' in style:
                 self._norm_kwargs(element.nodes, ranges, style, cdim)
-        elif color and 'node_color' in style:
-            style['node_facecolors'] = style.pop('node_color')
         style['node_edgecolors'] = style.pop('node_edgecolors', 'none')
         if is_number(style.get('node_size')):
             style['node_s'] = style.pop('node_size')**2
