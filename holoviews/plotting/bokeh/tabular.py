@@ -12,6 +12,7 @@ from bokeh.models.widgets import (
     TableColumn,
 )
 
+from ....core.util import dtype_kind
 from ...core import Dataset, Dimension
 from ...core.util import dimension_sanitizer, isdatetime
 from ...element import ItemTable
@@ -101,7 +102,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
         columns = []
         for d in element.dimensions():
             col = dimension_sanitizer(d.name)
-            kind = data[col].dtype.kind
+            kind = dtype_kind(data[col].dtype)
             if kind == 'i':
                 formatter = NumberFormatter()
                 editor = IntEditor()

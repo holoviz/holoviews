@@ -237,7 +237,7 @@ class DaskInterface(PandasInterface):
         vdims = dataset.dimensions('value', label='name')
         dtypes = data.dtypes
         numeric = [c for c, dtype in zip(dtypes.index, dtypes.values, strict=None)
-                   if dtype.kind in 'iufc' and c in vdims]
+                   if dtype_kind(dtype) in 'iufc' and c in vdims]
         reindexed = data[cols+numeric]
 
         inbuilts = {'amin': 'min', 'amax': 'max', 'mean': 'mean',

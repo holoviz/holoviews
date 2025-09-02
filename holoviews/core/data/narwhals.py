@@ -171,7 +171,7 @@ class NarwhalsInterface(Interface):
         name = dimension.name
         is_lazy = isinstance(dataset.data, nw.LazyFrame)
         df_column = dataset.data.select(name)
-        if dtype.kind == "O":
+        if util.dtype_kind(dtype) == "O":
             df_column = df_column.sort(by=name)
             cmin, cmax = df_column.head(0), df_column.tail(0)
             if is_lazy:

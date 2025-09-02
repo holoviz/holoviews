@@ -35,6 +35,7 @@ import numpy as np
 import param
 
 from ..core import NdOverlay, Overlay
+from ..core.util import dtype_kind
 from ..element.chart import Area
 from .resample import ResampleOperation1D
 
@@ -148,9 +149,9 @@ def _lttb(x, y, n_out, **kwargs):
     sampled_x[-1] = x.shape[0] - 1
 
     # View it as int64 to take the mean of it
-    if x.dtype.kind == 'M':
+    if dtype_kind(x.dtype) == 'M':
         x = x.view(np.int64)
-    if y.dtype.kind == 'M':
+    if dtype_kind(y.dtype) == 'M':
         y = y.view(np.int64)
 
     _lttb_inner(x, y, n_out, sampled_x, offset)

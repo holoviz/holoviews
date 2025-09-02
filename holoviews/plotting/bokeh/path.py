@@ -4,6 +4,7 @@ import numpy as np
 import param
 from bokeh.models import FactorRange
 
+from ....core.util import dtype_kind
 from ...core import util
 from ...core.dimension import Dimension
 from ...element import Contours, Polygons
@@ -333,7 +334,7 @@ class ContourPlot(PathPlot):
         factors = None
         if cdim.label in ranges and 'factors' in ranges[cdim.label]:
             factors = ranges[cdim.label]['factors']
-        elif values.dtype.kind in 'SUO' and len(values):
+        elif dtype_kind(values.dtype) in 'SUO' and len(values):
             if isinstance(values[0], np.ndarray):
                 values = np.concatenate(values)
             factors = util.unique_array(values)

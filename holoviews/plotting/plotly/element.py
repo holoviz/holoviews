@@ -4,6 +4,7 @@ import uuid
 import numpy as np
 import param
 
+from ....core.util import dtype_kind
 from ... import Tiles
 from ...core import util
 from ...core.dimension import Dimension
@@ -373,7 +374,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                                      'to overlay your data along the dimension.')
 
             # If color is not valid colorspec add colormapper
-            numeric = isinstance(val, np.ndarray) and val.dtype.kind in 'uifMm'
+            numeric = isinstance(val, np.ndarray) and dtype_kind(val.dtype) in 'uifMm'
             if ('color' in k and isinstance(val, np.ndarray) and numeric):
                 copts = self.get_color_opts(v, element, ranges, style)
                 new_style.pop('cmap', None)

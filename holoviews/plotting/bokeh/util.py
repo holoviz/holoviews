@@ -45,6 +45,7 @@ from bokeh.themes import built_in_themes
 from bokeh.themes.theme import Theme
 from packaging.version import Version
 
+from ....core.util import dtype_kind
 from ...core import util
 from ...core.layout import Layout
 from ...core.ndmapping import NdMapping
@@ -152,7 +153,7 @@ def decode_bytes(array):
     bokeh serialization errors
 
     """
-    if (not len(array) or (isinstance(array, arraylike_types) and array.dtype.kind != 'O')):
+    if (not len(array) or (isinstance(array, arraylike_types) and dtype_kind(array.dtype) != 'O')):
         return array
     decoded = [v.decode('utf-8') if isinstance(v, bytes) else v for v in array]
     if isinstance(array, np.ndarray):
@@ -1233,7 +1234,7 @@ def dtype_fix_hook(plot, element):
             with suppress(Exception):
                 data = renderer.data_source.data
                 for k, v in data.items():
-                    if hasattr(v, "dtype") and v.dtype.kind == "U":
+                    if hasattr(v, "dtype") and dtype_kind(v.dtype) == "U":
                         data[k] = v.tolist()
 
 

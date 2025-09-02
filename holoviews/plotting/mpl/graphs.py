@@ -4,6 +4,7 @@ import numpy as np
 import param
 from matplotlib.collections import LineCollection, PolyCollection
 
+from ....core.util import dtype_kind
 from ...core.data import Dataset
 from ...core.options import Cycle, abbreviated_exception
 from ...core.util import is_number, isscalar, search_indices, unique_array
@@ -57,7 +58,7 @@ class GraphPlot(GraphMixin, ColorbarPlot):
         if cdim:
             cs = element.nodes.dimension_values(self.color_index)
             # Check if numeric otherwise treat as categorical
-            if cs.dtype.kind == 'f':
+            if dtype_kind(cs.dtype) == 'f':
                 style['node_c'] = cs
             else:
                 factors = unique_array(cs)
@@ -91,11 +92,11 @@ class GraphPlot(GraphMixin, ColorbarPlot):
         cvals = element.dimension_values(edge_cdim)
         if idx in [0, 1]:
             factors = element.nodes.dimension_values(2, expanded=False)
-        elif idx == 2 and cvals.dtype.kind in 'uif':
+        elif idx == 2 and dtype_kind(cvals.dtype) in 'uif':
             factors = None
         else:
             factors = unique_array(cvals)
-        if factors is None or (factors.dtype.kind == 'f' and idx not in [0, 1]):
+        if factors is None or (dtype_kind(factors.dtype) == 'f' and idx not in [0, 1]):
             style['edge_c'] = cvals
         else:
             cvals = search_indices(cvals, factors)
@@ -302,7 +303,7 @@ class ChordPlot(ChordMixin, GraphPlot):
         nodes = element.nodes
         if element.vdims:
             values = element.dimension_values(element.vdims[0])
-            if values.dtype.kind in 'uif':
+            if dtype_kind(values.dtype) in 'uif':
                 edges = Dataset(element)[values>0]
                 nodes = list(np.unique([edges.dimension_values(i) for i in range(2)]))
                 nodes = element.nodes.select(**{element.nodes.kdims[2].name: nodes})

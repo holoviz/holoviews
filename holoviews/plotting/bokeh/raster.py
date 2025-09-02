@@ -8,6 +8,7 @@ from bokeh.models import CustomJS, CustomJSHover, DatetimeAxis, HoverTool
 from bokeh.models.dom import Div, Span, Styles, ValueOf
 from panel.io import hold
 
+from ....core.util import dtype_kind
 from ...core.data import XArrayInterface
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster
@@ -293,7 +294,7 @@ class RasterPlot(ServerHoverMixin, ColorbarPlot):
             if i > 2 and 'hover' not in self.handles:
                 break
             img = element.dimension_values(i, flat=False)
-            if img.dtype.kind == 'b':
+            if dtype_kind(img.dtype) == 'b':
                 img = img.astype(np.int8)
             if 0 in img.shape:
                 img = np.array([[np.nan]])
@@ -369,7 +370,7 @@ class RGBPlot(ServerHoverMixin, SyntheticLegendMixin):
         if img.ndim == 3:
             img_max = img.max() if img.size else np.nan
             # Can be 0 to 255 if nodata has been used
-            if img.dtype.kind == 'f' and img_max <= 1:
+            if dtype_kind(img.dtype) == 'f' and img_max <= 1:
                 img = img*255
                 # img_max * 255 <- have no effect
             if img.size and (img.min() < 0 or img_max > 255):

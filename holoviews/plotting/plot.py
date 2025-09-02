@@ -18,6 +18,7 @@ from panel.io.notebook import push
 from panel.io.state import state
 from pyviz_comms import JupyterComm
 
+from ...core.util import dtype_kind
 from ..core import traversal, util
 from ..core.data import Dataset, disable_pipeline
 from ..core.element import Element, Element3D
@@ -716,7 +717,7 @@ class DimensionedPlot(Plot):
 
                 if all(util.isfinite(r) for r in el_dim.range):
                     data_range = (None, None)
-                elif dtype is not None and dtype.kind in 'SU':
+                elif dtype is not None and dtype_kind(dtype) in 'SU':
                     data_range = ('', '')
                 elif isinstance(el, Graph) and el_dim in el.kdims[:2]:
                     data_range = el.nodes.range(2, dimension_range=False)
@@ -727,7 +728,7 @@ class DimensionedPlot(Plot):
                     data_range = el.range(el_dim, dimension_range=False)
 
                 data_ranges[(el, el_dim)] = data_range
-                if dtype is not None and dtype.kind in 'uif' and robust:
+                if dtype is not None and dtype_kind(dtype) in 'uif' and robust:
                     percentile = 2 if isinstance(robust, bool) else robust
                     robust_ranges[(el, el_dim)] = (
                         dim(el_dim, np.nanpercentile, percentile).apply(el),
@@ -736,7 +737,7 @@ class DimensionedPlot(Plot):
 
                 if (any(isinstance(r, str) for r in data_range) or
                     (el_dim.type is not None and issubclass(el_dim.type, str)) or
-                    (dtype is not None and dtype.kind in 'SU')):
+                    (dtype is not None and dtype_kind(dtype) in 'SU')):
                     categorical_dims.append(el_dim)
 
         prev_ranges = ranges.get(group, {})
@@ -760,11 +761,11 @@ class DimensionedPlot(Plot):
                         continue
                     values = v.apply(el, all_values=True)
                     factors = None
-                    if values.dtype.kind == 'M':
+                    if dtype_kind(values.dtype) == 'M':
                         drange = values.min(), values.max()
                     elif util.isscalar(values):
                         drange = values, values
-                    elif values.dtype.kind in 'US':
+                    elif dtype_kind(values.dtype) in 'US':
                         factors = util.unique_array(values)
                     elif len(values) == 0:
                         drange = np.nan, np.nan
@@ -816,7 +817,7 @@ class DimensionedPlot(Plot):
                             values = el.dimension_values(el_dim, expanded=False)
                     elif isinstance(el, Graph) and el_dim in el.nodes:
                         values = el.nodes.dimension_values(el_dim, expanded=False)
-                    if (isinstance(values, np.ndarray) and values.dtype.kind == 'O' and
+                    if (isinstance(values, np.ndarray) and dtype_kind(values.dtype) == 'O' and
                         all(isinstance(v, (np.ndarray)) for v in values)):
                         values = np.concatenate(values) if len(values) else []
                     factors = util.unique_array(values)

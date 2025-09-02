@@ -2,6 +2,7 @@ import numpy as np
 from bokeh.models import CustomJS, Toolbar
 from bokeh.models.tools import RangeTool
 
+from ....core.util import dtype_kind
 from ...core.spaces import HoloMap
 from ...core.util import isscalar
 from ..links import (
@@ -259,7 +260,7 @@ class DataLinkCallback(LinkCallback):
             if len(v) and isinstance(v[0], np.ndarray):
                 continue # Skip ragged arrays
             if not ((isscalar(v) and v == col) or
-                    (v.dtype.kind not in 'iufc' and (v==col).all()) or
+                    (dtype_kind(v.dtype) not in 'iufc' and (v==col).all()) or
                     np.allclose(v, np.asarray(src_cds.data[k]), equal_nan=True)):
                 raise ValueError('DataLink can only be applied if overlapping '
                                  f'dimension values are equal, {k} column on source '

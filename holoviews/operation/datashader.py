@@ -38,6 +38,7 @@ from ..core.util import (
     cftime_types,
     datetime_types,
     dt_to_int,
+    dtype_kind,
     get_param_values,
 )
 from ..core.util.dependencies import _LazyModule
@@ -359,7 +360,7 @@ class aggregate(LineAggregationOperation):
         if (
             category_check or
             any((not is_custom and len(df[d.name]) and isinstance(df[d.name].values[0], cftime_types)) or
-            df[d.name].dtype.kind in ["M", "u"] for d in (x, y))
+            dtype_kind(df[d.name].dtype) in ["M", "u"] for d in (x, y))
         ):
             df = df.copy()
         if category_check:
@@ -369,11 +370,11 @@ class aggregate(LineAggregationOperation):
             vals = df[d.name]
             if not is_custom and len(vals) and isinstance(vals.values[0], cftime_types):
                 vals = cftime_to_timestamp(vals, 'ns')
-            elif vals.dtype.kind == 'M':
+            elif dtype_kind(vals.dtype) == 'M':
                 vals = vals.astype('datetime64[ns]')
             elif vals.dtype == np.uint64:
                 raise TypeError(f"Dtype of uint64 for column {d.name} is not supported.")
-            elif vals.dtype.kind == 'u':
+            elif dtype_kind(vals.dtype) == 'u':
                 pass  # To convert to int64
             else:
                 continue
@@ -491,14 +492,14 @@ class aggregate(LineAggregationOperation):
                 if col in agg.coords:
                     continue
                 val = dfdata[col].values[index]
-                if val.dtype.kind == 'f':
+                if dtype_kind(val.dtype) == 'f':
                     val[neg1] = np.nan
                 elif isinstance(val.dtype, pd.CategoricalDtype):
                     val = val.to_numpy()
                     val[neg1] = "-"
-                elif val.dtype.kind == "O":
+                elif dtype_kind(val.dtype) == "O":
                     val[neg1] = "-"
-                elif val.dtype.kind == "M":
+                elif dtype_kind(val.dtype) == "M":
                     val[neg1] = np.datetime64("NaT")
                 else:
                     val = val.astype(np.float64)
@@ -1052,7 +1053,7 @@ class trimesh_rasterize(aggregate):
             simplices = element.dframe(simplex_dims)
             verts = element.nodes.dframe(vert_dims)
         for c, dtype in zip(simplices.columns[:3], simplices.dtypes, strict=None):
-            if dtype.kind != 'i':
+            if dtype_kind(dtype) != 'i':
                 simplices[c] = simplices[c].astype('int')
         mesh = mesh(verts, simplices)
         if hasattr(mesh, 'persist'):
@@ -1728,7 +1729,7 @@ class SpreadingOperation(LinkableOperation):
     def _preprocess_rgb(self, element):
         rgbarray = np.dstack([element.dimension_values(vd, flat=False)
                               for vd in element.vdims])
-        if rgbarray.dtype.kind == 'f':
+        if dtype_kind(rgbarray.dtype) == 'f':
             rgbarray = rgbarray * 255
         return tf.Image(self.uint8_to_uint32(rgbarray.astype('uint8')))
 
@@ -2082,7 +2083,7 @@ class inspect_points(inspect_base):
         ds = raster.dataset.clone(df)
         xs, ys = (ds.dimension_values(kd) for kd in raster.kdims)
         dx, dy = xs - x, ys - y
-        xtype, ytype = dx.dtype.kind, dy.dtype.kind
+        xtype, ytype = dtype_kind(dx.dtype), dtype_kind(dy.dtype)
         if xtype in 'Mm':
             dx = dx.astype('int64')
         if ytype in 'Mm':

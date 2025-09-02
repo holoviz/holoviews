@@ -1,6 +1,7 @@
 import numpy as np
 from plotly.graph_objs.layout import Image as _Image
 
+from ....core.util import dtype_kind
 from ...core.util import VersionError
 from ...element import Tiles
 from .element import ElementPlot
@@ -63,7 +64,7 @@ Rendering RGB elements with the plotly backend requires the Pillow package""") f
             axis=0
         )
 
-        if img.dtype.kind == 'f':
+        if dtype_kind(img.dtype) == 'f':
             img = img * 255
         if img.size and (img.min() < 0 or img.max() > 255):
             self.param.warning('Clipping input data to the valid '

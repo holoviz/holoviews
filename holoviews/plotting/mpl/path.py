@@ -3,6 +3,7 @@ import param
 from matplotlib.collections import LineCollection, PatchCollection
 from matplotlib.dates import DateFormatter, date2num
 
+from ....core.util import dtype_kind
 from ...core import util
 from ...core.dimension import Dimension
 from ...core.options import abbreviated_exception
@@ -168,7 +169,7 @@ class ContourPlot(PathPlot):
             array = np.array([v for v, sps in zip(array, subpaths, strict=None)
                               for _ in range(len(sps))])
 
-        if array.dtype.kind not in 'uif':
+        if dtype_kind(array.dtype) not in 'uif':
             array = util.search_indices(array, util.unique_array(array))
         style['array'] = array
         self._norm_kwargs(element, ranges, style, cdim)
