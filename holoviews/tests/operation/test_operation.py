@@ -111,7 +111,8 @@ class OperationTests(ComparisonTestCase):
         self.assertEqual(op_img, img.clone(img.data*6, group='Transform'))
 
     def test_operation_chain_find(self):
-        class CustomOp1(Operation): pass
+        class CustomOp1(Operation):
+            link_inputs = param.Boolean(False)
         class CustomOp2(Operation):
             link_inputs = param.Boolean(True)
 
@@ -120,14 +121,14 @@ class OperationTests(ComparisonTestCase):
         ch_op = chain.instance(operations=[op1, op2])
         self.assertIs(ch_op.find(CustomOp1, skip_nonlinked=False), op1)
         self.assertIsNone(ch_op.find(CustomOp1, skip_nonlinked=True))
-        self.assertIsNone(ch_op.find(CustomOp2, skip_nonlinked=False))
-        self.assertIsNone(ch_op.find(CustomOp2, skip_nonlinked=True))
+        self.assertIs(ch_op.find(CustomOp2, skip_nonlinked=False), op2)
+        self.assertIs(ch_op.find(CustomOp2, skip_nonlinked=True), op2)
 
     def test_operation_chain_find_apply(self):
         img = Image(np.random.rand(10, 10))
         tr_op = transform.instance(operator=lambda x: x*2)
         img_apply = img.apply(tr_op, dynamic=False)
-        self.assertIs(img_apply.pipeline.find(transform), tr_op)
+        self.assertIs(img_apply.pipeline.find(transform, skip_nonlinked=False), tr_op)
 
     def test_operation_chain_find_apply_chain(self):
         class CustomOp1(Operation): pass

@@ -255,6 +255,8 @@ class chain(Operation):
         """
         found = None
         for op in self.operations[::-1]:
+            if not op.link_inputs and skip_nonlinked:
+                continue
             if isinstance(op, operation):
                 found = op
                 break
@@ -267,8 +269,6 @@ class chain(Operation):
                     if subfound is not None:
                         found = subfound
                         break
-            if not op.link_inputs and skip_nonlinked:
-                break
         return found
 
 
