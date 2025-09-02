@@ -135,7 +135,7 @@ def serve_panel(page, port):  # noqa: F811
 
     return serve_and_return_page
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="module")
 def reset_store():
     _custom_options = {k: {} for k in hv.Store._custom_options}
     _options = hv.Store._options.copy()

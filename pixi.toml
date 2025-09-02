@@ -33,7 +33,7 @@ features = ["required", "py313", "optional", "test-core", "test-example", "test-
 no-default-feature = true
 
 [environments.test-ui]
-features = ["required", "py312", "optional", "test-core", "test-ui"]
+features = ["required", "py313", "optional", "test-core", "test-ui"]
 no-default-feature = true
 
 [environments.test-core]
@@ -116,7 +116,7 @@ plotly = ">=4.0"
 polars = "*"
 pooch = "*"
 pyarrow = "*"
-pyparsing = "!=3.2.2" # Pinned 2025-03
+pyparsing = "*"
 python-duckdb = "*"
 scikit-image = "*"
 scipy = "*"
@@ -147,7 +147,7 @@ pytest = "*"
 pytest-asyncio = "*"
 pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
-pytest-rerunfailures = "*"
+pytest-rerunfailures = "!=16.0.0" # https://github.com/pytest-dev/pytest-rerunfailures/issues/303
 pytest-xdist = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-gpu + test-ui environment
@@ -163,7 +163,7 @@ nbval = "*"
 channels = ["microsoft"]
 
 [feature.test-ui.dependencies]
-playwright = { version = "!=1.51.0", channel = "microsoft" } # https://github.com/microsoft/playwright-python/issues/2791
+playwright = { version = "*", channel = "microsoft" }
 pytest-playwright = { version = "*", channel = "microsoft" }
 
 [feature.test-ui.tasks]
