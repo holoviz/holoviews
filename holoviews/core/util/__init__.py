@@ -919,6 +919,8 @@ def isfinite(val):
         return not isnat(val)
     elif isinstance(val, (str, bytes)):
         return True
+    elif isinstance(val, (nw.DataFrame, nw.LazyFrame)):
+        return val.select(nw.all().is_finite())
     finite = np.isfinite(val)
     if finite is pd.NA:
         return False
