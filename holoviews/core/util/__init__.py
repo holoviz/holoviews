@@ -2414,15 +2414,16 @@ def dtype_kind(obj) -> str:
 
     Parameters
     ----------
-    obj : object
-    An object which contains a dtype attribute, either a Numpy or narwhals.
+    obj : object / dtype
+    An object which contains a dtype attribute or a dtype,
+    can either be a Numpy or Narwhals dtype.
 
     Returns
     -------
     dtype_kind : str
     The kind of the dtype as a single character string.
     """
-    dtype = obj.dtype  # Should raise an error
+    dtype = getattr(obj, "dtype", obj)
     if hasattr(dtype, "kind"):
         return dtype.kind
 
