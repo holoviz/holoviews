@@ -102,7 +102,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
         columns = []
         for d in element.dimensions():
             col = dimension_sanitizer(d.name)
-            kind = dtype_kind(data[col].dtype)
+            kind = dtype_kind(data[col])
             if kind == 'i':
                 formatter = NumberFormatter()
                 editor = IntEditor()

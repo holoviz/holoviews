@@ -1187,7 +1187,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         # Ensure x-values are categorical
         xname = dimension_sanitizer(xdim.name)
-        if xname in sanitized_data and isinstance(sanitized_data[xname], np.ndarray) and dtype_kind(sanitized_data[xname].dtype) not in 'uifM' and not isdatetime(sanitized_data[xname]):
+        if xname in sanitized_data and isinstance(sanitized_data[xname], np.ndarray) and dtype_kind(sanitized_data[xname]) not in 'uifM' and not isdatetime(sanitized_data[xname]):
             sanitized_data[xname] = categorize_array(sanitized_data[xname], xdim)
 
         # If axes inverted change mapping to match hbar signature

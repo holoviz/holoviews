@@ -242,7 +242,7 @@ class LabelsPlot(ColorbarPlot):
             x, y, text = item[:3]
             if len(item) == 4 and cmap is not None:
                 color = item[3]
-                if dtype_kind(plot_args[-1].dtype) in 'if':
+                if dtype_kind(plot_args[-1]) in 'if':
                     color = (color - vmin) / (vmax-vmin)
                     plot_kwargs['color'] = cmap(color)
                 else:

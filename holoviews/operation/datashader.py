@@ -360,7 +360,7 @@ class aggregate(LineAggregationOperation):
         if (
             category_check or
             any((not is_custom and len(df[d.name]) and isinstance(df[d.name].values[0], cftime_types)) or
-            dtype_kind(df[d.name].dtype) in ["M", "u"] for d in (x, y))
+            dtype_kind(df[d.name]) in ["M", "u"] for d in (x, y))
         ):
             df = df.copy()
         if category_check:
