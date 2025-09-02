@@ -8,9 +8,8 @@ from bokeh.models import CustomJS, CustomJSHover, DatetimeAxis, HoverTool
 from bokeh.models.dom import Div, Span, Styles, ValueOf
 from panel.io import hold
 
-from ....core.util import dtype_kind
 from ...core.data import XArrayInterface
-from ...core.util import cartesian_product, dimension_sanitizer, isfinite
+from ...core.util import cartesian_product, dimension_sanitizer, dtype_kind, isfinite
 from ...element import Raster
 from ...util.warnings import warn
 from ..util import categorical_legend

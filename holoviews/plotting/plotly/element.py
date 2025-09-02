@@ -4,12 +4,12 @@ import uuid
 import numpy as np
 import param
 
-from ....core.util import dtype_kind
 from ... import Tiles
 from ...core import util
 from ...core.dimension import Dimension
 from ...core.element import Element
 from ...core.spaces import DynamicMap
+from ...core.util import dtype_kind
 from ...streams import Stream
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot

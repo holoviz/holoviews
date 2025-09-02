@@ -7,10 +7,9 @@ from bokeh.models import CategoricalColorMapper, CustomJS, Whisker
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
-from ....core.util import dtype_kind
 from ...core.data import Dataset
 from ...core.dimension import dimension_name
-from ...core.util import dimension_sanitizer, isdatetime, isfinite
+from ...core.util import dimension_sanitizer, dtype_kind, isdatetime, isfinite
 from ...operation import interpolate_curve
 from ...util.transform import dim
 from ...util.warnings import warn

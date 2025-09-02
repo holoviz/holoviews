@@ -4,9 +4,9 @@ import numpy as np
 import param
 from bokeh.models import FactorRange
 
-from ....core.util import dtype_kind
 from ...core import util
 from ...core.dimension import Dimension
+from ...core.util import dtype_kind
 from ...element import Contours, Polygons
 from ...util.transform import dim
 from .callbacks import PolyDrawCallback, PolyEditCallback

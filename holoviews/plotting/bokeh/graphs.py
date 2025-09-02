@@ -12,10 +12,9 @@ from bokeh.models import (
     StaticLayoutProvider,
 )
 
-from ....core.util import dtype_kind
 from ...core.data import Dataset
 from ...core.options import Cycle, abbreviated_exception
-from ...core.util import dimension_sanitizer, unique_array
+from ...core.util import dimension_sanitizer, dtype_kind, unique_array
 from ...util.transform import dim
 from ..mixins import ChordMixin, GraphMixin
 from ..util import get_directed_graph_paths, process_cmap

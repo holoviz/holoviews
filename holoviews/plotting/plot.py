@@ -18,7 +18,6 @@ from panel.io.notebook import push
 from panel.io.state import state
 from pyviz_comms import JupyterComm
 
-from ...core.util import dtype_kind
 from ..core import traversal, util
 from ..core.data import Dataset, disable_pipeline
 from ..core.element import Element, Element3D
@@ -26,7 +25,7 @@ from ..core.layout import Empty, Layout, NdLayout
 from ..core.options import Compositor, SkipRendering, Store, lookup_options
 from ..core.overlay import CompositeOverlay, NdOverlay, Overlay
 from ..core.spaces import DynamicMap, HoloMap
-from ..core.util import isfinite, stream_parameters, unique_iterator
+from ..core.util import dtype_kind, isfinite, stream_parameters, unique_iterator
 from ..element import Graph, Table
 from ..selection import NoOpSelectionDisplay
 from ..streams import RangeX, RangeXY, RangeY, Stream

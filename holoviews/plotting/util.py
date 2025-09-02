@@ -8,7 +8,6 @@ import numpy as np
 import param
 from packaging.version import Version
 
-from ...core.util import dtype_kind
 from ..core import (
     AdjointLayout,
     CompositeOverlay,
@@ -28,6 +27,7 @@ from ..core.util import (
     arraylike_types,
     closest_match,
     disable_constant,
+    dtype_kind,
     get_overlay_spec,
     is_number,
     isfinite,

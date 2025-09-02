@@ -45,7 +45,6 @@ from bokeh.themes import built_in_themes
 from bokeh.themes.theme import Theme
 from packaging.version import Version
 
-from ....core.util import dtype_kind
 from ...core import util
 from ...core.layout import Layout
 from ...core.ndmapping import NdMapping
@@ -56,6 +55,7 @@ from ...core.util import (
     callable_name,
     cftime_to_timestamp,
     cftime_types,
+    dtype_kind,
     isnumeric,
     unique_array,
 )

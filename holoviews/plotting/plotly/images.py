@@ -1,8 +1,7 @@
 import numpy as np
 from plotly.graph_objs.layout import Image as _Image
 
-from ....core.util import dtype_kind
-from ...core.util import VersionError
+from ...core.util import VersionError, dtype_kind
 from ...element import Tiles
 from .element import ElementPlot
 from .selection import PlotlyOverlaySelectionDisplay

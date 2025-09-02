@@ -10,7 +10,6 @@ from matplotlib import ticker
 from matplotlib.dates import date2num
 from matplotlib.image import AxesImage
 
-from ....core.util import dtype_kind
 from ...core import (
     CompositeOverlay,
     Dataset,
@@ -22,6 +21,7 @@ from ...core import (
 )
 from ...core.dimension import Dimension
 from ...core.options import Keywords, abbreviated_exception
+from ...core.util import dtype_kind
 from ...element import Graph, Path
 from ...streams import Stream
 from ...util.transform import dim

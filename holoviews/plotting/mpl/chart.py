@@ -4,12 +4,12 @@ import param
 from matplotlib.collections import LineCollection
 from matplotlib.dates import DateFormatter, date2num
 
-from ....core.util import dtype_kind
 from ...core.dimension import Dimension
 from ...core.options import Store, abbreviated_exception
 from ...core.util import (
     dt64_to_dt,
     dt_to_int,
+    dtype_kind,
     isdatetime,
     isfinite,
     isscalar,

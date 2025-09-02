@@ -2,9 +2,8 @@ import numpy as np
 from bokeh.models import CustomJS, Toolbar
 from bokeh.models.tools import RangeTool
 
-from ....core.util import dtype_kind
 from ...core.spaces import HoloMap
-from ...core.util import isscalar
+from ...core.util import dtype_kind, isscalar
 from ..links import (
     DataLink,
     Link,

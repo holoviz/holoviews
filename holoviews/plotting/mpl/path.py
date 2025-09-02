@@ -3,10 +3,10 @@ import param
 from matplotlib.collections import LineCollection, PatchCollection
 from matplotlib.dates import DateFormatter, date2num
 
-from ....core.util import dtype_kind
 from ...core import util
 from ...core.dimension import Dimension
 from ...core.options import abbreviated_exception
+from ...core.util import dtype_kind
 from ...element import Polygons
 from .element import ColorbarPlot
 from .util import polygons_to_path_patches

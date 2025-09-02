@@ -12,9 +12,8 @@ from bokeh.models.widgets import (
     TableColumn,
 )
 
-from ....core.util import dtype_kind
 from ...core import Dataset, Dimension
-from ...core.util import dimension_sanitizer, isdatetime
+from ...core.util import dimension_sanitizer, dtype_kind, isdatetime
 from ...element import ItemTable
 from ...streams import Buffer
 from ..plot import GenericElementPlot

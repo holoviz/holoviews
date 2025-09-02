@@ -1,7 +1,7 @@
 import numpy as np
 
-from ...core.util import dtype_kind
 from ..core import Dataset, Dimension, util
+from ..core.util import dtype_kind
 from ..element import Bars, Graph
 from ..element.util import categorical_aggregate2d
 from .util import get_axis_padding
