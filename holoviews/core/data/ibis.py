@@ -162,7 +162,7 @@ class IbisInterface(Interface):
     @classmethod
     def histogram(cls, expr, bins, density=True, weights=None):
         bins = np.asarray(bins)
-        bins = [int(v) if dtype_kind(bins.dtype) in 'iu' else float(v) for v in bins]
+        bins = [int(v) if dtype_kind(bins) in 'iu' else float(v) for v in bins]
         binned = expr.bucket(bins).name('bucket')
         hist = np.zeros(len(bins)-1)
         if IBIS_GE_4_0_0:

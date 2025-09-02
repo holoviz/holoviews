@@ -1903,7 +1903,7 @@ class GridSpace(Layoutable, UniformNdMapping):
                 if isinstance(k, slice):
                     continue
                 dim_keys = np.array([ke[i] for ke in keys])
-                if dtype_kind(dim_keys.dtype) in 'OSU':
+                if dtype_kind(dim_keys) in 'OSU':
                     continue
                 snapped_val = dim_keys[np.argmin(np.abs(dim_keys-k))]
                 key = list(key)

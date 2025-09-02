@@ -169,7 +169,7 @@ class ContourPlot(PathPlot):
             array = np.array([v for v, sps in zip(array, subpaths, strict=None)
                               for _ in range(len(sps))])
 
-        if dtype_kind(array.dtype) not in 'uif':
+        if dtype_kind(array) not in 'uif':
             array = util.search_indices(array, util.unique_array(array))
         style['array'] = array
         self._norm_kwargs(element, ranges, style, cdim)

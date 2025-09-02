@@ -116,7 +116,7 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         cvals = element.dimension_values(cdim)
         if idx in self._node_columns:
             factors = element.nodes.dimension_values(2, expanded=False)
-        elif idx == 2 and dtype_kind(cvals.dtype) in 'uif':
+        elif idx == 2 and dtype_kind(cvals) in 'uif':
             factors = None
         else:
             factors = unique_array(cvals)
@@ -124,13 +124,13 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         default_cmap = 'viridis' if factors is None else 'tab20'
         cmap = style.get('edge_cmap', style.get('cmap', default_cmap))
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
-        if factors is None or (dtype_kind(factors.dtype) in 'uif' and idx not in self._node_columns):
+        if factors is None or (dtype_kind(factors) in 'uif' and idx not in self._node_columns):
             colors, factors = None, None
         else:
-            if dtype_kind(factors.dtype) == 'f':
+            if dtype_kind(factors) == 'f':
                 cvals = cvals.astype(np.int32)
                 factors = factors.astype(np.int32)
-            if dtype_kind(factors.dtype) not in 'SU':
+            if dtype_kind(factors) not in 'SU':
                 field += '_str__'
                 cvals = [str(f) for f in cvals]
                 factors = (str(f) for f in factors)
@@ -184,7 +184,7 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         nodes = element.nodes.dimension_values(2)
         node_positions = element.nodes.array([0, 1])
         # Map node indices to integers
-        if dtype_kind(nodes.dtype) not in 'uif':
+        if dtype_kind(nodes) not in 'uif':
             node_indices = {v: i for i, v in enumerate(nodes)}
             index = np.array([node_indices[n] for n in nodes], dtype=np.int32)
             layout = {node_indices[k]: (y, x) if self.invert_axes else (x, y)
@@ -220,9 +220,9 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         edge_mapping = {}
         nan_node = index.max()+1 if len(index) else 0
         start, end = (element.dimension_values(i) for i in range(2))
-        if dtype_kind(nodes.dtype) == 'f':
+        if dtype_kind(nodes) == 'f':
             start, end = start.astype(np.int32), end.astype(np.int32)
-        elif dtype_kind(nodes.dtype) not in 'ui':
+        elif dtype_kind(nodes) not in 'ui':
             start = np.array([node_indices.get(x, nan_node) for x in start], dtype=np.int32)
             end = np.array([node_indices.get(y, nan_node) for y in end], dtype=np.int32)
         path_data = dict(start=start, end=end)
@@ -468,7 +468,7 @@ class ChordPlot(ChordMixin, GraphPlot):
         nodes = element.nodes
         if element.vdims:
             values = element.dimension_values(element.vdims[0])
-            if dtype_kind(values.dtype) in 'uif':
+            if dtype_kind(values) in 'uif':
                 edges = Dataset(element)[values>0]
                 nodes = list(np.unique([edges.dimension_values(i) for i in range(2)]))
                 nodes = element.nodes.select(**{element.nodes.kdims[2].name: nodes})

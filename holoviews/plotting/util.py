@@ -374,7 +374,7 @@ def compute_sizes(sizes, size_fn, scaling_factor, scaling_method, base_size):
     scaling.
 
     """
-    if dtype_kind(sizes.dtype) not in ('i', 'f'):
+    if dtype_kind(sizes) not in ('i', 'f'):
         return None
     if scaling_method == 'area':
         pass
@@ -1181,7 +1181,7 @@ class apply_nodata(Operation):
             return element.transform(**{vdim.name: transform})
         else:
             array = element.dimension_values(2, flat=False).T
-            if dtype_kind(array.dtype) not in 'iu':
+            if dtype_kind(array) not in 'iu':
                 return element
             array = array.astype('float64')
             return element.clone(self._replace_value(array))

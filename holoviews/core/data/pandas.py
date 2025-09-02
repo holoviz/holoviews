@@ -210,7 +210,7 @@ class PandasInterface(Interface, PandasAPI):
             column = cls.index_values(dataset, dimension)
         else:
             column = dataset.data[dimension.name]
-        if dtype_kind(column.dtype) == 'O':
+        if dtype_kind(column) == 'O':
             if not isinstance(dataset.data, pd.DataFrame):
                 column = column.sort(inplace=False)
             else:
@@ -228,7 +228,7 @@ class PandasInterface(Interface, PandasAPI):
             if dimension.nodata is not None:
                 column = cls.replace_value(column, dimension.nodata)
             cmin, cmax = finite_range(column, column.min(), column.max())
-            if dtype_kind(column.dtype) == 'M' and getattr(column.dtype, 'tz', None):
+            if dtype_kind(column) == 'M' and getattr(column.dtype, 'tz', None):
                 return (cmin.to_pydatetime().replace(tzinfo=None),
                         cmax.to_pydatetime().replace(tzinfo=None))
             return cmin, cmax
@@ -456,7 +456,7 @@ class PandasInterface(Interface, PandasAPI):
             data = dataset.data[dim.name]
         if keep_index:
             return data
-        if dtype_kind(data.dtype) == 'M' and getattr(data.dtype, 'tz', None):
+        if dtype_kind(data) == 'M' and getattr(data.dtype, 'tz', None):
             data = (data if isindex else data.dt).tz_localize(None)
         if not expanded:
             return pd.unique(data)

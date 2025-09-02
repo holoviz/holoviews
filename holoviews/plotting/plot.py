@@ -761,11 +761,11 @@ class DimensionedPlot(Plot):
                         continue
                     values = v.apply(el, all_values=True)
                     factors = None
-                    if dtype_kind(values.dtype) == 'M':
+                    if dtype_kind(values) == 'M':
                         drange = values.min(), values.max()
                     elif util.isscalar(values):
                         drange = values, values
-                    elif dtype_kind(values.dtype) in 'US':
+                    elif dtype_kind(values) in 'US':
                         factors = util.unique_array(values)
                     elif len(values) == 0:
                         drange = np.nan, np.nan
@@ -817,7 +817,7 @@ class DimensionedPlot(Plot):
                             values = el.dimension_values(el_dim, expanded=False)
                     elif isinstance(el, Graph) and el_dim in el.nodes:
                         values = el.nodes.dimension_values(el_dim, expanded=False)
-                    if (isinstance(values, np.ndarray) and dtype_kind(values.dtype) == 'O' and
+                    if (isinstance(values, np.ndarray) and dtype_kind(values) == 'O' and
                         all(isinstance(v, (np.ndarray)) for v in values)):
                         values = np.concatenate(values) if len(values) else []
                     factors = util.unique_array(values)

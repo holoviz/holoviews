@@ -745,8 +745,8 @@ class SpreadPlot(ElementPlot):
         each area separated by nans.
 
         """
-        xnan = np.array([np.datetime64('nat') if dtype_kind(xs.dtype) == 'M' else np.nan])
-        ynan = np.array([np.datetime64('nat') if dtype_kind(lower.dtype) == 'M' else np.nan])
+        xnan = np.array([np.datetime64('nat') if dtype_kind(xs) == 'M' else np.nan])
+        ynan = np.array([np.datetime64('nat') if dtype_kind(lower) == 'M' else np.nan])
         split = np.where(~isfinite(xs) | ~isfinite(lower) | ~isfinite(upper))[0]
         xvals = np.split(xs, split)
         lower = np.split(lower, split)
@@ -1007,7 +1007,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         # Merge data and mappings
         mapping.update(cmapping)
         for k, cd in cdata.items():
-            if isinstance(cmapper, CategoricalColorMapper) and dtype_kind(cd.dtype) in 'uif':
+            if isinstance(cmapper, CategoricalColorMapper) and dtype_kind(cd) in 'uif':
                 cd = categorize_array(cd, cdim)
             if k not in data or (len(data[k]) != next(len(data[key]) for key in data if key != k)):
                 data[k].append(cd)
@@ -1058,7 +1058,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         if group_dim is None:
             grouped = {0: element}
             is_dt = isdatetime(xvals)
-            if is_dt or dtype_kind(xvals.dtype) not in 'OU':
+            if is_dt or dtype_kind(xvals) not in 'OU':
                 xslice = stack_idx if stack_order else slice(None)
                 xdiff = np.abs(np.diff(xvals[xslice]))
                 diff_size = len(np.unique(xdiff))
@@ -1101,10 +1101,10 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         cvals = element.dimension_values(cdim, expanded=False) if cdim else None
         if cvals is not None:
-            if dtype_kind(cvals.dtype) in 'uif' and no_cidx:
+            if dtype_kind(cvals) in 'uif' and no_cidx:
                 cvals = categorize_array(cvals, color_dim)
 
-            factors = None if dtype_kind(cvals.dtype) in 'uif' else list(cvals)
+            factors = None if dtype_kind(cvals) in 'uif' else list(cvals)
             if cdim is xdim and factors:
                 factors = list(categorize_array(factors, xdim))
             if cmap is None and factors:
@@ -1146,7 +1146,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             elif grouping == 'grouped':
                 xs = ds.dimension_values(xdim)
                 ys = ds.dimension_values(ydim)
-                xoffsets = [(x if dtype_kind(xs.dtype) in 'SU' else xdim.pprint_value(x), gval)
+                xoffsets = [(x if dtype_kind(xs) in 'SU' else xdim.pprint_value(x), gval)
                             for x in xs]
                 data['xoffsets'].append(xoffsets)
                 data[ydim.name].append(ys)

@@ -413,13 +413,13 @@ class Interface(param.Parameterized):
     @classmethod
     def range(cls, dataset, dimension):
         column = dataset.dimension_values(dimension)
-        if dtype_kind(column.dtype) == 'M':
+        if dtype_kind(column) == 'M':
             return column.min(), column.max()
         elif len(column) == 0:
             return np.nan, np.nan
         else:
             try:
-                assert dtype_kind(column.dtype) not in 'SUO'
+                assert dtype_kind(column) not in 'SUO'
                 with warnings.catch_warnings():
                     warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
                     return finite_range(column, np.nanmin(column), np.nanmax(column))

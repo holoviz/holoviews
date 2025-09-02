@@ -320,7 +320,7 @@ class RadialHeatMapPlot(ColorbarPlot):
 
         # pretty print x and y dimension values if necessary
         def _pprint(dim_label, vals):
-            if dtype_kind(vals.dtype) not in 'SU':
+            if dtype_kind(vals) not in 'SU':
                 dim = aggregate.get_dimension(dim_label)
                 return [dim.pprint_value(v) for v in vals]
 

@@ -334,7 +334,7 @@ class ContourPlot(PathPlot):
         factors = None
         if cdim.label in ranges and 'factors' in ranges[cdim.label]:
             factors = ranges[cdim.label]['factors']
-        elif dtype_kind(values.dtype) in 'SUO' and len(values):
+        elif dtype_kind(values) in 'SUO' and len(values):
             if isinstance(values[0], np.ndarray):
                 values = np.concatenate(values)
             factors = util.unique_array(values)

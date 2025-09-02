@@ -58,7 +58,7 @@ class GraphPlot(GraphMixin, ColorbarPlot):
         if cdim:
             cs = element.nodes.dimension_values(self.color_index)
             # Check if numeric otherwise treat as categorical
-            if dtype_kind(cs.dtype) == 'f':
+            if dtype_kind(cs) == 'f':
                 style['node_c'] = cs
             else:
                 factors = unique_array(cs)
@@ -92,11 +92,11 @@ class GraphPlot(GraphMixin, ColorbarPlot):
         cvals = element.dimension_values(edge_cdim)
         if idx in [0, 1]:
             factors = element.nodes.dimension_values(2, expanded=False)
-        elif idx == 2 and dtype_kind(cvals.dtype) in 'uif':
+        elif idx == 2 and dtype_kind(cvals) in 'uif':
             factors = None
         else:
             factors = unique_array(cvals)
-        if factors is None or (dtype_kind(factors.dtype) == 'f' and idx not in [0, 1]):
+        if factors is None or (dtype_kind(factors) == 'f' and idx not in [0, 1]):
             style['edge_c'] = cvals
         else:
             cvals = search_indices(cvals, factors)
@@ -303,7 +303,7 @@ class ChordPlot(ChordMixin, GraphPlot):
         nodes = element.nodes
         if element.vdims:
             values = element.dimension_values(element.vdims[0])
-            if dtype_kind(values.dtype) in 'uif':
+            if dtype_kind(values) in 'uif':
                 edges = Dataset(element)[values>0]
                 nodes = list(np.unique([edges.dimension_values(i) for i in range(2)]))
                 nodes = element.nodes.select(**{element.nodes.kdims[2].name: nodes})

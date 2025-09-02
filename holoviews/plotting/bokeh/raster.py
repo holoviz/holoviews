@@ -294,7 +294,7 @@ class RasterPlot(ServerHoverMixin, ColorbarPlot):
             if i > 2 and 'hover' not in self.handles:
                 break
             img = element.dimension_values(i, flat=False)
-            if dtype_kind(img.dtype) == 'b':
+            if dtype_kind(img) == 'b':
                 img = img.astype(np.int8)
             if 0 in img.shape:
                 img = np.array([[np.nan]])
@@ -370,7 +370,7 @@ class RGBPlot(ServerHoverMixin, SyntheticLegendMixin):
         if img.ndim == 3:
             img_max = img.max() if img.size else np.nan
             # Can be 0 to 255 if nodata has been used
-            if dtype_kind(img.dtype) == 'f' and img_max <= 1:
+            if dtype_kind(img) == 'f' and img_max <= 1:
                 img = img*255
                 # img_max * 255 <- have no effect
             if img.size and (img.min() < 0 or img_max > 255):

@@ -155,7 +155,7 @@ class DictInterface(Interface):
         values = dataset.data[name]
         if isscalar(values):
             return True
-        if dtype_kind(values.dtype) == 'O':
+        if dtype_kind(values) == 'O':
             unique = set(values)
         else:
             unique = np.unique(values)

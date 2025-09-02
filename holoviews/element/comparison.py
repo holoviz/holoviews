@@ -276,9 +276,9 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_arrays(cls, arr1, arr2, msg='Arrays'):
         try:
-            if dtype_kind(arr1.dtype) == 'M':
+            if dtype_kind(arr1) == 'M':
                 arr1 = cast_array_to_int64(arr1.astype('datetime64[ns]'))
-            if dtype_kind(arr2.dtype) == 'M':
+            if dtype_kind(arr2) == 'M':
                 arr2 = cast_array_to_int64(arr2.astype('datetime64[ns]'))
             assert_array_equal(arr1, arr2)
         except Exception:
@@ -554,7 +554,7 @@ class Comparison(ComparisonInterface):
                     f"First has type {d1}, and second has type {d2}."
                 )
                 raise cls.failureException(failure_msg)
-            if dtype_kind(d1.dtype) in 'SUOV':
+            if dtype_kind(d1) in 'SUOV':
                 if list(d1) != list(d2):
                     failure_msg = f"{msg} along dimension {dim.pprint_label} not equal."
                     raise cls.failureException(failure_msg)

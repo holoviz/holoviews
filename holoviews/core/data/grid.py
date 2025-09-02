@@ -499,7 +499,7 @@ class GridInterface(DictInterface):
 
     @classmethod
     def key_select_mask(cls, dataset, values, ind):
-        if dtype_kind(values.dtype) == 'M':
+        if dtype_kind(values) == 'M':
             ind = util.parse_datetime_selection(ind)
         if isinstance(ind, tuple):
             ind = slice(*ind)
@@ -797,7 +797,7 @@ class GridInterface(DictInterface):
         if len(array) == 0:
             return np.nan, np.nan
 
-        if dtype_kind(array.dtype) == 'M':
+        if dtype_kind(array) == 'M':
             dmin, dmax = array.min(), array.max()
         else:
             try:

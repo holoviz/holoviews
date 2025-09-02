@@ -475,7 +475,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             coords = samples if isinstance(samples, list) else [samples]
 
         xs = self.dimension_values(0)
-        if core_util.dtype_kind(xs.dtype) in 'SO':
+        if core_util.dtype_kind(xs) in 'SO':
             raise NotImplementedError("Closest only supported for numeric types")
         idxs = [np.argmin(np.abs(xs-coord)) for coord in coords]
         return [type(s)(xs[idx]) for s, idx in zip(coords, idxs, strict=None)]

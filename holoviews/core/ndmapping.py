@@ -637,7 +637,7 @@ class NdMapping(MultiDimensionalMapping):
         the data.
 
         """
-        if isinstance(indexslice, np.ndarray) and dtype_kind(indexslice.dtype) == 'b':
+        if isinstance(indexslice, np.ndarray) and dtype_kind(indexslice) == 'b':
             if not len(indexslice) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
             selection = zip(indexslice, self.data.items(), strict=None)

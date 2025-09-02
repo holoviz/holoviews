@@ -876,7 +876,7 @@ def isnat(val):
     """
     import pandas as pd
     if (isinstance(val, (np.datetime64, np.timedelta64)) or
-        (isinstance(val, np.ndarray) and dtype_kind(val.dtype) == 'M')):
+        (isinstance(val, np.ndarray) and dtype_kind(val) == 'M')):
         return np.isnat(val)
     elif val is pd.NaT:
         return True
@@ -906,11 +906,11 @@ def isfinite(val):
         import dask.array as da
         return da.isfinite(val)
     elif isinstance(val, np.ndarray):
-        if dtype_kind(val.dtype) == 'M':
+        if dtype_kind(val) == 'M':
             return ~isnat(val)
-        elif dtype_kind(val.dtype) == 'O':
+        elif dtype_kind(val) == 'O':
             return np.array([isfinite(v) for v in val], dtype=bool)
-        elif dtype_kind(val.dtype) in 'US':
+        elif dtype_kind(val) in 'US':
             return ~pd.isna(val)
         finite = np.isfinite(val)
         finite &= ~pd.isna(val)
@@ -930,8 +930,8 @@ def isdatetime(value):
 
     """
     if isinstance(value, np.ndarray):
-        return (dtype_kind(value.dtype) == "M" or
-                (dtype_kind(value.dtype) == "O" and len(value) and
+        return (dtype_kind(value) == "M" or
+                (dtype_kind(value) == "O" and len(value) and
                  isinstance(value[0], datetime_types)))
     else:
         return isinstance(value, datetime_types)
@@ -964,7 +964,7 @@ def find_range(values, soft_range=None):
         values = np.squeeze(values) if len(values.shape) > 1 else values
         if soft_range:
             values = np.concatenate([values, soft_range])
-        if dtype_kind(values.dtype) == 'M':
+        if dtype_kind(values) == 'M':
             return values.min(), values.max()
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
@@ -1014,12 +1014,12 @@ def max_range(ranges, combined=True):
             arr = np.array(values)
             if not len(arr):
                 return np.nan, np.nan
-            elif dtype_kind(arr.dtype) in 'OSU':
+            elif dtype_kind(arr) in 'OSU':
                 arr = list(python2sort([
                     v for r in values for v in r
                     if not is_nan(v) and v is not None]))
                 return arr[0], arr[-1]
-            elif dtype_kind(arr.dtype) in 'M':
+            elif dtype_kind(arr) in 'M':
                 drange = ((arr.min(), arr.max()) if combined else
                           (arr[:, 0].min(), arr[:, 1].max()))
                 return drange
@@ -1204,7 +1204,7 @@ def unique_array(arr):
         return np.asarray(arr)
 
     import pandas as pd
-    if isinstance(arr, np.ndarray) and dtype_kind(arr.dtype) not in 'MO':
+    if isinstance(arr, np.ndarray) and dtype_kind(arr) not in 'MO':
         # Avoid expensive unpacking if not potentially datetime
         return pd.unique(arr)
 
@@ -2264,7 +2264,7 @@ def compute_edges(edges):
 
     """
     edges = np.asarray(edges)
-    if dtype_kind(edges.dtype) == 'i':
+    if dtype_kind(edges) == 'i':
         edges = edges.astype('f')
     midpoints = (edges[:-1] + edges[1:])/2.0
     boundaries = (2*edges[0] - midpoints[0], 2*edges[-1] - midpoints[-1])
@@ -2409,19 +2409,20 @@ def lazy_isinstance(obj, class_or_tuple):
     return False
 
 
-def dtype_kind(dtype) -> str:
+def dtype_kind(obj) -> str:
     """Return dtype kind as a single character string.
 
     Parameters
     ----------
-    dtype : DType
-    A dtype object, either a Numpy or narwhals.
+    obj : object
+    An object which contains a dtype attribute, either a Numpy or narwhals.
 
     Returns
     -------
     dtype_kind : str
     The kind of the dtype as a single character string.
     """
+    dtype = obj.dtype  # Should raise an error
     if hasattr(dtype, "kind"):
         return dtype.kind
 

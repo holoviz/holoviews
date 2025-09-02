@@ -149,9 +149,9 @@ def _lttb(x, y, n_out, **kwargs):
     sampled_x[-1] = x.shape[0] - 1
 
     # View it as int64 to take the mean of it
-    if dtype_kind(x.dtype) == 'M':
+    if dtype_kind(x) == 'M':
         x = x.view(np.int64)
-    if dtype_kind(y.dtype) == 'M':
+    if dtype_kind(y) == 'M':
         y = y.view(np.int64)
 
     _lttb_inner(x, y, n_out, sampled_x, offset)

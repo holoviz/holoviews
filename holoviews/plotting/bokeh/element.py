@@ -1716,7 +1716,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for i, col in enumerate(cols):
             column = data[col]
             if (isinstance(ranges[i], FactorRange) and
-                (isinstance(column, list) or util.dtype_kind(column.dtype) not in 'SU')):
+                (isinstance(column, list) or util.dtype_kind(column) not in 'SU')):
                 data[col] = [dims[i].pprint_value(v) for v in column]
 
 
@@ -1748,8 +1748,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             values = element.dimension_values(dimension, False)
         values = np.asarray(values)
         if not self._allow_implicit_categories:
-            values = values if dtype_kind(values.dtype) in 'SU' else []
-        return [v if dtype_kind(values.dtype) in 'SU' else dimension.pprint_value(v) for v in values]
+            values = values if dtype_kind(values) in 'SU' else []
+        return [v if dtype_kind(values) in 'SU' else dimension.pprint_value(v) for v in values]
 
     def _get_factors(self, element, ranges):
         """Get factors for categorical axes.
@@ -1868,7 +1868,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             elif k.endswith('font_size'):
                 if util.isscalar(val) and isinstance(val, int):
                     val = str(v)+'pt'
-                elif isinstance(val, np.ndarray) and dtype_kind(val.dtype) in 'ifu':
+                elif isinstance(val, np.ndarray) and dtype_kind(val) in 'ifu':
                     val = [str(int(s))+'pt' for s in val]
             if util.isscalar(val):
                 key = val
@@ -1878,18 +1878,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 data[k] = val
 
             # If color is not valid colorspec add colormapper
-            numeric = isinstance(val, util.arraylike_types) and dtype_kind(val.dtype) in 'uifMmb'
+            numeric = isinstance(val, util.arraylike_types) and dtype_kind(val) in 'uifMmb'
             colormap = style.get(prefix+'cmap')
             if ('color' in k and isinstance(val, util.arraylike_types) and
                 (numeric or not validate('color', val) or isinstance(colormap, dict))):
                 kwargs = {}
-                if dtype_kind(val.dtype) not in 'ifMu':
+                if dtype_kind(val) not in 'ifMu':
                     range_key = dim_range_key(v)
                     if range_key in ranges and 'factors' in ranges[range_key]:
                         factors = ranges[range_key]['factors']
                     else:
                         factors = util.unique_array(val)
-                    if isinstance(val, util.arraylike_types) and dtype_kind(val.dtype) == 'b':
+                    if isinstance(val, util.arraylike_types) and dtype_kind(val) == 'b':
                         factors = factors.astype(str)
                     kwargs['factors'] = factors
                 cmapper = self._get_colormapper(v, element, ranges,
@@ -1899,7 +1899,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 categorical = isinstance(cmapper, CategoricalColorMapper)
 
                 if categorical:
-                    if dtype_kind(val.dtype) in 'ifMub':
+                    if dtype_kind(val) in 'ifMub':
                         field = k + '_str__'
                         if v.dimension in element:
                             formatter = element.get_dimension(v.dimension).pprint_value
@@ -2902,13 +2902,13 @@ class ColorbarPlot(ElementPlot):
         field = util.dimension_sanitizer(cdim.name)
         dtypes = 'iOSU' if int_categories else 'OSU'
 
-        if factors is None and (isinstance(cdata, list) or dtype_kind(cdata.dtype) in dtypes):
+        if factors is None and (isinstance(cdata, list) or dtype_kind(cdata) in dtypes):
             range_key = dim_range_key(cdim)
             if range_key in ranges and 'factors' in ranges[range_key]:
                 factors = ranges[range_key]['factors']
             else:
                 factors = util.unique_array(cdata)
-        if factors is not None and int_categories and dtype_kind(cdata.dtype) == 'i':
+        if factors is not None and int_categories and dtype_kind(cdata) == 'i':
             field += '_str__'
             cdata = [str(f) for f in cdata]
             factors = [str(f) for f in factors]

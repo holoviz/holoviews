@@ -277,7 +277,7 @@ class Element(ViewableElement, Composable, Overlayable):
         for dim in dims:
             column = np.asanyarray(self.dimension_values(dim))
             columns.append(column)
-            types.append(dtype_kind(column.dtype))
+            types.append(dtype_kind(column))
         if len(set(types)) > 1:
             columns = [c.astype('object') for c in columns]
         return np.column_stack(columns)

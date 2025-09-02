@@ -678,7 +678,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 and not validate('color', val)):
                 new_style.pop(k)
                 self._norm_kwargs(element, ranges, new_style, v, val, prefix)
-                if dtype_kind(val.dtype) in 'OSUM':
+                if dtype_kind(val) in 'OSUM':
                     range_key = dim_range_key(v)
                     if range_key in ranges and 'factors' in ranges[range_key]:
                         factors = ranges[range_key]['factors']
@@ -948,14 +948,14 @@ class ColorbarPlot(ElementPlot):
             if not len(values):
                 clim = (0, 0)
                 categorical = False
-            elif dtype_kind(values.dtype) in 'uif':
+            elif dtype_kind(values) in 'uif':
                 if dim_name in ranges:
                     if self.clim_percentile and 'robust' in ranges[dim_name]:
                         clim = ranges[dim_name]['robust']
                     else:
                         clim = ranges[dim_name]['combined']
                 elif isinstance(vdim, dim):
-                    if dtype_kind(values.dtype) == 'M':
+                    if dtype_kind(values) == 'M':
                         clim = values.min(), values.max()
                     elif len(values) == 0:
                         clim = np.nan, np.nan
@@ -986,7 +986,7 @@ class ColorbarPlot(ElementPlot):
                 clim = (0, len(factors)-1)
                 categorical = True
         else:
-            categorical = dtype_kind(values.dtype) not in 'uif'
+            categorical = dtype_kind(values) not in 'uif'
 
         if self.cnorm == 'eq_hist':
             opts[prefix+'norm'] = EqHistNormalize(
@@ -1004,7 +1004,7 @@ class ColorbarPlot(ElementPlot):
         opts[prefix+'vmax'] = clim[1]
 
         cmap = opts.get(prefix+'cmap', opts.get('cmap', 'viridis'))
-        if dtype_kind(values.dtype) not in 'OSUM':
+        if dtype_kind(values) not in 'OSUM':
             ncolors = None
             if isinstance(self.color_levels, int):
                 ncolors = self.color_levels

@@ -53,7 +53,7 @@ class NarwhalsDtype:
 
     @property
     def kind(self):
-        return util.dtype_kind(self.dtype)
+        return util.dtype_kind(self)
 
     def __repr__(self):
         return repr(self.dtype)

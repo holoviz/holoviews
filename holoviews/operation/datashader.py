@@ -370,11 +370,11 @@ class aggregate(LineAggregationOperation):
             vals = df[d.name]
             if not is_custom and len(vals) and isinstance(vals.values[0], cftime_types):
                 vals = cftime_to_timestamp(vals, 'ns')
-            elif dtype_kind(vals.dtype) == 'M':
+            elif dtype_kind(vals) == 'M':
                 vals = vals.astype('datetime64[ns]')
             elif vals.dtype == np.uint64:
                 raise TypeError(f"Dtype of uint64 for column {d.name} is not supported.")
-            elif dtype_kind(vals.dtype) == 'u':
+            elif dtype_kind(vals) == 'u':
                 pass  # To convert to int64
             else:
                 continue
@@ -492,14 +492,14 @@ class aggregate(LineAggregationOperation):
                 if col in agg.coords:
                     continue
                 val = dfdata[col].values[index]
-                if dtype_kind(val.dtype) == 'f':
+                if dtype_kind(val) == 'f':
                     val[neg1] = np.nan
                 elif isinstance(val.dtype, pd.CategoricalDtype):
                     val = val.to_numpy()
                     val[neg1] = "-"
-                elif dtype_kind(val.dtype) == "O":
+                elif dtype_kind(val) == "O":
                     val[neg1] = "-"
-                elif dtype_kind(val.dtype) == "M":
+                elif dtype_kind(val) == "M":
                     val[neg1] = np.datetime64("NaT")
                 else:
                     val = val.astype(np.float64)
@@ -1729,7 +1729,7 @@ class SpreadingOperation(LinkableOperation):
     def _preprocess_rgb(self, element):
         rgbarray = np.dstack([element.dimension_values(vd, flat=False)
                               for vd in element.vdims])
-        if dtype_kind(rgbarray.dtype) == 'f':
+        if dtype_kind(rgbarray) == 'f':
             rgbarray = rgbarray * 255
         return tf.Image(self.uint8_to_uint32(rgbarray.astype('uint8')))
 
@@ -2083,7 +2083,7 @@ class inspect_points(inspect_base):
         ds = raster.dataset.clone(df)
         xs, ys = (ds.dimension_values(kd) for kd in raster.kdims)
         dx, dy = xs - x, ys - y
-        xtype, ytype = dtype_kind(dx.dtype), dtype_kind(dy.dtype)
+        xtype, ytype = dtype_kind(dx), dtype_kind(dy)
         if xtype in 'Mm':
             dx = dx.astype('int64')
         if ytype in 'Mm':

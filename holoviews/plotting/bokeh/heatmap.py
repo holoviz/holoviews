@@ -338,7 +338,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         """Helper function to convert values to corresponding dimension type.
 
         """
-        if dtype_kind(vals.dtype) not in 'SU':
+        if dtype_kind(vals) not in 'SU':
             dim = element.gridded.get_dimension(dim_label)
             return [dim.pprint_value(v) for v in vals]
 

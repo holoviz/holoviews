@@ -83,7 +83,7 @@ class DaskInterface(PandasInterface):
         import dask.dataframe as dd
         dimension = dataset.get_dimension(dimension, strict=True)
         column = dataset.data[dimension.name]
-        if dtype_kind(column.dtype) == 'O':
+        if dtype_kind(column) == 'O':
             try:
                 column = np.sort(column[column.notnull()].compute())
                 return (column[0], column[-1]) if len(column) else (None, None)

@@ -651,10 +651,10 @@ class layout_chords(Operation):
         tgt_idx = search_indices(tgt, nodes)
         if element.vdims:
             values = element.dimension_values(2)
-            if dtype_kind(values.dtype) not in 'uif':
+            if dtype_kind(values) not in 'uif':
                 values = np.ones(len(element), dtype='int')
             else:
-                if dtype_kind(values.dtype) == 'f':
+                if dtype_kind(values) == 'f':
                     values = np.ceil(values*(1./values.min()))
                 if values.sum() > max_chords:
                     values = np.ceil((values/float(values.sum()))*max_chords)
