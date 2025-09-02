@@ -5,6 +5,7 @@ import datetime
 import math
 import unittest
 from itertools import product
+from pathlib import Path
 
 import narwhals as nw
 import numpy as np
@@ -890,8 +891,27 @@ def test_dtype_kind_pandas_narwhals_consistency(data, dtype, expected_kind):
         pd_df = pd_df.astype({'col': dtype})
     nw_df = nw.from_native(pd_df)
 
-    pd_kind = dtype_kind(pd_df['col'].dtype)
-    nw_kind = dtype_kind(nw_df['col'].dtype)
+    pd_kind = dtype_kind(pd_df['col'])
+    nw_kind = dtype_kind(nw_df['col'])
 
     assert pd_kind == expected_kind
     assert nw_kind == expected_kind
+
+
+def test_dtype_kind_usage_count():
+    holoviews_path = Path(__file__).parents[2]
+    file_counts = {}
+    for py_file in holoviews_path.rglob('*.py'):
+        rel_path = py_file.relative_to(holoviews_path)
+        if '__pycache__' in rel_path.parts or 'tests' in rel_path.parts:
+            continue
+
+        with open(py_file, encoding='utf-8') as f:
+            content = f.read()
+            count = content.count('dtype.kind')
+
+        if count > 0:
+            file_counts[str(rel_path)] = count
+
+    expected_files = {'core/util/__init__.py': 1}
+    assert file_counts == expected_files
