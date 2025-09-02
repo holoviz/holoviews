@@ -8,6 +8,7 @@ from .. import util
 from ..dimension import dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
+from ..util import dtype_kind
 from .interface import DataError, Interface
 from .pandas import PandasInterface
 from .util import finite_range
@@ -119,7 +120,7 @@ class cuDFInterface(PandasInterface):
         column = dataset.data[dimension.name]
         if dimension.nodata is not None:
             column = cls.replace_value(column, dimension.nodata)
-        if column.dtype.kind == 'O':
+        if dtype_kind(column.dtype) == 'O':
             return np.nan, np.nan
         else:
             return finite_range(column, column.min(), column.max())

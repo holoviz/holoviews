@@ -7,7 +7,7 @@ import param
 
 from ..core.data import PandasInterface
 from ..core.dimension import Dimension
-from ..core.util import flatten, resolve_dependent_value, unique_iterator
+from ..core.util import dtype_kind, flatten, resolve_dependent_value, unique_iterator
 
 
 def _maybe_map(numpy_fn):
@@ -150,7 +150,7 @@ def bin(values, bins, labels=None):
         labels = (bins[:-1] + np.diff(bins)/2.)
     else:
         labels = np.asarray(labels)
-    dtype = 'float' if labels.dtype.kind == 'f' else 'O'
+    dtype = 'float' if dtype_kind(labels.dtype) == 'f' else 'O'
     binned = np.full_like(values, (np.nan if dtype == 'f' else None), dtype=dtype)
     for lower, upper, label in zip(bins[:-1], bins[1:], labels, strict=None):
         condition = (values > lower) & (values <= upper)
@@ -189,7 +189,7 @@ def categorize(values, categories, default=None):
         cats.append(cat)
     result = np.asarray(cats)
     # Convert unicode to object type like pandas does
-    if result.dtype.kind in ['U', 'S']:
+    if dtype_kind(result.dtype) in ['U', 'S']:
         result = result.astype('object')
     return result
 

@@ -14,6 +14,7 @@ from . import util
 from .dimension import Dimension, Dimensioned, ViewableElement, asdim
 from .util import (
     dimension_sort,
+    dtype_kind,
     get_ndmapping_label,
     process_ellipses,
     sanitize_identifier,
@@ -636,7 +637,7 @@ class NdMapping(MultiDimensionalMapping):
         the data.
 
         """
-        if isinstance(indexslice, np.ndarray) and indexslice.dtype.kind == 'b':
+        if isinstance(indexslice, np.ndarray) and dtype_kind(indexslice.dtype) == 'b':
             if not len(indexslice) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
             selection = zip(indexslice, self.data.items(), strict=None)

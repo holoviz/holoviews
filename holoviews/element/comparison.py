@@ -276,9 +276,9 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_arrays(cls, arr1, arr2, msg='Arrays'):
         try:
-            if arr1.dtype.kind == 'M':
+            if dtype_kind(arr1.dtype) == 'M':
                 arr1 = cast_array_to_int64(arr1.astype('datetime64[ns]'))
-            if arr2.dtype.kind == 'M':
+            if dtype_kind(arr2.dtype) == 'M':
                 arr2 = cast_array_to_int64(arr2.astype('datetime64[ns]'))
             assert_array_equal(arr1, arr2)
         except Exception:
