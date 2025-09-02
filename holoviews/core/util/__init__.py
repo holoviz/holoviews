@@ -2433,15 +2433,13 @@ def dtype_kind(dtype) -> str:
         return "u"
     elif dtype.is_numeric():
         return "f"
-    elif dtype.is_temporal():
-        return "M"
     elif isinstance(dtype, nw.dtypes.Duration):
         return "m"
+    elif dtype.is_temporal():
+        return "M"
     elif isinstance(dtype, nw.dtypes.Boolean):
         return "b"
     elif isinstance(dtype, nw.dtypes.String):
         return "U"
-    elif isinstance(dtype, nw.dtypes.Binary):
-        return "S"
     else:
         return "O"
