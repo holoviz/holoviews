@@ -3,6 +3,7 @@ Unit tests of the helper functions in core.utils
 """
 import datetime
 import math
+import os
 import unittest
 from itertools import product
 from pathlib import Path
@@ -911,7 +912,7 @@ def test_dtype_kind_usage_count():
             count = content.count('dtype.kind')
 
         if count > 0:
-            file_counts[str(rel_path)] = count
+            file_counts[str(rel_path).replace(os.sep, "/")] = count
 
     expected_files = {'core/util/__init__.py': 1}
     assert file_counts == expected_files
