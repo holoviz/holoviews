@@ -6,7 +6,7 @@ import warnings
 from functools import partial
 from itertools import pairwise
 
-import narwhals as nw
+import narwhals.stable.v2 as nw
 import numpy as np
 import param
 from packaging.version import Version

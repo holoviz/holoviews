@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import datashader as ds
 import datashader.reductions as rd
 import datashader.transfer_functions as tf
-import narwhals as nw
+import narwhals.stable.v2 as nw
 import numpy as np
 import pandas as pd
 import param

@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 
-import narwhals as nw
+import narwhals.stable.v2 as nw
 import numpy as np
 import pytest
 

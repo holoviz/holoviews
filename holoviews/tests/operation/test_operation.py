@@ -3,7 +3,7 @@ import random
 from importlib.util import find_spec
 from unittest import SkipTest, skipIf
 
-import narwhals as nw
+import narwhals.stable.v2 as nw
 import numpy as np
 import pandas as pd
 import pytest

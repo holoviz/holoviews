@@ -1,6 +1,6 @@
 import builtins
 
-import narwhals as nw
+import narwhals.stable.v2 as nw
 import numpy as np
 from narwhals.dependencies import is_into_dataframe, is_into_series
 

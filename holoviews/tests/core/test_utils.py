@@ -8,7 +8,7 @@ import unittest
 from itertools import product
 from pathlib import Path
 
-import narwhals as nw
+import narwhals.stable.v2 as nw
 import numpy as np
 import pandas as pd
 import pytest

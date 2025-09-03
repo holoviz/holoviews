@@ -519,7 +519,7 @@ class MultiDictInterfaceTest(MultiBaseInterfaceTest):
 
 
 def test_narwhals_multidict():
-    import narwhals as nw
+    import narwhals.stable.v2 as nw
 
     df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
     pd_el = Path(df, kdims=["A", "B"], vdims=[])

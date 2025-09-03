@@ -20,7 +20,7 @@ from functools import partial
 from threading import Event, Thread
 from types import FunctionType, GeneratorType
 
-import narwhals as nw
+import narwhals.stable.v2 as nw
 import numpy as np
 import param
 

@@ -1,7 +1,7 @@
 import operator
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
-import narwhals as nw
+import narwhals.stable.v2 as nw
 import numpy as np
 import param
 
