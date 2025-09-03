@@ -480,6 +480,39 @@ class Graph(Dataset, Element2D):
 
     @classmethod
     def from_sparse(cls, edges, nodes, **params):
+        """Create a Graph element from a sparse adjacency array.
+
+        Parameters
+        ----------
+        edges : scipy.sparse array
+            A sparse array representing the graph adjacency array. The array
+            should have shape (n_nodes, n_nodes) where non-zero entries indicate
+            edges between nodes. The array will be converted to COO format.
+        nodes : array-like or Dataset
+            Node positions or node information. Can be a 2D array of (x, y)
+            coordinates, a Dataset with node information, or a Nodes element.
+        **params : dict, optional
+            Additional parameters passed to the Graph constructor.
+
+        Returns
+        -------
+        Graph
+            A Graph element with edges defined by the sparse array and the
+            provided node information.
+
+        Raises
+        ------
+        TypeError
+            If edges is not a scipy sparse array.
+
+        Examples
+        --------
+        >>> from scipy.sparse import csr_array
+        >>> # Create a simple 3-node graph
+        >>> edges = csr_array([[0, 1, 0], [1, 0, 1], [0, 1, 0]])
+        >>> nodes = {'x': [0, 1, 0.5], 'y': [0, 0, 1], 'index': [0, 1, 2]}
+        >>> graph = Graph.from_sparse(edges, nodes)
+        """
         from scipy.sparse import issparse
 
         if not issparse(edges):
