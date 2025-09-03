@@ -3,6 +3,7 @@ import random
 from importlib.util import find_spec
 from unittest import SkipTest, skipIf
 
+import narwhals as nw
 import numpy as np
 import pandas as pd
 import pytest
@@ -600,6 +601,35 @@ class OperationTests(ComparisonTestCase):
         hist = Histogram(([1.,  4., 7.5], [0, 3, 6, 9]), vdims=['y'])
         self.assertEqual(op_hist, hist)
 
+    def test_histogram_narwhals_pandas(self):
+        df = nw.from_native(pd.DataFrame({'x': range(10)}))
+        ds = Dataset(df, vdims='x')
+        op_hist = histogram(ds, num_bins=3, normed=False)
+
+        hist = Histogram(([0, 3, 6, 9], [3, 3, 4]),
+                         vdims=('x_count', 'Count'))
+        self.assertEqual(op_hist, hist)
+
+    def test_histogram_narwhals_polars(self):
+        pl = pytest.importorskip("polars")
+        df = nw.from_native(pl.DataFrame({'x': range(10)}))
+        ds = Dataset(df, vdims='x')
+        op_hist = histogram(ds, num_bins=3, normed=False)
+
+        hist = Histogram(([0, 3, 6, 9], [3, 3, 4]),
+                         vdims=('x_count', 'Count'))
+        self.assertEqual(op_hist, hist)
+
+    def test_histogram_narwhals_polars_lazy(self):
+        pl = pytest.importorskip("polars")
+        df = nw.from_native(pl.LazyFrame({'x': range(10)}))
+        ds = Dataset(df, vdims='x')
+        op_hist = histogram(ds, num_bins=3, normed=False)
+
+        hist = Histogram(([0, 3, 6, 9], [3, 3, 4]),
+                         vdims=('x_count', 'Count'))
+        self.assertEqual(op_hist, hist)
+
     @pytest.mark.usefixtures("mpl_backend")
     def test_histogram_dask_array_mpl(self):
         # Regression test for https://github.com/holoviz/holoviews/issues/5111
@@ -740,6 +770,7 @@ class OperationTests(ComparisonTestCase):
         output = decimated.data[()].data
         pd.testing.assert_series_equal(data["x"], output["x"])
         pd.testing.assert_series_equal(data["y"], output["y"])
+
 
 class TestDendrogramOperation:
 
