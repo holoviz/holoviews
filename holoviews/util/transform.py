@@ -634,9 +634,6 @@ class dim:
             if 'axis' not in kwargs and not isinstance(fn, np.ufunc):
                 kwargs['axis'] = None
             fn = fn_name
-        # TODO: Figure out if this is needed
-        # if isinstance(data, (nw.Series, nw.DataFrame, nw.LazyFrame)):
-        #     fn = lambda self, other, fn=fn, name=self.dimension.name: fn(nw.col(name), other)
 
         if isinstance(fn, str):
             accessor = kwargs.pop('accessor', None)
