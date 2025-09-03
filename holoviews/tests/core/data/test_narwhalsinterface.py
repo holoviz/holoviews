@@ -133,6 +133,19 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         assert len(self.table.data.filter(select)) == 1
         assert len(self.table.data.filter(select_neighbor)) == 3
 
+    def test_histogram(self):
+        df = nw.from_native(self.frame({'values': [1, 1, 2, 2, 2, 3, 3, 4, 4, 5]}))
+        bins = [1, 2, 3, 4, 5, 6]
+
+        hist, edges = NarwhalsInterface.histogram(df, bins=bins)
+
+        assert isinstance(hist, np.ndarray)
+        assert isinstance(edges, np.ndarray)
+        assert len(hist) == len(bins) - 1
+        assert len(edges) == len(bins)
+        np.testing.assert_array_equal(edges, bins)
+        assert np.all(hist >= 0)
+
 
 class PandasNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
     __test__ = True

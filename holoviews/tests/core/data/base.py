@@ -404,7 +404,6 @@ class HomogeneousColumnTests:
         self.assertEqual(transformed, expected)
 
 
-
 class HeterogeneousColumnTests(HomogeneousColumnTests):
     """
     Tests for data formats that allow dataset to have varied types
