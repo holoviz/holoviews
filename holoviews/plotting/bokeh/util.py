@@ -11,6 +11,7 @@ import numpy as np
 from bokeh.core.json_encoder import serialize_json  # noqa (API import)
 from bokeh.core.property.datetime import Datetime
 from bokeh.core.validation import silence
+from bokeh.core.validation.check import is_silenced
 from bokeh.layouts import Column, Row, group_tools
 from bokeh.models import (
     CategoricalAxis,
@@ -546,12 +547,15 @@ def silence_warnings(*warnings):
     """Context manager for silencing bokeh validation warnings.
 
     """
+    silenced = set()
     for warning in warnings:
-        silence(warning)
+        if not is_silenced(warning):
+            silenced.add(warning)
+            silence(warning)
     try:
         yield
     finally:
-        for warning in warnings:
+        for warning in silenced:
             silence(warning, False)
 
 
