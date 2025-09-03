@@ -596,5 +596,17 @@ class NarwhalsInterface(Interface):
         nrows, _ = cls.shape(dataset)
         return nrows
 
+    @classmethod
+    def histogram(cls, data, bins, density=True, weights=None):
+        if isinstance(data, (nw.DataFrame, nw.LazyFrame)):
+            columns = list(data.collect_schema())
+            if len(columns) > 1:
+                msg = "Histogram can only be computed for a single column"
+                raise ValueError(msg)
+            if isinstance(data, nw.LazyFrame):
+                data = data.collect()
+            data = data[columns[0]]
+        return super().histogram(data.to_numpy(), bins, density, weights)
+
 
 Interface.register(NarwhalsInterface)

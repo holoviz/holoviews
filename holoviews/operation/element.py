@@ -851,10 +851,11 @@ class histogram(Operation):
             no_data = not len(data.head(1).execute())
             data = data[dim.name]
         elif isinstance(data, (nw.DataFrame, nw.LazyFrame, nw.Series)):
-            mask = is_finite(data)
+            if isinstance(data, nw.Series):
+                data = data.to_frame()
+            data = data.filter(nw.all().is_finite())
             if self.p.nonzero:
-                mask = mask & (data != 0)
-            data = data.filter(mask)
+                data = data.filter(nw.all() != 0)
             no_data = False if isinstance(data, nw.LazyFrame) else not len(data)
         else:
             mask = is_finite(data)
