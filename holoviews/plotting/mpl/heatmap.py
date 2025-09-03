@@ -113,6 +113,9 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
             if not yfactors:
                 yfactors = element.gridded.dimension_values(ydim, False)
             ylabels = [ydim.pprint_value(k) for k in yfactors]
+            ytype = element.gridded.interface.dtype(element.gridded, ydim)
+            if ytype.kind in 'SUO':
+                ylabels = ylabels[::-1]
             yticks = list(zip(ypos, ylabels, strict=None))
         return xticks, yticks
 
