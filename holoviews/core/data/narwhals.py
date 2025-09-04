@@ -66,6 +66,10 @@ class NarwhalsDtype:
     def __repr__(self):
         return repr(self.dtype)
 
+    @property
+    def type(self):
+        return type(self.dtype)
+
 
 class NarwhalsInterface(Interface):
     datatype = "narwhals"
@@ -359,9 +363,11 @@ class NarwhalsInterface(Interface):
 
         if selection_mask is not None:
             if isinstance(selection_mask, np.ndarray):
-                # Boolean ndarray does not work, so we convert it to list
-                # If the dtype is not boolean, we let narwhals error in filter
-                selection_mask = selection_mask.tolist()
+                selection_mask = nw.new_series(
+                    name="__mask__",
+                    values=selection_mask,
+                    backend=_EAGER_TYPE.get(df.implementation, df.implementation),
+                )
             if not isinstance(selection_mask, nw.Expr) and isinstance(df, nw.LazyFrame):
                 # NOTE(LazyFrame): forced conversion
                 df = df.collect()
