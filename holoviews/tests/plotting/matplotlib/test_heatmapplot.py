@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 from holoviews.element import HeatMap, Image
 
@@ -44,3 +45,31 @@ class TestHeatMapPlot(TestMPLPlot):
             expected = np.array([1, np.inf, np.inf, 2])
         masked = np.ma.array(expected, mask=np.logical_not(np.isfinite(expected)))
         np.testing.assert_equal(array, masked)
+
+    def test_heatmap_categorical_yaxis_label_order(self):
+        data = pd.DataFrame({
+            'depth_class': ['Shallow', 'Shallow', 'Intermediate', 'Intermediate', 'Deep', 'Deep'],
+            'mag_class': ['Light', 'Strong', 'Light', 'Strong', 'Light', 'Strong'],
+            'count': [100, 10, 50, 5, 20, 2]
+        })
+        data['depth_class'] = pd.Categorical(
+            data['depth_class'],
+            categories=['Shallow', 'Intermediate', 'Deep'],
+            ordered=True
+        )
+        data['mag_class'] = pd.Categorical(
+            data['mag_class'],
+            categories=['Light', 'Strong'],
+            ordered=True
+        )
+
+        hmap = HeatMap(data, ['mag_class', 'depth_class']).aggregate(function=np.mean)
+        plot = mpl_renderer.get_plot(hmap)
+
+        # Get y-tick labels from the plot
+        _, _, axis_kwargs = plot.get_data(hmap, {}, {})
+        yticks = axis_kwargs['yticks']
+        ylabels = [label for _, label in yticks]
+
+        expected_order = ['Shallow', 'Intermediate', 'Deep']
+        assert ylabels == expected_order
