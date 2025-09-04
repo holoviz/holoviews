@@ -695,10 +695,10 @@ class dim:
         e.g. pandas Series to NumPy array.
 
         """
-        if hasattr(data, 'compute') and compute:
+        if compute and hasattr(data, 'compute'):
             data = data.compute()
-        if hasattr(data, 'collect') and compute:
-            data = data.colect()
+        if compute and hasattr(data, 'collect'):
+            data = data.collect()
         return data
 
     def _coerce(self, data):
@@ -927,7 +927,7 @@ class df_dim(dim):
                 (coerce or isinstance(dataset.interface, PandasInterface)))
 
     def _compute_data(self, data, drop_index, compute):
-        if hasattr(data, 'compute') and compute:
+        if compute and hasattr(data, 'compute'):
             data = data.compute()
         if not drop_index:
             return data

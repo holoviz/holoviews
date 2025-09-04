@@ -915,4 +915,4 @@ def test_dtype_kind_usage_count():
             file_counts[str(rel_path).replace(os.sep, "/")] = count
 
     expected_files = {'core/util/__init__.py': 1}
-    assert file_counts == expected_files
+    assert file_counts == expected_files, "Don't use dtype.kind, use dtype_kind"
