@@ -351,6 +351,8 @@ class aggregate(LineAggregationOperation):
 
         if isinstance(df, (nw.DataFrame, nw.LazyFrame)):
             df = df.select(list(map(str, kdims + vdims)))
+            if df.implementation.is_dask():
+                df = df.to_native()
             if isinstance(df, nw.LazyFrame):
                 df = df.collect()
             df = df.to_pandas()
