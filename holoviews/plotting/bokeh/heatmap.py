@@ -4,7 +4,7 @@ from bokeh.models.glyphs import AnnularWedge
 
 from ...core.data import GridInterface
 from ...core.spaces import HoloMap
-from ...core.util import dimension_sanitizer, is_nan
+from ...core.util import dimension_sanitizer, dtype_kind, is_nan
 from .element import ColorbarPlot, CompositeElementPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, text_properties
@@ -337,7 +337,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         """Helper function to convert values to corresponding dimension type.
 
         """
-        if vals.dtype.kind not in 'SU':
+        if dtype_kind(vals) not in 'SU':
             dim = element.gridded.get_dimension(dim_label)
             return [dim.pprint_value(v) for v in vals]
 

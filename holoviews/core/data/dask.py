@@ -6,6 +6,7 @@ from .. import util
 from ..dimension import Dimension
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
+from ..util import dtype_kind
 from .interface import Interface
 from .pandas import PandasInterface
 
@@ -82,7 +83,7 @@ class DaskInterface(PandasInterface):
         import dask.dataframe as dd
         dimension = dataset.get_dimension(dimension, strict=True)
         column = dataset.data[dimension.name]
-        if column.dtype.kind == 'O':
+        if dtype_kind(column) == 'O':
             try:
                 column = np.sort(column[column.notnull()].compute())
                 return (column[0], column[-1]) if len(column) else (None, None)
@@ -236,7 +237,7 @@ class DaskInterface(PandasInterface):
         vdims = dataset.dimensions('value', label='name')
         dtypes = data.dtypes
         numeric = [c for c, dtype in zip(dtypes.index, dtypes.values, strict=None)
-                   if dtype.kind in 'iufc' and c in vdims]
+                   if dtype_kind(dtype) in 'iufc' and c in vdims]
         reindexed = data[cols+numeric]
 
         inbuilts = {'amin': 'min', 'amax': 'max', 'mean': 'mean',

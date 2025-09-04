@@ -3,9 +3,12 @@ Unit tests of the helper functions in core.utils
 """
 import datetime
 import math
+import os
 import unittest
 from itertools import product
+from pathlib import Path
 
+import narwhals.stable.v2 as nw
 import numpy as np
 import pandas as pd
 import pytest
@@ -20,6 +23,7 @@ from holoviews.core.util import (
     deephash,
     dimension_range,
     dt_to_int,
+    dtype_kind,
     find_range,
     get_path,
     is_nan,
@@ -846,3 +850,69 @@ def test_is_null_or_na_scalar_polars():
     assert is_null_or_na_scalar(pl.Null)
     assert not is_null_or_na_scalar(pl.DataFrame([1, 2]))
     assert not is_null_or_na_scalar(pl.LazyFrame([1, 2]))
+
+
+@pytest.mark.parametrize(["data", "dtype", "expected_kind"], [
+    # Boolean
+    ([True, False, True], 'bool', 'b'),
+
+    # Integer types
+    ([1, 2, 3], 'int8', 'i'),
+    ([1, 2, 3], 'int16', 'i'),
+    ([1, 2, 3], 'int32', 'i'),
+    ([1, 2, 3], 'int64', 'i'),
+    ([1, 2, 3], 'uint8', 'u'),
+    ([1, 2, 3], 'uint16', 'u'),
+    ([1, 2, 3], 'uint32', 'u'),
+    ([1, 2, 3], 'uint64', 'u'),
+
+    # Float types
+    pytest.param([1.1, 2.2, 3.3], 'float16', 'f', marks=pytest.mark.xfail(reason="narwhals don't support float16")),
+    ([1.1, 2.2, 3.3], 'float32', 'f'),
+    ([1.1, 2.2, 3.3], 'float64', 'f'),
+
+    # Datetime and timedelta
+    (pd.to_datetime(['2021-01-01', '2021-01-02', '2021-01-03']), None, 'M'),
+    (pd.to_timedelta(['1 days', '2 days', '3 days']), None, 'm'),
+
+    # Categorical
+    (pd.Categorical(['A', 'B', 'A']), None, 'O'),
+
+    # Object (mixed types)
+    ([1, 'a', None], None, 'O'),
+
+    # String types
+    pytest.param(['x', 'y', 'z'], 'string[python]', 'U', marks=pytest.mark.xfail(reason="pandas dtype is object")),
+    pytest.param(['x', 'y', 'z'], 'object', 'O', marks=pytest.mark.xfail(reason="narwhals dtype is string")),
+])
+def test_dtype_kind_pandas_narwhals_consistency(data, dtype, expected_kind):
+    """Test dtype_kind gives same results for pandas and narwhals DataFrames"""
+    pd_df = pd.DataFrame({'col': data})
+    if dtype is not None:
+        pd_df = pd_df.astype({'col': dtype})
+    nw_df = nw.from_native(pd_df)
+
+    pd_kind = dtype_kind(pd_df['col'])
+    nw_kind = dtype_kind(nw_df['col'])
+
+    assert pd_kind == expected_kind
+    assert nw_kind == expected_kind
+
+
+def test_dtype_kind_usage_count():
+    holoviews_path = Path(__file__).parents[2]
+    file_counts = {}
+    for py_file in holoviews_path.rglob('*.py'):
+        rel_path = py_file.relative_to(holoviews_path)
+        if '__pycache__' in rel_path.parts or 'tests' in rel_path.parts:
+            continue
+
+        with open(py_file, encoding='utf-8') as f:
+            content = f.read()
+            count = content.count('dtype.kind')
+
+        if count > 0:
+            file_counts[str(rel_path).replace(os.sep, "/")] = count
+
+    expected_files = {'core/util/__init__.py': 1}
+    assert file_counts == expected_files, "Don't use dtype.kind, use dtype_kind"

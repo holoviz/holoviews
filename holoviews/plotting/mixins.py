@@ -1,6 +1,7 @@
 import numpy as np
 
 from ..core import Dataset, Dimension, util
+from ..core.util import dtype_kind
 from ..element import Bars, Graph
 from ..element.util import categorical_aggregate2d
 from .util import get_axis_padding
@@ -221,8 +222,8 @@ class BarsMixin:
                 else:
                     xvals = element.dimension_values(0, False)
                 xvals = np.asarray(xvals)
-            c_is_str = xvals.dtype.kind in 'SU' or not as_string
-            g_is_str = gvals.dtype.kind in 'SU' or not as_string
+            c_is_str = dtype_kind(xvals) in 'SU' or not as_string
+            g_is_str = dtype_kind(gvals) in 'SU' or not as_string
             xvals = [x if c_is_str else xdim.pprint_value(x) for x in xvals]
             gvals = [g if g_is_str else gdim.pprint_value(g) for g in gvals]
             return xvals, gvals
@@ -234,7 +235,7 @@ class BarsMixin:
             else:
                 xvals = element.dimension_values(0, False)
             xvals = np.asarray(xvals)
-            c_is_str = xvals.dtype.kind in 'SU' or not as_string
+            c_is_str = dtype_kind(xvals) in 'SU' or not as_string
             xvals = [x if c_is_str else xdim.pprint_value(x) for x in xvals]
             return xvals, None
 

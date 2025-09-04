@@ -9,6 +9,7 @@ from ...core.options import Store, abbreviated_exception
 from ...core.util import (
     dt64_to_dt,
     dt_to_int,
+    dtype_kind,
     isdatetime,
     isfinite,
     isscalar,
@@ -618,7 +619,7 @@ class PointPlot(ChartPlot, ColorbarPlot, LegendPlot):
         if cdim and cmap:
             cs = element.dimension_values(self.color_index)
             # Check if numeric otherwise treat as categorical
-            if cs.dtype.kind in 'uif':
+            if dtype_kind(cs) in 'uif':
                 style['c'] = cs
             else:
                 style['c'] = search_indices(cs, unique_array(cs))
@@ -957,7 +958,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         xvals = element.dimension_values(0)
         is_dt = isdatetime(xvals)
         continuous = True
-        if is_dt or xvals.dtype.kind not in 'OU' and not (cdim or len(element.kdims) > 1):
+        if is_dt or dtype_kind(xvals) not in 'OU' and not (cdim or len(element.kdims) > 1):
             xvals = xvals[xslice]
             xdiff = np.abs(np.diff(xvals))
             diff_size = len(np.unique(xdiff))
