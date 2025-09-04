@@ -480,14 +480,15 @@ class Graph(Dataset, Element2D):
 
     @classmethod
     def from_sparse(cls, edges, nodes, **params):
-        """Create a Graph element from a sparse adjacency array.
+        """Create a Graph element from a sparse adjacency array/matrix.
 
         Parameters
         ----------
-        edges : scipy.sparse array
-            A sparse array representing the graph adjacency array. The array
-            should have shape (n_nodes, n_nodes) where non-zero entries indicate
-            edges between nodes. The array will be converted to COO format.
+        edges : scipy.sparse array/matrix
+            A sparse array/matrix representing the graph adjacency
+            array/matrix. The array/matrix should have shape (n_nodes, n_nodes)
+            where non-zero entries indicate edges between nodes.
+            The array/matrix will be converted to COO format.
         nodes : array-like or Dataset
             Node positions or node information. Can be a 2D array of (x, y)
             coordinates, a Dataset with node information, or a Nodes element.
@@ -497,13 +498,13 @@ class Graph(Dataset, Element2D):
         Returns
         -------
         Graph
-            A Graph element with edges defined by the sparse array and the
+            A Graph element with edges defined by the sparse array/matrix and the
             provided node information.
 
         Raises
         ------
         TypeError
-            If edges is not a scipy sparse array.
+            If edges is not a scipy sparse array/matrix.
 
         Examples
         --------
@@ -516,7 +517,7 @@ class Graph(Dataset, Element2D):
         from scipy.sparse import issparse
 
         if not issparse(edges):
-            msg = "edges expected to be a scipy.sparse array"
+            msg = f"edges expected to be a scipy.sparse array/matrix, not {type(edges).__name__}"
             raise TypeError(msg)
 
         keys = [*map(str, cls.kdims), "data"]
