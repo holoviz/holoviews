@@ -4,7 +4,7 @@ from bokeh.models.glyphs import AnnularWedge
 
 from ...core.data import GridInterface
 from ...core.spaces import HoloMap
-from ...core.util import dimension_sanitizer, is_nan
+from ...core.util import dimension_sanitizer, find_contiguous_subarray, is_nan
 from .element import ColorbarPlot, CompositeElementPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, text_properties
@@ -48,11 +48,18 @@ class HeatMapPlot(ColorbarPlot):
         function, draw separation lines where function returns True for passed
         heatmap category.""")
 
-    _plot_methods = dict(single='rect')
 
     style_opts = ['cmap', 'color', 'dilate', *base_properties, *line_properties, *fill_properties]
 
     selection_display = BokehOverlaySelectionDisplay()
+
+    def __init__(self, element, plot=None, **params):
+        super().__init__(element, plot=plot, **params)
+        self._is_contiguous_gridded = False
+
+    @property
+    def _plot_methods(self):
+        return dict(single='image') if self._is_contiguous_gridded else dict(single='rect')
 
     @classmethod
     def is_radial(cls, heatmap):
@@ -71,12 +78,6 @@ class HeatMapPlot(ColorbarPlot):
         x, y, z = (dimension_sanitizer(d) for d in element.dimensions(label=True)[:3])
         if self.invert_axes: x, y = y, x
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
-        if 'line_alpha' not in style and 'line_width' not in style:
-            style['line_alpha'] = 0
-            style['selection_line_alpha'] = 0
-            style['nonselection_line_alpha'] = 0
-        elif 'line_color' not in style:
-            style['line_color'] = 'white'
 
         if not element._unique:
             self.param.warning('HeatMap element index is not unique,  ensure you '
@@ -84,12 +85,53 @@ class HeatMapPlot(ColorbarPlot):
                                'using heatmap.aggregate(function=np.mean). '
                                'Duplicate index values have been dropped.')
 
-        if self.static_source:
+        is_gridded = element.interface.gridded
+        x_index = y_index = -1
+        if is_gridded:
+            xs, ys = (self._get_dimension_factors(element, ranges, kd) for kd in element.kdims)
+            if self.invert_axes:
+                xs, ys = ys, xs
+            x_range, y_range = self.handles['x_range'], self.handles['y_range']
+            x_index = find_contiguous_subarray(xs, x_range.factors)
+            y_index = find_contiguous_subarray(ys, y_range.factors)
+
+        self._is_contiguous_gridded = is_gridded and x_index != -1 and y_index != -1
+        if self._is_contiguous_gridded:
+            style = {k: v for k, v in style.items() if not k.startswith(('annular_', 'xmarks_', 'ymarks_'))}
+            style['color_mapper'] = cmapper
+            mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
+            if self.static_source:
+                return {}, mapping, style
+            if 'alpha' in style:
+                style['global_alpha'] = style['alpha']
+            data = dict(x=[x_index], y=[y_index])
+            for i, vdim in enumerate(element.vdims, 2):
+                if i > 2 and 'hover' not in self.handles:
+                    break
+                img = element.dimension_values(i, flat=False)
+                if img.dtype.kind == 'b':
+                    img = img.astype(np.int8)
+                if 0 in img.shape:
+                    img = np.array([[np.nan]])
+                if self.invert_axes:
+                    img = img.T
+                key = 'image' if i == 2 else dimension_sanitizer(vdim.name)
+                data[key] = [img]
+            dh, dw = data['image'][0].shape
+            data['dh'], data['dw'] = [dh], [dw]
+            return data, mapping, style
+        elif self.static_source:
             return {}, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper}}, style
+
+        if 'line_alpha' not in style and 'line_width' not in style:
+            style['line_alpha'] = 0
+            style['selection_line_alpha'] = 0
+            style['nonselection_line_alpha'] = 0
+        elif 'line_color' not in style:
+            style['line_color'] = 'white'
 
         aggregate = element.gridded
         xdim, ydim = aggregate.dimensions()[:2]
-
         xtype = aggregate.interface.dtype(aggregate, xdim)
         widths = None
         if xtype.kind in 'SUO':
@@ -154,7 +196,6 @@ class HeatMapPlot(ColorbarPlot):
         super()._init_glyphs(plot, element, ranges, source)
         self._draw_markers(plot, element, self.xmarks, axis='x')
         self._draw_markers(plot, element, self.ymarks, axis='y')
-
 
     def _update_glyphs(self, element, ranges, style):
         super()._update_glyphs(element, ranges, style)
