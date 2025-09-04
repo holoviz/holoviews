@@ -22,6 +22,7 @@ from types import FunctionType, GeneratorType
 
 import numpy as np
 import param
+from numpy.lib.stride_tricks import sliding_window_view
 
 from ...util.warnings import warn
 from .dependencies import (  # noqa: F401
@@ -1121,6 +1122,31 @@ def max_extents(extents, zrange=False):
                 else:
                     extents[uidx] = np.nanmax(upper)
     return tuple(extents)
+
+
+def find_contiguous_subarray(a, b, *, nan_equal=True):
+    """
+    Return the start index of `a` in `b` if `a` is a contiguous subarray of `b`.
+    Return -1 if not found.
+    """
+    a = np.asarray(a)
+    b = np.asarray(b)
+
+    if len(a) == 0:
+        return 0
+    if len(a) > len(b):
+        return -1
+    W = sliding_window_view(b, len(a))
+
+    if nan_equal and a.dtype.kind == 'f':
+        eq = (W == a) | (np.isnan(W) & np.isnan(a))
+    else:
+        eq = (W == a)
+
+    matches = np.all(eq, axis=1)
+    if np.any(matches):
+        return np.argmax(matches)
+    return -1
 
 
 def int_to_alpha(n, upper=True):
