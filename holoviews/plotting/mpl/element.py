@@ -337,6 +337,17 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         elif self.aspect == 'square':
             return 1
         elif self.aspect == 'equal':
+            if (
+                isinstance(xspan, util.datetime_types) ^ isinstance(yspan, util.datetime_types)
+                or isinstance(xspan, util.timedelta_types) ^ isinstance(yspan, util.timedelta_types)
+            ):
+                msg = (
+                    "The aspect is set to 'equal', but the axes does not have the same type: "
+                    f"x-axis {type(xspan).__name__} and y-axis {type(yspan).__name__}. "
+                    "Either have the axes be the same type or or set '.opts(aspect=)' "
+                    "to either a number or 'square'."
+                )
+                raise TypeError(msg)
             return xspan/yspan
         return 1
 
