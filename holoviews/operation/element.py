@@ -3,6 +3,7 @@ examples.
 
 """
 import warnings
+from collections import defaultdict
 from functools import partial
 from itertools import pairwise
 
@@ -1319,12 +1320,22 @@ class dendrogram(Operation):
             dataset = Dataset(element)
         sign = -1 if self.p.invert else 1
         sort_dims, dendros = [], {}
-        for d in self.p.adjoint_dims:
+        for d in map(str, element_kdims[:2]):
+            sort_dim = f"sort_{d}"
+            sort_dims.append(sort_dim)
+            if d not in self.p.adjoint_dims:
+                # Getting order of occurrence for non-selected kdims
+                # to avoid changing order of them. order is
+                # equivalent to: pd.Categorical(x, pd.unique(x)).codes
+                ddata = dataset.dimension_values(d)
+                code_map = defaultdict(lambda: len(code_map))  # noqa: B023
+                order = list(map(code_map.__getitem__, ddata))
+                dataset = dataset.add_dimension(sort_dim, 0, order)
+                continue
+
             ddata = self._compute_linkage(dataset, d, self.p.main_dim)
             order = [sign * ddata["ivl"].index(v) for v in dataset.dimension_values(d)]
-            sort_dim = f"sort_{d}"
             dataset = dataset.add_dimension(sort_dim, 0, order)
-            sort_dims.append(sort_dim)
 
             ic = ddata["icoord"]
             if self.p.invert:
@@ -1344,11 +1355,10 @@ class dendrogram(Operation):
         vdims = element_vdims or self.p.main_dim
         # Adding non_sort_dims to handle unstable sorting algorithms, which can differ between OSs
         # https://github.com/holoviz/holoviews/pull/6625#issuecomment-2981268665
-        non_sort_dims = [d for d in element_kdims[:2] if str(d) not in self.p.adjoint_dims]
         if type(element) is not Dataset:
-            main = element.clone(dataset.sort([*sort_dims, *non_sort_dims]).reindex(element_kdims), vdims=vdims)
+            main = element.clone(dataset.sort(sort_dims).reindex(element_kdims), vdims=vdims)
         else:
-            main = self.p.main_element(dataset.sort([*sort_dims, *non_sort_dims]).reindex(element_kdims[:2]), vdims=vdims)
+            main = self.p.main_element(dataset.sort(sort_dims).reindex(element_kdims[:2]), vdims=vdims)
 
         for dim in map(str, main.kdims[::-1]):
             if dim not in self.p.adjoint_dims:
