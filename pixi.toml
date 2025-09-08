@@ -156,19 +156,13 @@ test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
 [feature.test-example.dependencies]
 nbval = "*"
 
-[feature.test-ui]
-channels = ["microsoft"]
-
 [feature.test-ui.dependencies]
-playwright = { version = "*", channel = "microsoft" }
-pytest-playwright = { version = "*", channel = "microsoft" }
-
-[feature.test-ui.tasks]
-_install-ui = 'playwright install chromium'
+playwright = "*"
+pytest-playwright = "*"
+ffmpeg = "*"
 
 [feature.test-ui.tasks.test-ui]
 cmd = 'pytest holoviews/tests/ui --ui --browser chromium'
-depends-on = ["_install-ui"]
 
 [feature.test-gpu]
 channels = ["rapidsai"]
