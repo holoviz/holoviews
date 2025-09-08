@@ -1332,9 +1332,11 @@ class dendrogram(Operation):
             sort_dim = f"sort_{d}"
             sort_dims.append(sort_dim)
             if d not in self.p.adjoint_dims:
-                # Getting order of occurrence for non-selected kdims
-                # to avoid changing order of them. order is
-                # equivalent to: pd.Categorical(x, pd.unique(x)).codes
+                # This is needed because unstable sorting algorithms, which can
+                # differ between OSs, causing random ordering
+                # https://github.com/holoviz/holoviews/pull/6625#issuecomment-2981268665
+                # code_map + order is equivalent to:
+                # pd.Categorical(x, pd.unique(x)).codes
                 ddata = dataset.dimension_values(d)
                 code_map = defaultdict(lambda: len(code_map))  # noqa: B023
                 order = list(map(code_map.__getitem__, ddata))
@@ -1361,8 +1363,6 @@ class dendrogram(Operation):
                 return Layout(dendros.values())
 
         vdims = element_vdims or self.p.main_dim
-        # Adding non_sort_dims to handle unstable sorting algorithms, which can differ between OSs
-        # https://github.com/holoviz/holoviews/pull/6625#issuecomment-2981268665
         if type(element) is not Dataset:
             main = element.clone(dataset.sort(sort_dims).reindex(element_kdims), vdims=vdims)
         else:
