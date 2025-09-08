@@ -37,6 +37,7 @@ from ..core.util import (
     isdatetime,
     isfinite,
     label_sanitizer,
+    warn,
 )
 from ..element.chart import Histogram, Scatter
 from ..element.path import Contours, Dendrogram, Polygons
@@ -1320,6 +1321,13 @@ class dendrogram(Operation):
             dataset = Dataset(element)
         sign = -1 if self.p.invert else 1
         sort_dims, dendros = [], {}
+        if adjoint_not_kdims := (set(map(str, self.p.adjoint_dims)) - set(map(str, element_kdims[:2]))):
+            # Should be removed when https://github.com/holoviz/holoviews/issues/6683
+            # is implemented
+            adjoint_not_kdims_str = ", ".join(sorted(map(str, adjoint_not_kdims)))
+            msg = "Currently, 'adjoint_dims' can only be one of the first two kdims"
+            msg += f", {adjoint_not_kdims_str} is not."
+            warn(msg, UserWarning)
         for d in map(str, element_kdims[:2]):
             sort_dim = f"sort_{d}"
             sort_dims.append(sort_dim)
