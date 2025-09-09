@@ -1,7 +1,9 @@
 import datetime as dt
+import re
 
 import numpy as np
 import pandas as pd
+import pytest
 from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
 from holoviews.core import HoloMap, NdOverlay
@@ -624,3 +626,12 @@ class TestDendrogramPlot(TestBokehPlot):
         assert right.width == 80
         assert main.y_range is right.y_range
         assert main.y_scale is right.y_scale
+
+    def test_adjoint_plot_in_layout(self):
+        layout = (Scatter([]) << Dendrogram(self.x, self.y)) + Scatter([])
+        msg = "Adjoined dendrogram in a Layout, does not currently support `.opts(shared_axes=True)`"
+        with pytest.raises(NotImplementedError, match=re.escape(msg)):
+            bokeh_renderer(layout)
+
+        # Should not raise an exception
+        bokeh_renderer(layout.opts(shared_axes=False))

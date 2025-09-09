@@ -190,7 +190,7 @@ class DendrogramPlot(PathPlot):
         if self.adjoined:
             if self.layout_num and self.shared_axes:
                 msg = "Adjoined dendrogram in a Layout, does not currently support `.opts(shared_axes=True)`"
-                raise RuntimeError(msg)
+                raise NotImplementedError(msg)
             pos = ["main", "right", "top"][len(plots)]
             main = self.adjoined[0]
             if pos == "right":
