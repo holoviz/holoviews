@@ -742,9 +742,10 @@ class OperationTests(ComparisonTestCase):
         pd.testing.assert_series_equal(data["x"], output["x"])
         pd.testing.assert_series_equal(data["y"], output["y"])
 
+
+@pytest.mark.usefixtures("bokeh_backend")
 class TestDendrogramOperation:
 
-    @pytest.mark.usefixtures("bokeh_backend")
     def setup_class(self):
         pytest.importorskip("scipy")
 
