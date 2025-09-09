@@ -94,6 +94,7 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
 
     def _compute_ticks(self, element, xvals, yvals, xfactors, yfactors):
         xdim, ydim = element.kdims
+        aggregate = element.gridded
         if self.invert_axes:
             xdim, ydim = ydim, xdim
 
@@ -103,7 +104,7 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
         if xticks is None:
             xpos = xvals[:-1] + np.diff(xvals)/2.
             if not xfactors:
-                xfactors = element.gridded.dimension_values(xdim, False)
+                xfactors = aggregate.dimension_values(xdim, False)
             xlabels = [xdim.pprint_value(k) for k in xfactors]
             xticks = list(zip(xpos, xlabels, strict=None))
 
@@ -111,10 +112,10 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
         if yticks is None:
             ypos = yvals[:-1] + np.diff(yvals)/2.
             if not yfactors:
-                yfactors = element.gridded.dimension_values(ydim, False)
+                yfactors = aggregate.dimension_values(ydim, False)
             ylabels = [ydim.pprint_value(k) for k in yfactors]
             # if y-axis is categorical, reverse labels to match `origin='upper'` policy
-            ytype = element.gridded.interface.dtype(element.gridded, ydim)
+            ytype = aggregate.interface.dtype(aggregate, ydim)
             if ytype.kind in 'SUO':
                 ylabels = ylabels[::-1]
             yticks = list(zip(ypos, ylabels, strict=None))
@@ -185,7 +186,7 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
         style['yfactors'] = yfactors
 
         if self.show_values:
-            style['annotations'] = self._annotate_values(element.gridded, xvals, yvals)
+            style['annotations'] = self._annotate_values(aggregate, xvals, yvals)
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
         if 'vmin' in style:
