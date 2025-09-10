@@ -1,6 +1,7 @@
 import numpy as np
 import param
 from bokeh.models.glyphs import AnnularWedge
+from bokeh.models.ranges import FactorRange
 
 from ...core.data import GridInterface
 from ...core.spaces import HoloMap
@@ -86,16 +87,22 @@ class HeatMapPlot(ColorbarPlot):
                                'Duplicate index values have been dropped.')
 
         is_gridded = element.interface.gridded
-        x_index = y_index = -1
+        x_index = y_index = None
         if is_gridded:
-            xs, ys = (self._get_dimension_factors(element, ranges, kd) for kd in element.kdims)
-            if self.invert_axes:
-                xs, ys = ys, xs
             x_range, y_range = self.handles['x_range'], self.handles['y_range']
-            x_index = find_contiguous_subarray(xs, x_range.factors)
-            y_index = find_contiguous_subarray(ys, y_range.factors)
+            x_cat, y_cat = isinstance(x_range, FactorRange), isinstance(y_range, FactorRange)
+            if x_cat:
+                xs = self._get_dimension_factors(element, ranges, element.get_dimension(x))
+                x_index = find_contiguous_subarray(xs, x_range.factors)
+            else:
+                x_index = ranges[x]['data'][0]
+            if y_cat:
+                ys = self._get_dimension_factors(element, ranges, element.get_dimension(y))
+                y_index = find_contiguous_subarray(ys, y_range.factors)
+            else:
+                y_index = ranges[y]['data'][0]
 
-        self._is_contiguous_gridded = is_gridded and x_index != -1 and y_index != -1
+        self._is_contiguous_gridded = is_gridded and x_index is not None and y_index is not None
         if self._is_contiguous_gridded:
             style = {k: v for k, v in style.items() if not k.startswith(('annular_', 'xmarks_', 'ymarks_'))}
             style['color_mapper'] = cmapper
@@ -117,7 +124,8 @@ class HeatMapPlot(ColorbarPlot):
                     img = img.T
                 key = 'image' if i == 2 else dimension_sanitizer(vdim.name)
                 data[key] = [img]
-            dh, dw = data['image'][0].shape
+            dw = data['image'][0].shape[1] if x_cat else (ranges[x]['data'][1] - ranges[x]['data'][0])
+            dh = data['image'][0].shape[0] if y_cat else (ranges[y]['data'][1] - ranges[y]['data'][0])
             data['dh'], data['dw'] = [dh], [dw]
             return data, mapping, style
         elif self.static_source:
@@ -132,41 +140,44 @@ class HeatMapPlot(ColorbarPlot):
 
         aggregate = element.gridded
         xdim, ydim = aggregate.dimensions()[:2]
-        xtype = aggregate.interface.dtype(aggregate, xdim)
+        xtype = aggregate.interface.dtype(aggregate, x)
         widths = None
         if xtype.kind in 'SUO':
-            xvals = aggregate.dimension_values(xdim)
+            xvals = aggregate.dimension_values(x)
             width = 1
         else:
-            xvals = aggregate.dimension_values(xdim, flat=False)
+            xvals = aggregate.dimension_values(x, flat=False)
+            if self.invert_axes:
+                xvals = xvals.T
             if xvals.shape[1] > 1:
                 edges = GridInterface._infer_interval_breaks(xvals, axis=1)
                 widths = np.diff(edges, axis=1).T.flatten()
             else:
                 widths = [self.default_span]*xvals.shape[0] if len(xvals) else []
-            xvals = xvals.T.flatten()
+            xvals = xvals.T.flatten()# - np.array(widths)/2
             width = 'width'
 
         ytype = aggregate.interface.dtype(aggregate, ydim)
         heights = None
         if ytype.kind in 'SUO':
-            yvals = aggregate.dimension_values(ydim)
+            yvals = aggregate.dimension_values(y)
             height = 1
         else:
-            yvals = aggregate.dimension_values(ydim, flat=False)
+            yvals = aggregate.dimension_values(y, flat=False)
+            if self.invert_axes:
+                yvals = yvals.T
             if yvals.shape[0] > 1:
                 edges = GridInterface._infer_interval_breaks(yvals, axis=0)
                 heights = np.diff(edges, axis=0).T.flatten()
             else:
                 heights = [self.default_span]*yvals.shape[1] if len(yvals) else []
-            yvals = yvals.T.flatten()
+            yvals = yvals.T.flatten()# - np.array(heights)/2
             height = 'height'
 
         zvals = aggregate.dimension_values(2, flat=False)
-        zvals = zvals.T.flatten()
-
-        if self.invert_axes:
-            width, height = height, width
+        if not self.invert_axes:
+            zvals = zvals.T
+        zvals = zvals.flatten()
 
         data = {x: xvals, y: yvals, 'zvalues': zvals}
         if widths is not None:
