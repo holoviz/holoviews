@@ -395,7 +395,11 @@ class link_selections(_base_link_selections):
                 # Disable regions if setting selection_expr directly
                 if inst.show_regions:
                     inst.show_regions = False
-                inst._selection_override.event(selection_expr=new_selection_expr)
+                    try:
+                        inst._selection_override.event(selection_expr=new_selection_expr)
+                    finally:
+                        with param.parameterized.discard_events(inst):
+                            inst.show_regions = True
 
         inst.param.watch(
             update_selection_expr, ['selection_expr']
