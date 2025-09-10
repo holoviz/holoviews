@@ -9,6 +9,9 @@ from ...core.util import dimension_sanitizer, find_contiguous_subarray, is_nan
 from .element import ColorbarPlot, CompositeElementPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, text_properties
+from .util import (
+    BOKEH_GE_3_3_0,
+)
 
 
 class HeatMapPlot(ColorbarPlot):
@@ -74,6 +77,17 @@ class HeatMapPlot(ColorbarPlot):
 
     def _element_transform(self, transform, element, ranges):
         return transform.apply(element.gridded, ranges=ranges, flat=False).T.flatten()
+
+    def _hover_opts(self, element):
+        if not self._is_contiguous_gridded:
+            return super()._hover_opts(element)
+        if BOKEH_GE_3_3_0:
+            xdim, ydim = element.kdims
+            vdim = ", ".join([d.pprint_label for d in element.vdims])
+            return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y'), (vdim, '@image')], {}
+        else:
+            xdim, ydim = element.kdims
+            return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y')], {}
 
     def get_data(self, element, ranges, style):
         x, y, z = (dimension_sanitizer(d) for d in element.dimensions(label=True)[:3])
@@ -207,6 +221,8 @@ class HeatMapPlot(ColorbarPlot):
         super()._init_glyphs(plot, element, ranges, source)
         self._draw_markers(plot, element, self.xmarks, axis='x')
         self._draw_markers(plot, element, self.ymarks, axis='y')
+        if self._is_contiguous_gridded:
+            self._update_hover(element)
 
     def _update_glyphs(self, element, ranges, style):
         super()._update_glyphs(element, ranges, style)
