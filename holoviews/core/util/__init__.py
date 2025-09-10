@@ -1146,7 +1146,7 @@ def find_contiguous_subarray(a, b, *, nan_equal=True):
     matches = np.all(eq, axis=1)
     if np.any(matches):
         return np.argmax(matches)
-    return -1
+    return None
 
 
 def int_to_alpha(n, upper=True):
