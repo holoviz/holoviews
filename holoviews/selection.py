@@ -397,6 +397,7 @@ class link_selections(_base_link_selections):
                     inst.show_regions = False
                     try:
                         inst._selection_override.event(selection_expr=new_selection_expr)
+                        inst._cross_filter_stream.selection_expr = new_selection_expr
                     finally:
                         with param.parameterized.discard_events(inst):
                             inst.show_regions = True
