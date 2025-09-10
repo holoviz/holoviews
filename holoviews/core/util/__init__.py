@@ -22,7 +22,6 @@ from types import FunctionType, GeneratorType
 
 import numpy as np
 import param
-from numpy.lib.stride_tricks import sliding_window_view
 
 from ...util.warnings import warn
 from .dependencies import (  # noqa: F401
@@ -1124,29 +1123,28 @@ def max_extents(extents, zrange=False):
     return tuple(extents)
 
 
-def find_contiguous_subarray(a, b, *, nan_equal=True):
+def find_contiguous_subarray(a, b):
     """
     Return the start index of `a` in `b` if `a` is a contiguous subarray of `b`.
-    Return -1 if not found.
+
+    Arguments
+    ---------
+    a: np.ndarray | list
+       The array that may or may not be a contiguous subset of `b`.
+    b: np.ndarray | list
+       The array that may or may not contain `a` as a contiguous subset.
+
+    Returns
+    -------
+    int | None
+       The index at which a appears in b or None.
     """
-    a = np.asarray(a)
-    b = np.asarray(b)
-
-    if len(a) == 0:
-        return 0
-    if len(a) > len(b):
-        return -1
-    W = sliding_window_view(b, len(a))
-
-    if nan_equal and a.dtype.kind == 'f':
-        eq = (W == a) | (np.isnan(W) & np.isnan(a))
-    else:
-        eq = (W == a)
-
-    matches = np.all(eq, axis=1)
-    if np.any(matches):
-        return np.argmax(matches)
-    return None
+    a, b = np.asarray(a), np.asarray(b)
+    first_match = b == a[0]
+    if not first_match.any():
+        return None
+    idx = np.argmax(first_match)
+    return idx if (b[idx:idx+len(a)] == a).all() else None
 
 
 def int_to_alpha(n, upper=True):
