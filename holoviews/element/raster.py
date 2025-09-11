@@ -432,9 +432,6 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         if any([isinstance(el, slice) for el in coords]):
             bounds = compute_slice_bounds(coords, self, shape[:2])
 
-            xdim, ydim = self.kdims
-            l, b, r, t = bounds.lbrt()
-
             # Situate resampled region into overall slice
             y0, y1, x0, x1 = Slice(bounds, self)
             y0, y1 = shape[0]-y1, shape[0]-y0

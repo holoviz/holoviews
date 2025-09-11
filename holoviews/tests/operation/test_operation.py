@@ -860,7 +860,7 @@ class TestDendrogramOperation:
         # depth dimensions is the orthogonal axis to the main plot
         dataset = Dataset(self.df)
         dendro = dendrogram(dataset, adjoint_dims=["x", "z"], main_dim="y")
-        (atop, amain, aright), (top, main, right) = self.get_childrens(dendro)
+        (atop, amain, aright), (top, _main, right) = self.get_childrens(dendro)
 
         # Verify no shared axis is changing the depth dimension of the right
         assert atop.y_range.start == top.y_range.start

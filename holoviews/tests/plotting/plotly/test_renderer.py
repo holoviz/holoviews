@@ -97,7 +97,7 @@ class PlotlyRendererTest(ComparisonTestCase):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
 
         y = plot.handles['fig']['data'][0]['y']
         self.assertEqual(y[2], 0.1)
@@ -112,7 +112,7 @@ class PlotlyRendererTest(ComparisonTestCase):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
 
         y = plot.handles['fig']['data'][0]['y']
         self.assertEqual(y[2], 2)
@@ -127,7 +127,7 @@ class PlotlyRendererTest(ComparisonTestCase):
                           streams=[stream]).redim.values(x=[1, 2, 3])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
 
         y = plot.handles['fig']['data'][0]['y']
         self.assertEqual(y[2], 2)

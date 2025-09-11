@@ -40,8 +40,8 @@ class ImageInterface(GridInterface):
             yvalid = util.validate_regular_sampling(ys, eltype.rtol or util.config.image_rtol)
             if not xvalid or not yvalid:
                 raise ValueError('ImageInterface only supports regularly sampled coordinates')
-            l, r, xdensity, invertx = util.bound_range(xs, None, eltype._time_unit)
-            b, t, ydensity, inverty = util.bound_range(ys, None, eltype._time_unit)
+            l, r, _xdensity, invertx = util.bound_range(xs, None, eltype._time_unit)
+            b, t, _ydensity, inverty = util.bound_range(ys, None, eltype._time_unit)
             kwargs['bounds'] = BoundingBox(points=((l, b), (r, t)))
             if len(vdims) == 1:
                 data = np.flipud(np.asarray(data[vdims[0].name]))
