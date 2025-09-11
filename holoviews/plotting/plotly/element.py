@@ -719,7 +719,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
         for okey, subplot in self.subplots.items():
             if element is not None and subplot.drawn:
-                idx, spec, exact = self._match_subplot(okey, subplot, items, element)
+                idx, _spec, _exact = self._match_subplot(okey, subplot, items, element)
                 if idx is not None:
                     _, el = items.pop(idx)
                 else:

@@ -1354,7 +1354,7 @@ class GenericElementPlot(DimensionedPlot):
         """Computes padding along the axes taking into account the plot aspect.
 
         """
-        (x0, y0, z0, x1, y1, z1) = extents
+        (x0, y0, _z0, x1, y1, _z1) = extents
         padding_opt = self.lookup_options(obj, 'plot').kwargs.get('padding')
         if self.overlaid:
             padding = 0
@@ -1399,7 +1399,7 @@ class GenericElementPlot(DimensionedPlot):
 
         trigger = False
         if not self.overlaid and not self.batched:
-            xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))
+            xspan, yspan, _zspan = (v/2. for v in get_axis_padding(self.default_span))
             mx0, mx1 = get_minimum_span(x0, x1, xspan)
             if x0 != mx0 or x1 != mx1:
                 x0, x1 = mx0, mx1
@@ -1409,7 +1409,6 @@ class GenericElementPlot(DimensionedPlot):
                 y0, y1 = my0, my1
                 trigger = True
 
-            mz0, mz1 = get_minimum_span(z0, z1, zspan)
         xpad, ypad, zpad = self.get_padding(element, (x0, y0, z0, x1, y1, z1))
 
         if range_type == 'soft':
@@ -1938,7 +1937,7 @@ class GenericOverlayPlot(GenericElementPlot):
                     exact_matches = [m for m in exact_matches if m[-1]]
                     if exact_matches:
                         idx = exact_matches[0][0]
-                        _, el = temp_items.pop(idx)
+                        _ = temp_items.pop(idx)
                         continue
             found = True
         if idx is not None:

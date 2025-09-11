@@ -260,7 +260,7 @@ def fix_aspect(fig, nrows, ncols, title=None, extra_artists=None,
     if extra_artists is None:
         extra_artists = []
     fig.canvas.draw()
-    w, h = fig.get_size_inches()
+    w, _h = fig.get_size_inches()
 
     # Compute maximum height and width of each row and columns
     rows = resolve_rows([[ax] for ax in fig.axes])
