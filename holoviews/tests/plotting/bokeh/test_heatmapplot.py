@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from bokeh.models import FactorRange, HoverTool, Range1d
+from bokeh.models import FactorRange, HoverTool, Image as bkImage, Range1d
 
 from holoviews.element import HeatMap, Image, Points
 
@@ -97,10 +97,15 @@ class TestHeatMapPlot(TestBokehPlot):
         arr = np.array([[0, 1, 2], [3, 4,  5]])
         hm = HeatMap(Image(arr)).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(hm)
-        source = plot.handles['source']
-        self.assertEqual(source.data['zvalues'], hm.dimension_values(2, flat=False).T.flatten())
-        self.assertEqual(source.data['x'], hm.dimension_values(1))
-        self.assertEqual(source.data['y'], hm.dimension_values(0))
+        assert plot._is_contiguous_gridded is True
+        assert isinstance(plot.handles["glyph"], bkImage)
+
+        data = plot.handles['source'].data
+        np.testing.assert_equal(data['image'][0], hm.dimension_values(2, flat=False).T)
+        assert data["x"] == [-0.5]
+        assert data["y"] == [-0.5]
+        assert data["dw"] == [1]
+        assert data["dh"] == [1]
 
     def test_heatmap_dilate(self):
         hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).opts(dilate=True)
