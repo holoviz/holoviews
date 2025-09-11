@@ -1937,7 +1937,7 @@ class GenericOverlayPlot(GenericElementPlot):
                     exact_matches = [m for m in exact_matches if m[-1]]
                     if exact_matches:
                         idx = exact_matches[0][0]
-                        _ = temp_items.pop(idx)
+                        temp_items.pop(idx)
                         continue
             found = True
         if idx is not None:
