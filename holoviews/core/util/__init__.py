@@ -2275,7 +2275,7 @@ def mimebundle_to_html(bundle):
 
     """
     if isinstance(bundle, tuple):
-        data, metadata = bundle
+        data, _metadata = bundle
     else:
         data = bundle
     html = data.get('text/html', '')

@@ -636,7 +636,7 @@ class ColorbarPlot(ElementPlot):
                 cmin, cmax = self.clim
             elif dim_name in ranges:
                 if self.clim_percentile and 'robust' in ranges[dim_name]:
-                    low, high = ranges[dim_name]['robust']
+                    cmin, cmax = ranges[dim_name]['robust']
                 else:
                     cmin, cmax = ranges[dim_name]['combined']
             elif isinstance(eldim, dim):
@@ -719,7 +719,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
         for okey, subplot in self.subplots.items():
             if element is not None and subplot.drawn:
-                idx, spec, exact = self._match_subplot(okey, subplot, items, element)
+                idx, _spec, _exact = self._match_subplot(okey, subplot, items, element)
                 if idx is not None:
                     _, el = items.pop(idx)
                 else:

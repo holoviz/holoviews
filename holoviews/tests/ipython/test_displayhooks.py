@@ -31,7 +31,7 @@ class TestHTMLDisplay(TestDisplayHooks):
 
     def test_store_render_html(self):
         curve = Curve([1, 2, 3])
-        data, metadata = Store.render(curve)
+        data, _metadata = Store.render(curve)
         mime_types = {'text/html'}
         self.assertEqual(set(data), mime_types)
 
@@ -44,7 +44,7 @@ class TestPNGDisplay(TestDisplayHooks):
 
     def test_store_render_png(self):
         curve = Curve([1, 2, 3])
-        data, metadata = Store.render(curve)
+        data, _metadata = Store.render(curve)
         mime_types = {'image/png'}
         self.assertEqual(set(data), mime_types)
 
@@ -57,7 +57,7 @@ class TestSVGDisplay(TestDisplayHooks):
 
     def test_store_render_svg(self):
         curve = Curve([1, 2, 3])
-        data, metadata = Store.render(curve)
+        data, _metadata = Store.render(curve)
         mime_types = {'image/svg+xml'}
         self.assertEqual(set(data), mime_types)
 
@@ -70,6 +70,6 @@ class TestCombinedDisplay(TestDisplayHooks):
 
     def test_store_render_combined(self):
         curve = Curve([1, 2, 3])
-        data, metadata = Store.render(curve)
+        data, _metadata = Store.render(curve)
         mime_types = {'text/html', 'image/svg+xml', 'image/png'}
         self.assertEqual(set(data), mime_types)

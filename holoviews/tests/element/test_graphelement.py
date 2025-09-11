@@ -167,7 +167,7 @@ class TestFromSparse:
         regular_array = np.array([[1, 2], [3, 4]])
         nodes_data = {'x': [0.0, 1.0], 'y': [0.0, 1.0], 'index': [0, 1]}
 
-        with pytest.raises(TypeError, match="edges expected to be a scipy.sparse array"):
+        with pytest.raises(TypeError, match=r"edges expected to be a scipy.sparse array"):
             Graph.from_sparse(regular_array, nodes_data)
 
 

@@ -160,7 +160,7 @@ class BokehRendererTest(ComparisonTestCase):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
         cds = plot.handles['cds']
 
         self.assertEqual(cds.data['y'][2], 0.1)
@@ -174,7 +174,7 @@ class BokehRendererTest(ComparisonTestCase):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
         cds = plot.handles['cds']
 
         self.assertEqual(cds.data['y'][2], 2)
@@ -188,7 +188,7 @@ class BokehRendererTest(ComparisonTestCase):
                           streams=[stream]).redim.values(x=[1, 2, 3])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
         cds = plot.handles['cds']
 
         self.assertEqual(cds.data['y'][2], 2)

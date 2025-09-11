@@ -105,7 +105,7 @@ class TestSubcoordinateY(TestBokehPlot):
         overlay = Overlay([Curve(range(10)).opts(subcoordinate_y=True) for i in range(2)])
         with pytest.raises(
             ValueError,
-            match='Every Element plotted on a subcoordinate_y axis must have a label or be part of an NdOverlay.'
+            match=r'Every Element plotted on a subcoordinate_y axis must have a label or be part of an NdOverlay.'
         ):
             bokeh_renderer.get_plot(overlay)
 
@@ -443,8 +443,8 @@ class TestSubcoordinateY(TestBokehPlot):
         with pytest.raises(
             ValueError,
             match=(
-                'The subcoordinate_y overlay contains elements with a defined group, each '
-                'subcoordinate_y element in the overlay must have a defined group.'
+                r'The subcoordinate_y overlay contains elements with a defined group, each '
+                r'subcoordinate_y element in the overlay must have a defined group.'
             )
         ):
             bokeh_renderer.get_plot(Overlay(curves))
