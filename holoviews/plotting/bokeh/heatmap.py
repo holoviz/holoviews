@@ -9,9 +9,7 @@ from ...core.util import dimension_sanitizer, find_contiguous_subarray, is_nan
 from .element import ColorbarPlot, CompositeElementPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, text_properties
-from .util import (
-    BOKEH_GE_3_3_0,
-)
+from .util import BOKEH_GE_3_3_0
 
 
 class HeatMapPlot(ColorbarPlot):
@@ -221,7 +219,7 @@ class HeatMapPlot(ColorbarPlot):
         super()._init_glyphs(plot, element, ranges, source)
         self._draw_markers(plot, element, self.xmarks, axis='x')
         self._draw_markers(plot, element, self.ymarks, axis='y')
-        if self._is_contiguous_gridded:
+        if self._is_contiguous_gridded and "hover" in self.handles:
             self._update_hover(element)
 
     def _update_glyphs(self, element, ranges, style):

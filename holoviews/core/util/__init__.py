@@ -1126,12 +1126,13 @@ def max_extents(extents, zrange=False):
 def find_contiguous_subarray(a, b):
     """
     Return the start index of `a` in `b` if `a` is a contiguous subarray of `b`.
+    This expect that there is no duplicates in a or b.
 
     Arguments
     ---------
-    a: np.ndarray | list
+    a: array_like
        The array that may or may not be a contiguous subset of `b`.
-    b: np.ndarray | list
+    b: array_like
        The array that may or may not contain `a` as a contiguous subset.
 
     Returns
@@ -1139,6 +1140,8 @@ def find_contiguous_subarray(a, b):
     int | None
        The index at which a appears in b or None.
     """
+    if len(a) == 0:
+        return 0
     a, b = np.asarray(a), np.asarray(b)
     first_match = b == a[0]
     if not first_match.any():
