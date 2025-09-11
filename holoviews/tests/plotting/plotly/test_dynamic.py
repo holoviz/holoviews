@@ -63,7 +63,7 @@ class TestDynamicMap(TestPlotlyPlot):
 
         # Check that object callback was triggered
         fn.assert_called_once()
-        args, kwargs = fn.call_args_list[0]
+        args, _kwargs = fn.call_args_list[0]
         event = args[0]
         self.assertIs(event.obj, plotly_pane)
         self.assertIs(event.new, plotly_pane.object)

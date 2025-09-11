@@ -306,8 +306,7 @@ class RadialHeatMapPlot(ColorbarPlot):
 
     def get_data(self, element, ranges, style):
         # dimension labels
-        dim_labels = element.dimensions(label=True)[:3]
-        x, y, z = (dimension_sanitizer(d) for d in dim_labels)
+        x, y = (dimension_sanitizer(d) for d in element.dimensions(label=True)[:2])
 
         if self.invert_axes: x, y = y, x
 

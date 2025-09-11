@@ -5,6 +5,7 @@ from unittest import SkipTest, skipIf
 
 import numpy as np
 import pandas as pd
+import param
 import pytest
 
 try:
@@ -44,8 +45,10 @@ from holoviews import (
     renderer,
 )
 from holoviews.core.data.grid import GridInterface
+from holoviews.core.operation import Operation
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.element import (
+    chain,
     contours,
     decimate,
     dendrogram,
@@ -96,6 +99,50 @@ class OperationTests(ComparisonTestCase):
         img = Image(np.random.rand(10, 10))
         op_img = transform(img, operator=lambda x: x*2)
         self.assertEqual(op_img, img.clone(img.data*2, group='Transform'))
+
+    def test_operation_chain(self):
+        img = Image(np.random.rand(10, 10))
+        op_img = chain(
+            img,
+            operations=[
+                transform.instance(operator=lambda x: x*2),
+                transform.instance(operator=lambda x: x*3),
+        ])
+        self.assertEqual(op_img, img.clone(img.data*6, group='Transform'))
+
+    def test_operation_chain_find(self):
+        class CustomOp1(Operation):
+            link_inputs = param.Boolean(False)
+        class CustomOp2(Operation):
+            link_inputs = param.Boolean(True)
+
+        op1 = CustomOp1.instance()
+        op2 = CustomOp2.instance()
+        ch_op = chain.instance(operations=[op1, op2])
+        self.assertIs(ch_op.find(CustomOp1, skip_nonlinked=False), op1)
+        self.assertIsNone(ch_op.find(CustomOp1, skip_nonlinked=True))
+        self.assertIs(ch_op.find(CustomOp2, skip_nonlinked=False), op2)
+        self.assertIs(ch_op.find(CustomOp2, skip_nonlinked=True), op2)
+
+    def test_operation_chain_find_apply(self):
+        img = Image(np.random.rand(10, 10))
+        tr_op = transform.instance(operator=lambda x: x*2)
+        img_apply = img.apply(tr_op, dynamic=False)
+        self.assertIs(img_apply.pipeline.find(transform, skip_nonlinked=False), tr_op)
+
+    def test_operation_chain_find_apply_chain(self):
+        class CustomOp1(Operation): pass
+        class CustomOp2(Operation): pass
+
+        img = Image(np.random.rand(10, 10))
+        op1 = CustomOp1.instance()
+        op2 = CustomOp2.instance()
+        ch_op = chain.instance(operations=[op1,op2])
+        img_apply = img.apply(ch_op, dynamic=False)
+        self.assertIs(
+            img_apply.pipeline.find(CustomOp1, skip_nonlinked=False),
+            op1,
+        )
 
     def test_image_threshold(self):
         img = Image(np.array([[0, 1, 0], [3, 4, 5.]]))
@@ -813,7 +860,7 @@ class TestDendrogramOperation:
         # depth dimensions is the orthogonal axis to the main plot
         dataset = Dataset(self.df)
         dendro = dendrogram(dataset, adjoint_dims=["x", "z"], main_dim="y")
-        (atop, amain, aright), (top, main, right) = self.get_childrens(dendro)
+        (atop, amain, aright), (top, _main, right) = self.get_childrens(dendro)
 
         # Verify no shared axis is changing the depth dimension of the right
         assert atop.y_range.start == top.y_range.start

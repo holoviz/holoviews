@@ -126,7 +126,7 @@ class TestBokehServer(ComparisonTestCase):
         stream = RangeXY(source=el)
 
         obj, _ = bokeh_renderer._validate(el, None)
-        server, _ = self._launcher(obj, port=6002)
+        _server, _ = self._launcher(obj, port=6002)
         [(plot, _)] = obj._plots.values()
 
         cb = plot.callbacks[0]
@@ -146,7 +146,7 @@ class TestBokehServer(ComparisonTestCase):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
         obj, _ = bokeh_renderer._validate(dmap, None)
         _, session = self._launcher(obj, port=6004)
-        [(plot, _)] = obj._plots.values()
+        [(_plot, _)] = obj._plots.values()
         [(doc, _)] = obj._documents.items()
 
         cds = session.document.roots[0].select_one({'type': ColumnDataSource})

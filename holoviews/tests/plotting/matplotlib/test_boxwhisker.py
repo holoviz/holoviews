@@ -12,7 +12,7 @@ class TestMPLBoxWhiskerPlot(TestMPLPlot):
         values = np.random.rand(100)
         boxwhisker = BoxWhisker(values)
         plot = mpl_renderer.get_plot(boxwhisker)
-        data, style, axis_opts = plot.get_data(boxwhisker, {}, {})
+        data, style, _axis_opts = plot.get_data(boxwhisker, {}, {})
         self.assertEqual(data[0][0], values)
         if MPL_GE_3_9_0:
             self.assertEqual(style['tick_labels'], [''])
