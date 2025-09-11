@@ -105,12 +105,12 @@ class HeatMapPlot(ColorbarPlot):
             x_cat, y_cat = isinstance(x_range, FactorRange), isinstance(y_range, FactorRange)
             if x_cat:
                 xs = self._get_dimension_factors(element, ranges, element.get_dimension(x))
-                x_index = find_contiguous_subarray(xs, x_range.factors)
+                x_index = find_contiguous_subarray(xs, x_range.factors) if x_range.factors else 0
             else:
                 x_index = ranges[x]['data'][0]
             if y_cat:
                 ys = self._get_dimension_factors(element, ranges, element.get_dimension(y))
-                y_index = find_contiguous_subarray(ys, y_range.factors)
+                y_index = find_contiguous_subarray(ys, y_range.factors) if y_range.factors else 0
             else:
                 y_index = ranges[y]['data'][0]
 
