@@ -153,7 +153,7 @@ class HeatMapPlot(ColorbarPlot):
             style['line_color'] = 'white'
 
         aggregate = element.gridded
-        xdim, ydim = aggregate.dimensions()[:2]
+        ydim = aggregate.dimensions()[1]
         xtype = aggregate.interface.dtype(aggregate, x)
         widths = None
         if xtype.kind in 'SUO':
