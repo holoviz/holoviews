@@ -636,7 +636,7 @@ class ColorbarPlot(ElementPlot):
                 cmin, cmax = self.clim
             elif dim_name in ranges:
                 if self.clim_percentile and 'robust' in ranges[dim_name]:
-                    low, high = ranges[dim_name]['robust']
+                    cmin, cmax = ranges[dim_name]['robust']
                 else:
                     cmin, cmax = ranges[dim_name]['combined']
             elif isinstance(eldim, dim):
