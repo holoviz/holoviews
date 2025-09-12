@@ -71,5 +71,5 @@ class TestHeatMapPlot(TestMPLPlot):
         yticks = axis_kwargs['yticks']
         ylabels = [label for _, label in yticks]
 
-        expected_order = ['Shallow', 'Intermediate', 'Deep']
+        expected_order = ['Deep', 'Intermediate', 'Shallow']
         assert ylabels == expected_order
