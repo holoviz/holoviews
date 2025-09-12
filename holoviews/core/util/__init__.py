@@ -1123,31 +1123,32 @@ def max_extents(extents, zrange=False):
     return tuple(extents)
 
 
-def find_contiguous_subarray(a, b):
+def find_contiguous_subarray(sub_array, full_array):
     """
-    Return the start index of `a` in `b` if `a` is a contiguous subarray of `b`.
-    This expect that there is no duplicates in a or b.
+    Return the start index of `sub_array` in `ful_array` if `sub_array`
+    is a contiguous subarray of `ful_array`. This expect that there is no
+    duplicates in any of the arrays.
 
     Arguments
     ---------
-    a: array_like
-       The array that may or may not be a contiguous subset of `b`.
-    b: array_like
-       The array that may or may not contain `a` as a contiguous subset.
+    sub_array: array_like
+       The array that may or may not be a contiguous subset of `full_array`.
+    full_array: array_like
+       The array that may or may not contain `sub_array` as a contiguous subset.
 
     Returns
     -------
     int | None
        The index at which a appears in b or None.
     """
-    if len(a) == 0:
+    if len(sub_array) == 0:
         return 0
-    a, b = np.asarray(a), np.asarray(b)
-    first_match = b == a[0]
+    sub_array, full_array = np.asarray(sub_array), np.asarray(full_array)
+    first_match = full_array == sub_array[0]
     if not first_match.any():
         return None
     idx = np.argmax(first_match)
-    return idx if (b[idx:idx+len(a)] == a).all() else None
+    return idx if (full_array[idx:idx+len(sub_array)] == sub_array).all() else None
 
 
 def int_to_alpha(n, upper=True):
