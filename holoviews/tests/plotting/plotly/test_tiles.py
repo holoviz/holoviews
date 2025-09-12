@@ -233,7 +233,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
             self.lat_range[0], 0, 0, self.lat_range[0], self.lat_range[0]
         ]))
         self.assertEqual(bounds_trace["mode"], "lines")
-        self.assertTrue(points_trace["showlegend"], False)
+        assert points_trace["showlegend"] is True
 
         # No xaxis/yaxis
         self.assertNotIn("xaxis", fig_dict["layout"])

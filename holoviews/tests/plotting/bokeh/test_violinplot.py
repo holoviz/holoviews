@@ -23,7 +23,7 @@ class TestBokehViolinPlot(TestBokehPlot):
     def test_violin_simple(self):
         values = np.random.rand(100)
         violin = Violin(values).opts(violin_width=0.7)
-        qmin, q1, q2, q3, qmax = (np.percentile(values, q=q)
+        _qmin, q1, q2, q3, _qmax = (np.percentile(values, q=q)
                                   for q in range(0,125,25))
         iqr = q3 - q1
         upper = min(q3 + 1.5*iqr, np.nanmax(values))
@@ -85,7 +85,6 @@ class TestBokehViolinPlot(TestBokehPlot):
 
     def test_violin_multi(self):
         violin = Violin((np.random.randint(0, 2, 100), np.random.rand(100)), kdims=['A']).sort()
-        r1, r2 = violin.range(1)
         plot = bokeh_renderer.get_plot(violin)
         self.assertEqual(plot.handles['x_range'].factors, ['0', '1'])
 

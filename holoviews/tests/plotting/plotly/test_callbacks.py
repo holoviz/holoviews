@@ -260,17 +260,17 @@ class TestCallbacks(TestCase):
         # Build callbacks
         range_classes = [RangeXYCallback, RangeXCallback, RangeYCallback]
 
-        xyplots, xystreamss, xycallbacks, xyevents = build_callback_set(
+        _xyplots, xystreamss, _xycallbacks, xyevents = build_callback_set(
             RangeXYCallback, ['first', 'second', 'third', 'forth', 'other'],
             RangeXY, 2
         )
 
-        xplots, xstreamss, xcallbacks, xevents = build_callback_set(
+        _xplots, xstreamss, _xcallbacks, xevents = build_callback_set(
             RangeXCallback, ['first', 'second', 'third', 'forth', 'other'],
             RangeX, 2
         )
 
-        yplots, ystreamss, ycallbacks, yevents = build_callback_set(
+        _yplots, ystreamss, _y_callbacks, yevents = build_callback_set(
             RangeYCallback, ['first', 'second', 'third', 'forth', 'other'],
             RangeY, 2
         )
@@ -447,17 +447,17 @@ class TestCallbacks(TestCase):
         # Build callbacks
         bounds_classes = [BoundsXYCallback, BoundsXCallback, BoundsYCallback]
 
-        xyplots, xystreamss, xycallbacks, xyevents = build_callback_set(
+        _xyplots, xystreamss, _xycallbacks, xyevents = build_callback_set(
             BoundsXYCallback, ['first', 'second', 'third', 'forth', 'other'],
             BoundsXY, 2
         )
 
-        xplots, xstreamss, xcallbacks, xevents = build_callback_set(
+        _xplots, xstreamss, _xcallbacks, xevents = build_callback_set(
             BoundsXCallback, ['first', 'second', 'third', 'forth', 'other'],
             BoundsX, 2
         )
 
-        yplots, ystreamss, ycallbacks, yevents = build_callback_set(
+        _yplots, ystreamss, _ycallbacks, yevents = build_callback_set(
             BoundsYCallback, ['first', 'second', 'third', 'forth', 'other'],
             BoundsY, 2
         )
@@ -580,7 +580,7 @@ class TestCallbacks(TestCase):
         })
 
     def testSelection1DCallback(self):
-        plots, streamss, callbacks, sel_events = build_callback_set(
+        _plots, streamss, _callbacks, sel_events = build_callback_set(
             Selection1DCallback, ['first', 'second', 'third', 'forth', 'other'],
             Selection1D, 2
         )

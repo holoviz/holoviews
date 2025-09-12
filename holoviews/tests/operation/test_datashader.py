@@ -1711,7 +1711,7 @@ def test_uint_dtype(dtype):
 def test_uint64_dtype():
     df = pd.DataFrame(np.arange(2, dtype=np.uint64), columns=["A"])
     curve = Curve(df)
-    with pytest.raises(TypeError, match="Dtype of uint64 for column A is not supported."):
+    with pytest.raises(TypeError, match=r"Dtype of uint64 for column A is not supported."):
         rasterize(curve, dynamic=False, height=10, width=10)
 
 

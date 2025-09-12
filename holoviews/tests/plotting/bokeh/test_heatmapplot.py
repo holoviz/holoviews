@@ -97,7 +97,6 @@ class TestHeatMapPlot(TestBokehPlot):
         arr = np.array([[0, 1, 2], [3, 4,  5]])
         hm = HeatMap(Image(arr)).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(hm)
-        xdim, ydim = hm.kdims
         source = plot.handles['source']
         self.assertEqual(source.data['zvalues'], hm.dimension_values(2, flat=False).T.flatten())
         self.assertEqual(source.data['x'], hm.dimension_values(1))
