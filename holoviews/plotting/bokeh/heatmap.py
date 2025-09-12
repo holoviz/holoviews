@@ -89,7 +89,8 @@ class HeatMapPlot(ColorbarPlot):
 
     def get_data(self, element, ranges, style):
         x, y = (dimension_sanitizer(d) for d in element.dimensions(label=True)[:2])
-        if self.invert_axes: x, y = y, x
+        if self.invert_axes:
+            x, y = y, x
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
 
         if not element._unique:
@@ -151,7 +152,6 @@ class HeatMapPlot(ColorbarPlot):
             style['line_color'] = 'white'
 
         aggregate = element.gridded
-        ydim = aggregate.dimensions()[0 if self.invert_axes else 1]
         xtype = aggregate.interface.dtype(aggregate, x)
         widths = None
         if xtype.kind in 'SUO':
@@ -169,7 +169,7 @@ class HeatMapPlot(ColorbarPlot):
             xvals = xvals.T.flatten()# - np.array(widths)/2
             width = 'width'
 
-        ytype = aggregate.interface.dtype(aggregate, ydim)
+        ytype = aggregate.interface.dtype(aggregate, y)
         heights = None
         if ytype.kind in 'SUO':
             yvals = aggregate.dimension_values(y)
