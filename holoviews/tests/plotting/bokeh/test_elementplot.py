@@ -824,8 +824,8 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
 
     def test_dynamicmap_subcoordinate_y_enabled_later_raise_error(self):
         dmap = DynamicMap(lambda: Curve([], label="curve"))
-        plot = bokeh_renderer.get_plot(dmap)
-        dmap = dmap.opts(opts.Curve(subcoordinate_y=True))
+        bokeh_renderer.get_plot(dmap)
+        dmap.opts(subcoordinate_y=True)
 
 
 @pytest.mark.usefixtures("bokeh_backend")
