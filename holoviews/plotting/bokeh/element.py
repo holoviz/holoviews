@@ -1794,6 +1794,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self._subcoord_overlaid:
             y_source_range = self.handles['y_range']
             if isinstance(self.subcoordinate_y, bool):
+                raise RuntimeError(
+                    "Failed retrieving y axis information. "
+                    "The initial DynamicMap plot does not have subcoordinate_y enabled."
+                )
                 center = y_source_range.tags[1]['subcoordinate_y']
                 offset = self.subcoordinate_scale/2.
                 ytarget_range = dict(start=center-offset, end=center+offset)
