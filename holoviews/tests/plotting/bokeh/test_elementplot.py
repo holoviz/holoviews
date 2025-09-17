@@ -19,11 +19,12 @@ from bokeh.models import (
 
 from holoviews import opts
 from holoviews.core import Dimension, DynamicMap, HoloMap, NdOverlay, Overlay
+from holoviews.core.options import AbbreviatedException
 from holoviews.core.util import dt_to_int
 from holoviews.element import Curve, HeatMap, Image, Labels, Scatter
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0, BOKEH_GE_3_6_0
 from holoviews.plotting.util import process_cmap
-from holoviews.streams import PointDraw, Stream
+from holoviews.streams import Pipe, PointDraw, Stream
 from holoviews.util import render
 
 from ...utils import LoggingComparisonTestCase
@@ -826,6 +827,21 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         dmap = DynamicMap(lambda: Curve([], label="curve"))
         bokeh_renderer.get_plot(dmap)
         dmap.opts(subcoordinate_y=True)
+
+    def test_dynamicmap_subcoordinate_y_enabled_later_raise_error(self):
+        def func(data):
+            if not data:
+                return Curve([]) * Curve([])
+            plot1 = Curve([0, 1], label="1").opts(subcoordinate_y=True)
+            plot2 = Curve([2, 1], label="2").opts(subcoordinate_y=True)
+            return plot1 * plot2
+
+        pipe = Pipe(data=False)
+        dmap = DynamicMap(func, streams=[pipe])
+        bokeh_renderer.get_plot(dmap)
+        msg = 'RuntimeError: Failed retrieving "subcoordinate_y". Labels mismatched for initial and updated DynamicMap plots.'
+        with pytest.raises(AbbreviatedException, match=msg):
+            pipe.send(True)
 
 
 @pytest.mark.usefixtures("bokeh_backend")
