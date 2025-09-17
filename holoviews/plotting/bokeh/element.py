@@ -1796,8 +1796,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if isinstance(self.subcoordinate_y, bool):
                 if "subcoordinate_y" not in y_source_range.tags[1]:
                     raise RuntimeError(
-                        "Failed retrieving y axis information. "
-                        "The initial DynamicMap plot does not have subcoordinate_y enabled."
+                        "Failed retrieving subcoordinate_y. Labels mismatched for initial and updated DynamicMap plots."
                     )
                 center = y_source_range.tags[1]['subcoordinate_y']
                 offset = self.subcoordinate_scale/2.
