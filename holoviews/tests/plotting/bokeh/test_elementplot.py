@@ -823,7 +823,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
             "WARNING", "cb model could not be"
         )
 
-    def test_dynamicmap_subcoordinate_y_enabled_later_raise_error(self):
+    def test_dynamicmap_subcoordinate_y_enabled_labels_mismatched(self):
         def func(data):
             if not data:
                 return Curve([]) * Curve([])
