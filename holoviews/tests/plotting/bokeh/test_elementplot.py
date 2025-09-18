@@ -824,19 +824,30 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         )
 
     def test_dynamicmap_subcoordinate_y_enabled_labels_mismatched(self):
-        def func(data):
+        cases = [
+            ("", "", "", "1"),
+            ("", "1", "2", "3"),
+            ("1", "2", "3", "4"),
+        ]
+
+        def func(data, plot_labels):
             if not data:
-                return Curve([]) * Curve([])
-            plot1 = Curve([0, 1], label="1").opts(subcoordinate_y=True)
-            plot2 = Curve([2, 1], label="2").opts(subcoordinate_y=True)
+                return (
+                        Curve([], label=plot_labels[0]) *
+                        Curve([], label=plot_labels[1])
+                )
+            plot1 = Curve([0, 1], label=plot_labels[2]).opts(subcoordinate_y=True)
+            plot2 = Curve([2, 1], label=plot_labels[3]).opts(subcoordinate_y=True)
             return plot1 * plot2
 
-        pipe = Pipe(data=False)
-        dmap = DynamicMap(func, streams=[pipe])
-        bokeh_renderer.get_plot(dmap)
-        msg = 'RuntimeError: Failed retrieving "subcoordinate_y". Labels mismatched for initial and updated DynamicMap plots.'
-        with pytest.raises(AbbreviatedException, match=msg):
-            pipe.send(True)
+        for labels in cases:
+            pipe = Pipe(data=False)
+            dmap = DynamicMap(lambda data, labels=labels: func(data, labels), streams=[pipe])
+            bokeh_renderer.get_plot(dmap)
+
+            msg = 'Failed retrieving "subcoordinate_y". Labels mismatched for initial and updated DynamicMap plots.'
+            with pytest.raises(AbbreviatedException, match=msg):
+                pipe.send(True)
 
 
 @pytest.mark.usefixtures("bokeh_backend")
