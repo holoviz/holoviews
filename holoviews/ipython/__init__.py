@@ -260,7 +260,7 @@ class notebook_extension(extension):
             'bokeh_version':  bokeh_version,
             'mpl_version':    mpl_version,
             'plotly_version': plotly_version,
-            'show_tooltip': not os.getenv("HV_DOCS_BUILD")
+            'show_tooltip': not (os.getenv("CI") or os.getenv("HV_DOCS_BUILD"))
         })
         publish_display_data(data={'text/html': html})
 
