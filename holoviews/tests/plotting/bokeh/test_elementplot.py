@@ -826,6 +826,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_dynamicmap_subcoordinate_y_enabled_labels_mismatched(self):
         cases = [
             ("", "", "", "1"),
+            ("", "1", "", "2"),
             ("", "1", "2", "3"),
             ("1", "2", "3", "4"),
         ]
