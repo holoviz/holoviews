@@ -92,7 +92,7 @@ class GeomTests(ComparisonTestCase):
     def test_empty_range(self):
         mds = Path([], kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
-        x0, x1 = mds.range(0)
+        x0, _x1 = mds.range(0)
         self.assertFalse(np.isfinite(x0))
         self.assertFalse(np.isfinite(x0))
         y0, y1 = mds.range(1)

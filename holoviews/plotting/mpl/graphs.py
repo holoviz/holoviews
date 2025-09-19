@@ -119,7 +119,6 @@ class GraphPlot(GraphMixin, ColorbarPlot):
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
 
-        xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         pxs, pys = (element.nodes.dimension_values(i) for i in range(2))
         dims = element.nodes.dimensions()
         self._compute_styles(element, ranges, style)

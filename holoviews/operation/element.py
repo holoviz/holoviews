@@ -24,6 +24,7 @@ from ..core import (
     Operation,
     Overlay,
 )
+from ..core.accessors import Apply
 from ..core.data import ArrayInterface, DictInterface, PandasInterface, default_datatype
 from ..core.data.util import dask_array_module
 from ..core.util import (
@@ -254,11 +255,20 @@ class chain(Operation):
         """
         found = None
         for op in self.operations[::-1]:
+            if not op.link_inputs and skip_nonlinked:
+                continue
             if isinstance(op, operation):
                 found = op
                 break
-            if not op.link_inputs and skip_nonlinked:
-                break
+            if isinstance(op, method) and op.input_type is Apply and op.args:
+                if isinstance(op.args[0], operation):
+                    found = op.args[0]
+                    break
+                elif isinstance(op.args[0], chain):
+                    subfound = op.args[0].find(operation, skip_nonlinked=skip_nonlinked)
+                    if subfound is not None:
+                        found = subfound
+                        break
         return found
 
 

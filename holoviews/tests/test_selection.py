@@ -87,7 +87,7 @@ class TestLinkSelections(ComparisonTestCase):
 
         # Check initial state of linked dynamic map
         self.assertIsInstance(current_obj, hv.Overlay)
-        unselected, selected, region, region2 = current_obj.values()
+        unselected, selected, region, _region2 = current_obj.values()
 
         # Check initial base layer
         self.check_base_points_like(unselected, lnk_sel)
@@ -102,7 +102,7 @@ class TestLinkSelections(ComparisonTestCase):
 
         self.assertIsInstance(selectionxy, hv.streams.SelectionXY)
         selectionxy.event(bounds=(0, 1, 5, 5))
-        unselected, selected, region, region2 = linked[()].values()
+        unselected, selected, region, _region2 = linked[()].values()
 
         # Check that base layer is unchanged
         self.check_base_points_like(unselected, lnk_sel)
@@ -474,7 +474,7 @@ class TestLinkSelections(ComparisonTestCase):
         self.assertIsInstance(hist_selectionxy, SelectionXY)
         hist_selectionxy.event(bounds=(0, 0, 2.5, 2))
 
-        points_unsel, points_sel, points_region, points_region_poly = current_obj[0][()].values()
+        _points_unsel, points_sel, points_region, _points_region_poly = current_obj[0][()].values()
 
         # Check points selection overlay
         self.check_overlay_points_like(points_sel, lnk_sel, self.data.iloc[selected2])
