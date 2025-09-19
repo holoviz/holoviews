@@ -1,13 +1,15 @@
 import numpy as np
 import param
 from bokeh.models.glyphs import AnnularWedge
+from bokeh.models.ranges import FactorRange
 
 from ...core.data import GridInterface
 from ...core.spaces import HoloMap
-from ...core.util import dimension_sanitizer, is_nan
+from ...core.util import dimension_sanitizer, find_contiguous_subarray, is_nan
 from .element import ColorbarPlot, CompositeElementPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, text_properties
+from .util import BOKEH_GE_3_3_0
 
 
 class HeatMapPlot(ColorbarPlot):
@@ -48,11 +50,18 @@ class HeatMapPlot(ColorbarPlot):
         function, draw separation lines where function returns True for passed
         heatmap category.""")
 
-    _plot_methods = dict(single='rect')
 
     style_opts = ['cmap', 'color', 'dilate', *base_properties, *line_properties, *fill_properties]
 
     selection_display = BokehOverlaySelectionDisplay()
+
+    def __init__(self, element, plot=None, **params):
+        super().__init__(element, plot=plot, **params)
+        self._is_contiguous_gridded = False
+
+    @property
+    def _plot_methods(self):
+        return dict(single='image') if self._is_contiguous_gridded else dict(single='rect')
 
     @classmethod
     def is_radial(cls, heatmap):
@@ -67,16 +76,22 @@ class HeatMapPlot(ColorbarPlot):
     def _element_transform(self, transform, element, ranges):
         return transform.apply(element.gridded, ranges=ranges, flat=False).T.flatten()
 
+    def _hover_opts(self, element):
+        if not self._is_contiguous_gridded:
+            return super()._hover_opts(element)
+        if BOKEH_GE_3_3_0:
+            xdim, ydim = element.kdims
+            vdim = ", ".join([d.pprint_label for d in element.vdims])
+            return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y'), (vdim, '@image')], {}
+        else:
+            xdim, ydim = element.kdims
+            return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y')], {}
+
     def get_data(self, element, ranges, style):
         x, y = (dimension_sanitizer(d) for d in element.dimensions(label=True)[:2])
-        if self.invert_axes: x, y = y, x
+        if self.invert_axes:
+            x, y = y, x
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
-        if 'line_alpha' not in style and 'line_width' not in style:
-            style['line_alpha'] = 0
-            style['selection_line_alpha'] = 0
-            style['nonselection_line_alpha'] = 0
-        elif 'line_color' not in style:
-            style['line_color'] = 'white'
 
         if not element._unique:
             self.param.warning('HeatMap element index is not unique,  ensure you '
@@ -84,47 +99,97 @@ class HeatMapPlot(ColorbarPlot):
                                'using heatmap.aggregate(function=np.mean). '
                                'Duplicate index values have been dropped.')
 
-        if self.static_source:
+        is_gridded = element.interface.gridded
+        x_index = y_index = None
+        if is_gridded:
+            x_range, y_range = self.handles['x_range'], self.handles['y_range']
+            x_cat, y_cat = isinstance(x_range, FactorRange), isinstance(y_range, FactorRange)
+            if x_cat:
+                xs = self._get_dimension_factors(element, ranges, element.get_dimension(x))
+                x_index = find_contiguous_subarray(xs, x_range.factors) if x_range.factors else 0
+            else:
+                x_index = ranges[x]['data'][0]
+            if y_cat:
+                ys = self._get_dimension_factors(element, ranges, element.get_dimension(y))
+                y_index = find_contiguous_subarray(ys, y_range.factors) if y_range.factors else 0
+            else:
+                y_index = ranges[y]['data'][0]
+
+        self._is_contiguous_gridded = is_gridded and x_index is not None and y_index is not None
+        if self._is_contiguous_gridded:
+            style = {k: v for k, v in style.items() if not k.startswith(('annular_', 'xmarks_', 'ymarks_'))}
+            style['color_mapper'] = cmapper
+            mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
+            if self.static_source:
+                return {}, mapping, style
+            if 'alpha' in style:
+                style['global_alpha'] = style['alpha']
+            data = dict(x=[x_index], y=[y_index])
+            for i, vdim in enumerate(element.vdims, 2):
+                if i > 2 and 'hover' not in self.handles:
+                    break
+                img = element.dimension_values(i, flat=False)
+                if img.dtype.kind == 'b':
+                    img = img.astype(np.int8)
+                if 0 in img.shape:
+                    img = np.array([[np.nan]])
+                if self.invert_axes:
+                    img = img.T
+                key = 'image' if i == 2 else dimension_sanitizer(vdim.name)
+                data[key] = [img]
+            dw = data['image'][0].shape[1] if x_cat else (ranges[x]['data'][1] - ranges[x]['data'][0])
+            dh = data['image'][0].shape[0] if y_cat else (ranges[y]['data'][1] - ranges[y]['data'][0])
+            data['dh'], data['dw'] = [dh], [dw]
+            return data, mapping, style
+        elif self.static_source:
             return {}, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper}}, style
 
-        aggregate = element.gridded
-        xdim, ydim = aggregate.dimensions()[:2]
+        if 'line_alpha' not in style and 'line_width' not in style:
+            style['line_alpha'] = 0
+            style['selection_line_alpha'] = 0
+            style['nonselection_line_alpha'] = 0
+        elif 'line_color' not in style:
+            style['line_color'] = 'white'
 
-        xtype = aggregate.interface.dtype(aggregate, xdim)
+        aggregate = element.gridded
+        xtype = aggregate.interface.dtype(aggregate, x)
         widths = None
         if xtype.kind in 'SUO':
-            xvals = aggregate.dimension_values(xdim)
+            xvals = aggregate.dimension_values(x)
             width = 1
         else:
-            xvals = aggregate.dimension_values(xdim, flat=False)
+            xvals = aggregate.dimension_values(x, flat=False)
+            if self.invert_axes:
+                xvals = xvals.T
             if xvals.shape[1] > 1:
                 edges = GridInterface._infer_interval_breaks(xvals, axis=1)
                 widths = np.diff(edges, axis=1).T.flatten()
             else:
                 widths = [self.default_span]*xvals.shape[0] if len(xvals) else []
-            xvals = xvals.T.flatten()
+            xvals = xvals.T.flatten()# - np.array(widths)/2
             width = 'width'
 
-        ytype = aggregate.interface.dtype(aggregate, ydim)
+        ytype = aggregate.interface.dtype(aggregate, y)
         heights = None
         if ytype.kind in 'SUO':
-            yvals = aggregate.dimension_values(ydim)
+            yvals = aggregate.dimension_values(y)
             height = 1
         else:
-            yvals = aggregate.dimension_values(ydim, flat=False)
+            yvals = aggregate.dimension_values(y, flat=False)
+            if self.invert_axes:
+                yvals = yvals.T
             if yvals.shape[0] > 1:
                 edges = GridInterface._infer_interval_breaks(yvals, axis=0)
                 heights = np.diff(edges, axis=0).T.flatten()
             else:
                 heights = [self.default_span]*yvals.shape[1] if len(yvals) else []
-            yvals = yvals.T.flatten()
+            yvals = yvals.T.flatten()# - np.array(heights)/2
             height = 'height'
 
         zvals = aggregate.dimension_values(2, flat=False)
-        zvals = zvals.T.flatten()
-
-        if self.invert_axes:
-            width, height = height, width
+        if not self.invert_axes:
+            zvals = zvals.T
+        zvals = zvals.flatten()
 
         data = {x: xvals, y: yvals, 'zvalues': zvals}
         if widths is not None:
@@ -154,7 +219,8 @@ class HeatMapPlot(ColorbarPlot):
         super()._init_glyphs(plot, element, ranges, source)
         self._draw_markers(plot, element, self.xmarks, axis='x')
         self._draw_markers(plot, element, self.ymarks, axis='y')
-
+        if self._is_contiguous_gridded and "hover" in self.handles:
+            self._update_hover(element)
 
     def _update_glyphs(self, element, ranges, style):
         super()._update_glyphs(element, ranges, style)
