@@ -872,6 +872,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
             pipe = Pipe(data=False)
             dmap = DynamicMap(lambda data, labels=labels: func(data, labels), streams=[pipe])
             bokeh_renderer.get_plot(dmap)
+            # works with no issue
             pipe.send(True)
 
 
