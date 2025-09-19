@@ -173,8 +173,6 @@ class AggregationOperation(ResampleOperation2D):
             params['xdensity'] = 1
         if height == 0:
             params['ydensity'] = 1
-        if isinstance(agg_fn, ds.by):
-            return ImageStack(xarray, **params)
         return self.p.element_type(xarray, **params)
 
     def _get_agg_params(self, element, x, y, agg_fn, bounds):
@@ -385,6 +383,9 @@ class aggregate(LineAggregationOperation):
             sel_fn = type(sel_fn)(column=rd.SpecialColumn.RowIndex)
         agg_state = AggState.get_state(agg_fn, sel_fn)
 
+        if AggState.has_by(agg_state) and self.p.element_type is Image:
+            self.p.element_type = ImageStack
+
         if overlay_aggregate.applies(element, agg_fn, line_width=self.p.line_width, sel_fn=sel_fn):
             params = dict(
                 {p: v for p, v in self.param.values().items() if p != 'name'},
@@ -410,8 +411,6 @@ class aggregate(LineAggregationOperation):
             empty_val = 0 if isinstance(agg_fn, ds.count) else np.nan
             xarray = xr.DataArray(np.full((height, width), empty_val),
                                   dims=[y.name, x.name], coords={x.name: xs, y.name: ys})
-            if AggState.has_by(agg_state):
-                return ImageStack(xarray, **params)
             return self.p.element_type(xarray, **params)
 
         cvs = ds.Canvas(plot_width=width, plot_height=height,
@@ -444,14 +443,11 @@ class aggregate(LineAggregationOperation):
         if ytype == 'datetime':
             agg[y.name] = agg[y.name].astype('datetime64[ns]')
 
-        if not AggState.has_by(agg_state):
-            return self.p.element_type(agg, **params)
-        elif agg_state == AggState.AGG_BY:
+        if agg_state == AggState.AGG_BY:
             params['vdims'] = list(map(str, agg.coords[agg_fn.column].data))
-            return ImageStack(agg, **params)
         elif agg_state == AggState.AGG_SEL_BY:
             params['vdims'] = [d for d in agg.data_vars if d not in agg.attrs["selector_columns"]]
-            return ImageStack(agg, **params)
+        return self.p.element_type(agg, **params)
 
     def _apply_datashader(self, dfdata, cvs_fn, agg_fn, agg_kwargs, x, y, agg_state: AggState):
         # Suppress numpy warning emitted by dask:
