@@ -43,12 +43,15 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
     __test__ = True
 
     def setUp(self):
+        self.restore_datatype = self.element.datatype
+        # TODO: This should work!
+        # self.element.datatype = [self.datatype]
         self.init_column_data()
         self.init_grid_data()
         self.init_data()
 
     def tearDown(self):
-        pass
+        self.element.datatype = self.restore_datatype
 
     def init_column_data(self):
         # Create heterogeneously typed table
@@ -114,10 +117,10 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
     def test_dataset_array_init_hm_tuple_dims(self):
         raise SkipTest("Not supported")
 
-    def test_dataset_odict_init(self):
+    def test_dataset_dict_init(self):
         raise SkipTest("Not supported")
 
-    def test_dataset_odict_init_alias(self):
+    def test_dataset_dict_init_alias(self):
         raise SkipTest("Not supported")
 
     def test_dataset_simple_zip_init(self):
@@ -139,9 +142,6 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         raise SkipTest("Not supported")
 
     def test_dataset_implicit_indexing_init(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_dict_init(self):
         raise SkipTest("Not supported")
 
     def test_dataset_dataframe_init_hm(self):

@@ -23,7 +23,7 @@ class MultiInterface(Interface):
 
     datatype = 'multitabular'
 
-    subtypes = ['dictionary', 'dataframe', 'array', 'dask']
+    subtypes = ['dictionary', 'dataframe', 'array', 'dask', 'narwhals']
 
     geom_types = ['Polygon', 'Ring', 'Line', 'Point']
 

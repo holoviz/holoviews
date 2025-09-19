@@ -56,6 +56,7 @@ from ...core.util import (
     callable_name,
     cftime_to_timestamp,
     cftime_types,
+    dtype_kind,
     isnumeric,
     unique_array,
 )
@@ -153,7 +154,7 @@ def decode_bytes(array):
     bokeh serialization errors
 
     """
-    if (not len(array) or (isinstance(array, arraylike_types) and array.dtype.kind != 'O')):
+    if (not len(array) or (isinstance(array, arraylike_types) and dtype_kind(array) != 'O')):
         return array
     decoded = [v.decode('utf-8') if isinstance(v, bytes) else v for v in array]
     if isinstance(array, np.ndarray):
@@ -1237,7 +1238,7 @@ def dtype_fix_hook(plot, element):
             with suppress(Exception):
                 data = renderer.data_source.data
                 for k, v in data.items():
-                    if hasattr(v, "dtype") and v.dtype.kind == "U":
+                    if hasattr(v, "dtype") and dtype_kind(v) == "U":
                         data[k] = v.tolist()
 
 

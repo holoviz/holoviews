@@ -9,6 +9,7 @@ from importlib.util import find_spec
 import numpy as np
 
 from ..core import Dataset, NdOverlay, util
+from ..core.util import dtype_kind
 from ..streams import Lasso, Selection1D, SelectionXY
 from ..util.transform import dim
 from .annotation import HSpan, VSpan
@@ -37,7 +38,7 @@ class SelectionIndexExpr:
         if len(index_cols) == 1:
             index_dim = index_cols[0]
             vals = dim(index_dim).apply(ds.iloc[index, cols], expanded=False)
-            if vals.dtype.kind == 'O' and all(isinstance(v, np.ndarray) for v in vals):
+            if dtype_kind(vals) == 'O' and all(isinstance(v, np.ndarray) for v in vals):
                 vals = [v for arr in vals for v in util.unique_iterator(arr)]
             expr = dim(index_dim).isin(list(util.unique_iterator(vals)))
         else:

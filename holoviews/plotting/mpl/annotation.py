@@ -5,7 +5,7 @@ from matplotlib import patches
 from matplotlib.lines import Line2D
 
 from ...core.options import abbreviated_exception
-from ...core.util import match_spec
+from ...core.util import dtype_kind, match_spec
 from ...element import HLines, HSpans, VLines, VSpans
 from .element import ColorbarPlot, ElementPlot
 from .plot import mpl_rc_context
@@ -241,7 +241,7 @@ class LabelsPlot(ColorbarPlot):
             x, y, text = item[:3]
             if len(item) == 4 and cmap is not None:
                 color = item[3]
-                if plot_args[-1].dtype.kind in 'if':
+                if dtype_kind(plot_args[-1]) in 'if':
                     color = (color - vmin) / (vmax-vmin)
                     plot_kwargs['color'] = cmap(color)
                 else:

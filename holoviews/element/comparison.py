@@ -42,7 +42,13 @@ from ..core import (
     Overlay,
 )
 from ..core.options import Cycle, Options
-from ..core.util import cast_array_to_int64, datetime_types, dt_to_int, is_float
+from ..core.util import (
+    cast_array_to_int64,
+    datetime_types,
+    dt_to_int,
+    dtype_kind,
+    is_float,
+)
 from ..core.util.dependencies import _is_installed
 from . import *  # noqa (All Elements need to support comparison)
 
@@ -270,9 +276,9 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_arrays(cls, arr1, arr2, msg='Arrays'):
         try:
-            if arr1.dtype.kind == 'M':
+            if dtype_kind(arr1) == 'M':
                 arr1 = cast_array_to_int64(arr1.astype('datetime64[ns]'))
-            if arr2.dtype.kind == 'M':
+            if dtype_kind(arr2) == 'M':
                 arr2 = cast_array_to_int64(arr2.astype('datetime64[ns]'))
             assert_array_equal(arr1, arr2)
         except Exception:
@@ -539,7 +545,7 @@ class Comparison(ComparisonInterface):
             raise AssertionError(f"{msg} not of matching length, {el1.shape[0]} vs. {el2.shape[0]}.")
         for dim, d1, d2 in dimension_data:
             with contextlib.suppress(Exception):
-                np.testing.assert_equal(d1, d2)
+                np.testing.assert_equal(np.asarray(d1), np.asarray(d2))
                 continue  # if equal, no need to check further
 
             if d1.dtype != d2.dtype:
@@ -548,13 +554,12 @@ class Comparison(ComparisonInterface):
                     f"First has type {d1}, and second has type {d2}."
                 )
                 raise cls.failureException(failure_msg)
-            if d1.dtype.kind in 'SUOV':
+            if dtype_kind(d1) in 'SUOV':
                 if list(d1) != list(d2):
                     failure_msg = f"{msg} along dimension {dim.pprint_label} not equal."
                     raise cls.failureException(failure_msg)
             else:
-                cls.compare_arrays(d1, d2, msg)
-
+                cls.compare_arrays(np.asarray(d1), np.asarray(d2), msg)
 
     @classmethod
     def compare_curve(cls, el1, el2, msg='Curve'):
