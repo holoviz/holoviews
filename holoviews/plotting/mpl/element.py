@@ -654,7 +654,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 val = np.concatenate([v.apply(el, ranges=ranges, flat=True)
                                       for el in element.split()])
             elif 'node' in k:
-                val = v.apply(element.nodes)
+                val = v.apply(element.nodes, ranges=ranges)
             else:
                 val = v.apply(element, ranges)
 

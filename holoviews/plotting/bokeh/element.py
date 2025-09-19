@@ -1839,7 +1839,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                              list(self.overlay_dims))
                 val = v.apply(ds, ranges=ranges, flat=True)[0]
             elif 'node' in k:
-                val = v.apply(element.nodes)
+                val = v.apply(element.nodes, ranges=ranges)
             else:
                 val = self._element_transform(v, element, ranges)
 
