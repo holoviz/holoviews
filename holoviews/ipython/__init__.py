@@ -249,6 +249,9 @@ class notebook_extension(extension):
             import plotly
             plotly_version = plotly.__version__
 
+        # Hide tooltip first by checking if HV_HIDE_TOOLTIP_LOGO is set to true,
+        # and then for CI, default is to not hide.
+        hide_tooltip = os.getenv("HV_HIDE_TOOLTIP_LOGO", os.getenv("CI", "0")).lower() in ("1", "true")
         html = template.render({
             'logo':        logo,
             'logo_src':    logo_src,
@@ -260,7 +263,7 @@ class notebook_extension(extension):
             'bokeh_version':  bokeh_version,
             'mpl_version':    mpl_version,
             'plotly_version': plotly_version,
-            'show_tooltip': not (os.getenv("CI") or os.getenv("HV_DOCS_BUILD"))
+            'show_tooltip': not hide_tooltip,
         })
         publish_display_data(data={'text/html': html})
 
