@@ -1794,6 +1794,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self._subcoord_overlaid:
             y_source_range = self.handles['y_range']
             if isinstance(self.subcoordinate_y, bool):
+                if "subcoordinate_y" not in y_source_range.tags[1]:
+                    # See https://github.com/holoviz/holoviews/issues/6071
+                    msg = 'Failed retrieving "subcoordinate_y". Labels mismatched for initial and updated DynamicMap plots.'
+                    raise RuntimeError(msg)
                 center = y_source_range.tags[1]['subcoordinate_y']
                 offset = self.subcoordinate_scale/2.
                 ytarget_range = dict(start=center-offset, end=center+offset)
