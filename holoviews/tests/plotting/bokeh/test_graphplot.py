@@ -3,7 +3,15 @@ from bokeh.models import EdgesAndLinkedNodes, NodesAndLinkedEdges, NodesOnly, Pa
 from bokeh.models.mappers import CategoricalColorMapper, LinearColorMapper
 
 from holoviews.core.data import Dataset
-from holoviews.element import Chord, Graph, Nodes, TriMesh, VLine, circular_layout, Sankey
+from holoviews.element import (
+    Chord,
+    Graph,
+    Nodes,
+    Sankey,
+    TriMesh,
+    VLine,
+    circular_layout,
+)
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.util.transform import dim
 
