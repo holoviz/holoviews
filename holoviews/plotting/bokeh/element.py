@@ -1888,10 +1888,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 kwargs = {}
                 if val.dtype.kind not in 'ifMu':
                     range_key = dim_range_key(v)
-                    if range_key in ranges and 'factors' in ranges[range_key]:
-                        factors = ranges[range_key]['factors']
-                    else:
-                        factors = util.unique_array(val)
+                    # For categorical color mappings in overlays, always compute factors from the actual data
+                    # to ensure each element gets the correct factors for its specific data.
+                    # Using shared factors from ranges can cause incorrect color mapping
+                    # when overlaying elements with different categorical subsets.
+                    factors = util.unique_array(val)
                     if isinstance(val, util.arraylike_types) and val.dtype.kind == 'b':
                         factors = factors.astype(str)
                     kwargs['factors'] = factors
@@ -2907,10 +2908,11 @@ class ColorbarPlot(ElementPlot):
 
         if factors is None and (isinstance(cdata, list) or cdata.dtype.kind in dtypes):
             range_key = dim_range_key(cdim)
-            if range_key in ranges and 'factors' in ranges[range_key]:
-                factors = ranges[range_key]['factors']
-            else:
-                factors = util.unique_array(cdata)
+            # For categorical color mappings in overlays, always compute factors from the actual data
+            # to ensure each element gets the correct factors for its specific data.
+            # Using shared factors from ranges can cause incorrect color mapping
+            # when overlaying elements with different categorical subsets.
+            factors = util.unique_array(cdata)
         if factors is not None and int_categories and cdata.dtype.kind == 'i':
             field += '_str__'
             cdata = [str(f) for f in cdata]
