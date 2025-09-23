@@ -262,6 +262,12 @@ class link_selections(_base_link_selections):
         are expressed solely in terms of discrete values along the
         index_cols.  All Elements given to link_selections must define the index_cols, either as explicit dimensions or by sharing an underlying Dataset that defines them.""")
 
+    re_enable_regions_on_user_interaction = param.Boolean(
+        default=True, doc="""
+        If True, a subsequent user interaction (e.g. box/lasso select)
+        will re-enable region highlighting after a programmatic change
+        that disabled it.""")
+
     selection_expr = param.Parameter(default=None, doc="""
         dim expression of the current selection or None to indicate
         that everything is selected.""")
@@ -392,15 +398,15 @@ class link_selections(_base_link_selections):
             new_selection_expr = inst.selection_expr
             current_selection_expr = inst._cross_filter_stream.selection_expr
             if repr(new_selection_expr) != repr(current_selection_expr):
+                # Reset the streams
+                for s in inst._selection_expr_streams.values():
+                    s.reset()
+                    s.event()
                 # Disable regions if setting selection_expr directly
                 if inst.show_regions:
                     inst.show_regions = False
-                    try:
-                        inst._selection_override.event(selection_expr=new_selection_expr)
-                        inst._cross_filter_stream.selection_expr = new_selection_expr
-                    finally:
-                        with param.parameterized.discard_events(inst):
-                            inst.show_regions = True
+                inst._selection_override.event(selection_expr=new_selection_expr)
+                inst._cross_filter_stream.selection_expr = new_selection_expr
 
         inst.param.watch(
             update_selection_expr, ['selection_expr']
@@ -410,6 +416,9 @@ class link_selections(_base_link_selections):
             new_selection_expr = inst._cross_filter_stream.selection_expr
             if repr(inst.selection_expr) != repr(new_selection_expr):
                 inst.selection_expr = new_selection_expr
+                if inst.re_enable_regions_on_user_interaction:
+                    if not inst.show_regions:
+                        inst.show_regions = True
 
         inst._cross_filter_stream.param.watch(
             selection_expr_changed, ['selection_expr']
@@ -420,7 +429,6 @@ class link_selections(_base_link_selections):
             def clear_stream_history(resetting, stream=stream):
                 if resetting:
                     stream.clear_history()
-            print("registering reset for ", stream)
             stream.plot_reset_stream.param.watch(
                 clear_stream_history, ['resetting']
             )
