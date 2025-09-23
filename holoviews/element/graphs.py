@@ -478,6 +478,67 @@ class Graph(Dataset, Element2D):
         # Construct graph
         return cls((edge_data, nodes), vdims=edge_vdims)
 
+    @classmethod
+    def from_sparse(cls, edges, nodes, **params):
+        """Create a Graph element from a sparse adjacency array/matrix.
+
+        Parameters
+        ----------
+        edges : scipy.sparse array/matrix
+            A sparse array/matrix representing the graph adjacency
+            array/matrix. The array/matrix should have shape (n_nodes, n_nodes)
+            where non-zero entries indicate edges between nodes.
+            The array/matrix will be converted to COO format.
+        nodes : array-like or Dataset
+            Node positions or node information. Can be a 2D array of (x, y)
+            coordinates, a Dataset with node information, or a Nodes element.
+        **params : dict, optional
+            Additional parameters passed to the Graph constructor.
+
+        Returns
+        -------
+        Graph
+            A Graph element with edges defined by the sparse array/matrix and the
+            provided node information.
+
+        Raises
+        ------
+        TypeError
+            If edges is not a scipy sparse array/matrix.
+
+        Examples
+        --------
+        >>> from scipy.sparse import csr_array
+        >>> # Create a simple 3-node graph
+        >>> edges = csr_array([[0, 1, 0], [1, 0, 1], [0, 1, 0]])
+        >>> nodes = {'x': [0, 1, 0.5], 'y': [0, 0, 1], 'index': [0, 1, 2]}
+        >>> graph = Graph.from_sparse(edges, nodes)
+        """
+        from scipy.sparse import issparse
+
+        if not issparse(edges):
+            msg = f"edges expected to be a scipy.sparse array/matrix, not {type(edges).__name__}"
+            raise TypeError(msg)
+
+        keys = [*map(str, cls.kdims), "data"]
+        if kdims := params.get('kdims'):
+            if isinstance(kdims, str):
+                keys[0] = kdims
+            else:
+                keys[:len(kdims)] = kdims
+        if vdims := params.get('vdims'):
+            if isinstance(vdims, str):
+                keys[2] = vdims
+            else:
+                keys[2] = vdims[0]
+        else:
+            params["vdims"] = "data"
+
+        edges = edges.tocoo()
+        values = [edges.row, edges.col, edges.data]
+        edges_data = dict(zip(keys, values, strict=True))
+        return cls((edges_data, nodes), **params)
+
 
 class TriMesh(Graph):
     """A TriMesh represents a mesh of triangles represented as the

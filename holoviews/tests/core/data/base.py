@@ -1254,7 +1254,7 @@ class GriddedInterfaceTests:
 
     def test_sample_2d(self):
         xs = ys = np.linspace(0, 6, 50)
-        XS, YS = np.meshgrid(xs, ys)
+        XS, _YS = np.meshgrid(xs, ys)
         values = np.sin(XS)
         sampled = Dataset((xs, ys, values), ['x', 'y'], 'z').sample(y=0)
         self.assertEqual(sampled, Curve((xs, values[0]), vdims='z'))

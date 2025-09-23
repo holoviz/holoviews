@@ -630,7 +630,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _update_hover(self, element):
         tool = self.handles['hover']
         if 'hv_created' in tool.tags:
-            tooltips, hover_opts = self._prepare_hover_kwargs(element)
+            tooltips, _hover_opts = self._prepare_hover_kwargs(element)
             tool.tooltips = tooltips
         else:
             plot_opts = element.opts.get('plot', 'bokeh')
@@ -776,7 +776,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if dim:
                 axis_label = str(dim)
             else:
-                xlabel, ylabel, zlabel = self._get_axis_labels(dims if dims else (None, None))
+                xlabel, ylabel, _zlabel = self._get_axis_labels(dims if dims else (None, None))
                 if self.invert_axes:
                     xlabel, ylabel = ylabel, xlabel
                 axis_label = ylabel if pos else xlabel
@@ -924,7 +924,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.multi_y and subplots:
             if not BOKEH_GE_3_2_0:
                 self.param.warning('Independent axis zooming for multi_y=True only supported for Bokeh >=3.2')
-            yaxes, extra_axis_specs = self._create_extra_axes(plots, subplots, element, ranges)
+            _yaxes, extra_axis_specs = self._create_extra_axes(plots, subplots, element, ranges)
             axis_specs['y'].update(extra_axis_specs)
         else:
             range_tags_extras = {'invert_yaxis': self.invert_yaxis}
@@ -1248,7 +1248,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         dimensions = self._get_axis_dims(el)
         props = {axis: self._axis_properties(axis, key, plot, dim)
                  for axis, dim in zip(['x', 'y'], dimensions, strict=None)}
-        xlabel, ylabel, zlabel = self._get_axis_labels(dimensions)
+        xlabel, ylabel, _zlabel = self._get_axis_labels(dimensions)
         if self.invert_axes:
             xlabel, ylabel = ylabel, xlabel
         props['x']['axis_label'] = xlabel if 'x' in self.labelled or self.xlabel else ''
@@ -1795,6 +1795,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self._subcoord_overlaid:
             y_source_range = self.handles['y_range']
             if isinstance(self.subcoordinate_y, bool):
+                if "subcoordinate_y" not in y_source_range.tags[1]:
+                    # See https://github.com/holoviz/holoviews/issues/6071
+                    msg = 'Failed retrieving "subcoordinate_y". Labels mismatched for initial and updated DynamicMap plots.'
+                    raise RuntimeError(msg)
                 center = y_source_range.tags[1]['subcoordinate_y']
                 offset = self.subcoordinate_scale/2.
                 ytarget_range = dict(start=center-offset, end=center+offset)
@@ -3567,7 +3571,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     el = element
                 # If not batched get the Element matching the subplot
                 elif element is not None:
-                    idx, spec, exact = self._match_subplot(k, subplot, items, element)
+                    idx, _spec, exact = self._match_subplot(k, subplot, items, element)
                     if idx is not None and exact:
                         _, el = items.pop(idx)
 

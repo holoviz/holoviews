@@ -68,7 +68,7 @@ class HeatMapPlot(ColorbarPlot):
         return transform.apply(element.gridded, ranges=ranges, flat=False).T.flatten()
 
     def get_data(self, element, ranges, style):
-        x, y, z = (dimension_sanitizer(d) for d in element.dimensions(label=True)[:3])
+        x, y = (dimension_sanitizer(d) for d in element.dimensions(label=True)[:2])
         if self.invert_axes: x, y = y, x
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
         if 'line_alpha' not in style and 'line_width' not in style:

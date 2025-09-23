@@ -340,7 +340,6 @@ class VectorFieldPlot(ColorbarPlot):
         elif isinstance(mag_dim, str):
             mag_dim = element.get_dimension(mag_dim)
 
-        (x0, x1), (y0, y1) = (element.range(i) for i in range(2))
         if mag_dim:
             if isinstance(mag_dim, dim):
                 magnitudes = mag_dim.apply(element, flat=True)
@@ -1074,7 +1073,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                                       datatype=['dataframe', 'dictionary'])
 
         width = abs(width)
-        y0, y1 = ranges.get(ydim.label, {'combined': (None, None)})['combined']
+        _y0, y1 = ranges.get(ydim.label, {'combined': (None, None)})['combined']
         if self.logy:
             bottom = (ydim.range[0] or (0.01 if y1 > 0.01 else 10**(np.log10(y1)-2)))
         else:

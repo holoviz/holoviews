@@ -572,7 +572,7 @@ class overlay_aggregate(aggregate):
             x, y = dims
 
         info = self._get_sampling(element, x, y, ndims)
-        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
+        (x_range, y_range), (xs, ys), (_width, _height), (xtype, ytype) = info
         ((x0, x1), (y0, y1)), _ = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
         agg_params = dict({k: v for k, v in dict(self.param.values(),
                                                  **self.p).items()
@@ -681,7 +681,7 @@ class spread_aggregate(area_aggregate):
     """
 
     def _process(self, element, key=None):
-        x, y = element.dimensions()[:2]
+        y = element.dimensions()[1]
         df = PandasInterface.as_dframe(element)
         if df is element.data:
             df = df.copy()
@@ -1080,7 +1080,7 @@ class trimesh_rasterize(aggregate):
         else:
             x, y = element.kdims
         info = self._get_sampling(element, x, y)
-        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
+        (x_range, y_range), (xs, ys), (width, height), (_xtype, _ytype) = info
 
         agg = self.p.aggregator
         interp = self.p.interpolation or None
@@ -1469,7 +1469,7 @@ class geometry_rasterize(LineAggregationOperation):
         agg_fn = self._get_aggregator(element, self.p.aggregator)
         xdim, ydim = element.kdims
         info = self._get_sampling(element, xdim, ydim)
-        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
+        (x_range, y_range), (xs, ys), (width, height), (_xtype, _ytype) = info
         x0, x1 = x_range
         y0, y1 = y_range
 

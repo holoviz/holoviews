@@ -203,7 +203,6 @@ python-kaleido = "*"
 selenium = "*"
 
 [feature.doc.activation.env]
-HV_DOCS_BUILD = "1"
 MOZ_HEADLESS = "1"
 MPLBACKEND = "Agg"
 PANEL_EMBED = "true"

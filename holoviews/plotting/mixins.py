@@ -198,7 +198,7 @@ class BarsMixin:
         else:
             sdim = element.get_dimension(1)
 
-        xdim, ydim = element.dimensions()[:2]
+        xdim = element.dimensions()[0]
 
         xvals = None
         if xdim.values:

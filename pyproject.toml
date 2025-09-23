@@ -190,7 +190,6 @@ ignore = [
     "D400", # Missing-trailing-period
     "D401", # Non-imperative-mood
     "D404", # Docstring-starts-with-this
-    "UP038", # isinstance and issubclass uses a |-separated union
 ]
 extend-unsafe-fixes = [
     "F401", # Unused imports
@@ -224,5 +223,5 @@ combine-as-imports = true
 convention = "numpy"
 
 [tool.codespell]
-ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn,ser,assertIn,anc"
+ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn,ser,assertIn,anc,COO"
 write-changes = true
