@@ -183,8 +183,10 @@ class TestLinkSelections(ComparisonTestCase):
             (hv.dim('y') >= 0) & (hv.dim('y') <= 1)
         )
         lnk_sel.selection_expr = se
-        self.assertTrue(lnk_sel.show_regions)
+        self.assertFalse(lnk_sel.show_regions)
         lnk_sel.selection_expr = None
+        self.assertFalse(lnk_sel.show_regions)
+        lnk_sel._cross_filter_stream.selection_expr = se
         self.assertTrue(lnk_sel.show_regions)
 
     def test_overlay_points_errorbars(self, dynamic=False):
