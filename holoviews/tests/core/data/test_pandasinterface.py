@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
+import pytest
 
 from holoviews.core.data import Dataset
 from holoviews.core.data.interface import DataError
+from holoviews.core.data.pandas import PandasInterface
 from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Distribution, Points, Scatter
@@ -163,6 +165,11 @@ class BasePandasInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         ds = Dataset(df)
         self.assertEqual(list(ds.data.columns), ['interface'])
 
+    def test_dataset_range_with_object_index(self):
+        df = pd.DataFrame(range(4), columns=["values"], index=list("BADC"))
+        ds = Dataset(df, kdims='index')
+        assert ds.range('index') == ('A', 'D')
+
 
 class PandasInterfaceTests(BasePandasInterfaceTests):
 
@@ -177,3 +184,241 @@ class PandasInterfaceTests(BasePandasInterfaceTests):
         df = pd.DataFrame({"dates": dates_tz})
         data = Dataset(df).dimension_values("dates")
         np.testing.assert_equal(dates, data)
+
+    def test_data_groupby_categorial(self):
+        # Test for https://github.com/holoviz/holoviews/issues/6305
+        df = pd.DataFrame({"y": [1, 2], "by": ["A", "B"]})
+        df["by"] = pd.Categorical(df["by"])
+        ds = Dataset(df, kdims="index", vdims="y").to(Scatter, groupby="by")
+        assert ds.keys() == ["A", "B"]
+
+    @pytest.mark.xfail(reason="Breaks hvplot")
+    def test_reindex(self):
+        ds = Dataset(pd.DataFrame({'x': np.arange(10), 'y': np.arange(10), 'z': np.random.rand(10)}))
+        df = ds.interface.reindex(ds, ['x'])
+        assert df.index.names == ['x']
+        df = ds.interface.reindex(ds, ['y'])
+        assert df.index.names == ['y']
+
+
+class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
+    datatype = 'dataframe'
+    data_type = pd.DataFrame
+
+    __test__ = True
+
+    def setUp(self):
+        frame = pd.DataFrame({"number": [1, 1, 2, 2], "color": ["red", "blue", "red", "blue"]})
+        index = pd.MultiIndex.from_frame(frame, names=("number", "color"))
+        self.df = pd.DataFrame(range(4), index=index, columns=["values"])
+        super().setUp()
+
+    def test_lexsort_depth_import(self):
+        # Indexing relies on knowing the lexsort_depth but this is a
+        # private import so we want to know should this import ever
+        # be changed
+        from pandas.core.indexes.multi import _lexsort_depth  # noqa
+
+    def test_no_kdims(self):
+        ds = Dataset(self.df)
+        assert ds.kdims == [Dimension("values")]
+        assert isinstance(ds.data.index, pd.MultiIndex)
+
+    def test_index_kdims(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        assert ds.kdims == [Dimension("number"), Dimension("color")]
+        assert ds.vdims == [Dimension("values")]
+        assert isinstance(ds.data.index, pd.MultiIndex)
+
+    def test_index_aggregate(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        expected = pd.DataFrame({'number': [1, 2], 'values': [0.5, 2.5], 'values_var': [0.25, 0.25]})
+        agg = ds.aggregate("number", function=np.mean, spreadfn=np.var)
+        pd.testing.assert_frame_equal(agg.data, expected)
+
+    def test_index_select_monotonic(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.select(number=1)
+        expected = pd.DataFrame({'color': ['red', 'blue'], 'values': [0, 1], 'number': [1, 1]}).set_index(['number', 'color'])
+        assert isinstance(selected.data.index, pd.MultiIndex)
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_index_select(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.select(number=1)
+        expected = pd.DataFrame({'color': ['red', 'blue'], 'values': [0, 1], 'number': [1, 1]}).set_index(['number', 'color'])
+        assert isinstance(selected.data.index, pd.MultiIndex)
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_index_select_all_indexes(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.select(number=1, color='red')
+        assert selected == 0
+
+    def test_index_select_all_indexes_lists(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.select(number=[1], color=['red'])
+        expected = pd.DataFrame({'color': ['red'], 'values': [0], 'number': [1]}).set_index(['number', 'color'])
+        assert isinstance(selected.data.index, pd.MultiIndex)
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_index_select_all_indexes_slice_and_scalar(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.select(number=(0, 1), color='red')
+        expected = pd.DataFrame({'color': ['red'], 'values': [0], 'number': [1]}).set_index(['number', 'color'])
+        assert isinstance(selected.data.index, pd.MultiIndex)
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_iloc_scalar_scalar_only_index(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[0, 0]
+        expected = 1
+        assert selected == expected
+
+    def test_iloc_slice_scalar_only_index(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[:, 0]
+        expected = self.df.reset_index()[["number"]]
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_iloc_slice_slice_only_index(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[:, :2]
+        expected = self.df.reset_index()[["number", "color"]]
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_iloc_scalar_slice_only_index(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[0, :2]
+        expected = pd.DataFrame({"number": 1, "color": "red"}, index=[0])
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_iloc_scalar_scalar(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[0, 2]
+        expected = 0
+        assert selected == expected
+
+    def test_iloc_slice_scalar(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[:, 2]
+        expected = self.df.iloc[:, [0]]
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_iloc_slice_slice(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[:, :3]
+        expected = self.df.iloc[:, [0]]
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_iloc_scalar_slice(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.iloc[0, :3]
+        expected = self.df.iloc[[0], [0]]
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_out_of_bounds(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        with pytest.raises(ValueError, match="column is out of bounds"):
+            ds.iloc[0, 3]
+
+    def test_sort(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        sorted_ds = ds.sort("color")
+        np.testing.assert_array_equal(sorted_ds.dimension_values("values"), [1, 3, 0, 2])
+        np.testing.assert_array_equal(sorted_ds.dimension_values("number"), [1, 2, 1, 2])
+
+    def test_select_monotonic(self):
+        ds = Dataset(self.df.sort_index(), kdims=["number", "color"])
+        selected = ds.select(color="red")
+        pd.testing.assert_frame_equal(selected.data, self.df.iloc[[0, 2], :])
+
+        selected = ds.select(number=1, color='red')
+        assert selected == 0
+
+    def test_select_not_monotonic(self):
+        frame = pd.DataFrame({"number": [1, 1, 2, 2], "color": [2, 1, 2, 1]})
+        index = pd.MultiIndex.from_frame(frame, names=frame.columns)
+        df = pd.DataFrame(range(4), index=index, columns=["values"])
+        ds = Dataset(df, kdims=list(frame.columns))
+
+        data = ds.select(color=slice(2, 3)).data
+        expected = pd.DataFrame({"number": [1, 2], "color": [2, 2], "values": [0, 2]}).set_index(['number', 'color'])
+        pd.testing.assert_frame_equal(data, expected)
+
+    def test_select_not_in_index(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        selected = ds.select(number=[2, 3])
+        expected = self.df.loc[[2]]
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_select_index_and_column(self):
+        # See https://github.com/holoviz/holoviews/issues/6578
+        frame = pd.DataFrame({"number": [1, 1, 2, 2], "color": ["red", "blue", "red", "blue"]})
+        index = pd.MultiIndex.from_frame(frame, names=("number", "color"))
+        df = pd.DataFrame({"cat": list("abab"), "values": range(4)}, index=index)
+        ds = Dataset(df, kdims=["number"], vdims=["cat", "values"])
+        selected = ds.select(number=[1], cat=["a"])
+        expected = df[(df.index.get_level_values(0) == 1) & (df["cat"] == "a")]
+        pd.testing.assert_frame_equal(selected.data, expected)
+
+    def test_sample(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        sample = ds.interface.sample(ds, [1])
+        assert sample.to_dict() == {'values': {(1, 'blue'): 1}}
+
+        self.df.iloc[0, 0] = 1
+        ds = Dataset(self.df, kdims=["number", "color"])
+        sample = ds.interface.sample(ds, [1])
+        assert sample.to_dict() == {'values': {(1, 'red'): 1, (1, 'blue'): 1}}
+
+    def test_values(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        assert (ds.interface.values(ds, 'color') == ['red', 'blue', 'red', 'blue']).all()
+        assert (ds.interface.values(ds, 'number') == [1, 1, 2, 2]).all()
+        assert (ds.interface.values(ds, 'values') == [0, 1, 2, 3]).all()
+
+    def test_reindex(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        df = ds.interface.reindex(ds, ['number', 'color'])
+        assert df.index.names == ['number', 'color']
+
+        df = ds.interface.reindex(ds, ['number'])
+        assert df.index.names == ['number']
+
+        df = ds.interface.reindex(ds, ['values'])
+        assert df.index.names == ['values']
+
+    def test_groupby_one_index(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        grouped = ds.groupby("number")
+        assert list(grouped.keys()) == [1, 2]
+        for k, v in grouped.items():
+            pd.testing.assert_frame_equal(v.data, ds.select(number=k).data)
+
+    def test_groupby_two_indexes(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        grouped = ds.groupby(["number", "color"])
+        assert list(grouped.keys()) == list(self.df.index)
+        for k, v in grouped.items():
+            pd.testing.assert_frame_equal(v.data, ds.select(number=[k[0]], color=[k[1]]).data)
+
+    def test_groupby_one_index_one_column(self):
+        ds = Dataset(self.df, kdims=["number", "color"])
+        grouped = ds.groupby('values')
+        assert list(grouped.keys()) == [0, 1, 2, 3]
+        for k, v in grouped.items():
+            pd.testing.assert_frame_equal(v.data, ds.select(values=k).data)
+
+    def test_regression_no_auto_index(self):
+        # https://github.com/holoviz/holoviews/issues/6298
+
+        plot = Scatter(self.df, kdims="number")
+        np.testing.assert_equal(plot.dimension_values('number'), self.df.index.get_level_values('number'))
+
+
+def test_no_subclasse_interface_applies():
+    spd = pytest.importorskip("spatialpandas")
+    square = spd.geometry.Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
+    sdf = spd.GeoDataFrame({"geometry": spd.GeoSeries([square, square]), "name": ["A", "B"]})
+    assert PandasInterface.applies(sdf) is False

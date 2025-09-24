@@ -1,5 +1,5 @@
-"""
-Definition and registration of display hooks for the IPython Notebook.
+"""Definition and registration of display hooks for the IPython Notebook.
+
 """
 import sys
 import traceback
@@ -28,8 +28,6 @@ from ..core.io import FileArchive
 from ..core.options import AbbreviatedException, SkipRendering, Store, StoreOptions
 from ..core.traversal import unique_dimkeys
 from ..core.util import mimebundle_to_html
-from ..plotting import Plot
-from ..plotting.renderer import MIME_TYPES
 from ..util.settings import OutputSettings
 from .magics import OptsMagic, OutputMagic
 
@@ -51,7 +49,9 @@ def max_frame_warning(max_frames):
     )
 
 def process_object(obj):
-    "Hook to process the object currently being displayed."
+    """Hook to process the object currently being displayed.
+
+    """
     invalid_options = OptsMagic.process_element(obj)
     if invalid_options: return invalid_options
     OutputMagic.info(obj)
@@ -77,8 +77,8 @@ def render(obj, **kwargs):
 
 
 def single_frame_plot(obj):
-    """
-    Returns plot, renderer and format for single frame export.
+    """Returns plot, renderer and format for single frame export.
+
     """
     obj = Layout(obj) if isinstance(obj, AdjointLayout) else obj
 
@@ -93,20 +93,26 @@ def single_frame_plot(obj):
 
 
 def first_frame(obj):
-    "Only display the first frame of an animated plot"
+    """Only display the first frame of an animated plot
+
+    """
     plot, renderer, fmt = single_frame_plot(obj)
     plot.update(0)
     return {'text/html': renderer.html(plot, fmt)}
 
 def middle_frame(obj):
-    "Only display the (approximately) middle frame of an animated plot"
+    """Only display the (approximately) middle frame of an animated plot
+
+    """
     plot, renderer, fmt = single_frame_plot(obj)
     middle_frame = int(len(plot) / 2)
     plot.update(middle_frame)
     return {'text/html': renderer.html(plot, fmt)}
 
 def last_frame(obj):
-    "Only display the last frame of an animated plot"
+    """Only display the last frame of an animated plot
+
+    """
     plot, renderer, fmt = single_frame_plot(obj)
     plot.update(len(plot))
     return {'text/html': renderer.html(plot, fmt)}
@@ -131,12 +137,62 @@ def option_state(element):
         dynamic_optstate(element, state=optstate)
         raise
 
+def _render_jupyter_exception(e):
+    import html
+
+    raw_tb = "\n".join(traceback.format_exception(e.etype, e.value, e.traceback)).strip()
+
+    escaped_tb = html.escape(raw_tb)
+    exc_name = e.etype.__name__
+    exc_msg = str(e.value).split("\n")[0]
+    if len(exc_msg) > 80:
+        exc_msg = exc_msg[:80].strip() + " ..."
+    exc_msg = html.escape(exc_msg)
+
+    output_html = f"""
+    <style>
+      .hv-jupyter-exc {{
+        font-family: monospace;
+        border-radius: 3px;
+        padding: 0.5em;
+        margin: 0.5em 0;
+      }}
+      .hv-jupyter-exc summary {{
+        cursor: pointer;
+        user-select: none;
+        list-style: none;
+        position: relative;
+        padding-left: 1.2em;
+      }}
+      .hv-jupyter-exc summary::after {{
+        content: "▶";
+        position: absolute;
+        left: 0;
+        top: 0;
+        transition: transform 0.2s ease;
+      }}
+      .hv-jupyter-exc[open] summary::after {{
+        transform: rotate(90deg);
+      }}
+      .hv-jupyter-full {{
+        padding: 0.5em 0 0 1em;
+        white-space: pre-wrap;
+        background-color: #fdd;
+        color: #000;
+      }}
+    </style>
+    <details class="hv-jupyter-exc">
+      <summary><b>{exc_name}:</b> {exc_msg}</summary>
+      <div class="hv-jupyter-full">{escaped_tb}</pre>
+    </details>"""
+    return {"text/html": output_html}
+
 
 def display_hook(fn):
-    """
-    A decorator to wrap display hooks that return a MIME bundle or None.
+    """A decorator to wrap display hooks that return a MIME bundle or None.
     Additionally it handles adding output to the notebook archive, saves
     files specified with the output magic and handles tracebacks.
+
     """
     @wraps(fn)
     def wrapped(element):
@@ -150,6 +206,7 @@ def display_hook(fn):
             if mimebundle is None:
                 return {}, {}
             mime_data, mime_metadata = mimebundle
+            from ..plotting.renderer import MIME_TYPES
             if MIME_TYPES['js'] in mime_data:
                 mime_data['text/html'] = mimebundle_to_html(mime_data)
                 del mime_data[MIME_TYPES['js']]
@@ -168,14 +225,8 @@ def display_hook(fn):
                 sys.stderr.write(str(e))
             return {}, {}
         except AbbreviatedException as e:
-            FULL_TRACEBACK = '\n'.join(traceback.format_exception(e.etype,
-                                                                  e.value,
-                                                                  e.traceback))
-            info = dict(name=e.etype.__name__,
-                        message=str(e.value).replace('\n','<br>'))
-            msg =  '<i> [Call holoviews.ipython.show_traceback() for details]</i>'
-            return {'text/html': "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)}, {}
-
+            FULL_TRACEBACK = '\n'.join(traceback.format_exception(e.etype, e.value, e.traceback))
+            return _render_jupyter_exception(e), {}
         except Exception:
             raise
     return wrapped
@@ -236,15 +287,17 @@ def grid_display(grid, max_frames):
 
 
 def display(obj, raw_output=False, **kwargs):
-    """
-    Renders any HoloViews object to HTML and displays it
+    """Renders any HoloViews object to HTML and displays it
     using the IPython display function. If raw is enabled
     the raw HTML is returned instead of displaying it directly.
+
     """
     if not Store.loaded_backends() and isinstance(obj, Dimensioned):
         raise RuntimeError('To use display on a HoloViews object ensure '
                            'a backend is loaded using the holoviews '
                            'extension.')
+
+    from ..plotting import Plot
 
     raw = True
     if isinstance(obj, GridSpace):
@@ -288,9 +341,9 @@ def pprint_display(obj):
 
 
 def image_display(element, max_frames, fmt):
-    """
-    Used to render elements to an image format (svg or png) if requested
+    """Used to render elements to an image format (svg or png) if requested
     in the display formats.
+
     """
     if fmt not in Store.display_formats:
         return None
@@ -315,16 +368,16 @@ def image_display(element, max_frames, fmt):
 
 @display_hook
 def png_display(element, max_frames):
-    """
-    Used to render elements to PNG if requested in the display formats.
+    """Used to render elements to PNG if requested in the display formats.
+
     """
     return image_display(element, max_frames, fmt='png')
 
 
 @display_hook
 def svg_display(element, max_frames):
-    """
-    Used to render elements to SVG if requested in the display formats.
+    """Used to render elements to SVG if requested in the display formats.
+
     """
     return image_display(element, max_frames, fmt='svg')
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 An example of a simple player widget animating an Image demonstrating
 how to connect a simple HoloViews plot with custom widgets and
@@ -10,18 +9,19 @@ The app can be served using:
 
 """
 import numpy as np
-import holoviews as hv
-
 from bokeh.io import curdoc
 from bokeh.layouts import layout
-from bokeh.models import Slider, Button
+from bokeh.models import Button, Slider
+
+import holoviews as hv
 
 renderer = hv.renderer('bokeh')
 
 # Declare the HoloViews object
+seed = np.random.default_rng()
 start = 0
 end = 10
-hmap = hv.HoloMap({i: hv.Image(np.random.rand(10,10)) for i in range(start, end+1)})
+hmap = hv.HoloMap({i: hv.Image(seed.random(size=(10,10))) for i in range(start, end+1)})
 
 # Convert the HoloViews object into a plot
 plot = renderer.get_plot(hmap)
@@ -38,13 +38,16 @@ def slider_update(attrname, old, new):
 slider = Slider(start=start, end=end, value=0, step=1, title="Year")
 slider.on_change('value', slider_update)
 
+callback_tasks = {}
+
 def animate():
-    if button.label == '► Play':
-        button.label = '❚❚ Pause'
-        curdoc().add_periodic_callback(animate_update, 200)
+    if button.label == "► Play":
+        button.label = "❚❚ Pause"
+        callback_tasks["animate"] = curdoc().add_periodic_callback(animate_update, 400)
     else:
-        button.label = '► Play'
-        curdoc().remove_periodic_callback(animate_update)
+        button.label = "► Play"
+        curdoc().remove_periodic_callback(callback_tasks["animate"])
+
 
 button = Button(label='► Play', width=60)
 button.on_click(animate)

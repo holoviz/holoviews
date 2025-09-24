@@ -1,0 +1,237 @@
+[project]
+name = "holoviews"
+channels = ["pyviz/label/dev", "bokeh/label/rc", "conda-forge"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+
+[environments]
+default = [
+    "required",
+    "py312",
+    "optional",
+    "test-core",
+    "test-example",
+    "test-unit-task",
+    "test-ui",
+    "lint",
+    "dev",
+]
+
+[environments.test-310]
+features = ["required", "py310", "optional", "test-core", "test-example", "test-unit-task"]
+no-default-feature = true
+
+[environments.test-311]
+features = ["required", "py311", "optional", "test-core", "test-example", "test-unit-task"]
+no-default-feature = true
+
+[environments.test-312]
+features = ["required", "py312", "optional", "test-core", "test-example", "test-unit-task"]
+no-default-feature = true
+
+[environments.test-313]
+features = ["required", "py313", "optional", "test-core", "test-example", "test-unit-task"]
+no-default-feature = true
+
+[environments.test-ui]
+features = ["required", "py313", "optional", "test-core", "test-ui"]
+no-default-feature = true
+
+[environments.test-core]
+features = ["required", "py313", "test-core", "test-unit-task"]
+no-default-feature = true
+
+[environments.test-gpu]
+features = ["required", "py312", "test-core", "optional", "test-gpu"]
+no-default-feature = true
+
+[environments.docs]
+features = ["required", "py311", "optional", "doc"]
+no-default-feature = true
+
+[environments.build]
+features = ["required", "py311", "build"]
+no-default-feature = true
+
+[environments.lint]
+features = ["lint"]
+no-default-feature = true
+
+[feature.required.dependencies]
+nomkl = "*"
+pip = "*"
+# Required
+bokeh = ">=3.1"
+colorcet = "*"
+numpy = ">=1.21"
+packaging = "*"
+pandas = ">=1.3"
+panel = ">=1.0"
+param = ">=2.0,<3.0"
+pyviz_comms = ">=2.1"
+
+[feature.required.tasks]
+check-latest-packages = 'python scripts/check_latest_packages.py'
+download-data = 'python scripts/download_data.py'
+install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
+sync-git-tags = 'python scripts/sync_git_tags.py holoviews'
+
+[feature.required.activation.env]
+PYTHONIOENCODING = "utf-8"
+
+[feature.py310.dependencies]
+python = "3.10.*"
+
+[feature.py311.dependencies]
+python = "3.11.*"
+
+[feature.py312.dependencies]
+python = "3.12.*"
+
+[feature.py312.activation.env]
+COVERAGE_CORE = "sysmon"
+
+[feature.py313.dependencies]
+python = "3.13.*"
+
+[feature.py313.activation.env]
+COVERAGE_CORE = "sysmon"
+
+[feature.optional.dependencies]
+bokeh_sampledata = "*"
+cftime = "*"
+contourpy = "*"
+dask-core = "*"
+datashader = ">=0.11.1"
+ffmpeg = "*"
+ibis-sqlite = "*"
+ipython = ">=5.4.0"
+matplotlib-base = ">=3"
+nbconvert-core = "*"
+netcdf4 = "*"
+networkx = "*"
+notebook = "*"
+pillow = "*"
+plotly = ">=4.0"
+pooch = "*"
+pyarrow = "*"
+pyparsing = "*"
+scikit-image = "*"
+scipy = "*"
+selenium = "*"
+shapely = "*"
+spatialpandas = "*"
+xarray = ">=0.10.4"
+xyzservices = "*"
+
+[feature.optional.target.unix.dependencies]
+tsdownsample = "*" # currently not available on Windows
+
+[feature.dev.dependencies]
+jupyterlab = "*"
+jupyterlab-myst = "*"
+setuptools_scm = "*"
+
+[feature.dev.tasks]
+lab = 'jupyter lab'
+setup-dev = { depends-on = ["install", "download-data", "lint-install"] }
+
+# =============================================
+# =================== TESTS ===================
+# =============================================
+[feature.test-core.dependencies]
+psutil = "*"
+pytest = "*"
+pytest-asyncio = "*"
+pytest-cov = "*"
+pytest-github-actions-annotate-failures = "*"
+pytest-rerunfailures = "!=16.0.0" # https://github.com/pytest-dev/pytest-rerunfailures/issues/303
+pytest-xdist = "*"
+
+[feature.test-unit-task.tasks] # So it is not showing up in the test-gpu + test-ui environment
+test-unit = 'pytest holoviews/tests -n logical --dist loadgroup'
+
+[feature.test-example.tasks]
+test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
+
+[feature.test-example.dependencies]
+nbval = "*"
+
+[feature.test-ui]
+channels = ["microsoft"]
+
+[feature.test-ui.dependencies]
+playwright = { version = "*", channel = "microsoft" }
+pytest-playwright = { version = "*", channel = "microsoft" }
+
+[feature.test-ui.tasks]
+_install-ui = 'playwright install chromium'
+
+[feature.test-ui.tasks.test-ui]
+cmd = 'pytest holoviews/tests/ui --ui --browser chromium'
+depends-on = ["_install-ui"]
+
+[feature.test-gpu]
+channels = ["rapidsai"]
+platforms = ["linux-64"]
+
+[feature.test-gpu.activation.env]
+NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = "0"
+
+[feature.test-gpu.dependencies]
+cuda-version = "12.2.*"
+cudf = "25.06.*"
+cupy = "*"
+# cuspatial = "*"  # https://github.com/rapidsai/cuspatial/issues/1563#issuecomment-2845966364
+librmm = { version = "*", channel = "rapidsai" }
+rmm = { version = "*", channel = "rapidsai" }
+
+[feature.test-gpu.tasks]
+test-gpu = "pytest holoviews/tests --gpu"
+
+# =============================================
+# =================== DOCS ====================
+# =============================================
+[feature.doc.dependencies]
+graphviz = "*"
+nbsite = ">=0.9.0a6,<0.10.0"
+numpydoc = "*"
+pooch = "*"
+python-kaleido = "*"
+selenium = "*"
+
+[feature.doc.activation.env]
+MOZ_HEADLESS = "1"
+MPLBACKEND = "Agg"
+PANEL_EMBED = "true"
+PANEL_EMBED_JSON = "true"
+PANEL_EMBED_JSON_PREFIX = "json"
+SPHINX_APIDOC_OPTIONS = "members,show-inheritance"
+
+[feature.doc.tasks]
+_docs-generate-rst = 'nbsite generate-rst --org holoviz --project-name holoviews'
+_docs-refmanual = 'sphinx-apidoc -e -o doc/reference_manual/ holoviews/ holoviews/tests --ext-autodoc --ext-intersphinx'
+_docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name holoviews'
+
+[feature.doc.tasks.docs-build]
+depends-on = ['_docs-generate-rst', '_docs-refmanual', '_docs-generate']
+
+# =============================================
+# ================== BUILD ====================
+# =============================================
+[feature.build.dependencies]
+python-build = "*"
+conda-build = "*"
+
+[feature.build.tasks]
+build-conda = 'bash scripts/conda/build.sh'
+build-pip = 'python -m build .'
+
+# =============================================
+# =================== LINT ====================
+# =============================================
+[feature.lint.dependencies]
+pre-commit = "*"
+
+[feature.lint.tasks]
+lint = 'pre-commit run --all-files'
+lint-install = 'pre-commit install'

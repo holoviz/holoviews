@@ -12,15 +12,15 @@ from ...streams import (
     SelectionXY,
     Stream,
 )
-from .util import _trace_to_subplot
+from .util import PLOTLY_MAP, PLOTLY_SCATTERMAP, _trace_to_subplot
 
 
 class PlotlyCallbackMetaClass(type):
-    """
-    Metaclass for PlotlyCallback classes.
+    """Metaclass for PlotlyCallback classes.
 
     We want each callback class to keep track of all of the instances of the class.
     Using a meta class here lets us keep the logic for instance tracking in one place.
+
     """
 
     def __init__(cls, name, bases, attrs):
@@ -172,10 +172,10 @@ class BoundsCallback(PlotlyCallback):
             trace_type = trace.get('type', 'scatter')
             trace_uid = trace.get('uid', None)
 
-            if _trace_to_subplot.get(trace_type, None) != ['mapbox']:
+            if _trace_to_subplot.get(trace_type, None) != [PLOTLY_MAP]:
                 continue
 
-            mapbox_ref = trace.get('subplot', 'mapbox')
+            mapbox_ref = trace.get('subplot', PLOTLY_MAP)
             if mapbox_ref in range_data:
                 lon_bounds = [range_data[mapbox_ref][0][0], range_data[mapbox_ref][1][0]]
                 lat_bounds = [range_data[mapbox_ref][0][1], range_data[mapbox_ref][1][1]]
@@ -268,13 +268,13 @@ class RangeCallback(PlotlyCallback):
         # Process traces
         event_data = {}
         for trace in traces:
-            trace_type = trace.get('type', 'scattermapbox')
+            trace_type = trace.get('type', PLOTLY_SCATTERMAP)
             trace_uid = trace.get('uid', None)
 
-            if _trace_to_subplot.get(trace_type, None) != ['mapbox']:
+            if _trace_to_subplot.get(trace_type, None) != [PLOTLY_MAP]:
                 continue
 
-            subplot_id = trace.get("subplot", "mapbox")
+            subplot_id = trace.get("subplot", PLOTLY_MAP)
             derived_prop = subplot_id + "._derived"
 
             if not property_value:

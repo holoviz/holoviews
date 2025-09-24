@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from holoviews import Element, NdOverlay
+from holoviews import Curve, Element, NdOverlay, Overlay
 
 
 class CompositeTest(unittest.TestCase):
@@ -26,8 +26,14 @@ class OverlayTest(CompositeTest):
     def test_overlay_iter(self):
         views = [self.view1, self.view2, self.view3]
         overlay = NdOverlay(list(enumerate(views)))
-        for el, v in zip(overlay, views):
+        for el, v in zip(overlay, views, strict=None):
             self.assertEqual(el, v)
+
+    def test_overlay_iterable(self):
+        # Related to https://github.com/holoviz/holoviews/issues/5315
+        c1 = Curve([0, 1])
+        c2 = Curve([10, 20])
+        Overlay({'a': c1, 'b': c2}.values())
 
     def test_overlay_integer_indexing(self):
         overlay = NdOverlay(list(enumerate([self.view1, self.view2, self.view3])))

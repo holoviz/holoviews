@@ -25,7 +25,7 @@ class TilePlot(ElementPlot):
         if not isinstance(element.data, (str, dict)):
             SkipRendering("WMTS element data must be a URL string, dictionary, or "
                           "xyzservices.TileProvider, bokeh cannot "
-                          "render %r" % element.data)
+                          f"render {element.data!r}")
         if element.data is None:
             raise ValueError("Tile source URL may not be None with the bokeh backend")
         elif isinstance(element.data, dict):
@@ -64,8 +64,8 @@ class TilePlot(ElementPlot):
                            if k in renderer.properties()})
 
     def _init_glyph(self, plot, mapping, properties):
-        """
-        Returns a Bokeh glyph object.
+        """Returns a Bokeh glyph object.
+
         """
         tile_source = mapping['tile_source']
         level = properties.pop('level', 'glyph')

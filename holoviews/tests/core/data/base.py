@@ -466,35 +466,35 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_simple_zip_init(self):
-        dataset = Dataset(zip(self.xs, self.ys), kdims=['x'], vdims=['y'])
+        dataset = Dataset(zip(self.xs, self.ys, strict=None), kdims=['x'], vdims=['y'])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_simple_zip_init_alias(self):
-        dataset = Dataset(zip(self.xs, self.ys), kdims=[('x', 'X')], vdims=[('y', 'Y')])
+        dataset = Dataset(zip(self.xs, self.ys, strict=None), kdims=[('x', 'X')], vdims=[('y', 'Y')])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_zip_init(self):
         dataset = Dataset(zip(self.gender, self.age,
-                              self.weight, self.height),
+                              self.weight, self.height, strict=None),
                           kdims=self.kdims, vdims=self.vdims)
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_zip_init_alias(self):
         dataset = self.alias_table.clone(zip(self.gender, self.age,
-                                             self.weight, self.height))
+                                             self.weight, self.height, strict=None))
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_odict_init(self):
-        dataset = Dataset(dict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
+        dataset = Dataset(dict(zip(self.xs, self.ys, strict=None)), kdims=['A'], vdims=['B'])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_odict_init_alias(self):
-        dataset = Dataset(dict(zip(self.xs, self.ys)),
+        dataset = Dataset(dict(zip(self.xs, self.ys, strict=None)),
                           kdims=[('a', 'A')], vdims=[('b', 'B')])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_dict_init(self):
-        dataset = Dataset(dict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
+        dataset = Dataset(dict(zip(self.xs, self.ys, strict=None)), kdims=['A'], vdims=['B'])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_range_with_dimension_range(self):
@@ -607,22 +607,22 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         aggregated = Dataset([], kdims=self.kdims[:1], vdims=[d for vd in self.vdims for d in [vd, vd+'_std']])
         self.compare_dataset(dataset.aggregate(['Gender'], np.mean, np.std), aggregated)
 
-    def test_dataset_groupby(self):
+    def test_dataset_groupby(self, sort=False):
         group1 = {'Age':[10,16], 'Weight':[15,18], 'Height':[0.8,0.6]}
         group2 = {'Age':[12], 'Weight':[10], 'Height':[0.8]}
         grouped = HoloMap([('M', Dataset(group1, kdims=['Age'], vdims=self.vdims)),
                            ('F', Dataset(group2, kdims=['Age'], vdims=self.vdims))],
-                          kdims=['Gender'], sort=False)
+                          kdims=['Gender'], sort=sort)
         self.assertEqual(self.table.groupby(['Gender']), grouped)
 
-    def test_dataset_groupby_alias(self):
+    def test_dataset_groupby_alias(self, sort=False):
         group1 = {'age':[10,16], 'weight':[15,18], 'height':[0.8,0.6]}
         group2 = {'age':[12], 'weight':[10], 'height':[0.8]}
         grouped = HoloMap([('M', Dataset(group1, kdims=[('age', 'Age')],
                                          vdims=self.alias_vdims)),
                            ('F', Dataset(group2, kdims=[('age', 'Age')],
                                          vdims=self.alias_vdims))],
-                          kdims=[('gender', 'Gender')], sort=False)
+                          kdims=[('gender', 'Gender')], sort=sort)
         self.assertEqual(self.alias_table.groupby('Gender'), grouped)
 
     def test_dataset_groupby_second_dim(self):
@@ -693,6 +693,20 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
                           kdims=self.kdims, vdims=self.vdims)
         self.assertEqual(row, indexed)
 
+    def test_dataset_select_rows_gender_male_dict(self):
+        row = self.table.select({"Gender": 'M'})
+        indexed = Dataset({'Gender':['M', 'M'], 'Age':[10, 16],
+                           'Weight':[15,18], 'Height':[0.8,0.6]},
+                          kdims=self.kdims, vdims=self.vdims)
+        self.assertEqual(row, indexed)
+
+    def test_dataset_select_rows_gender_male_dimension_dict(self):
+        row = self.table.select({self.table.kdims[0]: 'M'})
+        indexed = Dataset({'Gender':['M', 'M'], 'Age':[10, 16],
+                           'Weight':[15,18], 'Height':[0.8,0.6]},
+                          kdims=self.kdims, vdims=self.vdims)
+        self.assertEqual(row, indexed)
+
     def test_dataset_select_rows_gender_male_expr(self):
         row = self.table.select(selection_expr=dim('Gender') == 'M')
         indexed = Dataset({'Gender': ['M', 'M'], 'Age': [10, 16],
@@ -703,6 +717,15 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
     def test_dataset_select_rows_gender_male_alias(self):
         row = self.alias_table.select(Gender='M')
         alias_row = self.alias_table.select(gender='M')
+        indexed = Dataset({'gender':['M', 'M'], 'age':[10, 16],
+                           'weight':[15,18], 'height':[0.8,0.6]},
+                          kdims=self.alias_kdims, vdims=self.alias_vdims)
+        self.assertEqual(row, indexed)
+        self.assertEqual(alias_row, indexed)
+
+    def test_dataset_select_rows_gender_male_alias_dict(self):
+        row = self.alias_table.select({"Gender": 'M'})
+        alias_row = self.alias_table.select({"gender": 'M'})
         indexed = Dataset({'gender':['M', 'M'], 'age':[10, 16],
                            'weight':[15,18], 'height':[0.8,0.6]},
                           kdims=self.alias_kdims, vdims=self.alias_vdims)
@@ -855,7 +878,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         expected = Dataset({'Gender':self.gender, 'Age':self.age,
                               'Weight':self.weight, 'Height':self.height,
                               'combined': self.age*self.weight},
-                             kdims=self.kdims, vdims=self.vdims+['combined'])
+                             kdims=self.kdims, vdims=[*self.vdims, 'combined'])
         self.assertEqual(transformed, expected)
 
     def test_select_with_neighbor(self):
@@ -973,11 +996,35 @@ class GriddedInterfaceTests:
         )
         self.assertEqual(self.dataset_grid.select(y=slice(0, 0.25)), ds)
 
+    def test_select_slice_as_dict(self):
+        ds = self.element(
+            (self.grid_xs, self.grid_ys[:2], self.grid_zs[:2]), ['x', 'y'], ['z']
+        )
+        self.assertEqual(self.dataset_grid.select({"y": slice(0, 0.25)}), ds)
+
+    def test_select_slice_as_dimension_dict(self):
+        ds = self.element(
+            (self.grid_xs, self.grid_ys[:2], self.grid_zs[:2]), ['x', 'y'], ['z']
+        )
+        self.assertEqual(self.dataset_grid.select({self.dataset_grid.kdims[1]: slice(0, 0.25)}), ds)
+
     def test_select_tuple(self):
         ds = self.element(
             (self.grid_xs, self.grid_ys[:2], self.grid_zs[:2]), ['x', 'y'], ['z']
         )
         self.assertEqual(self.dataset_grid.select(y=(0, 0.25)), ds)
+
+    def test_select_tuple_as_dict(self):
+        ds = self.element(
+            (self.grid_xs, self.grid_ys[:2], self.grid_zs[:2]), ['x', 'y'], ['z']
+        )
+        self.assertEqual(self.dataset_grid.select({"y": (0, 0.25)}), ds)
+
+    def test_select_tuple_as_dimension_dict(self):
+        ds = self.element(
+            (self.grid_xs, self.grid_ys[:2], self.grid_zs[:2]), ['x', 'y'], ['z']
+        )
+        self.assertEqual(self.dataset_grid.select({self.dataset_grid.kdims[1]: (0, 0.25)}), ds)
 
     def test_nodata_range(self):
         ds = self.dataset_grid.clone(vdims=[Dimension('z', nodata=0)])
@@ -1158,7 +1205,7 @@ class GriddedInterfaceTests:
 
     def test_sample_2d(self):
         xs = ys = np.linspace(0, 6, 50)
-        XS, YS = np.meshgrid(xs, ys)
+        XS, _YS = np.meshgrid(xs, ys)
         values = np.sin(XS)
         sampled = Dataset((xs, ys, values), ['x', 'y'], 'z').sample(y=0)
         self.assertEqual(sampled, Curve((xs, values[0]), vdims='z'))

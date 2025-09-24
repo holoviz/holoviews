@@ -36,7 +36,7 @@ class ArrayInterface(Interface):
         elif isinstance(data, dict) and not all(d in data for d in dimensions):
             dict_data = sorted(data.items())
             dataset = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
-                            for k, v in dict_data))
+                            for k, v in dict_data), strict=None)
             data = np.column_stack(list(dataset))
         elif isinstance(data, tuple):
             data = [d if isinstance(d, np.ndarray) else np.asarray(d) for d in data]
@@ -76,7 +76,7 @@ class ArrayInterface(Interface):
         ncols = dataset.data.shape[1] if dataset.data.ndim > 1 else 1
         if ncols < ndims:
             raise DataError("Supplied data does not match specified "
-                            "dimensions, expected at least %s columns." % ndims, cls)
+                            f"dimensions, expected at least {ndims} columns.", cls)
 
 
     @classmethod
@@ -229,9 +229,9 @@ class ArrayInterface(Interface):
 
     @classmethod
     def unpack_scalar(cls, dataset, data):
-        """
-        Given a dataset object and data in the appropriate format for
+        """Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
+
         """
         if data.shape == (1, 1):
             return data[0, 0]
@@ -247,7 +247,7 @@ class ArrayInterface(Interface):
             idx = dataset.get_dimension_index(d)
             data[:, idx] = arr
         new_cols = [arr for d, arr in new_data.items() if dataset.get_dimension(d) is None]
-        return np.column_stack([data]+new_cols)
+        return np.column_stack([data, *new_cols])
 
 
     @classmethod

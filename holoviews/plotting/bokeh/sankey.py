@@ -13,7 +13,7 @@ class SankeyPlot(GraphPlot):
     labels = param.ClassSelector(class_=(str, dim), doc="""
         The dimension or dimension value transform used to draw labels from.""")
 
-    label_position = param.ObjectSelector(default='right',
+    label_position = param.Selector(default='right',
                                           objects=['left', 'right', 'outer', 'inner'],
                                           doc="""
         Whether node labels should be placed to the left, right, outer or inner.""")
@@ -58,15 +58,14 @@ class SankeyPlot(GraphPlot):
 
     _draw_order = ['graph', 'quad_1', 'text_1', 'text_2']
 
-    style_opts = GraphPlot.style_opts + ['edge_fill_alpha', 'nodes_line_color',
-                                         'label_text_font_size']
+    style_opts = [*GraphPlot.style_opts, 'edge_fill_alpha', 'nodes_line_color', 'label_text_font_size']
 
     filled = True
 
     def _init_glyphs(self, plot, element, ranges, source):
         super()._init_glyphs(plot, element, ranges, source)
         renderer = plot.renderers.pop(plot.renderers.index(self.handles['glyph_renderer']))
-        plot.renderers = [renderer] + plot.renderers
+        plot.renderers = [renderer, *plot.renderers]
         arc_renderer = self.handles['quad_1_glyph_renderer']
         scatter_renderer = self.handles['scatter_1_glyph_renderer']
         arc_renderer.view = scatter_renderer.view
@@ -106,8 +105,8 @@ class SankeyPlot(GraphPlot):
             arc_glyph.update(**styles)
 
     def _compute_quads(self, element, data, mapping):
-        """
-        Computes the node quad glyph data.x
+        """Computes the node quad glyph data.x
+
         """
         quad_mapping = {'left': 'x0', 'right': 'x1', 'bottom': 'y0', 'top': 'y1'}
         quad_data = dict(data['scatter_1'])
@@ -122,8 +121,8 @@ class SankeyPlot(GraphPlot):
         mapping['quad_1'] = quad_mapping
 
     def _compute_labels(self, element, data, mapping):
-        """
-        Computes labels for the nodes and adds it to the data.
+        """Computes labels for the nodes and adds it to the data.
+
         """
         if element.vdims:
             edges = Dataset(element)[element[element.vdims[0].name]>0]
@@ -172,7 +171,7 @@ class SankeyPlot(GraphPlot):
             xs = np.array([node['x0'] for node in nodes]) - offset
 
         for i, node in enumerate(nodes):
-            if len(text):
+            if text:
                 label = text[i]
             else:
                 label = ''
@@ -212,8 +211,8 @@ class SankeyPlot(GraphPlot):
                                  text_baseline='middle', text_align=align)
 
     def _patch_hover(self, element, data):
-        """
-        Replace edge start and end hover data with label_index data.
+        """Replace edge start and end hover data with label_index data.
+
         """
         if not (self.inspection_policy == 'edges' and 'hover' in self.handles):
             return
@@ -221,20 +220,22 @@ class SankeyPlot(GraphPlot):
         src, tgt = (dimension_sanitizer(kd.name) for kd in element.kdims[:2])
         if src == 'start': src += '_values'
         if tgt == 'end':   tgt += '_values'
-        lookup = dict(zip(*(element.nodes.dimension_values(d) for d in (2, lidx))))
+        lookup = dict(zip(*(element.nodes.dimension_values(d) for d in (2, lidx)), strict=None))
         src_vals = data['patches_1'][src]
         tgt_vals = data['patches_1'][tgt]
         data['patches_1'][src] = [lookup.get(v, v) for v in src_vals]
         data['patches_1'][tgt] = [lookup.get(v, v) for v in tgt_vals]
 
     def get_extents(self, element, ranges, range_type='combined', **kwargs):
-        """Return the extents of the Sankey box"""
+        """Return the extents of the Sankey box
+
+        """
         if range_type == 'extents':
             return element.nodes.extents
         xdim, ydim = element.nodes.kdims[:2]
         xpad = .05 if self.label_index is None else 0.25
-        x0, x1 = ranges[xdim.name][range_type]
-        y0, y1 = ranges[ydim.name][range_type]
+        x0, x1 = ranges[xdim.label][range_type]
+        y0, y1 = ranges[ydim.label][range_type]
         xdiff = (x1-x0)
         ydiff = (y1-y0)
 

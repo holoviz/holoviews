@@ -17,4 +17,4 @@ for _k, _v in _current_locals:
     if public(_v) and issubclass(_v, Operation):
         Compositor.operations.append(_v)
 
-__all__ = _public + ['Compositor']
+__all__ = [*_public, 'Compositor']

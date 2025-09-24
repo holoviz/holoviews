@@ -3,11 +3,11 @@ from unittest import SkipTest
 import numpy as np
 import pandas as pd
 import pytest
-from bokeh.models import CustomJSHover
+from bokeh.models import CustomJSHover, HoverTool
 
-from holoviews.element import RGB, Image, ImageStack, Raster
+from holoviews.element import RGB, Image, ImageStack, Points, Raster
 from holoviews.plotting.bokeh.raster import ImageStackPlot
-from holoviews.plotting.bokeh.util import bokeh34
+from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -150,10 +150,21 @@ class TestRasterPlot(TestBokehPlot):
         assert hover.tooltips[-1] == ("Timestamp", "@{Timestamp}{%F %T}")
         assert "@{Timestamp}" in hover.formatters
 
-        if bokeh34:  # https://github.com/bokeh/bokeh/issues/13598
+        if BOKEH_GE_3_4_0:  # https://github.com/bokeh/bokeh/issues/13598
             assert hover.formatters["@{Timestamp}"] == "datetime"
         else:
             assert isinstance(hover.formatters["@{Timestamp}"], CustomJSHover)
+
+    def test_image_hover_with_custom_js(self):
+        # Regression for https://github.com/holoviz/holoviews/issues/6101
+        hover_tool = HoverTool(
+            tooltips=[("x", "$x{custom}")], formatters={"x": CustomJSHover(code="return value + '2'")}
+        )
+        img = Image(np.ones(100).reshape(10, 10)).opts(tools=[hover_tool])
+        plot = bokeh_renderer.get_plot(img)
+
+        hover = plot.handles["hover"]
+        assert hover.formatters == hover_tool.formatters
 
 class _ImageStackBase(TestRasterPlot):
     __test__ = False
@@ -397,6 +408,34 @@ class _ImageStackBase(TestRasterPlot):
         assert source.data["dh"][0] == self.ysize
         assert isinstance(plot, ImageStackPlot)
 
+    def test_image_stack_dict_cmap(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["b", "a", "c"])
+        img_stack.opts(cmap={"c": "yellow", "a": "red", "b": "green"})
+        plot = bokeh_renderer.get_plot(img_stack)
+        source = plot.handles["source"]
+        np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
+        np.testing.assert_equal(source.data["image"][0][:, :, 1], b)
+        np.testing.assert_equal(source.data["image"][0][:, :, 2], c)
+        assert plot.handles["color_mapper"].palette == ["green", "red", "yellow"]
+
+    def test_image_stack_dict_cmap_missing(self):
+        x = np.arange(0, 3)
+        y = np.arange(5, 8)
+        a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
+        b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
+        c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
+
+        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["b", "a", "c"])
+        with pytest.raises(ValueError, match="must have the same value dimensions"):
+            img_stack.opts(cmap={"c": "yellow", "a": "red"})
+            bokeh_renderer.get_plot(img_stack)
+
 
 class TestImageStackEven(_ImageStackBase):
     __test__ = True
@@ -434,3 +473,39 @@ class TestImageStackUneven2(_ImageStackBase):
         self.ysize = 3
         self.xsize = 4
         super().setUp()
+
+
+class TestSyntheticLegendPlot(TestBokehPlot):
+    __test__ = True
+
+    def setUp(self):
+        ds = pytest.importorskip("datashader")
+        super().setUp()
+
+        from holoviews.operation.datashader import datashade, rasterize
+        points = Points([(0, 0, 'A'), (1, 1, 'B'), (2, 2, 'C')], vdims=['Label'])
+        kwargs = dict(aggregator=ds.by('Label'), dynamic=False, width=10, height=10)
+        self.img_stack = rasterize(points, **kwargs).opts(show_legend=True)
+        self.rgb = datashade(points, **kwargs).opts(show_legend=True)
+
+    def test_image_stack_legend(self):
+        plot = bokeh_renderer.get_plot(self.img_stack)
+        mapper = plot.handles['synthetic_color_mapper']
+        assert mapper.factors == ['A', 'B', 'C']
+        glyph = plot._legend_plot.handles['glyph']
+        assert glyph.fill_color.field == 'color'
+        assert glyph.fill_color.transform is mapper
+
+    def test_image_stack_legend_with_cmap(self):
+        self.img_stack.opts(cmap=["red"])
+        plot = bokeh_renderer.get_plot(self.img_stack)
+        mapper = plot.handles['synthetic_color_mapper']
+        assert mapper.palette == ["red", "red", "red"]
+
+    def test_rgb_legend(self):
+        plot = bokeh_renderer.get_plot(self.rgb)
+        mapper = plot.handles['synthetic_color_mapper']
+        assert mapper.factors == ['A', 'B', 'C']
+        glyph = plot._legend_plot.handles['glyph']
+        assert glyph.fill_color.field == 'color'
+        assert glyph.fill_color.transform is mapper

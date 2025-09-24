@@ -1,12 +1,15 @@
 """
 Test cases for rendering exporters
 """
+import os
 import subprocess
+import sys
 from unittest import SkipTest
 
 import numpy as np
 import panel as pn
 import param
+import pytest
 from matplotlib import style
 from panel.widgets import DiscreteSlider, FloatSlider, Player
 from pyviz_comms import CommManager
@@ -77,16 +80,17 @@ class MPLRendererTest(ComparisonTestCase):
         self.assertEqual((w, h), (288, 288))
 
     def test_render_gif(self):
-        data, metadata = self.renderer.components(self.map1, 'gif')
+        data, _metadata = self.renderer.components(self.map1, 'gif')
         self.assertIn("<img src='data:image/gif", data['text/html'])
 
+    @pytest.mark.skipif(sys.platform == 'win32' and os.environ.get('GITHUB_RUN_ID'), reason='Skip on Windows CI')
     def test_render_mp4(self):
         devnull = subprocess.DEVNULL
         try:
             subprocess.call(['ffmpeg', '-h'], stdout=devnull, stderr=devnull)
         except Exception:
             raise SkipTest('ffmpeg not available, skipping mp4 export test')
-        data, metadata = self.renderer.components(self.map1, 'mp4')
+        data, _metadata = self.renderer.components(self.map1, 'mp4')
         self.assertIn("<source src='data:video/mp4", data['text/html'])
 
     def test_render_static(self):
@@ -146,11 +150,12 @@ class MPLRendererTest(ComparisonTestCase):
         self.assertEqual(obj.widget_location, 'top')
         self.assertEqual(obj.widget_type, 'individual')
 
+    @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm:UserWarning')
     def test_render_dynamicmap_with_dims(self):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
         artist = plot.handles['artist']
 
         (_, y) = artist.get_data()
@@ -160,12 +165,13 @@ class MPLRendererTest(ComparisonTestCase):
         (_, y) = artist.get_data()
         self.assertEqual(y[2], 3.1)
 
+    @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm:UserWarning')
     def test_render_dynamicmap_with_stream(self):
         stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
         artist = plot.handles['artist']
 
         (_, y) = artist.get_data()
@@ -174,13 +180,14 @@ class MPLRendererTest(ComparisonTestCase):
         (_, y) = artist.get_data()
         self.assertEqual(y[2], 3)
 
+    @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm:UserWarning')
     def test_render_dynamicmap_with_stream_dims(self):
         stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda x, y: Curve([x, 1, y]), kdims=['x', 'y'],
                           streams=[stream]).redim.values(x=[1, 2, 3])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
         artist = plot.handles['artist']
 
         (_, y) = artist.get_data()

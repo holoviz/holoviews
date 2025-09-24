@@ -1,6 +1,7 @@
 import numpy as np
 
 from holoviews.element import BoxWhisker
+from holoviews.plotting.mpl.util import MPL_GE_3_9_0
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -11,9 +12,12 @@ class TestMPLBoxWhiskerPlot(TestMPLPlot):
         values = np.random.rand(100)
         boxwhisker = BoxWhisker(values)
         plot = mpl_renderer.get_plot(boxwhisker)
-        data, style, axis_opts = plot.get_data(boxwhisker, {}, {})
+        data, style, _axis_opts = plot.get_data(boxwhisker, {}, {})
         self.assertEqual(data[0][0], values)
-        self.assertEqual(style['labels'], [''])
+        if MPL_GE_3_9_0:
+            self.assertEqual(style['tick_labels'], [''])
+        else:
+            self.assertEqual(style['labels'], [''])
 
     def test_boxwhisker_simple_overlay(self):
         values = np.random.rand(100)

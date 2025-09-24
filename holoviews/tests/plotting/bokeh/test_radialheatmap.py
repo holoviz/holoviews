@@ -18,7 +18,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         x = [f"Seg {idx}" for idx in range(2)]
         y = [f"Ann {idx}" for idx in range(2)]
         self.z = list(range(4))
-        self.x, self.y = zip(*product(x, y))
+        self.x, self.y = zip(*product(x, y), strict=None)
 
         self.ann_bins = {"o1": np.array([0.5, 0.75]),
                          "o2": np.array([0.75, 1])}
@@ -229,7 +229,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         cmp_mark_data = self.plot._get_xmarks_data(["o1"], self.seg_bins)
 
         for sub_list in ["xs", "ys"]:
-            test_pairs = zip(test_mark_data[sub_list], cmp_mark_data[sub_list])
+            test_pairs = zip(test_mark_data[sub_list], cmp_mark_data[sub_list], strict=None)
             for test_value, cmp_value in test_pairs:
                 self.assertEqual(np.array(test_value), np.array(cmp_value))
 
@@ -252,7 +252,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
 
         """
 
-        data, mapping, style = self.plot.get_data(self.element, {}, {})
+        data, mapping, _style = self.plot.get_data(self.element, {}, {})
 
         glyphs = self.plot._style_groups.keys()
 

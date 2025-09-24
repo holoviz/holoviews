@@ -1,5 +1,5 @@
+import sys
 from io import BytesIO
-from unittest import SkipTest
 
 import numpy as np
 import panel as pn
@@ -17,6 +17,7 @@ from holoviews.plotting.bokeh import BokehRenderer
 from holoviews.streams import Stream
 
 
+@pytest.mark.usefixtures("bokeh_backend")
 class BokehRendererTest(ComparisonTestCase):
 
     def setUp(self):
@@ -85,13 +86,12 @@ class BokehRendererTest(ComparisonTestCase):
         self.renderer.components(plot, 'html')
         self.assertEqual(plot.state.outline_line_color, '#444444')
 
+    @pytest.mark.skipif(sys.platform == "linux", reason="2025-03: Flaky test on Linux")
     def test_render_to_png(self):
+        pytest.importorskip("selenium")
         curve = Curve([])
         renderer = BokehRenderer.instance(fig='png')
-        try:
-            png, info = renderer(curve)
-        except RuntimeError:
-            raise SkipTest("Test requires selenium")
+        png, info = renderer(curve)
         self.assertIsInstance(png, bytes)
         self.assertEqual(info['file-ext'], 'png')
 
@@ -160,7 +160,7 @@ class BokehRendererTest(ComparisonTestCase):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
         cds = plot.handles['cds']
 
         self.assertEqual(cds.data['y'][2], 0.1)
@@ -174,7 +174,7 @@ class BokehRendererTest(ComparisonTestCase):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
         cds = plot.handles['cds']
 
         self.assertEqual(cds.data['y'][2], 2)
@@ -188,7 +188,7 @@ class BokehRendererTest(ComparisonTestCase):
                           streams=[stream]).redim.values(x=[1, 2, 3])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
         cds = plot.handles['cds']
 
         self.assertEqual(cds.data['y'][2], 2)

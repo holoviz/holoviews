@@ -1,13 +1,12 @@
-"""
-Defines mix-in classes to handle support for linked brushing on
+"""Defines mix-in classes to handle support for linked brushing on
 elements.
+
 """
 
 import sys
 from importlib.util import find_spec
 
 import numpy as np
-import pandas as pd
 
 from ..core import Dataset, NdOverlay, util
 from ..streams import Lasso, Selection1D, SelectionXY
@@ -32,10 +31,12 @@ class SelectionIndexExpr:
         self._index_skip = True
         if not index:
             return None, None, None
-        ds = self.clone(kdims=index_cols, new_type=Dataset)
+        clone_vdims = [vdim.name for vdim in self.vdims if vdim.name not in index_cols]
+        cols = clone_vdims + index_cols
+        ds = self.clone(kdims=index_cols, vdims=clone_vdims, new_type=Dataset)
         if len(index_cols) == 1:
             index_dim = index_cols[0]
-            vals = dim(index_dim).apply(ds.iloc[index], expanded=False)
+            vals = dim(index_dim).apply(ds.iloc[index, cols], expanded=False)
             if vals.dtype.kind == 'O' and all(isinstance(v, np.ndarray) for v in vals):
                 vals = [v for arr in vals for v in util.unique_iterator(arr)]
             expr = dim(index_dim).isin(list(util.unique_iterator(vals)))
@@ -43,7 +44,7 @@ class SelectionIndexExpr:
             get_shape = dim(self.dataset.get_dimension(index_cols[0]), np.shape)
             index_cols = [dim(self.dataset.get_dimension(c), np.ravel) for c in index_cols]
             vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(
-                ds.iloc[index], expanded=True, flat=True
+                ds.iloc[index, cols], expanded=True, flat=True
             )
             contains = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals, object=True)
             expr = dim(contains, np.reshape, get_shape)
@@ -80,26 +81,54 @@ def spatial_select_gridded(xvals, yvals, geometry):
         sel_mask = spatial_select_columnar(xvals.flatten(), yvals.flatten(), geometry)
         return sel_mask.reshape(xvals.shape)
 
+def _cuspatial_old(xvals, yvals, geometry):
+    import cudf
+    import cuspatial
+
+    result = cuspatial.point_in_polygon(
+        xvals,
+        yvals,
+        cudf.Series([0], index=["selection"]),
+        [0],
+        geometry[:, 0],
+        geometry[:, 1],
+    )
+    return result.values
+
+
+def _cuspatial_new(xvals, yvals, geometry):
+    import cudf
+    import cuspatial
+    import geopandas
+    from shapely.geometry import Polygon
+
+    df = cudf.DataFrame({'x':xvals, 'y':yvals})
+    points = cuspatial.GeoSeries.from_points_xy(
+       df.interleave_columns().astype('float')
+    )
+    polygons = cuspatial.GeoSeries(
+       geopandas.GeoSeries(Polygon(geometry)), index=["selection"]
+    )
+    result = cuspatial.point_in_polygon(points,polygons)
+    return result.values.ravel()
+
+
 def spatial_select_columnar(xvals, yvals, geometry, geom_method=None):
+    import pandas as pd
     if 'cudf' in sys.modules:
         import cudf
+        import cupy as cp
         if isinstance(xvals, cudf.Series):
             xvals = xvals.values.astype('float')
             yvals = yvals.values.astype('float')
             try:
-                import cuspatial
-                result = cuspatial.point_in_polygon(
-                    xvals,
-                    yvals,
-                    cudf.Series([0], index=["selection"]),
-                    [0],
-                    geometry[:, 0],
-                    geometry[:, 1],
-                )
-                return result.values
+                try:
+                    return _cuspatial_old(xvals, yvals, geometry)
+                except TypeError:
+                    return _cuspatial_new(xvals, yvals, geometry)
             except ImportError:
-                xvals = np.asarray(xvals)
-                yvals = np.asarray(yvals)
+                xvals = cp.asnumpy(xvals)
+                yvals = cp.asnumpy(yvals)
     if 'dask' in sys.modules:
         import dask.dataframe as dd
         if isinstance(xvals, dd.Series):
@@ -146,7 +175,7 @@ def _mask_spatialpandas(masked_xvals, masked_yvals, geometry):
 
 def _mask_shapely(masked_xvals, masked_yvals, geometry):
     from shapely.geometry import Point, Polygon
-    points = (Point(x, y) for x, y in zip(masked_xvals, masked_yvals))
+    points = (Point(x, y) for x, y in zip(masked_xvals, masked_yvals, strict=None))
     poly = Polygon(geometry)
     return np.array([poly.contains(p) for p in points], dtype=bool)
 
@@ -161,7 +190,7 @@ def spatial_geom_select(x0vals, y0vals, x1vals, y1vals, geometry):
     try:
         from shapely.geometry import Polygon, box
         boxes = (box(x0, y0, x1, y1) for x0, y0, x1, y1 in
-                 zip(x0vals, y0vals, x1vals, y1vals))
+                 zip(x0vals, y0vals, x1vals, y1vals, strict=None))
         poly = Polygon(geometry)
         return np.array([poly.contains(p) for p in boxes])
     except ImportError:
@@ -171,7 +200,7 @@ def spatial_geom_select(x0vals, y0vals, x1vals, y1vals, geometry):
 def spatial_poly_select(xvals, yvals, geometry):
     try:
         from shapely.geometry import Polygon
-        boxes = (Polygon(np.column_stack([xs, ys])) for xs, ys in zip(xvals, yvals))
+        boxes = (Polygon(np.column_stack([xs, ys])) for xs, ys in zip(xvals, yvals, strict=None))
         poly = Polygon(geometry)
         return np.array([poly.contains(p) for p in boxes])
     except ImportError:
@@ -182,13 +211,13 @@ def spatial_bounds_select(xvals, yvals, bounds):
     x0, y0, x1, y1 = bounds
     return np.array([((x0<=np.nanmin(xs)) & (y0<=np.nanmin(ys)) &
                       (x1>=np.nanmax(xs)) & (y1>=np.nanmax(ys)))
-                     for xs, ys in zip(xvals, yvals)])
+                     for xs, ys in zip(xvals, yvals, strict=None)])
 
 
 class Selection2DExpr(SelectionIndexExpr):
-    """
-    Mixin class for Cartesian 2D elements to add basic support for
+    """Mixin class for Cartesian 2D elements to add basic support for
     SelectionExpr streams.
+
     """
 
     _selection_dims = 2
@@ -207,11 +236,11 @@ class Selection2DExpr(SelectionIndexExpr):
             xsel = kwargs['x_selection']
             if isinstance(xsel, list):
                 xcats = xsel
-                x0, x1 = int(round(x0)), int(round(x1))
+                x0, x1 = round(x0), round(x1)
             ysel = kwargs['y_selection']
             if isinstance(ysel, list):
                 ycats = ysel
-                y0, y1 = int(round(y0)), int(round(y1))
+                y0, y1 = round(y0), round(y1)
 
         # Handle invert_xaxis/invert_yaxis
         if x0 > x1:
@@ -376,9 +405,9 @@ class SelectionGeomExpr(Selection2DExpr):
 class SelectionPolyExpr(Selection2DExpr):
 
     def _skip(self, **kwargs):
-        """
-        Do not skip geometry selections until polygons support returning
+        """Do not skip geometry selections until polygons support returning
         indexes on lasso based selections.
+
         """
         skip = kwargs.get('index_cols') and self._index_skip and 'geometry' not in kwargs
         if skip:
@@ -412,9 +441,9 @@ class SelectionPolyExpr(Selection2DExpr):
 
 
 class Selection1DExpr(Selection2DExpr):
-    """
-    Mixin class for Cartesian 1D Chart elements to add basic support for
+    """Mixin class for Cartesian 1D Chart elements to add basic support for
     SelectionExpr streams.
+
     """
 
     _selection_dims = 1

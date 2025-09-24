@@ -8,14 +8,14 @@ from .selection import SelectionIndexExpr
 
 
 class ItemTable(Element):
-    """
-    A tabular element type to allow convenient visualization of either
+    """A tabular element type to allow convenient visualization of either
     a standard Python dictionary or a list of tuples
     (i.e. input suitable for an dict constructor).
     Tables store heterogeneous data with different labels.
 
     Dimension objects are also accepted as keys, allowing dimensional
     information (e.g. type and units) to be associated per heading.
+
     """
 
     kdims = param.List(default=[], bounds=(0, 0), doc="""
@@ -50,8 +50,8 @@ class ItemTable(Element):
         super().__init__(str_keys, **params)
 
     def __getitem__(self, heading):
-        """
-        Get the value associated with the given heading (key).
+        """Get the value associated with the given heading (key).
+
         """
         if heading == ():
             return self
@@ -82,13 +82,13 @@ class ItemTable(Element):
                                   'cannot be reduced.')
 
     def pprint_cell(self, row, col):
-        """
-        Get the formatted cell value for the given row and column indices.
+        """Get the formatted cell value for the given row and column indices.
+
         """
         if col > 2:
             raise Exception("Only two columns available in a ItemTable.")
         elif row >= self.rows:
-            raise Exception("Maximum row index is %d" % self.rows-1)
+            raise Exception(f"Maximum row index is {self.rows-1}")
         elif col == 0:
             return self.dimensions('value')[row].pprint_label
         else:
@@ -101,9 +101,9 @@ class ItemTable(Element):
                                   "don't support histograms.")
 
     def cell_type(self, row, col):
-        """
-        Returns the cell type given a row and column index. The common
+        """Returns the cell type given a row and column index. The common
         basic cell types are 'data' and 'heading'.
+
         """
         if col == 0:  return 'heading'
         else:         return 'data'
@@ -111,9 +111,9 @@ class ItemTable(Element):
 
 
 class Table(SelectionIndexExpr, Dataset, Tabular):
-    """
-    Table is a Dataset type, which gets displayed in a tabular
+    """Table is a Dataset type, which gets displayed in a tabular
     format and is convertible to most other Element types.
+
     """
 
     group = param.String(default='Table', constant=True, doc="""

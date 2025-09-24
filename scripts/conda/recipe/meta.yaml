@@ -1,0 +1,49 @@
+{% set pyproject = load_file_data('../../../pyproject.toml', from_recipe_dir=True) %}
+{% set project = pyproject['project'] %}
+
+package:
+  name: {{ project["name"] }}
+  version: {{ VERSION }}
+
+source:
+  url: ../../../dist/{{ project["name"] }}-{{ VERSION }}.tar.gz
+
+build:
+  noarch: python
+  script: {{ PYTHON }} -m pip install --no-deps -vv .
+  entry_points:
+    {% for group,epoints in project.get("entry_points",{}).items() %}
+    {% for entry_point in epoints %}
+    - {{ entry_point }}
+    {% endfor %}
+    {% endfor %}
+
+requirements:
+  build:
+    - python {{ project['requires-python'] }}
+    {% for dep in pyproject['build-system']['requires'] %}
+    - {{ dep }}
+    {% endfor %}
+  run:
+    - python {{ project['requires-python'] }}
+    {% for dep in project.get('dependencies', []) %}
+    - {{ dep }}
+    {% endfor %}
+    {% for dep in project['optional-dependencies']['recommended'] %}
+    {% if dep.startswith('matplotlib') %}
+    - {{ dep.replace('matplotlib', 'matplotlib-base') }}
+    {% endif %}
+    {% endfor %}
+
+test:
+  imports:
+    - {{ project["name"] }}
+  commands:
+    - pip check
+  requires:
+    - pip
+
+about:
+  home: https://holoviews.org
+  summary: Stop plotting your data - annotate your data and let it visualize itself.
+  license: BSD 3-Clause

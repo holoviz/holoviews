@@ -8,8 +8,7 @@ from .interface import DataError, Interface
 
 
 class MultiInterface(Interface):
-    """
-    MultiInterface allows wrapping around a list of tabular datasets
+    """MultiInterface allows wrapping around a list of tabular datasets
     including dataframes, the columnar dictionary format or 2D tabular
     NumPy arrays. Using the split method the list of tabular data can
     be split into individual datasets.
@@ -17,6 +16,7 @@ class MultiInterface(Interface):
     The interface makes the data appear a list of tabular datasets as
     a single dataset. The interface may be used to represent geometries
     so the behavior depends on the type of geometry being represented.
+
     """
 
     types = ()
@@ -121,9 +121,9 @@ class MultiInterface(Interface):
 
     @classmethod
     def _inner_dataset_template(cls, dataset, validate_vdims=True):
-        """
-        Returns a Dataset template used as a wrapper around the data
+        """Returns a Dataset template used as a wrapper around the data
         contained within the multi-interface dataset.
+
         """
         from . import Dataset
         vdims = dataset.vdims if getattr(dataset, 'level', None) is None else []
@@ -193,8 +193,8 @@ class MultiInterface(Interface):
 
     @classmethod
     def isscalar(cls, dataset, dim, per_geom=False):
-        """
-        Tests if dimension is scalar in each subpath.
+        """Tests if dimension is scalar in each subpath.
+
         """
         if not dataset.data:
             return True
@@ -203,7 +203,7 @@ class MultiInterface(Interface):
         combined = []
         for d in dataset.data:
             ds.data = d
-            values = ds.interface.values(ds, dim, expanded=False)
+            values = ds.interface.values(ds, str(dim), expanded=False)
             unique = list(util.unique_iterator(values))
             if len(unique) > 1:
                 return False
@@ -218,14 +218,14 @@ class MultiInterface(Interface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
-        """
-        Applies selectiong on all the subpaths.
+        """Applies selectiong on all the subpaths.
+
         """
         from ...element import Polygons
         if not dataset.data:
             return dataset.data
         elif selection_mask is not None:
-            return [d for b, d in zip(selection_mask, dataset.data) if b]
+            return [d for b, d in zip(selection_mask, dataset.data, strict=None) if b]
         ds = cls._inner_dataset_template(dataset)
         skipped = (Polygons._hole_key,)
         if hasattr(ds.interface, 'geo_column'):
@@ -245,8 +245,8 @@ class MultiInterface(Interface):
 
     @classmethod
     def select_paths(cls, dataset, index):
-        """
-        Allows selecting paths with usual NumPy slicing index.
+        """Allows selecting paths with usual NumPy slicing index.
+
         """
         selection = np.array([{0: p} for p in dataset.data])[index]
         if isinstance(selection, dict):
@@ -276,8 +276,8 @@ class MultiInterface(Interface):
         for d in dimensions:
             if not cls.isscalar(dataset, d, True):
                 raise ValueError('MultiInterface can only apply groupby '
-                                 'on scalar dimensions, %s dimension '
-                                 'is not scalar' % d)
+                                 f'on scalar dimensions, {d} dimension '
+                                 'is not scalar')
             vals = cls.values(dataset, d, False, True)
             values.append(vals)
         values = tuple(values)
@@ -288,8 +288,8 @@ class MultiInterface(Interface):
         keys = (tuple(vals[i] for vals in values) for i in range(len(vals)))
         grouped_data = []
         for unique_key in util.unique_iterator(keys):
-            mask = ds.interface.select_mask(ds, dict(zip(dimensions, unique_key)))
-            selection = [data for data, m in zip(dataset.data, mask) if m]
+            mask = ds.interface.select_mask(ds, dict(zip(dimensions, unique_key, strict=None)))
+            selection = [data for data, m in zip(dataset.data, mask, strict=None) if m]
             group_data = group_type(selection, **group_kwargs)
             grouped_data.append((unique_key, group_data))
 
@@ -307,9 +307,9 @@ class MultiInterface(Interface):
 
     @classmethod
     def shape(cls, dataset):
-        """
-        Returns the shape of all subpaths, making it appear like a
+        """Returns the shape of all subpaths, making it appear like a
         single array of concatenated subpaths separated by NaN values.
+
         """
         if not dataset.data:
             return (0, len(dataset.dimensions()))
@@ -326,10 +326,10 @@ class MultiInterface(Interface):
 
     @classmethod
     def length(cls, dataset):
-        """
-        Returns the length of the multi-tabular dataset making it appear
+        """Returns the length of the multi-tabular dataset making it appear
         like a single array of concatenated subpaths separated by NaN
         values.
+
         """
         if not dataset.data:
             return 0
@@ -388,10 +388,10 @@ class MultiInterface(Interface):
     @classmethod
     def values(cls, dataset, dimension, expanded=True, flat=True,
                compute=True, keep_index=False):
-        """
-        Returns a single concatenated array of all subpaths separated
+        """Returns a single concatenated array of all subpaths separated
         by NaN values. If expanded keyword is False an array of arrays
         is returned.
+
         """
         if not dataset.data:
             return np.array([])
@@ -435,14 +435,14 @@ class MultiInterface(Interface):
             return np.concatenate(values) if values else np.array([])
         else:
             array = np.empty(len(values), dtype=object)
-            array[:] = [a[0] if s else a for s, a in zip(scalars, values)]
+            array[:] = [a[0] if s else a for s, a in zip(scalars, values, strict=None)]
             return array
 
     @classmethod
     def split(cls, dataset, start, end, datatype, **kwargs):
-        """
-        Splits a multi-interface Dataset into regular Datasets using
+        """Splits a multi-interface Dataset into regular Datasets using
         regular tabular interfaces.
+
         """
         objs = []
         if datatype is None:
@@ -494,7 +494,7 @@ class MultiInterface(Interface):
         new_data = []
         template = cls._inner_dataset_template(dataset)
         array_type = template.interface.datatype == 'array'
-        for d, v in zip(dataset.data, values):
+        for d, v in zip(dataset.data, values, strict=None):
             template.data = d
             if array_type:
                 ds = template.clone(template.columns())
@@ -556,22 +556,27 @@ def ensure_ring(geom, values=None):
     length) then the insertion will occur on the values instead,
     ensuring that they will match the ring geometry.
 
-    Args:
-        geom: 2-D array of geometry coordinates
-        values: Optional array of values
+    Parameters
+    ----------
+        geom
+            2-D array of geometry coordinates
+        values
+            Optional array of values
 
-    Returns:
-        Array where values have been inserted and ring closing indexes
+    Returns
+    -------
+    Array where values have been inserted and ring closing indexes
+
     """
     if values is None:
         values = geom
 
     breaks = np.where(np.isnan(geom.astype('float')).sum(axis=1))[0]
-    starts = [0] + list(breaks+1)
-    ends = list(breaks-1) + [len(geom)-1]
-    zipped = zip(geom[starts], geom[ends], ends, values[starts])
+    starts = [0, *(breaks + 1)]
+    ends = [*(breaks - 1), len(geom) - 1]
+    zipped = zip(geom[starts], geom[ends], ends, values[starts], strict=None)
     unpacked = tuple(zip(*[(v, i+1) for s, e, i, v in zipped
-                     if (s!=e).any()]))
+                     if (s!=e).any()], strict=None))
     if not unpacked:
         return values
     inserts, inds = unpacked

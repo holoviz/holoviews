@@ -1,6 +1,5 @@
 import matplotlib as mpl
 import numpy as np
-import pandas as pd
 import param
 from matplotlib import patches
 from matplotlib.lines import Line2D
@@ -13,10 +12,9 @@ from .plot import mpl_rc_context
 
 
 class ABLine2D(Line2D):
+    """Draw a line based on its slope and y-intercept.
 
-    """
-    Draw a line based on its slope and y-intercept. Additional arguments are
-    passed to the <matplotlib.lines.Line2D> constructor.
+    Additional arguments are passed to the matplotlib.lines.Line2D constructor.
     """
 
     def __init__(self, slope, intercept, *args, **kwargs):
@@ -37,7 +35,7 @@ class ABLine2D(Line2D):
         self.axes.callbacks.connect('ylim_changed', self._update_lim)
 
     def _update_lim(self, event):
-        """ called whenever axis x/y limits change """
+        """Called whenever axis x/y limits change."""
         x = np.array(self.axes.get_xbound())
         y = (self._slope * x) + self._intercept
         self.set_data(x, y)
@@ -45,8 +43,8 @@ class ABLine2D(Line2D):
 
 
 class AnnotationPlot(ElementPlot):
-    """
-    AnnotationPlot handles the display of all annotation elements.
+    """AnnotationPlot handles the display of all annotation elements.
+
     """
 
     show_legend = param.Boolean(default=False, doc="""
@@ -80,7 +78,9 @@ class AnnotationPlot(ElementPlot):
 
 
 class VLinePlot(AnnotationPlot):
-    "Draw a vertical line on the axis"
+    """Draw a vertical line on the axis
+
+    """
 
     style_opts = ['alpha', 'color', 'linewidth', 'linestyle', 'visible']
 
@@ -92,12 +92,16 @@ class VLinePlot(AnnotationPlot):
 
 
 class HLinePlot(AnnotationPlot):
-    "Draw a horizontal line on the axis"
+    """Draw a horizontal line on the axis
+
+    """
 
     style_opts = ['alpha', 'color', 'linewidth', 'linestyle', 'visible']
 
     def draw_annotation(self, axis, position, opts):
-        "Draw a horizontal line on the axis"
+        """Draw a horizontal line on the axis
+
+        """
         if self.invert_axes:
             return [axis.axvline(position, **opts)]
         else:
@@ -105,13 +109,17 @@ class HLinePlot(AnnotationPlot):
 
 
 class VSpanPlot(AnnotationPlot):
-    "Draw a vertical span on the axis"
+    """Draw a vertical span on the axis
+
+    """
 
     style_opts = ['alpha', 'color', 'facecolor', 'edgecolor',
                   'linewidth', 'linestyle', 'visible']
 
     def draw_annotation(self, axis, positions, opts):
-        "Draw a vertical span on the axis"
+        """Draw a vertical span on the axis
+
+        """
         if self.invert_axes:
             return [axis.axhspan(*positions, **opts)]
         else:
@@ -119,13 +127,17 @@ class VSpanPlot(AnnotationPlot):
 
 
 class HSpanPlot(AnnotationPlot):
-    "Draw a horizontal span on the axis"
+    """Draw a horizontal span on the axis
+
+    """
 
     style_opts = ['alpha', 'color', 'facecolor', 'edgecolor',
                   'linewidth', 'linestyle', 'visible']
 
     def draw_annotation(self, axis, positions, opts):
-        "Draw a horizontal span on the axis"
+        """Draw a horizontal span on the axis
+
+        """
         if self.invert_axes:
             return [axis.axvspan(*positions, **opts)]
         else:
@@ -137,7 +149,9 @@ class SlopePlot(AnnotationPlot):
     style_opts = ['alpha', 'color', 'linewidth', 'linestyle', 'visible']
 
     def draw_annotation(self, axis, position, opts):
-        "Draw a horizontal line on the axis"
+        """Draw a horizontal line on the axis
+
+        """
         gradient, intercept = position
         if self.invert_axes:
             if gradient == 0:
@@ -149,7 +163,9 @@ class SlopePlot(AnnotationPlot):
 
 
 class TextPlot(AnnotationPlot):
-    "Draw the Text annotation object"
+    """Draw the Text annotation object
+
+    """
 
     style_opts = ['alpha', 'color', 'family', 'weight', 'visible']
 
@@ -207,7 +223,7 @@ class LabelsPlot(ColorbarPlot):
         if 'size' in style: style['fontsize'] = style.pop('size')
         if 'horizontalalignment' not in style: style['horizontalalignment'] = 'center'
         if 'verticalalignment' not in style: style['verticalalignment'] = 'center'
-        return positions + (text, cs), style, {}
+        return (*positions, text, cs), style, {}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         if plot_args[-1] is not None:
@@ -221,7 +237,7 @@ class LabelsPlot(ColorbarPlot):
         vectorized = {k: v for k, v in plot_kwargs.items() if isinstance(v, np.ndarray)}
 
         texts = []
-        for i, item in enumerate(zip(*plot_args)):
+        for i, item in enumerate(zip(*plot_args, strict=None)):
             x, y, text = item[:3]
             if len(item) == 4 and cmap is not None:
                 color = item[3]
@@ -242,10 +258,12 @@ class LabelsPlot(ColorbarPlot):
 
 
 class ArrowPlot(AnnotationPlot):
-    "Draw an arrow using the information supplied to the Arrow annotation"
+    """Draw an arrow using the information supplied to the Arrow annotation
+
+    """
 
     _arrow_style_opts = ['alpha', 'color', 'lw', 'linewidth', 'visible']
-    _text_style_opts = TextPlot.style_opts + ['textsize', 'fontsize']
+    _text_style_opts = [*TextPlot.style_opts, 'textsize', 'fontsize']
 
     style_opts = sorted(set(_arrow_style_opts + _text_style_opts))
 
@@ -272,7 +290,9 @@ class ArrowPlot(AnnotationPlot):
 
 
 class SplinePlot(AnnotationPlot):
-    "Draw the supplied Spline annotation (see Spline docstring)"
+    """Draw the supplied Spline annotation (see Spline docstring)
+
+    """
 
     style_opts = ['alpha', 'edgecolor', 'linewidth', 'linestyle', 'visible']
 
@@ -301,11 +321,12 @@ class _SyntheticAnnotationPlot(AnnotationPlot):
         else:
             size = len(self.hmap.last.kdims)
             first_keys = list(positions)[:size]
-            values = zip(*[positions[n] for n in first_keys])
+            values = zip(*[positions[n] for n in first_keys], strict=None)
         fn = getattr(axis, self._methods[self.invert_axes])
         return [fn(*val, **opts) for val in values]
 
     def get_extents(self, element, ranges=None, range_type='combined', **kwargs):
+        import pandas as pd
         extents = super().get_extents(element, ranges, range_type)
         if isinstance(element, HLines):
             extents = np.nan, extents[0], np.nan, extents[2]

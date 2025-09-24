@@ -1,14 +1,13 @@
-"""
-Supplies MultiDimensionalMapping and NdMapping which are multi-dimensional
+"""Supplies MultiDimensionalMapping and NdMapping which are multi-dimensional
 map types. The former class only allows indexing whereas the latter
 also enables slicing over multiple dimension ranges.
+
 """
 
 from itertools import cycle
 from operator import itemgetter
 
 import numpy as np
-import pandas as pd
 import param
 
 from . import util
@@ -24,12 +23,12 @@ from .util import (
 
 
 class item_check:
-    """
-    Context manager to allow creating NdMapping types without
+    """Context manager to allow creating NdMapping types without
     performing the usual item_checks, providing significant
     speedups when there are a lot of items. Should only be
     used when both keys and values are guaranteed to be the
     right type, as is the case for many internal operations.
+
     """
 
     def __init__(self, enabled):
@@ -44,11 +43,11 @@ class item_check:
 
 
 class sorted_context:
-    """
-    Context manager to temporarily disable sorting on NdMapping
+    """Context manager to temporarily disable sorting on NdMapping
     types. Retains the current sort order, which can be useful as
     an optimization on NdMapping instances where sort=True but the
     items are already known to have been sorted.
+
     """
 
     def __init__(self, enabled):
@@ -64,8 +63,7 @@ class sorted_context:
 
 
 class MultiDimensionalMapping(Dimensioned):
-    """
-    An MultiDimensionalMapping is a Dimensioned mapping (like a
+    """An MultiDimensionalMapping is a Dimensioned mapping (like a
     dictionary or array) that uses fixed-length multidimensional
     keys. This behaves like a sparse N-dimensional array that does not
     require a dense sampling over the multidimensional space.
@@ -87,6 +85,7 @@ class MultiDimensionalMapping(Dimensioned):
     useful slicing methods for selecting subsets of the data. Even so,
     keeping the slicing support separate from the indexing and data
     storage methods helps make both classes easier to understand.
+
     """
 
     group = param.String(default='MultiDimensionalMapping', constant=True)
@@ -129,10 +128,10 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def _item_check(self, dim_vals, data):
-        """
-        Applies optional checks to individual data elements before
+        """Applies optional checks to individual data elements before
         they are inserted ensuring that they are of a certain
         type. Subclassed may implement further element restrictions.
+
         """
         if not self._check_items:
             return
@@ -147,16 +146,15 @@ class MultiDimensionalMapping(Dimensioned):
             raise TypeError(f'{slf} does not accept {data} type, data elements have '
                             f'to be a {data_type}.')
         elif not len(dim_vals) == self.ndims:
-            raise KeyError('The data contains keys of length %d, but the kdims '
-                           'only declare %d dimensions. Ensure that the number '
-                           'of kdims match the length of the keys in your data.'
-                           % (len(dim_vals), self.ndims))
+            raise KeyError(f'The data contains keys of length {len(dim_vals)}, but the kdims '
+                           f'only declare {self.ndims} dimensions. Ensure that the number '
+                           'of kdims match the length of the keys in your data.')
 
 
     def _add_item(self, dim_vals, data, sort=True, update=True):
-        """
-        Adds item to the data, applying dimension types and ensuring
+        """Adds item to the data, applying dimension types and ensuring
         key conforms to Dimension type and values.
+
         """
         sort = sort and self.sort
         if not isinstance(dim_vals, tuple):
@@ -165,9 +163,9 @@ class MultiDimensionalMapping(Dimensioned):
         self._item_check(dim_vals, data)
 
         # Apply dimension types
-        dim_types = zip([kd.type for kd in self.kdims], dim_vals)
+        dim_types = zip([kd.type for kd in self.kdims], dim_vals, strict=None)
         dim_vals = tuple(v if None in [t, v] else t(v) for t, v in dim_types)
-        valid_vals = zip(self.kdims, dim_vals)
+        valid_vals = zip(self.kdims, dim_vals, strict=None)
 
         for dim, val in valid_vals:
             if dim.values and val is not None and val not in dim.values:
@@ -186,12 +184,12 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def _apply_key_type(self, keys):
-        """
-        If a type is specified by the corresponding key dimension,
+        """If a type is specified by the corresponding key dimension,
         this method applies the type to the supplied key.
+
         """
         typed_key = ()
-        for dim, key in zip(self.kdims, keys):
+        for dim, key in zip(self.kdims, keys, strict=None):
             key_type = dim.type
             if key_type is None:
                 typed_key += (key,)
@@ -209,10 +207,10 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def _split_index(self, key):
-        """
-        Partitions key into key and deep dimension groups. If only key
+        """Partitions key into key and deep dimension groups. If only key
         indices are supplied, the data is indexed with an empty tuple.
         Keys with indices than there are dimensions will be padded.
+
         """
         if not isinstance(key, tuple):
             key = (key,)
@@ -236,10 +234,10 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def _dataslice(self, data, indices):
-        """
-        Returns slice of data element if the item is deep
+        """Returns slice of data element if the item is deep
         indexable. Warns if attempting to slice an object that has not
         been declared deep indexable.
+
         """
         if self._deep_indexable and isinstance(data, Dimensioned) and indices:
             return data[indices]
@@ -257,18 +255,26 @@ class MultiDimensionalMapping(Dimensioned):
     def clone(self, data=None, shared_data=True, *args, **overrides):
         """Clones the object, overriding data and parameters.
 
-        Args:
-            data: New data replacing the existing data
-            shared_data (bool, optional): Whether to use existing data
-            new_type (optional): Type to cast object to
-            link (bool, optional): Whether clone should be linked
-                Determines whether Streams and Links attached to
-                original object will be inherited.
-            *args: Additional arguments to pass to constructor
-            **overrides: New keyword arguments to pass to constructor
+        Parameters
+        ----------
+        data
+            New data replacing the existing data
+        shared_data : bool, optional
+            Whether to use existing data
+        new_type : optional
+            Type to cast object to
+        link : bool, optional
+            Whether clone should be linked
+            Determines whether Streams and Links attached to
+            original object will be inherited.
+        *args
+            Additional arguments to pass to constructor
+        **overrides
+            New keyword arguments to pass to constructor
 
-        Returns:
-            Cloned object
+        Returns
+        -------
+        Cloned object
         """
         with item_check(not shared_data and self._check_items):
             return super().clone(data, shared_data, *args, **overrides)
@@ -281,16 +287,23 @@ class MultiDimensionalMapping(Dimensioned):
         returning an object of type container_type (expected to be
         dictionary-like) containing the groups.
 
-        Args:
-            dimensions: Dimension(s) to group by
-            container_type: Type to cast group container to
-            group_type: Type to cast each group to
-            dynamic: Whether to return a DynamicMap
-            **kwargs: Keyword arguments to pass to each group
+        Parameters
+        ----------
+        dimensions
+            Dimension(s) to group by
+        container_type
+            Type to cast group container to
+        group_type
+            Type to cast each group to
+        dynamic
+            Whether to return a DynamicMap
+        **kwargs
+            Keyword arguments to pass to each group
 
-        Returns:
-            Returns object of supplied container_type containing the
-            groups. If dynamic=True returns a DynamicMap instead.
+        Returns
+        -------
+        Returns object of supplied container_type containing the
+        groups. If dynamic=True returns a DynamicMap instead.
         """
         if self.ndims == 1:
             self.param.warning('Cannot split Map with only one dimension.')
@@ -313,15 +326,22 @@ class MultiDimensionalMapping(Dimensioned):
         the key dimensions and a key value scalar or sequence of the
         same length as the existing keys.
 
-        Args:
-            dimension: Dimension or dimension spec to add
-            dim_pos (int) Integer index to insert dimension at
-            dim_val (scalar or ndarray): Dimension value(s) to add
-            vdim: Disabled, this type does not have value dimensions
-            **kwargs: Keyword arguments passed to the cloned element
+        Parameters
+        ----------
+        dimension
+            Dimension or dimension spec to add
+        dim_pos : int
+            Integer index to insert dimension at
+        dim_val : scalar or ndarray
+            Dimension value(s) to add
+        vdim
+            Disabled, this type does not have value dimensions
+        **kwargs
+            Keyword arguments passed to the cloned element
 
-        Returns:
-            Cloned object containing the new dimension
+        Returns
+        -------
+        Cloned object containing the new dimension
         """
         dimension = asdim(dimension)
 
@@ -348,7 +368,7 @@ class MultiDimensionalMapping(Dimensioned):
                                 "as existing keys.")
 
         items = {}
-        for dval, (key, val) in zip(dim_val, self.data.items()):
+        for dval, (key, val) in zip(dim_val, self.data.items(), strict=None):
             if vdim:
                 new_val = list(val)
                 new_val.insert(dim_pos, dval)
@@ -364,11 +384,14 @@ class MultiDimensionalMapping(Dimensioned):
     def drop_dimension(self, dimensions):
         """Drops dimension(s) from keys
 
-        Args:
-            dimensions: Dimension(s) to drop
+        Parameters
+        ----------
+        dimensions
+            Dimension(s) to drop
 
-        Returns:
-            Clone of object with with dropped dimension(s)
+        Returns
+        -------
+        Clone of object with with dropped dimension(s)
         """
         dimensions = [dimensions] if np.isscalar(dimensions) else dimensions
         dims = [d for d in self.kdims if d not in dimensions]
@@ -379,21 +402,6 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Args:
-            dimension: The dimension to return values for
-            expanded (bool, optional): Whether to expand values
-                Whether to return the expanded values, behavior depends
-                on the type of data:
-                  * Columnar: If false returns unique values
-                  * Geometry: If false returns scalar values per geometry
-                  * Gridded: If false returns 1D coordinates
-            flat (bool, optional): Whether to flatten array
-
-        Returns:
-            NumPy array of values along the requested dimension
-        """
         dimension = self.get_dimension(dimension, strict=True)
         if dimension in self.kdims:
             return np.array([k[self.get_dimension_index(dimension)] for k in self.data.keys()])
@@ -417,26 +425,30 @@ class MultiDimensionalMapping(Dimensioned):
         created object as the new labels must be sufficient to address
         each value uniquely.
 
-        Args:
-            kdims (optional): New list of key dimensions after reindexing
-            force (bool, optional): Whether to drop non-unique items
+        Parameters
+        ----------
+        kdims : optional
+            New list of key dimensions after reindexing
+        force : bool, optional
+            Whether to drop non-unique items
 
-        Returns:
-            Reindexed object
+        Returns
+        -------
+        Reindexed object
         """
         if kdims is None:
             kdims = []
         old_kdims = [d.name for d in self.kdims]
         if not isinstance(kdims, list):
             kdims = [kdims]
-        elif not len(kdims):
+        elif not kdims:
             kdims = [d for d in old_kdims
                      if not len(set(self.dimension_values(d))) == 1]
         indices = [self.get_dimension_index(el) for el in kdims]
 
         keys = [tuple(k[i] for i in indices) for k in self.data.keys()]
         reindexed_items = dict(
-            (k, v) for (k, v) in zip(keys, self.data.values()))
+            (k, v) for (k, v) in zip(keys, self.data.values(), strict=None))
         reduced_dims = {d.name for d in self.kdims}.difference(kdims)
         dimensions = [self.get_dimension(d) for d in kdims
                       if d not in reduced_dims]
@@ -445,7 +457,7 @@ class MultiDimensionalMapping(Dimensioned):
             raise Exception("Given dimension labels not sufficient"
                             "to address all values uniquely")
 
-        if len(keys):
+        if keys:
             cdims = {self.get_dimension(d): self.dimension_values(d)[0] for d in reduced_dims}
         else:
             cdims = {}
@@ -456,27 +468,30 @@ class MultiDimensionalMapping(Dimensioned):
 
     @property
     def last(self):
-        "Returns the item highest data item along the map dimensions."
+        """Returns the item highest data item along the map dimensions.
+
+        """
         return list(self.data.values())[-1] if len(self) else None
 
 
     @property
     def last_key(self):
-        "Returns the last key value."
+        """Returns the last key value.
+
+        """
         return list(self.keys())[-1] if len(self) else None
 
 
     @property
     def info(self):
-        """
-        Prints information about the Dimensioned object, including the
+        """Prints information about the Dimensioned object, including the
         number and type of objects contained within it and information
         about its dimensions.
+
         """
         if (len(self.values()) > 0):
             info_str = self.__class__.__name__ +\
-                       " containing %d items of type %s\n" % (len(self.keys()),
-                                                              type(self.values()[0]).__name__)
+                       f" containing {len(self.keys())} items of type {type(self.values()[0]).__name__}\n"
         else:
             info_str = self.__class__.__name__ + " containing no items\n"
         info_str += ('-' * (len(info_str)-1)) + "\n\n"
@@ -497,9 +512,11 @@ class MultiDimensionalMapping(Dimensioned):
     def update(self, other):
         """Merges other item with this object
 
-        Args:
-            other: Object containing items to merge into this object
-                Must be a dictionary or NdMapping type
+        Parameters
+        ----------
+        other
+            Object containing items to merge into this object
+            Must be a dictionary or NdMapping type
         """
         if isinstance(other, NdMapping):
             dims = [d for d in other.kdims if d not in self.kdims]
@@ -516,7 +533,9 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def keys(self):
-        " Returns the keys of all the elements."
+        """Returns the keys of all the elements.
+
+        """
         if self.ndims == 1:
             return [k[0] for k in self.data.keys()]
         else:
@@ -524,17 +543,23 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def values(self):
-        "Returns the values of all the elements."
+        """Returns the values of all the elements.
+
+        """
         return list(self.data.values())
 
 
     def items(self):
-        "Returns all elements as a list in (key,value) format."
-        return list(zip(list(self.keys()), list(self.values())))
+        """Returns all elements as a list in (key,value) format.
+
+        """
+        return list(zip(list(self.keys()), list(self.values()), strict=None))
 
 
     def get(self, key, default=None):
-        "Standard get semantics for all mapping types"
+        """Standard get semantics for all mapping types
+
+        """
         try:
             if key is None:
                 return None
@@ -544,16 +569,18 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def pop(self, key, default=None):
-        "Standard pop semantics for all mapping types"
+        """Standard pop semantics for all mapping types
+
+        """
         if not isinstance(key, tuple): key = (key,)
         return self.data.pop(key, default)
 
 
     def __getitem__(self, key):
-        """
-        Allows multi-dimensional indexing in the order of the
+        """Allows multi-dimensional indexing in the order of the
         specified key dimensions, passing any additional indices to
         the data elements.
+
         """
         if key in [Ellipsis, ()]:
             return self
@@ -562,7 +589,9 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def __setitem__(self, key, value):
-        "Adds item to mapping"
+        """Adds item to mapping
+
+        """
         self._add_item(key, value, update=False)
 
 
@@ -571,7 +600,9 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def __iter__(self):
-        "Iterates over mapping values"
+        """Iterates over mapping values
+
+        """
         return iter(self.values())
 
 
@@ -586,29 +617,29 @@ class MultiDimensionalMapping(Dimensioned):
 
 
 class NdMapping(MultiDimensionalMapping):
-    """
-    NdMapping supports the same indexing semantics as
+    """NdMapping supports the same indexing semantics as
     MultiDimensionalMapping but also supports slicing semantics.
 
     Slicing semantics on an NdMapping is dependent on the ordering
     semantics of the keys. As MultiDimensionalMapping sort the keys, a
     slice on an NdMapping is effectively a way of filtering out the
     keys that are outside the slice range.
+
     """
 
     group = param.String(default='NdMapping', constant=True)
 
     def __getitem__(self, indexslice):
-        """
-        Allows slicing operations along the key and data
+        """Allows slicing operations along the key and data
         dimensions. If no data slice is supplied it will return all
         data elements, otherwise it will return the requested slice of
         the data.
+
         """
         if isinstance(indexslice, np.ndarray) and indexslice.dtype.kind == 'b':
             if not len(indexslice) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
-            selection = zip(indexslice, self.data.items())
+            selection = zip(indexslice, self.data.items(), strict=None)
             return self.clone([item for c, item in selection if c])
         elif isinstance(indexslice, tuple) and indexslice == () and not self.kdims:
             return self.data[()]
@@ -627,7 +658,7 @@ class NdMapping(MultiDimensionalMapping):
         else:
             conditions = self._generate_conditions(map_slice)
             items = self.data.items()
-            for cidx, (condition, dim) in enumerate(zip(conditions, self.kdims)):
+            for cidx, (condition, dim) in enumerate(zip(conditions, self.kdims, strict=None)):
                 values = dim.values
                 items = [(k, v) for k, v in items
                          if condition(values.index(k[cidx])
@@ -644,8 +675,8 @@ class NdMapping(MultiDimensionalMapping):
 
 
     def _expand_slice(self, indices):
-        """
-        Expands slices containing steps into a list.
+        """Expands slices containing steps into a list.
+
         """
         keys = list(self.data.keys())
         expanded = []
@@ -668,19 +699,19 @@ class NdMapping(MultiDimensionalMapping):
 
 
     def _transform_indices(self, indices):
-        """
-        Identity function here but subclasses can implement transforms
+        """Identity function here but subclasses can implement transforms
         of the dimension indices from one coordinate system to another.
+
         """
         return indices
 
 
     def _generate_conditions(self, map_slice):
-        """
-        Generates filter conditions used for slicing the data structure.
+        """Generates filter conditions used for slicing the data structure.
+
         """
         conditions = []
-        for dim, dim_slice in zip(self.kdims, map_slice):
+        for dim, dim_slice in zip(self.kdims, map_slice, strict=None):
             if isinstance(dim_slice, slice):
                 start, stop = dim_slice.start, dim_slice.stop
                 if dim.values:
@@ -750,8 +781,7 @@ class NdMapping(MultiDimensionalMapping):
 
 
 class UniformNdMapping(NdMapping):
-    """
-    A UniformNdMapping is a map of Dimensioned objects and is itself
+    """A UniformNdMapping is a map of Dimensioned objects and is itself
     indexed over a number of specified dimensions. The dimension may
     be a spatial dimension (i.e., a ZStack), time (specifying a frame
     sequence) or any other combination of Dimensions.
@@ -760,6 +790,7 @@ class UniformNdMapping(NdMapping):
     and split along its and its containing Element's dimensions.
     Subclasses should implement the appropriate slicing, sampling and
     reduction methods for their Dimensioned type.
+
     """
 
     data_type = (ViewableElement, NdMapping)
@@ -778,18 +809,26 @@ class UniformNdMapping(NdMapping):
               *args, **overrides):
         """Clones the object, overriding data and parameters.
 
-        Args:
-            data: New data replacing the existing data
-            shared_data (bool, optional): Whether to use existing data
-            new_type (optional): Type to cast object to
-            link (bool, optional): Whether clone should be linked
-                Determines whether Streams and Links attached to
-                original object will be inherited.
-            *args: Additional arguments to pass to constructor
-            **overrides: New keyword arguments to pass to constructor
+        Parameters
+        ----------
+        data
+            New data replacing the existing data
+        shared_data : bool, optional
+            Whether to use existing data
+        new_type : optional
+            Type to cast object to
+        link : bool, optional
+            Whether clone should be linked
+            Determines whether Streams and Links attached to
+            original object will be inherited.
+        *args
+            Additional arguments to pass to constructor
+        **overrides
+            New keyword arguments to pass to constructor
 
-        Returns:
-            Cloned object
+        Returns
+        -------
+        Cloned object
         """
         settings = self.param.values()
         if settings.get('group', None) != self._group:
@@ -824,18 +863,24 @@ class UniformNdMapping(NdMapping):
         Useful to collapse stacks of objects into a single object,
         e.g. to average a stack of Images or Curves.
 
-        Args:
-            dimensions: Dimension(s) to collapse
-                Defaults to all key dimensions
-            function: Aggregation function to apply, e.g. numpy.mean
-            spreadfn: Secondary reduction to compute value spread
-                Useful for computing a confidence interval, spread, or
-                standard deviation.
-            **kwargs: Keyword arguments passed to the aggregation function
+        Parameters
+        ----------
+        dimensions
+            Dimension(s) to collapse
+            Defaults to all key dimensions
+        function
+            Aggregation function to apply, e.g. numpy.mean
+        spreadfn
+            Secondary reduction to compute value spread
+            Useful for computing a confidence interval, spread, or
+            standard deviation.
+        **kwargs
+            Keyword arguments passed to the aggregation function
 
-        Returns:
-            Returns the collapsed element or HoloMap of collapsed
-            elements
+        Returns
+        -------
+        Returns the collapsed element or HoloMap of collapsed
+        elements
         """
         from .data import concat
         from .overlay import CompositeOverlay
@@ -869,7 +914,7 @@ class UniformNdMapping(NdMapping):
                 keys, maps = self._split_overlays()
                 group_data = group.type(dict([
                     (key, ndmap.collapse(function=function, spreadfn=spreadfn, **kwargs))
-                    for key, ndmap in zip(keys, maps)
+                    for key, ndmap in zip(keys, maps, strict=None)
                 ]))
             else:
                 raise ValueError(
@@ -886,13 +931,19 @@ class UniformNdMapping(NdMapping):
         Returns a pandas dataframe of columns along each dimension,
         either completely flat or indexed by key dimensions.
 
-        Args:
-            dimensions: Dimensions to return as columns
-            multi_index: Convert key dimensions to (multi-)index
+        Parameters
+        ----------
+        dimensions
+            Dimensions to return as columns
+        multi_index
+            Convert key dimensions to (multi-)index
 
-        Returns:
-            DataFrame of columns corresponding to each dimension
+        Returns
+        -------
+        DataFrame of columns corresponding to each dimension
         """
+        import pandas as pd
+
         if dimensions is None:
             outer_dimensions = self.kdims
             inner_dimensions = None
@@ -920,7 +971,7 @@ class UniformNdMapping(NdMapping):
                 for dim, val in key_dims:
                     dimn = 1
                     while dim in df:
-                        dim = dim+'_%d' % dimn
+                        dim = dim+f'_{dimn}'
                         if dim in df:
                             dimn += 1
                     df.insert(0, dim, val)
@@ -930,7 +981,9 @@ class UniformNdMapping(NdMapping):
 
     @property
     def group(self):
-        "Group inherited from items"
+        """Group inherited from items
+
+        """
         if self._group:
             return self._group
         group =  get_ndmapping_label(self, 'group') if len(self) else None
@@ -942,14 +995,15 @@ class UniformNdMapping(NdMapping):
     @group.setter
     def group(self, group):
         if group is not None and not sanitize_identifier.allowable(group):
-            raise ValueError("Supplied group %s contains invalid "
-                             "characters." % self.group)
+            raise ValueError(f"Supplied group {self.group} contains invalid characters.")
         self._group = group
 
 
     @property
     def label(self):
-        "Label inherited from items"
+        """Label inherited from items
+
+        """
         if self._label:
             return self._label
         elif len(self):
@@ -962,13 +1016,14 @@ class UniformNdMapping(NdMapping):
     @label.setter
     def label(self, label):
         if label is not None and not sanitize_identifier.allowable(label):
-            raise ValueError("Supplied group %s contains invalid "
-                             "characters." % self.group)
+            raise ValueError(f"Supplied group {self.group} contains invalid characters.")
         self._label = label
 
     @property
     def type(self):
-        "The type of elements stored in the mapping."
+        """The type of elements stored in the mapping.
+
+        """
         if self._type is None and len(self):
             self._type = self.values()[0].__class__
         return self._type
@@ -982,7 +1037,7 @@ class UniformNdMapping(NdMapping):
     def _item_check(self, dim_vals, data):
         if not self._check_items:
             return
-        elif self.type is not None and (type(data) != self.type):
+        elif self.type is not None and (type(data) is not self.type):
             raise AssertionError(f"{self.__class__.__name__} must only contain one type of object, not both {type(data).__name__} and {self.type.__name__}.")
         super()._item_check(dim_vals, data)
 
@@ -991,9 +1046,8 @@ class UniformNdMapping(NdMapping):
         from .overlay import Overlay
         if isinstance(other, type(self)):
             if self.kdims != other.kdims:
-                raise KeyError("Can only overlay two %ss with "
-                               "non-matching key dimensions."
-                               % type(self).__name__)
+                raise KeyError(f"Can only overlay two {type(self).__name__}s with "
+                               "non-matching key dimensions.")
             items = []
             self_keys = list(self.data.keys())
             other_keys = list(other.data.keys())

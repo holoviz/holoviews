@@ -6,11 +6,11 @@ from .selection import Selection2DExpr, SelectionGeomExpr
 
 
 class Geometry(Dataset, Element2D):
-    """
-    Geometry elements represent a collection of objects drawn in
+    """Geometry elements represent a collection of objects drawn in
     a 2D coordinate system. The two key dimensions correspond to the
     x- and y-coordinates in the 2D space, while the value dimensions
     may be used to control other visual attributes of the Geometry
+
     """
 
     group = param.String(default='Geometry', constant=True)
@@ -27,9 +27,9 @@ class Geometry(Dataset, Element2D):
 
 
 class Points(Selection2DExpr, Geometry):
-    """
-    Points represents a set of coordinates in 2D space, which may
+    """Points represents a set of coordinates in 2D space, which may
     optionally be associated with any number of value dimensions.
+
     """
 
     group = param.String(default='Points', constant=True)
@@ -38,12 +38,12 @@ class Points(Selection2DExpr, Geometry):
 
 
 class VectorField(Selection2DExpr, Geometry):
-    """
-    A VectorField represents a set of vectors in 2D space with an
+    """A VectorField represents a set of vectors in 2D space with an
     associated angle, as well as an optional magnitude and any number
     of other value dimensions. The angles are assumed to be defined in
     radians and by default the magnitude is assumed to be normalized
     to be between 0 and 1.
+
     """
 
     group = param.String(default='VectorField', constant=True)
@@ -76,15 +76,17 @@ class VectorField(Selection2DExpr, Geometry):
             repackaged_dataset[vdim] = dataset[vdim]
         vdims = [
             Dimension('Angle', cyclic=True, range=(0, 2 * np.pi)),
-            Dimension('Magnitude')
-        ] + vdims[2:]
+            Dimension('Magnitude'),
+            *vdims[2:],
+        ]
         return cls(repackaged_dataset, kdims=kdims, vdims=vdims, **params)
 
 
 class Segments(SelectionGeomExpr, Geometry):
+    """Segments represent a collection of lines in 2D space.
+
     """
-    Segments represent a collection of lines in 2D space.
-    """
+
     group = param.String(default='Segments', constant=True)
 
     kdims = param.List(default=[Dimension('x0'), Dimension('y0'),
@@ -95,8 +97,8 @@ class Segments(SelectionGeomExpr, Geometry):
 
 
 class Rectangles(SelectionGeomExpr, Geometry):
-    """
-    Rectangles represent a collection of axis-aligned rectangles in 2D space.
+    """Rectangles represent a collection of axis-aligned rectangles in 2D space.
+
     """
 
     group = param.String(default='Rectangles', constant=True)

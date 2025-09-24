@@ -2,7 +2,7 @@ import numpy as np
 
 from holoviews.element import HeatMap, Image
 
-from .test_plot import TestMPLPlot, mpl38, mpl_renderer
+from .test_plot import MPL_GE_3_8_0, TestMPLPlot, mpl_renderer
 
 
 class TestHeatMapPlot(TestMPLPlot):
@@ -12,7 +12,7 @@ class TestHeatMapPlot(TestMPLPlot):
         hm = HeatMap(Image(arr)).opts(invert_axes=True)
         plot = mpl_renderer.get_plot(hm)
         artist = plot.handles['artist']
-        if mpl38:
+        if MPL_GE_3_8_0:
             np.testing.assert_equal(artist.get_array().data, arr.T[::-1])
         else:
             np.testing.assert_equal(artist.get_array().data, arr.T[::-1].flatten())
@@ -26,7 +26,7 @@ class TestHeatMapPlot(TestMPLPlot):
         hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).opts(invert_xaxis=True)
         plot = mpl_renderer.get_plot(hmap)
         array = plot.handles['artist'].get_array()
-        if mpl38:
+        if MPL_GE_3_8_0:
             expected = np.array([[1, np.inf], [np.inf, 2]])
         else:
             expected = np.array([1, np.inf, np.inf, 2])
@@ -38,7 +38,7 @@ class TestHeatMapPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(hmap)
         array = plot.handles['artist'].get_array()
         expected = np.array([1, np.inf, np.inf, 2])
-        if mpl38:
+        if MPL_GE_3_8_0:
             expected = np.array([[1, np.inf], [np.inf, 2]])
         else:
             expected = np.array([1, np.inf, np.inf, 2])

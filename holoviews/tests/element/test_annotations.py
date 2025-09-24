@@ -15,7 +15,7 @@ class AnnotationTests(ComparisonTestCase):
     """
 
     def test_hline_invalid_constructor(self):
-        if Version(param.__version__) > Version('2.0.0a2'):
+        if Version(param.__version__).release >= (2, 0, 0):
             err = "ClassSelector parameter 'HLine.y' value must be an instance of"
         else:
             err = "ClassSelector parameter 'y' value must be an instance of"

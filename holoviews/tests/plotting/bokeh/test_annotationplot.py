@@ -17,11 +17,11 @@ from holoviews.element import (
     VSpan,
     VSpans,
 )
-from holoviews.plotting.bokeh.util import bokeh32, bokeh33
+from holoviews.plotting.bokeh.util import BOKEH_GE_3_2_0, BOKEH_GE_3_3_0, BOKEH_GE_3_4_0
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
-if bokeh32:
+if BOKEH_GE_3_2_0:
     from bokeh.models import (
         HSpan as BkHSpan,
         HStrip as BkHStrip,
@@ -29,7 +29,9 @@ if bokeh32:
         VStrip as BkVStrip,
     )
 
-if bokeh33:
+if BOKEH_GE_3_4_0:
+    from bokeh.models import Node
+elif BOKEH_GE_3_3_0:
     from bokeh.models.coordinates import Node
 
 
@@ -73,7 +75,7 @@ class TestHVSpanPlot(TestBokehPlot):
 
         assert span.left == 1.1
         assert span.right == 1.5
-        if bokeh33:
+        if BOKEH_GE_3_3_0:
             assert isinstance(span.bottom, Node)
             assert isinstance(span.top, Node)
         else:
@@ -85,7 +87,7 @@ class TestHVSpanPlot(TestBokehPlot):
         hspan = HSpan(1.1, 1.5)
         plot = bokeh_renderer.get_plot(hspan)
         span = plot.handles['glyph']
-        if bokeh33:
+        if BOKEH_GE_3_3_0:
             assert isinstance(span.left, Node)
             assert isinstance(span.right, Node)
         else:
@@ -105,7 +107,7 @@ class TestHVSpanPlot(TestBokehPlot):
         vspan = VSpan(1.1, 1.5).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(vspan)
         span = plot.handles['glyph']
-        if bokeh33:
+        if BOKEH_GE_3_3_0:
             assert isinstance(span.left, Node)
             assert isinstance(span.right, Node)
         else:
@@ -121,7 +123,7 @@ class TestHVSpanPlot(TestBokehPlot):
         span = plot.handles['glyph']
         assert span.left == 1.1
         assert span.right == 1.5
-        if bokeh33:
+        if BOKEH_GE_3_3_0:
             assert isinstance(span.bottom, Node)
             assert isinstance(span.top, Node)
         else:
@@ -243,7 +245,7 @@ class TestLabelsPlot(TestBokehPlot):
 class TestHVLinesPlot(TestBokehPlot):
 
     def setUp(self):
-        if not bokeh32:
+        if not BOKEH_GE_3_2_0:
             raise unittest.SkipTest("Bokeh 3.2 added H/VLines")
         super().setUp()
 
@@ -264,6 +266,21 @@ class TestHVLinesPlot(TestBokehPlot):
         source = plot.handles["source"]
         assert list(source.data) == ["y"]
         assert (source.data["y"] == [0, 1, 2, 5.5]).all()
+
+    def test_hlines_plot_multi_y(self):
+        hlines = (
+            HLines({"y1": [1, 2, 3]}, 'y1') * HLines({'y2': [3, 4, 5]}, 'y2')
+        ).opts(multi_y=True)
+        plot = bokeh_renderer.get_plot(hlines)
+        sp1, sp2 = plot.subplots.values()
+        y1_range = sp1.handles['y_range']
+        assert y1_range.name == 'y1'
+        assert y1_range.start == 1
+        assert y1_range.end == 3
+        y2_range = sp2.handles['y_range']
+        assert y2_range.name == 'y2'
+        assert y2_range.start == 3
+        assert y2_range.end == 5
 
     def test_hlines_xlabel_ylabel(self):
         hlines = HLines(
@@ -427,7 +444,7 @@ class TestHVLinesPlot(TestBokehPlot):
 class TestHVSpansPlot(TestBokehPlot):
 
     def setUp(self):
-        if not bokeh32:
+        if not BOKEH_GE_3_2_0:
             raise unittest.SkipTest("Bokeh 3.2 added H/VSpans")
         super().setUp()
 
@@ -619,3 +636,15 @@ class TestHVSpansPlot(TestBokehPlot):
         assert plot_el.handles["x_range"].end == plot_dmap.handles["x_range"].end
         assert plot_el.handles["y_range"].start == plot_dmap.handles["y_range"].start
         assert plot_el.handles["y_range"].end == plot_dmap.handles["y_range"].end
+
+    def test_hspans_no_upper_range(self):
+        # Test for: https://github.com/holoviz/holoviews/issues/6289
+
+        dim = hv.Dimension("p", label="prob", range=(0, None))
+        fig = hv.Curve(
+            [(0, 0.6), (1, 0.3), (2, 0.4), (3, 0.45)], kdims="x", vdims=dim
+        )
+        spans = hv.HSpans([(0, 0.2), (0.4, 0.6)], kdims=["x", dim])
+        plot_el = bokeh_renderer.get_plot(spans * fig)
+        assert plot_el.handles["x_range"].start == 0
+        assert plot_el.handles["x_range"].end == 3

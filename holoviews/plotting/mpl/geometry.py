@@ -9,11 +9,12 @@ from .path import PathPlot, PolygonPlot
 
 
 class SegmentPlot(GeomMixin, ColorbarPlot):
-    """
-    Segments are lines in 2D space where each two key dimensions specify a
+    """Segments are lines in 2D space where each two key dimensions specify a
     (x, y) node of the line.
+
     """
-    style_opts = PathPlot.style_opts + ['cmap']
+
+    style_opts = [*PathPlot.style_opts, 'cmap']
 
     _nonvectorized_styles = ['cmap']
 
@@ -34,7 +35,7 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
         inds = (1, 0, 3, 2) if self.invert_axes else (0, 1, 2, 3)
         dims = element.dimensions()
         data = [[(x0, y0), (x1, y1)] for x0, y0, x1, y1
-                in zip(*(element.dimension_values(d) for d in inds))]
+                in zip(*(element.dimension_values(d) for d in inds), strict=None)]
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
         return (data,), style, {'dimensions': dims}
@@ -42,9 +43,9 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
 
 
 class RectanglesPlot(GeomMixin, ColorbarPlot):
-    """
-    Rectangles are polygons in 2D space where the key dimensions represent
+    """Rectangles are polygons in 2D space where the key dimensions represent
     the bottom-left and top-right corner of the rectangle.
+
     """
 
     style_opts = PolygonPlot.style_opts
@@ -72,7 +73,7 @@ class RectanglesPlot(GeomMixin, ColorbarPlot):
 
         dims = element.dimensions()
         data = [Rectangle((x0, y0), x1, y1) for (x0, y0, x1, y1)
-                in zip(x0s, y0s, x1s-x0s, y1s-y0s)]
+                in zip(x0s, y0s, x1s-x0s, y1s-y0s, strict=None)]
 
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)

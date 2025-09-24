@@ -1,5 +1,4 @@
-"""
-Options and OptionTrees allow different classes of options
+"""Options and OptionTrees allow different classes of options
 (e.g. matplotlib-specific styles and plot specific parameters) to be
 defined separately from the core data structures and away from
 visualization specific code.
@@ -49,10 +48,10 @@ from .util import group_sanitizer, label_sanitizer, sanitize_identifier
 
 
 def cleanup_custom_options(id, weakref=None):
-    """
-    Cleans up unused custom trees if all objects referencing the
+    """Cleans up unused custom trees if all objects referencing the
     custom id have been garbage collected or tree is otherwise
     unreferenced.
+
     """
     try:
         if Store._options_context:
@@ -82,9 +81,9 @@ def cleanup_custom_options(id, weakref=None):
 
 
 def lookup_options(obj, group, backend):
-    """
-    Given a HoloViews object, a plot option group (e.g. 'style') and
+    """Given a HoloViews object, a plot option group (e.g. 'style') and
     backend, return the corresponding Options object.
+
     """
     plot_class = None
     try:
@@ -103,28 +102,29 @@ def lookup_options(obj, group, backend):
 
 
 class CallbackError(RuntimeError):
-    """
-    An error raised during a callback.
+    """An error raised during a callback.
+
     """
 
 
 class SkipRendering(Exception):
-    """
-    A SkipRendering exception in the plotting code will make the display
+    """A SkipRendering exception in the plotting code will make the display
     hooks fall back to a text repr. Used to skip rendering of
     DynamicMaps with exhausted element generators.
+
     """
+
     def __init__(self, message="", warn=True):
         self.warn = warn
         super().__init__(message)
 
 
 class OptionError(Exception):
-    """
-    Custom exception raised when there is an attempt to apply invalid
+    """Custom exception raised when there is an attempt to apply invalid
     options. Stores the necessary information to construct a more
     readable message for the user if caught and processed
     appropriately.
+
     """
 
     def __init__(self, invalid_keyword, allowed_keywords,
@@ -147,8 +147,8 @@ class OptionError(Exception):
         return msg
 
     def format_options_error(self):
-        """
-        Return a fuzzy match message based on the OptionError
+        """Return a fuzzy match message based on the OptionError
+
         """
         allowed_keywords = self.allowed_keywords
         target = allowed_keywords.target
@@ -180,14 +180,15 @@ class OptionError(Exception):
 
 
 class AbbreviatedException(Exception):
-    """
-    Raised by the abbreviate_exception context manager when it is
+    """Raised by the abbreviate_exception context manager when it is
     appropriate to present an abbreviated the traceback and exception
     message in the notebook.
 
     Particularly useful when processing style options supplied by the
     user which may not be valid.
+
     """
+
     def __init__(self, etype, value, traceback):
         self.etype = etype
         self.value = value
@@ -202,18 +203,19 @@ class AbbreviatedException(Exception):
         )
 
     def print_traceback(self):
-        """
-        Print the traceback of the exception wrapped by the AbbreviatedException.
+        """Print the traceback of the exception wrapped by the AbbreviatedException.
+
         """
         traceback.print_exception(self.etype, self.value, self.traceback)
 
 
 class abbreviated_exception:
-    """
-    Context manager used to to abbreviate tracebacks using an
+    """Context manager used to to abbreviate tracebacks using an
     AbbreviatedException when a backend may raise an error due to
     incorrect style options.
+
     """
+
     def __enter__(self):
         return self
 
@@ -224,9 +226,9 @@ class abbreviated_exception:
 
 @contextmanager
 def options_policy(skip_invalid, warn_on_skip):
-    """
-    Context manager to temporarily set the skip_invalid and warn_on_skip
+    """Context manager to temporarily set the skip_invalid and warn_on_skip
     class parameters on Options.
+
     """
     settings = (Options.skip_invalid, Options.warn_on_skip)
     (Options.skip_invalid, Options.warn_on_skip) = (skip_invalid, warn_on_skip)
@@ -236,11 +238,10 @@ def options_policy(skip_invalid, warn_on_skip):
         (Options.skip_invalid, Options.warn_on_skip) = settings
 
 
-class Keywords(param.Parameterized):
-    """
-    A keywords objects represents a set of Python keywords. It is
+class Keywords:
+    """A keywords objects represents a set of Python keywords. It is
     list-like and ordered but it is also a set without duplicates. When
-    passed as **kwargs, Python keywords are not ordered but this class
+    passed as `**kwargs`, Python keywords are not ordered but this class
     always lists keywords in sorted order.
 
     In addition to containing the list of keywords, Keywords has an
@@ -248,22 +249,18 @@ class Keywords(param.Parameterized):
 
     This class is for internal use only and should not be in the user
     namespace.
+
     """
 
-    values = param.List(doc="Set of keywords as a sorted list.")
-
-    target = param.String(allow_None=True, doc="""
-       Optional string description of what the keywords apply to.""")
-
     def __init__(self, values=None, target=None):
-
         if values is None:
             values = []
-        strings = [isinstance(v, str) for v in values]
-        if False in strings:
+        if any(not isinstance(v, str) for v in values):
             raise ValueError(f'All keywords must be strings: {values}')
-        super().__init__(values=sorted(values),
-                                              target=target)
+        self.values = sorted(values)
+        if target is not None and not isinstance(target, str):
+            raise ValueError("Keywords target must be a string type.")
+        self.target = target
 
     def __add__(self, other):
         if (self.target and other.target) and (self.target != other.target):
@@ -272,9 +269,9 @@ class Keywords(param.Parameterized):
         return Keywords(sorted(set(self.values + other.values)), target=target)
 
     def fuzzy_match(self, kw):
-        """
-        Given a string, fuzzy match against the Keyword values,
+        """Given a string, fuzzy match against the Keyword values,
         returning a list of close matches.
+
         """
         return difflib.get_close_matches(kw, self.values)
 
@@ -295,12 +292,12 @@ class Keywords(param.Parameterized):
 
 
 class Cycle(param.Parameterized):
-    """
-    A simple container class that specifies cyclic options. A typical
+    """A simple container class that specifies cyclic options. A typical
     example would be to cycle the curve colors in an Overlay composed
     of an arbitrary number of curves. The values may be supplied as
     an explicit list or a key to look up in the default cycles
     attribute.
+
     """
 
     key = param.String(default='default_colors', allow_None=True, doc="""
@@ -368,8 +365,7 @@ def grayscale(val):
 
 
 class Palette(Cycle):
-    """
-    Palettes allow easy specifying a discrete sampling
+    """Palettes allow easy specifying a discrete sampling
     of an existing colormap. Palettes may be supplied a key
     to look up a function function in the colormap class
     attribute. The function should accept a float scalar
@@ -379,6 +375,7 @@ class Palette(Cycle):
 
     The range and samples may conveniently be overridden
     with the __getitem__ method.
+
     """
 
     key = param.String(default='grayscale', doc="""
@@ -406,12 +403,12 @@ class Palette(Cycle):
 
 
     def __getitem__(self, slc):
-        """
-        Provides a convenient interface to override the
+        """Provides a convenient interface to override the
         range and samples parameters of the Cycle.
         Supplying a slice step or index overrides the
         number of samples. Unsupplied slice values will be
         inherited.
+
         """
         (start, stop), step = self.range, self.samples
         if isinstance(slc, slice):
@@ -435,14 +432,14 @@ class Palette(Cycle):
 
 
 class Options:
-    """
-    An Options object holds a collection of keyword options. In
+    """An Options object holds a collection of keyword options. In
     addition, Options support (optional) keyword validation as well as
     infinite indexing over the set of supplied cyclic values.
 
     Options support inheritance of setting values via the __call__
     method. By calling an Options object with additional keywords, you
     can create a new Options object inheriting the parent options.
+
     """
 
     # Whether all Options instances should skip invalid keywords or
@@ -491,17 +488,17 @@ class Options:
         self.key = key
 
     def keywords_target(self, target):
-        """
-        Helper method to easily set the target on the allowed_keywords Keywords.
+        """Helper method to easily set the target on the allowed_keywords Keywords.
+
         """
         self.allowed_keywords.target = target
         return self
 
     def filtered(self, allowed):
-        """
-        Return a new Options object that is filtered by the specified
+        """Return a new Options object that is filtered by the specified
         list of keys. Mutating self.kwargs to filter is unsafe due to
         the option expansion that occurs on initialization.
+
         """
         kws = {k:v for k,v in self.kwargs.items() if k in allowed}
         return self.__class__(key=self.key,
@@ -510,8 +507,8 @@ class Options:
 
 
     def __call__(self, allowed_keywords=None, **kwargs):
-        """
-        Create a new Options object that inherits the parent options.
+        """Create a new Options object that inherits the parent options.
+
         """
         if 'key' not in kwargs:
             kwargs['key'] = self.key
@@ -520,14 +517,16 @@ class Options:
         return self.__class__(**dict(self.kwargs, **inherited_style))
 
     def keys(self):
-        "The keyword names across the supplied options."
+        """The keyword names across the supplied options.
+
+        """
         return sorted(list(self.kwargs.keys()))
 
     def max_cycles(self, num):
-        """
-        Truncates all contained Palette objects to a maximum number
+        """Truncates all contained Palette objects to a maximum number
         of samples and returns a new Options object containing the
         truncated or resampled Palettes.
+
         """
         kwargs = {kw: (arg[num] if isinstance(arg, Palette) else arg)
                   for kw, arg in self.kwargs.items()}
@@ -535,13 +534,15 @@ class Options:
 
     @property
     def cyclic(self):
-        "Returns True if the options cycle, otherwise False"
+        """Returns True if the options cycle, otherwise False
+
+        """
         return any(isinstance(val, Cycle) for val in self.kwargs.values())
 
     def __getitem__(self, index):
-        """
-        Infinite cyclic indexing of options over the integers,
+        """Infinite cyclic indexing of options over the integers,
         looping over the set of defined Cycle objects.
+
         """
         if len(self.kwargs) == 0:
             return {}
@@ -556,7 +557,9 @@ class Options:
 
     @property
     def options(self):
-        "Access of the options keywords when no cycles are defined."
+        """Access of the options keywords when no cycles are defined.
+
+        """
         if not self.cyclic:
             return self[0]
         else:
@@ -579,8 +582,7 @@ class Options:
 
 
 class OptionTree(AttrTree):
-    """
-    A subclass of AttrTree that is used to define the inheritance
+    """A subclass of AttrTree that is used to define the inheritance
     relationships between a collection of Options objects. Each node
     of the tree supports a group of Options objects and the leaf nodes
     inherit their keyword values from parent nodes up to the root.
@@ -602,6 +604,7 @@ class OptionTree(AttrTree):
     the options specification. This acts as an alternative was of
     specifying the options groups of the current node. Note that this
     approach method may only be used with the group lists format.
+
     """
 
     def __init__(self, items=None, identifier=None, parent=None,
@@ -630,10 +633,10 @@ class OptionTree(AttrTree):
             StoreOptions.apply_customizations(options, self)
 
     def _merge_options(self, identifier, group_name, options):
-        """
-        Computes a merged Options object for the given group
+        """Computes a merged Options object for the given group
         name from the existing Options on the node and the
         new Options which are passed in.
+
         """
         if group_name not in self.groups:
             raise KeyError(f"Group {group_name} not defined on SettingTree.")
@@ -668,9 +671,9 @@ class OptionTree(AttrTree):
         return super().__getitem__(item)
 
     def __getattr__(self, identifier):
-        """
-        Allows creating sub OptionTree instances using attribute
+        """Allows creating sub OptionTree instances using attribute
         access, inheriting the group options.
+
         """
         try:
             return super(AttrTree, self).__getattr__(identifier)
@@ -735,11 +738,11 @@ class OptionTree(AttrTree):
                 self[identifier].__setattr__(subtree.identifier, subtree)
 
     def find(self, path, mode='node'):
-        """
-        Find the closest node or path to an the arbitrary path that is
+        """Find the closest node or path to an the arbitrary path that is
         supplied down the tree from the given node. The mode argument
         may be either 'node' or 'path' which determines the return
         type.
+
         """
         path = path.split('.') if isinstance(path, str) else list(path)
         item = self
@@ -756,13 +759,13 @@ class OptionTree(AttrTree):
         return item if mode == 'node' else item.path
 
     def closest(self, obj, group, defaults=True, backend=None):
-        """
-        This method is designed to be called from the root of the
+        """This method is designed to be called from the root of the
         tree. Given any LabelledData object, this method will return
         the most appropriate Options object, including inheritance.
 
         In addition, closest supports custom options by checking the
         object
+
         """
         opts_spec = (
             obj.__class__.__name__,
@@ -772,7 +775,7 @@ class OptionTree(AttrTree):
         # Try to get a cache hit in the backend lookup cache
         backend = backend or Store.current_backend
         cache = Store._lookup_cache.get(backend, {})
-        cache_key = opts_spec+(group, defaults, id(self.root))
+        cache_key = (*opts_spec, group, defaults, id(self.root))
         if cache_key in cache:
             return cache[cache_key]
 
@@ -783,9 +786,9 @@ class OptionTree(AttrTree):
         return options
 
     def options(self, group, target=None, defaults=True, backend=None):
-        """
-        Using inheritance up to the root, get the complete Options
+        """Using inheritance up to the root, get the complete Options
         object for the given node and the specified group.
+
         """
         if target is None:
             target = self.path
@@ -808,8 +811,8 @@ class OptionTree(AttrTree):
         return Options(**dict(parent_opts.kwargs, **self.groups[group].kwargs))
 
     def __repr__(self):
-        """
-        Evalable representation of the OptionTree.
+        """Evalable representation of the OptionTree.
+
         """
         groups = self.__dict__['groups']
         # Tab and group entry separators
@@ -849,8 +852,7 @@ EMPTY_OPTIONS = Options()
 
 
 class Compositor(param.Parameterized):
-    """
-    A Compositor is a way of specifying an operation to be automatically
+    """A Compositor is a way of specifying an operation to be automatically
     applied to Overlays that match a specified pattern upon display.
 
     Any Operation that takes an Overlay as input may be used to define a
@@ -859,9 +861,10 @@ class Compositor(param.Parameterized):
     For instance, a compositor may be defined to automatically display
     three overlaid monochrome matrices as an RGB image as long as the
     values names of those matrices match 'R', 'G' and 'B'.
+
     """
 
-    mode = param.ObjectSelector(default='data',
+    mode = param.Selector(default='data',
                                 objects=['data', 'display'], doc="""
       The mode of the Compositor object which may be either 'data' or
       'display'.""")
@@ -902,12 +905,12 @@ class Compositor(param.Parameterized):
 
     @classmethod
     def strongest_match(cls, overlay, mode, backend=None):
-        """
-        Returns the single strongest matching compositor operation
+        """Returns the single strongest matching compositor operation
         given an overlay. If no matches are found, None is returned.
 
         The best match is defined as the compositor operation with the
         highest match value as returned by the match_level method.
+
         """
         match_strength = [
             (op.match_level(overlay), op) for op in cls.definitions
@@ -923,8 +926,8 @@ class Compositor(param.Parameterized):
 
     @classmethod
     def collapse_element(cls, overlay, ranges=None, mode='data', backend=None):
-        """
-        Finds any applicable compositor and applies it.
+        """Finds any applicable compositor and applies it.
+
         """
         from .element import Element
         from .overlay import CompositeOverlay, Overlay
@@ -959,7 +962,7 @@ class Compositor(param.Parameterized):
             if isinstance(overlay, Overlay):
                 result = [result]
             else:
-                result = list(zip(sliced.keys(), [result]))
+                result = list(zip(sliced.keys(), [result], strict=None))
             processed[applicable_op] += [el for r in result for el in r.traverse(lambda x: x, [Element])]
             overlay = overlay.clone(values[:start]+result+values[stop:])
 
@@ -972,8 +975,8 @@ class Compositor(param.Parameterized):
 
     @classmethod
     def collapse(cls, holomap, ranges=None, mode='data'):
-        """
-        Given a map of Overlays, apply all applicable compositors.
+        """Given a map of Overlays, apply all applicable compositors.
+
         """
         # No potential compositors
         if cls.definitions == []:
@@ -981,16 +984,16 @@ class Compositor(param.Parameterized):
 
         # Apply compositors
         clone = holomap.clone(shared_data=False)
-        data = zip(ranges[1], holomap.data.values()) if ranges else holomap.data.items()
+        data = zip(ranges[1], holomap.data.values(), strict=None) if ranges else holomap.data.items()
         for key, overlay in data:
             clone[key] = cls.collapse_element(overlay, ranges, mode)
         return clone
 
     @classmethod
     def map(cls, obj, mode='data', backend=None):
-        """
-        Applies compositor operations to any HoloViews element or container
+        """Applies compositor operations to any HoloViews element or container
         using the map method.
+
         """
         from .overlay import CompositeOverlay
         element_compositors = [c for c in cls.definitions if len(c._pattern_spec) == 1]
@@ -1043,19 +1046,19 @@ class Compositor(param.Parameterized):
 
     @property
     def output_type(self):
-        """
-        Returns the operation output_type unless explicitly overridden
+        """Returns the operation output_type unless explicitly overridden
         in the kwargs.
+
         """
         return self._output_type or self.operation.output_type
 
     def _slice_match_level(self, overlay_items):
-        """
-        Find the match strength for a list of overlay items that must
+        """Find the match strength for a list of overlay items that must
         be exactly the same length as the pattern specification.
+
         """
         level = 0
-        for spec, el in zip(self._pattern_spec, overlay_items):
+        for spec, el in zip(self._pattern_spec, overlay_items, strict=None):
             if spec[0] != type(el).__name__:
                 return None
             level += 1      # Types match
@@ -1074,13 +1077,13 @@ class Compositor(param.Parameterized):
         return level
 
     def match_level(self, overlay):
-        """
-        Given an overlay, return the match level and applicable slice
+        """Given an overlay, return the match level and applicable slice
         of the overall overlay. The level an integer if there is a
         match or None if there is no match.
 
         The level integer is the number of matching components. Higher
         values indicate a stronger match.
+
         """
         slice_width = len(self._pattern_spec)
         if slice_width > len(overlay): return None
@@ -1098,8 +1101,8 @@ class Compositor(param.Parameterized):
         return (best_lvl, match_slice) if best_lvl != 0 else None
 
     def apply(self, value, input_ranges, backend=None):
-        """
-        Apply the compositor on the input with the given input ranges.
+        """Apply the compositor on the input with the given input ranges.
+
         """
         from .overlay import CompositeOverlay
         if backend is None: backend = Store.current_backend
@@ -1118,14 +1121,14 @@ class Compositor(param.Parameterized):
 
 
 class Store:
-    """
-    The Store is what links up HoloViews objects to their
+    """The Store is what links up HoloViews objects to their
     corresponding options and to the appropriate classes of the chosen
     backend (e.g. for rendering).
 
     In addition, Store supports pickle operations that automatically
     pickle and unpickle the corresponding options for a HoloViews
     object.
+
     """
 
     renderers = {} # The set of available Renderers across all backends.
@@ -1166,7 +1169,9 @@ class Store:
 
     @classmethod
     def set_current_backend(cls, backend):
-        "Use this method to set the backend to run the switch hooks"
+        """Use this method to set the backend to run the switch hooks
+
+        """
         for hook in cls._backend_switch_hooks:
             hook(backend)
         cls.current_backend = backend
@@ -1182,9 +1187,9 @@ class Store:
 
     @classmethod
     def loaded_backends(cls):
-        """
-        Returns a list of the backends that have been loaded, based on
+        """Returns a list of the backends that have been loaded, based on
         the available OptionTrees.
+
         """
         return sorted(cls._options.keys())
 
@@ -1198,9 +1203,9 @@ class Store:
 
     @classmethod
     def load(cls, filename):
-        """
-        Equivalent to pickle.load except that the HoloViews trees is
+        """Equivalent to pickle.load except that the HoloViews trees is
         restored appropriately.
+
         """
         cls.load_counter_offset = StoreOptions.id_offset()
         val = pickle.load(filename)
@@ -1209,9 +1214,9 @@ class Store:
 
     @classmethod
     def loads(cls, pickle_string):
-        """
-        Equivalent to pickle.loads except that the HoloViews trees is
+        """Equivalent to pickle.loads except that the HoloViews trees is
         restored appropriately.
+
         """
         cls.load_counter_offset = StoreOptions.id_offset()
         val = pickle.loads(pickle_string)
@@ -1220,9 +1225,9 @@ class Store:
 
     @classmethod
     def dump(cls, obj, file, protocol=0):
-        """
-        Equivalent to pickle.dump except that the HoloViews option
+        """Equivalent to pickle.dump except that the HoloViews option
         tree is saved appropriately.
+
         """
         cls.save_option_state = True
         pickle.dump(obj, file, protocol=protocol)
@@ -1230,9 +1235,9 @@ class Store:
 
     @classmethod
     def dumps(cls, obj, protocol=0):
-        """
-        Equivalent to pickle.dumps except that the HoloViews option
+        """Equivalent to pickle.dumps except that the HoloViews option
         tree is saved appropriately.
+
         """
         cls.save_option_state = True
         val = pickle.dumps(obj, protocol=protocol)
@@ -1242,10 +1247,10 @@ class Store:
     @classmethod
     def info(cls, obj, ansi=True, backend='matplotlib', visualization=True,
              recursive=False, pattern=None, elements=None):
-        """
-        Show information about a particular object or component class
+        """Show information about a particular object or component class
         including the applicable style and plot options. Returns None if
         the object is not parameterized.
+
         """
         if elements is None:
             elements = []
@@ -1253,7 +1258,7 @@ class Store:
         parameterized_class = (isinstance(obj,type)
                                and  issubclass(obj,param.Parameterized))
         info = None
-        if parameterized_object or parameterized_class:
+        if InfoPrinter.store and (parameterized_object or parameterized_class):
             info = InfoPrinter.info(obj, ansi=ansi, backend=backend,
                                     visualization=visualization,
                                     pattern=pattern, elements=elements)
@@ -1284,9 +1289,9 @@ class Store:
 
     @classmethod
     def lookup(cls, backend, obj):
-        """
-        Given an object, lookup the corresponding customized option
+        """Given an object, lookup the corresponding customized option
         tree if a single custom tree is applicable.
+
         """
         ids = {el for el in obj.traverse(lambda x: x.id) if el is not None}
         if len(ids) == 0:
@@ -1294,14 +1299,14 @@ class Store:
         elif len(ids) != 1:
             idlist = ",".join([str(el) for el in sorted(ids)])
             raise Exception("Object contains elements combined across "
-                            "multiple custom trees (ids %s)" % idlist)
+                            f"multiple custom trees (ids {idlist})")
         return cls._custom_options[backend][next(iter(ids))]
 
     @classmethod
     def transfer_options(cls, obj, new_obj, backend=None, names=None, level=3):
-        """
-        Transfers options for all backends from one object to another.
+        """Transfers options for all backends from one object to another.
         Drops any options defined in the supplied drop list.
+
         """
         if obj is new_obj:
             return
@@ -1325,14 +1330,14 @@ class Store:
 
     @classmethod
     def add_style_opts(cls, component, new_options, backend=None):
-        """
-        Given a component such as an Element (e.g. Image, Curve) or a
+        """Given a component such as an Element (e.g. Image, Curve) or a
         container (e.g. Layout) specify new style options to be
         accepted by the corresponding plotting class.
 
-        Note: This is supplied for advanced users who know which
+        Note : This is supplied for advanced users who know which
         additional style keywords are appropriate for the
         corresponding plotting class.
+
         """
         backend = cls.current_backend if backend is None else backend
         if component not in cls.registry[backend]:
@@ -1349,16 +1354,16 @@ class Store:
             for option in new_options:
                 if option not in cls.registry[backend][component].style_opts:
                     plot_class = cls.registry[backend][component]
-                    plot_class.style_opts = sorted(plot_class.style_opts+[option])
+                    plot_class.style_opts = sorted([*plot_class.style_opts, option])
         cls._options[backend][component.name] = Options(
             'style', merge_keywords=True, allowed_keywords=new_options
         )
 
     @classmethod
     def register(cls, associations, backend, style_aliases=None):
-        """
-        Register the supplied dictionary of associations between
+        """Register the supplied dictionary of associations between
         elements and plotting classes to the specified backend.
+
         """
         if style_aliases is None:
             style_aliases = {}
@@ -1401,26 +1406,26 @@ class Store:
 
     @classmethod
     def set_display_hook(cls, group, objtype, hook):
-        """
-        Specify a display hook that will be applied to objects of type
+        """Specify a display hook that will be applied to objects of type
         objtype. The group specifies the set to which the display hook
         belongs, allowing the Store to compute the precedence within
         each group.
+
         """
         cls._display_hooks[group][objtype] = hook
 
     @classmethod
     def render(cls, obj):
-        """
-        Using any display hooks that have been registered, render the
+        """Using any display hooks that have been registered, render the
         object to a dictionary of MIME types and metadata information.
+
         """
         class_hierarchy = inspect.getmro(type(obj))
         hooks = []
         for _, type_hooks in cls._display_hooks.items():
-            for cls in class_hierarchy:
-                if cls in type_hooks:
-                    hooks.append(type_hooks[cls])
+            for subcls in class_hierarchy:
+                if subcls in type_hooks:
+                    hooks.append(type_hooks[subcls])
                     break
 
         data, metadata = {}, {}
@@ -1435,8 +1440,7 @@ class Store:
 
 
 class StoreOptions:
-    """
-    A collection of utilities for advanced users for creating and
+    """A collection of utilities for advanced users for creating and
     setting customized option trees on the Store. Designed for use by
     either advanced users or the %opts line and cell magics which use
     this machinery.
@@ -1450,6 +1454,7 @@ class StoreOptions:
     Lastly this class offers a means to record all OptionErrors
     generated by an option specification. This is used for validation
     purposes.
+
     """
 
     #=======================#
@@ -1460,17 +1465,17 @@ class StoreOptions:
 
     @classmethod
     def start_recording_skipped(cls):
-        """
-        Start collecting OptionErrors for all skipped options recorded
+        """Start collecting OptionErrors for all skipped options recorded
         with the record_skipped_option method
+
         """
         cls._errors_recorded = []
 
     @classmethod
     def stop_recording_skipped(cls):
-        """
-        Stop collecting OptionErrors recorded with the
+        """Stop collecting OptionErrors recorded with the
         record_skipped_option method and return them
+
         """
         if cls._errors_recorded is None:
             raise Exception('Cannot stop recording before it is started')
@@ -1480,9 +1485,9 @@ class StoreOptions:
 
     @classmethod
     def record_skipped_option(cls, error):
-        """
-        Record the OptionError associated with a skipped option if
+        """Record the OptionError associated with a skipped option if
         currently recording
+
         """
         if cls._errors_recorded is not None:
             cls._errors_recorded.append(error)
@@ -1498,8 +1503,8 @@ class StoreOptions:
 
     @classmethod
     def tree_to_dict(cls, tree):
-        """
-        Given an OptionTree, convert it into the equivalent dictionary format.
+        """Given an OptionTree, convert it into the equivalent dictionary format.
+
         """
         specs = {}
         for k in tree.keys():
@@ -1513,10 +1518,10 @@ class StoreOptions:
 
     @classmethod
     def propagate_ids(cls, obj, match_id, new_id, applied_keys, backend=None):
-        """
-        Recursively propagate an id through an object for components
+        """Recursively propagate an id through an object for components
         matching the applied_keys. This method can only be called if
         there is a tree with a matching id in Store.custom_options
+
         """
         applied = []
         def propagate(o):
@@ -1527,33 +1532,32 @@ class StoreOptions:
 
         # Clean up the custom tree if it was not applied
         if new_id not in Store.custom_options(backend=backend):
-            raise AssertionError("New option id %d does not match any "
-                                 "option trees in Store.custom_options."
-                                 % new_id)
+            raise AssertionError(f"New option id {new_id} does not match any "
+                                 "option trees in Store.custom_options.")
         return applied
 
     @classmethod
     def capture_ids(cls, obj):
-        """
-        Given an list of ids, capture a list of ids that can be
+        """Given an object, capture a list of ids that can be
         restored using the restore_ids.
+
         """
         return obj.traverse(lambda o: o.id)
 
     @classmethod
     def restore_ids(cls, obj, ids):
-        """
-        Given an list of ids as captured with capture_ids, restore the
+        """Given an list of ids as captured with capture_ids, restore the
         ids. Note the structure of an object must not change between
         the calls to capture_ids and restore_ids.
+
         """
         ids = iter(ids)
         obj.traverse(lambda o: setattr(o, 'id', next(ids)))
 
     @classmethod
     def apply_customizations(cls, spec, options):
-        """
-        Apply the given option specs to the supplied options tree.
+        """Apply the given option specs to the supplied options tree.
+
         """
         for key in sorted(spec.keys()):
             if isinstance(spec[key], (list, tuple)):
@@ -1570,14 +1574,14 @@ class StoreOptions:
 
     @classmethod
     def validate_spec(cls, spec, backends=None):
-        """
-        Given a specification, validated it against the options tree for
+        """Given a specification, validated it against the options tree for
         the specified backends by raising OptionError for invalid
         options. If backends is None, validates against all the
         currently loaded backend.
 
         Only useful when invalid keywords generate exceptions instead of
         skipping, i.e. Options.skip_invalid is False.
+
         """
         loaded_backends = Store.loaded_backends() if backends is None else backends
 
@@ -1597,12 +1601,12 @@ class StoreOptions:
                 error_key = (error.invalid_keyword,
                              error.allowed_keywords.target,
                              error.group_name)
-                error_info[error_key+(backend,)] = error.allowed_keywords
+                error_info[(*error_key, backend)] = error.allowed_keywords
                 backend_errors[error_key].add(backend)
 
-        for ((keyword, target, group_name), backends) in backend_errors.items():
+        for ((keyword, target, group_name), backend_error) in backend_errors.items():
             # If the keyword failed for the target across all loaded backends...
-            if set(backends) == set(loaded_backends):
+            if set(backend_error) == set(loaded_backends):
                 key = (keyword, target, group_name, Store.current_backend)
                 raise OptionError(keyword,
                                   group_name=group_name,
@@ -1611,9 +1615,9 @@ class StoreOptions:
 
     @classmethod
     def validation_error_message(cls, spec, backends=None):
-        """
-        Returns an options validation error message if there are any
+        """Returns an options validation error message if there are any
         invalid keywords. Otherwise returns None.
+
         """
         try:
             cls.validate_spec(spec, backends=backends)
@@ -1622,10 +1626,10 @@ class StoreOptions:
 
     @classmethod
     def expand_compositor_keys(cls, spec):
-        """
-        Expands compositor definition keys into {type}.{group}
+        """Expands compositor definition keys into {type}.{group}
         keys. For instance a compositor operation returning a group
         string 'Image' of element type RGB expands to 'RGB.Image'.
+
         """
         expanded_spec = {}
         applied_keys = []
@@ -1644,14 +1648,14 @@ class StoreOptions:
 
     @classmethod
     def create_custom_trees(cls, obj, options=None, backend=None):
-        """
-        Returns the appropriate set of customized subtree clones for
+        """Returns the appropriate set of customized subtree clones for
         an object, suitable for merging with Store.custom_options (i.e
         with the ids appropriately offset). Note if an object has no
         integer ids a new OptionTree is built.
 
         The id_mapping return value is a list mapping the ids that
         need to be matched as set to their new values.
+
         """
         clones, id_mapping = {}, []
         obj_ids = cls.get_object_ids(obj)
@@ -1699,8 +1703,7 @@ class StoreOptions:
 
     @classmethod
     def merge_options(cls, groups, options=None,**kwargs):
-        """
-        Given a full options dictionary and options groups specified
+        """Given a full options dictionary and options groups specified
         as a keywords, return the full set of merged options:
 
         >>> options={'Curve':{'style':dict(color='b')}}
@@ -1727,21 +1730,21 @@ class StoreOptions:
                     additions.update({k:kws})
             if spec_key not in options:
                 options[spec_key] = {}
-            for key in additions:
+            for key, value in additions.items():
                 if key in options[spec_key]:
-                    options[spec_key][key].update(additions[key])
+                    options[spec_key][key].update(value)
                 else:
-                    options[spec_key][key] = additions[key]
+                    options[spec_key][key] = value
         return options
 
 
     @classmethod
     def state(cls, obj, state=None):
-        """
-        Method to capture and restore option state. When called
+        """Method to capture and restore option state. When called
         without any state supplied, the current state is
         returned. Then if this state is supplied back in a later call
         using the same object, the original state is restored.
+
         """
         if state is None:
             ids = cls.capture_ids(obj)
@@ -1757,8 +1760,7 @@ class StoreOptions:
     @classmethod
     @contextmanager
     def options(cls, obj, options=None, **kwargs):
-        """
-        Context-manager for temporarily setting options on an object
+        """Context-manager for temporarily setting options on an object
         (if options is None, no options will be set) . Once the
         context manager exits, both the object and the Store will be
         left in exactly the same state they were in before the context
@@ -1766,6 +1768,7 @@ class StoreOptions:
 
         See holoviews.core.options.set_options function for more
         information on the options specification format.
+
         """
         if (options is not None) or kwargs:
             Store._options_context = True
@@ -1783,9 +1786,9 @@ class StoreOptions:
 
     @classmethod
     def id_offset(cls):
-        """
-        Compute an appropriate offset for future id values given the set
+        """Compute an appropriate offset for future id values given the set
         of ids currently defined across backends.
+
         """
         max_ids = []
         for backend in Store.renderers.keys():
@@ -1795,15 +1798,15 @@ class StoreOptions:
             max_id = max(store_ids)+1 if len(store_ids) > 0 else 0
             max_ids.append(max_id)
         # If no backends defined (e.g. plotting not imported) return zero
-        return max(max_ids) if len(max_ids) else 0
+        return max(max_ids) if max_ids else 0
 
     @classmethod
     def update_backends(cls, id_mapping, custom_trees, backend=None):
-        """
-        Given the id_mapping from previous ids to new ids and the new
+        """Given the id_mapping from previous ids to new ids and the new
         custom tree dictionary, update the current backend with the
         supplied trees and update the keys in the remaining backends to
         stay linked with the current object.
+
         """
         backend = Store.current_backend if backend is None else backend
         # Update the custom option entries for the current backend
@@ -1822,8 +1825,7 @@ class StoreOptions:
 
     @classmethod
     def set_options(cls, obj, options=None, backend=None, **kwargs):
-        """
-        Pure Python function for customize HoloViews objects in terms of
+        """Pure Python function for customize HoloViews objects in terms of
         their style, plot and normalization options.
 
         The options specification is a dictionary containing the target
@@ -1844,8 +1846,9 @@ class StoreOptions:
                           Options('style', cmap='Blues')]}
 
 
-        Relationship to the %%opts magic
-        ----------------------------------
+        Notes
+        -----
+        Relationship to the %%opts magic:
 
         This function matches the functionality supplied by the %%opts
         cell magic in the IPython extension. In fact, you can use the same
@@ -1858,6 +1861,7 @@ class StoreOptions:
         Then setting both plot and style options:
 
         set_options(my_image, OptsSpec.parse("Image [size=50] (cmap='Blues')"))
+
         """
         # Note that an alternate, more verbose and less recommended
         # syntax can also be used:

@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 from matplotlib.collections import LineCollection, PolyCollection
-from packaging.version import Version
 
 from holoviews.core.data import Dataset
 from holoviews.core.options import AbbreviatedException, Cycle
@@ -9,7 +8,7 @@ from holoviews.core.spaces import HoloMap
 from holoviews.element import Chord, Graph, Nodes, TriMesh, circular_layout
 from holoviews.util.transform import dim
 
-from .test_plot import TestMPLPlot, mpl_renderer
+from .test_plot import MPL_GE_3_4_0, TestMPLPlot, mpl_renderer
 
 
 class TestMplGraphPlot(TestMPLPlot):
@@ -198,20 +197,19 @@ class TestMplGraphPlot(TestMPLPlot):
         self.assertEqual(artist.get_linewidths(), [12, 3, 5])
 
     def test_graph_op_node_alpha(self):
-        import matplotlib as mpl
         edges = [(0, 1), (0, 2)]
         nodes = Nodes([(0, 0, 0, 0.2), (0, 1, 1, 0.6), (1, 1, 2, 1)], vdims='alpha')
         graph = Graph((edges, nodes)).opts(node_alpha='alpha')
 
-        if Version(mpl.__version__) < Version("3.4.0"):
+        if MPL_GE_3_4_0:
+            plot = mpl_renderer.get_plot(graph)
+            artist = plot.handles['nodes']
+            self.assertEqual(artist.get_alpha(), np.array([0.2, 0.6, 1]))
+        else:
             # Python 3.6 only support up to matplotlib 3.3
             msg = 'TypeError: alpha must be a float or None'
             with pytest.raises(AbbreviatedException, match=msg):
                 mpl_renderer.get_plot(graph)
-        else:
-            plot = mpl_renderer.get_plot(graph)
-            artist = plot.handles['nodes']
-            self.assertEqual(artist.get_alpha(), np.array([0.2, 0.6, 1]))
 
     def test_graph_op_edge_color(self):
         edges = [(0, 1, 'red'), (0, 2, 'green'), (1, 3, 'blue')]
@@ -392,21 +390,19 @@ class TestMplTriMeshPlot(TestMPLPlot):
         self.assertEqual(artist.get_sizes(), np.array([9, 4, 64, 16]))
 
     def test_trimesh_op_node_alpha(self):
-        import matplotlib as mpl
-
         edges = [(0, 1, 2), (1, 2, 3)]
         nodes = [(-1, -1, 0, 0.2), (0, 0, 1, 0.6), (0, 1, 2, 1), (1, 0, 3, 0.3)]
         trimesh = TriMesh((edges, Nodes(nodes, vdims='alpha'))).opts(node_alpha='alpha')
 
-        if Version(mpl.__version__) < Version("3.4.0"):
+        if MPL_GE_3_4_0:
+            plot = mpl_renderer.get_plot(trimesh)
+            artist = plot.handles['nodes']
+            self.assertEqual(artist.get_alpha(), np.array([0.2, 0.6, 1, 0.3]))
+        else:
             # Python 3.6 only support up to matplotlib 3.3
             msg = "TypeError: alpha must be a float or None"
             with pytest.raises(AbbreviatedException, match=msg):
                 mpl_renderer.get_plot(trimesh)
-        else:
-            plot = mpl_renderer.get_plot(trimesh)
-            artist = plot.handles['nodes']
-            self.assertEqual(artist.get_alpha(), np.array([0.2, 0.6, 1, 0.3]))
 
     def test_trimesh_op_node_line_width(self):
         edges = [(0, 1, 2), (1, 2, 3)]
