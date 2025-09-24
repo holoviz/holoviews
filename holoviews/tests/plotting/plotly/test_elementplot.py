@@ -1,11 +1,13 @@
+import re
 from collections import deque
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import DynamicMap
-from holoviews.element import Curve, Path3D, Scatter, Scatter3D
+from holoviews.element import Curve, Path3D, QuadMesh, Scatter, Scatter3D
 from holoviews.streams import PointerX
 
 from .test_plot import TestPlotlyPlot, plotly_renderer
@@ -187,6 +189,21 @@ class TestElementPlot(TestPlotlyPlot):
         state = self._get_plot_state(scatter)
         self.assertEqual(state['layout']['scene']['zaxis']['tickvals'], [0, 500, 1000])
         self.assertEqual(state['layout']['scene']['zaxis']['ticktext'], ['A', 'B', 'C'])
+
+    ### Aspect ratio ###
+    def test_aspect_non_matching_types(self):
+        X = pd.date_range(start="1/1/2018", end="1/08/2018", periods=100)
+        Y = np.linspace(1, 100, 100)
+        Z = np.random.randn(100, 100)
+        qm = QuadMesh((X, Y, Z)).opts(aspect='equal')
+        msg = (
+            "The aspect is set to 'equal', but the axes does not have the same type: "
+            "x-axis timedelta64 and y-axis float64. "
+            "Either have the axes be the same type or or set '.opts(aspect=)' "
+            "to either a number or 'square'."
+        )
+        with pytest.raises(TypeError, match=re.escape(msg)):
+            plotly_renderer.get_plot(qm)
 
 
 class TestOverlayPlot(TestPlotlyPlot):
