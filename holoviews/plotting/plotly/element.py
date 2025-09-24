@@ -318,6 +318,18 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         """Computes the aspect ratio of the plot
 
         """
+        if self.aspect == 'equal' and (
+            isinstance(xspan, util.datetime_types) ^ isinstance(yspan, util.datetime_types)
+            or isinstance(xspan, util.timedelta_types) ^ isinstance(yspan, util.timedelta_types)
+        ):
+            msg = (
+                "The aspect is set to 'equal', but the axes does not have the same type: "
+                f"x-axis {type(xspan).__name__} and y-axis {type(yspan).__name__}. "
+                "Either have the axes be the same type or or set '.opts(aspect=)' "
+                "to either a number or 'square'."
+            )
+            raise TypeError(msg)
+
         return self.width/self.height
 
 
