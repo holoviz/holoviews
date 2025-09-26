@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 
 import numpy as np
 import param
@@ -87,6 +87,7 @@ class _base_link_selections(param.ParameterizedFunction):
         inst._selection_override = _SelectionExprOverride()
         inst._selection_expr_streams = {}
         inst._plot_reset_streams = {}
+        inst._streams = defaultdict(list)
 
         # Init selection streams
         inst._selection_streams = self_or_cls._build_selection_streams(inst)
@@ -103,7 +104,7 @@ class _base_link_selections(param.ParameterizedFunction):
         elif event.new == 'subtract':
             self.selection_mode = 'inverse'
 
-    def _register(self, hvobj):
+    def _register(self, hvobj, origin=None):
         """Register an Element or DynamicMap that may be capable of generating
         selection expressions in response to user interaction events
 
@@ -119,7 +120,7 @@ class _base_link_selections(param.ParameterizedFunction):
         self._selection_expr_streams[hvobj] = selection_expr_seq
         self._cross_filter_stream.append_input_stream(selection_expr_seq)
 
-        self._plot_reset_streams[hvobj] = PlotReset(source=hvobj)
+        self._plot_reset_streams[hvobj] = reset_stream = PlotReset(source=hvobj)
 
         # Register reset
         def clear_stream_history(resetting, stream=selection_expr_seq.history_stream):
@@ -127,6 +128,7 @@ class _base_link_selections(param.ParameterizedFunction):
                 stream.clear_history()
                 stream.event()
 
+        mode_stream = None
         if not isinstance(hvobj, Table):
             mode_stream = SelectMode(source=hvobj)
             mode_stream.param.watch(self._update_mode, 'mode')
@@ -134,6 +136,23 @@ class _base_link_selections(param.ParameterizedFunction):
         self._plot_reset_streams[hvobj].param.watch(
             clear_stream_history, ['resetting']
         )
+        self._streams[origin].append((selection_expr_seq, mode_stream, reset_stream))
+
+    def unlink(self, hvobj):
+        """
+        Unlinks an object which has previously been added to the
+        link_selections function.
+
+        Args:
+           hvobj: Component to unsubscribe from link_selections
+        """
+        for streams in self._streams.pop(hvobj, []):
+            for stream in streams:
+                if stream is None:
+                    continue
+                stream.source = None
+                stream._subscribers = []
+                del stream
 
     def __call__(self, hvobj, **kwargs):
         # Apply kwargs as params
@@ -147,10 +166,11 @@ class _base_link_selections(param.ParameterizedFunction):
                                "backend explicitly.")
 
         # Perform transform
-        return self._selection_transform(hvobj.clone())
+        return self._selection_transform(hvobj)
 
-    def _selection_transform(self, hvobj, operations=()):
-        """Transform an input HoloViews object into a dynamic object with linked
+    def _selection_transform(self, hvobj, operations=(), origin=None):
+        """
+        Transform an input HoloViews object into a dynamic object with linked
         selections enabled.
 
         """
@@ -159,12 +179,13 @@ class _base_link_selections(param.ParameterizedFunction):
             callback = hvobj.callback
             if len(callback.inputs) > 1:
                 return Overlay([
-                    self._selection_transform(el) for el in callback.inputs
+                    self._selection_transform(el, hvobj if origin is None else origin)
+                    for el in callback.inputs
                 ]).collate()
 
             initialize_dynamic(hvobj)
             if issubclass(hvobj.type, Element):
-                self._register(hvobj)
+                self._register(hvobj, origin)
                 chart = Store.registry[Store.current_backend][hvobj.type]
                 return chart.selection_display(hvobj).build_selection(
                     self._selection_streams, hvobj, operations,
@@ -190,17 +211,17 @@ class _base_link_selections(param.ParameterizedFunction):
         elif isinstance(hvobj, Element):
             # Register hvobj to receive selection expression callbacks
             chart = Store.registry[Store.current_backend][type(hvobj)]
-            if getattr(chart, 'selection_display', None) is not None:
+            if getattr(chart, 'selection_display', None):
                 element = hvobj.clone(link=self.link_inputs)
-                self._register(element)
+                self._register(element, hvobj if origin is None else origin)
                 return chart.selection_display(element).build_selection(
                     self._selection_streams, element, operations,
                     self._selection_expr_streams.get(element, None), cache=self._cache
                 )
             return hvobj
         elif isinstance(hvobj, (Layout, Overlay, NdOverlay, GridSpace, AdjointLayout)):
-            data = dict([(k, self._selection_transform(v, operations))
-                                 for k, v in hvobj.items()])
+            data = dict([(k, self._selection_transform(v, operations, origin))
+                         for k, v in hvobj.items()])
             if isinstance(hvobj, NdOverlay):
                 def compose(*args, **kwargs):
                     new = []
@@ -331,8 +352,9 @@ class link_selections(_base_link_selections):
         if not isinstance(data, Dataset):
             raw = True
             data = Dataset(data)
-        pipe = Pipe(data=data.data)
+        pipe = Pipe()
         self._datasets.append((pipe, data, raw))
+        self._update_pipes()
         return pipe.param.data
 
     def filter(self, data, selection_expr=None):
