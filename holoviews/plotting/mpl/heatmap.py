@@ -1,4 +1,4 @@
-from itertools import product
+from itertools import product # noqa F401 # don't remove for now
 
 import numpy as np
 import param
@@ -81,19 +81,27 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
 
     def _annotate_values(self, element, xvals, yvals):
         val_dim = element.vdims[0]
-        vals = element.dimension_values(val_dim).flatten()
+        vals = element.dimension_values(val_dim, flat=False)
         xpos = xvals[:-1] + np.diff(xvals)/2.
         ypos = yvals[:-1] + np.diff(yvals)/2.
-        plot_coords = product(xpos, ypos)
+
+        # When invert_axes=True, `get_data` transposes and reverses both axes.
+        # Apply the same to the annotation values.
+        if self.invert_axes:
+            vals = vals.T[::-1, ::-1]
+
         annotations = {}
-        for plot_coord, v in zip(plot_coords, vals, strict=None):
-            text = '-' if is_nan(v) else val_dim.pprint_value(v)
-            annotations[plot_coord] = text
+        for j, y in enumerate(ypos):
+            for i, x in enumerate(xpos):
+                v = vals[j, i]
+                text = '-' if is_nan(v) else val_dim.pprint_value(v)
+                annotations[(x, y)] = text
         return annotations
 
 
     def _compute_ticks(self, element, xvals, yvals, xfactors, yfactors):
         xdim, ydim = element.kdims
+        aggregate = element.gridded
         if self.invert_axes:
             xdim, ydim = ydim, xdim
 
@@ -103,7 +111,7 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
         if xticks is None:
             xpos = xvals[:-1] + np.diff(xvals)/2.
             if not xfactors:
-                xfactors = element.gridded.dimension_values(xdim, False)
+                xfactors = aggregate.dimension_values(xdim, False)
             xlabels = [xdim.pprint_value(k) for k in xfactors]
             xticks = list(zip(xpos, xlabels, strict=None))
 
@@ -111,9 +119,12 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
         if yticks is None:
             ypos = yvals[:-1] + np.diff(yvals)/2.
             if not yfactors:
-                yfactors = element.gridded.dimension_values(ydim, False)
+                yfactors = aggregate.dimension_values(ydim, False)
             ylabels = [ydim.pprint_value(k) for k in yfactors]
-            yticks = list(zip(ypos, ylabels, strict=None))
+            ytype = aggregate.interface.dtype(aggregate, ydim)
+            if ytype.kind in 'SUO':
+                positions = ypos[::-1]
+                yticks = list(zip(positions, ylabels, strict=None))
         return xticks, yticks
 
 
@@ -181,7 +192,7 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
         style['yfactors'] = yfactors
 
         if self.show_values:
-            style['annotations'] = self._annotate_values(element.gridded, xvals, yvals)
+            style['annotations'] = self._annotate_values(aggregate, xvals, yvals)
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
         if 'vmin' in style:
