@@ -6,6 +6,7 @@ import warnings
 from functools import partial
 from itertools import pairwise
 
+import narwhals.stable.v2 as nw
 import numpy as np
 import param
 from packaging.version import Version
@@ -859,6 +860,13 @@ class histogram(Operation):
             data = data.filter(mask) if IBIS_GE_9_5_0 else data[mask]
             no_data = not len(data.head(1).execute())
             data = data[dim.name]
+        elif isinstance(data, (nw.DataFrame, nw.LazyFrame, nw.Series)):
+            if isinstance(data, nw.Series):
+                data = data.to_frame()
+            data = data.filter(nw.all().is_finite())
+            if self.p.nonzero:
+                data = data.filter(nw.all() != 0)
+            no_data = False if isinstance(data, nw.LazyFrame) else not len(data)
         else:
             mask = is_finite(data)
             if self.p.nonzero:

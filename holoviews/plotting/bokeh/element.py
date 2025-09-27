@@ -52,6 +52,7 @@ from bokeh.models.tools import Tool
 from ...core import Dataset, Dimension, DynamicMap, Element, util
 from ...core.options import Keywords, SkipRendering, abbreviated_exception
 from ...core.overlay import CompositeOverlay, NdOverlay
+from ...core.util import dtype_kind
 from ...element import Annotation, Contours, Graph, Path, Tiles, VectorField
 from ...streams import Buffer, PlotSize, RangeXY
 from ...util.transform import dim
@@ -1715,7 +1716,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for i, col in enumerate(cols):
             column = data[col]
             if (isinstance(ranges[i], FactorRange) and
-                (isinstance(column, list) or column.dtype.kind not in 'SU')):
+                (isinstance(column, list) or util.dtype_kind(column) not in 'SU')):
                 data[col] = [dims[i].pprint_value(v) for v in column]
 
 
@@ -1747,8 +1748,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             values = element.dimension_values(dimension, False)
         values = np.asarray(values)
         if not self._allow_implicit_categories:
-            values = values if values.dtype.kind in 'SU' else []
-        return [v if values.dtype.kind in 'SU' else dimension.pprint_value(v) for v in values]
+            values = values if dtype_kind(values) in 'SU' else []
+        return [v if dtype_kind(values) in 'SU' else dimension.pprint_value(v) for v in values]
 
     def _get_factors(self, element, ranges):
         """Get factors for categorical axes.
@@ -1873,7 +1874,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             elif k.endswith('font_size'):
                 if util.isscalar(val) and isinstance(val, int):
                     val = str(v)+'pt'
-                elif isinstance(val, np.ndarray) and val.dtype.kind in 'ifu':
+                elif isinstance(val, np.ndarray) and dtype_kind(val) in 'ifu':
                     val = [str(int(s))+'pt' for s in val]
             if util.isscalar(val):
                 key = val
@@ -1883,18 +1884,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 data[k] = val
 
             # If color is not valid colorspec add colormapper
-            numeric = isinstance(val, util.arraylike_types) and val.dtype.kind in 'uifMmb'
+            numeric = isinstance(val, util.arraylike_types) and dtype_kind(val) in 'uifMmb'
             colormap = style.get(prefix+'cmap')
             if ('color' in k and isinstance(val, util.arraylike_types) and
                 (numeric or not validate('color', val) or isinstance(colormap, dict))):
                 kwargs = {}
-                if val.dtype.kind not in 'ifMu':
+                if dtype_kind(val) not in 'ifMu':
                     range_key = dim_range_key(v)
                     if range_key in ranges and 'factors' in ranges[range_key]:
                         factors = ranges[range_key]['factors']
                     else:
                         factors = util.unique_array(val)
-                    if isinstance(val, util.arraylike_types) and val.dtype.kind == 'b':
+                    if isinstance(val, util.arraylike_types) and dtype_kind(val) == 'b':
                         factors = factors.astype(str)
                     kwargs['factors'] = factors
                 cmapper = self._get_colormapper(v, element, ranges,
@@ -1904,7 +1905,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 categorical = isinstance(cmapper, CategoricalColorMapper)
 
                 if categorical:
-                    if val.dtype.kind in 'ifMub':
+                    if dtype_kind(val) in 'ifMub':
                         field = k + '_str__'
                         if v.dimension in element:
                             formatter = element.get_dimension(v.dimension).pprint_value
@@ -2085,7 +2086,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 key = f'@{{{k}}}'
                 if (
                     (len(values) and isinstance(values[0], util.datetime_types)) or
-                    (len(values) and isinstance(values[0], np.ndarray) and values[0].dtype.kind == 'M')
+                    (len(values) and isinstance(values[0], np.ndarray) and dtype_kind(values[0]) == 'M')
                 ):
                     hover.tooltips = [(l, f+'{%F %T}' if f == key else f) for l, f in hover.tooltips]
                     hover.formatters[key] = "datetime"
@@ -2907,13 +2908,13 @@ class ColorbarPlot(ElementPlot):
         field = util.dimension_sanitizer(cdim.name)
         dtypes = 'iOSU' if int_categories else 'OSU'
 
-        if factors is None and (isinstance(cdata, list) or cdata.dtype.kind in dtypes):
+        if factors is None and (isinstance(cdata, list) or dtype_kind(cdata) in dtypes):
             range_key = dim_range_key(cdim)
             if range_key in ranges and 'factors' in ranges[range_key]:
                 factors = ranges[range_key]['factors']
             else:
                 factors = util.unique_array(cdata)
-        if factors is not None and int_categories and cdata.dtype.kind == 'i':
+        if factors is not None and int_categories and dtype_kind(cdata) == 'i':
             field += '_str__'
             cdata = [str(f) for f in cdata]
             factors = [str(f) for f in factors]

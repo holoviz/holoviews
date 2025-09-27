@@ -27,6 +27,7 @@ from ..core.util import (
     arraylike_types,
     closest_match,
     disable_constant,
+    dtype_kind,
     get_overlay_spec,
     is_number,
     isfinite,
@@ -373,7 +374,7 @@ def compute_sizes(sizes, size_fn, scaling_factor, scaling_method, base_size):
     scaling.
 
     """
-    if sizes.dtype.kind not in ('i', 'f'):
+    if dtype_kind(sizes) not in ('i', 'f'):
         return None
     if scaling_method == 'area':
         pass
@@ -1174,13 +1175,13 @@ class apply_nodata(Operation):
         if hasattr(element, 'interface'):
             vdim = element.vdims[0]
             dtype = element.interface.dtype(element, vdim)
-            if dtype.kind not in 'iu':
+            if dtype_kind(dtype) not in 'iu':
                 return element
             transform = dim(vdim, self._replace_value)
             return element.transform(**{vdim.name: transform})
         else:
             array = element.dimension_values(2, flat=False).T
-            if array.dtype.kind not in 'iu':
+            if dtype_kind(array) not in 'iu':
                 return element
             array = array.astype('float64')
             return element.clone(self._replace_value(array))
