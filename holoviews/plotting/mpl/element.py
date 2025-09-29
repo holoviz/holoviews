@@ -172,8 +172,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     if legend:
                         legend.set_visible(self.show_legend)
                         self.handles["bbox_extra_artists"] += [legend]
-                    axis.xaxis.grid(self.show_grid)
-                    axis.yaxis.grid(self.show_grid)
+                    # Apply grid settings
+                    self._update_grid(axis)
 
                 # Apply log axes
                 if self.logx:
@@ -290,6 +290,49 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     f"model. Ensure the custom option spec {opt!r} you provided references a "
                     f"valid method on the specified model. Similar options include {matches!r}"
                 )
+
+    def _update_grid(self, axis):
+        """Updates grid settings on the matplotlib axis based on gridstyle options.
+
+        """
+        if not self.show_grid and not self.gridstyle:
+            axis.grid(False)
+            return
+
+        style_items = list(self.gridstyle.items())
+        # Options that apply to both x and y grids, x, and then y
+        both = {k: v for k, v in style_items if k.startswith(('grid_', 'minor_grid'))}
+
+        # Merge options - both options first, then axis-specific
+        xopts = both.copy()
+        xopts.update({k.replace('xgrid_', ''): v for k, v in style_items if 'xgrid' in k})
+
+        yopts = both.copy()
+        yopts.update({k.replace('ygrid_', ''): v for k, v in style_items if 'ygrid' in k})
+
+        # Remove grid_ prefix from matplotlib property names
+        xopts = {k.replace('grid_', ''): v for k, v in xopts.items()}
+        yopts = {k.replace('grid_', ''): v for k, v in yopts.items()}
+
+        # Apply grid visibility first
+        if xopts or yopts or self.show_grid:
+            axis.grid(True)
+
+        # Apply x-axis grid styling
+        if xopts:
+            xgridlines = axis.get_xgridlines()
+            for line in xgridlines:
+                for prop, val in xopts.items():
+                    if hasattr(line, f'set_{prop}'):
+                        getattr(line, f'set_{prop}')(val)
+
+        # Apply y-axis grid styling
+        if yopts:
+            ygridlines = axis.get_ygridlines()
+            for line in ygridlines:
+                for prop, val in yopts.items():
+                    if hasattr(line, f'set_{prop}'):
+                        getattr(line, f'set_{prop}')(val)
 
     def _finalize_artist(self, element):
         """Allows extending the _finalize_axis method with Element
@@ -1145,7 +1188,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
     _passed_handles = ['fig', 'axis']
 
     _propagate_options = ['aspect', 'fig_size', 'xaxis', 'yaxis', 'zaxis',
-                          'labelled', 'bgcolor', 'fontsize', 'invert_axes',
+                          'labelled', 'bgcolor', 'fontsize', 'gridstyle', 'invert_axes',
                           'show_frame', 'show_grid', 'logx', 'logy', 'logz',
                           'xticks', 'yticks', 'zticks', 'xrotation', 'yrotation',
                           'zrotation', 'invert_xaxis', 'invert_yaxis',
