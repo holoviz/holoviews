@@ -9,6 +9,7 @@ from ...core import util
 from ...core.dimension import Dimension
 from ...core.element import Element
 from ...core.spaces import DynamicMap
+from ...core.util import dtype_kind
 from ...streams import Stream
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -385,7 +386,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                                      'to overlay your data along the dimension.')
 
             # If color is not valid colorspec add colormapper
-            numeric = isinstance(val, np.ndarray) and val.dtype.kind in 'uifMm'
+            numeric = isinstance(val, np.ndarray) and dtype_kind(val) in 'uifMm'
             if ('color' in k and isinstance(val, np.ndarray) and numeric):
                 copts = self.get_color_opts(v, element, ranges, style)
                 new_style.pop('cmap', None)
