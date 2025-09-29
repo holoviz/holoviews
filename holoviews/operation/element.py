@@ -1351,8 +1351,11 @@ class dendrogram(Operation):
             sort_dims.append(sort_dim)
             if d not in self.p.adjoint_dims:
                 # This is needed because unstable sorting algorithms, which can
-                # differ between OSs, causing random ordering
+                # differ between OSs, causing change in ordering on a
+                # non-selected axis:
                 # https://github.com/holoviz/holoviews/pull/6625#issuecomment-2981268665
+                # We don't want to use an stable sort algorithm in Dataset.sort
+                # as this adds a performance overhead.
                 # code_map + order is equivalent to:
                 # pd.Categorical(x, pd.unique(x)).codes
                 ddata = dataset.dimension_values(d)
