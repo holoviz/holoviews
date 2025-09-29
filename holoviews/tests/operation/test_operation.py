@@ -47,6 +47,7 @@ from holoviews import (
 )
 from holoviews.core.data.grid import GridInterface
 from holoviews.core.operation import Operation
+from holoviews.core.options import SkipRendering
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.element import (
     chain,
@@ -819,9 +820,9 @@ class OperationTests(ComparisonTestCase):
         pd.testing.assert_series_equal(data["y"], output["y"])
 
 
+@pytest.mark.usefixtures("bokeh_backend")
 class TestDendrogramOperation:
 
-    @pytest.mark.usefixtures("bokeh_backend")
     def setup_class(self):
         pytest.importorskip("scipy")
 
@@ -842,14 +843,41 @@ class TestDendrogramOperation:
             for j in range(6)
             for i in range(5)
         ])
+
+        # Based on scanpy.datasets.pbmc68k_reduced
+        obs = 'abcdefghij'
+        var = 'mtropqnkslmtropqnkslmtropqnkslmtropqnkslmtropqnkslmtropqnkslmtropqnkslmtropqnkslmtropqnkslmtropqnksl'
+        data = [
+            8, 10, 4, 8, 45, 6, 32, 45, 60, 6, 23, 10, 19, 0, 10, 6, 30, 7, 7,
+            6, 8, 10, 16, 0, 10, 6, 7, 21, 7, 34, 8, 10, 23, 10, 10, 6, 7, 7,
+            7, 6, 8, 10, 4, 5, 10, 6, 7, 19, 7, 31, 8, 10, 4, 4, 10, 22, 7, 7,
+            7, 6, 8, 10, 4, 7, 10, 33, 7, 24, 22, 6, 8, 10, 4, 12, 10, 27, 7,
+            7, 7, 6, 8, 10, 13, 25, 10, 6, 21, 7, 7, 6, 8, 10, 4, 7, 41, 6, 7,
+            40, 7, 23
+        ]
+        counts = [353, 491, 1185, 0, 1674, 2763, 710, 1613, 2377, 716]
+        df = pd.DataFrame({
+            "obs": [x for x in obs for _ in range(10)],
+            "var": list(var),
+            "data": data,
+            "counts": [x for x in counts for _ in range(10)],
+         })
+        self.ds = Dataset(df, kdims=["obs", "var"], vdims=["data", "counts"])
+
         self.bokeh_renderer = renderer("bokeh")
 
     def get_childrens(self, adjoint):
         bk_childrens = self.bokeh_renderer.get_plot(adjoint).handles["plot"].children
         (atop, *_), (amain, *_), (aright, *_) = bk_childrens
-        top = self.bokeh_renderer.get_plot(adjoint["top"]).handles["plot"]
+        try:
+            top = self.bokeh_renderer.get_plot(adjoint["top"]).handles["plot"]
+        except SkipRendering:
+            right = None
         main = self.bokeh_renderer.get_plot(adjoint["main"]).handles["plot"]
-        right = self.bokeh_renderer.get_plot(adjoint["right"]).handles["plot"]
+        try:
+            right = self.bokeh_renderer.get_plot(adjoint["right"]).handles["plot"]
+        except SkipRendering:
+            right = None
         return (atop, amain, aright), (top, main, right)
 
     def test_right_only(self):
@@ -949,7 +977,7 @@ class TestDendrogramOperation:
                 assert main1.x_range.factors == main2.x_range.factors[::-1]
 
     @pytest.mark.parametrize("adjoint_dims", (["cluster"], ["gene"],), ids=["right", "top"])
-    def test_assure_non_adjoined_axis_is_unchanged(self, adjoint_dims):
+    def test_assure_non_adjoined_axis_is_unchanged_points(self, adjoint_dims):
         # See: https://github.com/holoviz/holoviews/pull/6625#issuecomment-2981268665
         plot = Points(self.df2, kdims=["gene", "cluster"])
         main1 = self.bokeh_renderer.get_plot(plot).handles["plot"]
@@ -962,3 +990,58 @@ class TestDendrogramOperation:
                 assert main1.x_range.factors == main2.x_range.factors
             case ["gene"]:
                 assert main1.y_range.factors == main2.y_range.factors
+
+    def test_assure_non_adjoined_axis_is_unchanged_heatmap(self):
+        # Follow up to previous test, see
+        # https://github.com/holoviz/holoviews/pull/6669#issuecomment-3237153317
+        plot = HeatMap(self.ds)
+        main1 = self.bokeh_renderer.get_plot(plot).handles["plot"]
+
+        dendro = dendrogram(plot, adjoint_dims=["obs"], main_dim="data")
+        main2 = self.bokeh_renderer.get_plot(dendro["main"]).handles["plot"]
+
+        assert main1.y_range.factors == main2.y_range.factors
+
+    @pytest.mark.parametrize(
+        "adjoint_dims",
+        (["cluster"], ["gene"], ["gene", "cluster"]),
+        ids=["right", "top", "both"],
+    )
+    def test_gridded_dataset(self, adjoint_dims, rng):
+        xr = pytest.importorskip("xarray")
+
+        N = 10
+        da = xr.DataArray(
+            rng.normal(size=(N, N)),
+            name="main",
+            dims=("cluster", "gene"),
+            coords={
+                "cluster": [f"c{i}" for i in range(N)],
+                "gene": [f"g{j}" for j in range(N)],
+            },
+        )
+
+        dendro = dendrogram(Dataset(da), adjoint_dims=adjoint_dims, main_dim="main")
+        assert isinstance(dendro, AdjointLayout)
+
+    def test_failed_linkage(self):
+        msg = "Could not calculate linkage for dendrogram"
+        with pytest.raises(ValueError, match=msg):
+            dendrogram(self.ds, adjoint_dims=["obs"], main_dim="counts")
+
+        # This should work
+        dendrogram(self.ds, adjoint_dims=["obs"], main_dim="counts", linkage_metric="euclidean")
+
+    def test_not_primary_main_dim(self):
+        # Adding hover to have access to the other dimension values
+        plot = HeatMap(self.ds).opts(tools=["hover"])
+        assert plot.vdims[0] == "data"
+        dendro = dendrogram(
+            plot,
+            adjoint_dims=["obs"],
+            main_dim="counts",
+            linkage_metric="euclidean"
+        )
+        (_, amain, _), *_ = self.get_childrens(dendro)
+        data = amain.renderers[0].data_source.data
+        assert list(data["zvalues"]) == list(map(int, data["data"]))
