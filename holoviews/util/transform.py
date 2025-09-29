@@ -1,12 +1,13 @@
 import operator
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
+import narwhals.stable.v2 as nw
 import numpy as np
 import param
 
 from ..core.data import PandasInterface
 from ..core.dimension import Dimension
-from ..core.util import flatten, resolve_dependent_value, unique_iterator
+from ..core.util import dtype_kind, flatten, resolve_dependent_value, unique_iterator
 
 
 def _maybe_map(numpy_fn):
@@ -149,7 +150,7 @@ def bin(values, bins, labels=None):
         labels = (bins[:-1] + np.diff(bins)/2.)
     else:
         labels = np.asarray(labels)
-    dtype = 'float' if labels.dtype.kind == 'f' else 'O'
+    dtype = 'float' if dtype_kind(labels) == 'f' else 'O'
     binned = np.full_like(values, (np.nan if dtype == 'f' else None), dtype=dtype)
     for lower, upper, label in zip(bins[:-1], bins[1:], labels, strict=None):
         condition = (values > lower) & (values <= upper)
@@ -188,7 +189,7 @@ def categorize(values, categories, default=None):
         cats.append(cat)
     result = np.asarray(cats)
     # Convert unicode to object type like pandas does
-    if result.dtype.kind in ['U', 'S']:
+    if dtype_kind(result) in ['U', 'S']:
         result = result.astype('object')
     return result
 
@@ -694,8 +695,10 @@ class dim:
         e.g. pandas Series to NumPy array.
 
         """
-        if hasattr(data, 'compute') and compute:
+        if compute and hasattr(data, 'compute'):
             data = data.compute()
+        if compute and hasattr(data, 'collect'):
+            data = data.collect()
         return data
 
     def _coerce(self, data):
@@ -782,6 +785,9 @@ class dim:
             eldim = None
         elif isinstance(dimension, param.Parameter):
             data = getattr(dimension.owner, dimension.name)
+            eldim = None
+        elif isinstance(dataset.data, (nw.LazyFrame, nw.DataFrame)):
+            data = nw.col(dimension.name)
             eldim = None
         else:
             lookup = dimension if strict else dimension.name
@@ -921,7 +927,7 @@ class df_dim(dim):
                 (coerce or isinstance(dataset.interface, PandasInterface)))
 
     def _compute_data(self, data, drop_index, compute):
-        if hasattr(data, 'compute') and compute:
+        if compute and hasattr(data, 'compute'):
             data = data.compute()
         if not drop_index:
             return data

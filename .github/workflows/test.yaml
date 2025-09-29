@@ -52,6 +52,7 @@ jobs:
     outputs:
       code_change: ${{ steps.filter.outputs.code }}
       matrix: ${{ env.MATRIX }}
+      matrix_option: ${{ env.MATRIX_OPTION }}
     steps:
       - uses: actions/checkout@v4
         if: github.event_name != 'pull_request'
@@ -125,6 +126,7 @@ jobs:
         with:
           environments: ${{ matrix.environment }}
       - name: Check packages latest version
+        if: needs.setup.outputs.matrix_option != 'downstream'
         run: |
           pixi run -e ${{ matrix.environment }} check-latest-packages bokeh panel param datashader
       - name: Test Unit

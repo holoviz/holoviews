@@ -6,6 +6,7 @@ from .. import util
 from ..dimension import dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
+from ..util import dtype_kind
 from .dictionary import DictInterface
 from .interface import DataError, Interface
 from .util import dask_array_module, finite_range, get_array_types, is_dask
@@ -498,7 +499,7 @@ class GridInterface(DictInterface):
 
     @classmethod
     def key_select_mask(cls, dataset, values, ind):
-        if values.dtype.kind == 'M':
+        if dtype_kind(values) == 'M':
             ind = util.parse_datetime_selection(ind)
         if isinstance(ind, tuple):
             ind = slice(*ind)
@@ -796,7 +797,7 @@ class GridInterface(DictInterface):
         if len(array) == 0:
             return np.nan, np.nan
 
-        if array.dtype.kind == 'M':
+        if dtype_kind(array) == 'M':
             dmin, dmax = array.min(), array.max()
         else:
             try:

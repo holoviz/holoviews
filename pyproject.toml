@@ -32,6 +32,7 @@ classifiers = [
 dependencies = [
     "bokeh >=3.1",
     "colorcet",
+    "narwhals >=2",
     "numpy >=1.21",
     "packaging",
     "pandas >=1.3",
@@ -136,6 +137,8 @@ filterwarnings = [
     "ignore::ResourceWarning",
     # 2024-11
     "ignore:The legacy Dask DataFrame implementation is deprecated:FutureWarning", # https://github.com/holoviz/spatialpandas/issues/146
+    # 2025-05
+    "ignore:The 'shapely.geos' module is deprecated, and will be removed in a future version:DeprecationWarning", # https://github.com/geopandas/geopandas/pull/3453
 ]
 
 [tool.coverage]
