@@ -1190,6 +1190,14 @@ def unique_zip(*args, strict=None):
     return list(unique_iterator(zip(*args, strict=strict)))
 
 
+def unique(arr):
+    # if pd:
+    #     return pd.unique(arr)
+    arr = np.asanyarray(arr)
+    _, idx = np.unique(arr, return_index=True)
+    return arr[np.sort(idx)]
+
+
 def unique_array(arr):
     """Returns an array of unique values in the input order.
 
@@ -1207,11 +1215,7 @@ def unique_array(arr):
 
     if isinstance(arr, np.ndarray) and dtype_kind(arr) not in 'MO':
         # Avoid expensive unpacking if not potentially datetime
-        if NUMPY_GE_2_3_0:
-            return np.unique(arr, sorted=False)
-        else:
-            return pd.unique(arr)
-
+        return unique(arr)
 
     values = []
     for v in arr:
@@ -1221,11 +1225,7 @@ def unique_array(arr):
         elif pd and isinstance(getattr(v, "dtype", None), pd.CategoricalDtype):
             v = v.dtype.categories
         values.append(v)
-    if NUMPY_GE_2_3_0:
-        return np.unique(np.asarray(values).ravel(), sorted=False)
-    else:
-        return pd.unique(np.asarray(values).ravel())
-
+    return unique(np.asarray(values).ravel())
 
 def match_spec(element, specification):
     """Matches the group.label specification of the supplied
