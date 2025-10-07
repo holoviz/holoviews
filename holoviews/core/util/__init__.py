@@ -1221,7 +1221,7 @@ def unique_array(arr):
     for v in arr:
         if (isinstance(v, datetime_types) and
             not isinstance(v, cftime_types)):
-            v = pd.Timestamp(v).to_datetime64()
+            v = parse_datetime(v)
         elif pd and isinstance(getattr(v, "dtype", None), pd.CategoricalDtype):
             v = v.dtype.categories
         values.append(v)
@@ -2162,8 +2162,28 @@ def parse_datetime(date):
     """Parses dates specified as string or integer or pandas Timestamp
 
     """
-    import pandas as pd
-    return pd.to_datetime(date).to_datetime64()
+    # if pd:
+    #     return pd.to_datetime(date).to_datetime64()
+
+    match date:
+        case np.datetime64():
+            return date
+        case dt.datetime():
+            return np.datetime64(date)
+        case dt.date():
+            return np.datetime64(dt.datetime.combine(date, time()))
+        case dt.time():
+            return np.datetime64(dt.datetime.combine(dt.date.today(), date))
+        case str():
+            from dateutil.parser import parse
+            return np.datetime64(parse(date))
+        case int() | float():
+            return np.datetime64(dt.datetime.fromtimestamp(date))
+        case _:
+            if pd and isinstance(date, pd.Timestamp):
+                return date.to_datetime64()
+            msg = f"Unsupported type for datetime parsing: {type(date)}"
+            raise TypeError(msg)
 
 
 def parse_datetime_selection(sel):
