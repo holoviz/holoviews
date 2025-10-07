@@ -2169,6 +2169,8 @@ def parse_datetime(date):
         case np.datetime64():
             return date
         case dt.datetime():
+            if date.tzinfo:
+                date = date.astimezone(dt.timezone.utc).replace(tzinfo=None)
             return np.datetime64(date)
         case dt.date():
             return np.datetime64(dt.datetime.combine(date, time()))
