@@ -126,9 +126,13 @@ jobs:
         with:
           environments: ${{ matrix.environment }}
       - name: Check packages latest version
-        if: needs.setup.outputs.matrix_option != 'downstream'
+        if: ${{ needs.setup.outputs.matrix_option != 'downstream' && matrix.environment != 'test-314' }}
         run: |
           pixi run -e ${{ matrix.environment }} check-latest-packages bokeh panel param datashader
+      - name: Check packages latest version (3.14)
+        if: matrix.environment == 'test-314'
+        run: |
+          pixi run -e ${{ matrix.environment }} check-latest-packages bokeh panel param
       - name: Test Unit
         run: |
           pixi run -e ${{ matrix.environment }} test-unit $COV
