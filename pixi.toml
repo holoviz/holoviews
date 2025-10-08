@@ -32,12 +32,16 @@ no-default-feature = true
 features = ["required", "py313", "optional", "test-core", "test-example", "test-unit-task"]
 no-default-feature = true
 
+[environments.test-314]
+features = ["required", "py314", "optional-314", "test-core", "test-example", "test-unit-task"]
+no-default-feature = true
+
 [environments.test-ui]
 features = ["required", "py313", "optional", "test-core", "test-ui"]
 no-default-feature = true
 
 [environments.test-core]
-features = ["required", "py313", "test-core", "test-unit-task"]
+features = ["required", "py314", "test-core", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-gpu]
@@ -97,6 +101,12 @@ python = "3.13.*"
 [feature.py313.activation.env]
 COVERAGE_CORE = "sysmon"
 
+[feature.py314.dependencies]
+python = "3.14.*"
+
+[feature.py314.activation.env]
+COVERAGE_CORE = "sysmon"
+
 [feature.optional.dependencies]
 bokeh_sampledata = "*"
 cftime = "*"
@@ -128,6 +138,38 @@ xyzservices = "*"
 
 [feature.optional.target.unix.dependencies]
 tsdownsample = "*" # currently not available on Windows
+
+[feature.optional-314.dependencies]
+bokeh_sampledata = "*"
+cftime = "*"
+contourpy = "*"
+dask-core = "*"
+# datashader = ">=0.11.1"
+ffmpeg = "*"
+ibis-sqlite = "*"
+ipython = ">=5.4.0"
+matplotlib-base = ">=3"
+nbconvert-core = "*"
+netcdf4 = "*"
+networkx = "*"
+notebook = "*"
+pillow = "*"
+plotly = ">=4.0"
+polars = "*"
+pooch = "*"
+pyarrow = "*"
+pyparsing = "*"
+python-duckdb = "*"
+scikit-image = "*"
+scipy = "*"
+selenium = "*"
+shapely = "*"
+# spatialpandas = "*"
+xarray = ">=0.10.4"
+xyzservices = "*"
+
+[feature.optional-314.target.unix.dependencies]
+# tsdownsample = "*" # currently not available on Windows
 
 [feature.dev.dependencies]
 jupyterlab = "*"
