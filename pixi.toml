@@ -32,12 +32,16 @@ no-default-feature = true
 features = ["required", "py313", "optional", "test-core", "test-example", "test-unit-task"]
 no-default-feature = true
 
+[environments.test-314]
+features = ["required", "py314", "optional-314", "test-core", "test-example", "test-unit-task"]
+no-default-feature = true
+
 [environments.test-ui]
-features = ["required", "py312", "optional", "test-core", "test-ui"]
+features = ["required", "py313", "optional", "test-core", "test-ui"]
 no-default-feature = true
 
 [environments.test-core]
-features = ["required", "py313", "test-core", "test-unit-task"]
+features = ["required", "py314", "test-core", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-gpu]
@@ -62,6 +66,7 @@ pip = "*"
 # Required
 bokeh = ">=3.1"
 colorcet = "*"
+narwhals = ">=2"
 numpy = ">=1.21"
 packaging = "*"
 pandas = ">=1.3"
@@ -96,6 +101,12 @@ python = "3.13.*"
 [feature.py313.activation.env]
 COVERAGE_CORE = "sysmon"
 
+[feature.py314.dependencies]
+python = "3.14.*"
+
+[feature.py314.activation.env]
+COVERAGE_CORE = "sysmon"
+
 [feature.optional.dependencies]
 bokeh_sampledata = "*"
 cftime = "*"
@@ -112,9 +123,11 @@ networkx = "*"
 notebook = "*"
 pillow = "*"
 plotly = ">=4.0"
+polars = "*"
 pooch = "*"
 pyarrow = "*"
-pyparsing = "!=3.2.2" # Pinned 2025-03
+pyparsing = "*"
+python-duckdb = "*"
 scikit-image = "*"
 scipy = "*"
 selenium = "*"
@@ -125,6 +138,38 @@ xyzservices = "*"
 
 [feature.optional.target.unix.dependencies]
 tsdownsample = "*" # currently not available on Windows
+
+[feature.optional-314.dependencies]
+bokeh_sampledata = "*"
+cftime = "*"
+contourpy = "*"
+dask-core = "*"
+# datashader = ">=0.11.1"
+ffmpeg = "*"
+ibis-sqlite = "*"
+ipython = ">=5.4.0"
+matplotlib-base = ">=3"
+nbconvert-core = "*"
+netcdf4 = "*"
+networkx = "*"
+notebook = "*"
+pillow = "*"
+plotly = ">=4.0"
+polars = "*"
+pooch = "*"
+pyarrow = "*"
+pyparsing = "*"
+python-duckdb = "*"
+scikit-image = "*"
+scipy = "*"
+selenium = "*"
+shapely = "*"
+# spatialpandas = "*"
+xarray = ">=0.10.4"
+xyzservices = "*"
+
+[feature.optional-314.target.unix.dependencies]
+# tsdownsample = "*" # currently not available on Windows
 
 [feature.dev.dependencies]
 jupyterlab = "*"
@@ -144,7 +189,7 @@ pytest = "*"
 pytest-asyncio = "*"
 pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
-pytest-rerunfailures = "*"
+pytest-rerunfailures = "!=16.0.0" # https://github.com/pytest-dev/pytest-rerunfailures/issues/303
 pytest-xdist = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-gpu + test-ui environment
@@ -160,7 +205,7 @@ nbval = "*"
 channels = ["microsoft"]
 
 [feature.test-ui.dependencies]
-playwright = { version = "!=1.51.0", channel = "microsoft" } # https://github.com/microsoft/playwright-python/issues/2791
+playwright = { version = "*", channel = "microsoft" }
 pytest-playwright = { version = "*", channel = "microsoft" }
 
 [feature.test-ui.tasks]
@@ -200,7 +245,6 @@ python-kaleido = "*"
 selenium = "*"
 
 [feature.doc.activation.env]
-HV_DOCS_BUILD = "1"
 MOZ_HEADLESS = "1"
 MPLBACKEND = "Agg"
 PANEL_EMBED = "true"

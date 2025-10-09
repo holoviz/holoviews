@@ -52,6 +52,7 @@ jobs:
     outputs:
       code_change: ${{ steps.filter.outputs.code }}
       matrix: ${{ env.MATRIX }}
+      matrix_option: ${{ env.MATRIX_OPTION }}
     steps:
       - uses: actions/checkout@v4
         if: github.event_name != 'pull_request'
@@ -83,7 +84,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "environment": ["test-310", "test-313"]
+              "environment": ["test-310", "test-313", "test-314"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'full' option
@@ -91,7 +92,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "environment": ["test-310", "test-311", "test-312", "test-313"]
+              "environment": ["test-310", "test-311", "test-312", "test-313", "test-314"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'downstream' option
@@ -99,7 +100,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest"],
-              "environment": ["test-311"]
+              "environment": ["test-310"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
 
@@ -125,8 +126,13 @@ jobs:
         with:
           environments: ${{ matrix.environment }}
       - name: Check packages latest version
+        if: ${{ needs.setup.outputs.matrix_option != 'downstream' && matrix.environment != 'test-314' }}
         run: |
           pixi run -e ${{ matrix.environment }} check-latest-packages bokeh panel param datashader
+      - name: Check packages latest version (3.14)
+        if: matrix.environment == 'test-314'
+        run: |
+          pixi run -e ${{ matrix.environment }} check-latest-packages bokeh panel param
       - name: Test Unit
         run: |
           pixi run -e ${{ matrix.environment }} test-unit $COV

@@ -341,7 +341,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         )
 
         # Check initial figures
-        fig1 = components.graphs[0].figure
+        _fig1 = components.graphs[0].figure
         fig2 = components.graphs[1].figure
 
         # Figure holds the scatter trace
@@ -366,7 +366,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
                 CallbackContext, "triggered",
                 [{"prop_id": inputs[0].component_id + ".selectedData"}]
         ):
-            [fig1, fig2, new_store] = callback_fn(
+            [_fig1, fig2, new_store] = callback_fn(
                 {"points": [
                     {
                         "curveNumber": 0,
@@ -403,7 +403,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
                 CallbackContext, "triggered",
                 [{"prop_id": components.resets[0].id + ".n_clicks"}]
         ):
-            [fig1, fig2, new_store] = callback_fn(
+            [_fig1, fig2, new_store] = callback_fn(
                 {}, {}, 1, store
             )
 
@@ -478,7 +478,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         # mimic initial callback invocation
         store_value = encode_store_data({"streams": {}})
         with patch.object(CallbackContext, "triggered", []):
-            [fig, new_store] = callback_fn(
+            [fig, _new_store] = callback_fn(
                 {}, {}, 3, None, store_value
             )
 

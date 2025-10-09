@@ -20,6 +20,7 @@ from functools import partial
 from threading import Event, Thread
 from types import FunctionType, GeneratorType
 
+import narwhals.stable.v2 as nw
 import numpy as np
 import param
 
@@ -875,7 +876,7 @@ def isnat(val):
     """
     import pandas as pd
     if (isinstance(val, (np.datetime64, np.timedelta64)) or
-        (isinstance(val, np.ndarray) and val.dtype.kind == 'M')):
+        (isinstance(val, np.ndarray) and dtype_kind(val) == 'M')):
         return np.isnat(val)
     elif val is pd.NaT:
         return True
@@ -905,11 +906,11 @@ def isfinite(val):
         import dask.array as da
         return da.isfinite(val)
     elif isinstance(val, np.ndarray):
-        if val.dtype.kind == 'M':
+        if dtype_kind(val) == 'M':
             return ~isnat(val)
-        elif val.dtype.kind == 'O':
+        elif dtype_kind(val) == 'O':
             return np.array([isfinite(v) for v in val], dtype=bool)
-        elif val.dtype.kind in 'US':
+        elif dtype_kind(val) in 'US':
             return ~pd.isna(val)
         finite = np.isfinite(val)
         finite &= ~pd.isna(val)
@@ -918,6 +919,8 @@ def isfinite(val):
         return not isnat(val)
     elif isinstance(val, (str, bytes)):
         return True
+    elif isinstance(val, (nw.DataFrame, nw.LazyFrame)):
+        return val.select(nw.all().is_finite())
     finite = np.isfinite(val)
     if finite is pd.NA:
         return False
@@ -929,8 +932,8 @@ def isdatetime(value):
 
     """
     if isinstance(value, np.ndarray):
-        return (value.dtype.kind == "M" or
-                (value.dtype.kind == "O" and len(value) and
+        return (dtype_kind(value) == "M" or
+                (dtype_kind(value) == "O" and len(value) and
                  isinstance(value[0], datetime_types)))
     else:
         return isinstance(value, datetime_types)
@@ -963,7 +966,7 @@ def find_range(values, soft_range=None):
         values = np.squeeze(values) if len(values.shape) > 1 else values
         if soft_range:
             values = np.concatenate([values, soft_range])
-        if values.dtype.kind == 'M':
+        if dtype_kind(values) == 'M':
             return values.min(), values.max()
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
@@ -1013,12 +1016,12 @@ def max_range(ranges, combined=True):
             arr = np.array(values)
             if not len(arr):
                 return np.nan, np.nan
-            elif arr.dtype.kind in 'OSU':
+            elif dtype_kind(arr) in 'OSU':
                 arr = list(python2sort([
                     v for r in values for v in r
                     if not is_nan(v) and v is not None]))
                 return arr[0], arr[-1]
-            elif arr.dtype.kind in 'M':
+            elif dtype_kind(arr) in 'M':
                 drange = ((arr.min(), arr.max()) if combined else
                           (arr[:, 0].min(), arr[:, 1].max()))
                 return drange
@@ -1203,7 +1206,7 @@ def unique_array(arr):
         return np.asarray(arr)
 
     import pandas as pd
-    if isinstance(arr, np.ndarray) and arr.dtype.kind not in 'MO':
+    if isinstance(arr, np.ndarray) and dtype_kind(arr) not in 'MO':
         # Avoid expensive unpacking if not potentially datetime
         return pd.unique(arr)
 
@@ -2263,7 +2266,7 @@ def compute_edges(edges):
 
     """
     edges = np.asarray(edges)
-    if edges.dtype.kind == 'i':
+    if dtype_kind(edges) == 'i':
         edges = edges.astype('f')
     midpoints = (edges[:-1] + edges[1:])/2.0
     boundaries = (2*edges[0] - midpoints[0], 2*edges[-1] - midpoints[-1])
@@ -2275,7 +2278,7 @@ def mimebundle_to_html(bundle):
 
     """
     if isinstance(bundle, tuple):
-        data, metadata = bundle
+        data, _metadata = bundle
     else:
         data = bundle
     html = data.get('text/html', '')
@@ -2406,3 +2409,41 @@ def lazy_isinstance(obj, class_or_tuple):
         if isinstance(obj, functools.reduce(getattr, attr_name.split('.'), mod)):
             return True
     return False
+
+
+def dtype_kind(obj) -> str:
+    """Return dtype kind as a single character string.
+
+    Parameters
+    ----------
+    obj : object / dtype
+    An object which contains a dtype attribute or a dtype,
+    can either be a Numpy or Narwhals dtype.
+
+    Returns
+    -------
+    dtype_kind : str
+    The kind of the dtype as a single character string.
+    """
+    dtype = getattr(obj, "dtype", obj)
+    if hasattr(dtype, "kind"):
+        return dtype.kind
+
+    if not isinstance(dtype, nw.dtypes.DType):
+        raise TypeError(f"Not supported dtype: {dtype}")
+    if dtype.is_signed_integer():
+        return "i"
+    elif dtype.is_unsigned_integer():
+        return "u"
+    elif dtype.is_numeric():
+        return "f"
+    elif isinstance(dtype, nw.dtypes.Duration):
+        return "m"
+    elif dtype.is_temporal():
+        return "M"
+    elif isinstance(dtype, nw.dtypes.Boolean):
+        return "b"
+    elif isinstance(dtype, nw.dtypes.String):
+        return "U"
+    else:
+        return "O"

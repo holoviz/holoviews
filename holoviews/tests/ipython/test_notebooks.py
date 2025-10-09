@@ -22,7 +22,7 @@ def apply_preprocessors(preprocessors, nbname):
         exporter = nbconvert.PythonExporter()
         for preprocessor in preprocessors:
             exporter.register_preprocessor(preprocessor)
-        source, meta = exporter.from_notebook_node(nb)
+        source, _meta = exporter.from_notebook_node(nb)
     return source
 
 class TestOptsPreprocessor(ComparisonTestCase):

@@ -598,7 +598,7 @@ class Renderer(Exporter):
 
         rendered = self_or_cls(plot, fmt)
         if rendered is None: return
-        (data, info) = rendered
+        (_data, info) = rendered
         encoded = self_or_cls.encode(rendered)
         prefix = self_or_cls._save_prefix(info['file-ext'])
         if prefix:

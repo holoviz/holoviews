@@ -3,7 +3,15 @@ from bokeh.models import EdgesAndLinkedNodes, NodesAndLinkedEdges, NodesOnly, Pa
 from bokeh.models.mappers import CategoricalColorMapper, LinearColorMapper
 
 from holoviews.core.data import Dataset
-from holoviews.element import Chord, Graph, Nodes, TriMesh, VLine, circular_layout
+from holoviews.element import (
+    Chord,
+    Graph,
+    Nodes,
+    Sankey,
+    TriMesh,
+    VLine,
+    circular_layout,
+)
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.util.transform import dim
 
@@ -609,3 +617,87 @@ class TestBokehChordPlot(TestBokehPlot):
         self.assertEqual(cmapper.factors, ['0', '1', '2'])
         self.assertEqual(edge_source.data['edge_color'], np.array(['0', '0', '1']))
         self.assertEqual(property_to_dict(glyph.line_color), {'field': 'edge_color', 'transform': cmapper})
+
+
+class TestBokehSankeyPlot(TestBokehPlot):
+
+    def setUp(self):
+        super().setUp()
+        # Simple acyclic flow 0->1, 0->2 with values
+        self.src = np.array([0, 0], dtype=np.int32)
+        self.tgt = np.array([1, 2], dtype=np.int32)
+        self.val = np.array([3.0, 2.0])
+        self.palette = {
+            'A': '#1f77b4',  # blue
+            'B': '#ff7f0e',  # orange
+            'C': '#2ca02c',  # green
+        }
+        # Provide nodes with explicit index->label mapping
+        self.nodes = Dataset(
+            {'index': [0, 1, 2], 'Label': ['A', 'B', 'C']},
+            kdims=['index'], vdims=['Label']
+        )
+        self.sk = Sankey(((self.src, self.tgt, self.val), self.nodes), vdims=['Value'])
+        self.sk = self.sk.opts(
+            # Color nodes by their label using the provided palette
+            node_color='Label',
+            node_cmap=self.palette,
+            color_index=None,
+        )
+
+
+    def test_basic_sankey_sources(self):
+        plot = bokeh_renderer.get_plot(self.sk)
+        node_source = plot.handles['scatter_1_source']
+        edge_source = plot.handles['patches_1_source']
+        layout_source = plot.handles['layout_source']
+
+        # Nodes are 0..2
+        np.testing.assert_array_equal(node_source.data['index'], np.array([0, 1, 2]))
+        # Edges map start/end to indices
+        np.testing.assert_array_equal(edge_source.data['start'], self.src)
+        np.testing.assert_array_equal(edge_source.data['end'], self.tgt)
+
+        # StaticLayoutProvider has mapping from node index to (x,y)
+        # Only request kdims (x, y, index) to avoid unpacking vdims
+        layout = {z: (x, y) for x, y, z in self.sk.nodes.array([0, 1, 2])}
+        assert layout_source.graph_layout == layout
+
+        # Quad glyph data for node rectangles should be present
+        # These are added by SankeyPlot._compute_quads
+        for col in ('x0', 'x1', 'y0', 'y1'):
+            assert col in node_source.data
+            assert len(node_source.data[col]) == 3
+
+    def test_sankey_hover_label_patch(self):
+        # With inspection_policy='edges', start/end hover fields should be remapped
+        # to node labels based on label_index (defaults to 2, i.e. node idx dimension)
+        # Map hover start/end to human-readable labels by specifying label_index
+        g = self.sk.opts(inspection_policy='edges', label_index='Label')
+        plot = bokeh_renderer.get_plot(g)
+        edge_source = plot.handles['patches_1_source']
+
+        # In GraphPlot hover, start/end values are exposed as 'start_values'/'end_values'
+        # SankeyPlot._patch_hover replaces those entries with label lookups
+        # using nodes.vdims at label_index (here 'Label').
+        start_vals = edge_source.data['start_values']
+        end_vals = edge_source.data['end_values']
+        # Labels by node index: 0->A, 1->B, 2->C
+        assert start_vals == ['A', 'A']
+        assert end_vals == ['B', 'C']
+
+    def test_sankey_node_color_categorical(self):
+        plot = bokeh_renderer.get_plot(self.sk)
+
+        quad_glyph = plot.handles['quad_1_glyph']
+        node_source = plot.handles['scatter_1_source']  # quad source is synced to scatter
+
+        # Validate the glyph uses a categorical color mapper for node_color
+        fill_spec = property_to_dict(quad_glyph.fill_color)
+        self.assertEqual(fill_spec.get('field'), 'node_color')
+        transform = fill_spec.get('transform')
+        assert isinstance(transform, CategoricalColorMapper)
+        # Factors should include the node labels
+        assert list(transform.factors) == ['A', 'B', 'C']
+        np.testing.assert_array_equal(node_source.data['node_color'],
+                                       np.array(self.nodes['Label']))

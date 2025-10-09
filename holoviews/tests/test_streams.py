@@ -238,7 +238,7 @@ class TestParamsStream(LoggingComparisonTestCase):
     def test_param_parameter_instance_separate_parameters(self):
         inner = self.inner()
 
-        valid, invalid = Stream._process_streams([inner.param.x, inner.param.y])
+        valid, _invalid = Stream._process_streams([inner.param.x, inner.param.y])
         xparam, yparam = valid
 
         self.assertIs(xparam.parameterized, inner)

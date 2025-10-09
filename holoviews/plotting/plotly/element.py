@@ -9,6 +9,7 @@ from ...core import util
 from ...core.dimension import Dimension
 from ...core.element import Element
 from ...core.spaces import DynamicMap
+from ...core.util import dtype_kind
 from ...streams import Stream
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -318,6 +319,18 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         """Computes the aspect ratio of the plot
 
         """
+        if self.aspect == 'equal' and (
+            isinstance(xspan, util.datetime_types) ^ isinstance(yspan, util.datetime_types)
+            or isinstance(xspan, util.timedelta_types) ^ isinstance(yspan, util.timedelta_types)
+        ):
+            msg = (
+                "The aspect is set to 'equal', but the axes does not have the same type: "
+                f"x-axis {type(xspan).__name__} and y-axis {type(yspan).__name__}. "
+                "Either have the axes be the same type or or set '.opts(aspect=)' "
+                "to either a number or 'square'."
+            )
+            raise TypeError(msg)
+
         return self.width/self.height
 
 
@@ -373,7 +386,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                                      'to overlay your data along the dimension.')
 
             # If color is not valid colorspec add colormapper
-            numeric = isinstance(val, np.ndarray) and val.dtype.kind in 'uifMm'
+            numeric = isinstance(val, np.ndarray) and dtype_kind(val) in 'uifMm'
             if ('color' in k and isinstance(val, np.ndarray) and numeric):
                 copts = self.get_color_opts(v, element, ranges, style)
                 new_style.pop('cmap', None)
@@ -636,7 +649,7 @@ class ColorbarPlot(ElementPlot):
                 cmin, cmax = self.clim
             elif dim_name in ranges:
                 if self.clim_percentile and 'robust' in ranges[dim_name]:
-                    low, high = ranges[dim_name]['robust']
+                    cmin, cmax = ranges[dim_name]['robust']
                 else:
                     cmin, cmax = ranges[dim_name]['combined']
             elif isinstance(eldim, dim):
@@ -719,7 +732,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
         for okey, subplot in self.subplots.items():
             if element is not None and subplot.drawn:
-                idx, spec, exact = self._match_subplot(okey, subplot, items, element)
+                idx, _spec, _exact = self._match_subplot(okey, subplot, items, element)
                 if idx is not None:
                     _, el = items.pop(idx)
                 else:
