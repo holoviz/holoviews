@@ -62,6 +62,7 @@ if find_spec("datashader") is None:
         "reference/elements/plotly/ImageStack.ipynb",
         "user_guide/15-Large_Data.ipynb",
         "user_guide/16-Streaming_Data.ipynb",
+        "user_guide/Interactive_Hover_for_Big_Data.ipynb",
         "user_guide/Linked_Brushing.ipynb",
         "user_guide/Network_Graphs.ipynb",
     ]
@@ -69,6 +70,11 @@ if find_spec("datashader") is None:
 if find_spec("scikit-image") is None:
     collect_ignore_glob += [
         "user_guide/Network_Graphs.ipynb",
+    ]
+
+if find_spec("tsdownsample") is None:
+    collect_ignore_glob += [
+        "gallery/demos/bokeh/multichannel_timeseries_viewer.ipynb",
     ]
 
 
