@@ -1193,9 +1193,14 @@ def unique_zip(*args, strict=None):
 def unique(arr):
     # if pd:
     #     return pd.unique(arr)
-    arr = np.asanyarray(arr)
-    _, idx = np.unique(arr, return_index=True)
-    return arr[np.sort(idx)]
+    try:
+        arr = np.asanyarray(arr)
+        _, idx = np.unique(arr, return_index=True)
+        return arr[np.sort(idx)]
+    except TypeError:
+        if dtype_kind(arr) == "O":
+            return np.array(list(unique_iterator(arr)), dtype="object")
+        raise
 
 
 def unique_array(arr):
