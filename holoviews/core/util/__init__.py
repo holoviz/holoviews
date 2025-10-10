@@ -2163,37 +2163,37 @@ def date_range(start, end, length, time_unit='us'):
     return start+step/2.+np.arange(length)*step
 
 
-def parse_datetime(date):
+def parse_datetime(date_like):
     """Parses dates specified as string or integer or pandas Timestamp
 
     """
     # if pd:
-    #     return pd.to_datetime(date).to_datetime64()
+    #     return pd.to_datetime(date_like).to_datetime64()
 
-    match date:
+    match date_like:
         case np.datetime64():
-            return date
+            return date_like
         case dt.datetime():
-            if date.tzinfo:
-                date = date.astimezone(dt.timezone.utc).replace(tzinfo=None)
-            return np.datetime64(date)
+            date = date_like
         case dt.date():
-            return np.datetime64(dt.datetime.combine(date, dt.time()), "ns")
+            date = dt.datetime.combine(date_like, dt.time())
         case dt.time():
-            return np.datetime64(dt.datetime.combine(dt.date.today(), date), "ns")
+            date = dt.datetime.combine(dt.date.today(), date_like)
         case str():
             from dateutil.parser import parse
-            date = parse(date)
-            if date.tzinfo:
-                date = date.astimezone(dt.timezone.utc).replace(tzinfo=None)
-            return np.datetime64(date, "ns")
+            date = parse(date_like)
         case int() | float():
-            return np.datetime64(dt.datetime.fromtimestamp(date), "ns")
+            date = dt.datetime.fromtimestamp(date_like)
+        case _ if pd and isinstance(date_like, pd.Timestamp):
+            return date_like.to_datetime64()
         case _:
-            if pd and isinstance(date, pd.Timestamp):
-                return date.to_datetime64()
-            msg = f"Unsupported type for datetime parsing: {type(date)}"
+            msg = f"Unsupported type for datetime parsing: {type(date_like)}"
             raise TypeError(msg)
+
+    if getattr(date, "tzinfo", None):
+        date = date.astimezone(dt.timezone.utc).replace(tzinfo=None)
+
+    return np.datetime64(date, "ns")
 
 
 def parse_datetime_selection(sel):
