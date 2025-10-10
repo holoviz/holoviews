@@ -813,10 +813,24 @@ class IPTestCase(ComparisonTestCase):
         self.addTypeEqualityFunc(SVG,  self.skip_comparison)
 
     def tearDown(self) -> None:
+        # Save references to database connections before exit callbacks
+        # because exit callbacks set history_manager to None
+        db_connections = []
+        if hasattr(self.ip, 'history_manager') and self.ip.history_manager is not None:
+            hm = self.ip.history_manager
+            if hasattr(hm, 'db'):
+                db_connections.append(hm.db)
+            if hasattr(hm, 'save_thread') and hasattr(hm.save_thread, 'db'):
+                db_connections.append(hm.save_thread.db)
+
         # self.ip.displayhook.flush calls gc.collect
         with patch('gc.collect', lambda: None):
             for ex in self.exits:
                 ex()
+
+            for db in db_connections:
+                db.close()
+
         del self.ip
         super().tearDown()
 
