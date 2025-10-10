@@ -2173,14 +2173,17 @@ def parse_datetime(date):
                 date = date.astimezone(dt.timezone.utc).replace(tzinfo=None)
             return np.datetime64(date)
         case dt.date():
-            return np.datetime64(dt.datetime.combine(date, time()))
+            return np.datetime64(dt.datetime.combine(date, dt.time()), "ns")
         case dt.time():
-            return np.datetime64(dt.datetime.combine(dt.date.today(), date))
+            return np.datetime64(dt.datetime.combine(dt.date.today(), date), "ns")
         case str():
             from dateutil.parser import parse
-            return np.datetime64(parse(date))
+            date = parse(date)
+            if date.tzinfo:
+                date = date.astimezone(dt.timezone.utc).replace(tzinfo=None)
+            return np.datetime64(date, "ns")
         case int() | float():
-            return np.datetime64(dt.datetime.fromtimestamp(date))
+            return np.datetime64(dt.datetime.fromtimestamp(date), "ns")
         case _:
             if pd and isinstance(date, pd.Timestamp):
                 return date.to_datetime64()
