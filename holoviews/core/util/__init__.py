@@ -27,7 +27,6 @@ import param
 from ...util.warnings import warn
 from .dependencies import (  # noqa: F401
     NUMPY_GE_2_0_0,
-    NUMPY_GE_2_3_0,
     NUMPY_VERSION,
     PANDAS_GE_2_1_0,
     PANDAS_GE_2_2_0,
