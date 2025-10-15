@@ -16,8 +16,10 @@ except ImportError:
 
 try:
     import ibis
+
+    from holoviews.core.data.ibis import IBIS_VERSION
 except ImportError:
-    ibis = None
+    ibis = IBIS_VERSION = None
 
 try:
     import cudf
@@ -487,7 +489,7 @@ class OperationTests(ComparisonTestCase):
     @pytest.mark.usefixtures('ibis_sqlite_backend')
     def test_dataset_histogram_ibis(self):
         df = pd.DataFrame(dict(x=np.arange(10)))
-        t = ibis.memtable(df, name='t')
+        t = ibis.memtable(df, **({} if IBIS_VERSION >= (11, 0, 0) else {"name": "t"}))
         ds = Dataset(t, vdims='x')
         op_hist = histogram(ds, dimension='x', num_bins=3, normed=True)
 
@@ -499,7 +501,7 @@ class OperationTests(ComparisonTestCase):
     @pytest.mark.usefixtures('ibis_sqlite_backend')
     def test_dataset_cumulative_histogram_ibis(self):
         df = pd.DataFrame(dict(x=np.arange(10)))
-        t = ibis.memtable(df, name='t')
+        t = ibis.memtable(df, **({} if IBIS_VERSION >= (11, 0, 0) else {"name": "t"}))
         ds = Dataset(t, vdims='x')
         op_hist = histogram(ds, num_bins=3, cumulative=True, normed=True)
 
@@ -511,7 +513,7 @@ class OperationTests(ComparisonTestCase):
     @pytest.mark.usefixtures('ibis_sqlite_backend')
     def test_dataset_histogram_explicit_bins_ibis(self):
         df = pd.DataFrame(dict(x=np.arange(10)))
-        t = ibis.memtable(df, name='t')
+        t = ibis.memtable(df, **({} if IBIS_VERSION >= (11, 0, 0) else {"name": "t"}))
         ds = Dataset(t, vdims='x')
         op_hist = histogram(ds, bins=[0, 1, 3], normed=False)
 
