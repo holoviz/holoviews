@@ -1750,3 +1750,28 @@ def test_datashade_count_cat_no_change_inplace():
     render(op)
     # Should not convert to category dtype
     assert df["c"].dtype == "object"
+
+
+@pytest.mark.parametrize("lazy", [False, True])
+@pytest.mark.parametrize("op", [aggregate, rasterize, datashade])
+def test_points_polars(lazy, op):
+    pl = pytest.importorskip("polars")
+    data = {
+        "x": [0.2, 0.4, 0.0],
+        "y": [0.3, 0.7, 0.99],
+    }
+    op_kwargs = dict(
+        dynamic=False,
+        x_range=(0, 1,),
+        y_range=(0, 1,),
+        width=2,
+        height=2
+    )
+
+    polars_df = pl.LazyFrame(data) if lazy else pl.DataFrame(data)
+    polars_img = op(Points(polars_df), **op_kwargs)
+
+    pandas_df = pd.DataFrame(data)
+    pandas_img = op(Points(pandas_df), **op_kwargs)
+
+    xr.testing.assert_equal(polars_img.data, pandas_img.data)

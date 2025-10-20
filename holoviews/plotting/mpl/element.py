@@ -21,6 +21,7 @@ from ...core import (
 )
 from ...core.dimension import Dimension
 from ...core.options import Keywords, abbreviated_exception
+from ...core.util import dtype_kind
 from ...element import Graph, Path
 from ...streams import Stream
 from ...util.transform import dim
@@ -337,6 +338,17 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         elif self.aspect == 'square':
             return 1
         elif self.aspect == 'equal':
+            if (
+                isinstance(xspan, util.datetime_types) ^ isinstance(yspan, util.datetime_types)
+                or isinstance(xspan, util.timedelta_types) ^ isinstance(yspan, util.timedelta_types)
+            ):
+                msg = (
+                    "The aspect is set to 'equal', but the axes does not have the same type: "
+                    f"x-axis {type(xspan).__name__} and y-axis {type(yspan).__name__}. "
+                    "Either have the axes be the same type or or set '.opts(aspect=)' "
+                    "to either a number or 'square'."
+                )
+                raise TypeError(msg)
             return xspan/yspan
         return 1
 
@@ -653,6 +665,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             elif type(element) is Path:
                 val = np.concatenate([v.apply(el, ranges=ranges, flat=True)
                                       for el in element.split()])
+            elif 'node' in k:
+                val = v.apply(element.nodes, ranges=ranges)
             else:
                 val = v.apply(element, ranges)
 
@@ -677,7 +691,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 and not validate('color', val)):
                 new_style.pop(k)
                 self._norm_kwargs(element, ranges, new_style, v, val, prefix)
-                if val.dtype.kind in 'OSUM':
+                if dtype_kind(val) in 'OSUM':
                     range_key = dim_range_key(v)
                     if range_key in ranges and 'factors' in ranges[range_key]:
                         factors = ranges[range_key]['factors']
@@ -947,14 +961,14 @@ class ColorbarPlot(ElementPlot):
             if not len(values):
                 clim = (0, 0)
                 categorical = False
-            elif values.dtype.kind in 'uif':
+            elif dtype_kind(values) in 'uif':
                 if dim_name in ranges:
                     if self.clim_percentile and 'robust' in ranges[dim_name]:
                         clim = ranges[dim_name]['robust']
                     else:
                         clim = ranges[dim_name]['combined']
                 elif isinstance(vdim, dim):
-                    if values.dtype.kind == 'M':
+                    if dtype_kind(values) == 'M':
                         clim = values.min(), values.max()
                     elif len(values) == 0:
                         clim = np.nan, np.nan
@@ -985,7 +999,7 @@ class ColorbarPlot(ElementPlot):
                 clim = (0, len(factors)-1)
                 categorical = True
         else:
-            categorical = values.dtype.kind not in 'uif'
+            categorical = dtype_kind(values) not in 'uif'
 
         if self.cnorm == 'eq_hist':
             opts[prefix+'norm'] = EqHistNormalize(
@@ -1003,7 +1017,7 @@ class ColorbarPlot(ElementPlot):
         opts[prefix+'vmax'] = clim[1]
 
         cmap = opts.get(prefix+'cmap', opts.get('cmap', 'viridis'))
-        if values.dtype.kind not in 'OSUM':
+        if dtype_kind(values) not in 'OSUM':
             ncolors = None
             if isinstance(self.color_levels, int):
                 ncolors = self.color_levels
