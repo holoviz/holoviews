@@ -1,6 +1,12 @@
 import numpy as np
 import pandas as pd
-from bokeh.models import FactorRange, HoverTool, Image as bkImage, Range1d
+from bokeh.models import (
+    FactorRange,
+    HoverTool,
+    Image as bkImage,
+    Range1d,
+    Rect as bkRect,
+)
 
 from holoviews.element import HeatMap, Image, Points
 
@@ -178,3 +184,18 @@ class TestHeatMapPlot(TestBokehPlot):
         np.testing.assert_array_equal(data['A'], df.index.get_level_values('A'))
         np.testing.assert_array_equal(data['B'], df.index.get_level_values('B'))
         np.testing.assert_array_equal(data['zvalues'], df['C'])
+
+    def test_heatmap_gridded_nonequidistant(self):
+        x = np.arange(12)
+        x[4:] += 5
+        y = [chr(65 + i) for i in range(10)]
+        arr = np.ones((10, 12)) * np.arange(12) * np.atleast_2d(np.arange(10)).T
+        hm = HeatMap((x, y, arr))
+
+        plot = bokeh_renderer.get_plot(hm)
+        assert isinstance(plot.handles["glyph"], bkRect)
+
+        data = plot.handles["cds"].data
+        np.testing.assert_array_equal(data["x"], hm.dimension_values("x"))
+        np.testing.assert_array_equal(data["y"], hm.dimension_values("y"))
+        np.testing.assert_array_equal(data["zvalues"], hm.dimension_values("z"))
