@@ -134,7 +134,7 @@ class HeatMapPlot(ColorbarPlot):
                 if i > 2 and 'hover' not in self.handles:
                     break
                 img = element.dimension_values(i, flat=False)
-                if img.dtype.kind == 'b':
+                if dtype_kind(img) == 'b':
                     img = img.astype(np.int8)
                 if 0 in img.shape:
                     img = np.array([[np.nan]])
@@ -171,7 +171,7 @@ class HeatMapPlot(ColorbarPlot):
                 widths = np.diff(edges, axis=1).T.flatten()
             else:
                 widths = [self.default_span]*xvals.shape[0] if len(xvals) else []
-            xvals = xvals.T.flatten()# - np.array(widths)/2
+            xvals = xvals.T.flatten()
             width = 'width'
 
         ytype = aggregate.interface.dtype(aggregate, y)
@@ -188,7 +188,7 @@ class HeatMapPlot(ColorbarPlot):
                 heights = np.diff(edges, axis=0).T.flatten()
             else:
                 heights = [self.default_span]*yvals.shape[1] if len(yvals) else []
-            yvals = yvals.T.flatten()# - np.array(heights)/2
+            yvals = yvals.T.flatten()
             height = 'height'
 
         zvals = aggregate.dimension_values(2, flat=False)
