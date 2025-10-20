@@ -5,7 +5,12 @@ from bokeh.models.ranges import FactorRange
 
 from ...core.data import GridInterface
 from ...core.spaces import HoloMap
-from ...core.util import dimension_sanitizer, find_contiguous_subarray, dtype_kind, is_nan
+from ...core.util import (
+    dimension_sanitizer,
+    dtype_kind,
+    find_contiguous_subarray,
+    is_nan,
+)
 from .element import ColorbarPlot, CompositeElementPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, text_properties
