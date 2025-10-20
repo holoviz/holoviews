@@ -937,9 +937,14 @@ class regrid(AggregationOperation):
         # Disable upsampling by clipping size and ranges
         (xstart, xend), (ystart, yend) = (x_range, y_range)
         xspan, yspan = (xend-xstart), (yend-ystart)
-        interp = self.p.interpolation or None
-        if interp == 'bilinear': interp = 'linear'
-        if not (self.p.upsample or interp is None) and self.p.target is None:
+        interp = self.p.interpolation
+        # Convert interpolation method to datashader format
+        # False/None means no interpolation (use nearest neighbor)
+        if interp in (False, None):
+            interp = 'nearest'
+        elif interp == 'bilinear':
+            interp = 'linear'
+        if not (self.p.upsample or interp in (False, None)) and self.p.target is None:
             (x0, x1), (y0, y1) = element.range(0), element.range(1)
             if isinstance(x0, datetime_types):
                 x0, x1 = dt_to_int(x0, 'ns'), dt_to_int(x1, 'ns')
@@ -1023,7 +1028,7 @@ class trimesh_rasterize(aggregate):
                                      class_=(rd.Reduction, rd.summary, str))
 
     interpolation = param.Selector(default='bilinear',
-                                         objects=['bilinear', 'linear', None, False], doc="""
+                                         objects=['bilinear', 'linear', 'nearest', None, False], doc="""
         The interpolation method to apply during rasterization.""")
 
     def _precompute(self, element, agg):
