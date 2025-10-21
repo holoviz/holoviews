@@ -998,7 +998,8 @@ class DatashaderRegridTests(ComparisonTestCase):
         self.assertEqual(regridded, expected)
 
     # None, False, and 'nearest' are expected to return the same Image values
-    def test_regrid_interpolation_none(self):
+    @pytest.mark.parametrize("interpolation", [None, False, "nearest"])
+    def test_regrid_interpolation_nearest(self):
         img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
         regridded = regrid(img, width=4, height=4, upsample=True, interpolation=None, dynamic=False)
         expected = Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
@@ -1008,28 +1009,9 @@ class DatashaderRegridTests(ComparisonTestCase):
                            [2, 2, 3, 3]]))
         self.assertEqual(regridded, expected)
 
-    def test_regrid_interpolation_false(self):
-        img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
-        regridded = regrid(img, width=4, height=4, upsample=True, interpolation=False, dynamic=False)
-        expected = Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
-                          [[0, 0, 1, 1],
-                           [0, 0, 1, 1],
-                           [2, 2, 3, 3],
-                           [2, 2, 3, 3]]))
-        self.assertEqual(regridded, expected)
-
-    def test_regrid_interpolation_nearest(self):
-        img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
-        regridded = regrid(img, width=4, height=4, upsample=True, interpolation='nearest', dynamic=False)
-        expected = Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
-                          [[0, 0, 1, 1],
-                           [0, 0, 1, 1],
-                           [2, 2, 3, 3],
-                           [2, 2, 3, 3]]))
-        self.assertEqual(regridded, expected)
-
     # 'bilinear' and 'linear' expected to return the same Image values
-    def test_regrid_interpolation_bilinear(self):
+    @pytest.mark.parametrize("interpolation", ["linear", "bilinear"])
+    def test_regrid_interpolation_linear(self):
         img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
         regridded = regrid(img, width=4, height=4, upsample=True, interpolation='bilinear', dynamic=False)
         expected = Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
@@ -1039,24 +1021,10 @@ class DatashaderRegridTests(ComparisonTestCase):
                            [2, 2, 2, 3]]))
         self.assertEqual(regridded, expected)
 
-    def test_regrid_interpolation_linear(self):
-        img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
-        regridded = regrid(img, width=4, height=4, upsample=True, interpolation='linear', dynamic=False)
-        expected = Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
-                          [[0, 0, 0, 1],
-                           [0, 1, 1, 1],
-                           [1, 1, 2, 2],
-                           [2, 2, 2, 3]]))
-        self.assertEqual(regridded, expected)
-
+    @pytest.mark.parametrize("interpolation", [False, None])
     def test_datashade_interpolation_false(self):
         img = Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
         shaded = datashade(img, interpolation=False, dynamic=False, width=4, height=4)
-        assert isinstance(shaded, RGB)
-
-    def test_datashade_interpolation_none(self):
-        img = Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
-        shaded = datashade(img, interpolation=None, dynamic=False, width=4, height=4)
         assert isinstance(shaded, RGB)
 
 

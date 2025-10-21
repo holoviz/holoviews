@@ -944,7 +944,7 @@ class regrid(AggregationOperation):
             interp = 'nearest'
         elif interp == 'bilinear':
             interp = 'linear'
-        if not (self.p.upsample or interp in (False, None)) and self.p.target is None:
+        if not (self.p.upsample or self.p.interpolation in (False, None)) and self.p.target is None:
             (x0, x1), (y0, y1) = element.range(0), element.range(1)
             if isinstance(x0, datetime_types):
                 x0, x1 = dt_to_int(x0, 'ns'), dt_to_int(x1, 'ns')
