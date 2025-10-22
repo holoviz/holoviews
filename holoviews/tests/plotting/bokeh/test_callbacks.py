@@ -8,11 +8,18 @@ import pytest
 import pyviz_comms as comms
 from bokeh.events import Tap
 from bokeh.io.doc import set_curdoc
-from bokeh.models import ColumnDataSource, Plot, PolyEditTool, Range1d, Selection
+from bokeh.models import (
+    ColumnDataSource,
+    FactorRange,
+    Plot,
+    PolyEditTool,
+    Range1d,
+    Selection,
+)
 
 from holoviews.core import DynamicMap
 from holoviews.core.options import Store
-from holoviews.element import Box, Curve, Points, Polygons, Rectangles, Table
+from holoviews.element import Box, Curve, HeatMap, Points, Polygons, Rectangles, Table
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.bokeh.callbacks import (
     BoxEditCallback,
@@ -553,3 +560,88 @@ def test_rangexy_subcoordinate_y_dynamic():
     assert len(plot.callbacks) == 1
     callback = plot.callbacks[0]
     assert callback._process_msg({}) == {}
+
+
+# Regression tests for https://github.com/holoviz/holoviews/pull/6438
+@pytest.mark.usefixtures('bokeh_backend')
+def test_pointer_xy_factor_range_out_of_bounds():
+    heatmap = HeatMap([('A', 'X', 1), ('B', 'Y', 2), ('C', 'Z', 3)])
+    PointerXY(source=heatmap)
+    plot = bokeh_server_renderer.get_plot(heatmap)
+    set_curdoc(plot.document)
+    callback = plot.callbacks[0]
+
+    x_range = plot.handles['x_range']
+    y_range = plot.handles['y_range']
+    assert isinstance(x_range, FactorRange)
+    assert isinstance(y_range, FactorRange)
+
+    msg = callback._process_msg({'x': 0, 'y': 0})
+    assert msg['x'] == 'A'
+    assert msg['y'] == 'X'
+
+    msg = callback._process_msg({'x': 1, 'y': 1})
+    assert msg['x'] == 'B'
+    assert msg['y'] == 'Y'
+
+    # Test out-of-bounds indices. Should not raise IndexError
+    msg = callback._process_msg({'x': 10, 'y': 0}) # x out of bounds
+    assert msg['x'] == 10
+    assert msg['y'] == 'X'
+
+    msg = callback._process_msg({'x': 0, 'y': 10}) # y out of bounds
+    assert msg['x'] == 'A'
+    assert msg['y'] == 10
+
+    msg = callback._process_msg({'x': 100, 'y': 100})  # Both way out of bounds
+    assert msg['x'] == 100
+    assert msg['y'] == 100
+
+    # Negative indices like -1 will wrap around to get the last element if available,
+    # so they won't trigger IndexError
+    msg = callback._process_msg({'x': -1, 'y': -1})
+    assert msg['x'] == 'C'  # Gets last element in x factors
+    assert msg['y'] == 'Z'  # Gets last element in y factors
+
+    # Test negative indices truly out of bounds
+    msg = callback._process_msg({'x': -4, 'y': -4})
+    assert msg['x'] == -4
+    assert msg['y'] == -4
+
+
+@pytest.mark.usefixtures('bokeh_backend')
+def test_tap_factor_range_out_of_bounds():
+    heatmap = HeatMap([('A', 'X', 1), ('B', 'Y', 2), ('C', 'Z', 3)])
+    SingleTap(source=heatmap)
+    plot = bokeh_server_renderer.get_plot(heatmap)
+    set_curdoc(plot.document)
+    callback = plot.callbacks[0]
+
+    x_range = plot.handles['x_range']
+    y_range = plot.handles['y_range']
+    assert isinstance(x_range, FactorRange)
+    assert isinstance(y_range, FactorRange)
+
+    msg = callback._process_msg({'x': 1, 'y': 1})
+    assert msg['x'] == 'B'
+    assert msg['y'] == 'Y'
+
+    msg = callback._process_msg({'x': 10, 'y': 1})
+    assert msg['x'] == 10
+    assert msg['y'] == 'Y'
+
+    msg = callback._process_msg({'x': 1, 'y': 10})
+    assert msg['x'] == 'B'
+    assert msg['y'] == 10
+
+    msg = callback._process_msg({'x': 50, 'y': 50})
+    assert msg['x'] == 50
+    assert msg['y'] == 50
+
+    msg = callback._process_msg({'x': -1, 'y': -1})
+    assert msg['x'] == 'C'
+    assert msg['y'] == 'Z'
+
+    msg = callback._process_msg({'x': -4, 'y': -4})
+    assert msg['x'] == -4
+    assert msg['y'] == -4
