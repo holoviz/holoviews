@@ -295,44 +295,55 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """Updates grid settings on the matplotlib axis based on gridstyle options.
 
         """
-        if not self.show_grid and not self.gridstyle:
+        if self.show_grid is False:
             axis.grid(False)
             return
 
-        style_items = list(self.gridstyle.items())
+        style_items = self.gridstyle.items()
         # Options that apply to both x and y grids, x, and then y
-        both = {k: v for k, v in style_items if k.startswith(('grid_', 'minor_grid'))}
+        both = {
+            k.removeprefix('grid_'): v
+            for k, v in style_items
+            if not k.startswith(('x', 'y'))
+        }
 
         # Merge options - both options first, then axis-specific
-        xopts = both.copy()
-        xopts.update({k.replace('xgrid_', ''): v for k, v in style_items if 'xgrid' in k})
+        xopts = {
+            **both,
+            **{k.removeprefix('xgrid_').removeprefix("x_"): v for k, v in style_items if k.startswith('x')}
+        }
 
-        yopts = both.copy()
-        yopts.update({k.replace('ygrid_', ''): v for k, v in style_items if 'ygrid' in k})
-
-        # Remove grid_ prefix from matplotlib property names
-        xopts = {k.replace('grid_', ''): v for k, v in xopts.items()}
-        yopts = {k.replace('grid_', ''): v for k, v in yopts.items()}
+        yopts = {
+            **both,
+            **{k.removeprefix('ygrid_').removeprefix("y_"): v for k, v in style_items if k.startswith('y')}
+        }
 
         # Apply grid visibility first
-        if xopts or yopts or self.show_grid:
-            axis.grid(True)
+        axis.grid(True)
 
         # Apply x-axis grid styling
         if xopts:
             xgridlines = axis.get_xgridlines()
             for line in xgridlines:
                 for prop, val in xopts.items():
-                    if hasattr(line, f'set_{prop}'):
-                        getattr(line, f'set_{prop}')(val)
+                    if fn := getattr(line, f'set_{prop}', None):
+                        fn(val)
+                    else:
+                        self.param.warning(
+                            f"Grid line has no property 'set_{prop}' to set grid style."
+                        )
 
         # Apply y-axis grid styling
         if yopts:
             ygridlines = axis.get_ygridlines()
             for line in ygridlines:
                 for prop, val in yopts.items():
-                    if hasattr(line, f'set_{prop}'):
-                        getattr(line, f'set_{prop}')(val)
+                    if fn := getattr(line, f'set_{prop}', None):
+                        fn(val)
+                    else:
+                        self.param.warning(
+                            f"Grid line has no property 'set_{prop}' to set grid style."
+                        )
 
     def _finalize_artist(self, element):
         """Allows extending the _finalize_axis method with Element
