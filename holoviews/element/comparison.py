@@ -805,10 +805,18 @@ class IPTestCase(ComparisonTestCase):
         except Exception:
             raise SkipTest("IPython could not be imported") from None
 
+        from traitlets.config import Config
+
         super().setUp()
         self.exits = []
         with patch('atexit.register', lambda x: self.exits.append(x)):
-            self.ip = IPython.InteractiveShell(history_length=0, history_load_length=0)
+            config = Config()
+            config.HistoryManager.hist_file = ':memory:'
+            self.ip = IPython.InteractiveShell(
+                config=config,
+                history_length=0,
+                history_load_length=0
+            )
         self.addTypeEqualityFunc(HTML, self.skip_comparison)
         self.addTypeEqualityFunc(SVG,  self.skip_comparison)
 
