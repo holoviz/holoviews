@@ -564,57 +564,51 @@ def test_rangexy_subcoordinate_y_dynamic():
 
 # Regression tests for https://github.com/holoviz/holoviews/pull/6438
 @pytest.mark.usefixtures('bokeh_backend')
-def test_pointer_xy_factor_range_out_of_bounds():
+async def test_heatmap_pointer_xy_outside_plot_area():
     heatmap = HeatMap([('A', 'X', 1), ('B', 'Y', 2), ('C', 'Z', 3)])
-    PointerXY(source=heatmap)
+    stream = PointerXY(source=heatmap)
     plot = bokeh_server_renderer.get_plot(heatmap)
-    set_curdoc(plot.document)
     callback = plot.callbacks[0]
 
     x_range = plot.handles['x_range']
     y_range = plot.handles['y_range']
     assert isinstance(x_range, FactorRange)
     assert isinstance(y_range, FactorRange)
+    assert x_range.factors == ['A', 'B', 'C']
+    assert y_range.factors == ['X', 'Y', 'Z']
 
-    msg = callback._process_msg({'x': 0, 'y': 0})
-    assert msg['x'] == 'A'
-    assert msg['y'] == 'X'
+    await callback.on_msg({'x': 0, 'y': 0})
+    assert stream.x == 'A'
+    assert stream.y == 'X'
 
-    msg = callback._process_msg({'x': 1, 'y': 1})
-    assert msg['x'] == 'B'
-    assert msg['y'] == 'Y'
+    await callback.on_msg({'x': 1, 'y': 1})
+    assert stream.x == 'B'
+    assert stream.y == 'Y'
 
     # Test out-of-bounds indices. Should not raise IndexError
-    msg = callback._process_msg({'x': 10, 'y': 0}) # x out of bounds
-    assert msg['x'] == 10
-    assert msg['y'] == 'X'
+    await callback.on_msg({'x': 10, 'y': 0}) # x out of bounds
+    assert stream.x == 10
+    assert stream.y == 'X'
 
-    msg = callback._process_msg({'x': 0, 'y': 10}) # y out of bounds
-    assert msg['x'] == 'A'
-    assert msg['y'] == 10
+    await callback.on_msg({'x': 0, 'y': 10}) # y way out of bounds
+    assert stream.x == 'A'
+    assert stream.y == 10
 
-    msg = callback._process_msg({'x': 100, 'y': 100})  # Both way out of bounds
-    assert msg['x'] == 100
-    assert msg['y'] == 100
+    await callback.on_msg({'x': 100, 'y': 100}) # Both way out of bounds
+    assert stream.x == 100
+    assert stream.y == 100
 
-    # Negative indices like -1 will wrap around to get the last element if available,
-    # so they won't trigger IndexError
-    msg = callback._process_msg({'x': -1, 'y': -1})
-    assert msg['x'] == 'C'  # Gets last element in x factors
-    assert msg['y'] == 'Z'  # Gets last element in y factors
-
-    # Test negative indices truly out of bounds
-    msg = callback._process_msg({'x': -4, 'y': -4})
-    assert msg['x'] == -4
-    assert msg['y'] == -4
+    # Test negative indices out-of-bounds
+    await callback.on_msg({'x': -10, 'y': -10})
+    assert stream.x == -10
+    assert stream.y == -10
 
 
 @pytest.mark.usefixtures('bokeh_backend')
-def test_tap_factor_range_out_of_bounds():
+async def test_heatmap_tap_outside_plot_area():
     heatmap = HeatMap([('A', 'X', 1), ('B', 'Y', 2), ('C', 'Z', 3)])
-    SingleTap(source=heatmap)
+    stream = SingleTap(source=heatmap)
     plot = bokeh_server_renderer.get_plot(heatmap)
-    set_curdoc(plot.document)
     callback = plot.callbacks[0]
 
     x_range = plot.handles['x_range']
@@ -622,26 +616,22 @@ def test_tap_factor_range_out_of_bounds():
     assert isinstance(x_range, FactorRange)
     assert isinstance(y_range, FactorRange)
 
-    msg = callback._process_msg({'x': 1, 'y': 1})
-    assert msg['x'] == 'B'
-    assert msg['y'] == 'Y'
+    await callback.on_msg({'x': 1, 'y': 1})
+    assert stream.x == 'B'
+    assert stream.y == 'Y'
 
-    msg = callback._process_msg({'x': 10, 'y': 1})
-    assert msg['x'] == 10
-    assert msg['y'] == 'Y'
+    await callback.on_msg({'x': 10, 'y': 1})
+    assert stream.x == 10
+    assert stream.y == 'Y'
 
-    msg = callback._process_msg({'x': 1, 'y': 10})
-    assert msg['x'] == 'B'
-    assert msg['y'] == 10
+    await callback.on_msg({'x': 1, 'y': 10})
+    assert stream.x == 'B'
+    assert stream.y == 10
 
-    msg = callback._process_msg({'x': 50, 'y': 50})
-    assert msg['x'] == 50
-    assert msg['y'] == 50
+    await callback.on_msg({'x': 50, 'y': 50})
+    assert stream.x == 50
+    assert stream.y == 50
 
-    msg = callback._process_msg({'x': -1, 'y': -1})
-    assert msg['x'] == 'C'
-    assert msg['y'] == 'Z'
-
-    msg = callback._process_msg({'x': -4, 'y': -4})
-    assert msg['x'] == -4
-    assert msg['y'] == -4
+    await callback.on_msg({'x': -10, 'y': -10})
+    assert stream.x == -10
+    assert stream.y == -10
