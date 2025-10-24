@@ -84,10 +84,8 @@ class HeatMapPlot(ColorbarPlot):
 
     def _update_hover(self, element):
         hover = self.handles["hover"]
-        if not self._is_contiguous_gridded:
+        if not self._is_contiguous_gridded or 'hv_created' not in hover.tags:
             return super()._update_hover(element)
-        if 'hv_created' not in hover.tags:
-            return
 
         source = self.handles["cds"]
         x_range = self.handles["x_range"]
@@ -103,7 +101,7 @@ class HeatMapPlot(ColorbarPlot):
               const x0 = data.x[0];
               const dx = data.dw[0] / nx;
               const ix = Math.floor((x - x0) / dx);
-            return (ix >= 0 && ix < nx) ? x_range.factors[ix] : "-";
+              return (ix >= 0 && ix < nx) ? x_range.factors[ix] : "-";
             } else {
               const y0 = data.y[0];
               const dy = data.dh[0] / ny;
