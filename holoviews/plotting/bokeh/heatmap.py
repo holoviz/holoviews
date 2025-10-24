@@ -1,5 +1,6 @@
 import numpy as np
 import param
+from bokeh.models import CustomJSHover
 from bokeh.models.glyphs import AnnularWedge
 from bokeh.models.ranges import FactorRange
 
@@ -81,16 +82,50 @@ class HeatMapPlot(ColorbarPlot):
     def _element_transform(self, transform, element, ranges):
         return transform.apply(element.gridded, ranges=ranges, flat=False).T.flatten()
 
-    def _hover_opts(self, element):
+    def _update_hover(self, element):
+        hover = self.handles["hover"]
         if not self._is_contiguous_gridded:
-            return super()._hover_opts(element)
+            return super()._update_hover(element)
+        if 'hv_created' not in hover.tags:
+            return
+
+        source = self.handles["cds"]
+        x_range = self.handles["x_range"]
+        y_range = self.handles["y_range"]
+
+        pixel_image = CustomJSHover(
+            args=dict(src=source, x_range=x_range, y_range=y_range),
+            code="""
+            const data = src.data;
+            const [ny, nx] = data.image[0].shape;
+            const {x, y} = special_vars;
+            if (format == "x") {
+              const x0 = data.x[0];
+              const dx = data.dw[0] / nx;
+              const ix = Math.floor((x - x0) / dx);
+            return (ix >= 0 && ix < nx) ? x_range.factors[ix] : "-";
+            } else {
+              const y0 = data.y[0];
+              const dy = data.dh[0] / ny;
+              const iy = Math.floor((y - y0) / dy);
+              return (iy >= 0 && iy < ny) ? y_range.factors[iy] : "-";
+            }""",
+        )
+
         if BOKEH_GE_3_3_0:
             xdim, ydim = element.kdims
             vdim = ", ".join([d.pprint_label for d in element.vdims])
-            return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y'), (vdim, '@image')], {}
+            hover.tooltips = [(xdim.pprint_label, "$x{x}"), (ydim.pprint_label, "$y{y}"), (vdim, '@image')]
         else:
             xdim, ydim = element.kdims
-            return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y')], {}
+            hover.tooltips = [(xdim.pprint_label, "$x{x}"), (ydim.pprint_label, "$y{y}")]
+
+        formatters = {}
+        if isinstance(x_range, FactorRange):
+            formatters["$x"] = pixel_image
+        if isinstance(y_range, FactorRange):
+            formatters["$y"] = pixel_image
+        hover.formatters = formatters
 
     def get_data(self, element, ranges, style):
         x, y = (dimension_sanitizer(d) for d in element.dimensions(label=True)[:2])
@@ -226,7 +261,7 @@ class HeatMapPlot(ColorbarPlot):
         super()._init_glyphs(plot, element, ranges, source)
         self._draw_markers(plot, element, self.xmarks, axis='x')
         self._draw_markers(plot, element, self.ymarks, axis='y')
-        if self._is_contiguous_gridded and "hover" in self.handles:
+        if "hover" in self.handles:
             self._update_hover(element)
 
     def _update_glyphs(self, element, ranges, style):
