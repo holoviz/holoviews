@@ -175,6 +175,20 @@ class TestLinkSelections(ComparisonTestCase):
             ]
         )
 
+    def test_select_expr_show_regions(self):
+        lnk_sel = link_selections.instance()
+        self.assertTrue(lnk_sel.show_regions)
+        se = (
+            (hv.dim('x') >= 0) & (hv.dim('x') <= 1) &
+            (hv.dim('y') >= 0) & (hv.dim('y') <= 1)
+        )
+        lnk_sel.selection_expr = se
+        self.assertFalse(lnk_sel.show_regions)
+        lnk_sel.selection_expr = None
+        self.assertFalse(lnk_sel.show_regions)
+        lnk_sel._cross_filter_stream.selection_expr = se
+        self.assertTrue(lnk_sel.show_regions)
+
     def test_overlay_points_errorbars(self, dynamic=False):
         points = Points(self.data)
         error = ErrorBars(self.data, kdims='x', vdims=['y', 'e'])
