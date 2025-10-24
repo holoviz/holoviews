@@ -101,12 +101,14 @@ class HeatMapPlot(ColorbarPlot):
               const x0 = data.x[0];
               const dx = data.dw[0] / nx;
               const ix = Math.floor((x - x0) / dx);
-              return (ix >= 0 && ix < nx) ? x_range.factors[ix] : "-";
+              const factors = x_range.factors ? x_range.factors[ix] : x0 + dx / 2 + ix * dx
+              return (ix >= 0 && ix < nx) ? factors : "-";
             } else {
               const y0 = data.y[0];
               const dy = data.dh[0] / ny;
               const iy = Math.floor((y - y0) / dy);
-              return (iy >= 0 && iy < ny) ? y_range.factors[iy] : "-";
+              const factors = y_range.factors ? y_range.factors[iy] : y0 + dy / 2 + iy * dy
+              return (iy >= 0 && iy < ny) ? factors : "-";
             }""",
         )
 
@@ -117,13 +119,7 @@ class HeatMapPlot(ColorbarPlot):
         else:
             xdim, ydim = element.kdims
             hover.tooltips = [(xdim.pprint_label, "$x{x}"), (ydim.pprint_label, "$y{y}")]
-
-        formatters = {}
-        if isinstance(x_range, FactorRange):
-            formatters["$x"] = pixel_image
-        if isinstance(y_range, FactorRange):
-            formatters["$y"] = pixel_image
-        hover.formatters = formatters
+        hover.formatters = {"$x": pixel_image, "$y": pixel_image}
 
     def get_data(self, element, ranges, style):
         x, y = (dimension_sanitizer(d) for d in element.dimensions(label=True)[:2])

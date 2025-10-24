@@ -493,7 +493,7 @@ def test_hover_tooltips_rasterize_server_hover_filter(serve_hv, rng):
 @pytest.mark.parametrize("x_axis_type", [int, str])
 @pytest.mark.parametrize("y_axis_type", [int, str])
 def test_hover_heatmap_image(serve_hv, x_axis_type, y_axis_type):
-    x = list(map(x_axis_type, range(12)))
+    x = list(map(x_axis_type, range(0, 24, 2)))
     y = list(map(y_axis_type, range(10)))
     z = np.arange(10 * 12).reshape(10, 12)
 
@@ -511,6 +511,6 @@ def test_hover_heatmap_image(serve_hv, x_axis_type, y_axis_type):
     expect(page.locator(".bk-Tooltip")).to_have_count(1)
     tooltip = page.locator(".bk-Tooltip")
 
-    expect(tooltip).to_contain_text("x: 5")
+    expect(tooltip).to_contain_text("x: 10")
     expect(tooltip).to_contain_text("y: 4")
     expect(tooltip).to_contain_text("z: 53")
