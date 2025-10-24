@@ -14,6 +14,7 @@ import pandas as pd
 import pytest
 
 from holoviews import Dimension, Element
+from holoviews.core import util
 from holoviews.core.util import (
     closest_match,
     compute_density,
@@ -42,6 +43,20 @@ from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PointerXY
 
 sanitize_identifier = sanitize_identifier_fn.instance()
+
+
+@pytest.fixture
+def with_pandas(request, monkeypatch):
+  """Fixture to control pandas availability"""
+  if request.param:
+      pytest.importorskip("pandas")
+  else:
+      monkeypatch.setattr(util, 'pd', None)
+
+
+def with_and_without_pandas(func):
+  """Decorator to test both with and without pandas"""
+  return pytest.mark.parametrize("with_pandas", [True, False], indirect=True, ids=["with_pandas", "without_pandas"])(func)
 
 
 class TestDeepHash(ComparisonTestCase):
@@ -916,3 +931,61 @@ def test_dtype_kind_usage_count():
 
     expected_files = {'core/util/__init__.py': 1}
     assert file_counts == expected_files, "Don't use dtype.kind, use dtype_kind"
+
+
+@with_and_without_pandas
+@pytest.mark.parametrize(
+    ["test_input","expected_output"],
+    [
+        (np.array([3, 1, 2, 1, 3, 4, 2]), np.array([3, 1, 2, 4])),
+        (np.array([1, 2, 3, 4, 5]), np.array([1, 2, 3, 4, 5])),
+        (np.array([5, 5, 5, 5]), np.array([5])),
+        (np.array([42]), np.array([42])),
+        (np.array(['b', 'a', 'c', 'a', 'b']), np.array(['b', 'a', 'c'])),
+        (np.array([1.5, 2.3, 1.5, 3.7, 2.3]), np.array([1.5, 2.3, 3.7])),
+        (np.array([1, 'a', 2, 'a', 1, 'b'], dtype=object), np.array([1, 'a', 2, 'b'], dtype=object)),
+        (np.array([]), np.array([])),
+], ids=[
+    "numeric_with_duplicates",
+    "already_unique",
+    "all_same",
+    "single_element",
+    "string_array",
+    "float_array",
+    "object_array_mixed_types",
+    "empty_array",
+])
+def test_unique(test_input, expected_output, with_pandas, monkeypatch):
+    result = util._unique(test_input)
+    np.testing.assert_array_equal(result, expected_output)
+
+
+@with_and_without_pandas
+@pytest.mark.parametrize(["test_input" ,"expected_output"], [
+    (np.datetime64('2023-01-15T12:30:45'), np.datetime64('2023-01-15T12:30:45')),
+    (datetime.datetime(2023, 1, 15, 12, 30, 45), np.datetime64('2023-01-15T12:30:45', 'ns')),
+    (datetime.date(2023, 1, 15), np.datetime64('2023-01-15T00:00:00', 'ns')),
+    ('2023-01-15T12:30:45', np.datetime64('2023-01-15T12:30:45', 'ns')),
+    ('2023-01-15', np.datetime64('2023-01-15T00:00:00', 'ns')),
+    ('2023/01/15', np.datetime64('2023-01-15T00:00:00', 'ns')),
+    (datetime.datetime(2023, 1, 15, 12, 30, 45, tzinfo=datetime.timezone.utc), np.datetime64('2023-01-15T12:30:45', 'ns')),
+    (
+        datetime.datetime(
+            2023, 1, 15, 17, 30, 45, tzinfo=datetime.timezone(datetime.timedelta(hours=5))
+        ),
+        np.datetime64('2023-01-15T12:30:45', 'ns'),
+    )],
+    ids=[
+    "numpy_datetime64",
+    "python_datetime",
+    "python_date",
+    "string_iso_format",
+    "string_simple_date",
+    "string_slash_format",
+    "timezone_aware",
+    "timezone_conversion",
+])
+def test_parse_datetime(test_input, expected_output, with_pandas, monkeypatch):
+    result = util.parse_datetime(test_input)
+    assert isinstance(result, np.datetime64)
+    assert result == expected_output

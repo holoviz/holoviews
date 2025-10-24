@@ -72,6 +72,7 @@ packaging = "*"
 pandas = ">=1.3"
 panel = ">=1.0"
 param = ">=2.0,<3.0"
+python-dateutil = ">=2.8.2"
 pyviz_comms = ">=2.1"
 
 [feature.required.tasks]

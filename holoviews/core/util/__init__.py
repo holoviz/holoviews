@@ -48,9 +48,11 @@ from .types import (
 
 TYPE_CHECKING = False
 if TYPE_CHECKING:
+    import dask.dataframe as dd
     import pandas as pd
     import polars as pl
 else:
+    dd = _LazyModule("dask.dataframe", bool_use_sys_modules=True)
     pd = _LazyModule("pandas", bool_use_sys_modules=True)
     pl = _LazyModule("polars", bool_use_sys_modules=True)
 
@@ -192,8 +194,7 @@ class HashableJSON(json.JSONEncoder):
                 obj = state.choice(obj.flat, size=_ARRAY_SAMPLE_SIZE)
             h.update(obj.tobytes())
             return h.hexdigest()
-        import pandas as pd
-        if isinstance(obj, (pd.Series, pd.DataFrame)):
+        if pd and isinstance(obj, (pd.Series, pd.DataFrame)):
             if len(obj) > _DATAFRAME_ROWS_LARGE:
                 obj = obj.sample(n=_DATAFRAME_SAMPLE_SIZE, random_state=0)
             try:
@@ -874,11 +875,10 @@ def isnat(val):
     """Checks if the value is a NaT. Should only be called on datetimelike objects.
 
     """
-    import pandas as pd
     if (isinstance(val, (np.datetime64, np.timedelta64)) or
         (isinstance(val, np.ndarray) and dtype_kind(val) == 'M')):
         return np.isnat(val)
-    elif val is pd.NaT:
+    elif pd and val is pd.NaT:
         return True
     elif isinstance(val, (pandas_datetime_types, pandas_timedelta_types)):
         return pd.isna(val)
@@ -891,7 +891,6 @@ def isfinite(val):
     np.isfinite with support for None, string, datetime types.
 
     """
-    import pandas as pd
     is_dask = is_dask_array(val)
     if not np.isscalar(val) and not is_dask:
         if isinstance(val, np.ma.core.MaskedArray):
@@ -900,6 +899,7 @@ def isfinite(val):
             return ~val.isna() & isfinite(val._data)
         val = asarray(val, strict=False)
 
+    isnan = pd.isna if pd else np.isnan
     if val is None:
         return False
     elif is_dask:
@@ -911,9 +911,9 @@ def isfinite(val):
         elif dtype_kind(val) == 'O':
             return np.array([isfinite(v) for v in val], dtype=bool)
         elif dtype_kind(val) in 'US':
-            return ~pd.isna(val)
+            return ~isnan(val)
         finite = np.isfinite(val)
-        finite &= ~pd.isna(val)
+        finite &= ~isnan(val)
         return finite
     elif isinstance(val, (datetime_types, timedelta_types)):
         return not isnat(val)
@@ -922,9 +922,9 @@ def isfinite(val):
     elif isinstance(val, (nw.DataFrame, nw.LazyFrame)):
         return val.select(nw.all().is_finite())
     finite = np.isfinite(val)
-    if finite is pd.NA:
+    if pd and finite is pd.NA:
         return False
-    return finite & ~pd.isna(np.asarray(val))
+    return finite & ~isnan(np.asarray(val))
 
 
 def isdatetime(value):
@@ -995,7 +995,6 @@ def max_range(ranges, combined=True):
     -------
     The maximum range as a single tuple
     """
-    import pandas as pd
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
@@ -1004,7 +1003,7 @@ def max_range(ranges, combined=True):
                           for r in values for v in r):
                 converted = []
                 for l, h in values:
-                    if isinstance(l, pd.Period) and isinstance(h, pd.Period):
+                    if pd and isinstance(l, pd.Period) and isinstance(h, pd.Period):
                         l = l.to_timestamp().to_datetime64()
                         h = h.to_timestamp().to_datetime64()
                     elif isinstance(l, datetime_types) and isinstance(h, datetime_types):
@@ -1190,6 +1189,22 @@ def unique_zip(*args, strict=None):
     return list(unique_iterator(zip(*args, strict=strict)))
 
 
+def _unique(arr):
+    """Returns an array of unique values in the input order.
+
+    """
+    if pd:
+        return pd.unique(arr)
+    try:
+        arr = np.asanyarray(arr)
+        _, idx = np.unique(arr, return_index=True)
+        return arr[np.sort(idx)]
+    except TypeError:
+        if dtype_kind(arr) == "O":
+            return np.array(list(unique_iterator(arr)), dtype="object")
+        raise
+
+
 def unique_array(arr):
     """Returns an array of unique values in the input order.
 
@@ -1205,21 +1220,19 @@ def unique_array(arr):
     if not len(arr):
         return np.asarray(arr)
 
-    import pandas as pd
     if isinstance(arr, np.ndarray) and dtype_kind(arr) not in 'MO':
         # Avoid expensive unpacking if not potentially datetime
-        return pd.unique(arr)
+        return _unique(arr)
 
     values = []
     for v in arr:
         if (isinstance(v, datetime_types) and
             not isinstance(v, cftime_types)):
-            v = pd.Timestamp(v).to_datetime64()
-        elif isinstance(getattr(v, "dtype", None), pd.CategoricalDtype):
+            v = parse_datetime(v)
+        elif pd and isinstance(getattr(v, "dtype", None), pd.CategoricalDtype):
             v = v.dtype.categories
         values.append(v)
-    return pd.unique(np.asarray(values).ravel())
-
+    return _unique(np.asarray(values).ravel())
 
 def match_spec(element, specification):
     """Matches the group.label specification of the supplied
@@ -1529,31 +1542,31 @@ def is_dataframe(data):
     """Checks whether the supplied data is of DataFrame type.
 
     """
-    import pandas as pd
-    dd = None
-    if 'dask.dataframe' in sys.modules and 'pandas' in sys.modules:
-        import dask.dataframe as dd
-    return((isinstance(data, pd.DataFrame)) or
-          (dd is not None and isinstance(data, dd.DataFrame)))
+    types = []
+    if pd:
+        types.append(pd.DataFrame)
+    if dd:
+        types.append(dd.DataFrame)
+    return isinstance(data, tuple(types))
 
 
 def is_series(data):
     """Checks whether the supplied data is of Series type.
 
     """
-    import pandas as pd
-    dd = None
-    if 'dask.dataframe' in sys.modules:
-        import dask.dataframe as dd
-    return (isinstance(data, pd.Series) or
-          (dd is not None and isinstance(data, dd.Series)))
+    types = []
+    if pd:
+        types.append(pd.Series)
+    if dd:
+        types.append(dd.Series)
+    return isinstance(data, tuple(types))
 
 
 def is_dask_array(data):
-    da = None
     if 'dask.array' in sys.modules:
         import dask.array as da
-    return (da is not None and isinstance(data, da.Array))
+        return isinstance(data, da.Array)
+    return False
 
 
 def is_cupy_array(data):
@@ -1935,13 +1948,13 @@ class ndmapping_groupby(param.ParameterizedFunction):
 
     def __call__(self, ndmapping, dimensions, container_type,
                  group_type, sort=False, **kwargs):
-        return self.groupby_pandas(ndmapping, dimensions, container_type,
+        fn = self.groupby_pandas if pd else self.groupby_python
+        return fn(ndmapping, dimensions, container_type,
                        group_type, sort=sort, **kwargs)
 
     @param.parameterized.bothmethod
     def groupby_pandas(self_or_cls, ndmapping, dimensions, container_type,
                        group_type, sort=False, **kwargs):
-        import pandas as pd
         if 'kdims' in kwargs:
             idims = [ndmapping.get_dimension(d) for d in kwargs['kdims']]
         else:
@@ -2076,8 +2089,10 @@ def is_nan(x):
     try:
         # Using pd.isna instead of np.isnan as np.isnan(pd.NA) returns pd.NA!
         # Call bool() to raise an error if x is pd.NA, an array, etc.
-        import pandas as pd
-        return bool(pd.isna(x))
+        if pd:
+            return bool(pd.isna(x))
+        else:
+            return bool(np.isnan(x))
     except Exception:
         return False
 
@@ -2143,9 +2158,8 @@ def date_range(start, end, length, time_unit='us'):
     of samples.
 
     """
-    import pandas as pd
     step = (1./compute_density(start, end, length, time_unit))
-    if isinstance(start, pd.Timestamp):
+    if pd and isinstance(start, pd.Timestamp):
         start = start.to_datetime64()
     step = np.timedelta64(round(step), time_unit)
     return start+step/2.+np.arange(length)*step
@@ -2155,8 +2169,32 @@ def parse_datetime(date):
     """Parses dates specified as string or integer or pandas Timestamp
 
     """
-    import pandas as pd
-    return pd.to_datetime(date).to_datetime64()
+    if pd:
+        return pd.to_datetime(date).to_datetime64()
+
+    match date:
+        case np.datetime64():
+            return date
+        case dt.datetime():
+            ...  # to not be seen as dt.date
+        case dt.date():
+            date = dt.datetime.combine(date, dt.time())
+        case dt.time():
+            date = dt.datetime.combine(dt.date.today(), date)
+        case str():
+            from dateutil.parser import parse
+            date = parse(date)
+        case int() | float():
+            date = dt.datetime.fromtimestamp(date)
+        case _:
+            msg = f"Unsupported type for datetime parsing: {type(date)}"
+            raise TypeError(msg)
+
+    # pd.to_datetime removes timezone which we mimic here
+    if getattr(date, "tzinfo", None):
+        date = date.astimezone(dt.timezone.utc).replace(tzinfo=None)
+
+    return np.datetime64(date, "ns")
 
 
 def parse_datetime_selection(sel):
@@ -2179,10 +2217,9 @@ def dt_to_int(value, time_unit='us'):
     """Converts a datetime type to an integer with the supplied time unit.
 
     """
-    import pandas as pd
-    if isinstance(value, pd.Period):
+    if pd and isinstance(value, pd.Period):
         value = value.to_timestamp()
-    if isinstance(value, pd.Timestamp):
+    if pd and isinstance(value, pd.Timestamp):
         try:
             value = value.to_datetime64()
         except Exception:
