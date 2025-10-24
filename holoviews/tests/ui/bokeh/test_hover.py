@@ -487,3 +487,31 @@ def test_hover_tooltips_rasterize_server_hover_filter(serve_hv, rng):
 
     assert len(hover_models) == 1
     assert hover_models[0].data["__index__"] == -1
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+@pytest.mark.parametrize("x_axis_type", [int, str, lambda x: x+0.1], ids=["int", "str", "float"])
+@pytest.mark.parametrize("y_axis_type", [int, str, lambda x: x+0.1], ids=["int", "str", "float"])
+def test_hover_heatmap_image(serve_hv, x_axis_type, y_axis_type):
+    x = list(map(x_axis_type, range(0, 24, 2)))
+    y = list(map(y_axis_type, range(10)))
+    z = np.arange(10 * 12).reshape(10, 12)
+
+    heatmap = hv.HeatMap((x, y, z)).opts(tools=["hover"])
+
+    page = serve_hv(heatmap)
+    hv_plot = page.locator(".bk-events")
+    expect(hv_plot).to_have_count(1)
+    bbox = hv_plot.bounding_box()
+
+    # Hover over the center of the plot
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    page.mouse.up()
+
+    expect(page.locator(".bk-Tooltip")).to_have_count(1)
+    tooltip = page.locator(".bk-Tooltip")
+
+    is_lambda = lambda x: x.__name__ == "<lambda>"
+    expect(tooltip).to_contain_text("x: 10.100" if is_lambda(x_axis_type) else "x: 10")
+    expect(tooltip).to_contain_text("y: 4.100" if is_lambda(y_axis_type) else "y: 4")
+    expect(tooltip).to_contain_text("z: 53")
