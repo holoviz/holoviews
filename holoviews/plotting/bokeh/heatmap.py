@@ -145,14 +145,14 @@ class HeatMapPlot(ColorbarPlot):
             else:
                 xs = element.dimension_values(x, expanded=False)
                 xdiff = np.diff(xs)
-                x_index = ranges[x]['data'][0] if (xdiff.size and np.allclose(xdiff, xdiff[0])) else None
+                x_index = ranges[x]['data'][0] if (not xdiff.size or np.allclose(xdiff, xdiff[0])) else None
             if y_cat:
                 ys = self._get_dimension_factors(element, ranges, element.get_dimension(y))
                 y_index = find_contiguous_subarray(ys, y_range.factors) if y_range.factors else 0
             else:
                 ys = element.dimension_values(y, expanded=False)
                 ydiff = np.diff(ys)
-                y_index = ranges[y]['data'][0] if (ydiff.size and np.allclose(ydiff, ydiff[0])) else None
+                y_index = ranges[y]['data'][0] if (not ydiff.size or np.allclose(ydiff, ydiff[0])) else None
 
         self._is_contiguous_gridded = is_gridded and x_index is not None and y_index is not None
         if self._is_contiguous_gridded:
