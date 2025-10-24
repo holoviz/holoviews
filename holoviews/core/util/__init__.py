@@ -2190,6 +2190,7 @@ def parse_datetime(date):
             msg = f"Unsupported type for datetime parsing: {type(date)}"
             raise TypeError(msg)
 
+    # pd.to_datetime removes timezone which we mimic here
     if getattr(date, "tzinfo", None):
         date = date.astimezone(dt.timezone.utc).replace(tzinfo=None)
 
