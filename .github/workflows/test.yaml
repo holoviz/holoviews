@@ -194,7 +194,7 @@ jobs:
           environments: ${{ matrix.environment }}
       - name: Check packages latest version
         run: |
-          pixi run -e ${{ matrix.environment }} check-latest-packages numpy pandas bokeh panel param
+          pixi run -e ${{ matrix.environment }} check-latest-packages pandas bokeh panel param numpy
       - name: Test Unit
         run: |
           pixi run -e ${{ matrix.environment }} test-unit
