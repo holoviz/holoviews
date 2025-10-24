@@ -56,6 +56,12 @@ class HeatMapPlot(ColorbarPlot):
         function, draw separation lines where function returns True for passed
         heatmap category.""")
 
+    optimize_gridded = param.Boolean(default=True, doc="""
+        Whether to optimize the heatmap rendering when the data is
+        gridded and contiguous. If enabled, a single image glyph will be
+        used to render the heatmap instead of individual quad glyphs,
+        significantly improving performance for large heatmaps.""")
+
 
     style_opts = ['cmap', 'color', 'dilate', *base_properties, *line_properties, *fill_properties]
 
@@ -66,8 +72,12 @@ class HeatMapPlot(ColorbarPlot):
         self._is_contiguous_gridded = False
 
     @property
+    def is_contiguous_gridded(self):
+        return self.optimize_gridded and self._is_contiguous_gridded
+
+    @property
     def _plot_methods(self):
-        return dict(single='image') if self._is_contiguous_gridded else dict(single='rect')
+        return dict(single='image') if self.is_contiguous_gridded else dict(single='rect')
 
     @classmethod
     def is_radial(cls, heatmap):
@@ -84,7 +94,7 @@ class HeatMapPlot(ColorbarPlot):
 
     def _update_hover(self, element):
         hover = self.handles["hover"]
-        if not self._is_contiguous_gridded or 'hv_created' not in hover.tags:
+        if not self.is_contiguous_gridded or 'hv_created' not in hover.tags:
             return super()._update_hover(element)
 
         source = self.handles["cds"]
@@ -136,7 +146,7 @@ class HeatMapPlot(ColorbarPlot):
 
         is_gridded = element.interface.gridded
         x_index = y_index = None
-        if is_gridded:
+        if is_gridded and self.optimize_gridded:
             x_range, y_range = self.handles['x_range'], self.handles['y_range']
             x_cat, y_cat = isinstance(x_range, FactorRange), isinstance(y_range, FactorRange)
             if x_cat:
@@ -155,7 +165,7 @@ class HeatMapPlot(ColorbarPlot):
                 y_index = ranges[y]['data'][0] if (not ydiff.size or np.allclose(ydiff, ydiff[0])) else None
 
         self._is_contiguous_gridded = is_gridded and x_index is not None and y_index is not None
-        if self._is_contiguous_gridded:
+        if self.is_contiguous_gridded:
             style = {k: v for k, v in style.items() if not k.startswith(('annular_', 'xmarks_', 'ymarks_'))}
             style['color_mapper'] = cmapper
             mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
