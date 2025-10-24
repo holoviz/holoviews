@@ -94,6 +94,7 @@ class HeatMapPlot(ColorbarPlot):
         pixel_image = CustomJSHover(
             args=dict(src=source, x_range=x_range, y_range=y_range),
             code="""
+            const formatter = Bokeh.require("core/util/templating").get_formatter();
             const data = src.data;
             const [ny, nx] = data.image[0].shape;
             const {x, y} = special_vars;
@@ -101,13 +102,13 @@ class HeatMapPlot(ColorbarPlot):
               const x0 = data.x[0];
               const dx = data.dw[0] / nx;
               const ix = Math.floor((x - x0) / dx);
-              const factors = x_range.factors ? x_range.factors[ix] : x0 + dx / 2 + ix * dx
+              const factors = x_range.factors ? x_range.factors[ix] : formatter(x0 + dx / 2 + ix * dx)
               return (ix >= 0 && ix < nx) ? factors : "-";
             } else {
               const y0 = data.y[0];
               const dy = data.dh[0] / ny;
               const iy = Math.floor((y - y0) / dy);
-              const factors = y_range.factors ? y_range.factors[iy] : y0 + dy / 2 + iy * dy
+              const factors = y_range.factors ? y_range.factors[iy] : formatter(y0 + dy / 2 + iy * dy)
               return (iy >= 0 && iy < ny) ? factors : "-";
             }""",
         )
@@ -143,13 +144,15 @@ class HeatMapPlot(ColorbarPlot):
                 x_index = find_contiguous_subarray(xs, x_range.factors) if x_range.factors else 0
             else:
                 xs = element.dimension_values(x, expanded=False)
-                x_index = ranges[x]['data'][0] if len(np.unique(np.diff(xs))) < 2 else None
+                xdiff = np.diff(xs)
+                x_index = ranges[x]['data'][0] if (xdiff.size and np.allclose(xdiff, xdiff[0])) else None
             if y_cat:
                 ys = self._get_dimension_factors(element, ranges, element.get_dimension(y))
                 y_index = find_contiguous_subarray(ys, y_range.factors) if y_range.factors else 0
             else:
                 ys = element.dimension_values(y, expanded=False)
-                y_index = ranges[y]['data'][0] if len(np.unique(np.diff(ys))) < 2 else None
+                ydiff = np.diff(ys)
+                y_index = ranges[y]['data'][0] if (ydiff.size and np.allclose(ydiff, ydiff[0])) else None
 
         self._is_contiguous_gridded = is_gridded and x_index is not None and y_index is not None
         if self._is_contiguous_gridded:
