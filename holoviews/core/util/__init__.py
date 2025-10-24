@@ -1189,9 +1189,12 @@ def unique_zip(*args, strict=None):
     return list(unique_iterator(zip(*args, strict=strict)))
 
 
-def unique(arr):
-    # if pd:
-    #     return pd.unique(arr)
+def _unique(arr):
+    """Returns an array of unique values in the input order.
+
+    """
+    if pd:
+        return pd.unique(arr)
     try:
         arr = np.asanyarray(arr)
         _, idx = np.unique(arr, return_index=True)
@@ -1219,7 +1222,7 @@ def unique_array(arr):
 
     if isinstance(arr, np.ndarray) and dtype_kind(arr) not in 'MO':
         # Avoid expensive unpacking if not potentially datetime
-        return unique(arr)
+        return _unique(arr)
 
     values = []
     for v in arr:
@@ -1229,7 +1232,7 @@ def unique_array(arr):
         elif pd and isinstance(getattr(v, "dtype", None), pd.CategoricalDtype):
             v = v.dtype.categories
         values.append(v)
-    return unique(np.asarray(values).ravel())
+    return _unique(np.asarray(values).ravel())
 
 def match_spec(element, specification):
     """Matches the group.label specification of the supplied
@@ -2162,31 +2165,29 @@ def date_range(start, end, length, time_unit='us'):
     return start+step/2.+np.arange(length)*step
 
 
-def parse_datetime(date_like):
+def parse_datetime(date):
     """Parses dates specified as string or integer or pandas Timestamp
 
     """
-    # if pd:
-    #     return pd.to_datetime(date_like).to_datetime64()
+    if pd:
+        return pd.to_datetime(date).to_datetime64()
 
-    match date_like:
+    match date:
         case np.datetime64():
-            return date_like
+            return date
         case dt.datetime():
-            date = date_like
+            ...  # to not be seen as dt.date
         case dt.date():
-            date = dt.datetime.combine(date_like, dt.time())
+            date = dt.datetime.combine(date, dt.time())
         case dt.time():
-            date = dt.datetime.combine(dt.date.today(), date_like)
+            date = dt.datetime.combine(dt.date.today(), date)
         case str():
             from dateutil.parser import parse
-            date = parse(date_like)
+            date = parse(date)
         case int() | float():
-            date = dt.datetime.fromtimestamp(date_like)
-        case _ if pd and isinstance(date_like, pd.Timestamp):
-            return date_like.to_datetime64()
+            date = dt.datetime.fromtimestamp(date)
         case _:
-            msg = f"Unsupported type for datetime parsing: {type(date_like)}"
+            msg = f"Unsupported type for datetime parsing: {type(date)}"
             raise TypeError(msg)
 
     if getattr(date, "tzinfo", None):
