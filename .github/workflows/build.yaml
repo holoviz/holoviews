@@ -26,6 +26,7 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     environment:
       name: publish
+      url: https://pypi.org/p/${{ env.PACKAGE }}
     steps:
       - run: echo "All builds have finished, have been approved, and ready to publish"
 
