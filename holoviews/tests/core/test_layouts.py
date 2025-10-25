@@ -45,6 +45,79 @@ class CompositeTest(ComparisonTestCase):
     def test_layout_rmul_overlay_ncols_preserved(self):
         assert (self.view3 * (self.view1 + self.view2).cols(1))._max_cols == 1
 
+    def test_or_operator(self):
+        """Test that | operator creates a Layout like +"""
+        layout = self.view1 | self.view2
+        self.assertEqual(type(layout), Layout)
+        self.assertEqual(len(layout), 2)
+
+    def test_or_operator_equivalence_to_add(self):
+        """Test that | and + operators are equivalent"""
+        layout_add = self.view1 + self.view2 + self.view3
+        layout_or = self.view1 | self.view2 | self.view3
+        self.assertEqual(len(layout_add), len(layout_or))
+        self.assertEqual(layout_add.shape, layout_or.shape)
+        self.assertEqual(layout_add._max_cols, layout_or._max_cols)
+
+    def test_truediv_operator_single_row(self):
+        """Test that / operator creates row breaks"""
+        layout = self.view1 / self.view2
+        self.assertEqual(type(layout), Layout)
+        self.assertEqual(len(layout), 2)
+        self.assertEqual(layout._max_cols, 1)
+        self.assertEqual(layout.shape, (2, 1))
+
+    def test_truediv_operator_multiple_columns(self):
+        """Test (p1 | p2 | p3) / p4 creates 2 rows with p4 spanning full width"""
+        layout = (self.view1 | self.view2 | self.view3) / Element('data4')
+        # p4 should have colspan=3 in the span_info
+        self.assertEqual(len(layout), 4)  # 3 items in row 1 + 1 in row 2
+        self.assertEqual(layout._max_cols, 3)
+        self.assertEqual(layout.shape, (2, 3))
+        # Verify that p4 has colspan of 3
+        p4_path = [k for k, v in layout.data.items() if v.data == 'data4'][0]
+        self.assertIn(p4_path, layout._span_info)
+        self.assertEqual(layout._span_info[p4_path], (3, 1))  # colspan=3, rowspan=1
+
+    def test_truediv_operator_two_rows(self):
+        """Test (p1 | p2) / (p3 | p4) creates 2x2 grid with no repetition"""
+        layout = (self.view1 | self.view2) / (self.view3 | Element('data4'))
+        # No repetition needed - both rows have same width
+        self.assertEqual(len(layout), 4)
+        self.assertEqual(layout._max_cols, 2)
+        self.assertEqual(layout.shape, (2, 2))
+
+    def test_truediv_operator_reverse_spanning(self):
+        """Test p1 / (p2 | p3 | p4) where first row narrower than second"""
+        layout = self.view1 / (self.view2 | self.view3 | Element('data4'))
+        # p1 should have colspan=3 in the span_info
+        self.assertEqual(len(layout), 4)  # 1 item in row 1 + 3 items in row 2
+        self.assertEqual(layout._max_cols, 3)
+        self.assertEqual(layout.shape, (2, 3))
+        # Verify that p1 has colspan of 3
+        p1_path = [k for k, v in layout.data.items() if v.data == self.view1.data][0]
+        self.assertIn(p1_path, layout._span_info)
+        self.assertEqual(layout._span_info[p1_path], (3, 1))  # colspan=3, rowspan=1
+
+    def test_truediv_operator_chained(self):
+        """Test chaining / operators: (p1 | p2) / (p3 | p4 | p5) / (p6 | p7) creates 3 rows"""
+        p6 = Element('data6')
+        p7 = Element('data7')
+        layout = (self.view1 | self.view2) / (self.view3 | Element('data4') | Element('data5')) / (p6 | p7)
+        # Should create 3 distinct rows
+        self.assertEqual(len(layout), 7)  # 2 + 3 + 2 elements
+        # Check that we have 3 unique row indices
+        unique_rows = set(layout._row_indices.values())
+        self.assertEqual(len(unique_rows), 3)
+        # Grid should use LCM(2, 3, 2) = 6 columns
+        self.assertEqual(layout._max_cols, 6)
+        # Verify row indices are 0, 1, 2
+        self.assertEqual(unique_rows, {0, 1, 2})
+
+    def test_layout_or_overlay_ncols_preserved(self):
+        """Test that _max_cols is preserved when using | with overlay"""
+        assert ((self.view1 | self.view2).cols(1) * self.view3)._max_cols == 1
+
 
 class AdjointLayoutTest(CompositeTest):
 

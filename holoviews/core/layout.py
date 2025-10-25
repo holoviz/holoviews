@@ -35,6 +35,214 @@ class Layoutable:
     def __radd__(self, other):
         return self.__class__.__add__(other, self)
 
+    def __or__(x, y):
+        """Compose objects into a Layout (same as __add__)"""
+        if any(isinstance(arg, int) for arg in (x, y)):
+            raise TypeError(f"unsupported operand type(s) for |: {x.__class__.__name__} and {y.__class__.__name__}.")
+        try:
+            return Layout([x, y])
+        except NotImplementedError:
+            return NotImplemented
+
+    def __ror__(self, other):
+        return self.__class__.__or__(other, self)
+
+    def __truediv__(self, other):
+        """Compose objects into a Layout with a row break before the right operand
+
+        Creates a layout where items are arranged in rows. Elements in narrower rows
+        will span to match the width of the widest row. Supports chaining to create
+        multiple rows.
+
+        Examples
+        --------
+            (p1 | p2 | p3) / p4 creates:
+                Row 0: p1, p2, p3
+                Row 1: p4 (spans 3 columns)
+
+            p1 / (p2 | p3) creates:
+                Row 0: p1 (spans 2 columns)
+                Row 1: p2, p3
+
+            (p1 | p2) / (p3 | p4) / p5 creates:
+                Row 0: p1, p2
+                Row 1: p3, p4
+                Row 2: p5 (spans appropriately)
+        """
+        from math import gcd
+        def lcm(a, b):
+            return abs(a * b) // gcd(a, b)
+
+        def multi_lcm(numbers):
+            """Calculate LCM of multiple numbers"""
+            result = numbers[0]
+            for num in numbers[1:]:
+                result = lcm(result, num)
+            return result
+
+        # Check if left operand already has row structure (for chaining)
+        if isinstance(self, Layout) and hasattr(self, '_row_indices') and self._row_indices:
+            # Extract existing rows from left operand
+            rows = {}
+            for path, row_idx in self._row_indices.items():
+                if row_idx not in rows:
+                    rows[row_idx] = []
+                rows[row_idx].append(path)
+
+            # Sort rows by index
+            existing_rows = [rows[i] for i in sorted(rows.keys())]
+            row_sizes = [len(row) for row in existing_rows]
+
+            # Add right operand as a new row
+            if isinstance(other, Layout):
+                right_items = list(other.data.items())
+            else:
+                right_items = [(None, other)]
+
+            row_sizes.append(len(right_items))
+
+            # Calculate LCM across ALL rows for the grid
+            grid_cols = multi_lcm(row_sizes)
+
+            # Create new layout with all items
+            all_items = []
+            for row in existing_rows:
+                for path in row:
+                    all_items.append(self.data[path])
+            for item in right_items:
+                all_items.append(item[1] if item[0] is not None else item[1])
+
+            layout = Layout(all_items)
+            layout._max_cols = grid_cols
+
+            # Set row indices and span info for all rows
+            paths = list(layout.data.keys())
+            layout._row_indices = {}
+            path_idx = 0
+
+            # Process existing rows
+            for row_idx, row_size in enumerate(row_sizes[:-1]):  # All rows except the new one
+                cols_per_element = grid_cols // row_size
+                for i in range(row_size):
+                    layout._row_indices[paths[path_idx]] = row_idx
+                    if cols_per_element > 1:
+                        layout._span_info[paths[path_idx]] = (cols_per_element, 1)
+                    path_idx += 1
+
+            # Process new row (right operand)
+            new_row_idx = len(row_sizes) - 1
+            new_row_size = row_sizes[-1]
+            cols_per_element = grid_cols // new_row_size
+            for i in range(new_row_size):
+                layout._row_indices[paths[path_idx]] = new_row_idx
+                if cols_per_element > 1:
+                    layout._span_info[paths[path_idx]] = (cols_per_element, 1)
+                path_idx += 1
+
+        else:
+            # Original case: simple two-row layout
+            # Collect items from left operand
+            if isinstance(self, Layout):
+                left_items = list(self.data.items())
+            else:
+                left_items = [(None, self)]
+
+            # Collect items from right operand
+            if isinstance(other, Layout):
+                right_items = list(other.data.items())
+            else:
+                right_items = [(None, other)]
+
+            # Determine column width using LCM for even distribution
+            n_left = len(left_items)
+            n_right = len(right_items)
+
+            # Use LCM of row sizes for the grid
+            grid_cols = lcm(n_left, n_right)
+
+            # Create new layout
+            all_items = [item[1] if item[0] is not None else item[1] for item in left_items + right_items]
+            layout = Layout(all_items)
+            layout._max_cols = grid_cols
+
+            # Set span information for all elements to distribute evenly
+            paths = list(layout.data.keys())
+
+            # Track which row each element belongs to
+            layout._row_indices = {}
+
+            # First row: each element spans (grid_cols / n_left) columns
+            cols_per_left = grid_cols // n_left
+            for i in range(n_left):
+                layout._row_indices[paths[i]] = 0
+                if cols_per_left > 1:
+                    layout._span_info[paths[i]] = (cols_per_left, 1)
+
+            # Second row: each element spans (grid_cols / n_right) columns
+            cols_per_right = grid_cols // n_right
+            for i in range(n_right):
+                layout._row_indices[paths[n_left + i]] = 1
+                if cols_per_right > 1:
+                    layout._span_info[paths[n_left + i]] = (cols_per_right, 1)
+
+        return layout
+
+    def __rtruediv__(self, other):
+        """Reverse division - other / self
+
+        Same as __truediv__ but with operands reversed.
+        """
+        # Collect items from left operand (other)
+        if isinstance(other, Layout):
+            left_items = list(other.data.items())
+        else:
+            left_items = [(None, other)]
+
+        # Collect items from right operand (self)
+        if isinstance(self, Layout):
+            right_items = list(self.data.items())
+        else:
+            right_items = [(None, self)]
+
+        # Determine column width using LCM for even distribution
+        n_left = len(left_items)
+        n_right = len(right_items)
+
+        # Calculate LCM to create a finer grid for even distribution
+        from math import gcd
+        def lcm(a, b):
+            return abs(a * b) // gcd(a, b)
+
+        # Use LCM of row sizes for the grid
+        grid_cols = lcm(n_left, n_right)
+
+        # Create new layout
+        all_items = [item[1] if item[0] is not None else item[1] for item in left_items + right_items]
+        layout = Layout(all_items)
+        layout._max_cols = grid_cols
+
+        # Set span information for all elements to distribute evenly
+        paths = list(layout.data.keys())
+
+        # Track which row each element belongs to
+        layout._row_indices = {}
+
+        # First row: each element spans (grid_cols / n_left) columns
+        cols_per_left = grid_cols // n_left
+        for i in range(n_left):
+            layout._row_indices[paths[i]] = 0  # Row 0
+            if cols_per_left > 1:
+                layout._span_info[paths[i]] = (cols_per_left, 1)
+
+        # Second row: each element spans (grid_cols / n_right) columns
+        cols_per_right = grid_cols // n_right
+        for i in range(n_right):
+            layout._row_indices[paths[n_left + i]] = 1  # Row 1
+            if cols_per_right > 1:
+                layout._span_info[paths[n_left + i]] = (cols_per_right, 1)
+
+        return layout
+
 
 class Composable(Layoutable):
     """Composable is a mix-in class to allow Dimensioned objects to be
@@ -464,6 +672,8 @@ class Layout(Layoutable, ViewableTree):
 
     def __init__(self, items=None, identifier=None, parent=None, **kwargs):
         self.__dict__['_max_cols'] = 4
+        self.__dict__['_span_info'] = {}  # Stores {path: (colspan, rowspan)} for spanning elements
+        self.__dict__['_row_indices'] = {}  # Stores {path: row_index} for row structure
         super().__init__(items, identifier, parent, **kwargs)
 
     def decollate(self):
@@ -542,6 +752,8 @@ class Layout(Layoutable, ViewableTree):
         """
         clone = super().clone(*args, **overrides)
         clone._max_cols = self._max_cols
+        clone._span_info = self._span_info.copy() if hasattr(self, '_span_info') else {}
+        clone._row_indices = self._row_indices.copy() if hasattr(self, '_row_indices') else {}
         return clone
 
 

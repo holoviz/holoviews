@@ -10,6 +10,7 @@ from bokeh.models import (
     Column,
     ColumnDataSource,
     Div,
+    GridBox,
     Legend,
     Row,
     Title,
@@ -1019,15 +1020,100 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             layout_plot = Tabs(tabs=panels, sizing_mode=sizing_mode)
         else:
             plot_grid = filter_toolboxes(plot_grid)
-            layout_plot = gridplot(
-                children=plot_grid,
-                toolbar_location=self.toolbar,
-                merge_tools=False,
-                sizing_mode=sizing_mode
-            )
+
+            # Check if layout has span information and use GridBox if it does
+            has_spanning = hasattr(self.layout, '_span_info') and self.layout._span_info
+
+            if has_spanning:
+                # Build GridBox children list with colspan/rowspan
+                gridbox_children = []
+
+                # Use _row_indices to properly group elements by row
+                if hasattr(self.layout, '_row_indices') and self.layout._row_indices:
+                    # Group elements by row
+                    row_elements = {}
+                    for (r, c), path in self.paths.items():
+                        plot = plot_grid[r][c]
+                        if plot is not None and path in self.layout._row_indices:
+                            row_idx = self.layout._row_indices[path]
+                            if row_idx not in row_elements:
+                                row_elements[row_idx] = []
+                            row_elements[row_idx].append((plot, path))
+
+                    # Build GridBox children row by row
+                    for row_idx in sorted(row_elements.keys()):
+                        current_col = 0
+                        for plot, path in row_elements[row_idx]:
+                            # Check if this element should span
+                            span = self.layout._span_info.get(path, (1, 1))
+                            colspan, rowspan = span
+
+                            # For spanning elements, set policies to expand while preserving min size
+                            if colspan > 1:
+                                # Preserve current width as min_width, remove fixed width
+                                if hasattr(plot, 'width') and plot.width is not None:
+                                    if hasattr(plot, 'min_width'):
+                                        plot.min_width = plot.width
+                                    plot.width = None
+                                if hasattr(plot, 'width_policy'):
+                                    plot.width_policy = 'max'
+                                if hasattr(plot, 'sizing_mode'):
+                                    plot.sizing_mode = 'stretch_width'
+
+                            # Add to GridBox children: (child, row, col, rowspan, colspan)
+                            gridbox_children.append((plot, row_idx, current_col, rowspan, colspan))
+
+                            # Advance column position by colspan
+                            current_col += colspan
+                else:
+                    # Fallback to old logic if _row_indices not available
+                    for r in range(len(plot_grid)):
+                        current_col = 0  # Track actual column position in GridBox
+                        for c in range(len(plot_grid[r])):
+                            plot = plot_grid[r][c]
+                            if plot is not None:
+                                # Get the path for this position
+                                path = self.paths.get((r, c), None)
+
+                                # Check if this element should span
+                                span = self.layout._span_info.get(path, (1, 1))
+                                colspan, rowspan = span
+
+                                # For spanning elements, set policies to expand while preserving min size
+                                if colspan > 1:
+                                    # Preserve current width as min_width, remove fixed width
+                                    if hasattr(plot, 'width') and plot.width is not None:
+                                        if hasattr(plot, 'min_width'):
+                                            plot.min_width = plot.width
+                                        plot.width = None
+                                    if hasattr(plot, 'width_policy'):
+                                        plot.width_policy = 'max'
+                                    if hasattr(plot, 'sizing_mode'):
+                                        plot.sizing_mode = 'stretch_width'
+
+                                # Add to GridBox children: (child, row, col, rowspan, colspan)
+                                # Use current_col instead of c to account for previous colspans
+                                gridbox_children.append((plot, r, current_col, rowspan, colspan))
+
+                                # Advance column position by colspan
+                                current_col += colspan
+
+                layout_plot = GridBox(
+                    children=gridbox_children,
+                    sizing_mode=sizing_mode
+                )
+            else:
+                layout_plot = gridplot(
+                    children=plot_grid,
+                    toolbar_location=self.toolbar,
+                    merge_tools=False,
+                    sizing_mode=sizing_mode
+                )
+
             if self.sync_legends:
                 sync_legends(layout_plot)
-            if self.merge_tools:
+            # GridBox doesn't support toolbar, only gridplot does
+            if self.merge_tools and not has_spanning:
                 layout_plot.toolbar = merge_tools(plot_grid, autohide=self.autohide_toolbar)
 
         title = self._get_title_div(self.keys[-1])
