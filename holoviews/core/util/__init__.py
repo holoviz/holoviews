@@ -1125,6 +1125,34 @@ def max_extents(extents, zrange=False):
     return tuple(extents)
 
 
+def find_contiguous_subarray(sub_array, full_array):
+    """
+    Return the start index of `sub_array` in `ful_array` if `sub_array`
+    is a contiguous subarray of `ful_array`. This expect that there is no
+    duplicates in any of the arrays.
+
+    Arguments
+    ---------
+    sub_array: array_like
+       The array that may or may not be a contiguous subset of `full_array`.
+    full_array: array_like
+       The array that may or may not contain `sub_array` as a contiguous subset.
+
+    Returns
+    -------
+    int | None
+       The index at which a appears in b or None.
+    """
+    if len(sub_array) == 0:
+        return 0
+    sub_array, full_array = np.asarray(sub_array), np.asarray(full_array)
+    first_match = full_array == sub_array[0]
+    if not first_match.any():
+        return None
+    idx = np.argmax(first_match)
+    return idx if (full_array[idx:idx+len(sub_array)] == sub_array).all() else None
+
+
 def int_to_alpha(n, upper=True):
     """Generates alphanumeric labels of form A-Z, AA-ZZ etc.
 
