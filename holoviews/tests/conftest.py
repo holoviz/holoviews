@@ -43,7 +43,9 @@ def pytest_collection_modifyitems(config, items):
             skipped.append(item)
 
     config.hook.pytest_deselected(items=skipped)
-    items[:] = selected
+    # Sorted because pytest 8.4.0 and pytest-playwright
+    # https://github.com/microsoft/playwright-pytest/pull/284
+    items[:] = sorted(selected, key=lambda x: x.path)
 
 
 with contextlib.suppress(ImportError):
@@ -77,10 +79,10 @@ def _plotting_backend(backend):
     if not hv.extension._loaded:
         hv.extension(backend)
     hv.renderer(backend)
-    curent_backend = hv.Store.current_backend
+    current_backend = hv.Store.current_backend
     hv.Store.set_current_backend(backend)
     yield
-    hv.Store.set_current_backend(curent_backend)
+    hv.Store.set_current_backend(current_backend)
 
 
 @pytest.fixture
@@ -133,7 +135,7 @@ def serve_panel(page, port):  # noqa: F811
 
     return serve_and_return_page
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="module")
 def reset_store():
     _custom_options = {k: {} for k in hv.Store._custom_options}
     _options = hv.Store._options.copy()

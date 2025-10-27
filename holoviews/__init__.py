@@ -7,11 +7,11 @@ the process of plotting.
 
 HoloViews
 
-- supports a wide range of data sources including Pandas, Dask, XArray
-Rapids cuDF, Geopandas, NetworkX and Ibis.
+- supports a wide range of data sources including Pandas, Dask, XArray Rapids cuDF, Streamz, Intake, Geopandas, NetworkX and Ibis.
+
 - supports the plotting backends Bokeh (default), Matplotlib and Plotly.
-- allows you to drop into the rest of the
-HoloViz ecosystem when more power or flexibility is needed.
+
+- allows you to drop into the rest of the HoloViz ecosystem when more power or flexibility is needed.
 
 For basic data exploration we recommend using the higher level hvPlot package,
 which provides the familiar Pandas `.plot` api. You can drop into HoloViews
@@ -159,8 +159,7 @@ def help(obj, visualization=True, ansi=True, backend=None,
     the supplied object is shown. Note that the recursive option will
     only work with an object instance and not a class.
 
-    If ansi is set to False, all ANSI color
-    codes are stripped out.
+    If ``ansi`` is set to False, all ANSI color codes are stripped out.
 
     """
     backend = backend if backend else Store.current_backend

@@ -92,7 +92,7 @@ class GeomTests(ComparisonTestCase):
     def test_empty_range(self):
         mds = Path([], kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
-        x0, x1 = mds.range(0)
+        x0, _x1 = mds.range(0)
         self.assertFalse(np.isfinite(x0))
         self.assertFalse(np.isfinite(x0))
         y0, y1 = mds.range(1)
@@ -516,3 +516,12 @@ class MultiDictInterfaceTest(MultiBaseInterfaceTest):
     subtype = 'dictionary'
 
     __test__ = True
+
+
+def test_narwhals_multidict():
+    import narwhals.stable.v2 as nw
+
+    df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
+    pd_el = Path(df, kdims=["A", "B"], vdims=[])
+    nw_el = Path(nw.from_native(df), kdims=["A", "B"], vdims=[])
+    pd.testing.assert_frame_equal(pd_el.data[0], nw_el.data[0].to_pandas())

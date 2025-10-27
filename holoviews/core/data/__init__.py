@@ -1,5 +1,6 @@
 import copy
 import types
+from collections.abc import Mapping
 from contextlib import contextmanager
 from functools import wraps
 from itertools import pairwise
@@ -29,6 +30,7 @@ from .ibis import IbisInterface  # noqa (API import)
 from .image import ImageInterface  # noqa (API import)
 from .interface import Interface, iloc, ndloc
 from .multipath import MultiInterface  # noqa (API import)
+from .narwhals import NarwhalsInterface  # noqa: F401
 from .pandas import PandasAPI, PandasInterface  # noqa (API import)
 from .spatialpandas import SpatialPandasInterface  # noqa (API import)
 from .spatialpandas_dask import DaskSpatialPandasInterface  # noqa (API import)
@@ -37,9 +39,11 @@ from .xarray import XArrayInterface  # noqa (API import)
 default_datatype = 'dataframe'
 
 datatypes = ['dataframe', 'dictionary', 'grid', 'xarray', 'multitabular',
-             'spatialpandas', 'dask_spatialpandas', 'dask', 'cuDF', 'array',
+             'spatialpandas', 'dask_spatialpandas', 'dask', 'cuDF', 'array', 'narwhals',
              'ibis']
 
+
+_TABULAR_DATATYPE = ['dataframe', 'dask', 'ibis', 'cuDF', 'narwhals']
 
 def concat(datasets, datatype=None):
     """Concatenates collection of datasets along NdMapping dimensions.
@@ -472,7 +476,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             coords = samples if isinstance(samples, list) else [samples]
 
         xs = self.dimension_values(0)
-        if xs.dtype.kind in 'SO':
+        if core_util.dtype_kind(xs) in 'SO':
             raise NotImplementedError("Closest only supported for numeric types")
         idxs = [np.argmin(np.abs(xs-coord)) for coord in coords]
         return [type(s)(xs[idx]) for s, idx in zip(coords, idxs, strict=None)]
@@ -635,29 +639,39 @@ class Dataset(Element, metaclass=PipelineMeta):
         or a scalar if a single value was selected
         """
         from ...util.transform import dim
-        if isinstance(selection_expr, dict):
+        dimensions = self.dimensions()
+        ndims = len(dimensions)
+        sel_dims = (*dimensions, 'selection_mask')
+        if isinstance(selection_expr, Mapping):
             if selection:
                 raise ValueError("""\
                 Selections may be supplied as keyword arguments or as a positional
                 argument, never both.""")
-            selection = selection_expr
+            selection = {
+                self.get_dimension(dim).name: v
+                for dim, v in selection_expr.items()
+                if dim in sel_dims or (isinstance(dim, int) and dim < ndims)
+            }
             selection_expr = None
-        if selection_expr is not None and not isinstance(selection_expr, dim):
+        elif selection_expr is not None and not isinstance(selection_expr, dim):
             raise ValueError("""\
             The first positional argument to the Dataset.select method is expected to be a
             holoviews.util.transform.dim expression. Use the selection_specs keyword
             argument to specify a selection specification""")
+        elif selection:
+            selection = {
+                dim: sel for dim, sel in selection.items()
+                if dim in sel_dims or (isinstance(dim, int) and dim < ndims)
+            }
 
         if selection_specs is not None and not isinstance(selection_specs, (list, tuple)):
             selection_specs = [selection_specs]
-        sel_dims = (*self.dimensions(), 'selection_mask')
-        selection = {dim: sel for dim, sel in selection.items() if dim in sel_dims}
         if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
             or (not selection and not selection_expr)):
             return self
 
         # Handle selection dim expression
-        if selection_expr is not None:
+        if selection_expr is not None and selection_expr.ops:
             mask = selection_expr.apply(self, compute=False, keep_index=True)
             selection = {'selection_mask': mask}
 
@@ -844,7 +858,9 @@ class Dataset(Element, metaclass=PipelineMeta):
         # may be replaced with more general handling
         # see https://github.com/holoviz/holoviews/issues/1173
         from ...element import Curve, Table
-        datatype = ['dataframe', 'dictionary', 'dask', 'ibis', 'cuDF']
+
+        # If no datatype is selected, default to dictionary
+        datatype = [d for d in _TABULAR_DATATYPE if d in self.datatype] or ["dictionary"]
         if len(samples) == 1:
             sel = {kd.name: s for kd, s in zip(self.kdims, samples[0], strict=None)}
             dims = [kd for kd, v in sel.items() if not np.isscalar(v)]
@@ -864,7 +880,6 @@ class Dataset(Element, metaclass=PipelineMeta):
                 reindexed = selection.clone(new_type=Dataset, datatype=datatype).reindex(kdims)
                 selection = tuple(reindexed.columns(kdims+self.vdims).values())
 
-            datatype = list(core_util.unique_iterator([*self.datatype, 'dataframe', 'dict']))
             return self.clone(selection, kdims=kdims, new_type=new_type,
                               datatype=datatype)
 
@@ -1042,7 +1057,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         if dimensions is None:
             dimensions = []
         if not isinstance(dimensions, list): dimensions = [dimensions]
-        if not len(dimensions): dimensions = self.dimensions('key', True)
+        if not dimensions: dimensions = self.dimensions('key', True)
         if group_type is None: group_type = type(self)
 
         dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
@@ -1163,26 +1178,6 @@ class Dataset(Element, metaclass=PipelineMeta):
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-            Whether to return the expanded values, behavior depends
-            on the type of data:
-                * Columnar: If false returns unique values
-                * Geometry: If false returns scalar values per geometry
-                * Gridded: If false returns 1D coordinates
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         dim = self.get_dimension(dimension, strict=True)
         values = self.interface.values(self, dim, expanded, flat)
         if dim.nodata is not None:

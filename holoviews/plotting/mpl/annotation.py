@@ -5,16 +5,16 @@ from matplotlib import patches
 from matplotlib.lines import Line2D
 
 from ...core.options import abbreviated_exception
-from ...core.util import match_spec
+from ...core.util import dtype_kind, match_spec
 from ...element import HLines, HSpans, VLines, VSpans
 from .element import ColorbarPlot, ElementPlot
 from .plot import mpl_rc_context
 
 
 class ABLine2D(Line2D):
-    """Draw a line based on its slope and y-intercept. Additional arguments are
-    passed to the <matplotlib.lines.Line2D> constructor.
+    """Draw a line based on its slope and y-intercept.
 
+    Additional arguments are passed to the matplotlib.lines.Line2D constructor.
     """
 
     def __init__(self, slope, intercept, *args, **kwargs):
@@ -35,9 +35,7 @@ class ABLine2D(Line2D):
         self.axes.callbacks.connect('ylim_changed', self._update_lim)
 
     def _update_lim(self, event):
-        """Called whenever axis x/y limits change
-
-        """
+        """Called whenever axis x/y limits change."""
         x = np.array(self.axes.get_xbound())
         y = (self._slope * x) + self._intercept
         self.set_data(x, y)
@@ -243,7 +241,7 @@ class LabelsPlot(ColorbarPlot):
             x, y, text = item[:3]
             if len(item) == 4 and cmap is not None:
                 color = item[3]
-                if plot_args[-1].dtype.kind in 'if':
+                if dtype_kind(plot_args[-1]) in 'if':
                     color = (color - vmin) / (vmax-vmin)
                     plot_kwargs['color'] = cmap(color)
                 else:

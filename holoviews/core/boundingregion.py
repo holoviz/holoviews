@@ -220,6 +220,9 @@ class BoundingBox(BoundingRegion):
         else:
             return False
 
+    def __hash__(self):
+        return hash(self.aarect)
+
 
 
 class BoundingEllipse(BoundingBox):
@@ -253,8 +256,8 @@ class AARectangle:
     Defines the smallest axis-aligned rectangle that encloses a set of
     points.
 
-    Example
-    -------
+    Examples
+    --------
     >>> aar = AARectangle( (x1,y1),(x2,y2), ... , (xN,yN) )
 
     """

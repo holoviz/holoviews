@@ -8,6 +8,7 @@ from .. import util
 from ..dimension import dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
+from ..util import dtype_kind
 from .interface import DataError, Interface
 from .pandas import PandasInterface
 from .util import finite_range
@@ -22,11 +23,10 @@ class cuDFInterface(PandasInterface):
     The cuDFInterface covers almost the complete API exposed
     by the PandasInterface with two notable exceptions:
 
-    1) Aggregation and groupby do not have a consistent sort order
+    1. Aggregation and groupby do not have a consistent sort order
        (see https://github.com/rapidsai/cudf/issues/4237)
-    3) Not all functions can be easily applied to a cuDF so
+    2. Not all functions can be easily applied to a cuDF so
        some functions applied with aggregate and reduce will not work.
-
     """
 
     datatype = 'cuDF'
@@ -120,7 +120,7 @@ class cuDFInterface(PandasInterface):
         column = dataset.data[dimension.name]
         if dimension.nodata is not None:
             column = cls.replace_value(column, dimension.nodata)
-        if column.dtype.kind == 'O':
+        if dtype_kind(column) == 'O':
             return np.nan, np.nan
         else:
             return finite_range(column, column.min(), column.max())
@@ -256,7 +256,7 @@ class cuDFInterface(PandasInterface):
 
         indexed = cls.indexed(dataset, selection)
         if selection_mask is not None:
-            df = df.iloc[selection_mask]
+            df = df.loc[selection_mask]
         if indexed and len(df) == 1 and len(dataset.vdims) == 1:
             return df[dataset.vdims[0].name].iloc[0]
         return df

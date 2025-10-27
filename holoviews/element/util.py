@@ -15,6 +15,7 @@ from ..core.util import (
     PANDAS_GE_2_1_0,
     cartesian_product,
     datetime_types,
+    dtype_kind,
     is_cyclic,
     is_nan,
     one_to_one,
@@ -123,9 +124,9 @@ class categorical_aggregate2d(Operation):
     aggregation. The aggregation will retain the global sorting order
     of both dimensions.
 
-    >> table = Table([('USA', 2000, 282.2), ('UK', 2005, 58.89)],
+    >>> table = Table([('USA', 2000, 282.2), ('UK', 2005, 58.89)],
                      kdims=['Country', 'Year'], vdims=['Population'])
-    >> categorical_aggregate2d(table)
+    >>> categorical_aggregate2d(table)
     Dataset({'Country': ['USA', 'UK'], 'Year': [2000, 2005],
              'Population': [[ 282.2 , np.nan], [np.nan,   58.89]]},
             kdims=['Country', 'Year'], vdims=['Population'])
@@ -145,9 +146,9 @@ class categorical_aggregate2d(Operation):
         xcoords = obj.dimension_values(xdim, False)
         ycoords = obj.dimension_values(ydim, False)
 
-        if xcoords.dtype.kind not in 'SUO':
+        if dtype_kind(xcoords) not in 'SUO':
             xcoords = sort_arr(xcoords)
-        if ycoords.dtype.kind not in 'SUO':
+        if dtype_kind(ycoords) not in 'SUO':
             return xcoords, sort_arr(ycoords)
 
         # Determine global orderings of y-values using topological sort
@@ -163,7 +164,7 @@ class categorical_aggregate2d(Operation):
                 for p1, p2 in itertools.pairwise(vals):
                     orderings[p1] = [p2]
             if sort:
-                if vals.dtype.kind in ('i', 'f'):
+                if dtype_kind(vals) in ('i', 'f'):
                     sort = (np.diff(vals)>=0).all()
                 else:
                     sort = np.array_equal(sort_arr(vals), vals)

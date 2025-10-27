@@ -1,4 +1,5 @@
 import colorsys
+from collections.abc import Mapping
 from copy import deepcopy
 from operator import itemgetter
 
@@ -84,9 +85,6 @@ class Raster(Element2D):
         return super().range(dim, data_range, dimension_range)
 
     def dimension_values(self, dim, expanded=True, flat=True):
-        """The set of samples available along a particular dimension.
-
-        """
         dim_idx = self.get_dimension_index(dim)
         if not expanded and dim_idx == 0:
             return np.array(range(self.data.shape[1]))
@@ -415,7 +413,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         specs match the selected object.
 
         """
-        if isinstance(selection_expr, dict):
+        if isinstance(selection_expr, Mapping):
             if selection:
                 raise ValueError("""\
                 Selections may be supplied as keyword arguments or as a positional
@@ -433,9 +431,6 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         shape = self.interface.shape(self, gridded=True)
         if any([isinstance(el, slice) for el in coords]):
             bounds = compute_slice_bounds(coords, self, shape[:2])
-
-            xdim, ydim = self.kdims
-            l, b, r, t = bounds.lbrt()
 
             # Situate resampled region into overall slice
             y0, y1, x0, x1 = Slice(bounds, self)
@@ -486,7 +481,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
                         coords = [(0, c) if idx else (c, 0) for c in v]
                     if len(coords) not in [0, len(v)]:
                         raise ValueError("Length of samples must match")
-                    elif len(coords):
+                    elif coords:
                         coords = [(t[abs(idx-1)], c) if idx else (c, t[abs(idx-1)])
                                   for c, t in zip(v, coords, strict=None)]
                 getter.append(idx)

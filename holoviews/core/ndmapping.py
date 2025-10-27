@@ -14,6 +14,7 @@ from . import util
 from .dimension import Dimension, Dimensioned, ViewableElement, asdim
 from .util import (
     dimension_sort,
+    dtype_kind,
     get_ndmapping_label,
     process_ellipses,
     sanitize_identifier,
@@ -402,26 +403,6 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """Return the values along the requested dimension.
-
-        Parameters
-        ----------
-        dimension
-            The dimension to return values for
-        expanded : bool, optional
-            Whether to expand values
-            Whether to return the expanded values, behavior depends
-            on the type of data:
-                * Columnar: If false returns unique values
-                * Geometry: If false returns scalar values per geometry
-                * Gridded: If false returns 1D coordinates
-        flat : bool, optional
-            Whether to flatten array
-
-        Returns
-        -------
-        NumPy array of values along the requested dimension
-        """
         dimension = self.get_dimension(dimension, strict=True)
         if dimension in self.kdims:
             return np.array([k[self.get_dimension_index(dimension)] for k in self.data.keys()])
@@ -461,7 +442,7 @@ class MultiDimensionalMapping(Dimensioned):
         old_kdims = [d.name for d in self.kdims]
         if not isinstance(kdims, list):
             kdims = [kdims]
-        elif not len(kdims):
+        elif not kdims:
             kdims = [d for d in old_kdims
                      if not len(set(self.dimension_values(d))) == 1]
         indices = [self.get_dimension_index(el) for el in kdims]
@@ -656,7 +637,7 @@ class NdMapping(MultiDimensionalMapping):
         the data.
 
         """
-        if isinstance(indexslice, np.ndarray) and indexslice.dtype.kind == 'b':
+        if isinstance(indexslice, np.ndarray) and dtype_kind(indexslice) == 'b':
             if not len(indexslice) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
             selection = zip(indexslice, self.data.items(), strict=None)

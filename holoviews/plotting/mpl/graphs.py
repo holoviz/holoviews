@@ -6,7 +6,7 @@ from matplotlib.collections import LineCollection, PolyCollection
 
 from ...core.data import Dataset
 from ...core.options import Cycle, abbreviated_exception
-from ...core.util import is_number, isscalar, search_indices, unique_array
+from ...core.util import dtype_kind, is_number, isscalar, search_indices, unique_array
 from ...util.transform import dim
 from ..mixins import ChordMixin, GraphMixin
 from ..util import get_directed_graph_paths, process_cmap
@@ -54,10 +54,12 @@ class GraphPlot(GraphMixin, ColorbarPlot):
         color = elstyle.kwargs.get('node_color')
         cdim = element.nodes.get_dimension(self.color_index)
         cmap = elstyle.kwargs.get('cmap', 'tab20')
-        if cdim:
+        if color and 'node_color' in style:
+            style['node_facecolors'] = style.pop('node_color')
+        elif cdim:
             cs = element.nodes.dimension_values(self.color_index)
             # Check if numeric otherwise treat as categorical
-            if cs.dtype.kind == 'f':
+            if dtype_kind(cs) == 'f':
                 style['node_c'] = cs
             else:
                 factors = unique_array(cs)
@@ -72,8 +74,6 @@ class GraphPlot(GraphMixin, ColorbarPlot):
                 style.pop('node_color', None)
             if 'node_c' in style:
                 self._norm_kwargs(element.nodes, ranges, style, cdim)
-        elif color and 'node_color' in style:
-            style['node_facecolors'] = style.pop('node_color')
         style['node_edgecolors'] = style.pop('node_edgecolors', 'none')
         if is_number(style.get('node_size')):
             style['node_s'] = style.pop('node_size')**2
@@ -91,11 +91,11 @@ class GraphPlot(GraphMixin, ColorbarPlot):
         cvals = element.dimension_values(edge_cdim)
         if idx in [0, 1]:
             factors = element.nodes.dimension_values(2, expanded=False)
-        elif idx == 2 and cvals.dtype.kind in 'uif':
+        elif idx == 2 and dtype_kind(cvals) in 'uif':
             factors = None
         else:
             factors = unique_array(cvals)
-        if factors is None or (factors.dtype.kind == 'f' and idx not in [0, 1]):
+        if factors is None or (dtype_kind(factors) == 'f' and idx not in [0, 1]):
             style['edge_c'] = cvals
         else:
             cvals = search_indices(cvals, factors)
@@ -119,7 +119,6 @@ class GraphPlot(GraphMixin, ColorbarPlot):
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
 
-        xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         pxs, pys = (element.nodes.dimension_values(i) for i in range(2))
         dims = element.nodes.dimensions()
         self._compute_styles(element, ranges, style)
@@ -302,7 +301,7 @@ class ChordPlot(ChordMixin, GraphPlot):
         nodes = element.nodes
         if element.vdims:
             values = element.dimension_values(element.vdims[0])
-            if values.dtype.kind in 'uif':
+            if dtype_kind(values) in 'uif':
                 edges = Dataset(element)[values>0]
                 nodes = list(np.unique([edges.dimension_values(i) for i in range(2)]))
                 nodes = element.nodes.select(**{element.nodes.kdims[2].name: nodes})

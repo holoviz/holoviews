@@ -7,9 +7,13 @@ from .. import util
 from ..dimension import Dimension, asdim, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
+from ..util import dtype_kind
+from ..util.dependencies import _no_import_version
 from .grid import GridInterface
 from .interface import DataError, Interface
 from .util import dask_array_module, finite_range
+
+XARRAY_VERSION = _no_import_version("xarray")
 
 
 def is_cupy(array):
@@ -190,7 +194,7 @@ class XArrayInterface(GridInterface):
                 coords[kd.name] = coord
             xr_kwargs = {'dims': dims if max(coord_dims) > 1 else list(coords)[::-1]}
             if packed:
-                xr_kwargs['dims'] = list(coords)[::-1] + ['band']
+                xr_kwargs['dims'] = [*list(coords)[::-1], 'band']
                 coords['band'] = list(range(len(vdims)))
                 data = xr.DataArray(value_array, coords=coords, **xr_kwargs)
             else:
@@ -297,7 +301,7 @@ class XArrayInterface(GridInterface):
 
         if not len(data):
             dmin, dmax = np.nan, np.nan
-        elif data.dtype.kind == 'M' or not edges:
+        elif dtype_kind(data) == 'M' or not edges:
             dmin, dmax = data.min(), data.max()
             if not edges:
                 dmin, dmax = dmin.data, dmax.data
@@ -478,13 +482,13 @@ class XArrayInterface(GridInterface):
                     start = None if ind.stop is None else ncoords-ind.stop
                     stop = None if ind.start is None else ncoords-ind.start
                     ind = slice(start, stop, ind.step)
-                elif isinstance(ind, np.ndarray) and ind.dtype.kind == 'b':
+                elif isinstance(ind, np.ndarray) and dtype_kind(ind) == 'b':
                     ind = ind[::-1]
                 elif isinstance(ind, (np.ndarray, list)):
                     ind = [ncoords-i-1 for i in ind]
             if isinstance(ind, list):
                 ind = np.array(ind)
-            if isinstance(ind, np.ndarray) and ind.dtype.kind == 'b':
+            if isinstance(ind, np.ndarray) and dtype_kind(ind) == 'b':
                 ind = np.where(ind)[0]
             adjusted_indices.append(ind)
 
@@ -494,7 +498,7 @@ class XArrayInterface(GridInterface):
             return dataset.data[dataset.vdims[0].name].isel(**isel).values.item()
 
         # Detect if the indexing is selecting samples or slicing the array
-        sampled = (all(isinstance(ind, np.ndarray) and ind.dtype.kind != 'b'
+        sampled = (all(isinstance(ind, np.ndarray) and dtype_kind(ind) != 'b'
                        for ind in adjusted_indices) and len(indices) == len(kdims))
         if sampled or (all_scalar and len(indices) == len(kdims)):
             import xarray as xr
@@ -512,8 +516,13 @@ class XArrayInterface(GridInterface):
     @classmethod
     def concat_dim(cls, datasets, dim, vdims):
         import xarray as xr
-        return xr.concat([ds.assign_coords(**{dim.name: c}) for c, ds in datasets.items()],
-                         dim=dim.name)
+        concat_kwargs = {"dim": dim.name}
+        if XARRAY_VERSION >= (2025, 8, 0):
+            concat_kwargs["join"] = "outer"
+        return xr.concat(
+            [ds.assign_coords(**{dim.name: c}) for c, ds in datasets.items()],
+            **concat_kwargs
+        )
 
     @classmethod
     def redim(cls, dataset, dimensions):
@@ -591,7 +600,7 @@ class XArrayInterface(GridInterface):
                 dim_vals = dataset.data[k].values
                 upper = None if v[1] is None else v[1]-sys.float_info.epsilon*10
                 v = v[0], upper
-                if dim_vals.dtype.kind not in 'OSU' and np.all(dim_vals[1:] < dim_vals[:-1]):
+                if dtype_kind(dim_vals) not in 'OSU' and np.all(dim_vals[1:] < dim_vals[:-1]):
                     # If coordinates are inverted invert slice
                     v = v[::-1]
                 validated[dim] = slice(*v)

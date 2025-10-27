@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import datashader as ds
 import datashader.reductions as rd
 import datashader.transfer_functions as tf
+import narwhals.stable.v2 as nw
 import numpy as np
 import pandas as pd
 import param
@@ -37,6 +38,7 @@ from ..core.util import (
     cftime_types,
     datetime_types,
     dt_to_int,
+    dtype_kind,
     get_param_values,
 )
 from ..core.util.dependencies import _LazyModule
@@ -345,12 +347,20 @@ class aggregate(LineAggregationOperation):
         else:
             df = paths[0] if paths else pd.DataFrame([], columns=[x.name, y.name])
 
+        if isinstance(df, (nw.DataFrame, nw.LazyFrame)):
+            df = df.select(list(map(str, kdims + vdims)))
+            if df.implementation.is_dask():
+                df = df.to_native()
+            if isinstance(df, nw.LazyFrame):
+                df = df.collect()
+            df = df.to_pandas()
+
         is_custom = (bool_dd and isinstance(df, dd.DataFrame)) or cuDFInterface.applies(df)
         category_check = category and df[category].dtype.name != 'category'
         if (
             category_check or
             any((not is_custom and len(df[d.name]) and isinstance(df[d.name].values[0], cftime_types)) or
-            df[d.name].dtype.kind in ["M", "u"] for d in (x, y))
+            dtype_kind(df[d.name]) in ["M", "u"] for d in (x, y))
         ):
             df = df.copy()
         if category_check:
@@ -360,11 +370,11 @@ class aggregate(LineAggregationOperation):
             vals = df[d.name]
             if not is_custom and len(vals) and isinstance(vals.values[0], cftime_types):
                 vals = cftime_to_timestamp(vals, 'ns')
-            elif vals.dtype.kind == 'M':
+            elif dtype_kind(vals) == 'M':
                 vals = vals.astype('datetime64[ns]')
             elif vals.dtype == np.uint64:
                 raise TypeError(f"Dtype of uint64 for column {d.name} is not supported.")
-            elif vals.dtype.kind == 'u':
+            elif dtype_kind(vals) == 'u':
                 pass  # To convert to int64
             else:
                 continue
@@ -480,14 +490,14 @@ class aggregate(LineAggregationOperation):
                 if col in agg.coords:
                     continue
                 val = dfdata[col].values[index]
-                if val.dtype.kind == 'f':
+                if dtype_kind(val) == 'f':
                     val[neg1] = np.nan
                 elif isinstance(val.dtype, pd.CategoricalDtype):
                     val = val.to_numpy()
                     val[neg1] = "-"
-                elif val.dtype.kind == "O":
+                elif dtype_kind(val) == "O":
                     val[neg1] = "-"
-                elif val.dtype.kind == "M":
+                elif dtype_kind(val) == "M":
                     val[neg1] = np.datetime64("NaT")
                 else:
                     val = val.astype(np.float64)
@@ -558,7 +568,7 @@ class overlay_aggregate(aggregate):
             x, y = dims
 
         info = self._get_sampling(element, x, y, ndims)
-        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
+        (x_range, y_range), (xs, ys), (_width, _height), (xtype, ytype) = info
         ((x0, x1), (y0, y1)), _ = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
         agg_params = dict({k: v for k, v in dict(self.param.values(),
                                                  **self.p).items()
@@ -667,7 +677,7 @@ class spread_aggregate(area_aggregate):
     """
 
     def _process(self, element, key=None):
-        x, y = element.dimensions()[:2]
+        y = element.dimensions()[1]
         df = PandasInterface.as_dframe(element)
         if df is element.data:
             df = df.copy()
@@ -676,7 +686,7 @@ class spread_aggregate(area_aggregate):
         yvals = df[y.name]
         df[y.name] = yvals+df[pos.name]
         df['_lower'] = yvals-df[neg.name]
-        area = element.clone(df, vdims=[y, '_lower']+element.vdims[3:], new_type=Area)
+        area = element.clone(df, vdims=[y, '_lower', *element.vdims[3:]], new_type=Area)
         return super()._process(area, key=None)
 
 
@@ -923,9 +933,14 @@ class regrid(AggregationOperation):
         # Disable upsampling by clipping size and ranges
         (xstart, xend), (ystart, yend) = (x_range, y_range)
         xspan, yspan = (xend-xstart), (yend-ystart)
-        interp = self.p.interpolation or None
-        if interp == 'bilinear': interp = 'linear'
-        if not (self.p.upsample or interp is None) and self.p.target is None:
+        interp = self.p.interpolation
+        # Convert interpolation method to datashader format
+        # False/None means no interpolation (use nearest neighbor)
+        if interp in (False, None):
+            interp = 'nearest'
+        elif interp == 'bilinear':
+            interp = 'linear'
+        if not (self.p.upsample or self.p.interpolation in (False, None)) and self.p.target is None:
             (x0, x1), (y0, y1) = element.range(0), element.range(1)
             if isinstance(x0, datetime_types):
                 x0, x1 = dt_to_int(x0, 'ns'), dt_to_int(x1, 'ns')
@@ -1009,7 +1024,7 @@ class trimesh_rasterize(aggregate):
                                      class_=(rd.Reduction, rd.summary, str))
 
     interpolation = param.Selector(default='bilinear',
-                                         objects=['bilinear', 'linear', None, False], doc="""
+                                         objects=['bilinear', 'linear', 'nearest', None, False], doc="""
         The interpolation method to apply during rasterization.""")
 
     def _precompute(self, element, agg):
@@ -1041,7 +1056,7 @@ class trimesh_rasterize(aggregate):
             simplices = element.dframe(simplex_dims)
             verts = element.nodes.dframe(vert_dims)
         for c, dtype in zip(simplices.columns[:3], simplices.dtypes, strict=None):
-            if dtype.kind != 'i':
+            if dtype_kind(dtype) != 'i':
                 simplices[c] = simplices[c].astype('int')
         mesh = mesh(verts, simplices)
         if hasattr(mesh, 'persist'):
@@ -1066,7 +1081,7 @@ class trimesh_rasterize(aggregate):
         else:
             x, y = element.kdims
         info = self._get_sampling(element, x, y)
-        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
+        (x_range, y_range), (xs, ys), (width, height), (_xtype, _ytype) = info
 
         agg = self.p.aggregator
         interp = self.p.interpolation or None
@@ -1409,7 +1424,7 @@ class shade(LinkableOperation):
             warnings.filterwarnings('ignore', r'invalid value encountered in true_divide')
             if np.isnan(array.data).all():
                 xd, yd = kdims[:2]
-                arr = np.zeros(array.data.shape[:2]+(4,), dtype=np.uint8)
+                arr = np.zeros((*array.data.shape[:2], 4), dtype=np.uint8)
                 coords = {xd.name: element.data.coords[xd.name],
                           yd.name: element.data.coords[yd.name],
                           'band': [0, 1, 2, 3]}
@@ -1455,7 +1470,7 @@ class geometry_rasterize(LineAggregationOperation):
         agg_fn = self._get_aggregator(element, self.p.aggregator)
         xdim, ydim = element.kdims
         info = self._get_sampling(element, xdim, ydim)
-        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
+        (x_range, y_range), (xs, ys), (width, height), (_xtype, _ytype) = info
         x0, x1 = x_range
         y0, y1 = y_range
 
@@ -1717,7 +1732,7 @@ class SpreadingOperation(LinkableOperation):
     def _preprocess_rgb(self, element):
         rgbarray = np.dstack([element.dimension_values(vd, flat=False)
                               for vd in element.vdims])
-        if rgbarray.dtype.kind == 'f':
+        if dtype_kind(rgbarray) == 'f':
             rgbarray = rgbarray * 255
         return tf.Image(self.uint8_to_uint32(rgbarray.astype('uint8')))
 
@@ -2071,7 +2086,7 @@ class inspect_points(inspect_base):
         ds = raster.dataset.clone(df)
         xs, ys = (ds.dimension_values(kd) for kd in raster.kdims)
         dx, dy = xs - x, ys - y
-        xtype, ytype = dx.dtype.kind, dy.dtype.kind
+        xtype, ytype = dtype_kind(dx), dtype_kind(dy)
         if xtype in 'Mm':
             dx = dx.astype('int64')
         if ytype in 'Mm':

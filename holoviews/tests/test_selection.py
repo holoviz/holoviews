@@ -87,7 +87,7 @@ class TestLinkSelections(ComparisonTestCase):
 
         # Check initial state of linked dynamic map
         self.assertIsInstance(current_obj, hv.Overlay)
-        unselected, selected, region, region2 = current_obj.values()
+        unselected, selected, region, _region2 = current_obj.values()
 
         # Check initial base layer
         self.check_base_points_like(unselected, lnk_sel)
@@ -102,7 +102,7 @@ class TestLinkSelections(ComparisonTestCase):
 
         self.assertIsInstance(selectionxy, hv.streams.SelectionXY)
         selectionxy.event(bounds=(0, 1, 5, 5))
-        unselected, selected, region, region2 = linked[()].values()
+        unselected, selected, region, _region2 = linked[()].values()
 
         # Check that base layer is unchanged
         self.check_base_points_like(unselected, lnk_sel)
@@ -174,6 +174,20 @@ class TestLinkSelections(ComparisonTestCase):
                 lnk_sel.selected_color,
             ]
         )
+
+    def test_select_expr_show_regions(self):
+        lnk_sel = link_selections.instance()
+        self.assertTrue(lnk_sel.show_regions)
+        se = (
+            (hv.dim('x') >= 0) & (hv.dim('x') <= 1) &
+            (hv.dim('y') >= 0) & (hv.dim('y') <= 1)
+        )
+        lnk_sel.selection_expr = se
+        self.assertFalse(lnk_sel.show_regions)
+        lnk_sel.selection_expr = None
+        self.assertFalse(lnk_sel.show_regions)
+        lnk_sel._cross_filter_stream.selection_expr = se
+        self.assertTrue(lnk_sel.show_regions)
 
     def test_overlay_points_errorbars(self, dynamic=False):
         points = Points(self.data)
@@ -474,7 +488,7 @@ class TestLinkSelections(ComparisonTestCase):
         self.assertIsInstance(hist_selectionxy, SelectionXY)
         hist_selectionxy.event(bounds=(0, 0, 2.5, 2))
 
-        points_unsel, points_sel, points_region, points_region_poly = current_obj[0][()].values()
+        _points_unsel, points_sel, points_region, _points_region_poly = current_obj[0][()].values()
 
         # Check points selection overlay
         self.check_overlay_points_like(points_sel, lnk_sel, self.data.iloc[selected2])

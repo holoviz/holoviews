@@ -301,7 +301,7 @@ class OptsSpec(Parser):
         for old, new in cls.deprecations:
             if split[0] == old:
                 parsewarning.warning(msg.format(old=old, new=new))
-                return '.'.join([new] + split[1:])
+                return '.'.join([new, *split[1:]])
         return path
 
 
