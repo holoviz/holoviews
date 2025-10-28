@@ -9,7 +9,7 @@ from bokeh.models.dom import Div, Span, Styles, ValueOf
 from panel.io import hold
 
 from ...core.data import XArrayInterface
-from ...core.util import cartesian_product, dimension_sanitizer, isfinite
+from ...core.util import cartesian_product, dimension_sanitizer, dtype_kind, isfinite
 from ...element import Raster
 from ...util.warnings import warn
 from ..util import categorical_legend
@@ -21,6 +21,7 @@ from .util import (
     BOKEH_GE_3_3_0,
     BOKEH_GE_3_4_0,
     BOKEH_GE_3_7_0,
+    BOKEH_GE_3_8_0,
     BOKEH_VERSION,
     colormesh,
 )
@@ -86,7 +87,6 @@ class ServerHoverMixin(param.Parameterized):
 
         # Get dimensions
         coords, vars = list(data.coords), list(data.data_vars)
-        vars.remove("__index__")
         ht = self.hover_tooltips or {}
         if ht:
             ht = [ht] if isinstance(ht, str) else ht
@@ -115,7 +115,7 @@ class ServerHoverMixin(param.Parameterized):
                 Span(children=[f"{ht.get(attr, attr)}:"], style={"color": "#26aae1", "text_align": "right"}),
                 Span(children=[ValueOf(obj=hover_model, attr="data", **kwargs)], style={"text_align": "left"}),
             )
-        children = [el for dim in dims for el in _create_row(dim)]
+        children = [el for dim in dims for el in _create_row(dim) if dim != "__index__"]
 
         # Add a horizontal ruler and show the selector if available
         selector_columns = data.attrs["selector_columns"]
@@ -130,7 +130,6 @@ class ServerHoverMixin(param.Parameterized):
             })]
         else:
             divider = ()
-
 
         if first_selector is not None and data.attrs.get("selector") and self.selector_in_hovertool:
             selector_row = (
@@ -155,6 +154,12 @@ class ServerHoverMixin(param.Parameterized):
             args={"position": hover_model},
             code="export default ({position}, _, {geometry: {x, y}}) => {position.xy = [x, y]}",
         )
+
+        if BOKEH_GE_3_8_0:
+            hover.filters = {"": CustomJS(
+                args=dict(hover_model=hover_model),
+                code="""export default ({hover_model}) => hover_model.data["__index__"] != -1"""
+            )}
 
         def on_change(attr, old, new):
             if np.isinf(new).all():
@@ -288,7 +293,7 @@ class RasterPlot(ServerHoverMixin, ColorbarPlot):
             if i > 2 and 'hover' not in self.handles:
                 break
             img = element.dimension_values(i, flat=False)
-            if img.dtype.kind == 'b':
+            if dtype_kind(img) == 'b':
                 img = img.astype(np.int8)
             if 0 in img.shape:
                 img = np.array([[np.nan]])
@@ -300,7 +305,33 @@ class RasterPlot(ServerHoverMixin, ColorbarPlot):
         return (data, mapping, style)
 
 
-class RGBPlot(ServerHoverMixin, LegendPlot):
+class SyntheticLegendMixin(LegendPlot):
+
+    def _init_glyphs(self, plot, element, ranges, source):
+        super()._init_glyphs(plot, element, ranges, source)
+        if not ('holoviews.operation.datashader' in sys.modules and self.show_legend):
+            return
+        try:
+            cmap = self.lookup_options(element, 'style').options.get("cmap")
+            legend = categorical_legend(
+                element,
+                backend=self.backend,
+                # Only adding if it not None to not overwrite the default
+                **({"cmap": cmap} if cmap else {})
+            )
+        except Exception:
+            return
+        if legend is None:
+            return
+        legend_params = {k: v for k, v in self.param.values().items()
+                         if k.startswith('legend')}
+        self._legend_plot = PointPlot(legend, keys=[], overlaid=1, **legend_params)
+        self._legend_plot.initialize_plot(plot=plot)
+        self._legend_plot.handles['glyph_renderer'].tags.append('hv_legend')
+        self.handles['synthetic_color_mapper'] = self._legend_plot.handles['color_color_mapper']
+
+
+class RGBPlot(ServerHoverMixin, SyntheticLegendMixin):
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
@@ -321,23 +352,6 @@ class RGBPlot(ServerHoverMixin, LegendPlot):
         return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y'),
                 ('RGBA', '@image')], {}
 
-    def _init_glyphs(self, plot, element, ranges, source):
-        super()._init_glyphs(plot, element, ranges, source)
-        if not ('holoviews.operation.datashader' in sys.modules and self.show_legend):
-            return
-        try:
-            legend = categorical_legend(element, backend=self.backend)
-        except Exception:
-            return
-        if legend is None:
-            return
-        legend_params = {k: v for k, v in self.param.values().items()
-                         if k.startswith('legend')}
-        self._legend_plot = PointPlot(legend, keys=[], overlaid=1, **legend_params)
-        self._legend_plot.initialize_plot(plot=plot)
-        self._legend_plot.handles['glyph_renderer'].tags.append('hv_legend')
-        self.handles['rgb_color_mapper'] = self._legend_plot.handles['color_color_mapper']
-
     def get_data(self, element, ranges, style):
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
         if 'alpha' in style:
@@ -355,7 +369,7 @@ class RGBPlot(ServerHoverMixin, LegendPlot):
         if img.ndim == 3:
             img_max = img.max() if img.size else np.nan
             # Can be 0 to 255 if nodata has been used
-            if img.dtype.kind == 'f' and img_max <= 1:
+            if dtype_kind(img) == 'f' and img_max <= 1:
                 img = img*255
                 # img_max * 255 <- have no effect
             if img.size and (img.min() < 0 or img_max > 255):
@@ -392,7 +406,7 @@ class RGBPlot(ServerHoverMixin, LegendPlot):
         return (data, mapping, style)
 
 
-class ImageStackPlot(RasterPlot):
+class ImageStackPlot(RasterPlot, SyntheticLegendMixin):
 
     _plot_methods = dict(single='image_stack')
 

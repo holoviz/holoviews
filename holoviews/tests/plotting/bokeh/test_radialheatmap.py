@@ -252,7 +252,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
 
         """
 
-        data, mapping, style = self.plot.get_data(self.element, {}, {})
+        data, mapping, _style = self.plot.get_data(self.element, {}, {})
 
         glyphs = self.plot._style_groups.keys()
 

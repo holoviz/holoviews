@@ -110,6 +110,11 @@ class MPLPlot(DimensionedPlot):
     fig_size = param.Number(default=100., bounds=(1, None), doc="""
         Size relative to the supplied overall fig_inches in percent.""")
 
+    gridstyle = param.Dict(default={}, doc="""
+        Allows customizing the grid style, e.g. grid_color defines
+        the line color for both grids while xgrid_color exclusively
+        customizes the x-axis grid lines.""")
+
     initial_hooks = param.HookList(default=[], doc="""
         Optional list of hooks called before plotting the data onto
         the axis (now marked for deprecation). The hook is passed the

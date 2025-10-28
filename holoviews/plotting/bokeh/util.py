@@ -11,6 +11,7 @@ import numpy as np
 from bokeh.core.json_encoder import serialize_json  # noqa (API import)
 from bokeh.core.property.datetime import Datetime
 from bokeh.core.validation import silence
+from bokeh.core.validation.check import is_silenced
 from bokeh.layouts import Column, Row, group_tools
 from bokeh.models import (
     CategoricalAxis,
@@ -55,6 +56,7 @@ from ...core.util import (
     callable_name,
     cftime_to_timestamp,
     cftime_types,
+    dtype_kind,
     isnumeric,
     unique_array,
 )
@@ -68,6 +70,7 @@ BOKEH_GE_3_4_0 = BOKEH_VERSION >= (3, 4, 0)
 BOKEH_GE_3_5_0 = BOKEH_VERSION >= (3, 5, 0)
 BOKEH_GE_3_6_0 = BOKEH_VERSION >= (3, 6, 0)
 BOKEH_GE_3_7_0 = BOKEH_VERSION >= (3, 7, 0)
+BOKEH_GE_3_8_0 = BOKEH_VERSION >= (3, 8, 0)
 
 TOOL_TYPES = {
     'pan': tools.PanTool,
@@ -86,12 +89,16 @@ TOOL_TYPES = {
     'yzoom_out': tools.ZoomOutTool,
     'click': tools.TapTool,
     'tap': tools.TapTool,
+    'doubletap': tools.TapTool,
     'crosshair': tools.CrosshairTool,
+    'xcrosshair': tools.CrosshairTool,
+    'ycrosshair': tools.CrosshairTool,
     'box_select': tools.BoxSelectTool,
     'xbox_select': tools.BoxSelectTool,
     'ybox_select': tools.BoxSelectTool,
     'poly_select': tools.PolySelectTool,
     'lasso_select': tools.LassoSelectTool,
+    'auto_box_zoom': tools.BoxZoomTool,
     'box_zoom': tools.BoxZoomTool,
     'xbox_zoom': tools.BoxZoomTool,
     'ybox_zoom': tools.BoxZoomTool,
@@ -105,8 +112,24 @@ TOOL_TYPES = {
     'point_draw': tools.PointDrawTool,
     'poly_draw': tools.PolyDrawTool,
     'poly_edit': tools.PolyEditTool,
-    'freehand_draw': tools.FreehandDrawTool
+    'freehand_draw': tools.FreehandDrawTool,
+    'copy': tools.CopyTool,
+    'examine': tools.ExamineTool,
+    'fullscreen': tools.FullscreenTool,
+    'line_edit': tools.LineEditTool,
 }
+
+if BOKEH_GE_3_6_0:
+    TOOL_TYPES.update({
+        'pan_down': tools.ClickPanTool,
+        'pan_east': tools.ClickPanTool,
+        'pan_left': tools.ClickPanTool,
+        'pan_north': tools.ClickPanTool,
+        'pan_right': tools.ClickPanTool,
+        'pan_south': tools.ClickPanTool,
+        'pan_up': tools.ClickPanTool,
+        'pan_west': tools.ClickPanTool,
+    })
 
 
 def convert_timestamp(timestamp):
@@ -131,7 +154,7 @@ def decode_bytes(array):
     bokeh serialization errors
 
     """
-    if (not len(array) or (isinstance(array, arraylike_types) and array.dtype.kind != 'O')):
+    if (not len(array) or (isinstance(array, arraylike_types) and dtype_kind(array) != 'O')):
         return array
     decoded = [v.decode('utf-8') if isinstance(v, bytes) else v for v in array]
     if isinstance(array, np.ndarray):
@@ -525,12 +548,15 @@ def silence_warnings(*warnings):
     """Context manager for silencing bokeh validation warnings.
 
     """
+    silenced = set()
     for warning in warnings:
-        silence(warning)
+        if not is_silenced(warning):
+            silenced.add(warning)
+            silence(warning)
     try:
         yield
     finally:
-        for warning in warnings:
+        for warning in silenced:
             silence(warning, False)
 
 
@@ -1212,7 +1238,7 @@ def dtype_fix_hook(plot, element):
             with suppress(Exception):
                 data = renderer.data_source.data
                 for k, v in data.items():
-                    if hasattr(v, "dtype") and v.dtype.kind == "U":
+                    if hasattr(v, "dtype") and dtype_kind(v) == "U":
                         data[k] = v.tolist()
 
 

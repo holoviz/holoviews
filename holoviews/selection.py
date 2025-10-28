@@ -289,6 +289,8 @@ class link_selections(_base_link_selections):
         inst._obj_selections = {}
         inst._obj_regions = {}
         inst._reset_regions = True
+        inst._user_show_regions = inst.show_regions
+        inst._updating_show_regions_internal = False
 
         # _datasets caches
         inst._datasets = []
@@ -297,6 +299,12 @@ class link_selections(_base_link_selections):
         self_or_cls._install_param_callbacks(inst)
 
         return inst
+
+    @param.depends('show_regions', watch=True)
+    def _update_user_show_regions(self):
+        if self._updating_show_regions_internal:
+            return
+        self._user_show_regions = self.show_regions
 
     @param.depends('selection_expr', watch=True)
     def _update_pipes(self):
@@ -392,10 +400,17 @@ class link_selections(_base_link_selections):
             new_selection_expr = inst.selection_expr
             current_selection_expr = inst._cross_filter_stream.selection_expr
             if repr(new_selection_expr) != repr(current_selection_expr):
+                # Reset the streams
+                for s in inst._selection_expr_streams.values():
+                    s.reset()
+                    s.event()
                 # Disable regions if setting selection_expr directly
-                if inst.show_regions:
+                if inst._user_show_regions:
+                    inst._updating_show_regions_internal = True
                     inst.show_regions = False
+                    inst._updating_show_regions_internal = False
                 inst._selection_override.event(selection_expr=new_selection_expr)
+                inst._cross_filter_stream.selection_expr = new_selection_expr
 
         inst.param.watch(
             update_selection_expr, ['selection_expr']
@@ -405,6 +420,10 @@ class link_selections(_base_link_selections):
             new_selection_expr = inst._cross_filter_stream.selection_expr
             if repr(inst.selection_expr) != repr(new_selection_expr):
                 inst.selection_expr = new_selection_expr
+                if inst._user_show_regions:
+                    inst._updating_show_regions_internal = True
+                    inst.show_regions = True
+                    inst._updating_show_regions_internal = False
 
         inst._cross_filter_stream.param.watch(
             selection_expr_changed, ['selection_expr']
@@ -415,7 +434,6 @@ class link_selections(_base_link_selections):
             def clear_stream_history(resetting, stream=stream):
                 if resetting:
                     stream.clear_history()
-            print("registering reset for ", stream)
             stream.plot_reset_stream.param.watch(
                 clear_stream_history, ['resetting']
             )

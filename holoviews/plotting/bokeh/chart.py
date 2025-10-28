@@ -9,9 +9,10 @@ from bokeh.transform import jitter
 
 from ...core.data import Dataset
 from ...core.dimension import dimension_name
-from ...core.util import dimension_sanitizer, isdatetime, isfinite
+from ...core.util import dimension_sanitizer, dtype_kind, isdatetime, isfinite
 from ...operation import interpolate_curve
 from ...util.transform import dim
+from ...util.warnings import warn
 from ..mixins import AreaMixin, BarsMixin, SpikesMixin
 from ..util import compute_sizes, get_min_distance
 from .element import ColorbarPlot, ElementPlot, LegendPlot, OverlayPlot
@@ -24,10 +25,92 @@ from .styles import (
     mpl_to_bokeh,
     rgb2hex,
 )
-from .util import categorize_array
+from .util import BOKEH_GE_3_8_0, categorize_array
 
 
-class PointPlot(LegendPlot, ColorbarPlot):
+class SizebarMixin(LegendPlot):
+
+    sizebar = param.Boolean(default=False, doc="""
+        Whether to display a sizebar.""")
+
+    sizebar_location = param.Selector(
+        default="below",
+        objects=["above", "below", "left", "right", "center"],
+        doc="""
+        Location anchor for positioning scale bar, default to 'below'.
+
+        The sizebar_location is only used if sizebar is True.""")
+
+    sizebar_orientation = param.Selector(default="horizontal", objects=["horizontal", "vertical"], doc="""
+        Orientation of the sizebar, default to 'horizontal'.
+
+        The sizebar_orientation is only used if sizebar is True.
+    """)
+
+    sizebar_color = param.String(default="black", doc="""
+        Color of the glyph in the sizebar, default to 'black'.
+
+        The sizebar_color is only used if sizebar is True.""")
+
+    sizebar_alpha = param.Number(default=0.6, bounds=(0, 1), doc="""
+        Alpha value of the glyph in the sizebar, default to 0.6.
+
+        The sizebar_alpha is only used if sizebar is True.""")
+
+    sizebar_bounds = param.NumericTuple(default=None, length=2, doc="""
+        Bounds of the sizebar, default to None which will automatically
+        determine the bounds based on the data.
+
+        The sizebar_bounds is only used if sizebar is True.""")
+
+    sizebar_opts = param.Dict(
+        default={}, doc="""
+        Allows setting specific styling options for the sizebar.
+        See https://docs.bokeh.org/en/latest/docs/reference/models/annotations.html#bokeh.models.SizeBar
+        for more information.
+
+        The sizebar_opts is only used if sizebar is True.""")
+
+    def _init_glyph(self, plot, mapping, properties):
+        renderer, glyph = super()._init_glyph(plot, mapping, properties)
+        if self.sizebar:
+            self._draw_sizebar(plot, renderer, glyph)
+        return renderer, glyph
+
+    def _draw_sizebar(self, plot, renderer, glyph):
+        if not BOKEH_GE_3_8_0:
+            raise RuntimeError("Sizebar requires Bokeh >= 3.8.0")
+
+        from bokeh.models import SizeBar
+        from bokeh.models.glyph import RadialGlyph
+
+        if not isinstance(glyph, RadialGlyph):
+            if isinstance(self, PointPlot):
+                # PointPlot have both Scatter and Circle plot methods
+                msg = "For sizebar to work you need to have radius set"
+                warn(msg, category=RuntimeWarning)
+            return
+
+        sizebar_kwargs = dict(
+            self.sizebar_opts,
+            renderer=renderer,
+            orientation=self.sizebar_orientation,
+            glyph_fill_color=self.sizebar_color,
+            glyph_fill_alpha=self.sizebar_alpha,
+            bounds=self.sizebar_bounds or "auto",
+        )
+
+        if "width" not in sizebar_kwargs:  # Width is the primary axis
+            match (self.sizebar_location, self.sizebar_orientation):
+                case (("above" | "below"), "horizontal") | (("left" | "right"), "vertical"):
+                    sizebar_kwargs["width"] = "max"
+
+        sizebar = SizeBar(**sizebar_kwargs)
+        plot.add_layout(sizebar, self.sizebar_location)
+        self.handles['sizebar'] = sizebar
+
+
+class PointPlot(SizebarMixin, ColorbarPlot):
 
     jitter = param.Number(default=None, bounds=(0, None), doc="""
       The amount of jitter to apply to offset the points along the x-axis.""")
@@ -257,7 +340,6 @@ class VectorFieldPlot(ColorbarPlot):
         elif isinstance(mag_dim, str):
             mag_dim = element.get_dimension(mag_dim)
 
-        (x0, x1), (y0, y1) = (element.range(i) for i in range(2))
         if mag_dim:
             if isinstance(mag_dim, dim):
                 magnitudes = mag_dim.apply(element, flat=True)
@@ -661,8 +743,8 @@ class SpreadPlot(ElementPlot):
         each area separated by nans.
 
         """
-        xnan = np.array([np.datetime64('nat') if xs.dtype.kind == 'M' else np.nan])
-        ynan = np.array([np.datetime64('nat') if lower.dtype.kind == 'M' else np.nan])
+        xnan = np.array([np.datetime64('nat') if dtype_kind(xs) == 'M' else np.nan])
+        ynan = np.array([np.datetime64('nat') if dtype_kind(lower) == 'M' else np.nan])
         split = np.where(~isfinite(xs) | ~isfinite(lower) | ~isfinite(upper))[0]
         xvals = np.split(xs, split)
         lower = np.split(lower, split)
@@ -923,7 +1005,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         # Merge data and mappings
         mapping.update(cmapping)
         for k, cd in cdata.items():
-            if isinstance(cmapper, CategoricalColorMapper) and cd.dtype.kind in 'uif':
+            if isinstance(cmapper, CategoricalColorMapper) and dtype_kind(cd) in 'uif':
                 cd = categorize_array(cd, cdim)
             if k not in data or (len(data[k]) != next(len(data[key]) for key in data if key != k)):
                 data[k].append(cd)
@@ -974,7 +1056,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         if group_dim is None:
             grouped = {0: element}
             is_dt = isdatetime(xvals)
-            if is_dt or xvals.dtype.kind not in 'OU':
+            if is_dt or dtype_kind(xvals) not in 'OU':
                 xslice = stack_idx if stack_order else slice(None)
                 xdiff = np.abs(np.diff(xvals[xslice]))
                 diff_size = len(np.unique(xdiff))
@@ -991,7 +1073,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                                       datatype=['dataframe', 'dictionary'])
 
         width = abs(width)
-        y0, y1 = ranges.get(ydim.label, {'combined': (None, None)})['combined']
+        _y0, y1 = ranges.get(ydim.label, {'combined': (None, None)})['combined']
         if self.logy:
             bottom = (ydim.range[0] or (0.01 if y1 > 0.01 else 10**(np.log10(y1)-2)))
         else:
@@ -1017,10 +1099,10 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         cvals = element.dimension_values(cdim, expanded=False) if cdim else None
         if cvals is not None:
-            if cvals.dtype.kind in 'uif' and no_cidx:
+            if dtype_kind(cvals) in 'uif' and no_cidx:
                 cvals = categorize_array(cvals, color_dim)
 
-            factors = None if cvals.dtype.kind in 'uif' else list(cvals)
+            factors = None if dtype_kind(cvals) in 'uif' else list(cvals)
             if cdim is xdim and factors:
                 factors = list(categorize_array(factors, xdim))
             if cmap is None and factors:
@@ -1062,7 +1144,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             elif grouping == 'grouped':
                 xs = ds.dimension_values(xdim)
                 ys = ds.dimension_values(ydim)
-                xoffsets = [(x if xs.dtype.kind in 'SU' else xdim.pprint_value(x), gval)
+                xoffsets = [(x if dtype_kind(xs) in 'SU' else xdim.pprint_value(x), gval)
                             for x in xs]
                 data['xoffsets'].append(xoffsets)
                 data[ydim.name].append(ys)
@@ -1103,7 +1185,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         # Ensure x-values are categorical
         xname = dimension_sanitizer(xdim.name)
-        if xname in sanitized_data and isinstance(sanitized_data[xname], np.ndarray) and sanitized_data[xname].dtype.kind not in 'uifM' and not isdatetime(sanitized_data[xname]):
+        if xname in sanitized_data and isinstance(sanitized_data[xname], np.ndarray) and dtype_kind(sanitized_data[xname]) not in 'uifM' and not isdatetime(sanitized_data[xname]):
             sanitized_data[xname] = categorize_array(sanitized_data[xname], xdim)
 
         # If axes inverted change mapping to match hbar signature

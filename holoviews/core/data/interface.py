@@ -7,6 +7,7 @@ import param
 from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping
+from ..util import dtype_kind
 from .util import finite_range
 
 
@@ -412,19 +413,19 @@ class Interface(param.Parameterized):
     @classmethod
     def range(cls, dataset, dimension):
         column = dataset.dimension_values(dimension)
-        if column.dtype.kind == 'M':
+        if dtype_kind(column) == 'M':
             return column.min(), column.max()
         elif len(column) == 0:
             return np.nan, np.nan
         else:
             try:
-                assert column.dtype.kind not in 'SUO'
+                assert dtype_kind(column) not in 'SUO'
                 with warnings.catch_warnings():
                     warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
                     return finite_range(column, np.nanmin(column), np.nanmax(column))
             except (AssertionError, TypeError):
                 column = [v for v in util.python2sort(column) if v is not None]
-                if not len(column):
+                if not column:
                     return np.nan, np.nan
                 return column[0], column[-1]
 

@@ -2852,7 +2852,7 @@ Features:
 - n-dimensional Dask arrays are now supported directly via the gridded
   dictionary data interface
   ([#2305](https://github.com/pyviz/holoviews/pull/2305))
-- Added new [Styling Plots](https://holoviews.org/user_guide/Styling_Plots.html)
+- Added new [Styling Plots](https://holoviews.org/user_guide/Style_Mapping.html)
   and [Colormaps](https://holoviews.org/user_guide/Colormaps.html)
   user guides, including new functionality for working with colormaps.
 
@@ -3896,7 +3896,7 @@ Features and improvements:
   data easily (PR
   [\#562](https://github.com/pyviz/holoviews/pull/542)).
 - Added data interface based on [iris
-  Cubes](https://scitools.org.uk/iris/docs/v1.9.2/index.html) (PR
+  Cubes](https://scitools-iris.readthedocs.io/en/stable/) (PR
   [\#624](https://github.com/pyviz/holoviews/pull/624)).
 - Added support for dynamic operations and overlaying of DynamicMaps
   (PR [\#588](https://github.com/pyviz/holoviews/pull/588)).
@@ -3948,7 +3948,7 @@ A minor bugfix release to patch a number of small but important issues.
 Fixes and improvements:
 
 - Added a [DynamicMap
-  Tutorial](https://holoviews.org/Tutorials/Dynamic_Map.html) to
+  Tutorial](https://holoviews.org/user_guide/Live_Data.html) to
   explain how to explore very large or continuous parameter spaces in
   HoloViews ([PR
   \#470](https://github.com/pyviz/holoviews/issues/470)).
@@ -4298,7 +4298,6 @@ API changes:
 - Interface to Pandas improved (1a7cd3d)
 - Removed `xlim`, `ylim` and `zlim` to eliminate redundancy.
 - Renaming of various plot and style options including:
-
   - `figure_*` to `fig_*`
   - `vertical_spacing` and `horizontal_spacing` to `vspace` and
     `hspace` respectively

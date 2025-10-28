@@ -25,7 +25,7 @@ from ..core.layout import Empty, Layout, NdLayout
 from ..core.options import Compositor, SkipRendering, Store, lookup_options
 from ..core.overlay import CompositeOverlay, NdOverlay, Overlay
 from ..core.spaces import DynamicMap, HoloMap
-from ..core.util import isfinite, stream_parameters, unique_iterator
+from ..core.util import dtype_kind, isfinite, stream_parameters, unique_iterator
 from ..element import Graph, Table
 from ..selection import NoOpSelectionDisplay
 from ..streams import RangeX, RangeXY, RangeY, Stream
@@ -716,7 +716,7 @@ class DimensionedPlot(Plot):
 
                 if all(util.isfinite(r) for r in el_dim.range):
                     data_range = (None, None)
-                elif dtype is not None and dtype.kind in 'SU':
+                elif dtype is not None and dtype_kind(dtype) in 'SU':
                     data_range = ('', '')
                 elif isinstance(el, Graph) and el_dim in el.kdims[:2]:
                     data_range = el.nodes.range(2, dimension_range=False)
@@ -727,7 +727,7 @@ class DimensionedPlot(Plot):
                     data_range = el.range(el_dim, dimension_range=False)
 
                 data_ranges[(el, el_dim)] = data_range
-                if dtype is not None and dtype.kind in 'uif' and robust:
+                if dtype is not None and dtype_kind(dtype) in 'uif' and robust:
                     percentile = 2 if isinstance(robust, bool) else robust
                     robust_ranges[(el, el_dim)] = (
                         dim(el_dim, np.nanpercentile, percentile).apply(el),
@@ -736,7 +736,7 @@ class DimensionedPlot(Plot):
 
                 if (any(isinstance(r, str) for r in data_range) or
                     (el_dim.type is not None and issubclass(el_dim.type, str)) or
-                    (dtype is not None and dtype.kind in 'SU')):
+                    (dtype is not None and dtype_kind(dtype) in 'SU')):
                     categorical_dims.append(el_dim)
 
         prev_ranges = ranges.get(group, {})
@@ -760,11 +760,11 @@ class DimensionedPlot(Plot):
                         continue
                     values = v.apply(el, all_values=True)
                     factors = None
-                    if values.dtype.kind == 'M':
+                    if dtype_kind(values) == 'M':
                         drange = values.min(), values.max()
                     elif util.isscalar(values):
                         drange = values, values
-                    elif values.dtype.kind in 'US':
+                    elif dtype_kind(values) in 'US':
                         factors = util.unique_array(values)
                     elif len(values) == 0:
                         drange = np.nan, np.nan
@@ -816,7 +816,7 @@ class DimensionedPlot(Plot):
                             values = el.dimension_values(el_dim, expanded=False)
                     elif isinstance(el, Graph) and el_dim in el.nodes:
                         values = el.nodes.dimension_values(el_dim, expanded=False)
-                    if (isinstance(values, np.ndarray) and values.dtype.kind == 'O' and
+                    if (isinstance(values, np.ndarray) and dtype_kind(values) == 'O' and
                         all(isinstance(v, (np.ndarray)) for v in values)):
                         values = np.concatenate(values) if len(values) else []
                     factors = util.unique_array(values)
@@ -1354,7 +1354,7 @@ class GenericElementPlot(DimensionedPlot):
         """Computes padding along the axes taking into account the plot aspect.
 
         """
-        (x0, y0, z0, x1, y1, z1) = extents
+        (x0, y0, _z0, x1, y1, _z1) = extents
         padding_opt = self.lookup_options(obj, 'plot').kwargs.get('padding')
         if self.overlaid:
             padding = 0
@@ -1399,7 +1399,7 @@ class GenericElementPlot(DimensionedPlot):
 
         trigger = False
         if not self.overlaid and not self.batched:
-            xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))
+            xspan, yspan, _zspan = (v/2. for v in get_axis_padding(self.default_span))
             mx0, mx1 = get_minimum_span(x0, x1, xspan)
             if x0 != mx0 or x1 != mx1:
                 x0, x1 = mx0, mx1
@@ -1409,7 +1409,6 @@ class GenericElementPlot(DimensionedPlot):
                 y0, y1 = my0, my1
                 trigger = True
 
-            mz0, mz1 = get_minimum_span(z0, z1, zspan)
         xpad, ypad, zpad = self.get_padding(element, (x0, y0, z0, x1, y1, z1))
 
         if range_type == 'soft':
@@ -1938,7 +1937,7 @@ class GenericOverlayPlot(GenericElementPlot):
                     exact_matches = [m for m in exact_matches if m[-1]]
                     if exact_matches:
                         idx = exact_matches[0][0]
-                        _, el = temp_items.pop(idx)
+                        temp_items.pop(idx)
                         continue
             found = True
         if idx is not None:

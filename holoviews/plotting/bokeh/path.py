@@ -5,6 +5,8 @@ import param
 from bokeh.models import FactorRange
 
 from ...core import util
+from ...core.dimension import Dimension
+from ...core.util import dtype_kind
 from ...element import Contours, Polygons
 from ...util.transform import dim
 from .callbacks import PolyDrawCallback, PolyEditCallback
@@ -94,17 +96,20 @@ class PathPlot(LegendPlot, ColorbarPlot):
         cdim = None
         if isinstance(color, str) and not validate('color', color):
             cdim = element.get_dimension(color)
+        elif isinstance(color, Dimension):
+            # Handle hv.Dimension() objects directly
+            cdim = element.get_dimension(color.name) if color.name in element else color
         elif self.color_index is not None:
             cdim = element.get_dimension(self.color_index)
 
         scalar = element.interface.isunique(element, cdim, per_geom=True) if cdim else False
         style_mapping = {
             (s, v) for s, v in style.items() if (s not in self._nonvectorized_styles) and
-            ((isinstance(v, str) and v in element) or isinstance(v, dim)) and
-            not (not isinstance(v, dim) and v == color and s == 'color')}
+            (isinstance(v, str) and v in element) or isinstance(v, (dim, Dimension)) and
+            not (not isinstance(v, (dim, Dimension)) and v == color and s == 'color')}
         mapping = dict(self._mapping)
 
-        if (not cdim or scalar) and not style_mapping and 'hover' not in self.handles:
+        if not (cdim or style_mapping or 'hover' in self.handles):
             if self.static_source:
                 data = {}
             else:
@@ -119,7 +124,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
         vals = defaultdict(list)
         if hover:
             vals.update({util.dimension_sanitizer(vd.name): [] for vd in element.vdims})
-        if cdim and self.color_index is not None:
+        if cdim:
             dim_name = util.dimension_sanitizer(cdim.name)
             cmapper = self._get_colormapper(cdim, element, ranges, style)
             mapping['line_color'] = {'field': dim_name, 'transform': cmapper}
@@ -127,13 +132,21 @@ class PathPlot(LegendPlot, ColorbarPlot):
 
         xpaths, ypaths = [], []
         for path in element.split():
-            if cdim and self.color_index is not None:
-                scalar = path.interface.isunique(path, cdim, per_geom=True)
-                cvals = path.dimension_values(cdim, not scalar)
-                vals[dim_name].append(cvals[:-1])
             cols = path.columns(path.kdims)
             xs, ys = (cols[kd.name] for kd in element.kdims)
             alen = len(xs)
+
+            if cdim:
+                scalar = path.interface.isunique(path, cdim, per_geom=True)
+                if scalar:
+                    # one value per geometry; repeat per segment
+                    cval = path.dimension_values(cdim, expanded=False)[0]
+                    vals[dim_name].append(np.full(alen-1, cval))
+                else:
+                    # per-vertex values; drop last to match segments
+                    cvals = path.dimension_values(cdim, expanded=True)
+                    vals[dim_name].append(cvals[:-1])
+
             xpaths += [xs[s1:s2+1] for (s1, s2) in zip(range(alen-1), range(1, alen+1), strict=None)]
             ypaths += [ys[s1:s2+1] for (s1, s2) in zip(range(alen-1), range(1, alen+1), strict=None)]
             if not hover:
@@ -188,6 +201,9 @@ class DendrogramPlot(PathPlot):
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         plot = super().initialize_plot(ranges, plot, plots, source)
         if self.adjoined:
+            if self.layout_num and self.shared_axes:
+                msg = "Adjoined dendrogram in a Layout, does not currently support `.opts(shared_axes=True)`"
+                raise NotImplementedError(msg)
             pos = ["main", "right", "top"][len(plots)]
             main = self.adjoined[0]
             if pos == "right":
@@ -321,7 +337,7 @@ class ContourPlot(PathPlot):
         factors = None
         if cdim.label in ranges and 'factors' in ranges[cdim.label]:
             factors = ranges[cdim.label]['factors']
-        elif values.dtype.kind in 'SUO' and len(values):
+        elif dtype_kind(values) in 'SUO' and len(values):
             if isinstance(values[0], np.ndarray):
                 values = np.concatenate(values)
             factors = util.unique_array(values)

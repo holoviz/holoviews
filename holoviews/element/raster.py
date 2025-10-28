@@ -432,9 +432,6 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         if any([isinstance(el, slice) for el in coords]):
             bounds = compute_slice_bounds(coords, self, shape[:2])
 
-            xdim, ydim = self.kdims
-            l, b, r, t = bounds.lbrt()
-
             # Situate resampled region into overall slice
             y0, y1, x0, x1 = Slice(bounds, self)
             y0, y1 = shape[0]-y1, shape[0]-y0
@@ -484,7 +481,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
                         coords = [(0, c) if idx else (c, 0) for c in v]
                     if len(coords) not in [0, len(v)]:
                         raise ValueError("Length of samples must match")
-                    elif len(coords):
+                    elif coords:
                         coords = [(t[abs(idx-1)], c) if idx else (c, t[abs(idx-1)])
                                   for c, t in zip(v, coords, strict=None)]
                 getter.append(idx)
