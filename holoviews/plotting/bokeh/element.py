@@ -3271,6 +3271,20 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     else:
                         tool_types.append(tool_type)
                     init_tools.append(tool)
+
+        # Add tools specified directly on the overlay
+        overlay_tools = self.default_tools + self.tools
+        for tool in overlay_tools:
+            if isinstance(tool, str):
+                tool_type = TOOL_TYPES.get(tool)
+            else:
+                tool_type = type(tool)
+            # Only add tools that haven't been added by subplots
+            if tool_type not in tool_types:
+                tool_types.append(tool_type)
+                init_tools.append(tool)
+
+
         self.handles['hover_tools'] = hover_tools
         return init_tools
 
