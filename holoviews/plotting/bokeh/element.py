@@ -3238,7 +3238,29 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         hover_tools = {}
         zooms_subcoordy = {}
         _zoom_types = (tools.WheelZoomTool, tools.ZoomInTool, tools.ZoomOutTool)
-        init_tools, tool_types = [], []
+        init_tools = []
+        tool_ids = set()
+
+        def get_tool_id(tool, tool_type):
+            """Generate a unique identifier for a tool."""
+            if isinstance(tool, str):
+                directional_tools = ('wheel_zoom', 'pan', 'zoom_in', 'zoom_out', 'box_zoom')
+                if tool in directional_tools:
+                    return (tool_type, 'both')
+                elif tool.startswith(('x', 'y')):
+                    if tool[1:] in directional_tools:
+                        dimension = 'width' if tool.startswith('x') else 'height'
+                        return (tool_type, dimension)
+                elif tool == 'auto_box_zoom':
+                    return (tool_type, 'auto')
+                return tool
+            elif hasattr(tool, 'dimensions') and tool.dimensions:
+                return (tool_type, tool.dimensions)
+            elif hasattr(tool, 'description') and tool.description:
+                return (tool_type, tool.description)
+            else:
+                return tool_type
+
         for key, subplot in self.subplots.items():
             el = element.get(key)
             if el is not None:
@@ -3248,6 +3270,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                         tool_type = TOOL_TYPES.get(tool)
                     else:
                         tool_type = type(tool)
+
+                    tool_id = get_tool_id(tool, tool_type)
                     if isinstance(tool, tools.HoverTool):
                         if isinstance(tool.tooltips, bokeh.models.dom.Div):
                             tooltips = tool.tooltips
@@ -3266,10 +3290,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                         else:
                             zooms_subcoordy[tool.tags[1]] = tool
                             self.handles['zooms_subcoordy'] = zooms_subcoordy
-                    elif tool_type in tool_types:
+                    elif tool_id in tool_ids:
                         continue
-                    else:
-                        tool_types.append(tool_type)
+
+                    tool_ids.add(tool_id)
                     init_tools.append(tool)
 
         # Add tools specified directly on the overlay
@@ -3279,11 +3303,19 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 tool_type = TOOL_TYPES.get(tool)
             else:
                 tool_type = type(tool)
-            # Only add tools that haven't been added by subplots
-            if tool_type not in tool_types:
-                tool_types.append(tool_type)
-                init_tools.append(tool)
 
+            tool_id = get_tool_id(tool, tool_type)
+
+            # Skip subcoordinate_y zoom tools that were already handled
+            if (self.subcoordinate_y and tool_type in _zoom_types and
+                isinstance(tool, str) and not tool.startswith('x')):
+                tool_name = tool.replace('_tool', '')
+                if tool_name in zooms_subcoordy:
+                    continue
+
+            if tool_id not in tool_ids:
+                tool_ids.add(tool_id)
+                init_tools.append(tool)
 
         self.handles['hover_tools'] = hover_tools
         return init_tools
