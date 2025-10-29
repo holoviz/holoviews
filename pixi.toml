@@ -244,6 +244,7 @@ numpydoc = "*"
 pooch = "*"
 python-kaleido = "*"
 selenium = "*"
+ipykernel = "<7.0.0" # temp
 
 [feature.doc.activation.env]
 MOZ_HEADLESS = "1"
