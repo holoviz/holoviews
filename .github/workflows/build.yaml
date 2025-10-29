@@ -107,7 +107,7 @@ jobs:
           if-no-files-found: error
       - name: Annotate PyPI URL
         run: |
-          echo "::notice::PyPI URL: https://pypi.org/p/$PACKAGE"
+          echo "::notice::[PyPI URL](https://pypi.org/p/$PACKAGE)"
 
   pip_install:
     name: Install PyPI
