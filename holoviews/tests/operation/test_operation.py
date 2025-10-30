@@ -487,7 +487,6 @@ class OperationTests(ComparisonTestCase):
 
     @ibis_skip
     @pytest.mark.usefixtures('ibis_sqlite_backend')
-    @pytest.mark.filterwarnings("ignore:'Ibis' datatype is deprecated")
     def test_dataset_histogram_ibis(self):
         df = pd.DataFrame(dict(x=np.arange(10)))
         t = ibis.memtable(df, **({} if IBIS_VERSION >= (11, 0, 0) else {"name": "t"}))
@@ -500,7 +499,6 @@ class OperationTests(ComparisonTestCase):
 
     @ibis_skip
     @pytest.mark.usefixtures('ibis_sqlite_backend')
-    @pytest.mark.filterwarnings("ignore:'Ibis' datatype is deprecated")
     def test_dataset_cumulative_histogram_ibis(self):
         df = pd.DataFrame(dict(x=np.arange(10)))
         t = ibis.memtable(df, **({} if IBIS_VERSION >= (11, 0, 0) else {"name": "t"}))
@@ -513,7 +511,6 @@ class OperationTests(ComparisonTestCase):
 
     @ibis_skip
     @pytest.mark.usefixtures('ibis_sqlite_backend')
-    @pytest.mark.filterwarnings("ignore:'Ibis' datatype is deprecated")
     def test_dataset_histogram_explicit_bins_ibis(self):
         df = pd.DataFrame(dict(x=np.arange(10)))
         t = ibis.memtable(df, **({} if IBIS_VERSION >= (11, 0, 0) else {"name": "t"}))

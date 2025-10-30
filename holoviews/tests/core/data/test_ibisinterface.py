@@ -46,9 +46,12 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
     __test__ = True
 
     def setUp(self):
-        self.restore_datatype = self.element.datatype
+        self.restore_datatype = self.element.datatype.copy()
         # TODO: This should work!
         # self.element.datatype = [self.datatype]
+        if "narwhals" in self.element.datatype:
+            # Higher priority
+            self.element.datatype.remove("narwhals")
         self.init_column_data()
         self.init_grid_data()
         self.init_data()

@@ -2,7 +2,6 @@ import builtins
 
 import narwhals.stable.v2 as nw
 import numpy as np
-from narwhals.dependencies import is_into_dataframe, is_into_series
 
 from .. import util
 from ..dimension import Dimension, dimension_name
@@ -79,9 +78,10 @@ class NarwhalsInterface(Interface):
     def applies(cls, obj):
         return (
             isinstance(obj, (nw.Series, nw.DataFrame, nw.LazyFrame))
-            or is_into_dataframe(obj)
-            or is_into_series(obj)
-            or (cls.narwhals_backend and isinstance(obj, (dict, tuple, np.ndarray)))
+            or nw.dependencies.is_into_dataframe(obj)
+            or nw.dependencies.is_into_series(obj)
+            or nw.dependencies.is_ibis_table(obj)
+            or bool(cls.narwhals_backend and isinstance(obj, (dict, tuple, np.ndarray)))
         ) and not _is_geodataframe(obj)
 
     @classmethod
