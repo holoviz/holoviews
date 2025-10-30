@@ -62,7 +62,7 @@ class IbisInterface(Interface):
 
     @classmethod
     def init(cls, eltype, data, keys, values):
-        deprecated("1.23.0", "'ibis' datatype", "'narwhals' datatype", repr_old=False, repr_new=False)
+        deprecated("1.24.0", "'ibis' datatype", "'narwhals' datatype", repr_old=False, repr_new=False)
 
         params = eltype.param.objects()
         index = params["kdims"]
