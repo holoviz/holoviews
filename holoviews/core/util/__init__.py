@@ -20,6 +20,7 @@ from functools import partial
 from threading import Event, Thread
 from types import FunctionType, GeneratorType
 
+import narwhals.stable.v2 as nw
 import numpy as np
 import param
 
@@ -47,9 +48,11 @@ from .types import (
 
 TYPE_CHECKING = False
 if TYPE_CHECKING:
+    import dask.dataframe as dd
     import pandas as pd
     import polars as pl
 else:
+    dd = _LazyModule("dask.dataframe", bool_use_sys_modules=True)
     pd = _LazyModule("pandas", bool_use_sys_modules=True)
     pl = _LazyModule("polars", bool_use_sys_modules=True)
 
@@ -191,8 +194,7 @@ class HashableJSON(json.JSONEncoder):
                 obj = state.choice(obj.flat, size=_ARRAY_SAMPLE_SIZE)
             h.update(obj.tobytes())
             return h.hexdigest()
-        import pandas as pd
-        if isinstance(obj, (pd.Series, pd.DataFrame)):
+        if pd and isinstance(obj, (pd.Series, pd.DataFrame)):
             if len(obj) > _DATAFRAME_ROWS_LARGE:
                 obj = obj.sample(n=_DATAFRAME_SAMPLE_SIZE, random_state=0)
             try:
@@ -873,11 +875,10 @@ def isnat(val):
     """Checks if the value is a NaT. Should only be called on datetimelike objects.
 
     """
-    import pandas as pd
     if (isinstance(val, (np.datetime64, np.timedelta64)) or
-        (isinstance(val, np.ndarray) and val.dtype.kind == 'M')):
+        (isinstance(val, np.ndarray) and dtype_kind(val) == 'M')):
         return np.isnat(val)
-    elif val is pd.NaT:
+    elif pd and val is pd.NaT:
         return True
     elif isinstance(val, (pandas_datetime_types, pandas_timedelta_types)):
         return pd.isna(val)
@@ -890,7 +891,6 @@ def isfinite(val):
     np.isfinite with support for None, string, datetime types.
 
     """
-    import pandas as pd
     is_dask = is_dask_array(val)
     if not np.isscalar(val) and not is_dask:
         if isinstance(val, np.ma.core.MaskedArray):
@@ -899,29 +899,32 @@ def isfinite(val):
             return ~val.isna() & isfinite(val._data)
         val = asarray(val, strict=False)
 
+    isnan = pd.isna if pd else np.isnan
     if val is None:
         return False
     elif is_dask:
         import dask.array as da
         return da.isfinite(val)
     elif isinstance(val, np.ndarray):
-        if val.dtype.kind == 'M':
+        if dtype_kind(val) == 'M':
             return ~isnat(val)
-        elif val.dtype.kind == 'O':
+        elif dtype_kind(val) == 'O':
             return np.array([isfinite(v) for v in val], dtype=bool)
-        elif val.dtype.kind in 'US':
-            return ~pd.isna(val)
+        elif dtype_kind(val) in 'US':
+            return ~isnan(val)
         finite = np.isfinite(val)
-        finite &= ~pd.isna(val)
+        finite &= ~isnan(val)
         return finite
     elif isinstance(val, (datetime_types, timedelta_types)):
         return not isnat(val)
     elif isinstance(val, (str, bytes)):
         return True
+    elif isinstance(val, (nw.DataFrame, nw.LazyFrame)):
+        return val.select(nw.all().is_finite())
     finite = np.isfinite(val)
-    if finite is pd.NA:
+    if pd and finite is pd.NA:
         return False
-    return finite & ~pd.isna(np.asarray(val))
+    return finite & ~isnan(np.asarray(val))
 
 
 def isdatetime(value):
@@ -929,8 +932,8 @@ def isdatetime(value):
 
     """
     if isinstance(value, np.ndarray):
-        return (value.dtype.kind == "M" or
-                (value.dtype.kind == "O" and len(value) and
+        return (dtype_kind(value) == "M" or
+                (dtype_kind(value) == "O" and len(value) and
                  isinstance(value[0], datetime_types)))
     else:
         return isinstance(value, datetime_types)
@@ -963,7 +966,7 @@ def find_range(values, soft_range=None):
         values = np.squeeze(values) if len(values.shape) > 1 else values
         if soft_range:
             values = np.concatenate([values, soft_range])
-        if values.dtype.kind == 'M':
+        if dtype_kind(values) == 'M':
             return values.min(), values.max()
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
@@ -992,7 +995,6 @@ def max_range(ranges, combined=True):
     -------
     The maximum range as a single tuple
     """
-    import pandas as pd
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
@@ -1001,7 +1003,7 @@ def max_range(ranges, combined=True):
                           for r in values for v in r):
                 converted = []
                 for l, h in values:
-                    if isinstance(l, pd.Period) and isinstance(h, pd.Period):
+                    if pd and isinstance(l, pd.Period) and isinstance(h, pd.Period):
                         l = l.to_timestamp().to_datetime64()
                         h = h.to_timestamp().to_datetime64()
                     elif isinstance(l, datetime_types) and isinstance(h, datetime_types):
@@ -1013,12 +1015,12 @@ def max_range(ranges, combined=True):
             arr = np.array(values)
             if not len(arr):
                 return np.nan, np.nan
-            elif arr.dtype.kind in 'OSU':
+            elif dtype_kind(arr) in 'OSU':
                 arr = list(python2sort([
                     v for r in values for v in r
                     if not is_nan(v) and v is not None]))
                 return arr[0], arr[-1]
-            elif arr.dtype.kind in 'M':
+            elif dtype_kind(arr) in 'M':
                 drange = ((arr.min(), arr.max()) if combined else
                           (arr[:, 0].min(), arr[:, 1].max()))
                 return drange
@@ -1123,6 +1125,34 @@ def max_extents(extents, zrange=False):
     return tuple(extents)
 
 
+def find_contiguous_subarray(sub_array, full_array):
+    """
+    Return the start index of `sub_array` in `ful_array` if `sub_array`
+    is a contiguous subarray of `ful_array`. This expect that there is no
+    duplicates in any of the arrays.
+
+    Arguments
+    ---------
+    sub_array: array_like
+       The array that may or may not be a contiguous subset of `full_array`.
+    full_array: array_like
+       The array that may or may not contain `sub_array` as a contiguous subset.
+
+    Returns
+    -------
+    int | None
+       The index at which a appears in b or None.
+    """
+    if len(sub_array) == 0:
+        return 0
+    sub_array, full_array = np.asarray(sub_array), np.asarray(full_array)
+    first_match = full_array == sub_array[0]
+    if not first_match.any():
+        return None
+    idx = np.argmax(first_match)
+    return idx if (full_array[idx:idx+len(sub_array)] == sub_array).all() else None
+
+
 def int_to_alpha(n, upper=True):
     """Generates alphanumeric labels of form A-Z, AA-ZZ etc.
 
@@ -1187,6 +1217,22 @@ def unique_zip(*args, strict=None):
     return list(unique_iterator(zip(*args, strict=strict)))
 
 
+def _unique(arr):
+    """Returns an array of unique values in the input order.
+
+    """
+    if pd:
+        return pd.unique(arr)
+    try:
+        arr = np.asanyarray(arr)
+        _, idx = np.unique(arr, return_index=True)
+        return arr[np.sort(idx)]
+    except TypeError:
+        if dtype_kind(arr) == "O":
+            return np.array(list(unique_iterator(arr)), dtype="object")
+        raise
+
+
 def unique_array(arr):
     """Returns an array of unique values in the input order.
 
@@ -1202,21 +1248,19 @@ def unique_array(arr):
     if not len(arr):
         return np.asarray(arr)
 
-    import pandas as pd
-    if isinstance(arr, np.ndarray) and arr.dtype.kind not in 'MO':
+    if isinstance(arr, np.ndarray) and dtype_kind(arr) not in 'MO':
         # Avoid expensive unpacking if not potentially datetime
-        return pd.unique(arr)
+        return _unique(arr)
 
     values = []
     for v in arr:
         if (isinstance(v, datetime_types) and
             not isinstance(v, cftime_types)):
-            v = pd.Timestamp(v).to_datetime64()
-        elif isinstance(getattr(v, "dtype", None), pd.CategoricalDtype):
+            v = parse_datetime(v)
+        elif pd and isinstance(getattr(v, "dtype", None), pd.CategoricalDtype):
             v = v.dtype.categories
         values.append(v)
-    return pd.unique(np.asarray(values).ravel())
-
+    return _unique(np.asarray(values).ravel())
 
 def match_spec(element, specification):
     """Matches the group.label specification of the supplied
@@ -1526,31 +1570,31 @@ def is_dataframe(data):
     """Checks whether the supplied data is of DataFrame type.
 
     """
-    import pandas as pd
-    dd = None
-    if 'dask.dataframe' in sys.modules and 'pandas' in sys.modules:
-        import dask.dataframe as dd
-    return((isinstance(data, pd.DataFrame)) or
-          (dd is not None and isinstance(data, dd.DataFrame)))
+    types = []
+    if pd:
+        types.append(pd.DataFrame)
+    if dd:
+        types.append(dd.DataFrame)
+    return isinstance(data, tuple(types))
 
 
 def is_series(data):
     """Checks whether the supplied data is of Series type.
 
     """
-    import pandas as pd
-    dd = None
-    if 'dask.dataframe' in sys.modules:
-        import dask.dataframe as dd
-    return (isinstance(data, pd.Series) or
-          (dd is not None and isinstance(data, dd.Series)))
+    types = []
+    if pd:
+        types.append(pd.Series)
+    if dd:
+        types.append(dd.Series)
+    return isinstance(data, tuple(types))
 
 
 def is_dask_array(data):
-    da = None
     if 'dask.array' in sys.modules:
         import dask.array as da
-    return (da is not None and isinstance(data, da.Array))
+        return isinstance(data, da.Array)
+    return False
 
 
 def is_cupy_array(data):
@@ -1932,13 +1976,13 @@ class ndmapping_groupby(param.ParameterizedFunction):
 
     def __call__(self, ndmapping, dimensions, container_type,
                  group_type, sort=False, **kwargs):
-        return self.groupby_pandas(ndmapping, dimensions, container_type,
+        fn = self.groupby_pandas if pd else self.groupby_python
+        return fn(ndmapping, dimensions, container_type,
                        group_type, sort=sort, **kwargs)
 
     @param.parameterized.bothmethod
     def groupby_pandas(self_or_cls, ndmapping, dimensions, container_type,
                        group_type, sort=False, **kwargs):
-        import pandas as pd
         if 'kdims' in kwargs:
             idims = [ndmapping.get_dimension(d) for d in kwargs['kdims']]
         else:
@@ -2073,8 +2117,10 @@ def is_nan(x):
     try:
         # Using pd.isna instead of np.isnan as np.isnan(pd.NA) returns pd.NA!
         # Call bool() to raise an error if x is pd.NA, an array, etc.
-        import pandas as pd
-        return bool(pd.isna(x))
+        if pd:
+            return bool(pd.isna(x))
+        else:
+            return bool(np.isnan(x))
     except Exception:
         return False
 
@@ -2140,9 +2186,8 @@ def date_range(start, end, length, time_unit='us'):
     of samples.
 
     """
-    import pandas as pd
     step = (1./compute_density(start, end, length, time_unit))
-    if isinstance(start, pd.Timestamp):
+    if pd and isinstance(start, pd.Timestamp):
         start = start.to_datetime64()
     step = np.timedelta64(round(step), time_unit)
     return start+step/2.+np.arange(length)*step
@@ -2152,8 +2197,32 @@ def parse_datetime(date):
     """Parses dates specified as string or integer or pandas Timestamp
 
     """
-    import pandas as pd
-    return pd.to_datetime(date).to_datetime64()
+    if pd:
+        return pd.to_datetime(date).to_datetime64()
+
+    match date:
+        case np.datetime64():
+            return date
+        case dt.datetime():
+            ...  # to not be seen as dt.date
+        case dt.date():
+            date = dt.datetime.combine(date, dt.time())
+        case dt.time():
+            date = dt.datetime.combine(dt.date.today(), date)
+        case str():
+            from dateutil.parser import parse
+            date = parse(date)
+        case int() | float():
+            date = dt.datetime.fromtimestamp(date)
+        case _:
+            msg = f"Unsupported type for datetime parsing: {type(date)}"
+            raise TypeError(msg)
+
+    # pd.to_datetime removes timezone which we mimic here
+    if getattr(date, "tzinfo", None):
+        date = date.astimezone(dt.timezone.utc).replace(tzinfo=None)
+
+    return np.datetime64(date, "ns")
 
 
 def parse_datetime_selection(sel):
@@ -2176,10 +2245,9 @@ def dt_to_int(value, time_unit='us'):
     """Converts a datetime type to an integer with the supplied time unit.
 
     """
-    import pandas as pd
-    if isinstance(value, pd.Period):
+    if pd and isinstance(value, pd.Period):
         value = value.to_timestamp()
-    if isinstance(value, pd.Timestamp):
+    if pd and isinstance(value, pd.Timestamp):
         try:
             value = value.to_datetime64()
         except Exception:
@@ -2263,7 +2331,7 @@ def compute_edges(edges):
 
     """
     edges = np.asarray(edges)
-    if edges.dtype.kind == 'i':
+    if dtype_kind(edges) == 'i':
         edges = edges.astype('f')
     midpoints = (edges[:-1] + edges[1:])/2.0
     boundaries = (2*edges[0] - midpoints[0], 2*edges[-1] - midpoints[-1])
@@ -2275,7 +2343,7 @@ def mimebundle_to_html(bundle):
 
     """
     if isinstance(bundle, tuple):
-        data, metadata = bundle
+        data, _metadata = bundle
     else:
         data = bundle
     html = data.get('text/html', '')
@@ -2406,3 +2474,41 @@ def lazy_isinstance(obj, class_or_tuple):
         if isinstance(obj, functools.reduce(getattr, attr_name.split('.'), mod)):
             return True
     return False
+
+
+def dtype_kind(obj) -> str:
+    """Return dtype kind as a single character string.
+
+    Parameters
+    ----------
+    obj : object / dtype
+    An object which contains a dtype attribute or a dtype,
+    can either be a Numpy or Narwhals dtype.
+
+    Returns
+    -------
+    dtype_kind : str
+    The kind of the dtype as a single character string.
+    """
+    dtype = getattr(obj, "dtype", obj)
+    if hasattr(dtype, "kind"):
+        return dtype.kind
+
+    if not isinstance(dtype, nw.dtypes.DType):
+        raise TypeError(f"Not supported dtype: {dtype}")
+    if dtype.is_signed_integer():
+        return "i"
+    elif dtype.is_unsigned_integer():
+        return "u"
+    elif dtype.is_numeric():
+        return "f"
+    elif isinstance(dtype, nw.dtypes.Duration):
+        return "m"
+    elif dtype.is_temporal():
+        return "M"
+    elif isinstance(dtype, nw.dtypes.Boolean):
+        return "b"
+    elif isinstance(dtype, nw.dtypes.String):
+        return "U"
+    else:
+        return "O"

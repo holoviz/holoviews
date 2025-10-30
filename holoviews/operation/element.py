@@ -3,9 +3,11 @@ examples.
 
 """
 import warnings
+from collections import defaultdict
 from functools import partial
 from itertools import pairwise
 
+import narwhals.stable.v2 as nw
 import numpy as np
 import param
 from packaging.version import Version
@@ -24,6 +26,7 @@ from ..core import (
     Operation,
     Overlay,
 )
+from ..core.accessors import Apply
 from ..core.data import ArrayInterface, DictInterface, PandasInterface, default_datatype
 from ..core.data.util import dask_array_module
 from ..core.util import (
@@ -36,6 +39,7 @@ from ..core.util import (
     isdatetime,
     isfinite,
     label_sanitizer,
+    warn,
 )
 from ..element.chart import Histogram, Scatter
 from ..element.path import Contours, Dendrogram, Polygons
@@ -254,11 +258,20 @@ class chain(Operation):
         """
         found = None
         for op in self.operations[::-1]:
+            if not op.link_inputs and skip_nonlinked:
+                continue
             if isinstance(op, operation):
                 found = op
                 break
-            if not op.link_inputs and skip_nonlinked:
-                break
+            if isinstance(op, method) and op.input_type is Apply and op.args:
+                if isinstance(op.args[0], operation):
+                    found = op.args[0]
+                    break
+                elif isinstance(op.args[0], chain):
+                    subfound = op.args[0].find(operation, skip_nonlinked=skip_nonlinked)
+                    if subfound is not None:
+                        found = subfound
+                        break
         return found
 
 
@@ -849,6 +862,13 @@ class histogram(Operation):
             data = data.filter(mask) if IBIS_GE_9_5_0 else data[mask]
             no_data = not len(data.head(1).execute())
             data = data[dim.name]
+        elif isinstance(data, (nw.DataFrame, nw.LazyFrame, nw.Series)):
+            if isinstance(data, nw.Series):
+                data = data.to_frame()
+            data = data.filter(nw.all().is_finite())
+            if self.p.nonzero:
+                data = data.filter(nw.all() != 0)
+            no_data = False if isinstance(data, nw.LazyFrame) else not len(data)
         else:
             mask = is_finite(data)
             if self.p.nonzero:
@@ -1293,27 +1313,60 @@ class dendrogram(Operation):
             arrays.append(v.dimension_values(vdim))
 
         X = np.vstack(arrays)
-        Z = linkage(
-            X,
-            method=self.p.linkage_method,
-            metric=self.p.linkage_metric,
-            optimal_ordering=self.p.optimal_ordering
-        )
+        try:
+            Z = linkage(
+                X,
+                method=self.p.linkage_method,
+                metric=self.p.linkage_metric,
+                optimal_ordering=self.p.optimal_ordering
+            )
+        except ValueError as e:
+            msg = "Could not calculate linkage for dendrogram, try changing 'linkage_metric' or 'linkage_method'."
+            raise ValueError(msg) from e
         return dendrogram(Z, labels=labels, no_plot=True)
 
     def _process(self, element, key=None):
         if self.p.main_dim is None:
             raise TypeError("'main_dim' cannot be None")
-        element_kdims = element.kdims
-        dataset = Dataset(element)
+        element_kdims, element_vdims = element.kdims, element.vdims
+        if element.interface.gridded:
+            dims = {
+                element.get_dimension(k, strict=True)
+                for k in (*element_kdims, *element_vdims, *self.p.adjoint_dims, self.p.main_dim)
+            }
+            dataset = Dataset(element.dframe(dimensions=list(dims)))
+        else:
+            dataset = Dataset(element)
         sign = -1 if self.p.invert else 1
         sort_dims, dendros = [], {}
-        for d in self.p.adjoint_dims:
+        if adjoint_not_kdims := (set(map(str, self.p.adjoint_dims)) - set(map(str, element_kdims[:2]))):
+            # Should be removed when https://github.com/holoviz/holoviews/issues/6683
+            # is implemented
+            adjoint_not_kdims_str = ", ".join(sorted(map(str, adjoint_not_kdims)))
+            msg = "Currently, 'adjoint_dims' can only be one of the first two kdims"
+            msg += f", {adjoint_not_kdims_str} is not."
+            warn(msg, UserWarning)
+        for d in map(str, element_kdims[:2]):
+            sort_dim = f"sort_{d}"
+            sort_dims.append(sort_dim)
+            if d not in self.p.adjoint_dims:
+                # This is needed because unstable sorting algorithms, which can
+                # differ between OSs, causing change in ordering on a
+                # non-selected axis:
+                # https://github.com/holoviz/holoviews/pull/6625#issuecomment-2981268665
+                # We don't want to use an stable sort algorithm in Dataset.sort
+                # as this adds a performance overhead.
+                # code_map + order is equivalent to:
+                # pd.Categorical(x, pd.unique(x)).codes
+                ddata = dataset.dimension_values(d)
+                code_map = defaultdict(lambda: len(code_map))  # noqa: B023
+                order = list(map(code_map.__getitem__, ddata))
+                dataset = dataset.add_dimension(sort_dim, 0, order)
+                continue
+
             ddata = self._compute_linkage(dataset, d, self.p.main_dim)
             order = [sign * ddata["ivl"].index(v) for v in dataset.dimension_values(d)]
-            sort_dim = f"sort_{d}"
             dataset = dataset.add_dimension(sort_dim, 0, order)
-            sort_dims.append(sort_dim)
 
             ic = ddata["icoord"]
             if self.p.invert:
@@ -1330,14 +1383,11 @@ class dendrogram(Operation):
             else:
                 return Layout(dendros.values())
 
-        vdims = [dataset.get_dimension(self.p.main_dim), *[vd for vd in dataset.vdims if vd != self.p.main_dim]]
-        # Adding non_sort_dims to handle unstable sorting algorithms, which can differ between OSs
-        # https://github.com/holoviz/holoviews/pull/6625#issuecomment-2981268665
-        non_sort_dims = [d for d in element_kdims[:2] if str(d) not in self.p.adjoint_dims]
+        vdims = element_vdims or self.p.main_dim
         if type(element) is not Dataset:
-            main = element.clone(dataset.sort([*sort_dims, *non_sort_dims]).reindex(element_kdims), vdims=vdims)
+            main = element.clone(dataset.sort(sort_dims).reindex(element_kdims), vdims=vdims)
         else:
-            main = self.p.main_element(dataset.sort([*sort_dims, *non_sort_dims]).reindex(element_kdims[:2]), vdims=vdims)
+            main = self.p.main_element(dataset.sort(sort_dims).reindex(element_kdims[:2]), vdims=vdims)
 
         for dim in map(str, main.kdims[::-1]):
             if dim not in self.p.adjoint_dims:

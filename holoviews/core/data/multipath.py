@@ -23,7 +23,7 @@ class MultiInterface(Interface):
 
     datatype = 'multitabular'
 
-    subtypes = ['dictionary', 'dataframe', 'array', 'dask']
+    subtypes = ['dictionary', 'dataframe', 'array', 'dask', 'narwhals']
 
     geom_types = ['Polygon', 'Ring', 'Line', 'Point']
 
@@ -203,7 +203,7 @@ class MultiInterface(Interface):
         combined = []
         for d in dataset.data:
             ds.data = d
-            values = ds.interface.values(ds, dim, expanded=False)
+            values = ds.interface.values(ds, str(dim), expanded=False)
             unique = list(util.unique_iterator(values))
             if len(unique) > 1:
                 return False

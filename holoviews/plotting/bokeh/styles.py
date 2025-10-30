@@ -56,7 +56,6 @@ legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_wid
 
 markers = {
     '+': {'marker': 'cross'},
-    'x': {'marker': 'cross', 'angle': np.pi/4},
     's': {'marker': 'square'},
     'd': {'marker': 'diamond'},
     '^': {'marker': 'triangle', 'angle': 0},

@@ -19,11 +19,12 @@ from bokeh.models import (
 
 from holoviews import opts
 from holoviews.core import Dimension, DynamicMap, HoloMap, NdOverlay, Overlay
+from holoviews.core.options import AbbreviatedException
 from holoviews.core.util import dt_to_int
 from holoviews.element import Curve, HeatMap, Image, Labels, Scatter
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0, BOKEH_GE_3_6_0
 from holoviews.plotting.util import process_cmap
-from holoviews.streams import PointDraw, Stream
+from holoviews.streams import Pipe, PointDraw, Stream
 from holoviews.util import render
 
 from ...utils import LoggingComparisonTestCase
@@ -821,6 +822,58 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.log_handler.assertContains(
             "WARNING", "cb model could not be"
         )
+
+    def test_dynamicmap_subcoordinate_y_enabled_labels_mismatched(self):
+        cases = [  # TODO: pytest.mark.parametrize
+            ("", "", "", "1"),
+            ("", "1", "", "2"),
+            ("", "1", "2", "1"),
+            ("", "1", "2", "3"),
+            ("1", "2", "1", "4"),
+            ("1", "2", "4", "1"),
+            ("1", "2", "3", "4"),
+        ]
+
+        def func(data, plot_labels):
+            if not data:
+                return (
+                        Curve([], label=plot_labels[0]) *
+                        Curve([], label=plot_labels[1])
+                )
+            plot1 = Curve([0, 1], label=plot_labels[2]).opts(subcoordinate_y=True)
+            plot2 = Curve([2, 1], label=plot_labels[3]).opts(subcoordinate_y=True)
+            return plot1 * plot2
+
+        for labels in cases:
+            pipe = Pipe(data=False)
+            dmap = DynamicMap(lambda data, labels=labels: func(data, labels), streams=[pipe])
+            bokeh_renderer.get_plot(dmap)
+
+            msg = 'Failed retrieving "subcoordinate_y". Labels mismatched for initial and updated DynamicMap plots.'
+            with pytest.raises(AbbreviatedException, match=msg):
+                pipe.send(True)
+
+    def test_dynamicmap_subcoordinate_y_enabled_labels_matched(self):
+        cases = [  # TODO: pytest.mark.parametrize
+            ("1", "2", "2", "1"),
+            ("1", "2", "1", "2"),
+        ]
+        def func(data, plot_labels):
+            if not data:
+                return (
+                        Curve([], label=plot_labels[0]) *
+                        Curve([], label=plot_labels[1])
+                )
+            plot1 = Curve([0, 1], label=plot_labels[2]).opts(subcoordinate_y=True)
+            plot2 = Curve([2, 1], label=plot_labels[3]).opts(subcoordinate_y=True)
+            return plot1 * plot2
+
+        for labels in cases:
+            pipe = Pipe(data=False)
+            dmap = DynamicMap(lambda data, labels=labels: func(data, labels), streams=[pipe])
+            bokeh_renderer.get_plot(dmap)
+            # works with no issue
+            pipe.send(True)
 
 
 @pytest.mark.usefixtures("bokeh_backend")

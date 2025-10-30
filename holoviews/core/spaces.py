@@ -18,6 +18,7 @@ from .layout import AdjointLayout, Empty, Layout, Layoutable, NdLayout
 from .ndmapping import NdMapping, UniformNdMapping, item_check
 from .options import Store, StoreOptions
 from .overlay import CompositeOverlay, NdOverlay, Overlay, Overlayable
+from .util import dtype_kind
 
 
 class HoloMap(Layoutable, UniformNdMapping, Overlayable):
@@ -1902,7 +1903,7 @@ class GridSpace(Layoutable, UniformNdMapping):
                 if isinstance(k, slice):
                     continue
                 dim_keys = np.array([ke[i] for ke in keys])
-                if dim_keys.dtype.kind in 'OSU':
+                if dtype_kind(dim_keys) in 'OSU':
                     continue
                 snapped_val = dim_keys[np.argmin(np.abs(dim_keys-k))]
                 key = list(key)

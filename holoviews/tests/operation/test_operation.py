@@ -3,8 +3,10 @@ import random
 from importlib.util import find_spec
 from unittest import SkipTest, skipIf
 
+import narwhals.stable.v2 as nw
 import numpy as np
 import pandas as pd
+import param
 import pytest
 
 try:
@@ -14,8 +16,10 @@ except ImportError:
 
 try:
     import ibis
+
+    from holoviews.core.data.ibis import IBIS_VERSION
 except ImportError:
-    ibis = None
+    ibis = IBIS_VERSION = None
 
 try:
     import cudf
@@ -44,8 +48,11 @@ from holoviews import (
     renderer,
 )
 from holoviews.core.data.grid import GridInterface
+from holoviews.core.operation import Operation
+from holoviews.core.options import SkipRendering
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.element import (
+    chain,
     contours,
     decimate,
     dendrogram,
@@ -96,6 +103,50 @@ class OperationTests(ComparisonTestCase):
         img = Image(np.random.rand(10, 10))
         op_img = transform(img, operator=lambda x: x*2)
         self.assertEqual(op_img, img.clone(img.data*2, group='Transform'))
+
+    def test_operation_chain(self):
+        img = Image(np.random.rand(10, 10))
+        op_img = chain(
+            img,
+            operations=[
+                transform.instance(operator=lambda x: x*2),
+                transform.instance(operator=lambda x: x*3),
+        ])
+        self.assertEqual(op_img, img.clone(img.data*6, group='Transform'))
+
+    def test_operation_chain_find(self):
+        class CustomOp1(Operation):
+            link_inputs = param.Boolean(False)
+        class CustomOp2(Operation):
+            link_inputs = param.Boolean(True)
+
+        op1 = CustomOp1.instance()
+        op2 = CustomOp2.instance()
+        ch_op = chain.instance(operations=[op1, op2])
+        self.assertIs(ch_op.find(CustomOp1, skip_nonlinked=False), op1)
+        self.assertIsNone(ch_op.find(CustomOp1, skip_nonlinked=True))
+        self.assertIs(ch_op.find(CustomOp2, skip_nonlinked=False), op2)
+        self.assertIs(ch_op.find(CustomOp2, skip_nonlinked=True), op2)
+
+    def test_operation_chain_find_apply(self):
+        img = Image(np.random.rand(10, 10))
+        tr_op = transform.instance(operator=lambda x: x*2)
+        img_apply = img.apply(tr_op, dynamic=False)
+        self.assertIs(img_apply.pipeline.find(transform, skip_nonlinked=False), tr_op)
+
+    def test_operation_chain_find_apply_chain(self):
+        class CustomOp1(Operation): pass
+        class CustomOp2(Operation): pass
+
+        img = Image(np.random.rand(10, 10))
+        op1 = CustomOp1.instance()
+        op2 = CustomOp2.instance()
+        ch_op = chain.instance(operations=[op1,op2])
+        img_apply = img.apply(ch_op, dynamic=False)
+        self.assertIs(
+            img_apply.pipeline.find(CustomOp1, skip_nonlinked=False),
+            op1,
+        )
 
     def test_image_threshold(self):
         img = Image(np.array([[0, 1, 0], [3, 4, 5.]]))
@@ -438,7 +489,7 @@ class OperationTests(ComparisonTestCase):
     @pytest.mark.usefixtures('ibis_sqlite_backend')
     def test_dataset_histogram_ibis(self):
         df = pd.DataFrame(dict(x=np.arange(10)))
-        t = ibis.memtable(df, name='t')
+        t = ibis.memtable(df, **({} if IBIS_VERSION >= (11, 0, 0) else {"name": "t"}))
         ds = Dataset(t, vdims='x')
         op_hist = histogram(ds, dimension='x', num_bins=3, normed=True)
 
@@ -450,7 +501,7 @@ class OperationTests(ComparisonTestCase):
     @pytest.mark.usefixtures('ibis_sqlite_backend')
     def test_dataset_cumulative_histogram_ibis(self):
         df = pd.DataFrame(dict(x=np.arange(10)))
-        t = ibis.memtable(df, name='t')
+        t = ibis.memtable(df, **({} if IBIS_VERSION >= (11, 0, 0) else {"name": "t"}))
         ds = Dataset(t, vdims='x')
         op_hist = histogram(ds, num_bins=3, cumulative=True, normed=True)
 
@@ -462,7 +513,7 @@ class OperationTests(ComparisonTestCase):
     @pytest.mark.usefixtures('ibis_sqlite_backend')
     def test_dataset_histogram_explicit_bins_ibis(self):
         df = pd.DataFrame(dict(x=np.arange(10)))
-        t = ibis.memtable(df, name='t')
+        t = ibis.memtable(df, **({} if IBIS_VERSION >= (11, 0, 0) else {"name": "t"}))
         ds = Dataset(t, vdims='x')
         op_hist = histogram(ds, bins=[0, 1, 3], normed=False)
 
@@ -598,6 +649,35 @@ class OperationTests(ComparisonTestCase):
         op_hist = histogram(points, num_bins=3, weight_dimension='y',
                             mean_weighted=True, normed=True)
         hist = Histogram(([1.,  4., 7.5], [0, 3, 6, 9]), vdims=['y'])
+        self.assertEqual(op_hist, hist)
+
+    def test_histogram_narwhals_pandas(self):
+        df = nw.from_native(pd.DataFrame({'x': range(10)}))
+        ds = Dataset(df, vdims='x')
+        op_hist = histogram(ds, num_bins=3, normed=False)
+
+        hist = Histogram(([0, 3, 6, 9], [3, 3, 4]),
+                         vdims=('x_count', 'Count'))
+        self.assertEqual(op_hist, hist)
+
+    def test_histogram_narwhals_polars(self):
+        pl = pytest.importorskip("polars")
+        df = nw.from_native(pl.DataFrame({'x': range(10)}))
+        ds = Dataset(df, vdims='x')
+        op_hist = histogram(ds, num_bins=3, normed=False)
+
+        hist = Histogram(([0, 3, 6, 9], [3, 3, 4]),
+                         vdims=('x_count', 'Count'))
+        self.assertEqual(op_hist, hist)
+
+    def test_histogram_narwhals_polars_lazy(self):
+        pl = pytest.importorskip("polars")
+        df = nw.from_native(pl.LazyFrame({'x': range(10)}))
+        ds = Dataset(df, vdims='x')
+        op_hist = histogram(ds, num_bins=3, normed=False)
+
+        hist = Histogram(([0, 3, 6, 9], [3, 3, 4]),
+                         vdims=('x_count', 'Count'))
         self.assertEqual(op_hist, hist)
 
     @pytest.mark.usefixtures("mpl_backend")
@@ -741,9 +821,10 @@ class OperationTests(ComparisonTestCase):
         pd.testing.assert_series_equal(data["x"], output["x"])
         pd.testing.assert_series_equal(data["y"], output["y"])
 
+
+@pytest.mark.usefixtures("bokeh_backend")
 class TestDendrogramOperation:
 
-    @pytest.mark.usefixtures("bokeh_backend")
     def setup_class(self):
         pytest.importorskip("scipy")
 
@@ -764,14 +845,41 @@ class TestDendrogramOperation:
             for j in range(6)
             for i in range(5)
         ])
+
+        # Based on scanpy.datasets.pbmc68k_reduced
+        obs = 'abcdefghij'
+        var = 'mtropqnkslmtropqnkslmtropqnkslmtropqnkslmtropqnkslmtropqnkslmtropqnkslmtropqnkslmtropqnkslmtropqnksl'
+        data = [
+            8, 10, 4, 8, 45, 6, 32, 45, 60, 6, 23, 10, 19, 0, 10, 6, 30, 7, 7,
+            6, 8, 10, 16, 0, 10, 6, 7, 21, 7, 34, 8, 10, 23, 10, 10, 6, 7, 7,
+            7, 6, 8, 10, 4, 5, 10, 6, 7, 19, 7, 31, 8, 10, 4, 4, 10, 22, 7, 7,
+            7, 6, 8, 10, 4, 7, 10, 33, 7, 24, 22, 6, 8, 10, 4, 12, 10, 27, 7,
+            7, 7, 6, 8, 10, 13, 25, 10, 6, 21, 7, 7, 6, 8, 10, 4, 7, 41, 6, 7,
+            40, 7, 23
+        ]
+        counts = [353, 491, 1185, 0, 1674, 2763, 710, 1613, 2377, 716]
+        df = pd.DataFrame({
+            "obs": [x for x in obs for _ in range(10)],
+            "var": list(var),
+            "data": data,
+            "counts": [x for x in counts for _ in range(10)],
+         })
+        self.ds = Dataset(df, kdims=["obs", "var"], vdims=["data", "counts"])
+
         self.bokeh_renderer = renderer("bokeh")
 
     def get_childrens(self, adjoint):
         bk_childrens = self.bokeh_renderer.get_plot(adjoint).handles["plot"].children
         (atop, *_), (amain, *_), (aright, *_) = bk_childrens
-        top = self.bokeh_renderer.get_plot(adjoint["top"]).handles["plot"]
+        try:
+            top = self.bokeh_renderer.get_plot(adjoint["top"]).handles["plot"]
+        except SkipRendering:
+            right = None
         main = self.bokeh_renderer.get_plot(adjoint["main"]).handles["plot"]
-        right = self.bokeh_renderer.get_plot(adjoint["right"]).handles["plot"]
+        try:
+            right = self.bokeh_renderer.get_plot(adjoint["right"]).handles["plot"]
+        except SkipRendering:
+            right = None
         return (atop, amain, aright), (top, main, right)
 
     def test_right_only(self):
@@ -813,7 +921,7 @@ class TestDendrogramOperation:
         # depth dimensions is the orthogonal axis to the main plot
         dataset = Dataset(self.df)
         dendro = dendrogram(dataset, adjoint_dims=["x", "z"], main_dim="y")
-        (atop, amain, aright), (top, main, right) = self.get_childrens(dendro)
+        (atop, amain, aright), (top, _main, right) = self.get_childrens(dendro)
 
         # Verify no shared axis is changing the depth dimension of the right
         assert atop.y_range.start == top.y_range.start
@@ -871,7 +979,7 @@ class TestDendrogramOperation:
                 assert main1.x_range.factors == main2.x_range.factors[::-1]
 
     @pytest.mark.parametrize("adjoint_dims", (["cluster"], ["gene"],), ids=["right", "top"])
-    def test_assure_non_adjoined_axis_is_unchanged(self, adjoint_dims):
+    def test_assure_non_adjoined_axis_is_unchanged_points(self, adjoint_dims):
         # See: https://github.com/holoviz/holoviews/pull/6625#issuecomment-2981268665
         plot = Points(self.df2, kdims=["gene", "cluster"])
         main1 = self.bokeh_renderer.get_plot(plot).handles["plot"]
@@ -884,3 +992,58 @@ class TestDendrogramOperation:
                 assert main1.x_range.factors == main2.x_range.factors
             case ["gene"]:
                 assert main1.y_range.factors == main2.y_range.factors
+
+    def test_assure_non_adjoined_axis_is_unchanged_heatmap(self):
+        # Follow up to previous test, see
+        # https://github.com/holoviz/holoviews/pull/6669#issuecomment-3237153317
+        plot = HeatMap(self.ds)
+        main1 = self.bokeh_renderer.get_plot(plot).handles["plot"]
+
+        dendro = dendrogram(plot, adjoint_dims=["obs"], main_dim="data")
+        main2 = self.bokeh_renderer.get_plot(dendro["main"]).handles["plot"]
+
+        assert main1.y_range.factors == main2.y_range.factors
+
+    @pytest.mark.parametrize(
+        "adjoint_dims",
+        (["cluster"], ["gene"], ["gene", "cluster"]),
+        ids=["right", "top", "both"],
+    )
+    def test_gridded_dataset(self, adjoint_dims, rng):
+        xr = pytest.importorskip("xarray")
+
+        N = 10
+        da = xr.DataArray(
+            rng.normal(size=(N, N)),
+            name="main",
+            dims=("cluster", "gene"),
+            coords={
+                "cluster": [f"c{i}" for i in range(N)],
+                "gene": [f"g{j}" for j in range(N)],
+            },
+        )
+
+        dendro = dendrogram(Dataset(da), adjoint_dims=adjoint_dims, main_dim="main")
+        assert isinstance(dendro, AdjointLayout)
+
+    def test_failed_linkage(self):
+        msg = "Could not calculate linkage for dendrogram"
+        with pytest.raises(ValueError, match=msg):
+            dendrogram(self.ds, adjoint_dims=["obs"], main_dim="counts")
+
+        # This should work
+        dendrogram(self.ds, adjoint_dims=["obs"], main_dim="counts", linkage_metric="euclidean")
+
+    def test_not_primary_main_dim(self):
+        # Adding hover to have access to the other dimension values
+        plot = HeatMap(self.ds).opts(tools=["hover"])
+        assert plot.vdims[0] == "data"
+        dendro = dendrogram(
+            plot,
+            adjoint_dims=["obs"],
+            main_dim="counts",
+            linkage_metric="euclidean"
+        )
+        (_, amain, _), *_ = self.get_childrens(dendro)
+        data = amain.renderers[0].data_source.data
+        assert list(data["zvalues"]) == list(map(int, data["data"]))

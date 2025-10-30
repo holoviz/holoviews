@@ -11,6 +11,7 @@ import numpy as np
 from bokeh.core.json_encoder import serialize_json  # noqa (API import)
 from bokeh.core.property.datetime import Datetime
 from bokeh.core.validation import silence
+from bokeh.core.validation.check import is_silenced
 from bokeh.layouts import Column, Row, group_tools
 from bokeh.models import (
     CategoricalAxis,
@@ -55,6 +56,7 @@ from ...core.util import (
     callable_name,
     cftime_to_timestamp,
     cftime_types,
+    dtype_kind,
     isnumeric,
     unique_array,
 )
@@ -152,7 +154,7 @@ def decode_bytes(array):
     bokeh serialization errors
 
     """
-    if (not len(array) or (isinstance(array, arraylike_types) and array.dtype.kind != 'O')):
+    if (not len(array) or (isinstance(array, arraylike_types) and dtype_kind(array) != 'O')):
         return array
     decoded = [v.decode('utf-8') if isinstance(v, bytes) else v for v in array]
     if isinstance(array, np.ndarray):
@@ -546,12 +548,15 @@ def silence_warnings(*warnings):
     """Context manager for silencing bokeh validation warnings.
 
     """
+    silenced = set()
     for warning in warnings:
-        silence(warning)
+        if not is_silenced(warning):
+            silenced.add(warning)
+            silence(warning)
     try:
         yield
     finally:
-        for warning in warnings:
+        for warning in silenced:
             silence(warning, False)
 
 
@@ -1233,7 +1238,7 @@ def dtype_fix_hook(plot, element):
             with suppress(Exception):
                 data = renderer.data_source.data
                 for k, v in data.items():
-                    if hasattr(v, "dtype") and v.dtype.kind == "U":
+                    if hasattr(v, "dtype") and dtype_kind(v) == "U":
                         data[k] = v.tolist()
 
 

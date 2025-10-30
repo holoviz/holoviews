@@ -9,7 +9,7 @@ from .ndmapping import NdMapping
 from .overlay import CompositeOverlay, NdOverlay, Overlayable
 from .spaces import GridSpace, HoloMap
 from .tree import AttrTree
-from .util import get_param_values
+from .util import dtype_kind, get_param_values
 
 
 class Element(ViewableElement, Composable, Overlayable):
@@ -275,9 +275,9 @@ class Element(ViewableElement, Composable, Overlayable):
 
         columns, types = [], []
         for dim in dims:
-            column = self.dimension_values(dim)
+            column = np.asanyarray(self.dimension_values(dim))
             columns.append(column)
-            types.append(column.dtype.kind)
+            types.append(dtype_kind(column))
         if len(set(types)) > 1:
             columns = [c.astype('object') for c in columns]
         return np.column_stack(columns)

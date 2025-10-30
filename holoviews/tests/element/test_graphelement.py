@@ -5,6 +5,7 @@ from unittest import SkipTest
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from holoviews.core.data import Dataset
 from holoviews.element.chart import Points
@@ -127,6 +128,48 @@ class GraphTests(ComparisonTestCase):
         redimmed = graph.redim(x='x2', y='y2')
         self.assertEqual(redimmed.nodes, graph.nodes.redim(x='x2', y='y2'))
         self.assertEqual(redimmed.edgepaths, graph.edgepaths.redim(x='x2', y='y2'))
+
+
+class TestFromSparse:
+
+    def setup_method(self):
+        pytest.importorskip('scipy')
+
+    @pytest.mark.parametrize("sparse_func", ("coo_array", "coo_matrix"))
+    @pytest.mark.parametrize("graph_kwargs", (
+        {},
+        {"kdims": ["source", "target"]},
+        {"vdims": ["weight"]},
+    ))
+    def test_from_sparse(self, sparse_func, graph_kwargs):
+        import scipy.sparse as sp
+
+        row = np.array([0, 0, 1, 2])
+        col = np.array([1, 2, 2, 0])
+        data = np.array([1.0, 2.0, 3.0, 4.0])
+        sparse_data = getattr(sp, sparse_func)((data, (row, col)), shape=(3, 3))
+        nodes_data = {'x': [0.0, 1.0, 0.5], 'y': [0.0, 0.0, 1.0], 'index': [0, 1, 2]}
+        graph = Graph.from_sparse(sparse_data, nodes_data, **graph_kwargs)
+
+        if kdims := graph_kwargs.get("kdims"):
+            np.testing.assert_array_equal(graph.dimension_values(kdims[0]), row)
+            np.testing.assert_array_equal(graph.dimension_values(kdims[1]), col)
+        else:
+            np.testing.assert_array_equal(graph.dimension_values('start'), row)
+            np.testing.assert_array_equal(graph.dimension_values('end'), col)
+
+        if vdims := graph_kwargs.get("vdims"):
+            np.testing.assert_array_equal(graph.dimension_values(vdims[0]), data)
+        else:
+            np.testing.assert_array_equal(graph.dimension_values('data'), data)
+
+    def test_from_sparse_invalid_input(self):
+        regular_array = np.array([[1, 2], [3, 4]])
+        nodes_data = {'x': [0.0, 1.0], 'y': [0.0, 1.0], 'index': [0, 1]}
+
+        with pytest.raises(TypeError, match=r"edges expected to be a scipy.sparse array"):
+            Graph.from_sparse(regular_array, nodes_data)
+
 
 class FromNetworkXTests(ComparisonTestCase):
 

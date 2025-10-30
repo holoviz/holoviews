@@ -6,7 +6,7 @@ from .. import util
 from ..dimension import dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from ..util import isscalar
+from ..util import dtype_kind, isscalar
 from .interface import DataError, Interface
 
 
@@ -51,7 +51,7 @@ class DictInterface(Interface):
                     data = np.atleast_2d(data).T
             data = {k: data[:,i] for i,k in enumerate(dimensions)}
         elif isinstance(data, list) and data == []:
-            data = dict([(d, []) for d in dimensions])
+            data = {key: [] for key in dimensions}
         elif isinstance(data, list) and isscalar(data[0]):
             if eltype._auto_indexable_1d:
                 data = {dimensions[0]: np.arange(len(data)), dimensions[1]: data}
@@ -155,7 +155,7 @@ class DictInterface(Interface):
         values = dataset.data[name]
         if isscalar(values):
             return True
-        if values.dtype.kind == 'O':
+        if dtype_kind(values) == 'O':
             unique = set(values)
         else:
             unique = np.unique(values)
