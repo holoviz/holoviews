@@ -356,9 +356,11 @@ class NarwhalsInterface(Interface):
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
         df = dataset.data
+        only_scalar_selection = True
         if selection_mask is None:
             column_sel = {k: v for k, v in selection.items()}
             if column_sel:
+                only_scalar_selection = all(isinstance(v, (str, int)) for v in column_sel.values())
                 selection_mask = cls.select_mask(dataset, column_sel)
 
         if selection_mask is not None:
@@ -377,7 +379,7 @@ class NarwhalsInterface(Interface):
             if not indexed:
                 df_vdim = df.select(str(dataset.vdims[0]))
                 is_scalar, is_lazy = cls._is_scalar_size(df_vdim)
-                if is_scalar:
+                if is_scalar and only_scalar_selection:
                     return (df_vdim.collect() if is_lazy else df_vdim).item()
         return df
 
