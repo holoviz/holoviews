@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from ...util.warnings import deprecated
 from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
@@ -61,6 +62,8 @@ class IbisInterface(Interface):
 
     @classmethod
     def init(cls, eltype, data, keys, values):
+        deprecated("1.23.0", "'ibis' datatype", "'narwhals' datatype", repr_old=False, repr_new=False)
+
         params = eltype.param.objects()
         index = params["kdims"]
         columns = params["vdims"]
