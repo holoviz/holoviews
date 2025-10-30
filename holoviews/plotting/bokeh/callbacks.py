@@ -328,7 +328,8 @@ class Callback:
         if not self._active and self.plot.document:
             self._active = True
             self._set_busy(True)
-            state.execute(self.process_on_change)
+            with set_curdoc(self.plot.document):
+                state.execute(self.process_on_change)
 
     async def on_event(self, event):
         """Process bokeh UIEvents adding timeout to process multiple concerted
@@ -339,7 +340,8 @@ class Callback:
         if not self._active and self.plot.document:
             self._active = True
             self._set_busy(True)
-            state.execute(self.process_on_event)
+            with set_curdoc(self.plot.document):
+                state.execute(self.process_on_event)
 
     async def process_on_event(self, timeout=None):
         """Trigger callback change event and triggering corresponding streams.
@@ -764,6 +766,9 @@ class PopupMixin:
         if popup_is_callable and not popup_pane.visible:
             return
 
+        state.execute(partial(self._update_popup, event, popup_pane), schedule=True)
+
+    def _update_popup(self, event, popup_pane):
         if not popup_pane.stylesheets:
             self._panel.stylesheets = [
                 """
