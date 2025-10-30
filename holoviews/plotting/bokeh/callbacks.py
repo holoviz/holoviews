@@ -125,22 +125,13 @@ class Callback:
     it will be treated as a regular callback on the model.  The
     callback can also define a _process_msg method, which can modify
     the data sent by the callback before it is passed to the streams.
-
-    A callback supports three different throttling modes:
-
-    - adaptive (default): The callback adapts the throttling timeout
-      depending on the rolling mean of the time taken to process each
-      message. The rolling window is controlled by the `adaptive_window`
-      value.
-    - throttle: Uses the fixed `throttle_timeout` as the minimum amount
-      of time between events.
-    - debounce: Processes the message only when no new event has been
-      received within the `throttle_timeout` duration.
-
     """
 
     # Attributes to sync
     attributes = {}
+
+    # Debounce in milliseconds
+    debounce = None
 
     # The plotting handle(s) to attach the JS callback on
     models = []
@@ -206,6 +197,7 @@ class Callback:
                 self._callbacks.pop(cb_hash, None)
         self.plot_handles = {}
         self._queue = []
+        self._event_queue = []
 
     def _filter_msg(self, msg, ids):
         """Filter event values that do not originate from the plotting
@@ -332,37 +324,46 @@ class Callback:
         value change at once rather than firing off multiple plot updates.
 
         """
-        self._queue.append((attr, old, new, time.time()))
+        self._queue.append((attr, old, new, time.perf_counter()))
         if not self._active and self.plot.document:
             self._active = True
             self._set_busy(True)
-            await self.process_on_change()
+            with set_curdoc(self.plot.document):
+                state.execute(self.process_on_change)
 
     async def on_event(self, event):
         """Process bokeh UIEvents adding timeout to process multiple concerted
         value change at once rather than firing off multiple plot updates.
 
         """
-        self._queue.append((event, time.time()))
+        self._event_queue.append((event, time.perf_counter()))
         if not self._active and self.plot.document:
             self._active = True
             self._set_busy(True)
-            await self.process_on_event()
+            with set_curdoc(self.plot.document):
+                state.execute(self.process_on_event)
 
     async def process_on_event(self, timeout=None):
         """Trigger callback change event and triggering corresponding streams.
 
         """
-        await asyncio.sleep(0.01)
-        if not self._queue:
+        if self.debounce is not None:
+            current = time.perf_counter()
+            while any((current-e[-1]) < (self.debounce/1000) for e in self._queue+self._event_queue):
+                await asyncio.sleep(0.05)
+                current = time.perf_counter()
+        else:
+            await asyncio.sleep(0.01)
+
+        if not self._event_queue:
             self._active = False
             self._set_busy(False)
             return
 
         # Get unique event types in the queue
         events = list(dict([(event.event_name, event)
-                            for event, dt in self._queue]).values())
-        self._queue = []
+                            for event, dt in self._event_queue]).values())
+        self._event_queue = []
 
         # Process event types
         for event in events:
@@ -373,11 +374,18 @@ class Callback:
                 model_obj = self.plot_handles.get(self.models[0])
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
             await self.on_msg(msg)
-        await self.process_on_event()
+        state.execute(self.process_on_event)
 
     async def process_on_change(self):
         # Give on_change time to process new events
-        await asyncio.sleep(0.01)
+        if self.debounce is not None:
+            current = time.perf_counter()
+            while any((current-e[-1]) < (self.debounce/1000) for e in self._queue+self._event_queue):
+                await asyncio.sleep(0.05)
+                current = time.perf_counter()
+        else:
+            await asyncio.sleep(0.01)
+
         if not self._queue:
             self._active = False
             self._set_busy(False)
@@ -409,7 +417,7 @@ class Callback:
         if not equal or any(s.transient for s in self.streams):
             await self.on_msg(msg)
             self._prev_msg = msg
-        await self.process_on_change()
+        state.execute(self.process_on_change)
 
     def _schedule_event(self, event):
         if self.plot.comm or not self.plot.document.session_context or state._is_pyodide:
@@ -758,6 +766,9 @@ class PopupMixin:
         if popup_is_callable and not popup_pane.visible:
             return
 
+        state.execute(partial(self._update_popup, event, popup_pane), schedule=True)
+
+    def _update_popup(self, event, popup_pane):
         if not popup_pane.stylesheets:
             self._panel.stylesheets = [
                 """
@@ -941,6 +952,8 @@ class RangeXYCallback(Callback):
 
     """
 
+    debounce = 100
+
     on_events = ['rangesupdate']
 
     models = ['plot']
@@ -1031,6 +1044,8 @@ class PlotSizeCallback(Callback):
     attributes = {'width': 'cb_obj.inner_width',
                   'height': 'cb_obj.inner_height'}
     on_changes = ['inner_width', 'inner_height']
+
+    debounce = 100
 
     def _process_msg(self, msg):
         if msg.get('width') and msg.get('height'):
