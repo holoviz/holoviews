@@ -233,6 +233,12 @@ convention = "numpy"
 ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn,ser,assertIn,anc,COO"
 write-changes = true
 
+[tool.typos.default]
+extend-ignore-re = [
+    ".*(?:#|--|//|/*).*(?:typos):\\s?ignore[^\\n]*\\n",
+    ".*(?:typos):\\s?ignore-next-line[^\\n]*\\n[^\\n]*",
+]
+
 [tool.typos.default.extend-words]
 lod = "lod"
 nd = "nd"
@@ -248,6 +254,10 @@ pn = "pn"
 arange = "arange"
 iy = "iy"
 ba = "ba"
+
+[tool.typos.default.extend-identifiers]
+les_mis = "les_mis"
+LesMis = "LesMis"
 
 [tool.typos.files]
 extend-exclude = ["holoviews/plotting/mpl/*.mplstyle"]
