@@ -8,6 +8,7 @@ from ...core.dimension import Dimension
 from ...core.options import abbreviated_exception
 from ...core.util import dtype_kind
 from ...element import Polygons
+from ...util.transform import dim  # noqa F401
 from .element import ColorbarPlot
 from .util import polygons_to_path_patches
 
@@ -45,9 +46,17 @@ class PathPlot(ColorbarPlot):
 
         # Support style-mapped color (e.g. .opts(color='c')) by resolving
         # a Dimension from the color style when no explicit color_index is set.
+        # Handle str, dim, and Dimension objects
         color_style = style.get('color')
-        if cdim is None and isinstance(color_style, str):
-            cdim = element.get_dimension(color_style)
+        if cdim is None:
+            if isinstance(color_style, str):
+                cdim = element.get_dimension(color_style)
+            elif isinstance(color_style, Dimension):
+                # Handle hv.Dimension() objects directly
+                cdim = element.get_dimension(color_style.name) if color_style.name in element else color_style
+            # elif isinstance(color_style, dim) and hasattr(color_style, 'dimension'):
+            #     # Extract dimension name for hv.dim() objects
+            #     cdim = element.get_dimension(str(color_style.dimension))
 
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
