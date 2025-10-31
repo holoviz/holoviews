@@ -245,7 +245,8 @@ options.BoxWhisker = Options('style', boxprops=dict(color='k', linewidth=1.5),
                              whiskerprops=dict(color='k', linewidth=1.5))
 
 # Geometries
-options.Rectangles = Options('style', edgecolor='black')
+options.Rectangles = Options('style', color=Cycle(), cmap=dflt_cmap, edgecolor='black')
+options.Segments = Options('style', color='black', cmap=dflt_cmap)
 
 # Rasters
 options.Image = Options('style', cmap=config.default_gridded_cmap, interpolation='nearest')
@@ -285,8 +286,6 @@ options.Dendrogram = Options('style', color="black")
 options.Dendrogram = Options('plot', xaxis=None, yaxis=None)
 options.Polygons = Options('style', facecolor=Cycle(), edgecolor='black',
                            cmap=dflt_cmap)
-options.Rectangles = Options('style', cmap=dflt_cmap)
-options.Segments = Options('style', cmap=dflt_cmap)
 options.Box = Options('style', color='black')
 options.Bounds = Options('style', color='black')
 options.Ellipse = Options('style', color='black')
