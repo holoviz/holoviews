@@ -206,8 +206,8 @@ nbval = "*"
 channels = ["microsoft"]
 
 [feature.test-ui.dependencies]
-playwright = { version = "*", channel = "microsoft" }
-pytest-playwright = { version = "*", channel = "microsoft" }
+playwright = "*"
+pytest-playwright = "*"
 
 [feature.test-ui.tasks]
 _install-ui = 'playwright install chromium'
