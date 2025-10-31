@@ -818,7 +818,7 @@ class TestClosestMatch(ComparisonTestCase):
         self.assertEqual(closest_match(spec, specs), None)
 
 
-def test_seach_indices_dtype_object():
+def test_search_indices_dtype_object():
     values = np.array(["c0", "c0", np.nan], dtype=object)
     source = np.array(["c0", np.nan], dtype=object)
     search_indices(values, source)
