@@ -248,3 +248,6 @@ pn = "pn"
 arange = "arange"
 iy = "iy"
 ba = "ba"
+
+[tool.typos.files]
+extend-exclude = ["holoviews/plotting/mpl/*.mplstyle"]
