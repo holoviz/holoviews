@@ -232,3 +232,19 @@ convention = "numpy"
 [tool.codespell]
 ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn,ser,assertIn,anc,COO"
 write-changes = true
+
+[tool.typos.default.extend-words]
+lod = "lod"
+nd = "nd"
+ndoes = "ndoes"
+reenabled = "reenabled"
+spreaded = "spreaded"
+whn = "whn"
+ser = "ser"
+assertIn = "assertIn"
+anc = "anc"
+CO = "CO"
+pn = "pn"
+arange = "arange"
+iy = "iy"
+ba = "ba"

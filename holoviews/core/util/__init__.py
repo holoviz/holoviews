@@ -1127,8 +1127,8 @@ def max_extents(extents, zrange=False):
 
 def find_contiguous_subarray(sub_array, full_array):
     """
-    Return the start index of `sub_array` in `ful_array` if `sub_array`
-    is a contiguous subarray of `ful_array`. This expect that there is no
+    Return the start index of `sub_array` in `full_array` if `sub_array`
+    is a contiguous subarray of `full_array`. This expect that there is no
     duplicates in any of the arrays.
 
     Arguments

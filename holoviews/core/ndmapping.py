@@ -1066,10 +1066,10 @@ class UniformNdMapping(NdMapping):
                 items.append((key, Overlay(item)))
             return self.clone(items)
 
-        overlayed_items = [(k, other * el if reverse else el * other)
+        overlaid_items = [(k, other * el if reverse else el * other)
                            for k, el in self.items()]
         try:
-            return self.clone(overlayed_items)
+            return self.clone(overlaid_items)
         except NotImplementedError:
             return NotImplemented
 
