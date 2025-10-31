@@ -41,6 +41,7 @@ from ..core.util import (
     label_sanitizer,
     warn,
 )
+from ..core.util.dependencies import NARWHALS_VERSION
 from ..element.chart import Histogram, Scatter
 from ..element.path import Contours, Dendrogram, Polygons
 from ..element.raster import RGB, HeatMap, Image
@@ -865,11 +866,11 @@ class histogram(Operation):
         elif isinstance(data, (nw.DataFrame, nw.LazyFrame, nw.Series)):
             if isinstance(data, nw.Series):
                 data = data.to_frame()
-            if data.implementation == nw.Implementation.IBIS:
+            if data.implementation == nw.Implementation.IBIS and NARWHALS_VERSION <= (2, 10, 0):
                 # https://github.com/narwhals-dev/narwhals/issues/3255
                 expr = ~nw.all().is_null()
             else:
-                expr = nw.all().is_finite()
+                expr = nw.all().is_finite() & ~nw.all().is_null()
             data = data.filter(expr)
 
             if self.p.nonzero:
