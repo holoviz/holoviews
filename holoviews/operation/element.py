@@ -866,12 +866,10 @@ class histogram(Operation):
         elif isinstance(data, (nw.DataFrame, nw.LazyFrame, nw.Series)):
             if isinstance(data, nw.Series):
                 data = data.to_frame()
-            if data.implementation == nw.Implementation.IBIS and NARWHALS_VERSION <= (2, 10, 0):
+            data = data.filter(~nw.all().is_null())
+            if not (data.implementation == nw.Implementation.IBIS and NARWHALS_VERSION <= (2, 10, 0)):
                 # https://github.com/narwhals-dev/narwhals/issues/3255
-                expr = ~nw.all().is_null()
-            else:
-                expr = nw.all().is_finite() & ~nw.all().is_null()
-            data = data.filter(expr)
+                data = data.filter(nw.all().is_finite())
 
             if self.p.nonzero:
                 data = data.filter(nw.all() != 0)
