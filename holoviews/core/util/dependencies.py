@@ -105,13 +105,12 @@ class _LazyModule:
 
 
 # Versions
-NARWHALS_VERSION = _no_import_version("narwhals")
 NUMPY_VERSION = _no_import_version("numpy")
-PANDAS_VERSION = _no_import_version("pandas")
 PARAM_VERSION = _no_import_version("param")
+PANDAS_VERSION = _no_import_version("pandas")
 
 NUMPY_GE_2_0_0 = NUMPY_VERSION >= (2, 0, 0)
 PANDAS_GE_2_1_0 = PANDAS_VERSION >= (2, 1, 0)
 PANDAS_GE_2_2_0 = PANDAS_VERSION >= (2, 2, 0)
 
-__all__ = ["NARWHALS_VERSION", "NUMPY_GE_2_0_0", "NUMPY_VERSION", "PANDAS_GE_2_1_0", "PANDAS_GE_2_2_0", "PANDAS_VERSION", "PARAM_VERSION", "_LazyModule"]
+__all__ = ["NUMPY_GE_2_0_0", "NUMPY_VERSION", "PANDAS_GE_2_1_0", "PANDAS_GE_2_2_0", "PANDAS_VERSION", "PARAM_VERSION", "_LazyModule"]
