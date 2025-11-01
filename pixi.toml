@@ -202,9 +202,6 @@ test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
 [feature.test-example.dependencies]
 nbval = "*"
 
-[feature.test-ui]
-channels = ["microsoft"]
-
 [feature.test-ui.dependencies]
 playwright = "*"
 pytest-playwright = "*"
