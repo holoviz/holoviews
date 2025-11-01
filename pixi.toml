@@ -1,4 +1,4 @@
-[project]
+[workspace]
 name = "holoviews"
 channels = ["pyviz/label/dev", "bokeh/label/rc", "conda-forge"]
 platforms = ["linux-64", "osx-arm64", "win-64"]
