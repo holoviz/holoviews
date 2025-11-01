@@ -865,7 +865,7 @@ class histogram(Operation):
         elif isinstance(data, (nw.DataFrame, nw.LazyFrame, nw.Series)):
             if isinstance(data, nw.Series):
                 data = data.to_frame()
-            data = data.filter(nw.all().is_finite())
+            data = data.filter(nw.all().is_finite()).filter(~nw.all().is_null())
             if self.p.nonzero:
                 data = data.filter(nw.all() != 0)
             no_data = False if isinstance(data, nw.LazyFrame) else not len(data)

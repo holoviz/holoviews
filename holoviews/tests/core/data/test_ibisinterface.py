@@ -3,6 +3,8 @@ import warnings
 from tempfile import NamedTemporaryFile
 from unittest import SkipTest
 
+import pytest
+
 try:
     import ibis
     # Getting this Warnings on Python 3.13 and Ibis 9.5
@@ -32,6 +34,7 @@ def create_temp_db(df, name, index=False):
     return sqlite.connect(filename)
 
 
+@pytest.mark.filterwarnings("ignore:'Ibis' datatype is deprecated")
 class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTests):
     """
     Test of the generic dictionary interface.
@@ -43,9 +46,12 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
     __test__ = True
 
     def setUp(self):
-        self.restore_datatype = self.element.datatype
+        self.restore_datatype = self.element.datatype.copy()
         # TODO: This should work!
         # self.element.datatype = [self.datatype]
+        if "narwhals" in self.element.datatype:
+            # Higher priority
+            self.element.datatype.remove("narwhals")
         self.init_column_data()
         self.init_grid_data()
         self.init_data()

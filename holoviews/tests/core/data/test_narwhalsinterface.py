@@ -146,6 +146,26 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         np.testing.assert_array_equal(edges, bins)
         assert np.all(hist >= 0)
 
+    def test_scalar_getitem(self):
+        df = nw.from_native(self.frame({
+            "day": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            "count": [1, 2, 3, 4, 5, 6, 7],
+        }))
+        ds = Dataset(df, kdims=["day"], vdims=["count"])
+        assert ds["Mon"] == 1
+
+    def test_non_scalar_getitem(self):
+        df = nw.from_native(self.frame({
+            "day": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            "count": [1, 2, 3, 4, 5, 6, 7],
+        }))
+        ds = Dataset(df, kdims=["day"], vdims=["count"])
+        result = ds[["Mon"]].data
+        assert isinstance(result, self.data_type)
+        if isinstance(result, nw.LazyFrame):
+            result = result.collect()
+        assert result.shape == (1, 2)
+
 
 class PandasNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
     __test__ = True

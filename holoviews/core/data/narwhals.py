@@ -2,7 +2,6 @@ import builtins
 
 import narwhals.stable.v2 as nw
 import numpy as np
-from narwhals.dependencies import is_into_dataframe, is_into_series
 
 from .. import util
 from ..dimension import Dimension, dimension_name
@@ -79,9 +78,10 @@ class NarwhalsInterface(Interface):
     def applies(cls, obj):
         return (
             isinstance(obj, (nw.Series, nw.DataFrame, nw.LazyFrame))
-            or is_into_dataframe(obj)
-            or is_into_series(obj)
-            or (cls.narwhals_backend and isinstance(obj, (dict, tuple, np.ndarray)))
+            or nw.dependencies.is_into_dataframe(obj)
+            or nw.dependencies.is_into_series(obj)
+            or nw.dependencies.is_ibis_table(obj)
+            or bool(cls.narwhals_backend and isinstance(obj, (dict, tuple, np.ndarray)))
         ) and not _is_geodataframe(obj)
 
     @classmethod
@@ -356,9 +356,11 @@ class NarwhalsInterface(Interface):
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
         df = dataset.data
+        only_scalar_selection = True
         if selection_mask is None:
             column_sel = {k: v for k, v in selection.items()}
             if column_sel:
+                only_scalar_selection = all(isinstance(v, (str, int)) for v in column_sel.values())
                 selection_mask = cls.select_mask(dataset, column_sel)
 
         if selection_mask is not None:
@@ -377,7 +379,7 @@ class NarwhalsInterface(Interface):
             if not indexed:
                 df_vdim = df.select(str(dataset.vdims[0]))
                 is_scalar, is_lazy = cls._is_scalar_size(df_vdim)
-                if is_scalar:
+                if is_scalar and only_scalar_selection:
                     return (df_vdim.collect() if is_lazy else df_vdim).item()
         return df
 
