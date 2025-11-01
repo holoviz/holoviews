@@ -170,7 +170,7 @@ class notebook_extension(extension):
 
     @classmethod
     def completions_sorting_key(cls, word):
-        """Fixed version of IPyton.completer.completions_sorting_key
+        """Fixed version of IPython.completer.completions_sorting_key
 
         """
         prio1, prio2 = 0, 0

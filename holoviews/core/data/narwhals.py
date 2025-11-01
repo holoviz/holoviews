@@ -455,7 +455,7 @@ class NarwhalsInterface(Interface):
         is_lazy = isinstance(data, nw.LazyFrame)
         if not expanded:
             # LazyFrame does not support maintain_order, it can therefore for some
-            # backends return non-determistic results even for the same data.
+            # backends return non-deterministic results even for the same data.
             # It looks like polars.LazyFrame support it, but not duckdb
             data = data.unique(**({} if is_lazy else {"maintain_order": True}))
         if is_lazy:

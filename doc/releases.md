@@ -2502,7 +2502,7 @@ Deprecations:
   ([#3054](https://github.com/pyviz/holoviews/pull/3054))
 - Top-level namespace was cleaned up
   ([#2224](https://github.com/pyviz/holoviews/pull/2224))
-- `ElementOpration`, `Layout.display` and `mdims` argument to `.to`
+- `ElementOperation`, `Layout.display` and `mdims` argument to `.to`
   now fully removed
   ([#3128](https://github.com/pyviz/holoviews/pull/3128))
 - `Element.mapping`, `ItemTable.values`, `Element.table`,

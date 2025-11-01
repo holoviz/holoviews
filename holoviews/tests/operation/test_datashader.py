@@ -670,7 +670,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
         expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
         self.assertEqual(agg, expected)
 
-    def test_spread_aggregate_assymmetric_count(self):
+    def test_spread_aggregate_asymmetric_count(self):
         spread = Spread([(0, 1, 0.4, 0.8), (1, 2, 0.8, 0.4), (2, 3, 0.5, 1)],
                         vdims=['y', 'pos', 'neg'])
         agg = rasterize(spread, width=4, height=4, dynamic=False)
@@ -1399,7 +1399,7 @@ def test_rasterize_where_agg_with_column(point_plot, agg_input_fn):
     np.testing.assert_array_equal(img["s"], img_no_column["s"])
 
 
-def test_rasterize_summerize(point_plot):
+def test_rasterize_summarize(point_plot):
     agg_fn_count, agg_fn_first = ds.count(), ds.first("val")
     agg_fn = ds.summary(count=agg_fn_count, first=agg_fn_first)
     rast_input = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=2, height=2)
