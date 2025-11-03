@@ -679,18 +679,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
 
     def _apply_transforms(self, element, ranges, style):
-        # Temporary workaround: raise NotImplementedError for hv.dim() and hv.Dimension()
-        # color options in Path plots
-        # See https://github.com/holoviz/holoviews/pull/6665 for more context
-        # if isinstance(element, Path):
-        #     color_style = style.get('color')
-        #     if isinstance(color_style, dim):
-        #         raise NotImplementedError(
-        #             "Using hv.dim() objects for color mapping in Path plots "
-        #             "is currently not supported in the matplotlib backend. "
-        #             "Please use a string column name instead (e.g., color='color_column')."
-        #         )
-
         new_style = dict(style)
         for k, v in style.items():
             if isinstance(v, (Dimension, str)):
