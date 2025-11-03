@@ -1,5 +1,63 @@
 # Releases
 
+## Version 1.22
+
+### Version 1.22.0
+
+**November 5, 2025**
+
+This release adds [Narwhals](https://narwhals-dev.github.io/narwhals/) support for broader dataframe compatibility. By doing so, we now also support Polars and DuckDB data backends.
+Another new feature is the addition of sizebar support to PointPlot, allowing for better visualization of point sizes in plots.
+Along with these new features, this release includes numerous enhancements, bug fixes, compatibility updates, and improved documentation.
+Many thanks to [@epaaso](https://github.com/epaaso) (first contribution), [@thuydotm](https://github.com/thuydotm) (first contribution), [@ahuang11](https://github.com/ahuang11), [@Azaya89](https://github.com/Azaya89), [@maximlt](https://github.com/maximlt), [@philippjfr](https://github.com/philippjfr), [@stanwest](https://github.com/stanwest), and [@hoxbro](https://github.com/hoxbro) for their contributions.
+
+New Features:
+
+- Support Narwhals ([#6567](https://github.com/holoviz/holoviews/pull/6567))
+- Add `sizebar` support to `Point` ([#6663](https://github.com/holoviz/holoviews/pull/6663))
+
+Enhancements:
+
+- Add `gridstyle` to matplotlib ([#6700](https://github.com/holoviz/holoviews/pull/6700))
+- Add `from_sparse` classmethod for `Graph` ([#6673](https://github.com/holoviz/holoviews/pull/6673))
+- Add support for synthetic legends on `ImageStackPlot` ([#6662](https://github.com/holoviz/holoviews/pull/6662))
+- Sync tools with Bokeh and use `auto_box_zoom` as default ([#6650](https://github.com/holoviz/holoviews/pull/6650))
+- Add hover filter ([#6646](https://github.com/holoviz/holoviews/pull/6646))
+- Improve error message for non-matching types when aspect is set to equal ([#6103](https://github.com/holoviz/holoviews/pull/6103))
+- Use `ImageStack` as an `element_type` in `rasterize` ([#6631](https://github.com/holoviz/holoviews/pull/6631))
+- Improve `core.util` to work better without pandas installed ([#6702](https://github.com/holoviz/holoviews/pull/6702))
+
+Deprecations:
+
+- Deprecate `IbisInterface` for `NarwhalsInterface` ([#6718](https://github.com/holoviz/holoviews/pull/6718))
+
+Performance:
+
+- Optimize `HeatMap` rendering path if gridded and contiguous ([#6680](https://github.com/holoviz/holoviews/pull/6680))
+- Add debounce support to `PlotSize` and `RangeXY` Bokeh callbacks ([#6672](https://github.com/holoviz/holoviews/pull/6672))
+
+Bug Fixes:
+
+- Interpolation for `Image` with `datashade` ([#6707](https://github.com/holoviz/holoviews/pull/6707))
+- `subcoordinate_y` for `DynamicMap` if labels mismatched between plots ([#6694](https://github.com/holoviz/holoviews/pull/6694))
+- Setting `selection_expr` programmatically ([#6689](https://github.com/holoviz/holoviews/pull/6689))
+- Handle `node_color` in element transformations for Bokeh and MPL ([#6678](https://github.com/holoviz/holoviews/pull/6678))
+- `hv.dim` and `hv.Dimension` as color opts for MPL Path plots ([#6721](https://github.com/holoviz/holoviews/pull/6721), [#6665](https://github.com/holoviz/holoviews/pull/6665))
+- Use native bokeh `x` marker in plots and legends ([#6676](https://github.com/holoviz/holoviews/pull/6676))
+- Silence Bokeh `FIXED_SIZING_MODE` warning on hv.save ([#6674](https://github.com/holoviz/holoviews/pull/6674))
+- Comparison for non-numeric dtypes ([#6671](https://github.com/holoviz/holoviews/pull/6671))
+- Allow discovering `.apply` operation on pipeline ([#6670](https://github.com/holoviz/holoviews/pull/6670))
+- `dendrogram` edgecases ([#6669](https://github.com/holoviz/holoviews/pull/6669))
+- Don't select in `decimate` if start and end are the same ([#6661](https://github.com/holoviz/holoviews/pull/6661))
+
+Compatibility
+
+- Ibis 11.0.0 ([#6706](https://github.com/holoviz/holoviews/pull/6706))
+- Python 3.14 ([#6704](https://github.com/holoviz/holoviews/pull/6704))
+- xarray 2025.08 ([#6664](https://github.com/holoviz/holoviews/pull/6664))
+- cuDF 25.10 ([#6659](https://github.com/holoviz/holoviews/pull/6659))
+- Pillow 11.3.0 ([#6651](https://github.com/holoviz/holoviews/pull/6651))
+
 ## Version 1.21
 
 ### Version 1.21.0
