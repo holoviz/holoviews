@@ -1037,8 +1037,11 @@ class Derived(Stream):
         """
         raise NotImplementedError
 
-    def __del__(self):
+    def cleanup(self):
         self._unregister_input_streams()
+
+    def __del__(self):
+        self.cleanup()
 
 
 class History(Stream):
@@ -1073,10 +1076,13 @@ class History(Stream):
 
         self.input_stream.add_subscriber(perform_update)
 
-    def __del__(self):
+    def cleanup(self):
         self.input_stream.source = None
         self.input_stream.clear()
         del self.values[:]
+
+    def __del__(self):
+        self.cleanup()
 
 
 class SelectionExpr(Derived):
@@ -1245,7 +1251,8 @@ class SelectionExprSequence(Derived):
         }
 
     def reset(self):
-        self.input_streams[0].clear_history()
+        if self.input_streams:
+            self.input_streams[0].clear_history()
         super().reset()
 
     @classmethod
@@ -1293,6 +1300,10 @@ class SelectionExprSequence(Derived):
             selection_expr=combined_selection_expr,
             region_element=combined_region_element if include_region else None
         )
+
+    def cleanup(self):
+        super().cleanup()
+        self.history_stream.cleanup()
 
 
 class CrossFilterSet(Derived):

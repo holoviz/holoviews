@@ -143,15 +143,33 @@ class _base_link_selections(param.ParameterizedFunction):
         Unlinks an object which has previously been added to the
         link_selections function.
 
-        Args:
-           hvobj: Component to unsubscribe from link_selections
+        Parameters
+        ----------
+        hvobj
+            Component to unsubscribe from link_selections
+
+        Examples
+        --------
+        >>> ls = link_selections.instance()
+        >>> points1 = hv.Points(data1)
+        >>> points2 = hv.Points(data2)
+        >>> linked_layout = ls(points1) + ls(points2)
+        >>> ls.unlink(points1)
         """
         for streams in self._streams.pop(hvobj, []):
             for stream in streams:
                 if stream is None:
                     continue
                 stream.source = None
-                stream._subscribers = []
+                stream.clear()
+                if hasattr(stream, 'cleanup'):
+                    stream.cleanup()
+                for obj, ses in list(self._selection_expr_streams.items()):
+                    if ses is stream:
+                        del self._selection_expr_streams[obj]
+                for obj, prs in list(self._plot_reset_streams.items()):
+                    if prs is stream:
+                        del self._plot_reset_streams[obj]
                 del stream
 
     def __call__(self, hvobj, **kwargs):
@@ -179,13 +197,13 @@ class _base_link_selections(param.ParameterizedFunction):
             callback = hvobj.callback
             if len(callback.inputs) > 1:
                 return Overlay([
-                    self._selection_transform(el, hvobj if origin is None else origin)
+                    self._selection_transform(el, operations, hvobj if origin is None else origin)
                     for el in callback.inputs
                 ]).collate()
 
             initialize_dynamic(hvobj)
             if issubclass(hvobj.type, Element):
-                self._register(hvobj, origin)
+                self._register(hvobj, hvobj if origin is None else origin)
                 chart = Store.registry[Store.current_backend][hvobj.type]
                 return chart.selection_display(hvobj).build_selection(
                     self._selection_streams, hvobj, operations,
