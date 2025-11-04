@@ -9,7 +9,7 @@ from bokeh.transform import jitter
 
 from ...core.data import Dataset
 from ...core.dimension import dimension_name
-from ...core.util import dimension_sanitizer, isdatetime, isfinite
+from ...core.util import dimension_sanitizer, dtype_kind, isdatetime, isfinite
 from ...operation import interpolate_curve
 from ...util.transform import dim
 from ...util.warnings import warn
@@ -340,7 +340,6 @@ class VectorFieldPlot(ColorbarPlot):
         elif isinstance(mag_dim, str):
             mag_dim = element.get_dimension(mag_dim)
 
-        (x0, x1), (y0, y1) = (element.range(i) for i in range(2))
         if mag_dim:
             if isinstance(mag_dim, dim):
                 magnitudes = mag_dim.apply(element, flat=True)
@@ -744,8 +743,8 @@ class SpreadPlot(ElementPlot):
         each area separated by nans.
 
         """
-        xnan = np.array([np.datetime64('nat') if xs.dtype.kind == 'M' else np.nan])
-        ynan = np.array([np.datetime64('nat') if lower.dtype.kind == 'M' else np.nan])
+        xnan = np.array([np.datetime64('nat') if dtype_kind(xs) == 'M' else np.nan])
+        ynan = np.array([np.datetime64('nat') if dtype_kind(lower) == 'M' else np.nan])
         split = np.where(~isfinite(xs) | ~isfinite(lower) | ~isfinite(upper))[0]
         xvals = np.split(xs, split)
         lower = np.split(lower, split)
@@ -1006,7 +1005,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         # Merge data and mappings
         mapping.update(cmapping)
         for k, cd in cdata.items():
-            if isinstance(cmapper, CategoricalColorMapper) and cd.dtype.kind in 'uif':
+            if isinstance(cmapper, CategoricalColorMapper) and dtype_kind(cd) in 'uif':
                 cd = categorize_array(cd, cdim)
             if k not in data or (len(data[k]) != next(len(data[key]) for key in data if key != k)):
                 data[k].append(cd)
@@ -1057,7 +1056,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         if group_dim is None:
             grouped = {0: element}
             is_dt = isdatetime(xvals)
-            if is_dt or xvals.dtype.kind not in 'OU':
+            if is_dt or dtype_kind(xvals) not in 'OU':
                 xslice = stack_idx if stack_order else slice(None)
                 xdiff = np.abs(np.diff(xvals[xslice]))
                 diff_size = len(np.unique(xdiff))
@@ -1074,7 +1073,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                                       datatype=['dataframe', 'dictionary'])
 
         width = abs(width)
-        y0, y1 = ranges.get(ydim.label, {'combined': (None, None)})['combined']
+        _y0, y1 = ranges.get(ydim.label, {'combined': (None, None)})['combined']
         if self.logy:
             bottom = (ydim.range[0] or (0.01 if y1 > 0.01 else 10**(np.log10(y1)-2)))
         else:
@@ -1100,10 +1099,10 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         cvals = element.dimension_values(cdim, expanded=False) if cdim else None
         if cvals is not None:
-            if cvals.dtype.kind in 'uif' and no_cidx:
+            if dtype_kind(cvals) in 'uif' and no_cidx:
                 cvals = categorize_array(cvals, color_dim)
 
-            factors = None if cvals.dtype.kind in 'uif' else list(cvals)
+            factors = None if dtype_kind(cvals) in 'uif' else list(cvals)
             if cdim is xdim and factors:
                 factors = list(categorize_array(factors, xdim))
             if cmap is None and factors:
@@ -1145,7 +1144,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             elif grouping == 'grouped':
                 xs = ds.dimension_values(xdim)
                 ys = ds.dimension_values(ydim)
-                xoffsets = [(x if xs.dtype.kind in 'SU' else xdim.pprint_value(x), gval)
+                xoffsets = [(x if dtype_kind(xs) in 'SU' else xdim.pprint_value(x), gval)
                             for x in xs]
                 data['xoffsets'].append(xoffsets)
                 data[ydim.name].append(ys)
@@ -1186,7 +1185,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         # Ensure x-values are categorical
         xname = dimension_sanitizer(xdim.name)
-        if xname in sanitized_data and isinstance(sanitized_data[xname], np.ndarray) and sanitized_data[xname].dtype.kind not in 'uifM' and not isdatetime(sanitized_data[xname]):
+        if xname in sanitized_data and isinstance(sanitized_data[xname], np.ndarray) and dtype_kind(sanitized_data[xname]) not in 'uifM' and not isdatetime(sanitized_data[xname]):
             sanitized_data[xname] = categorize_array(sanitized_data[xname], xdim)
 
         # If axes inverted change mapping to match hbar signature

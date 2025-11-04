@@ -6,7 +6,9 @@ from matplotlib.dates import DateFormatter, date2num
 from ...core import util
 from ...core.dimension import Dimension
 from ...core.options import abbreviated_exception
+from ...core.util import dtype_kind
 from ...element import Polygons
+from ...util.transform import dim
 from .element import ColorbarPlot
 from .util import polygons_to_path_patches
 
@@ -42,11 +44,16 @@ class PathPlot(ColorbarPlot):
     def get_data(self, element, ranges, style):
         cdim = element.get_dimension(self.color_index)
 
-        # Support style-mapped color (e.g. .opts(color='c')) by resolving
-        # a Dimension from the color style when no explicit color_index is set.
-        color_style = style.get('color')
-        if cdim is None and isinstance(color_style, str):
-            cdim = element.get_dimension(color_style)
+        if cdim is None:
+            color_style = style.get('color')
+            if isinstance(color_style, str):
+                cdim = element.get_dimension(color_style)
+            elif isinstance(color_style, Dimension):
+                cdim = element.get_dimension(color_style.label)
+            elif isinstance(color_style, dim) and not color_style.ops:
+                cdim = element.get_dimension(color_style.dimension.label)
+            if cdim:
+                style["color"] = cdim
 
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
@@ -69,9 +76,10 @@ class PathPlot(ColorbarPlot):
                 yarr = date2num(yarr)
                 dims[1] = ydim(value_format=DateFormatter(dt_format))
             arr = np.column_stack([xarr, yarr])
-            # If neither color_index nor array-style mapping nor a color dimension is present,
-            # keep whole paths; otherwise, segment into (len(x)-1) segments for correct mapping.
-            if not (self.color_index is not None or style_mapping or cdim):
+            # If neither color_index nor array-style mapping nor is present,
+            # keep whole paths; otherwise, segment into (len(x)-1) segments for
+            # correct mapping.
+            if not (self.color_index is not None or style_mapping):
                 paths.append(arr)
                 continue
             length = len(xarr)
@@ -168,7 +176,7 @@ class ContourPlot(PathPlot):
             array = np.array([v for v, sps in zip(array, subpaths, strict=None)
                               for _ in range(len(sps))])
 
-        if array.dtype.kind not in 'uif':
+        if dtype_kind(array) not in 'uif':
             array = util.search_indices(array, util.unique_array(array))
         style['array'] = array
         self._norm_kwargs(element, ranges, style, cdim)

@@ -103,6 +103,17 @@ pixi run setup-dev
 
 This will run the `install` and `download-data` tasks, among other tasks deemed necessary for a development environment.
 
+:::{admonition} Note
+:class: info
+
+You may want to update Pixi occasionally, especially when troubleshooting, to get the latest fixes and improvements:
+
+```bash
+pixi self-update
+```
+
+:::
+
 ### Syncing Git tags with upstream repository
 
 If you are working from a forked repository of HoloViews, you will need to sync the tags with the upstream repo.

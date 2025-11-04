@@ -33,7 +33,7 @@ from holoviews import (
     TriMesh,
     renderer,
 )
-from holoviews.element.comparison import ComparisonTestCase
+from holoviews.element.comparison import Comparison, ComparisonTestCase
 from holoviews.operation import apply_when
 from holoviews.streams import Tap
 from holoviews.util import render
@@ -670,7 +670,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
         expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
         self.assertEqual(agg, expected)
 
-    def test_spread_aggregate_assymmetric_count(self):
+    def test_spread_aggregate_asymmetric_count(self):
         spread = Spread([(0, 1, 0.4, 0.8), (1, 2, 0.8, 0.4), (2, 3, 0.5, 1)],
                         vdims=['y', 'pos', 'neg'])
         agg = rasterize(spread, width=4, height=4, dynamic=False)
@@ -997,6 +997,38 @@ class DatashaderRegridTests(ComparisonTestCase):
         expected = Image(np.zeros((0, 0)), bounds=(0, 0, 0, 0), xdensity=1, ydensity=1)
         self.assertEqual(regridded, expected)
 
+
+# None, False, and 'nearest' are expected to return the same Image values
+@pytest.mark.parametrize("interpolation", [None, False, "nearest"])
+def test_regrid_interpolation_nearest(interpolation):
+    img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
+    regridded = regrid(img, width=4, height=4, upsample=True, interpolation=interpolation, dynamic=False)
+    expected = Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
+                      [[0, 0, 1, 1],
+                       [0, 0, 1, 1],
+                       [2, 2, 3, 3],
+                       [2, 2, 3, 3]]))
+    Comparison.assertEqual(regridded, expected)
+
+
+# 'bilinear' and 'linear' expected to return the same Image values
+@pytest.mark.parametrize("interpolation", ["linear", "bilinear"])
+def test_regrid_interpolation_linear(interpolation):
+    img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
+    regridded = regrid(img, width=4, height=4, upsample=True, interpolation=interpolation, dynamic=False)
+    expected = Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
+                      [[0, 0, 0, 1],
+                       [0, 1, 1, 1],
+                       [1, 1, 2, 2],
+                       [2, 2, 2, 3]]))
+    Comparison.assertEqual(regridded, expected)
+
+
+@pytest.mark.parametrize("interpolation", [False, None])
+def test_datashade_interpolation(interpolation):
+    img = Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
+    shaded = datashade(img, interpolation=interpolation, dynamic=False, width=4, height=4)
+    assert isinstance(shaded, RGB)
 
 
 class DatashaderRasterizeTests(ComparisonTestCase):
@@ -1367,7 +1399,7 @@ def test_rasterize_where_agg_with_column(point_plot, agg_input_fn):
     np.testing.assert_array_equal(img["s"], img_no_column["s"])
 
 
-def test_rasterize_summerize(point_plot):
+def test_rasterize_summarize(point_plot):
     agg_fn_count, agg_fn_first = ds.count(), ds.first("val")
     agg_fn = ds.summary(count=agg_fn_count, first=agg_fn_first)
     rast_input = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=2, height=2)
@@ -1711,7 +1743,7 @@ def test_uint_dtype(dtype):
 def test_uint64_dtype():
     df = pd.DataFrame(np.arange(2, dtype=np.uint64), columns=["A"])
     curve = Curve(df)
-    with pytest.raises(TypeError, match="Dtype of uint64 for column A is not supported."):
+    with pytest.raises(TypeError, match=r"Dtype of uint64 for column A is not supported."):
         rasterize(curve, dynamic=False, height=10, width=10)
 
 
@@ -1750,3 +1782,28 @@ def test_datashade_count_cat_no_change_inplace():
     render(op)
     # Should not convert to category dtype
     assert df["c"].dtype == "object"
+
+
+@pytest.mark.parametrize("lazy", [False, True])
+@pytest.mark.parametrize("op", [aggregate, rasterize, datashade])
+def test_points_polars(lazy, op):
+    pl = pytest.importorskip("polars")
+    data = {
+        "x": [0.2, 0.4, 0.0],
+        "y": [0.3, 0.7, 0.99],
+    }
+    op_kwargs = dict(
+        dynamic=False,
+        x_range=(0, 1,),
+        y_range=(0, 1,),
+        width=2,
+        height=2
+    )
+
+    polars_df = pl.LazyFrame(data) if lazy else pl.DataFrame(data)
+    polars_img = op(Points(polars_df), **op_kwargs)
+
+    pandas_df = pd.DataFrame(data)
+    pandas_img = op(Points(pandas_df), **op_kwargs)
+
+    xr.testing.assert_equal(polars_img.data, pandas_img.data)

@@ -1,4 +1,5 @@
 import os
+from contextlib import suppress
 
 from colorcet import kbc, register_cmap
 from matplotlib import rc_params_from_file
@@ -28,12 +29,9 @@ from .stats import *
 from .tabular import *
 from .util import MPL_VERSION
 
-try:
+with suppress(ImportError):
     from pandas.plotting import register_matplotlib_converters
     register_matplotlib_converters()
-except ImportError:
-    from pandas.tseries import converter
-    converter.register()
 
 
 def set_style(key):

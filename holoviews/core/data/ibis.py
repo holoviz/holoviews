@@ -3,9 +3,11 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from ...util.warnings import deprecated
 from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
+from ..util import dtype_kind
 from ..util.dependencies import _LazyModule, _no_import_version
 from .interface import DataError, Interface
 from .util import cached
@@ -60,6 +62,8 @@ class IbisInterface(Interface):
 
     @classmethod
     def init(cls, eltype, data, keys, values):
+        deprecated("1.24.0", "'ibis' datatype", "'narwhals' datatype", repr_old=False, repr_new=False)
+
         params = eltype.param.objects()
         index = params["kdims"]
         columns = params["vdims"]
@@ -161,7 +165,7 @@ class IbisInterface(Interface):
     @classmethod
     def histogram(cls, expr, bins, density=True, weights=None):
         bins = np.asarray(bins)
-        bins = [int(v) if bins.dtype.kind in 'iu' else float(v) for v in bins]
+        bins = [int(v) if dtype_kind(bins) in 'iu' else float(v) for v in bins]
         binned = expr.bucket(bins).name('bucket')
         hist = np.zeros(len(bins)-1)
         if IBIS_GE_4_0_0:

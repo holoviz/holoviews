@@ -3,6 +3,8 @@ import warnings
 from tempfile import NamedTemporaryFile
 from unittest import SkipTest
 
+import pytest
+
 try:
     import ibis
     # Getting this Warnings on Python 3.13 and Ibis 9.5
@@ -32,6 +34,7 @@ def create_temp_db(df, name, index=False):
     return sqlite.connect(filename)
 
 
+@pytest.mark.filterwarnings("ignore:'Ibis' datatype is deprecated")
 class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTests):
     """
     Test of the generic dictionary interface.
@@ -43,12 +46,18 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
     __test__ = True
 
     def setUp(self):
+        self.restore_datatype = self.element.datatype.copy()
+        # TODO: This should work!
+        # self.element.datatype = [self.datatype]
+        if "narwhals" in self.element.datatype:
+            # Higher priority
+            self.element.datatype.remove("narwhals")
         self.init_column_data()
         self.init_grid_data()
         self.init_data()
 
     def tearDown(self):
-        pass
+        self.element.datatype = self.restore_datatype
 
     def init_column_data(self):
         # Create heterogeneously typed table
@@ -114,10 +123,10 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
     def test_dataset_array_init_hm_tuple_dims(self):
         raise SkipTest("Not supported")
 
-    def test_dataset_odict_init(self):
+    def test_dataset_dict_init(self):
         raise SkipTest("Not supported")
 
-    def test_dataset_odict_init_alias(self):
+    def test_dataset_dict_init_alias(self):
         raise SkipTest("Not supported")
 
     def test_dataset_simple_zip_init(self):
@@ -139,9 +148,6 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         raise SkipTest("Not supported")
 
     def test_dataset_implicit_indexing_init(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_dict_init(self):
         raise SkipTest("Not supported")
 
     def test_dataset_dataframe_init_hm(self):

@@ -7,7 +7,7 @@ import param
 from ..core import Dataset, Dimension, Element2D
 from ..core.accessors import Redim
 from ..core.operation import Operation
-from ..core.util import is_dataframe, max_range, search_indices
+from ..core.util import dtype_kind, is_dataframe, max_range, search_indices
 from .chart import Points
 from .path import Path
 from .util import (
@@ -712,10 +712,10 @@ class layout_chords(Operation):
         tgt_idx = search_indices(tgt, nodes)
         if element.vdims:
             values = element.dimension_values(2)
-            if values.dtype.kind not in 'uif':
+            if dtype_kind(values) not in 'uif':
                 values = np.ones(len(element), dtype='int')
             else:
-                if values.dtype.kind == 'f':
+                if dtype_kind(values) == 'f':
                     values = np.ceil(values*(1./values.min()))
                 if values.sum() > max_chords:
                     values = np.ceil((values/float(values.sum()))*max_chords)

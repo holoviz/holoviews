@@ -1,11 +1,15 @@
+import re
+
 import numpy as np
+import pandas as pd
+import pytest
 from matplotlib import style
 from matplotlib.projections import PolarAxes
 from matplotlib.ticker import FormatStrFormatter, FuncFormatter, PercentFormatter
 
 from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import DynamicMap
-from holoviews.element import Curve, HeatMap, Image, Scatter, Scatter3D
+from holoviews.element import Curve, HeatMap, Image, QuadMesh, Scatter, Scatter3D
 from holoviews.streams import Stream
 
 from ...utils import LoggingComparisonTestCase
@@ -302,6 +306,152 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
         self.log_handler.assertContains(
             "WARNING", "valid method on the specified model"
         )
+
+    ### Aspect ratio ###
+    def test_aspect_non_matching_types(self):
+        X = pd.date_range(start="1/1/2018", end="1/08/2018", periods=100)
+        Y = np.linspace(1, 100, 100)
+        Z = np.random.randn(100, 100)
+        qm = QuadMesh((X, Y, Z)).opts(aspect='equal')
+        msg = (
+            "The aspect is set to 'equal', but the axes does not have the same type: "
+            "x-axis timedelta64 and y-axis float64. "
+            "Either have the axes be the same type or or set '.opts(aspect=)' "
+            "to either a number or 'square'."
+        )
+        with pytest.raises(TypeError, match=re.escape(msg)):
+            mpl_renderer.get_plot(qm)
+
+    ### Grid ###
+    def test_grid_both(self):
+        curve = Curve(range(10)).opts(gridstyle={'grid_color': 'red', 'grid_linestyle': '--', 'grid_alpha': 0.5, 'grid_linewidth': 2}, show_grid=True)
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        gridlines = ax.get_xgridlines() + ax.get_ygridlines()
+        for line in gridlines:
+            self.assertEqual(line.get_color(), 'red')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+
+    def test_grid_both_show_grid_False(self):
+        curve = Curve(range(10)).opts(gridstyle={'grid_color': 'red', 'grid_linestyle': '--', 'grid_alpha': 0.5, 'grid_linewidth': 2}, show_grid=False)
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        assert not any(line.get_visible() for line in ax.get_xgridlines() + ax.get_ygridlines())
+
+    def test_grid_both_no_grid_prefix(self):
+        curve = Curve(range(10)).opts(gridstyle={'color': 'red', 'linestyle': '--', 'alpha': 0.5, 'linewidth': 2}, show_grid=True)
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        gridlines = ax.get_xgridlines() + ax.get_ygridlines()
+        for line in gridlines:
+            self.assertEqual(line.get_color(), 'red')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+
+    def test_grid_x(self):
+        curve = Curve(range(10)).opts(gridstyle={'xgrid_color': 'blue', 'xgrid_linestyle': '--', 'xgrid_alpha': 0.5, 'xgrid_linewidth': 2}, show_grid=True)
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        xgridlines = ax.get_xgridlines()
+        for line in xgridlines:
+            self.assertEqual(line.get_color(), 'blue')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+        ygridlines = ax.get_ygridlines()
+        for line in ygridlines:
+            self.assertNotEqual(line.get_color(), 'blue')
+            self.assertNotEqual(line.get_linestyle(), '--')
+            self.assertNotEqual(line.get_alpha(), 0.5)
+            self.assertNotEqual(line.get_linewidth(), 2)
+
+    def test_grid_x_no_grid_prefix(self):
+        curve = Curve(range(10)).opts(gridstyle={'color': 'blue', 'linestyle': '--', 'alpha': 0.5, 'linewidth': 2}, show_grid=True)
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        xgridlines = ax.get_xgridlines()
+        for line in xgridlines:
+            self.assertEqual(line.get_color(), 'blue')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+        ygridlines = ax.get_ygridlines()
+        for line in ygridlines:
+            self.assertEqual(line.get_color(), 'blue')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+
+    def test_grid_y(self):
+        curve = Curve(range(10)).opts(gridstyle={'ygrid_color': 'green', 'ygrid_linestyle': '--', 'ygrid_alpha': 0.5, 'ygrid_linewidth': 2}, show_grid=True)
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        ygridlines = ax.get_ygridlines()
+        for line in ygridlines:
+            self.assertEqual(line.get_color(), 'green')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+        xgridlines = ax.get_xgridlines()
+        for line in xgridlines:
+            self.assertNotEqual(line.get_color(), 'green')
+            self.assertNotEqual(line.get_linestyle(), '--')
+            self.assertNotEqual(line.get_alpha(), 0.5)
+            self.assertNotEqual(line.get_linewidth(), 2)
+
+    def test_grid_y_no_grid_prefix(self):
+        curve = Curve(range(10)).opts(gridstyle={'color': 'green', 'linestyle': '--', 'alpha': 0.5, 'linewidth': 2}, show_grid=True)
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        ygridlines = ax.get_ygridlines()
+        for line in ygridlines:
+            self.assertEqual(line.get_color(), 'green')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+        xgridlines = ax.get_xgridlines()
+        for line in xgridlines:
+            self.assertEqual(line.get_color(), 'green')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+
+    def test_grid_mix(self):
+        curve = Curve(range(10)).opts(gridstyle={'grid_color': 'red', 'ygrid_linestyle': '--', 'ygrid_alpha': 0.5, 'ygrid_linewidth': 2}, show_grid=True)
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        xgridlines = ax.get_xgridlines()
+        for line in xgridlines:
+            self.assertEqual(line.get_color(), 'red')
+            self.assertNotEqual(line.get_linestyle(), '--')
+            self.assertNotEqual(line.get_alpha(), 0.5)
+            self.assertNotEqual(line.get_linewidth(), 2)
+        ygridlines = ax.get_ygridlines()
+        for line in ygridlines:
+            self.assertEqual(line.get_color(), 'red')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+
+    def test_grid_mix_no_grid_prefix(self):
+        curve = Curve(range(10)).opts(gridstyle={'color': 'red', 'y_linestyle': '--', 'y_alpha': 0.5, 'y_linewidth': 2}, show_grid=True)
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        xgridlines = ax.get_xgridlines()
+        for line in xgridlines:
+            self.assertEqual(line.get_color(), 'red')
+            self.assertNotEqual(line.get_linestyle(), '--')
+            self.assertNotEqual(line.get_alpha(), 0.5)
+            self.assertNotEqual(line.get_linewidth(), 2)
+        ygridlines = ax.get_ygridlines()
+        for line in ygridlines:
+            self.assertEqual(line.get_color(), 'red')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
 
 
 class TestColorbarPlot(TestMPLPlot):

@@ -17,7 +17,7 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.11
+    rev: v0.14.3
     hooks:
       - id: ruff-check
   - repo: https://github.com/hoxbro/clean_notebook
@@ -25,12 +25,10 @@ repos:
     hooks:
       - id: clean-notebook
         args: [--strip-trailing-newlines]
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.1
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.38.1
     hooks:
-      - id: codespell
-        additional_dependencies:
-          - tomli
+      - id: typos
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
     hooks:

@@ -14,6 +14,7 @@ from . import util
 from .dimension import Dimension, Dimensioned, ViewableElement, asdim
 from .util import (
     dimension_sort,
+    dtype_kind,
     get_ndmapping_label,
     process_ellipses,
     sanitize_identifier,
@@ -636,7 +637,7 @@ class NdMapping(MultiDimensionalMapping):
         the data.
 
         """
-        if isinstance(indexslice, np.ndarray) and indexslice.dtype.kind == 'b':
+        if isinstance(indexslice, np.ndarray) and dtype_kind(indexslice) == 'b':
             if not len(indexslice) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
             selection = zip(indexslice, self.data.items(), strict=None)
@@ -1065,10 +1066,10 @@ class UniformNdMapping(NdMapping):
                 items.append((key, Overlay(item)))
             return self.clone(items)
 
-        overlayed_items = [(k, other * el if reverse else el * other)
+        overlaid_items = [(k, other * el if reverse else el * other)
                            for k, el in self.items()]
         try:
-            return self.clone(overlayed_items)
+            return self.clone(overlaid_items)
         except NotImplementedError:
             return NotImplemented
 

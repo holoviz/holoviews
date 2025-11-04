@@ -80,7 +80,7 @@ class MPLRendererTest(ComparisonTestCase):
         self.assertEqual((w, h), (288, 288))
 
     def test_render_gif(self):
-        data, metadata = self.renderer.components(self.map1, 'gif')
+        data, _metadata = self.renderer.components(self.map1, 'gif')
         self.assertIn("<img src='data:image/gif", data['text/html'])
 
     @pytest.mark.skipif(sys.platform == 'win32' and os.environ.get('GITHUB_RUN_ID'), reason='Skip on Windows CI')
@@ -90,7 +90,7 @@ class MPLRendererTest(ComparisonTestCase):
             subprocess.call(['ffmpeg', '-h'], stdout=devnull, stderr=devnull)
         except Exception:
             raise SkipTest('ffmpeg not available, skipping mp4 export test')
-        data, metadata = self.renderer.components(self.map1, 'mp4')
+        data, _metadata = self.renderer.components(self.map1, 'mp4')
         self.assertIn("<source src='data:video/mp4", data['text/html'])
 
     def test_render_static(self):
@@ -155,7 +155,7 @@ class MPLRendererTest(ComparisonTestCase):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
         artist = plot.handles['artist']
 
         (_, y) = artist.get_data()
@@ -171,7 +171,7 @@ class MPLRendererTest(ComparisonTestCase):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
         artist = plot.handles['artist']
 
         (_, y) = artist.get_data()
@@ -187,7 +187,7 @@ class MPLRendererTest(ComparisonTestCase):
                           streams=[stream]).redim.values(x=[1, 2, 3])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
         artist = plot.handles['artist']
 
         (_, y) = artist.get_data()

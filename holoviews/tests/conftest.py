@@ -79,10 +79,10 @@ def _plotting_backend(backend):
     if not hv.extension._loaded:
         hv.extension(backend)
     hv.renderer(backend)
-    curent_backend = hv.Store.current_backend
+    current_backend = hv.Store.current_backend
     hv.Store.set_current_backend(backend)
     yield
-    hv.Store.set_current_backend(curent_backend)
+    hv.Store.set_current_backend(current_backend)
 
 
 @pytest.fixture
