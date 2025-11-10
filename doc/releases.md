@@ -7,7 +7,7 @@
 **November 10, 2025**
 
 This release adds [Narwhals](https://narwhals-dev.github.io/narwhals/) support for broader dataframe compatibility. By doing so, we now also support Polars and DuckDB data backends.
-Another new feature is the addition of sizebar support to PointPlot, allowing for better visualization of point sizes in plots.
+Another new feature is the addition of sizebar support for `Points` elements, allowing for better visualization of point sizes in plots.
 Along with these new features, this release includes numerous enhancements, bug fixes, compatibility updates, and improved documentation.
 Many thanks to [@epaaso](https://github.com/epaaso) (first contribution), [@thuydotm](https://github.com/thuydotm) (first contribution), [@ahuang11](https://github.com/ahuang11), [@Azaya89](https://github.com/Azaya89), [@maximlt](https://github.com/maximlt), [@philippjfr](https://github.com/philippjfr), [@stanwest](https://github.com/stanwest), and [@hoxbro](https://github.com/hoxbro) for their contributions.
 
