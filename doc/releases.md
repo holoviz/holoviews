@@ -4,7 +4,7 @@
 
 ### Version 1.22.0
 
-**November 5, 2025**
+**November 10, 2025**
 
 This release adds [Narwhals](https://narwhals-dev.github.io/narwhals/) support for broader dataframe compatibility. By doing so, we now also support Polars and DuckDB data backends.
 Another new feature is the addition of sizebar support to PointPlot, allowing for better visualization of point sizes in plots.
@@ -13,7 +13,7 @@ Many thanks to [@epaaso](https://github.com/epaaso) (first contribution), [@thuy
 
 New Features:
 
-- Support Narwhals ([#6567](https://github.com/holoviz/holoviews/pull/6567))
+- Support Narwhals ([#6567](https://github.com/holoviz/holoviews/pull/6567), [#6725](https://github.com/holoviz/holoviews/pull/6725))
 - Add `sizebar` support to `Point` ([#6663](https://github.com/holoviz/holoviews/pull/6663))
 
 Enhancements:
@@ -26,6 +26,7 @@ Enhancements:
 - Improve error message for non-matching types when aspect is set to equal ([#6103](https://github.com/holoviz/holoviews/pull/6103))
 - Use `ImageStack` as an `element_type` in `rasterize` ([#6631](https://github.com/holoviz/holoviews/pull/6631))
 - Improve `core.util` to work better without pandas installed ([#6702](https://github.com/holoviz/holoviews/pull/6702))
+- Implement `link_selections.unlink` ([#6685](https://github.com/holoviz/holoviews/pull/6685))
 
 Deprecations:
 
@@ -35,6 +36,7 @@ Performance:
 
 - Optimize `HeatMap` rendering path if gridded and contiguous ([#6680](https://github.com/holoviz/holoviews/pull/6680))
 - Add debounce support to `PlotSize` and `RangeXY` Bokeh callbacks ([#6672](https://github.com/holoviz/holoviews/pull/6672))
+- Don't import IPython in `find_stack_level` ([#6724](https://github.com/holoviz/holoviews/pull/6724))
 
 Bug Fixes:
 
@@ -42,7 +44,7 @@ Bug Fixes:
 - `subcoordinate_y` for `DynamicMap` if labels mismatched between plots ([#6694](https://github.com/holoviz/holoviews/pull/6694))
 - Setting `selection_expr` programmatically ([#6689](https://github.com/holoviz/holoviews/pull/6689))
 - Handle `node_color` in element transformations for Bokeh and MPL ([#6678](https://github.com/holoviz/holoviews/pull/6678))
-- `hv.dim` and `hv.Dimension` as color opts for MPL Path plots ([#6721](https://github.com/holoviz/holoviews/pull/6721), [#6665](https://github.com/holoviz/holoviews/pull/6665))
+- `hv.dim` and `hv.Dimension` as color opts for Matplotlib Path plots ([#6721](https://github.com/holoviz/holoviews/pull/6721), [#6665](https://github.com/holoviz/holoviews/pull/6665))
 - Use native bokeh `x` marker in plots and legends ([#6676](https://github.com/holoviz/holoviews/pull/6676))
 - Silence Bokeh `FIXED_SIZING_MODE` warning on hv.save ([#6674](https://github.com/holoviz/holoviews/pull/6674))
 - Comparison for non-numeric dtypes ([#6671](https://github.com/holoviz/holoviews/pull/6671))
@@ -50,7 +52,7 @@ Bug Fixes:
 - `dendrogram` edgecases ([#6669](https://github.com/holoviz/holoviews/pull/6669))
 - Don't select in `decimate` if start and end are the same ([#6661](https://github.com/holoviz/holoviews/pull/6661))
 
-Compatibility
+Compatibility:
 
 - Ibis 11.0.0 ([#6706](https://github.com/holoviz/holoviews/pull/6706))
 - Python 3.14 ([#6704](https://github.com/holoviz/holoviews/pull/6704))
