@@ -1,7 +1,7 @@
 import datetime as dt
 import random
 from importlib.util import find_spec
-from unittest import SkipTest, skipIf
+from unittest import SkipTest
 
 import numpy as np
 import pandas as pd
@@ -64,8 +64,8 @@ from holoviews.operation.element import (
 )
 
 mpl = find_spec("matplotlib")
-da_skip = skipIf(da is None, "dask.array is not available")
-ibis_skip = skipIf(ibis is None, "ibis is not available")
+da_skip = pytest.mark.skipif(da is None, reason="dask.array is not available")
+ibis_skip = pytest.mark.skipif(ibis is None, reason="ibis is not available")
 
 
 class OperationTests(ComparisonTestCase):
