@@ -3,11 +3,11 @@ Unit tests for dim transforms
 """
 import pickle
 import warnings
-from unittest import skipIf
 
 import numpy as np
 import pandas as pd
 import param
+import pytest
 
 import holoviews as hv
 
@@ -22,7 +22,7 @@ try:
 except ImportError:
     xr = None
 
-xr_skip = skipIf(xr is None, "xarray not available")
+xr_skip = pytest.mark.skipif(xr is None, reason="xarray not available")
 
 try:
     import spatialpandas as spd
@@ -34,8 +34,8 @@ try:
 except ImportError:
     shapely = None
 
-shapelib_available = skipIf(shapely is None and spd is None,
-                            'Neither shapely nor spatialpandas are available')
+shapelib_available = pytest.mark.skipif(shapely is None and spd is None,
+                            reason='Neither shapely nor spatialpandas are available')
 
 from holoviews.core.data import Dataset
 from holoviews.element.comparison import ComparisonTestCase

@@ -1,12 +1,11 @@
-from unittest import skipIf
-
 import pandas as pd
+import pytest
 
 try:
     import scipy
 except ImportError:
     scipy = None
-scipy_skip = skipIf(scipy is None, "SciPy is not available.")
+scipy_skip = pytest.mark.skipif(scipy is None, reason="SciPy is not available.")
 
 import numpy as np
 
