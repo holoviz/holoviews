@@ -1,7 +1,8 @@
-from unittest import SkipTest, skip, skipIf
+from unittest import SkipTest, skip
 
 import pandas as pd
 import panel as pn
+import pytest
 
 import holoviews as hv
 from holoviews.core.options import Cycle, Store
@@ -16,7 +17,7 @@ try:
 except ImportError:
     datashade = None
 
-ds_skip = skipIf(datashade is None, "Datashader not available")
+ds_skip = pytest.mark.skipif(datashade is None, reason="Datashader not available")
 
 
 unselected_color = "#ff0000"

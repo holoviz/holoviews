@@ -1,6 +1,5 @@
-from unittest import skipIf
-
 import param
+import pytest
 
 from holoviews.core import DynamicMap, GridSpace, HoloMap, NdOverlay, Overlay
 from holoviews.element import Points
@@ -12,7 +11,7 @@ try:
 except ImportError:
     spread = datashade = None
 
-datashade_skip = skipIf(datashade is None, "datashade is not available")
+datashade_skip = pytest.mark.skipif(datashade is None, reason="datashade is not available")
 
 
 class XY(Stream):

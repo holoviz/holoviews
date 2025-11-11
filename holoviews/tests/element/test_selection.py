@@ -2,8 +2,6 @@
 Test cases for the Comparisons class over the Chart elements
 """
 
-from unittest import skipIf
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -52,11 +50,11 @@ try:
 except ImportError:
     dd = None
 
-spd_available = skipIf(spd is None, "spatialpandas is not available")
-shapelib_available = skipIf(shapely is None and spd is None,
-                            'Neither shapely nor spatialpandas are available')
-shapely_available = skipIf(shapely is None, 'shapely is not available')
-ds_available = skipIf(ds is None, 'datashader not available')
+spd_available = pytest.mark.skipif(spd is None, reason="spatialpandas is not available")
+shapelib_available = pytest.mark.skipif(shapely is None and spd is None,
+                            reason='Neither shapely nor spatialpandas are available')
+shapely_available = pytest.mark.skipif(shapely is None, reason='shapely is not available')
+ds_available = pytest.mark.skipif(ds is None, reason='datashader not available')
 dd_available = pytest.mark.skipif(dd is None, reason='dask.dataframe not available')
 
 
