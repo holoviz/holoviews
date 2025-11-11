@@ -1,6 +1,6 @@
 import datetime as dt
 from contextlib import suppress
-from unittest import SkipTest, skipIf
+from unittest import SkipTest
 
 import colorcet as cc
 import numpy as np
@@ -68,7 +68,7 @@ try:
 except ImportError:
     spatialpandas = None
 
-spatialpandas_skip = skipIf(spatialpandas is None, "SpatialPandas not available")
+spatialpandas_skip = pytest.mark.skipif(spatialpandas is None, reason="SpatialPandas not available")
 
 
 import logging
