@@ -166,8 +166,12 @@ class HeatMapPlot(ColorbarPlot):
 
         self._is_contiguous_gridded = is_gridded and x_index is not None and y_index is not None
         if self.is_contiguous_gridded:
-            style = {k: v for k, v in style.items() if not k.startswith(('annular_', 'xmarks_', 'ymarks_'))}
-            style.pop('color', None)
+            style = {
+                k: v for k, v in style.items()
+                if not (
+                    k.startswith(('annular_', 'xmarks_', 'ymarks_',)) or "fill" in k or "line" in k or "color" in k
+                )
+            }
             style['color_mapper'] = cmapper
             mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
             if self.static_source:
