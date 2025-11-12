@@ -267,7 +267,7 @@ class dim:
         self.ops = []
         self._ns = np.ndarray
         self.coerce = kwargs.get('coerce', True)
-        if isinstance(obj, str):
+        if isinstance(obj, (str, tuple)):
             self.dimension = Dimension(obj)
         elif isinstance(obj, Dimension):
             self.dimension = obj

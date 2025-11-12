@@ -1,7 +1,8 @@
-from unittest import SkipTest, skip, skipIf
+from unittest import SkipTest, skip
 
 import pandas as pd
 import panel as pn
+import pytest
 
 import holoviews as hv
 from holoviews.core.options import Cycle, Store
@@ -16,7 +17,7 @@ try:
 except ImportError:
     datashade = None
 
-ds_skip = skipIf(datashade is None, "Datashader not available")
+ds_skip = pytest.mark.skipif(datashade is None, reason="Datashader not available")
 
 
 unselected_color = "#ff0000"
@@ -174,6 +175,20 @@ class TestLinkSelections(ComparisonTestCase):
                 lnk_sel.selected_color,
             ]
         )
+
+    def test_select_expr_show_regions(self):
+        lnk_sel = link_selections.instance()
+        self.assertTrue(lnk_sel.show_regions)
+        se = (
+            (hv.dim('x') >= 0) & (hv.dim('x') <= 1) &
+            (hv.dim('y') >= 0) & (hv.dim('y') <= 1)
+        )
+        lnk_sel.selection_expr = se
+        self.assertFalse(lnk_sel.show_regions)
+        lnk_sel.selection_expr = None
+        self.assertFalse(lnk_sel.show_regions)
+        lnk_sel._cross_filter_stream.selection_expr = se
+        self.assertTrue(lnk_sel.show_regions)
 
     def test_overlay_points_errorbars(self, dynamic=False):
         points = Points(self.data)
@@ -695,6 +710,126 @@ class TestLinkSelections(ComparisonTestCase):
 
     def test_points_histogram_inverse_intersect_dynamic(self):
         self.test_points_histogram_inverse_intersect(dynamic=True)
+
+    def test_unlink_points(self):
+        points = Points(self.data)
+        lnk_sel = link_selections.instance(unselected_color='#ff0000')
+        linked = lnk_sel(points)
+
+        current_obj = linked[()]
+        self.assertIsInstance(current_obj, hv.Overlay)
+        selectionxy = TestLinkSelections.get_value_with_key_type(
+            lnk_sel._selection_expr_streams, hv.Points
+        ).input_streams[0].input_stream.input_streams[0]
+        selectionxy.event(bounds=(0, 1, 5, 5))
+        _unselected, selected, _region, _region2 = linked[()].values()
+        self.check_overlay_points_like(selected, lnk_sel, self.data.iloc[1:])
+
+        self.assertIn(points, lnk_sel._streams)
+        self.assertEqual(len(lnk_sel._selection_expr_streams), 1)
+        self.assertEqual(len(lnk_sel._plot_reset_streams), 1)
+        self.assertEqual(len(lnk_sel._cross_filter_stream.input_streams), 1)
+        self.assertEqual(len(lnk_sel._cross_filter_stream.input_streams[0].history_stream._subscribers), 1)
+        self.assertEqual(len(lnk_sel._cross_filter_stream.input_streams[0].history_stream.values), 2)
+
+        lnk_sel.unlink(points)
+
+        self.assertNotIn(points, lnk_sel._streams)
+        self.assertEqual(len(lnk_sel._selection_expr_streams), 0)
+        self.assertTrue(len(lnk_sel._plot_reset_streams) == 0)
+        self.assertEqual(len(lnk_sel._cross_filter_stream.input_streams), 1)
+        self.assertEqual(len(lnk_sel._cross_filter_stream.input_streams[0].history_stream._subscribers), 0)
+        self.assertEqual(len(lnk_sel._cross_filter_stream.input_streams[0].history_stream.values), 0)
+
+    def test_unlink_layout_one_object(self):
+        points = Points(self.data)
+        table = Table(self.data)
+        lnk_sel = link_selections.instance(
+            selected_color="#aa0000", unselected_color='#ff0000'
+        )
+        layout = points + table
+        linked = lnk_sel(layout)
+
+        current_obj = linked[()]
+        self.assertIsInstance(current_obj[0][()], hv.Overlay)
+        selectionxy = TestLinkSelections.get_value_with_key_type(
+            lnk_sel._selection_expr_streams, hv.Points
+        ).input_streams[0].input_stream.input_streams[0]
+        selectionxy.event(bounds=(0, 0, 4, 2))
+
+        self.assertIn(points, lnk_sel._streams)
+        self.assertIn(table, lnk_sel._streams)
+        self.assertEqual(len(lnk_sel._selection_expr_streams), 2)
+        self.assertTrue(len(lnk_sel._plot_reset_streams) == 2)
+
+        lnk_sel.unlink(points)
+
+        self.assertNotIn(points, lnk_sel._streams)
+        self.assertIn(table, lnk_sel._streams)
+        self.assertEqual(len(lnk_sel._selection_expr_streams), 1)
+        self.assertTrue(len(lnk_sel._plot_reset_streams) == 1)
+
+    def test_unlink_dynamic(self):
+        points = Points(self.data)
+        points_dynamic = hv.util.Dynamic(points)
+
+        lnk_sel = link_selections.instance(unselected_color='#ff0000')
+        linked = lnk_sel(points_dynamic)
+
+        current_obj = linked[()]
+        self.assertIsInstance(current_obj, hv.Overlay)
+        selectionxy = TestLinkSelections.get_value_with_key_type(
+            lnk_sel._selection_expr_streams, hv.Points
+        ).input_streams[0].input_stream.input_streams[0]
+        selectionxy.event(bounds=(0, 1, 5, 5))
+
+        self.assertIn(points_dynamic, lnk_sel._streams)
+        self.assertEqual(len(lnk_sel._selection_expr_streams), 1)
+        self.assertTrue(len(lnk_sel._plot_reset_streams) == 1)
+
+        lnk_sel.unlink(points_dynamic)
+
+        self.assertNotIn(points_dynamic, lnk_sel._streams)
+        self.assertEqual(len(lnk_sel._selection_expr_streams), 0)
+        self.assertTrue(len(lnk_sel._plot_reset_streams) == 0)
+
+    def test_unlink_multiple_objects(self):
+        points1 = Points(self.data)
+        points2 = Points(self.data)
+
+        lnk_sel = link_selections.instance(unselected_color='#ff0000')
+        lnk_sel(points1)
+        lnk_sel(points2)
+
+        self.assertIn(points1, lnk_sel._streams)
+        self.assertIn(points2, lnk_sel._streams)
+        self.assertEqual(len(lnk_sel._selection_expr_streams), 2)
+        self.assertTrue(len(lnk_sel._plot_reset_streams) == 2)
+
+        lnk_sel.unlink(points1)
+
+        self.assertNotIn(points1, lnk_sel._streams)
+        self.assertIn(points2, lnk_sel._streams)
+        self.assertEqual(len(lnk_sel._selection_expr_streams), 1)
+        self.assertTrue(len(lnk_sel._plot_reset_streams) == 1)
+
+        lnk_sel.unlink(points2)
+
+        self.assertNotIn(points1, lnk_sel._streams)
+        self.assertNotIn(points2, lnk_sel._streams)
+        self.assertEqual(len(lnk_sel._selection_expr_streams), 0)
+        self.assertTrue(len(lnk_sel._plot_reset_streams) == 0)
+
+    def test_unlink_nonexistent_object_no_error(self):
+        points1 = Points(self.data)
+        points2 = Points(self.data)
+
+        lnk_sel = link_selections.instance(unselected_color='#ff0000')
+        lnk_sel(points1)
+
+        lnk_sel.unlink(points2)
+
+        self.assertIn(points1, lnk_sel._streams)
 
 
 # Backend implementations

@@ -1,9 +1,8 @@
 import datetime as dt
 import random
 from importlib.util import find_spec
-from unittest import SkipTest, skipIf
+from unittest import SkipTest
 
-import narwhals.stable.v2 as nw
 import numpy as np
 import pandas as pd
 import param
@@ -65,8 +64,8 @@ from holoviews.operation.element import (
 )
 
 mpl = find_spec("matplotlib")
-da_skip = skipIf(da is None, "dask.array is not available")
-ibis_skip = skipIf(ibis is None, "ibis is not available")
+da_skip = pytest.mark.skipif(da is None, reason="dask.array is not available")
+ibis_skip = pytest.mark.skipif(ibis is None, reason="ibis is not available")
 
 
 class OperationTests(ComparisonTestCase):
@@ -652,8 +651,8 @@ class OperationTests(ComparisonTestCase):
         self.assertEqual(op_hist, hist)
 
     def test_histogram_narwhals_pandas(self):
-        df = nw.from_native(pd.DataFrame({'x': range(10)}))
-        ds = Dataset(df, vdims='x')
+        df = pd.DataFrame({'x': range(10)})
+        ds = Dataset(df, vdims='x', datatype=["narwhals"])
         op_hist = histogram(ds, num_bins=3, normed=False)
 
         hist = Histogram(([0, 3, 6, 9], [3, 3, 4]),
@@ -662,7 +661,7 @@ class OperationTests(ComparisonTestCase):
 
     def test_histogram_narwhals_polars(self):
         pl = pytest.importorskip("polars")
-        df = nw.from_native(pl.DataFrame({'x': range(10)}))
+        df = pl.DataFrame({'x': range(10)})
         ds = Dataset(df, vdims='x')
         op_hist = histogram(ds, num_bins=3, normed=False)
 
@@ -672,13 +671,25 @@ class OperationTests(ComparisonTestCase):
 
     def test_histogram_narwhals_polars_lazy(self):
         pl = pytest.importorskip("polars")
-        df = nw.from_native(pl.LazyFrame({'x': range(10)}))
+        df = pl.LazyFrame({'x': range(10)})
         ds = Dataset(df, vdims='x')
         op_hist = histogram(ds, num_bins=3, normed=False)
 
         hist = Histogram(([0, 3, 6, 9], [3, 3, 4]),
                          vdims=('x_count', 'Count'))
         self.assertEqual(op_hist, hist)
+
+    def test_histogram_narwhals_polars_lazy_groupby(self):
+        pl = pytest.importorskip("polars")
+        df = pl.LazyFrame({"x": [1, 2], "y": [1, 2]})
+        ds = Dataset(df)
+        op_hist = histogram(ds, num_bins=2, groupby="x")
+
+        hist1 = Histogram(([1, 1.5, 2], [1, 0]), kdims="y", vdims=[('y_count', 'Count')])
+        hist2 = Histogram(([1, 1.5, 2], [0, 1]), kdims="y", vdims=[('y_count', 'Count')])
+        expected = NdOverlay({(1,): hist1, (2,): hist2}, kdims=['x'])
+
+        self.assertEqual(op_hist, expected)
 
     @pytest.mark.usefixtures("mpl_backend")
     def test_histogram_dask_array_mpl(self):

@@ -76,8 +76,7 @@ class TestPathPlot(TestMPLPlot):
         arr = artist.get_array()
         assert arr is not None
 
-        # Expect 5 * (3-1) = 10 segment values
-        assert len(arr) == 10
+        assert len(arr) == 5
         # Value range should reflect our scalar-per-geometry inputs (0-40)
         assert float(arr.min()) == 0.0
         assert float(arr.max()) == 40.0
@@ -97,8 +96,7 @@ class TestPathPlot(TestMPLPlot):
 
         arr = artist.get_array()
         assert arr is not None
-        # Expect 5 * (7-1) = 30 segment values
-        assert len(arr) == 30
+        assert len(arr) == 5
         # Range again spans 0-40 for these inputs
         assert float(arr.min()) == 0.0
         assert float(arr.max()) == 40.0
@@ -118,7 +116,7 @@ class TestPathPlot(TestMPLPlot):
 
         # Check that the color array has the expected values
         arr = artist.get_array()
-        expected = np.array([0, 0, 10, 10, 20, 20, 30, 30, 40, 40])
+        expected = np.array([0, 10, 20, 30, 40])
         np.testing.assert_array_equal(arr, expected)
 
         # Check that colormap is properly set

@@ -51,7 +51,7 @@ class DictInterface(Interface):
                     data = np.atleast_2d(data).T
             data = {k: data[:,i] for i,k in enumerate(dimensions)}
         elif isinstance(data, list) and data == []:
-            data = dict([(d, []) for d in dimensions])
+            data = {key: [] for key in dimensions}
         elif isinstance(data, list) and isscalar(data[0]):
             if eltype._auto_indexable_1d:
                 data = {dimensions[0]: np.arange(len(data)), dimensions[1]: data}

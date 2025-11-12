@@ -39,6 +39,7 @@ dependencies = [
     "pandas >=1.3",
     "panel >=1.0",
     "param >=2.0,<3.0",
+    "python-dateutil >=2.8.2",
     "pyviz_comms >=2.1",
 ]
 
@@ -228,6 +229,23 @@ combine-as-imports = true
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
 
-[tool.codespell]
-ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn,ser,assertIn,anc,COO"
-write-changes = true
+[tool.typos.default]
+extend-ignore-re = [
+    ".*(?:#|--|//|/*).*(?:typos):\\s?ignore[^\\n]*\\n",
+    ".*(?:typos):\\s?ignore-next-line[^\\n]*\\n[^\\n]*",
+]
+
+[tool.typos.default.extend-words]
+anc = "anc"
+arange = "arange"
+ba = "ba"
+iy = "iy"
+lod = "lod"
+nd = "nd"
+pn = "pn"
+ser = "ser"
+spreaded = "spreaded"
+
+[tool.typos.default.extend-identifiers]
+les_mis = "les_mis"
+LesMis = "LesMis"
