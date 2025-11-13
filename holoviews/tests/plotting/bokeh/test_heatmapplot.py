@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 from bokeh.models import (
     FactorRange,
     HoverTool,
@@ -9,6 +10,7 @@ from bokeh.models import (
 )
 
 from holoviews.element import HeatMap, Image, Points
+from holoviews.plotting.bokeh.heatmap import HeatMapPlot
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -199,3 +201,34 @@ class TestHeatMapPlot(TestBokehPlot):
         np.testing.assert_array_equal(data["x"], hm.dimension_values("x"))
         np.testing.assert_array_equal(data["y"], hm.dimension_values("y"))
         np.testing.assert_array_equal(data["zvalues"], hm.dimension_values("z"))
+
+
+@pytest.mark.parametrize("optimized_gridded", [True, False])
+@pytest.mark.parametrize("style_name", sorted(HeatMapPlot.style_opts))
+def test_heatmap_style_opts(optimized_gridded, style_name):
+    if style_name == 'cmap':
+        style_value = 'viridis'
+    elif 'color' in style_name:
+        style_value = 'red'
+    elif 'alpha' in style_name:
+        style_value = 0.5
+    elif 'width' in style_name:
+        style_value = 2
+    elif style_name in ('visible', 'muted', 'dilate'):
+        style_value = True
+    elif 'dash' in style_name and 'offset' not in style_name:
+        style_value = 'solid'
+    elif 'join' in style_name:
+        style_value = 'miter'
+    elif 'cap' in style_name:
+        style_value = 'butt'
+    elif 'offset' in style_name:
+        style_value = 0
+    else:
+        style_value = 1
+
+    fig = HeatMap(([1,2,3,4], [1,2], [[1,2,3,4], [1,2,3,4]]))
+    styled = fig.opts(optimize_gridded=optimized_gridded, **{style_name: style_value})
+
+    plot = bokeh_renderer.get_plot(styled)
+    assert isinstance(plot.handles["glyph"], bkImage if optimized_gridded else bkRect)
