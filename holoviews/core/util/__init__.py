@@ -893,10 +893,8 @@ def isfinite(val):
     """
     is_dask = is_dask_array(val)
     if not np.isscalar(val) and not is_dask:
-        if isinstance(val, np.ma.core.MaskedArray):
-            return ~val.mask & isfinite(val.data)
-        elif isinstance(val, masked_types):
-            return ~val.isna() & isfinite(val._data)
+        if isinstance(val, masked_types):
+            return ~val._mask & isfinite(val._data)
         val = asarray(val, strict=False)
 
     isnan = pd.isna if pd else np.isnan
