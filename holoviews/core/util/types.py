@@ -3,6 +3,8 @@ import inspect
 from types import GeneratorType
 from typing import TYPE_CHECKING
 
+import narwhals.stable.v2 as nw
+
 from .dependencies import _LazyModule
 
 if TYPE_CHECKING:
@@ -95,6 +97,7 @@ def arraylike_types():
 
         yield from (ABCIndex, ABCSeries, ABCExtensionArray)
 
+    yield nw.Series
 
 @gen_types
 def masked_types():
