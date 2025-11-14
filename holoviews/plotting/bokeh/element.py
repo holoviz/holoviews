@@ -77,6 +77,7 @@ from .util import (
     BOKEH_GE_3_5_0,
     BOKEH_GE_3_6_0,
     BOKEH_GE_3_7_0,
+    BOKEH_GE_3_8_0,
     TOOL_TYPES,
     cds_column_replace,
     compute_layout_properties,
@@ -100,6 +101,9 @@ from .util import (
     theme_attr_json,
     wrap_formatter,
 )
+
+if BOKEH_GE_3_8_0:
+    from bokeh.models.axes import TimedeltaAxis
 
 try:
     TOOLS_MAP = Tool._known_aliases
@@ -802,9 +806,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 categorical = True
             elif el.get_dimension(dims[0]):
                 dim_type = el.get_dimension_type(dims[0])
-                if ((dim_type is np.object_ and issubclass(type(v0), util.datetime_types)) or
-                    dim_type in util.datetime_types):
+                if isinstance(v0, util.datetime_types) or dim_type in util.datetime_types:
                     axis_type = 'datetime'
+                elif BOKEH_GE_3_8_0 and isinstance(v0, util.timedelta_types) or dim_type in util.timedelta_types:
+                    axis_type = 'timedelta'
 
         norm_opts = self.lookup_options(el, 'norm').options
         shared_name = extra_range_name or ('x-main-range' if pos == 0 else 'y-main-range')
@@ -1391,10 +1396,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         data_aspect = (self.aspect == 'equal' or self.data_aspect)
         xaxis, yaxis = self.handles['xaxis'], self.handles['yaxis']
         categorical = isinstance(xaxis, CategoricalAxis) or isinstance(yaxis, CategoricalAxis)
-        datetime = isinstance(xaxis, DatetimeAxis) or isinstance(yaxis, CategoricalAxis)
+        datetime = isinstance(xaxis, DatetimeAxis) or isinstance(yaxis, DatetimeAxis)
+        timedelta = not BOKEH_GE_3_8_0 or isinstance(xaxis, TimedeltaAxis) or isinstance(yaxis, TimedeltaAxis)
         range_streams = [s for s in self.streams if isinstance(s, RangeXY)]
 
-        if data_aspect and (categorical or datetime):
+        if data_aspect and (categorical or datetime or timedelta):
             ax_type = 'categorical' if categorical else 'datetime axes'
             self.param.warning('Cannot set data_aspect if one or both '
                                f'axes are {ax_type}, the option will '

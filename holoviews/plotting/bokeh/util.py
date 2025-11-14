@@ -72,6 +72,11 @@ BOKEH_GE_3_6_0 = BOKEH_VERSION >= (3, 6, 0)
 BOKEH_GE_3_7_0 = BOKEH_VERSION >= (3, 7, 0)
 BOKEH_GE_3_8_0 = BOKEH_VERSION >= (3, 8, 0)
 
+
+if BOKEH_GE_3_8_0:
+    from bokeh.models.axes import TimedeltaAxis
+
+
 TOOL_TYPES = {
     'pan': tools.PanTool,
     'xpan': tools.PanTool,
@@ -1135,7 +1140,7 @@ def match_dim_specs(specs1, specs2):
 
 
 def get_scale(range_input, axis_type):
-    if isinstance(range_input, (DataRange1d, Range1d)) and axis_type in ["linear", "datetime", "mercator", "auto", None]:
+    if isinstance(range_input, (DataRange1d, Range1d)) and axis_type in ["linear", "datetime", "mercator", "auto", "timedelta", None]:
         return LinearScale()
     elif isinstance(range_input, (DataRange1d, Range1d)) and axis_type == "log":
         return LogScale()
@@ -1183,6 +1188,8 @@ def match_ax_type(ax, range_type):
         return range_type == 'categorical'
     elif isinstance(ax, DatetimeAxis):
         return range_type == 'datetime'
+    elif BOKEH_GE_3_8_0 and isinstance(ax, TimedeltaAxis):
+        return range_type == 'timedelta'
     else:
         return range_type in ('auto', 'log')
 
