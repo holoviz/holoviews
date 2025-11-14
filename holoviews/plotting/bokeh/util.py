@@ -6,45 +6,30 @@ from collections import defaultdict
 from contextlib import contextmanager, suppress
 from itertools import permutations
 
-import bokeh
 import numpy as np
-from bokeh.core.json_encoder import serialize_json  # noqa (API import)
 from bokeh.core.property.datetime import Datetime
 from bokeh.core.validation import silence
 from bokeh.core.validation.check import is_silenced
-from bokeh.layouts import Column, Row, group_tools
-from bokeh.models import (
+from bokeh.layouts import group_tools
+from bokeh.model import Model
+from bokeh.models import CustomJS, tools
+from bokeh.models.axes import (
     CategoricalAxis,
-    CopyTool,
-    CustomJS,
-    DataRange1d,
     DatetimeAxis,
-    ExamineTool,
-    FactorRange,
-    FullscreenTool,
-    GridBox,
-    GridPlot,
-    LayoutDOM,
     LinearAxis,
     LogAxis,
     MercatorAxis,
-    Model,
-    Plot,
-    Range1d,
-    SaveTool,
-    Spacer,
-    Tabs,
-    Toolbar,
-    tools,
 )
 from bokeh.models.formatters import PrintfTickFormatter, TickFormatter
+from bokeh.models.layouts import Column, GridBox, LayoutDOM, Row, Spacer, Tabs
+from bokeh.models.plots import GridPlot, Plot
+from bokeh.models.ranges import DataRange1d, FactorRange, Range1d
 from bokeh.models.scales import CategoricalScale, LinearScale, LogScale
 from bokeh.models.tickers import BasicTicker, FixedTicker, Ticker
 from bokeh.models.widgets import DataTable, Div
 from bokeh.plotting import figure
 from bokeh.themes import built_in_themes
 from bokeh.themes.theme import Theme
-from packaging.version import Version
 
 from ...core import util
 from ...core.layout import Layout
@@ -60,10 +45,11 @@ from ...core.util import (
     isnumeric,
     unique_array,
 )
+from ...core.util.dependencies import _no_import_version
 from ...util.warnings import warn
 from ..util import dim_axis_label
 
-BOKEH_VERSION = Version(bokeh.__version__).release
+BOKEH_VERSION = _no_import_version("bokeh")
 BOKEH_GE_3_2_0 = BOKEH_VERSION >= (3, 2, 0)
 BOKEH_GE_3_3_0 = BOKEH_VERSION >= (3, 3, 0)
 BOKEH_GE_3_4_0 = BOKEH_VERSION >= (3, 4, 0)
@@ -206,12 +192,12 @@ def compute_plot_size(plot):
         width = sum([max([compute_plot_size(f)[0] for f in col]) for col in cols])
         height = sum([max([compute_plot_size(f)[1] for f in row]) for row in rows])
         return width, height
-    elif isinstance(plot, (Div, Toolbar)):
+    elif isinstance(plot, (Div, tools.Toolbar)):
         # Cannot compute size for Div or Toolbar
         return 0, 0
     elif isinstance(plot, (Row, Column, Tabs)):
         if not plot.children: return 0, 0
-        if isinstance(plot, Row) or (isinstance(plot, Toolbar) and plot.toolbar_location not in ['right', 'left']):
+        if isinstance(plot, Row) or (isinstance(plot, tools.Toolbar) and plot.toolbar_location not in ['right', 'left']):
             w_agg, h_agg = (np.sum, np.max)
         elif isinstance(plot, Tabs):
             w_agg, h_agg = (np.max, np.max)
@@ -435,19 +421,19 @@ def merge_tools(plot_grid, *, disambiguation_properties=None, hide_toolbar=False
     and `description` can be used to prevent tools from being merged.
 
     """
-    tools = []
+    plot_tools = []
     for row in plot_grid:
         for item in row:
             if isinstance(item, LayoutDOM):
                 for p in item.select(dict(type=Plot)):
-                    tools.extend(p.toolbar.tools)
+                    plot_tools.extend(p.toolbar.tools)
             if hide_toolbar and hasattr(item, 'toolbar_location'):
                 item.toolbar_location = None
             if isinstance(item, GridPlot):
                 item.toolbar_location = None
 
     def merge(tool, group):
-        if issubclass(tool, (SaveTool, CopyTool, ExamineTool, FullscreenTool)):
+        if issubclass(tool, (tools.SaveTool, tools.CopyTool, tools.ExamineTool, tools.FullscreenTool)):
             return tool()
         else:
             return None
@@ -456,15 +442,15 @@ def merge_tools(plot_grid, *, disambiguation_properties=None, hide_toolbar=False
         disambiguation_properties = {'name', 'icon', 'tags', 'description'}
 
     ignore = set()
-    for tool in tools:
+    for tool in plot_tools:
         for p in tool.properties_with_values():
             if p not in disambiguation_properties:
                 ignore.add(p)
 
     toolbar_kwargs = {"autohide": autohide}
-    if tools:
-        toolbar_kwargs["tools"] = group_tools(tools, merge=merge, ignore=ignore)
-    return Toolbar(**toolbar_kwargs)
+    if plot_tools:
+        toolbar_kwargs["tools"] = group_tools(plot_tools, merge=merge, ignore=ignore)
+    return tools.Toolbar(**toolbar_kwargs)
 
 
 def sync_legends(bokeh_layout):
@@ -755,7 +741,7 @@ def filter_toolboxes(plots):
         plots.toolbar_location = None
     elif hasattr(plots, 'children'):
         plots.children = [filter_toolboxes(child) for child in plots.children
-                          if not isinstance(child, Toolbar)]
+                          if not isinstance(child, tools.Toolbar)]
     return plots
 
 
