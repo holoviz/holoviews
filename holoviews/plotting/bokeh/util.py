@@ -1145,6 +1145,8 @@ def get_axis_class(axis_type, range_input, dim): # Copied from bokeh
         return LogAxis, {}
     elif axis_type == "datetime":
         return DatetimeAxis, {}
+    elif BOKEH_GE_3_8_0 and axis_type == "timedelta":
+        return TimedeltaAxis, {}
     elif axis_type == "mercator":
         return MercatorAxis, dict(dimension='lon' if dim == 0 else 'lat')
     elif axis_type == "auto":
