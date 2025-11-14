@@ -22,7 +22,7 @@ from holoviews.core import Dimension, DynamicMap, HoloMap, NdOverlay, Overlay
 from holoviews.core.options import AbbreviatedException
 from holoviews.core.util import dt_to_int
 from holoviews.element import Curve, HeatMap, Image, Labels, Scatter
-from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0, BOKEH_GE_3_6_0
+from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0, BOKEH_GE_3_6_0, BOKEH_GE_3_8_0
 from holoviews.plotting.util import process_cmap
 from holoviews.streams import Pipe, PointDraw, Stream
 from holoviews.util import render
@@ -874,6 +874,32 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
             bokeh_renderer.get_plot(dmap)
             # works with no issue
             pipe.send(True)
+
+    @pytest.mark.skipif(not BOKEH_GE_3_8_0, reason="requires Bokeh >= 3.8")
+    def test_timedelta_axis_polars(self):
+        from bokeh.models.axes import TimedeltaAxis
+        pl = pytest.importorskip("polars")
+        df = pl.DataFrame(
+            {
+                "duration": [1000, 2000, 3000],
+                "data": [1, 2, 3],
+            }
+        ).with_columns(pl.col("duration").cast(pl.Duration("ns")))
+        el = Curve(df)
+        assert isinstance(render(el).below[0], TimedeltaAxis)
+
+    @pytest.mark.skipif(not BOKEH_GE_3_8_0, reason="requires Bokeh >= 3.8")
+    def test_timedelta_axis_pandas(self):
+        from bokeh.models.axes import TimedeltaAxis
+        pd = pytest.importorskip("pandas")
+        df = pd.DataFrame(
+            {
+                "duration": pd.to_timedelta([1000, 2000, 3000]),
+                "data": [1, 2, 3],
+            }
+        )
+        el = Curve(df)
+        assert isinstance(render(el).below[0], TimedeltaAxis)
 
 
 @pytest.mark.usefixtures("bokeh_backend")
