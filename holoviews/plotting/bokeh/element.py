@@ -1397,14 +1397,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xaxis, yaxis = self.handles['xaxis'], self.handles['yaxis']
         categorical = isinstance(xaxis, CategoricalAxis) or isinstance(yaxis, CategoricalAxis)
         datetime = isinstance(xaxis, DatetimeAxis) or isinstance(yaxis, DatetimeAxis)
-        timedelta = not BOKEH_GE_3_8_0 or isinstance(xaxis, TimedeltaAxis) or isinstance(yaxis, TimedeltaAxis)
+        timedelta = BOKEH_GE_3_8_0 and (isinstance(xaxis, TimedeltaAxis) or isinstance(yaxis, TimedeltaAxis))
         range_streams = [s for s in self.streams if isinstance(s, RangeXY)]
 
         if data_aspect and (categorical or datetime or timedelta):
-            ax_type = 'categorical' if categorical else 'datetime axes'
-            self.param.warning('Cannot set data_aspect if one or both '
-                               f'axes are {ax_type}, the option will '
-                               'be ignored.')
+            self.param.warning(
+                'Cannot set data_aspect if one or both axes are '
+                'categorical, datetime, or timedelta, data_aspect will '
+                'be ignored.'
+            )
         elif data_aspect:
             plot = self.handles['plot']
             xspan = r-l if util.is_number(l) and util.is_number(r) else None
