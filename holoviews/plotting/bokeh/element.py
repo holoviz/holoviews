@@ -808,7 +808,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 dim_type = el.get_dimension_type(dims[0])
                 if isinstance(v0, util.datetime_types) or dim_type in util.datetime_types:
                     axis_type = 'datetime'
-                elif BOKEH_GE_3_8_0 and isinstance(v0, util.timedelta_types) or dim_type in util.timedelta_types:
+                elif BOKEH_GE_3_8_0 and (isinstance(v0, util.timedelta_types) or dim_type in util.timedelta_types):
                     axis_type = 'timedelta'
 
         norm_opts = self.lookup_options(el, 'norm').options
