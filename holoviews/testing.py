@@ -26,9 +26,8 @@ from unittest.util import safe_repr
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
-from ..core.util.dependencies import _is_installed
-from . import element
-from .core import (
+from holoviews import element
+from holoviews.core import (
     AdjointLayout,
     Dimension,
     Dimensioned,
@@ -43,69 +42,20 @@ from .core import (
     NdOverlay,
     Overlay,
 )
-from .core.options import Cycle, Options
-from .core.util import (
+from holoviews.core.options import Cycle, Options
+from holoviews.core.util import (
     cast_array_to_int64,
     datetime_types,
     dt_to_int,
     dtype_kind,
     is_float,
 )
+from holoviews.core.util.dependencies import _is_installed
 
-# from . import *
-
-
-class ComparisonInterface:
-    """This class is designed to allow equality testing to work
-    seamlessly with unittest.TestCase as a mix-in by implementing a
-    compatible interface (namely the assertEqual method).
-
-    The assertEqual class method is to be overridden by an instance
-    method of the same name when used as a mix-in with TestCase. The
-    contents of the equality_type_funcs dictionary is suitable for use
-    with TestCase.addTypeEqualityFunc.
-
-    """
-
-    equality_type_funcs = {}
-    failureException = AssertionError
-
-    @classmethod
-    def simple_equality(cls, first, second, msg=None):
-        """Classmethod equivalent to unittest.TestCase method (longMessage = False.)
-
-        """
-        check = first==second
-        if not isinstance(check, bool) and hasattr(check, "all"):
-            check = check.all()
-        if not check:
-            standardMsg = f'{safe_repr(first)} != {safe_repr(second)}'
-            raise cls.failureException(msg or standardMsg)
+_equality_type_funcs = {}
 
 
-    @classmethod
-    def assertEqual(cls, first, second, msg=None):
-        """Classmethod equivalent to unittest.TestCase method
-
-        """
-        asserter = None
-        if type(first) is type(second) or (is_float(first) and is_float(second)):
-            asserter = cls.equality_type_funcs.get(type(first))
-
-            if asserter is not None:
-                if isinstance(asserter, str):
-                    asserter = getattr(cls, asserter)
-
-        if asserter is None:
-            asserter = cls.simple_equality
-
-        if msg is None:
-            asserter(first, second)
-        else:
-            asserter(first, second, msg=msg)
-
-
-class Comparison(ComparisonInterface):
+class _Comparison:
     """Class used for comparing two HoloViews objects, including complex
     composite objects. Comparisons are available as classmethods, the
     most general being the assertEqual method that is intended to work
@@ -117,155 +67,111 @@ class Comparison(ComparisonInterface):
 
     """
 
-    # someone might prefer to use a different function, e.g. assert_all_close
-    assert_array_almost_equal_fn = partial(assert_array_almost_equal, decimal=6)
+    almost_equal = False
+
 
     @classmethod
     def register(cls):
 
         # Float comparisons
-        cls.equality_type_funcs[float] =        cls.compare_floats
-        cls.equality_type_funcs[np.float32] =   cls.compare_floats
-        cls.equality_type_funcs[np.float64] =   cls.compare_floats
-
-        # List and tuple comparisons
-        cls.equality_type_funcs[list] =         cls.compare_lists
-        cls.equality_type_funcs[tuple] =        cls.compare_tuples
-
-        # Dictionary comparisons
-        cls.equality_type_funcs[dict] =         cls.compare_dictionaries
+        _equality_type_funcs[float] =        cls.compare_floats
+        _equality_type_funcs[np.float32] =   cls.compare_floats
+        _equality_type_funcs[np.float64] =   cls.compare_floats
 
         # Numpy array comparison
-        cls.equality_type_funcs[np.ndarray]          = cls.compare_arrays
-        cls.equality_type_funcs[np.ma.masked_array]  = cls.compare_arrays
+        _equality_type_funcs[np.ndarray]          = cls.compare_arrays
+        _equality_type_funcs[np.ma.masked_array]  = cls.compare_arrays
 
         # Pandas dataframe comparison
         if _is_installed("pandas"):
             import pandas as pd
-            cls.equality_type_funcs[pd.DataFrame] = cls.compare_dataframe
+            _equality_type_funcs[pd.DataFrame] = cls.compare_dataframe
 
         # Dimension objects
-        cls.equality_type_funcs[Dimension] =    cls.compare_dimensions
-        cls.equality_type_funcs[Dimensioned] =  cls.compare_dimensioned  # Used in unit tests
-        cls.equality_type_funcs[Element]     =  cls.compare_elements     # Used in unit tests
+        _equality_type_funcs[Dimension] =    cls.compare_dimensions
+        _equality_type_funcs[Dimensioned] =  cls.compare_dimensioned
+        _equality_type_funcs[Element]     =  cls.compare_elements
 
         # Composition (+ and *)
-        cls.equality_type_funcs[Overlay] =     cls.compare_overlays
-        cls.equality_type_funcs[Layout] =      cls.compare_layouttrees
-        cls.equality_type_funcs[Empty] =       cls.compare_empties
+        _equality_type_funcs[Overlay] =     cls.compare_overlays
+        _equality_type_funcs[Layout] =      cls.compare_layouttrees
+        _equality_type_funcs[Empty] =       cls.compare_empties
 
         # Annotations
-        cls.equality_type_funcs[element.VLine] =       cls.compare_vline
-        cls.equality_type_funcs[element.HLine] =       cls.compare_hline
-        cls.equality_type_funcs[element.VSpan] =       cls.compare_vspan
-        cls.equality_type_funcs[element.HSpan] =       cls.compare_hspan
-        cls.equality_type_funcs[element.Spline] =      cls.compare_spline
-        cls.equality_type_funcs[element.Arrow] =       cls.compare_arrow
-        cls.equality_type_funcs[element.Text] =        cls.compare_text
-        cls.equality_type_funcs[element.Div] =         cls.compare_div
+        _equality_type_funcs[element.VLine] =       cls.compare_vline
+        _equality_type_funcs[element.HLine] =       cls.compare_hline
+        _equality_type_funcs[element.VSpan] =       cls.compare_vspan
+        _equality_type_funcs[element.HSpan] =       cls.compare_hspan
+        _equality_type_funcs[element.Spline] =      cls.compare_spline
+        _equality_type_funcs[element.Arrow] =       cls.compare_arrow
+        _equality_type_funcs[element.Text] =        cls.compare_text
+        _equality_type_funcs[element.Div] =         cls.compare_div
 
         # Path comparisons
-        cls.equality_type_funcs[element.Path] =        cls.compare_paths
-        cls.equality_type_funcs[element.Contours] =    cls.compare_contours
-        cls.equality_type_funcs[element.Polygons] =    cls.compare_polygons
-        cls.equality_type_funcs[element.Box] =         cls.compare_box
-        cls.equality_type_funcs[element.Ellipse] =     cls.compare_ellipse
-        cls.equality_type_funcs[element.Bounds] =      cls.compare_bounds
+        _equality_type_funcs[element.Path] =        cls.compare_paths
+        _equality_type_funcs[element.Contours] =    cls.compare_contours
+        _equality_type_funcs[element.Polygons] =    cls.compare_polygons
+        _equality_type_funcs[element.Box] =         cls.compare_box
+        _equality_type_funcs[element.Ellipse] =     cls.compare_ellipse
+        _equality_type_funcs[element.Bounds] =      cls.compare_bounds
 
         # Rasters
-        cls.equality_type_funcs[element.Image] =       cls.compare_image
-        cls.equality_type_funcs[element.ImageStack] =  cls.compare_imagestack
-        cls.equality_type_funcs[element.RGB] =         cls.compare_rgb
-        cls.equality_type_funcs[element.HSV] =         cls.compare_hsv
-        cls.equality_type_funcs[element.Raster] =      cls.compare_raster
-        cls.equality_type_funcs[element.QuadMesh] =    cls.compare_quadmesh
-        cls.equality_type_funcs[element.Surface] =     cls.compare_surface
-        cls.equality_type_funcs[element.HeatMap] =     cls.compare_dataset
+        _equality_type_funcs[element.Image] =       cls.compare_image
+        _equality_type_funcs[element.ImageStack] =  cls.compare_imagestack
+        _equality_type_funcs[element.RGB] =         cls.compare_rgb
+        _equality_type_funcs[element.HSV] =         cls.compare_hsv
+        _equality_type_funcs[element.Raster] =      cls.compare_raster
+        _equality_type_funcs[element.QuadMesh] =    cls.compare_quadmesh
+        _equality_type_funcs[element.Surface] =     cls.compare_surface
+        _equality_type_funcs[element.HeatMap] =     cls.compare_dataset
 
         # Geometries
-        cls.equality_type_funcs[element.Segments] =    cls.compare_segments
-        cls.equality_type_funcs[element.Rectangles] =       cls.compare_boxes
+        _equality_type_funcs[element.Segments] =    cls.compare_segments
+        _equality_type_funcs[element.Rectangles] =       cls.compare_boxes
 
         # Charts
-        cls.equality_type_funcs[element.Dataset] =      cls.compare_dataset
-        cls.equality_type_funcs[element.Curve] =        cls.compare_curve
-        cls.equality_type_funcs[element.ErrorBars] =    cls.compare_errorbars
-        cls.equality_type_funcs[element.Spread] =       cls.compare_spread
-        cls.equality_type_funcs[element.Area] =         cls.compare_area
-        cls.equality_type_funcs[element.Scatter] =      cls.compare_scatter
-        cls.equality_type_funcs[element.Scatter3D] =    cls.compare_scatter3d
-        cls.equality_type_funcs[element.TriSurface] =   cls.compare_trisurface
-        cls.equality_type_funcs[element.Histogram] =    cls.compare_histogram
-        cls.equality_type_funcs[element.Bars] =         cls.compare_bars
-        cls.equality_type_funcs[element.Spikes] =       cls.compare_spikes
-        cls.equality_type_funcs[element.BoxWhisker] =   cls.compare_boxwhisker
-        cls.equality_type_funcs[element.VectorField] =  cls.compare_vectorfield
+        _equality_type_funcs[element.Dataset] =      cls.compare_dataset
+        _equality_type_funcs[element.Curve] =        cls.compare_curve
+        _equality_type_funcs[element.ErrorBars] =    cls.compare_errorbars
+        _equality_type_funcs[element.Spread] =       cls.compare_spread
+        _equality_type_funcs[element.Area] =         cls.compare_area
+        _equality_type_funcs[element.Scatter] =      cls.compare_scatter
+        _equality_type_funcs[element.Scatter3D] =    cls.compare_scatter3d
+        _equality_type_funcs[element.TriSurface] =   cls.compare_trisurface
+        _equality_type_funcs[element.Histogram] =    cls.compare_histogram
+        _equality_type_funcs[element.Bars] =         cls.compare_bars
+        _equality_type_funcs[element.Spikes] =       cls.compare_spikes
+        _equality_type_funcs[element.BoxWhisker] =   cls.compare_boxwhisker
+        _equality_type_funcs[element.VectorField] =  cls.compare_vectorfield
 
         # Graphs
-        cls.equality_type_funcs[element.Graph] =        cls.compare_graph
-        cls.equality_type_funcs[element.Nodes] =        cls.compare_nodes
-        cls.equality_type_funcs[element.EdgePaths] =    cls.compare_edgepaths
-        cls.equality_type_funcs[element.TriMesh] =      cls.compare_trimesh
+        _equality_type_funcs[element.Graph] =        cls.compare_graph
+        _equality_type_funcs[element.Nodes] =        cls.compare_nodes
+        _equality_type_funcs[element.EdgePaths] =    cls.compare_edgepaths
+        _equality_type_funcs[element.TriMesh] =      cls.compare_trimesh
 
         # Tables
-        cls.equality_type_funcs[element.ItemTable] =    cls.compare_itemtables
-        cls.equality_type_funcs[element.Table] =        cls.compare_tables
-        cls.equality_type_funcs[element.Points] =       cls.compare_points
+        _equality_type_funcs[element.ItemTable] =    cls.compare_itemtables
+        _equality_type_funcs[element.Table] =        cls.compare_tables
+        _equality_type_funcs[element.Points] =       cls.compare_points
 
         # Statistical
-        cls.equality_type_funcs[element.Bivariate] =    cls.compare_bivariate
-        cls.equality_type_funcs[element.Distribution] = cls.compare_distribution
-        cls.equality_type_funcs[element.HexTiles] =     cls.compare_hextiles
+        _equality_type_funcs[element.Bivariate] =    cls.compare_bivariate
+        _equality_type_funcs[element.Distribution] = cls.compare_distribution
+        _equality_type_funcs[element.HexTiles] =     cls.compare_hextiles
 
         # NdMappings
-        cls.equality_type_funcs[NdLayout] =      cls.compare_gridlayout
-        cls.equality_type_funcs[AdjointLayout] = cls.compare_adjointlayouts
-        cls.equality_type_funcs[NdOverlay] =     cls.compare_ndoverlays
-        cls.equality_type_funcs[GridSpace] =     cls.compare_grids
-        cls.equality_type_funcs[GridMatrix] =     cls.compare_grids
-        cls.equality_type_funcs[HoloMap] =       cls.compare_holomap
-        cls.equality_type_funcs[DynamicMap] =    cls.compare_dynamicmap
+        _equality_type_funcs[NdLayout] =      cls.compare_gridlayout
+        _equality_type_funcs[AdjointLayout] = cls.compare_adjointlayouts
+        _equality_type_funcs[NdOverlay] =     cls.compare_ndoverlays
+        _equality_type_funcs[GridSpace] =     cls.compare_grids
+        _equality_type_funcs[GridMatrix] =     cls.compare_grids
+        _equality_type_funcs[HoloMap] =       cls.compare_holomap
+        _equality_type_funcs[DynamicMap] =    cls.compare_dynamicmap
 
         # Option objects
-        cls.equality_type_funcs[Options] =     cls.compare_options
-        cls.equality_type_funcs[Cycle] =       cls.compare_cycles
-
-        return cls.equality_type_funcs
-
-
-    @classmethod
-    def compare_dictionaries(cls, d1, d2, msg='Dictionaries'):
-        keys= set(d1.keys())
-        keys2 = set(d2.keys())
-        symmetric_diff = keys ^ keys2
-        if symmetric_diff:
-            msg = f"Dictionaries have different sets of keys: {symmetric_diff!r}\n\n"
-            msg += f"Dictionary 1: {d1}\n"
-            msg += f"Dictionary 2: {d2}"
-            raise cls.failureException(msg)
-        for k in keys:
-            cls.assertEqual(d1[k], d2[k])
-
-
-    @classmethod
-    def compare_lists(cls, l1, l2, msg=None):
-        try:
-            cls.assertEqual(len(l1), len(l2))
-            for v1, v2 in zip(l1, l2, strict=None):
-                cls.assertEqual(v1, v2)
-        except AssertionError as e:
-            raise AssertionError(msg or f'{l1!r} != {l2!r}') from e
-
-
-    @classmethod
-    def compare_tuples(cls, t1, t2, msg=None):
-        try:
-            cls.assertEqual(len(t1), len(t2))
-            for i1, i2 in zip(t1, t2, strict=None):
-                cls.assertEqual(i1, i2)
-        except AssertionError as e:
-            raise AssertionError(msg or f'{t1!r} != {t2!r}') from e
-
+        _equality_type_funcs[Options] =     cls.compare_options
+        _equality_type_funcs[Cycle] =       cls.compare_cycles
 
     #=====================#
     # Literal comparisons #
@@ -277,31 +183,22 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_arrays(cls, arr1, arr2, msg='Arrays'):
-        try:
-            if dtype_kind(arr1) == 'M':
-                arr1 = cast_array_to_int64(arr1.astype('datetime64[ns]'))
-            if dtype_kind(arr2) == 'M':
-                arr2 = cast_array_to_int64(arr2.astype('datetime64[ns]'))
+        if cls.almost_equal:
+            assert_array_almost_equal(arr1, arr2)
+        else:
             assert_array_equal(arr1, arr2)
-        except Exception:
-            try:
-                cls.assert_array_almost_equal_fn(arr1, arr2)
-            except AssertionError as e:
-                raise cls.failureException(msg + str(e)[11:]) from e
 
     @classmethod
     def bounds_check(cls, el1, el2, msg=None):
         lbrt1 = el1.bounds.lbrt()
         lbrt2 = el2.bounds.lbrt()
-        try:
-            for v1, v2 in zip(lbrt1, lbrt2, strict=None):
-                if isinstance(v1, datetime_types):
-                    v1 = dt_to_int(v1)
-                if isinstance(v2, datetime_types):
-                    v2 = dt_to_int(v2)
-                cls.assert_array_almost_equal_fn(v1, v2)
-        except AssertionError as e:
-            raise cls.failureException(f"BoundingBoxes are mismatched: {el1.bounds.lbrt()} != {el2.bounds.lbrt()}.") from e
+        for v1, v2 in zip(lbrt1, lbrt2, strict=True):
+            if isinstance(v1, datetime_types):
+                v1 = dt_to_int(v1)
+            if isinstance(v2, datetime_types):
+                v2 = dt_to_int(v2)
+            # cls.assert_array_almost_equal_fn(v1, v2)
+            assert v1 == v2
 
 
     #=======================================#
@@ -367,10 +264,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_trees(cls, el1, el2, msg='Trees'):
-        if len(el1.keys()) != len(el2.keys()):
-            raise cls.failureException(f"{msg} have mismatched path counts.")
-        if el1.keys() != el2.keys():
-            raise cls.failureException(f"{msg} have mismatched paths.")
+        assert el1.keys() == el2.keys()
         for element1, element2 in zip(el1.values(),  el2.values(), strict=None):
             cls.assertEqual(element1, element2)
 
@@ -381,8 +275,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_empties(cls, el1, el2, msg=None):
-        if not all(isinstance(el, Empty) for el in [el1, el2]):
-            raise cls.failureException("Compared elements are not both Empty()")
+        assert all(isinstance(el, Empty) for el in [el1, el2])
 
     @classmethod
     def compare_overlays(cls, el1, el2, msg=None):
@@ -425,12 +318,7 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_gridlayout(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
-
-        if len(el1) != len(el2):
-            raise cls.failureException("Layouts have different sizes.")
-
-        if set(el1.keys()) != set(el2.keys()):
-            raise cls.failureException("Layouts have different keys.")
+        assert el1.keys() == el2.keys()
 
         for element1, element2 in zip(el1, el2, strict=None):
             cls.assertEqual(element1,element2)
@@ -724,10 +612,7 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_dataframe(cls, df1, df2, msg='DFrame'):
         from pandas.testing import assert_frame_equal
-        try:
-            assert_frame_equal(df1, df2)
-        except AssertionError as e:
-            raise cls.failureException(f'{msg}: {e}') from e
+        assert_frame_equal(df1, df2)
 
     #============#
     # Statistics #
@@ -761,7 +646,7 @@ class Comparison(ComparisonInterface):
         if len(el1) != len(el2):
             raise cls.failureException(f"{name}s have different depths.")
 
-        for element1, element2 in zip(el1, el2, strict=None):
+        for element1, element2 in zip(el1, el2, strict=True):
             cls.assertEqual(element1, element2)
 
     @classmethod
@@ -781,21 +666,38 @@ class Comparison(ComparisonInterface):
     def compare_cycles(cls, cycle1, cycle2, msg=None):
         cls.assertEqual(cycle1.values, cycle2.values)
 
+    @classmethod
+    def _simple_equality(cls,first, second, msg=None):
+        assert first == second
 
-class ComparisonTestCase(Comparison, TestCase):
-    """Class to integrate the Comparison class with unittest.TestCase.
+    @classmethod
+    def assertEqual(cls, first, second, msg=None):
+        """Classmethod equivalent to unittest.TestCase method
 
-    """
+        """
+        if not _equality_type_funcs:
+            cls.register()
 
-    def __init__(self, *args, **kwargs):
-        TestCase.__init__(self, *args, **kwargs)
-        registry = Comparison.register()
-        for k, v in registry.items():
-            self.addTypeEqualityFunc(k, v)
+        asserter = None
+        if type(first) is type(second) or (is_float(first) and is_float(second)):
+            asserter = _equality_type_funcs.get(type(first))
+
+            if asserter is not None:
+                if isinstance(asserter, str):
+                    asserter = getattr(cls, asserter)
+
+        if asserter is None:
+            asserter = cls._simple_equality
+
+        if msg is None:
+            asserter(first, second)
+        else:
+            asserter(first, second, msg=msg)
 
 
+class _ComparisonAlmost(_Comparison):
+    almost_equal = True
 
-_assert_element_equal = ComparisonTestCase().assertEqual
 
 def assert_element_equal(element1, element2):
     # Filter non-holoviews elements
@@ -805,4 +707,15 @@ def assert_element_equal(element1, element2):
     if not isinstance(element2, hv_types):
         raise TypeError(f"Second argument is not an allowed type but a {type(element2).__name__!r}.")
 
-    _assert_element_equal(element1, element2)
+    _Comparison.assertEqual(element1, element2)
+
+
+def assert_element_almost_equal(element1, element2):
+    # Filter non-holoviews elements
+    hv_types = (Element, Layout)
+    if not isinstance(element1, hv_types):
+        raise TypeError(f"First argument is not an allowed type but a {type(element1).__name__!r}.")
+    if not isinstance(element2, hv_types):
+        raise TypeError(f"Second argument is not an allowed type but a {type(element2).__name__!r}.")
+
+    _ComparisonAlmost.assertEqual(element1, element2)

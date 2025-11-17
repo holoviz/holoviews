@@ -12,6 +12,7 @@ import holoviews as hv
 
 CUSTOM_MARKS = ("ui", "gpu")
 
+pytest.register_assert_rewrite("holoviews.testing")
 
 def pytest_addoption(parser):
     for marker in CUSTOM_MARKS:
