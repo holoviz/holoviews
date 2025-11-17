@@ -176,7 +176,7 @@ class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
-        self.assertTrue(cmapper, LinearColorMapper)
+        assert isinstance(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 2)
         self.assertEqual(cds.data['color'], np.array([0, 1, 2]))
@@ -190,7 +190,7 @@ class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
-        self.assertTrue(cmapper, CategoricalColorMapper)
+        assert isinstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
         self.assertEqual(cds.data['color'], np.array(['A', 'B', 'C']))
         self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})

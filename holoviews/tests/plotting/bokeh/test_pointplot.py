@@ -375,7 +375,7 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
-        self.assertTrue(cmapper, LinearColorMapper)
+        assert isinstance(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 2)
         self.assertEqual(cds.data['color'], np.array([0, 1, 2]))
@@ -389,7 +389,7 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
-        self.assertTrue(cmapper, CategoricalColorMapper)
+        assert isinstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
         self.assertEqual(cds.data['color'], np.array(['A', 'B', 'C']))
         self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
@@ -413,7 +413,7 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
-        self.assertTrue(cmapper, CategoricalColorMapper)
+        assert isinstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['apple', 'pear'])
         self.assertEqual(np.asarray(cds.data['color']), np.array(['apple', 'pear', 'apple', 'pear']))
         self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
@@ -426,7 +426,7 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
-        self.assertTrue(cmapper, CategoricalColorMapper)
+        assert isinstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['0', '1', '2'])
         self.assertEqual(cmapper.palette, ['red', 'green', 'blue'])
         self.assertEqual(cds.data['color_str__'], ['0', '1', '2'])

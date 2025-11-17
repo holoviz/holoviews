@@ -244,9 +244,9 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         assert isinstance(toolbar, Toolbar)
         assert isinstance(grid, GridPlot)
         for (fig, _, _) in grid.children:
-            self.assertIsInstance(fig, figure)
-        self.assertTrue([len([r for r in f.renderers if isinstance(r, GlyphRenderer)])
-                         for (f, _, _) in grid.children], [1, 1, 1])
+            assert isinstance(fig, figure)
+        output = [len([r for r in f.renderers if isinstance(r, GlyphRenderer)]) for f, _, _ in grid.children]
+        assert output == [1, 1, 1]
 
     def test_layout_plot_tabs_with_adjoints(self):
         layout = (Curve([]) + Curve([]).hist()).opts(tabs=True)

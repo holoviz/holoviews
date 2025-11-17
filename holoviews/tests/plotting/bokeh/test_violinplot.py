@@ -115,7 +115,7 @@ class TestBokehViolinPlot(TestBokehPlot):
         cmapper = plot.handles['violin_color_color_mapper']
         glyph = plot.handles['patches_1_glyph']
         self.assertEqual(source.data['violin_color'], np.arange(5))
-        self.assertTrue(cmapper, LinearColorMapper)
+        assert isinstance(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 4)
         self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'violin_color', 'transform': cmapper})
@@ -129,7 +129,7 @@ class TestBokehViolinPlot(TestBokehPlot):
         glyph = plot.handles['patches_1_glyph']
         cmapper = plot.handles['violin_color_color_mapper']
         self.assertEqual(source.data['violin_color'], b[::5])
-        self.assertTrue(cmapper, CategoricalColorMapper)
+        assert isinstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['A', 'B', 'C', 'D', 'E'])
         self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'violin_color', 'transform': cmapper})
 
@@ -184,7 +184,7 @@ class TestBokehViolinPlot(TestBokehPlot):
         cmapper = plot.handles['box_color_color_mapper']
         glyph = plot.handles['vbar_1_glyph']
         self.assertEqual(source.data['box_color'], np.arange(5))
-        self.assertTrue(cmapper, LinearColorMapper)
+        assert isinstance(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 4)
         self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'box_color', 'transform': cmapper})
@@ -198,7 +198,7 @@ class TestBokehViolinPlot(TestBokehPlot):
         glyph = plot.handles['vbar_1_glyph']
         cmapper = plot.handles['box_color_color_mapper']
         self.assertEqual(source.data['box_color'], b[::5])
-        self.assertTrue(cmapper, CategoricalColorMapper)
+        assert isinstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['A', 'B', 'C', 'D', 'E'])
         self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'box_color', 'transform': cmapper})
 

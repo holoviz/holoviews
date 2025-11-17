@@ -1038,19 +1038,19 @@ class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
         img = Image(np.array([[0, 1], [2, 3]])).opts(cnorm='linear')
         plot = bokeh_renderer.get_plot(img)
         cmapper = plot.handles['color_mapper']
-        self.assertTrue(cmapper, LinearColorMapper)
+        assert isinstance(cmapper, LinearColorMapper)
 
     def test_colormapper_cnorm_log(self):
         img = Image(np.array([[0, 1], [2, 3]])).opts(cnorm='log')
         plot = bokeh_renderer.get_plot(img)
         cmapper = plot.handles['color_mapper']
-        self.assertTrue(cmapper, LogColorMapper)
+        assert isinstance(cmapper, LogColorMapper)
 
     def test_colormapper_cnorm_eqhist(self):
         img = Image(np.array([[0, 1], [2, 3]])).opts(cnorm='eq_hist')
         plot = bokeh_renderer.get_plot(img)
         cmapper = plot.handles['color_mapper']
-        self.assertTrue(cmapper, EqHistColorMapper)
+        assert isinstance(cmapper, EqHistColorMapper)
 
 
     def test_colormapper_min_max_colors(self):
