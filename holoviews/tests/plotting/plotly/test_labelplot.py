@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from holoviews.core.options import Cycle
 from holoviews.core.spaces import HoloMap
@@ -96,10 +97,8 @@ class TestMapboxLabelsPlot(TestPlotlyPlot):
         labels = Tiles("") * Labels([(0, 3, 0), (1, 2, 1), (2, 1, 1)]).opts(
             invert_axes=True
         )
-        with self.assertRaises(ValueError) as e:
+        with pytest.raises(ValueError, match="invert_axes"):
             self._get_plot_state(labels)
-
-        self.assertIn("invert_axes", str(e.exception))
 
     def test_labels_size(self):
         labels = Tiles("") * Labels([(0, 3, 0), (0, 2, 1), (0, 1, 1)]).opts(size=23)

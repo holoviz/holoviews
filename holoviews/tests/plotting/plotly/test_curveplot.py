@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from holoviews.element import Curve, Tiles
 from holoviews.plotting.plotly.util import PLOTLY_MAP
@@ -94,10 +95,8 @@ class TestMapboxCurvePlot(TestPlotlyPlot):
 
     def test_curve_inverted(self):
         curve = Tiles("") * Curve([1, 2, 3]).opts(invert_axes=True)
-        with self.assertRaises(ValueError) as e:
+        with pytest.raises(ValueError, match="invert_axes"):
             self._get_plot_state(curve)
-
-        self.assertIn("invert_axes", str(e.exception))
 
     def test_curve_interpolation(self):
         from holoviews.operation import interpolate_curve
@@ -123,9 +122,8 @@ class TestMapboxCurvePlot(TestPlotlyPlot):
 
     def test_curve_dash(self):
         curve = Tiles("") * Curve([1, 2, 3]).opts(dash='dash')
-        with self.assertRaises(ValueError) as e:
+        with pytest.raises(ValueError, match="dash"):
             self._get_plot_state(curve)
-        self.assertIn("dash", str(e.exception))
 
     def test_curve_line_width(self):
         curve = Tiles("") * Curve([1, 2, 3]).opts(line_width=5)
