@@ -1,28 +1,28 @@
 import base64
-
 from io import BytesIO
 
-import param
 import panel as pn
+import param
+from param.parameterized import bothmethod
+
+from ...core import HoloMap
+from ...core.options import Store
+from ..renderer import HTML_TAGS, MIME_TYPES, Renderer
+from .callbacks import callbacks
+from .util import (
+    PLOTLY_GE_6_0_0,
+    _convert_numpy_in_fig_dict,
+    clean_internal_figure_properties,
+)
 
 with param.logging_level('CRITICAL'):
     import plotly.graph_objs as go
 
-from param.parameterized import bothmethod
-
-from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
-from ...core.options import Store
-from ...core import HoloMap
-from .callbacks import callbacks
-from .util import clean_internal_figure_properties
-
-
 
 def _PlotlyHoloviewsPane(fig_dict, **kwargs):
-    """
-    Custom Plotly pane constructor for use by the HoloViews Pane.
-    """
+    """Custom Plotly pane constructor for use by the HoloViews Pane.
 
+    """
     # Remove internal HoloViews properties
     clean_internal_figure_properties(fig_dict)
 
@@ -49,11 +49,11 @@ class PlotlyRenderer(Renderer):
 
     backend = param.String(default='plotly', doc="The backend name.")
 
-    fig = param.ObjectSelector(default='auto', objects=['html', 'png', 'svg', 'auto'], doc="""
+    fig = param.Selector(default='auto', objects=['html', 'png', 'svg', 'auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    holomap = param.ObjectSelector(default='auto',
+    holomap = param.Selector(default='auto',
                                    objects=['scrubber','widgets', 'gif',
                                             None, 'auto'], doc="""
         Output render multi-frame (typically animated) format. If
@@ -70,10 +70,10 @@ class PlotlyRenderer(Renderer):
     _render_with_panel = True
 
     @bothmethod
-    def get_plot_state(self_or_cls, obj, doc=None, renderer=None, **kwargs):
-        """
-        Given a HoloViews Viewable return a corresponding figure dictionary.
+    def get_plot_state(self_or_cls, obj, doc=None, renderer=None, numpy_convert=False, **kwargs):
+        """Given a HoloViews Viewable return a corresponding figure dictionary.
         Allows cleaning the dictionary of any internal properties that were added
+
         """
         fig_dict = super().get_plot_state(obj, renderer, **kwargs)
         config = fig_dict.get('config', {})
@@ -88,12 +88,15 @@ class PlotlyRenderer(Renderer):
 
         # Remove template
         fig_dict.get('layout', {}).pop('template', None)
+
+        if numpy_convert and PLOTLY_GE_6_0_0:
+            return _convert_numpy_in_fig_dict(fig_dict)
+
         return fig_dict
 
     def _figure_data(self, plot, fmt, as_script=False, **kwargs):
         if fmt == 'gif':
             import plotly.io as pio
-
             from PIL import Image
             from plotly.io.orca import ensure_server, shutdown_server, status
 
@@ -155,8 +158,8 @@ class PlotlyRenderer(Renderer):
 
     @classmethod
     def load_nb(cls, inline=True):
-        """
-        Loads the plotly notebook resources.
+        """Loads the plotly notebook resources.
+
         """
         import panel.models.plotly # noqa
         cls._loaded = True

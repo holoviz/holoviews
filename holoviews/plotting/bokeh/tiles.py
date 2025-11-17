@@ -1,6 +1,5 @@
 import numpy as np
-
-from bokeh.models import WMTSTileSource, BBoxTileSource, QUADKEYTileSource
+from bokeh.models import BBoxTileSource, QUADKEYTileSource, WMTSTileSource
 
 from ...core.options import SkipRendering
 from ...element.tiles import _ATTRIBUTIONS
@@ -12,7 +11,7 @@ class TilePlot(ElementPlot):
     style_opts = ['alpha', 'render_parents', 'level', 'smoothing', 'min_zoom', 'max_zoom']
     selection_display = None
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         extents = super().get_extents(element, ranges, range_type)
         if (not self.overlaid and all(e is None or not np.isfinite(e) for e in extents)
             and range_type in ('combined', 'data')):
@@ -24,9 +23,9 @@ class TilePlot(ElementPlot):
 
     def get_data(self, element, ranges, style):
         if not isinstance(element.data, (str, dict)):
-            SkipRendering("WMTS element data must be a URL string or "
+            SkipRendering("WMTS element data must be a URL string, dictionary, or "
                           "xyzservices.TileProvider, bokeh cannot "
-                          "render %r" % element.data)
+                          f"render {element.data!r}")
         if element.data is None:
             raise ValueError("Tile source URL may not be None with the bokeh backend")
         elif isinstance(element.data, dict):
@@ -65,8 +64,8 @@ class TilePlot(ElementPlot):
                            if k in renderer.properties()})
 
     def _init_glyph(self, plot, mapping, properties):
-        """
-        Returns a Bokeh glyph object.
+        """Returns a Bokeh glyph object.
+
         """
         tile_source = mapping['tile_source']
         level = properties.pop('level', 'glyph')

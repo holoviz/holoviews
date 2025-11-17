@@ -1,11 +1,11 @@
 import numpy as np
-
 from plotly.graph_objs.layout import Image as _Image
 
-from ...core.util import VersionError
+from ...core.util import VersionError, dtype_kind
 from ...element import Tiles
 from .element import ElementPlot
 from .selection import PlotlyOverlaySelectionDisplay
+from .util import PLOTLY_MAP, PLOTLY_SCATTERMAP
 
 
 class RGBPlot(ElementPlot):
@@ -22,14 +22,13 @@ class RGBPlot(ElementPlot):
         if is_geo:
             layer = dict(datum, **options)
             dummy_trace = {
-                'type': 'scattermapbox',
+                'type': PLOTLY_SCATTERMAP,
                 'lat': [None],
                 'lon': [None],
                 'mode': 'markers',
                 'showlegend': False
             }
-            return dict(mapbox=dict(layers=[layer]),
-                        traces=[dummy_trace])
+            return {PLOTLY_MAP: dict(layers=[layer]), 'traces': [dummy_trace]}
         else:
             image = dict(datum, **options)
             # Create a dummy invisible scatter trace for this image.
@@ -56,7 +55,7 @@ class RGBPlot(ElementPlot):
             import PIL.Image
         except ImportError:
             raise VersionError("""\
-Rendering RGB elements with the plotly backend requires the Pillow package""")
+Rendering RGB elements with the plotly backend requires the Pillow package""") from None
 
         img = np.flip(
             np.dstack([element.dimension_values(d, flat=False)
@@ -64,7 +63,7 @@ Rendering RGB elements with the plotly backend requires the Pillow package""")
             axis=0
         )
 
-        if img.dtype.kind == 'f':
+        if dtype_kind(img) == 'f':
             img = img * 255
         if img.size and (img.min() < 0 or img.max() > 255):
             self.param.warning('Clipping input data to the valid '
@@ -93,12 +92,7 @@ Rendering RGB elements with the plotly backend requires the Pillow package""")
             img = np.flip(img, axis=0)
             b, t = t, b
 
-        if img.shape[2] == 3:
-            pil_img = PIL.Image.fromarray(img, 'RGB')
-        else:
-            pil_img = PIL.Image.fromarray(img, 'RGBA')
-
-        source = _Image(source=pil_img).source
+        source = _Image(source=PIL.Image.fromarray(img)).source
 
         if is_geo:
             lon_left, lat_top = Tiles.easting_northing_to_lon_lat(l, t)

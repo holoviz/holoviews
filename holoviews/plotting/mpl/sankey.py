@@ -1,7 +1,6 @@
 import param
-
-from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
+from matplotlib.patches import Rectangle
 
 from ...core.util import max_range
 from ...util.transform import dim
@@ -17,7 +16,7 @@ class SankeyPlot(GraphPlot):
     show_values = param.Boolean(default=True, doc="""
         Whether to show the values.""")
 
-    label_position = param.ObjectSelector(default='right', objects=['left', 'right'],
+    label_position = param.Selector(default='right', objects=['left', 'right'],
                                           doc="""
         Whether node labels should be placed to the left or right.""")
 
@@ -45,18 +44,18 @@ class SankeyPlot(GraphPlot):
 
     filled = True
 
-    style_opts = GraphPlot.style_opts + ['label_text_font_size']
+    style_opts = [*GraphPlot.style_opts, 'label_text_font_size']
 
-    def get_extents(self, element, ranges, range_type='combined'):
-        """
-        A Chord plot is always drawn on a unit circle.
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
+        """A Chord plot is always drawn on a unit circle.
+
         """
         if range_type == 'extents':
             return element.nodes.extents
         xdim, ydim = element.nodes.kdims[:2]
         xpad = .05 if self.label_index is None else 0.25
-        x0, x1 = ranges[xdim.name][range_type]
-        y0, y1 = ranges[ydim.name][range_type]
+        x0, x1 = ranges[xdim.label][range_type]
+        y0, y1 = ranges[ydim.label][range_type]
         xdiff = (x1-x0)
         ydiff = (y1-y0)
         if self.label_position == 'right':
@@ -97,7 +96,7 @@ class SankeyPlot(GraphPlot):
             x0, x1, y0, y1 = (node[a+i] for a in 'xy' for i in '01')
             rect = {'height': y1-y0, 'width': x1-x0, 'xy': (x0, y0)}
             rects.append(rect)
-            if len(text):
+            if text:
                 label = text[i]
             else:
                 label = ''

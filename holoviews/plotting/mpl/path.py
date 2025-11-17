@@ -1,13 +1,14 @@
-import param
 import numpy as np
-
-from matplotlib.collections import PatchCollection, LineCollection
-from matplotlib.dates import date2num, DateFormatter
+import param
+from matplotlib.collections import LineCollection, PatchCollection
+from matplotlib.dates import DateFormatter, date2num
 
 from ...core import util
 from ...core.dimension import Dimension
 from ...core.options import abbreviated_exception
+from ...core.util import dtype_kind
 from ...element import Polygons
+from ...util.transform import dim
 from .element import ColorbarPlot
 from .util import polygons_to_path_patches
 
@@ -43,6 +44,17 @@ class PathPlot(ColorbarPlot):
     def get_data(self, element, ranges, style):
         cdim = element.get_dimension(self.color_index)
 
+        if cdim is None:
+            color_style = style.get('color')
+            if isinstance(color_style, str):
+                cdim = element.get_dimension(color_style)
+            elif isinstance(color_style, Dimension):
+                cdim = element.get_dimension(color_style.label)
+            elif isinstance(color_style, dim) and not color_style.ops:
+                cdim = element.get_dimension(color_style.dimension.label)
+            if cdim:
+                style["color"] = cdim
+
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
 
@@ -64,17 +76,26 @@ class PathPlot(ColorbarPlot):
                 yarr = date2num(yarr)
                 dims[1] = ydim(value_format=DateFormatter(dt_format))
             arr = np.column_stack([xarr, yarr])
+            # If neither color_index nor array-style mapping nor is present,
+            # keep whole paths; otherwise, segment into (len(x)-1) segments for
+            # correct mapping.
             if not (self.color_index is not None or style_mapping):
                 paths.append(arr)
                 continue
             length = len(xarr)
-            for (s1, s2) in zip(range(length-1), range(1, length+1)):
-                if cdim:
-                    cvals.append(path[cdim.name])
+            for (s1, s2) in zip(range(length-1), range(1, length+1), strict=None):
+                if cdim is not None:
+                    pv = path[cdim.name]
+                    if isinstance(pv, util.arraylike_types) and len(pv) == length:
+                        # per-vertex values -> one value per segment (drop last)
+                        cvals.append(pv[s1])
+                    else:
+                        # scalar per geometry -> repeat for each segment
+                        cvals.append(pv)
                 paths.append(arr[s1:s2+1])
         if self.invert_axes:
             paths = [p[::-1] for p in paths]
-        if not (self.color_index or style_mapping):
+        if not (self.color_index or style_mapping or cdim):
             if cdim:
                 style['array'] = style.pop('c')
                 style['clim'] = style.pop('vmin', None), style.pop('vmax', None)
@@ -82,6 +103,8 @@ class PathPlot(ColorbarPlot):
         if cdim:
             self._norm_kwargs(element, ranges, style, cdim)
             style['array'] = np.array(cvals)
+            # When mapping color via array/cmap, drop scalar 'color' so it doesn't override
+            style.pop('color', None)
         return (paths,), style, {'dimensions': dims}
 
     def update_handles(self, key, axis, element, ranges, style):
@@ -150,10 +173,10 @@ class ContourPlot(PathPlot):
         if len(paths) != len(array):
             # If there are multi-geometries the list of scalar values
             # will not match the list of paths and has to be expanded
-            array = np.array([v for v, sps in zip(array, subpaths)
+            array = np.array([v for v, sps in zip(array, subpaths, strict=None)
                               for _ in range(len(sps))])
 
-        if array.dtype.kind not in 'uif':
+        if dtype_kind(array) not in 'uif':
             array = util.search_indices(array, util.unique_array(array))
         style['array'] = array
         self._norm_kwargs(element, ranges, style, cdim)
@@ -161,12 +184,12 @@ class ContourPlot(PathPlot):
 
 
 class PolygonPlot(ContourPlot):
-    """
-    PolygonPlot draws the polygon paths in the supplied Polygons
+    """PolygonPlot draws the polygon paths in the supplied Polygons
     object. If the Polygon has an associated value the color of
     Polygons will be drawn from the supplied cmap, otherwise the
     supplied facecolor will apply. Facecolor also determines the color
     for non-finite values.
+
     """
 
     show_legend = param.Boolean(default=False, doc="""

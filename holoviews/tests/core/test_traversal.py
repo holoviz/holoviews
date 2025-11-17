@@ -1,4 +1,4 @@
-from holoviews import HoloMap, DynamicMap, Curve
+from holoviews import Curve, DynamicMap, HoloMap
 from holoviews.core.traversal import unique_dimkeys
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -25,7 +25,7 @@ class TestUniqueDimKeys(ComparisonTestCase):
         exception = ('When combining HoloMaps into a composite plot '
                      'their dimensions must be subsets of each other.')
         with self.assertRaisesRegex(Exception, exception):
-            dims, keys = unique_dimkeys(hmap1+hmap2)
+            unique_dimkeys(hmap1+hmap2)
 
     def test_unique_keys_no_overlap_dynamicmap_uninitialized(self):
         dmap1 = DynamicMap(lambda A: Curve(range(10)), kdims=['A'])

@@ -1,5 +1,4 @@
-"""
-File originally part of the Topographica project. Provides
+"""File originally part of the Topographica project. Provides
 SheetCoordinateSystem, allowing conversion between continuous 'sheet
 coordinates' and integer matrix coordinates.
 
@@ -73,12 +72,13 @@ value 6.
 Of course, it would be an error to try to pass matrix coordinates like
 [0,2] to the sheet2matrix calls; the result would be a value far
 outside of the actual matrix.
+
 """
 
 import numpy as np
-from .boundingregion import BoundingBox
-from .util import datetime_types
 
+from .boundingregion import BoundingBox
+from .util import datetime_types, dtype_kind
 
 # Note about the 'bounds-master' approach we have adopted
 # =======================================================
@@ -116,10 +116,11 @@ from .util import datetime_types
 
 
 class SheetCoordinateSystem:
-    """
-    Provides methods to allow conversion between sheet and matrix
+    """Provides methods to allow conversion between sheet and matrix
     coordinates.
+
     """
+
     def __get_xdensity(self):
         return self.__xdensity
     def __get_ydensity(self):
@@ -142,8 +143,7 @@ class SheetCoordinateSystem:
     _time_unit = 'us'
 
     def __init__(self,bounds,xdensity,ydensity=None):
-        """
-        Store the bounds (as l,b,r,t in an array), xdensity, and
+        """Store the bounds (as l,b,r,t in an array), xdensity, and
         ydensity.
 
         If ydensity is not specified, it is assumed that the specified
@@ -153,6 +153,7 @@ class SheetCoordinateSystem:
 
         If both xdensity and ydensity are specified, these and the
         bounds are taken to be exact and are not adjusted.
+
         """
         if not ydensity:
             bounds,xdensity = self.__equalize_densities(bounds,xdensity)
@@ -178,11 +179,11 @@ class SheetCoordinateSystem:
 
 
     def __equalize_densities(self,nominal_bounds,nominal_density):
-        """
-        Calculate the true density along x, and adjust the top and
+        """Calculate the true density along x, and adjust the top and
         bottom bounds so that the density along y will be equal.
 
         Returns (adjusted_bounds, true_density)
+
         """
         left,bottom,right,top = nominal_bounds.lbrt()
         width, height = right-left, top-bottom
@@ -200,8 +201,7 @@ class SheetCoordinateSystem:
 
 
     def sheet2matrix(self,x,y):
-        """
-        Convert a point (x,y) in Sheet coordinates to continuous
+        """Convert a point (x,y) in Sheet coordinates to continuous
         matrix coordinates.
 
         Returns (float_row,float_col), where float_row corresponds to
@@ -218,23 +218,24 @@ class SheetCoordinateSystem:
         is outside. Similarly, y=0.5 is inside (at row 0) but y=-0.5
         is outside (at row 3) (it's the other way round for y because
         the matrix row index increases as y decreases).
+
         """
         # First translate to (left,top), which is [0,0] in the matrix,
         # then scale to the size of the matrix. The y coordinate needs
         # to be flipped, because the points are moving down in the
         # sheet as the y index increases in the matrix.
         xdensity = self.__xdensity
-        if ((isinstance(x, np.ndarray) and x.dtype.kind == 'M') or
+        if ((isinstance(x, np.ndarray) and dtype_kind(x) == 'M') or
             isinstance(x, datetime_types)):
-            xdensity = np.timedelta64(int(round(1./xdensity)), self._time_unit)
+            xdensity = np.timedelta64(round(1/xdensity), self._time_unit)
             float_col = (x-self.lbrt[0]) / xdensity
         else:
             float_col = (x-self.lbrt[0]) * xdensity
 
         ydensity = self.__ydensity
-        if ((isinstance(y, np.ndarray) and y.dtype.kind == 'M') or
+        if ((isinstance(y, np.ndarray) and dtype_kind(y) == 'M') or
             isinstance(y, datetime_types)):
-            ydensity = np.timedelta64(int(round(1./ydensity)), self._time_unit)
+            ydensity = np.timedelta64(round(1/ydensity), self._time_unit)
             float_row = (self.lbrt[3]-y) / ydensity
         else:
             float_row = (self.lbrt[3]-y) * ydensity
@@ -243,8 +244,7 @@ class SheetCoordinateSystem:
 
 
     def sheet2matrixidx(self,x,y):
-        """
-        Convert a point (x,y) in sheet coordinates to the integer row
+        """Convert a point (x,y) in sheet coordinates to the integer row
         and column index of the matrix cell in which that point falls,
         given a bounds and density.  Returns (row,column).
 
@@ -254,6 +254,7 @@ class SheetCoordinateSystem:
         right and bottom boundaries are exclusive.
 
         Valid for scalar or array x and y.
+
         """
         r,c = self.sheet2matrix(x,y)
         r = np.floor(r)
@@ -266,38 +267,40 @@ class SheetCoordinateSystem:
 
 
     def matrix2sheet(self,float_row,float_col):
-        """
-        Convert a floating-point location (float_row,float_col) in
+        """Convert a floating-point location (float_row,float_col) in
         matrix coordinates to its corresponding location (x,y) in
         sheet coordinates.
 
         Valid for scalar or array float_row and float_col.
 
         Inverse of sheet2matrix().
+
         """
         xoffset = float_col*self.__xstep
         if isinstance(self.lbrt[0], datetime_types):
-            xoffset = np.timedelta64(int(round(xoffset)), self._time_unit)
+            xoffset = np.timedelta64(round(xoffset), self._time_unit)
         x = self.lbrt[0] + xoffset
         yoffset = float_row*self.__ystep
         if isinstance(self.lbrt[3], datetime_types):
-            yoffset = np.timedelta64(int(round(yoffset)), self._time_unit)
+            yoffset = np.timedelta64(round(yoffset), self._time_unit)
         y = self.lbrt[3] - yoffset
         return x, y
 
 
     def matrixidx2sheet(self,row,col):
-        """
-        Return (x,y) where x and y are the floating point coordinates
+        """Return (x,y) where x and y are the floating point coordinates
         of the *center* of the given matrix cell (row,col). If the
         matrix cell represents a 0.2 by 0.2 region, then the center
         location returned would be 0.1,0.1.
 
-        NOTE: This is NOT the strict mathematical inverse of
+        Notes
+        -----
+        This is NOT the strict mathematical inverse of
         sheet2matrixidx(), because sheet2matrixidx() discards all but
         the integer portion of the continuous matrix coordinate.
 
         Valid only for scalar or array row and col.
+
         """
         x,y = self.matrix2sheet((row+0.5), (col+0.5))
 
@@ -310,18 +313,18 @@ class SheetCoordinateSystem:
 
 
     def closest_cell_center(self,x,y):
-        """
-        Given arbitrary sheet coordinates, return the sheet coordinates
+        """Given arbitrary sheet coordinates, return the sheet coordinates
         of the center of the closest unit.
+
         """
         return self.matrixidx2sheet(*self.sheet2matrixidx(x,y))
 
 
     def sheetcoordinates_of_matrixidx(self):
-        """
-        Return x,y where x is a vector of sheet coordinates
+        """Return x,y where x is a vector of sheet coordinates
         representing the x-center of each matrix cell, and y
         represents the corresponding y-center of the cell.
+
         """
         rows,cols = self.shape
         return self.matrixidx2sheet(np.arange(rows), np.arange(cols))
@@ -329,8 +332,7 @@ class SheetCoordinateSystem:
 
 
 class Slice(np.ndarray):
-    """
-    Represents a slice of a SheetCoordinateSystem; i.e., an array
+    """Represents a slice of a SheetCoordinateSystem; i.e., an array
     specifying the row and column start and end points for a submatrix
     of the SheetCoordinateSystem.
 
@@ -344,6 +346,7 @@ class Slice(np.ndarray):
     SheetCoordinateSystem, and that actions such as translate() also
     do not respect the bounds. To ensure that the slice is within the
     SheetCoordinateSystem's bounds, use crop_to_sheet().
+
     """
 
     __slots__ = []
@@ -355,9 +358,9 @@ class Slice(np.ndarray):
 
     def __new__(cls, bounds, sheet_coordinate_system, force_odd=False,
                 min_matrix_radius=1):
-        """
-        Create a slice of the given sheet_coordinate_system from the
+        """Create a slice of the given sheet_coordinate_system from the
         specified bounds.
+
         """
         if force_odd:
             slicespec=Slice._createoddslicespec(bounds,sheet_coordinate_system,
@@ -365,13 +368,12 @@ class Slice(np.ndarray):
         else:
             slicespec=Slice._boundsspec2slicespec(bounds.lbrt(),sheet_coordinate_system)
         # Using numpy.int32 for legacy reasons
-        a = np.array(slicespec, dtype=np.int32, copy=False).view(cls)
+        a = np.asarray(slicespec, dtype=np.int32).view(cls)
         return a
 
 
     def submatrix(self,matrix):
-        """
-        Return the submatrix of the given matrix specified by this
+        """Return the submatrix of the given matrix specified by this
         slice.
 
         Equivalent to computing the intersection between the
@@ -380,14 +382,15 @@ class Slice(np.ndarray):
 
         The submatrix is just a view into the sheet_matrix; it is not
         an independent copy.
+
         """
         return matrix[self[0]:self[1],self[2]:self[3]]
 
     @staticmethod
     def findinputslice(coord, sliceshape, sheetshape):
-        """
-        Gets the matrix indices of a slice within an array of size
+        """Gets the matrix indices of a slice within an array of size
         sheetshape from a sliceshape, positioned at coord.
+
         """
         center_row, center_col = coord
         n_rows, n_cols = sliceshape
@@ -402,11 +405,11 @@ class Slice(np.ndarray):
 
 
     def positionlesscrop(self,x,y,sheet_coord_system):
-        """
-        Return the correct slice for a weights/mask matrix at this
+        """Return the correct slice for a weights/mask matrix at this
         ConnectionField's location on the sheet (i.e. for getting the
         correct submatrix of the weights or mask in case the unit is
         near the edge of the sheet).
+
         """
         slice_inds = self.findinputslice(
             sheet_coord_system.sheet2matrixidx(x,y),
@@ -416,11 +419,11 @@ class Slice(np.ndarray):
 
 
     def positionedcrop(self,x,y,sheet_coord_system):
-        """
-        Offset the bounds_template to this cf's location and store the
+        """Offset the bounds_template to this cf's location and store the
         result in the 'bounds' attribute.
 
         Also stores the input_sheet_slice for access by C.
+
         """
         cf_row,cf_col = sheet_coord_system.sheet2matrixidx(x,y)
         bounds_x,bounds_y=self.compute_bounds(sheet_coord_system).centroid()
@@ -433,22 +436,30 @@ class Slice(np.ndarray):
 
 
     def translate(self, r, c):
-        "Translate the slice by the given number of rows and columns."
+        """Translate the slice by the given number of rows and columns.
+
+        """
         self+=[r,r,c,c]
 
 
     def set(self,slice_specification):
-        "Set this slice from some iterable that specifies (r1,r2,c1,c2)."
+        """Set this slice from some iterable that specifies (r1,r2,c1,c2).
+
+        """
         self.put([0,1,2,3],slice_specification) # pylint: disable-msg=E1101
 
 
     def shape_on_sheet(self):
-        "Return the shape of the array of the Slice on its sheet."
+        """Return the shape of the array of the Slice on its sheet.
+
+        """
         return self[1]-self[0],self[3]-self[2]
 
 
     def crop_to_sheet(self,sheet_coord_system):
-        "Crop the slice to the SheetCoordinateSystem's bounds."
+        """Crop the slice to the SheetCoordinateSystem's bounds.
+
+        """
         maxrow,maxcol = sheet_coord_system.shape
 
         self[0] = max(0,self[0])
@@ -459,8 +470,7 @@ class Slice(np.ndarray):
 
     @staticmethod
     def _createoddslicespec(bounds,scs,min_matrix_radius):
-        """
-        Create the 'odd' Slice that best approximates the specified
+        """Create the 'odd' Slice that best approximates the specified
         sheet-coordinate bounds.
 
         The supplied bounds are translated to have a center at the
@@ -476,6 +486,7 @@ class Slice(np.ndarray):
         through units, if the units are included on the right and
         bottom bounds, they will be included on the left and top
         bounds. This ensures that the slice has odd dimensions.
+
         """
         bounds_xcenter,bounds_ycenter=bounds.centroid()
         sheet_rows,sheet_cols = scs.shape
@@ -501,14 +512,14 @@ class Slice(np.ndarray):
 
     @staticmethod
     def _boundsspec2slicespec(boundsspec,scs):
-        """
-        Convert an iterable boundsspec (supplying l,b,r,t of a
+        """Convert an iterable boundsspec (supplying l,b,r,t of a
         BoundingRegion) into a Slice specification.
 
         Includes all units whose centers are within the specified
         sheet-coordinate bounds specified by boundsspec.
 
         Exact inverse of _slicespec2boundsspec().
+
         """
         l,b,r,t = boundsspec
 
@@ -517,7 +528,6 @@ class Slice(np.ndarray):
 
         l_idx = int(np.ceil(l_m-0.5))
         t_idx = int(np.ceil(t_m-0.5))
-        # CBENHANCEMENT: Python 2.6's math.trunc()?
         r_idx = int(np.floor(r_m+0.5))
         b_idx = int(np.floor(b_m+0.5))
 
@@ -526,11 +536,11 @@ class Slice(np.ndarray):
 
     @staticmethod
     def _slicespec2boundsspec(slicespec,scs):
-        """
-        Convert an iterable slicespec (supplying r1,r2,c1,c2 of a
+        """Convert an iterable slicespec (supplying r1,r2,c1,c2 of a
         Slice) into a BoundingRegion specification.
 
         Exact inverse of _boundsspec2slicespec().
+
         """
         r1,r2,c1,c2 = slicespec
 

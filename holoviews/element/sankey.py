@@ -2,29 +2,28 @@ import math
 from functools import cmp_to_key
 from itertools import cycle
 
-import param
 import numpy as np
+import param
 
-from ..core.dimension import Dimension
 from ..core.data import Dataset
+from ..core.dimension import Dimension
 from ..core.operation import Operation
 from ..core.util import get_param_values, unique_array
-from .graphs import Graph, Nodes, EdgePaths
+from .graphs import EdgePaths, Graph, Nodes
 from .util import quadratic_bezier
-
 
 _Y_N_DECIMAL_DIGITS = 6
 _Y_EPS = 10 ** -_Y_N_DECIMAL_DIGITS
 
 
 class _layout_sankey(Operation):
-    """
-    Computes a Sankey diagram from a Graph element for internal use in
+    """Computes a Sankey diagram from a Graph element for internal use in
     the Sankey element constructor.
 
     Adapted from d3-sankey under BSD-3 license.
 
-    Source: https://github.com/d3/d3-sankey/tree/v0.12.3
+    Source : https://github.com/d3/d3-sankey/tree/v0.12.3
+
     """
 
     bounds = param.NumericTuple(default=(0, 0, 1000, 500))
@@ -59,9 +58,12 @@ class _layout_sankey(Operation):
 
         node_data = []
         for node in graph['nodes']:
-            node_data.append((np.mean([node['x0'], node['x1']]),
-                              np.mean([node['y0'], node['y1']]),
-                              node['index'])+tuple(node['values']))
+            node_data.append((
+                np.mean([node['x0'], node['x1']]),
+                np.mean([node['y0'], node['y1']]),
+                node['index'],
+                *node['values']
+            ))
         if element.nodes.ndims == 3:
             kdims = element.nodes.kdims
         elif element.nodes.ndims:
@@ -74,24 +76,24 @@ class _layout_sankey(Operation):
 
     @classmethod
     def computeNodeLinks(cls, element, graph):
-        """
-        Populate the sourceLinks and targetLinks for each node.
+        """Populate the sourceLinks and targetLinks for each node.
         Also, if the source and target are not objects, assume they are indices.
+
         """
         index = element.nodes.kdims[-1]
         node_map = {}
         if element.nodes.vdims:
             values = zip(*(element.nodes.dimension_values(d)
-                           for d in element.nodes.vdims))
+                           for d in element.nodes.vdims), strict=None)
         else:
             values = cycle([tuple()])
-        for idx, vals in zip(element.nodes.dimension_values(index), values):
+        for idx, vals in zip(element.nodes.dimension_values(index), values, strict=None):
             node = {'index': idx, 'sourceLinks': [], 'targetLinks': [], 'values': vals}
             graph['nodes'].append(node)
             node_map[idx] = node
 
         links = [element.dimension_values(d) for d in element.dimensions()[:3]]
-        for i, (src, tgt, value) in enumerate(zip(*links)):
+        for i, (src, tgt, value) in enumerate(zip(*links, strict=None)):
             source, target = node_map[src], node_map[tgt]
             link = dict(index=i, source=source, target=target, value=value)
             graph['links'].append(link)
@@ -100,8 +102,8 @@ class _layout_sankey(Operation):
 
     @classmethod
     def computeNodeValues(cls, graph):
-        """
-        Compute the value (size) of each node by summing the associated links.
+        """Compute the value (size) of each node by summing the associated links.
+
         """
         for node in graph['nodes']:
             source_val = np.sum([l['value'] for l in node['sourceLinks']])
@@ -304,7 +306,9 @@ class _layout_sankey(Operation):
             self.resolveCollisions(column, beta, py)
 
     def relaxRightToLeft(self, columns, alpha, beta, py):
-        """Reposition each node based on its outgoing (source) links."""
+        """Reposition each node based on its outgoing (source) links.
+
+        """
         for column in columns[-2::-1]:
             for source in column:
                 y = 0
@@ -400,9 +404,9 @@ class _layout_sankey(Operation):
 
 
 class Sankey(Graph):
-    """
-    Sankey is an acyclic, directed Graph type that represents the flow
+    """Sankey is an acyclic, directed Graph type that represents the flow
     of some quantity between its nodes.
+
     """
 
     group = param.String(default='Sankey', constant=True)
@@ -445,8 +449,7 @@ class Sankey(Graph):
                 raise TypeError(f"Expected Nodes object in data, found {type(nodes)}.")
             self._nodes = nodes
             if not isinstance(edgepaths, self.edge_type):
-                raise TypeError("Expected EdgePaths object in data, found %s."
-                                % type(edgepaths))
+                raise TypeError(f"Expected EdgePaths object in data, found {type(edgepaths)}.")
             self._edgepaths = edgepaths
             self._sankey = sankey_graph
         self._validate()

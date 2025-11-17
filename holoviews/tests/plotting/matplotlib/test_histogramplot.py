@@ -3,11 +3,11 @@ import datetime as dt
 import numpy as np
 import pytest
 
+from holoviews.core.options import AbbreviatedException
 from holoviews.core.overlay import NdOverlay
 from holoviews.element import Dataset, Histogram
 from holoviews.operation import histogram
 from holoviews.plotting.util import hex2rgb
-from holoviews.core.options import AbbreviatedException
 
 from ...utils import LoggingComparisonTestCase
 from .test_plot import TestMPLPlot, mpl_renderer
@@ -76,12 +76,12 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         self.assertEqual(x_range[0], 0.19999999999999996)
         self.assertEqual(x_range[1], 3.8)
-        self.assertEqual(y_range[0], 0.03348369522101712)
+        self.assertEqual(y_range[0], 0.01)
         self.assertEqual(y_range[1], 3.3483695221017129)
         self.log_handler.assertContains('WARNING', 'Logarithmic axis range encountered value less than')
 
     def test_histogram_padding_datetime_square(self):
-        histogram = Histogram([(np.datetime64('2016-04-0%d' % i, 'ns'), i) for i in range(1, 4)]).opts(
+        histogram = Histogram([(np.datetime64(f'2016-04-0{i}', 'ns'), i) for i in range(1, 4)]).opts(
             padding=0.1
         )
         plot = mpl_renderer.get_plot(histogram)
@@ -92,7 +92,7 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
         self.assertEqual(y_range[1], 3.2)
 
     def test_histogram_padding_datetime_nonsquare(self):
-        histogram = Histogram([(np.datetime64('2016-04-0%d' % i, 'ns'), i) for i in range(1, 4)]).opts(
+        histogram = Histogram([(np.datetime64(f'2016-04-0{i}', 'ns'), i) for i in range(1, 4)]).opts(
             padding=0.1, aspect=2
         )
         plot = mpl_renderer.get_plot(histogram)
@@ -112,8 +112,8 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
         plot = mpl_renderer.get_plot(histogram)
         artist = plot.handles['artist']
         children = artist.get_children()
-        for c, w in zip(children, ['#000000', '#FF0000', '#00FF00']):
-            self.assertEqual(c.get_facecolor(), tuple(c/255. for c in hex2rgb(w))+(1,))
+        for c, w in zip(children, ['#000000', '#FF0000', '#00FF00'], strict=None):
+            self.assertEqual(c.get_facecolor(), (*(c / 255.0 for c in hex2rgb(w)), 1))
 
     def test_histogram_linear_color_op(self):
         histogram = Histogram([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
@@ -152,7 +152,7 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
         plot = mpl_renderer.get_plot(histogram)
         artist = plot.handles['artist']
         children = artist.get_children()
-        for c, w in zip(children, np.array([1, 4, 8])):
+        for c, w in zip(children, np.array([1, 4, 8]), strict=None):
             self.assertEqual(c.get_linewidth(), w)
 
     def test_op_ndoverlay_value(self):
@@ -163,7 +163,7 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
                              )
         plot = mpl_renderer.get_plot(overlay)
         colors = [(0, 0, 1, 1), (1, 0, 0, 1)]
-        for subplot, color in zip(plot.subplots.values(),  colors):
+        for subplot, color in zip(plot.subplots.values(),  colors, strict=None):
             children = subplot.handles['artist'].get_children()
             for c in children:
                 self.assertEqual(c.get_facecolor(), color)

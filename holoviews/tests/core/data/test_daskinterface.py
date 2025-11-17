@@ -1,9 +1,8 @@
-from unittest import SkipTest
 import unittest
+from unittest import SkipTest
 
 import numpy as np
 import pandas as pd
-from packaging.version import Version
 
 try:
     import dask.dataframe as dd
@@ -11,8 +10,8 @@ except ImportError:
     raise SkipTest("Could not import dask, skipping DaskInterface tests.")
 
 from holoviews.core.data import Dataset
+from holoviews.core.util import PANDAS_VERSION
 from holoviews.util.transform import dim
-from holoviews.core.util import pandas_version
 
 from .test_pandasinterface import BasePandasInterfaceTests
 
@@ -24,8 +23,13 @@ class DaskDatasetTest(BasePandasInterfaceTests):
 
     datatype = 'dask'
     data_type = dd.DataFrame
+    force_sort = True
 
     __test__ = True
+
+    def frame(self, *args, **kwargs):
+        df = pd.DataFrame(*args, **kwargs)
+        return dd.from_pandas(df, npartitions=2)
 
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
@@ -77,14 +81,14 @@ class DaskDatasetTest(BasePandasInterfaceTests):
         raise SkipTest("Temporarily skipped")
 
     @unittest.skipIf(
-        pandas_version >= Version("2.0"),
+        PANDAS_VERSION >= (2, 0, 0),
         reason="Not supported yet, https://github.com/dask/dask/issues/9913"
     )
     def test_dataset_aggregate_ht(self):
         super().test_dataset_aggregate_ht()
 
     @unittest.skipIf(
-        pandas_version >= Version("2.0"),
+        PANDAS_VERSION >= (2, 0, 0),
         reason="Not supported yet, https://github.com/dask/dask/issues/9913"
     )
     def test_dataset_aggregate_ht_alias(self):
@@ -105,26 +109,31 @@ class DaskDatasetTest(BasePandasInterfaceTests):
         self.assertEqual(ds, Dataset(df, [('x', 'X'), ('y', 'Y')]))
 
     def test_dataset_range_categorical_dimension(self):
-        ddf = dd.from_pandas(pd.DataFrame({'a': ['1', '2', '3']}), 1)
+        ddf = self.frame({'a': ['1', '2', '3']})
         ds = Dataset(ddf)
         self.assertEqual(ds.range(0), ('1', '3'))
 
     def test_dataset_range_categorical_dimension_empty(self):
-        ddf = dd.from_pandas(pd.DataFrame({'a': ['1', '2', '3']}), 1)
+        ddf = self.frame({'a': ['1', '2', '3']})
         ds = Dataset(ddf).iloc[:0]
         ds_range = ds.range(0)
-        self.assertTrue(np.isnan(ds_range[0]))
-        self.assertTrue(np.isnan(ds_range[1]))
+        assert np.isnan(ds_range[0])
+        assert np.isnan(ds_range[1])
 
     def test_select_expression_lazy(self):
         df = pd.DataFrame({
             'a': [1, 2, 3, 4, 5],
             'b': [10, 10, 11, 11, 10],
         })
-        ddf = dd.from_pandas(df, npartitions=2)
+        ddf = self.frame(df)
         ds = Dataset(ddf)
         new_ds = ds.select(selection_expr=dim('b') == 10)
 
         # Make sure that selecting by expression didn't cause evaluation
         self.assertIsInstance(new_ds.data, dd.DataFrame)
         self.assertEqual(new_ds.data.compute(), df[df.b == 10])
+
+    def test_dataset_get_dframe_by_dimension(self):
+        df = self.dataset_hm.dframe(['x'])
+        expected = self.frame({'x': self.xs}, dtype=df.dtypes.iloc[0]).compute()
+        self.assertEqual(df, expected)

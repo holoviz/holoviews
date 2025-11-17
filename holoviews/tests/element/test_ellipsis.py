@@ -2,9 +2,9 @@
 Unit tests of Ellipsis (...) in __getitem__
 """
 import numpy as np
+
 import holoviews as hv
 from holoviews.element.comparison import ComparisonTestCase
-
 
 
 class TestEllipsisCharts(ComparisonTestCase):
@@ -57,7 +57,7 @@ class TestEllipsisTable(ComparisonTestCase):
     def setUp(self):
         keys =   [('M',10), ('M',16), ('F',12)]
         values = [(15, 0.8), (18, 0.6), (10, 0.8)]
-        self.table =hv.Table(zip(keys,values),
+        self.table =hv.Table(zip(keys,values, strict=None),
                              kdims = ['Gender', 'Age'],
                              vdims=['Weight', 'Height'])
         super().setUp()

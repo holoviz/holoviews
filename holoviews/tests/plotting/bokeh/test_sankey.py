@@ -5,8 +5,8 @@ from holoviews import render
 from holoviews.core.data import Dataset, Dimension
 from holoviews.element import Sankey
 
-
 from .test_plot import TestBokehPlot, bokeh_renderer
+
 
 class TestSankeyPlot(TestBokehPlot):
 
@@ -27,7 +27,7 @@ class TestSankeyPlot(TestBokehPlot):
         text_data = {'x': np.array([18.75, 18.75, 1003.75, 1003.75, 1003.75]),
                      'y': np.array([125.454545, 375.454545,  48.787879, 229.090909, 430.30303 ]),
                      'text': ['A - 18', 'B - 15', 'X - 7', 'Y - 16', 'Z - 10']}
-        for k in text_data:
+        for k in text_data:  # noqa: PLC0206
             self.assertEqual(text_source.data[k], text_data[k])
 
         quad_data = {
@@ -37,7 +37,7 @@ class TestSankeyPlot(TestBokehPlot):
             'y0': [0.0, 270.9090909090908, -7.105427357601002e-15, 117.57575757575756, 360.6060606060606],
             'y1': [250.909091, 480.0, 97.575758, 340.606061, 500.0]
         }
-        for k in quad_data:
+        for k in quad_data:  # noqa: PLC0206
             self.assertEqual(quad_source.data[k], quad_data[k])
 
         self.assertEqual(patch_source.data['Value'], np.array([5, 7, 6, 2, 9, 4]))
@@ -68,13 +68,13 @@ class TestSankeyPlot(TestBokehPlot):
         text_data = {'x': np.array([18.75, 18.75, 1003.75, 1003.75, 1003.75]),
                      'y': np.array([125.454545, 375.454545,  48.787879, 229.090909, 430.30303 ]),
                      'text': ['A - 18', 'B - 15', 'X - 7', 'Y - 16', 'Z - 10']}
-        for k in text_data:
+        for k in text_data:  # noqa: PLC0206
             self.assertEqual(text_source.data[k], text_data[k])
 
         patch_data = {'start_values': ['A', 'A', 'A', 'B', 'B', 'B'],
                       'end_values': ['X', 'Y', 'Z', 'X', 'Y', 'Z'],
                       'Value': np.array([5, 7, 6, 2, 9, 4])}
-        for k in patch_data:
+        for k in patch_data:  # noqa: PLC0206
             self.assertEqual(patch_source.data[k], patch_data[k])
 
         renderers = plot.state.renderers

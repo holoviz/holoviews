@@ -3,18 +3,17 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 import pytest
+from bokeh.models import FactorRange, FixedTicker
 
-from holoviews.core import NdOverlay, HoloMap, DynamicMap
-from holoviews.core.options import Cycle, Palette, AbbreviatedException
+from holoviews.core import Dimension, DynamicMap, HoloMap, NdOverlay
+from holoviews.core.options import AbbreviatedException, Cycle, Palette
 from holoviews.element import Curve
+from holoviews.plotting.bokeh.callbacks import Callback, PointerXCallback
 from holoviews.plotting.util import rgb2hex
 from holoviews.streams import PointerX
 from holoviews.util.transform import dim
 
 from .test_plot import TestBokehPlot, bokeh_renderer
-
-from bokeh.models import FactorRange, FixedTicker
-from holoviews.plotting.bokeh.callbacks import Callback, PointerXCallback
 
 
 class TestCurvePlot(TestBokehPlot):
@@ -28,11 +27,12 @@ class TestCurvePlot(TestBokehPlot):
                              streams=[posx])
         plot = bokeh_renderer.get_plot(overlay)
         self.assertIn(plot.refresh, posx.subscribers)
-        self.assertNotIn(list(plot.subplots.values())[0].refresh, posx.subscribers)
+        self.assertNotIn(next(iter(plot.subplots.values())).refresh, posx.subscribers)
 
     def test_batched_curve_subscribers_correctly_linked(self):
         # Checks if a stream callback is created to link batched plot
         # to the stream
+        Callback._callbacks.clear()  # Reset to not be sensitive to other test
         posx = PointerX()
         opts = {'NdOverlay': dict(legend_limit=0),
                 'Curve': dict(line_color=Cycle(values=['red', 'blue']))}
@@ -41,7 +41,7 @@ class TestCurvePlot(TestBokehPlot):
                              streams=[posx])
         plot = bokeh_renderer.get_plot(overlay)
         self.assertEqual(len(Callback._callbacks), 1)
-        key = list(Callback._callbacks.keys())[0]
+        key = next(iter(Callback._callbacks.keys()))
         self.assertEqual(key, (id(plot.handles['plot']), id(PointerXCallback)))
 
     def test_cyclic_palette_curves(self):
@@ -51,7 +51,7 @@ class TestCurvePlot(TestBokehPlot):
                         for i in range(3)})
         colors = palette[3].values
         plot = bokeh_renderer.get_plot(hmap)
-        for subp, color in zip(plot.subplots.values(), colors):
+        for subp, color in zip(plot.subplots.values(), colors, strict=None):
             color = color if isinstance(color, str) else rgb2hex(color)
             self.assertEqual(subp.handles['glyph'].line_color, color)
 
@@ -108,6 +108,18 @@ class TestCurvePlot(TestBokehPlot):
         opts = {'Curve': {'tools': ['hover']}}
         obj = obj.opts(opts)
         self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x}'), ('y', '@{y}')], 'nearest')
+
+    def test_curve_hover_dimension(self):
+        obj = Curve(
+            range(10), Dimension('name', label='label')
+        ).opts(hover_tooltips=['label'])
+        self._test_hover_info(obj, [('label', '@{name}')], 'nearest')
+
+    def test_curve_hover_dimension_unit(self):
+        obj = Curve(
+            range(10), Dimension('name', label='label', unit='unit')
+        ).opts(hover_tooltips=['label'])
+        self._test_hover_info(obj, [('label (unit)', '@{name}')], 'nearest')
 
     def test_curve_categorical_xaxis(self):
         curve = Curve((['A', 'B', 'C'], [1,2,3]))
@@ -311,7 +323,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.3483695221017129)
 
     def test_curve_padding_datetime_square(self):
-        curve = Curve([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).opts(
+        curve = Curve([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)]).opts(
             padding=0.1
         )
         plot = bokeh_renderer.get_plot(curve)
@@ -322,7 +334,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_curve_padding_datetime_nonsquare(self):
-        curve = Curve([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).opts(
+        curve = Curve([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)]).opts(
             padding=0.1, width=600
         )
         plot = bokeh_renderer.get_plot(curve)
@@ -349,7 +361,7 @@ class TestCurvePlot(TestBokehPlot):
                              for i, color in enumerate(colors)},
                             'color').opts('Curve', color='color')
         plot = bokeh_renderer.get_plot(overlay)
-        for subplot, color in zip(plot.subplots.values(), colors):
+        for subplot, color in zip(plot.subplots.values(), colors, strict=None):
             style = dict(subplot.style[subplot.cyclic_index])
             style = subplot._apply_transforms(subplot.current_frame, {}, {}, style)
             self.assertEqual(style['color'], color)

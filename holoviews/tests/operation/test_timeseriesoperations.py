@@ -1,18 +1,17 @@
-from unittest import skipIf
-
 import pandas as pd
+import pytest
 
 try:
     import scipy
 except ImportError:
     scipy = None
-scipy_skip = skipIf(scipy is None, "SciPy is not available.")
+scipy_skip = pytest.mark.skipif(scipy is None, reason="SciPy is not available.")
 
 import numpy as np
 
 from holoviews import Curve, Scatter
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.operation.timeseries import (rolling, resample, rolling_outlier_std)
+from holoviews.operation.timeseries import resample, rolling, rolling_outlier_std
 
 
 class TimeseriesOperationTests(ComparisonTestCase):
@@ -32,24 +31,24 @@ class TimeseriesOperationTests(ComparisonTestCase):
 
     def test_roll_dates(self):
         rolled = rolling(self.date_curve, rolling_window=2)
-        rolled_vals = [np.NaN, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5]
+        rolled_vals = [np.nan, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5]
         self.assertEqual(rolled, Curve((self.dates, rolled_vals)))
 
     def test_roll_ints(self):
         rolled = rolling(self.int_curve, rolling_window=2)
-        rolled_vals = [np.NaN, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5]
+        rolled_vals = [np.nan, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5]
         self.assertEqual(rolled, Curve(rolled_vals))
 
     @scipy_skip
     def test_roll_date_with_window_type(self):
         rolled = rolling(self.date_curve, rolling_window=3, window_type='triang')
-        rolled_vals = [np.NaN, 2, 3, 4, 5, 6, np.NaN]
+        rolled_vals = [np.nan, 2, 3, 4, 5, 6, np.nan]
         self.assertEqual(rolled, Curve((self.dates, rolled_vals)))
 
     @scipy_skip
     def test_roll_ints_with_window_type(self):
         rolled = rolling(self.int_curve, rolling_window=3, window_type='triang')
-        rolled_vals = [np.NaN, 2, 3, 4, 5, 6, np.NaN]
+        rolled_vals = [np.nan, 2, 3, 4, 5, 6, np.nan]
         self.assertEqual(rolled, Curve(rolled_vals))
 
     def test_resample_weekly(self):

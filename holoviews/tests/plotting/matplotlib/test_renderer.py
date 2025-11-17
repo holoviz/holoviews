@@ -1,24 +1,24 @@
 """
 Test cases for rendering exporters
 """
+import os
 import subprocess
-
-from collections import OrderedDict
+import sys
 from unittest import SkipTest
 
 import numpy as np
-import param
 import panel as pn
+import param
+import pytest
 from matplotlib import style
-
-from holoviews import (DynamicMap, HoloMap, Image, ItemTable,
-                       GridSpace, Table, Curve)
-from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import Stream
-from holoviews.plotting.mpl import MPLRenderer, CurvePlot
-from holoviews.plotting.renderer import Renderer
-from panel.widgets import DiscreteSlider, Player, FloatSlider
+from panel.widgets import DiscreteSlider, FloatSlider, Player
 from pyviz_comms import CommManager
+
+from holoviews import Curve, DynamicMap, GridSpace, HoloMap, Image, ItemTable, Table
+from holoviews.element.comparison import ComparisonTestCase
+from holoviews.plotting.mpl import CurvePlot, MPLRenderer
+from holoviews.plotting.renderer import Renderer
+from holoviews.streams import Stream
 
 
 class MPLRendererTest(ComparisonTestCase):
@@ -57,13 +57,15 @@ class MPLRendererTest(ComparisonTestCase):
         with style.context("default"):
             plot = self.renderer.get_plot(self.image1 + self.image2)
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (576, 257))
+        # Depending on the backend the height may be slightly different
+        assert (w, h) == (576, 257) or (w, h) == (576, 259)
 
     def test_get_size_column_plot(self):
         with style.context("default"):
             plot = self.renderer.get_plot((self.image1 + self.image2).cols(1))
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (288, 509))
+        # Depending on the backend the height may be slightly different
+        assert (w, h) == (288, 509) or (w, h) == (288, 511)
 
     def test_get_size_grid_plot(self):
         grid = GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
@@ -78,16 +80,17 @@ class MPLRendererTest(ComparisonTestCase):
         self.assertEqual((w, h), (288, 288))
 
     def test_render_gif(self):
-        data, metadata = self.renderer.components(self.map1, 'gif')
+        data, _metadata = self.renderer.components(self.map1, 'gif')
         self.assertIn("<img src='data:image/gif", data['text/html'])
 
+    @pytest.mark.skipif(sys.platform == 'win32' and os.environ.get('GITHUB_RUN_ID'), reason='Skip on Windows CI')
     def test_render_mp4(self):
         devnull = subprocess.DEVNULL
         try:
             subprocess.call(['ffmpeg', '-h'], stdout=devnull, stderr=devnull)
         except Exception:
             raise SkipTest('ffmpeg not available, skipping mp4 export test')
-        data, metadata = self.renderer.components(self.map1, 'mp4')
+        data, _metadata = self.renderer.components(self.map1, 'mp4')
         self.assertIn("<source src='data:video/mp4", data['text/html'])
 
     def test_render_static(self):
@@ -105,7 +108,7 @@ class MPLRendererTest(ComparisonTestCase):
         widgets = obj.layout.select(DiscreteSlider)
         self.assertEqual(len(widgets), 1)
         slider = widgets[0]
-        self.assertEqual(slider.options, OrderedDict([(str(i), i) for i in range(5)]))
+        self.assertEqual(slider.options, dict([(str(i), i) for i in range(5)]))
 
     def test_render_holomap_embedded(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
@@ -147,11 +150,12 @@ class MPLRendererTest(ComparisonTestCase):
         self.assertEqual(obj.widget_location, 'top')
         self.assertEqual(obj.widget_type, 'individual')
 
+    @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm:UserWarning')
     def test_render_dynamicmap_with_dims(self):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
         artist = plot.handles['artist']
 
         (_, y) = artist.get_data()
@@ -161,12 +165,13 @@ class MPLRendererTest(ComparisonTestCase):
         (_, y) = artist.get_data()
         self.assertEqual(y[2], 3.1)
 
+    @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm:UserWarning')
     def test_render_dynamicmap_with_stream(self):
         stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
         artist = plot.handles['artist']
 
         (_, y) = artist.get_data()
@@ -175,13 +180,14 @@ class MPLRendererTest(ComparisonTestCase):
         (_, y) = artist.get_data()
         self.assertEqual(y[2], 3)
 
+    @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm:UserWarning')
     def test_render_dynamicmap_with_stream_dims(self):
         stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda x, y: Curve([x, 1, y]), kdims=['x', 'y'],
                           streams=[stream]).redim.values(x=[1, 2, 3])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
         artist = plot.handles['artist']
 
         (_, y) = artist.get_data()

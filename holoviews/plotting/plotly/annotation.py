@@ -1,7 +1,8 @@
 import param
 
-from .chart import ScatterPlot
 from ...element import Tiles
+from .chart import ScatterPlot
+from .util import PLOTLY_SCATTERMAP
 
 
 class LabelPlot(ScatterPlot):
@@ -21,7 +22,7 @@ class LabelPlot(ScatterPlot):
     @classmethod
     def trace_kwargs(cls, is_geo=False, **kwargs):
         if is_geo:
-            return {'type': 'scattermapbox', 'mode': 'text'}
+            return {'type': PLOTLY_SCATTERMAP, 'mode': 'text'}
         else:
             return {'type': 'scatter', 'mode': 'text'}
 

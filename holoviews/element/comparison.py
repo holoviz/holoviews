@@ -1,5 +1,4 @@
-"""
-Helper classes for comparing the equality of two HoloViews objects.
+"""Helper classes for comparing the equality of two HoloViews objects.
 
 These classes are designed to integrate with unittest.TestCase (see
 the tests directory) while making equality testing easily accessible
@@ -16,26 +15,46 @@ Note that this functionality could not be provided using comparison
 methods on all objects as comparison operators only return Booleans and
 thus would not supply any information regarding *why* two elements are
 considered different.
-"""
-from functools import partial
-import numpy as np
-import pandas as pd
-from unittest.util import safe_repr
-from unittest import TestCase
-from numpy.testing import assert_array_equal, assert_array_almost_equal
 
-from . import *    # noqa (All Elements need to support comparison)
-from ..core import (Element, Empty, AdjointLayout, Overlay, Dimension,
-                    HoloMap, Dimensioned, Layout, NdLayout, NdOverlay,
-                    GridSpace, DynamicMap, GridMatrix, OrderedDict)
-from ..core.options import Options, Cycle
-from ..core.util import (cast_array_to_int64, datetime_types, dt_to_int,
-                         is_float)
+"""
+import contextlib
+from functools import partial
+from unittest import SkipTest, TestCase
+from unittest.mock import patch
+from unittest.util import safe_repr
+
+import numpy as np
+from numpy.testing import assert_array_almost_equal, assert_array_equal
+
+from ..core import (
+    AdjointLayout,
+    Dimension,
+    Dimensioned,
+    DynamicMap,
+    Element,
+    Empty,
+    GridMatrix,
+    GridSpace,
+    HoloMap,
+    Layout,
+    NdLayout,
+    NdOverlay,
+    Overlay,
+)
+from ..core.options import Cycle, Options
+from ..core.util import (
+    cast_array_to_int64,
+    datetime_types,
+    dt_to_int,
+    dtype_kind,
+    is_float,
+)
+from ..core.util.dependencies import _is_installed
+from . import *  # noqa (All Elements need to support comparison)
 
 
 class ComparisonInterface:
-    """
-    This class is designed to allow equality testing to work
+    """This class is designed to allow equality testing to work
     seamlessly with unittest.TestCase as a mix-in by implementing a
     compatible interface (namely the assertEqual method).
 
@@ -43,6 +62,7 @@ class ComparisonInterface:
     method of the same name when used as a mix-in with TestCase. The
     contents of the equality_type_funcs dictionary is suitable for use
     with TestCase.addTypeEqualityFunc.
+
     """
 
     equality_type_funcs = {}
@@ -50,8 +70,8 @@ class ComparisonInterface:
 
     @classmethod
     def simple_equality(cls, first, second, msg=None):
-        """
-        Classmethod equivalent to unittest.TestCase method (longMessage = False.)
+        """Classmethod equivalent to unittest.TestCase method (longMessage = False.)
+
         """
         check = first==second
         if not isinstance(check, bool) and hasattr(check, "all"):
@@ -63,8 +83,8 @@ class ComparisonInterface:
 
     @classmethod
     def assertEqual(cls, first, second, msg=None):
-        """
-        Classmethod equivalent to unittest.TestCase method
+        """Classmethod equivalent to unittest.TestCase method
+
         """
         asserter = None
         if type(first) is type(second) or (is_float(first) and is_float(second)):
@@ -84,8 +104,7 @@ class ComparisonInterface:
 
 
 class Comparison(ComparisonInterface):
-    """
-    Class used for comparing two HoloViews objects, including complex
+    """Class used for comparing two HoloViews objects, including complex
     composite objects. Comparisons are available as classmethods, the
     most general being the assertEqual method that is intended to work
     with any input.
@@ -93,6 +112,7 @@ class Comparison(ComparisonInterface):
     For instance, to test if two Image objects are equal you can use:
 
     Comparison.assertEqual(matrix1, matrix2)
+
     """
 
     # someone might prefer to use a different function, e.g. assert_all_close
@@ -112,14 +132,15 @@ class Comparison(ComparisonInterface):
 
         # Dictionary comparisons
         cls.equality_type_funcs[dict] =         cls.compare_dictionaries
-        cls.equality_type_funcs[OrderedDict] =  cls.compare_dictionaries
 
         # Numpy array comparison
         cls.equality_type_funcs[np.ndarray]          = cls.compare_arrays
         cls.equality_type_funcs[np.ma.masked_array]  = cls.compare_arrays
 
         # Pandas dataframe comparison
-        cls.equality_type_funcs[pd.DataFrame] = cls.compare_dataframe
+        if _is_installed("pandas"):
+            import pandas as pd
+            cls.equality_type_funcs[pd.DataFrame] = cls.compare_dataframe
 
         # Dimension objects
         cls.equality_type_funcs[Dimension] =    cls.compare_dimensions
@@ -151,6 +172,7 @@ class Comparison(ComparisonInterface):
 
         # Rasters
         cls.equality_type_funcs[Image] =       cls.compare_image
+        cls.equality_type_funcs[ImageStack] =  cls.compare_imagestack
         cls.equality_type_funcs[RGB] =         cls.compare_rgb
         cls.equality_type_funcs[HSV] =         cls.compare_hsv
         cls.equality_type_funcs[Raster] =      cls.compare_raster
@@ -227,20 +249,20 @@ class Comparison(ComparisonInterface):
     def compare_lists(cls, l1, l2, msg=None):
         try:
             cls.assertEqual(len(l1), len(l2))
-            for v1, v2 in zip(l1, l2):
+            for v1, v2 in zip(l1, l2, strict=None):
                 cls.assertEqual(v1, v2)
-        except AssertionError:
-            raise AssertionError(msg or f'{l1!r} != {l2!r}')
+        except AssertionError as e:
+            raise AssertionError(msg or f'{l1!r} != {l2!r}') from e
 
 
     @classmethod
     def compare_tuples(cls, t1, t2, msg=None):
         try:
             cls.assertEqual(len(t1), len(t2))
-            for i1, i2 in zip(t1, t2):
+            for i1, i2 in zip(t1, t2, strict=None):
                 cls.assertEqual(i1, i2)
-        except AssertionError:
-            raise AssertionError(msg or f'{t1!r} != {t2!r}')
+        except AssertionError as e:
+            raise AssertionError(msg or f'{t1!r} != {t2!r}') from e
 
 
     #=====================#
@@ -254,30 +276,30 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_arrays(cls, arr1, arr2, msg='Arrays'):
         try:
-            if arr1.dtype.kind == 'M':
+            if dtype_kind(arr1) == 'M':
                 arr1 = cast_array_to_int64(arr1.astype('datetime64[ns]'))
-            if arr2.dtype.kind == 'M':
+            if dtype_kind(arr2) == 'M':
                 arr2 = cast_array_to_int64(arr2.astype('datetime64[ns]'))
             assert_array_equal(arr1, arr2)
         except Exception:
             try:
                 cls.assert_array_almost_equal_fn(arr1, arr2)
             except AssertionError as e:
-                raise cls.failureException(msg + str(e)[11:])
+                raise cls.failureException(msg + str(e)[11:]) from e
 
     @classmethod
     def bounds_check(cls, el1, el2, msg=None):
         lbrt1 = el1.bounds.lbrt()
         lbrt2 = el2.bounds.lbrt()
         try:
-            for v1, v2 in zip(lbrt1, lbrt2):
+            for v1, v2 in zip(lbrt1, lbrt2, strict=None):
                 if isinstance(v1, datetime_types):
                     v1 = dt_to_int(v1)
                 if isinstance(v2, datetime_types):
                     v2 = dt_to_int(v2)
                 cls.assert_array_almost_equal_fn(v1, v2)
-        except AssertionError:
-            raise cls.failureException(f"BoundingBoxes are mismatched: {el1.bounds.lbrt()} != {el2.bounds.lbrt()}.")
+        except AssertionError as e:
+            raise cls.failureException(f"BoundingBoxes are mismatched: {el1.bounds.lbrt()} != {el2.bounds.lbrt()}.") from e
 
 
     #=======================================#
@@ -309,7 +331,7 @@ class Comparison(ComparisonInterface):
                 cls.assertEqual(dim1_params[k], dim2_params[k], msg=None)
             except AssertionError as e:
                 msg = f'Dimension parameter {k!r} mismatched: '
-                raise cls.failureException(f"{msg}{e!s}")
+                raise cls.failureException(f"{msg}{e!s}") from e
 
     @classmethod
     def compare_labelled_data(cls, obj1, obj2, msg=None):
@@ -320,7 +342,7 @@ class Comparison(ComparisonInterface):
     def compare_dimension_lists(cls, dlist1, dlist2, msg='Dimension lists'):
         if len(dlist1) != len(dlist2):
             raise cls.failureException(f'{msg} mismatched')
-        for d1, d2 in zip(dlist1, dlist2):
+        for d1, d2 in zip(dlist1, dlist2, strict=None):
             cls.assertEqual(d1, d2)
 
     @classmethod
@@ -347,7 +369,7 @@ class Comparison(ComparisonInterface):
             raise cls.failureException(f"{msg} have mismatched path counts.")
         if el1.keys() != el2.keys():
             raise cls.failureException(f"{msg} have mismatched paths.")
-        for element1, element2 in zip(el1.values(),  el2.values()):
+        for element1, element2 in zip(el1.values(),  el2.values(), strict=None):
             cls.assertEqual(element1, element2)
 
     @classmethod
@@ -383,7 +405,7 @@ class Comparison(ComparisonInterface):
                                        + f"In first, not second {diff1}. "
                                        + f"In second, not first: {diff2}.")
 
-        for element1, element2 in zip(el1, el2):
+        for element1, element2 in zip(el1, el2, strict=None):
             cls.assertEqual(element1, element2)
 
     @classmethod
@@ -408,7 +430,7 @@ class Comparison(ComparisonInterface):
         if set(el1.keys()) != set(el2.keys()):
             raise cls.failureException("Layouts have different keys.")
 
-        for element1, element2 in zip(el1, el2):
+        for element1, element2 in zip(el1, el2, strict=None):
             cls.assertEqual(element1,element2)
 
 
@@ -418,13 +440,13 @@ class Comparison(ComparisonInterface):
         if len(el1) != len(el2):
             raise cls.failureException("NdOverlays have different lengths.")
 
-        for (layer1, layer2) in zip(el1, el2):
+        for (layer1, layer2) in zip(el1, el2, strict=None):
             cls.assertEqual(layer1, layer2)
 
     @classmethod
     def compare_adjointlayouts(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
-        for element1, element2 in zip(el1, el1):
+        for element1, element2 in zip(el1, el1, strict=None):
             cls.assertEqual(element1, element2)
 
 
@@ -481,7 +503,7 @@ class Comparison(ComparisonInterface):
         paths2 = el2.split()
         if len(paths1) != len(paths2):
             raise cls.failureException(f"{msg} objects do not have a matching number of paths.")
-        for p1, p2 in zip(paths1, paths2):
+        for p1, p2 in zip(paths1, paths2, strict=None):
             cls.compare_dataset(p1, p2, f'{msg} data')
 
     @classmethod
@@ -520,18 +542,24 @@ class Comparison(ComparisonInterface):
                             el2.dimension_values(d, flat=tabular))
                             for d in el1.vdims]
         if el1.shape[0] != el2.shape[0]:
-            raise AssertionError("%s not of matching length, %d vs. %d."
-                                 % (msg, el1.shape[0], el2.shape[0]))
+            raise AssertionError(f"{msg} not of matching length, {el1.shape[0]} vs. {el2.shape[0]}.")
         for dim, d1, d2 in dimension_data:
-            if d1.dtype != d2.dtype:
-                cls.failureException(f"{msg} {dim.pprint_label} columns have different type."
-                                     + f" First has type {d1}, and second has type {d2}.")
-            if d1.dtype.kind in 'SUOV':
-                if list(d1) == list(d2):
-                    cls.failureException(f"{msg} along dimension {dim.pprint_label} not equal.")
-            else:
-                cls.compare_arrays(d1, d2, msg)
+            with contextlib.suppress(Exception):
+                np.testing.assert_equal(np.asarray(d1), np.asarray(d2))
+                continue  # if equal, no need to check further
 
+            if d1.dtype != d2.dtype:
+                failure_msg = (
+                    f"{msg} {dim.pprint_label} columns have different type. "
+                    f"First has type {d1}, and second has type {d2}."
+                )
+                raise cls.failureException(failure_msg)
+            if dtype_kind(d1) in 'SUOV':
+                if list(d1) != list(d2):
+                    failure_msg = f"{msg} along dimension {dim.pprint_label} not equal."
+                    raise cls.failureException(failure_msg)
+            else:
+                cls.compare_arrays(np.asarray(d1), np.asarray(d2), msg)
 
     @classmethod
     def compare_curve(cls, el1, el2, msg='Curve'):
@@ -646,6 +674,11 @@ class Comparison(ComparisonInterface):
         cls.compare_dataset(el1, el2, msg)
 
     @classmethod
+    def compare_imagestack(cls, el1, el2, msg='ImageStack'):
+        cls.bounds_check(el1,el2)
+        cls.compare_dataset(el1, el2, msg)
+
+    @classmethod
     def compare_rgb(cls, el1, el2, msg='RGB'):
         cls.bounds_check(el1,el2)
         cls.compare_dataset(el1, el2, msg)
@@ -692,7 +725,7 @@ class Comparison(ComparisonInterface):
         try:
             assert_frame_equal(df1, df2)
         except AssertionError as e:
-            raise cls.failureException(msg+': '+str(e))
+            raise cls.failureException(f'{msg}: {e}') from e
 
     #============#
     # Statistics #
@@ -726,7 +759,7 @@ class Comparison(ComparisonInterface):
         if len(el1) != len(el2):
             raise cls.failureException(f"{name}s have different depths.")
 
-        for element1, element2 in zip(el1, el2):
+        for element1, element2 in zip(el1, el2, strict=None):
             cls.assertEqual(element1, element2)
 
     @classmethod
@@ -748,8 +781,8 @@ class Comparison(ComparisonInterface):
 
 
 class ComparisonTestCase(Comparison, TestCase):
-    """
-    Class to integrate the Comparison class with unittest.TestCase.
+    """Class to integrate the Comparison class with unittest.TestCase.
+
     """
 
     def __init__(self, *args, **kwargs):
@@ -757,3 +790,95 @@ class ComparisonTestCase(Comparison, TestCase):
         registry = Comparison.register()
         for k, v in registry.items():
             self.addTypeEqualityFunc(k, v)
+
+
+class IPTestCase(ComparisonTestCase):
+    """This class extends ComparisonTestCase to handle IPython specific
+    objects and support the execution of cells and magic.
+
+    """
+
+    def setUp(self):
+        try:
+            import IPython
+            from IPython.display import HTML, SVG
+        except Exception:
+            raise SkipTest("IPython could not be imported") from None
+
+        from traitlets.config import Config
+
+        super().setUp()
+        self.exits = []
+        with patch('atexit.register', lambda x: self.exits.append(x)):
+            config = Config()
+            config.HistoryManager.hist_file = ':memory:'
+            self.ip = IPython.InteractiveShell(
+                config=config,
+                history_length=0,
+                history_load_length=0
+            )
+        self.addTypeEqualityFunc(HTML, self.skip_comparison)
+        self.addTypeEqualityFunc(SVG,  self.skip_comparison)
+
+    def tearDown(self) -> None:
+        # Save references to database connections before exit callbacks
+        # because exit callbacks set history_manager to None
+        db_connections = []
+        if hasattr(self.ip, 'history_manager') and self.ip.history_manager is not None:
+            hm = self.ip.history_manager
+            if hasattr(hm, 'db'):
+                db_connections.append(hm.db)
+            if hasattr(hm, 'save_thread') and hasattr(hm.save_thread, 'db'):
+                db_connections.append(hm.save_thread.db)
+
+        # self.ip.displayhook.flush calls gc.collect
+        with patch('gc.collect', lambda: None):
+            for ex in self.exits:
+                ex()
+
+            for db in db_connections:
+                db.close()
+
+        del self.ip
+        super().tearDown()
+
+    def skip_comparison(self, obj1, obj2, msg): pass
+
+    def get_object(self, name):
+        obj = self.ip._object_find(name).obj
+        if obj is None:
+            raise self.failureException(f"Could not find object {name}")
+        return obj
+
+
+    def cell(self, line):
+        """Run an IPython cell
+
+        """
+        self.ip.run_cell(line, silent=True)
+
+    def cell_magic(self, *args, **kwargs):
+        """Run an IPython cell magic
+
+        """
+        self.ip.run_cell_magic(*args, **kwargs)
+
+
+    def line_magic(self, *args, **kwargs):
+        """Run an IPython line magic
+
+        """
+        self.ip.run_line_magic(*args, **kwargs)
+
+
+_assert_element_equal = ComparisonTestCase().assertEqual
+
+def assert_element_equal(element1, element2):
+    # Filter non-holoviews elements
+    hv_types = (Element, Layout)
+    if not isinstance(element1, hv_types):
+        raise TypeError(f"First argument is not an allowed type but a {type(element1).__name__!r}.")
+    if not isinstance(element2, hv_types):
+        raise TypeError(f"Second argument is not an allowed type but a {type(element2).__name__!r}.")
+
+    _assert_element_equal(element1, element2)

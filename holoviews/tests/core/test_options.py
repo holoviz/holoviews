@@ -1,22 +1,41 @@
-import os
+import contextlib
 import pickle
+from unittest import SkipTest
 
 import numpy as np
 import pytest
 
-from holoviews import Store, Histogram, Image, Curve, Points, DynamicMap, opts, util
+from holoviews import (
+    Curve,
+    DynamicMap,
+    Histogram,
+    Image,
+    Points,
+    Store,
+    opts,
+    plotting,
+    util,
+)
 from holoviews.core.options import (
-    OptionError, Cycle, Options, OptionTree, StoreOptions, options_policy
+    Cycle,
+    OptionError,
+    Options,
+    OptionTree,
+    StoreOptions,
+    options_policy,
 )
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews import plotting
+from holoviews.plotting import bokeh  # noqa: F401
 
 Options.skip_invalid = False
 
 # Needed a backend to register backend and options
-from holoviews.plotting import mpl # noqa
-from holoviews.plotting import bokeh # noqa
-from holoviews.plotting import plotly # noqa
+try:
+    from holoviews.plotting import mpl
+except ImportError:
+    mpl = None
+with contextlib.suppress(ImportError):
+    from holoviews.plotting import plotly  # noqa: F401
 
 
 class TestOptions(ComparisonTestCase):
@@ -182,10 +201,9 @@ class TestCycle(ComparisonTestCase):
     def test_options_property_disabled(self):
         cycle1 = Cycle(values=['a', 'b', 'c'])
         opts = Options('test', one=cycle1)
-        try:
-            opts.options
-        except Exception as e:
-            self.assertEqual(str(e), "The options property may only be used with non-cyclic Options.")
+        msg = r"The options property may only be used with non-cyclic Options\."
+        with pytest.raises(Exception, match=msg):
+            opts.options  # noqa: B018
 
 
 
@@ -270,6 +288,8 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
     """
 
     def setUp(self):
+        if mpl is None:
+            raise SkipTest("Matplotlib required to test Store inheritance")
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         options = Store.options()
@@ -280,7 +300,6 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
 
     def tearDown(self):
         Store.options(val=self.store_copy)
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super().tearDown()
 
     def initialize_option_tree(self):
@@ -406,7 +425,7 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         self.assertEqual(node1.kwargs, {'cmap': 'viridis', 'interpolation': 'nearest'})
         self.assertEqual(node2.kwargs, {'alpha': 0.2})
 
-    def test_custom_opts_to_default_inheritance(self):
+    def test_backend_opts_to_default_inheritance(self):
         """
         Checks customs inheritance backs off to default tree correctly
         using .opts.
@@ -458,6 +477,8 @@ class TestStoreInheritance(ComparisonTestCase):
     """
 
     def setUp(self):
+        if mpl is None:
+            raise SkipTest("Matplotlib required to test Store inheritance")
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         self.store_copy = OptionTree(sorted(Store.options().items()),
@@ -481,7 +502,6 @@ class TestStoreInheritance(ComparisonTestCase):
 
     def tearDown(self):
         Store.options(val=self.store_copy)
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super().tearDown()
 
     def lookup_options(self, obj, group):
@@ -541,6 +561,8 @@ class TestStoreInheritance(ComparisonTestCase):
 class TestOptionsMethod(ComparisonTestCase):
 
     def setUp(self):
+        if mpl is None:
+            raise SkipTest("Matplotlib required to test Store inheritance")
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         self.store_copy = OptionTree(sorted(Store.options().items()),
@@ -549,7 +571,6 @@ class TestOptionsMethod(ComparisonTestCase):
 
     def tearDown(self):
         Store.options(val=self.store_copy)
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super().tearDown()
 
     def lookup_options(self, obj, group):
@@ -592,6 +613,8 @@ class TestOptionsMethod(ComparisonTestCase):
 class TestOptsMethod(ComparisonTestCase):
 
     def setUp(self):
+        if mpl is None:
+            raise SkipTest("Matplotlib required to test Store inheritance")
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         self.store_copy = OptionTree(sorted(Store.options().items()),
@@ -600,7 +623,6 @@ class TestOptsMethod(ComparisonTestCase):
 
     def tearDown(self):
         Store.options(val=self.store_copy)
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super().tearDown()
 
     def lookup_options(self, obj, group):
@@ -706,7 +728,6 @@ class TestOptionTreeFind(ComparisonTestCase):
     def tearDown(self):
         Options._option_groups = self.original_option_groups
         Store.options(val=self.original_options)
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
 
     def test_optiontree_find1(self):
         self.assertEqual(self.options.find('MyType').options('group').options,
@@ -741,10 +762,10 @@ class TestOptionTreeFind(ComparisonTestCase):
                          dict(kw2='value2'))
 
     def test_optiontree_find_mismatch3(self):
-        self.assertEqual(self.options.find('Baz').options('group').options, dict())
+        self.assertEqual(self.options.find('Baz').options('group').options, {})
 
     def test_optiontree_find_mismatch4(self):
-        self.assertEqual(self.options.find('Baz.Baz').options('group').options, dict())
+        self.assertEqual(self.options.find('Baz.Baz').options('group').options, {})
 
 
 
@@ -754,6 +775,8 @@ class TestCrossBackendOptions(ComparisonTestCase):
     """
 
     def setUp(self):
+        if mpl is None:
+            raise SkipTest("Matplotlib required to test Store inheritance")
         # Some tests require that plotly isn't loaded
         self.plotly_options = Store._options.pop('plotly', None)
         self.store_mpl = OptionTree(
@@ -785,7 +808,6 @@ class TestCrossBackendOptions(ComparisonTestCase):
         Store.options(val=self.store_mpl, backend='matplotlib')
         Store.options(val=self.store_bokeh, backend='bokeh')
         Store.current_backend = 'matplotlib'
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
 
         if self.plotly_options is not None:
             Store._options['plotly'] = self.plotly_options
@@ -813,8 +835,6 @@ class TestCrossBackendOptions(ComparisonTestCase):
         Store.current_backend = 'bokeh'
         bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
         self.assertEqual(bokeh_opts, {'cmap':'Purple'})
-        return img
-
 
     def test_mpl_bokeh_offset_mpl(self):
         img = Image(np.random.rand(10,10))
@@ -841,7 +861,6 @@ class TestCrossBackendOptions(ComparisonTestCase):
         Store.current_backend = 'bokeh'
         bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
         self.assertEqual(bokeh_opts, {'cmap':'Purple'})
-        return img
 
     def test_builder_backend_switch_signature(self):
         Store.options(val=self.store_mpl, backend='matplotlib')
@@ -890,15 +909,31 @@ class TestCrossBackendOptions(ComparisonTestCase):
             opts.Curve(foobar=3)
         assert err in str(excinfo.value)
 
+    def test_apply_opts_with_non_active_backend(self):
+        Store.options(val=self.store_mpl, backend='matplotlib')
+        Store.options(val=self.store_bokeh, backend='bokeh')
+        Store.set_current_backend('bokeh')
+
+        opts.defaults(
+            opts.Curve(linewidth=5),
+            backend="matplotlib",
+        )
+
+        Store.set_current_backend('matplotlib')
+        assert Curve([]).opts.get().kwargs["linewidth"] == 5
+
 
 class TestLookupOptions(ComparisonTestCase):
 
     def test_lookup_options_honors_backend(self):
         points = Points([[1, 2], [3, 4]])
 
-        import holoviews.plotting.mpl
-        import holoviews.plotting.bokeh
-        import holoviews.plotting.plotly # noqa
+        try:
+            import holoviews.plotting.bokeh
+            import holoviews.plotting.mpl
+            import holoviews.plotting.plotly  # noqa
+        except ImportError:
+            raise SkipTest("Matplotlib or Plotly not installed")
 
         backends = Store.loaded_backends()
 
@@ -936,12 +971,15 @@ class TestLookupOptions(ComparisonTestCase):
             self.assertNotIn("muted_alpha", options_matplotlib.keys())
 
 
+@pytest.mark.usefixtures("bokeh_backend")
 class TestCrossBackendOptionSpecification(ComparisonTestCase):
     """
     Test the style system can style a single object across backends.
     """
 
     def setUp(self):
+        if mpl is None:
+            raise SkipTest("Matplotlib required to test Store inheritance")
         # Some tests require that plotly isn't loaded
         self.plotly_options = Store._options.pop('plotly', None)
         self.store_mpl = OptionTree(
@@ -958,7 +996,6 @@ class TestCrossBackendOptionSpecification(ComparisonTestCase):
         Store.options(val=self.store_mpl, backend='matplotlib')
         Store.options(val=self.store_bokeh, backend='bokeh')
         Store.current_backend = 'matplotlib'
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
 
         if self.plotly_options is not None:
             Store._options['plotly'] = self.plotly_options
@@ -1090,27 +1127,39 @@ class TestCrossBackendOptionSpecification(ComparisonTestCase):
 
 class TestCrossBackendOptionPickling(TestCrossBackendOptions):
 
-    cleanup = ['test_raw_pickle.pkl', 'test_pickle_mpl_bokeh.pkl']
+    def setUp(self):
+        super().setUp()
+        self.raw = Image(np.random.rand(10,10))
+        Store.current_backend = 'matplotlib'
+        StoreOptions.set_options(self.raw, style={'Image':{'cmap':'Blues'}})
+        Store.current_backend = 'bokeh'
+        StoreOptions.set_options(self.raw, style={'Image':{'cmap':'Purple'}})
 
-    def tearDown(self):
-        super().tearDown()
-        for f in self.cleanup:
-            try:
-                os.remove(f)
-            except Exception:
-                pass
+    def _create_tmp_path(self):
+        # Remove this when we use pytest
+        import tempfile
+        from pathlib import Path
+
+        tmp_dir = tempfile.TemporaryDirectory()
+        tmp_path = Path(tmp_dir.name)
+
+        return tmp_dir, tmp_path
+
 
     def test_raw_pickle(self):
         """
         Test usual pickle saving and loading (no style information preserved)
         """
-        fname= 'test_raw_pickle.pkl'
-        raw = super().test_mpl_bokeh_mpl()
-        pickle.dump(raw, open(fname,'wb'))
+        tmp_dir, tmp_path = self._create_tmp_path()  # Pytest remove
+
+        fname= tmp_path / 'test_raw_pickle.pkl'
+        with open(fname,'wb') as handle:
+            pickle.dump(self.raw, handle)
         self.clear_options()
-        img = pickle.load(open(fname,'rb'))
+        with open(fname,'rb') as handle:
+            img = pickle.load(handle)
         # Data should match
-        self.assertEqual(raw, img)
+        self.assertEqual(self.raw, img)
         # But the styles will be lost without using Store.load/Store.dump
         pickle.current_backend = 'matplotlib'
         mpl_opts = Store.lookup_options('matplotlib', img, 'style').options
@@ -1120,17 +1169,22 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
         self.assertEqual(bokeh_opts, {})
 
+        tmp_dir.cleanup()  # Pytest remove
+
     def test_pickle_mpl_bokeh(self):
         """
         Test pickle saving and loading with Store (style information preserved)
         """
-        fname = 'test_pickle_mpl_bokeh.pkl'
-        raw = super().test_mpl_bokeh_mpl()
-        Store.dump(raw, open(fname,'wb'))
+        tmp_dir, tmp_path = self._create_tmp_path()  # Pytest remove
+
+        fname = tmp_path / 'test_pickle_mpl_bokeh.pkl'
+        with open(fname,'wb') as handle:
+            Store.dump(self.raw, handle)
         self.clear_options()
-        img = Store.load(open(fname,'rb'))
+        with open(fname,'rb') as handle:
+            img = Store.load(handle)
         # Data should match
-        self.assertEqual(raw, img)
+        self.assertEqual(self.raw, img)
         # Check it is still blue in matplotlib...
         Store.current_backend = 'matplotlib'
         mpl_opts = Store.lookup_options('matplotlib', img, 'style').options
@@ -1139,3 +1193,5 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         Store.current_backend = 'bokeh'
         bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
         self.assertEqual(bokeh_opts, {'cmap':'Purple'})
+
+        tmp_dir.cleanup()  # Pytest remove

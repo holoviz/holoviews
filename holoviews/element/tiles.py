@@ -1,16 +1,15 @@
 from types import FunctionType
 
-import param
 import numpy as np
+import param
 
 from ..core.dimension import Dimension
 from ..core.element import Element2D
-from ..util.transform import lon_lat_to_easting_northing, easting_northing_to_lon_lat
+from ..util.transform import easting_northing_to_lon_lat, lon_lat_to_easting_northing
 
 
 class Tiles(Element2D):
-    """
-    The Tiles element represents tile sources, specified as URL
+    """The Tiles element represents tile sources, specified as URL
     containing different template variables or xyzservices.TileProvider.
     These variables correspond to three different formats for specifying the spatial
     location and zoom level of the requested tiles:
@@ -25,6 +24,7 @@ class Tiles(Element2D):
     defined as eastings and northings. Any data overlaid on a tile
     source therefore has to be defined in those coordinates or be
     projected (e.g. using GeoViews).
+
     """
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
@@ -39,8 +39,8 @@ class Tiles(Element2D):
         if isinstance(data, MercatorTileSource):
             data = data.url
         elif data is not None and not isinstance(data, (str, dict)):
-            raise TypeError('{} data should be a tile service URL or '
-                            'xyzservices.TileProvider not a {} type.'.format(type(self).__name__, type(data).__name__) )
+            raise TypeError(f'{type(self).__name__} data should be a tile service URL or '
+                            f'xyzservices.TileProvider not a {type(data).__name__} type.' )
         super().__init__(data, kdims=kdims, vdims=vdims, **params)
 
     def range(self, dim, data_range=True, dimension_range=True):
@@ -51,23 +51,23 @@ class Tiles(Element2D):
 
     @staticmethod
     def lon_lat_to_easting_northing(longitude, latitude):
-        """
-        Projects the given longitude, latitude values into Web Mercator
+        """Projects the given longitude, latitude values into Web Mercator
         (aka Pseudo-Mercator or EPSG:3857) coordinates.
 
         See docstring for holoviews.util.transform.lon_lat_to_easting_northing
         for more information
+
         """
         return lon_lat_to_easting_northing(longitude, latitude)
 
     @staticmethod
     def easting_northing_to_lon_lat(easting, northing):
-        """
-        Projects the given easting, northing values into
+        """Projects the given easting, northing values into
         longitude, latitude coordinates.
 
         See docstring for holoviews.util.transform.easting_northing_to_lon_lat
         for more information
+
         """
         return easting_northing_to_lon_lat(easting, northing)
 
@@ -85,14 +85,14 @@ _ATTRIBUTIONS = {
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, '
         '&copy; <a href="https://cartodb.com/attributions">CartoDB</a>'
     ),
-    ('stamen', 'net/t') : ( # to match both 'toner' and 'terrain'
-        'Map tiles by <a href="https://stamen.com">Stamen Design</a>, '
+    ('stamen', 'png') : ( # to match both 'toner' and 'terrain'
+        'Map tiles by <a href="https://stamen.com">Stamen Design</a> / <a href="https://stadiamaps.com">Stadia Maps</a>, '
         'under <a href="https://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. '
         'Data by <a href="https://openstreetmap.org">OpenStreetMap</a>, '
         'under <a href="https://www.openstreetmap.org/copyright">ODbL</a>.'
     ),
-    ('stamen', 'watercolor') : (
-        'Map tiles by <a href="https://stamen.com">Stamen Design</a>, '
+    ('stamen', 'jpg') : (  # watercolor
+        'Map tiles by <a href="https://stamen.com">Stamen Design</a> / <a href="https://stadiamaps.com">Stadia Maps</a>, '
         'under <a href="https://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. '
         'Data by <a href="https://openstreetmap.org">OpenStreetMap</a>, '
         'under <a href="https://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.'
@@ -132,15 +132,15 @@ CartoLight = lambda: Tiles('https://cartodb-basemaps-4.global.ssl.fastly.net/lig
 
 
 # Stamen basemaps
-StamenTerrain = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/terrain/{Z}/{X}/{Y}.png', name="StamenTerrain")
-StamenTerrainRetina = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/terrain/{Z}/{X}/{Y}@2x.png', name="StamenTerrainRetina")
-StamenWatercolor = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/watercolor/{Z}/{X}/{Y}.jpg', name="StamenWatercolor")
-StamenToner = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner/{Z}/{X}/{Y}.png', name="StamenToner")
-StamenTonerRetina = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner/{Z}/{X}/{Y}@2x.png', name="StamenTonerRetina")
-StamenTonerBackground = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner-background/{Z}/{X}/{Y}.png', name="StamenTonerBackground")
-StamenTonerBackgroundRetina = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner-background/{Z}/{X}/{Y}@2x.png', name="StamenTonerBackgroundRetina")
-StamenLabels = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner-labels/{Z}/{X}/{Y}.png', name="StamenLabels")
-StamenLabelsRetina = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner-labels/{Z}/{X}/{Y}@2x.png', name="StamenLabelsRetina")
+StamenTerrain = lambda: Tiles('https://tiles.stadiamaps.com/tiles/stamen_terrain/{Z}/{X}/{Y}.png', name="StamenTerrain")
+StamenTerrainRetina = lambda: Tiles('https://tiles.stadiamaps.com/tiles/stamen_terrain/{Z}/{X}/{Y}@2x.png', name="StamenTerrainRetina")
+StamenWatercolor = lambda: Tiles('https://tiles.stadiamaps.com/tiles/stamen_watercolor/{Z}/{X}/{Y}.jpg', name="StamenWatercolor")
+StamenToner = lambda: Tiles('https://tiles.stadiamaps.com/tiles/stamen_toner/{Z}/{X}/{Y}.png', name="StamenToner")
+StamenTonerRetina = lambda: Tiles('https://tiles.stadiamaps.com/tiles/stamen_toner/{Z}/{X}/{Y}@2x.png', name="StamenTonerRetina")
+StamenTonerBackground = lambda: Tiles('https://tiles.stadiamaps.com/tiles/stamen_toner_background/{Z}/{X}/{Y}.png', name="StamenTonerBackground")
+StamenTonerBackgroundRetina = lambda: Tiles('https://tiles.stadiamaps.com/tiles/stamen_toner_background/{Z}/{X}/{Y}@2x.png', name="StamenTonerBackgroundRetina")
+StamenLabels = lambda: Tiles('https://tiles.stadiamaps.com/tiles/stamen_toner_labels/{Z}/{X}/{Y}.png', name="StamenLabels")
+StamenLabelsRetina = lambda: Tiles('https://tiles.stadiamaps.com/tiles/stamen_toner_labels/{Z}/{X}/{Y}@2x.png', name="StamenLabelsRetina")
 
 # Esri maps (see https://server.arcgisonline.com/arcgis/rest/services for the full list)
 EsriImagery = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{Z}/{Y}/{X}.jpg', name="EsriImagery")
@@ -160,4 +160,5 @@ _all_tile_sources = {k: v for k, v in locals().items() if isinstance(v, Function
                 ['ESRI', 'lon_lat_to_easting_northing', 'easting_northing_to_lon_lat',
                  'deprecation_warning', 'wikimedia_replacement']}
 
-tile_sources = {k: v for k, v in _all_tile_sources.items()}
+tile_sources = {k: v for k, v in _all_tile_sources.items() if "Stamen" not in k}
+stamen_sources = {k: v for k, v in _all_tile_sources.items() if "Stamen" in k}

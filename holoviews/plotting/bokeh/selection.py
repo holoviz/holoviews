@@ -14,7 +14,9 @@ class TabularSelectionDisplay(SelectionDisplay):
             opts['selected'] = list(np.where(mask)[0])
         return el.opts(clone=True, backend='bokeh', **opts)
 
-    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache={}):
+    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache=None):
+        if cache is None:
+            cache = {}
         sel_streams = [selection_streams.exprs_stream]
         hvobj = hvobj.apply(self._build_selection, streams=sel_streams, per_element=True)
         for op in operations:
@@ -23,8 +25,8 @@ class TabularSelectionDisplay(SelectionDisplay):
 
 
 class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
-    """
-    Overlay selection display subclass for use with bokeh backend
+    """Overlay selection display subclass for use with bokeh backend
+
     """
 
     def _build_element_layer(self, element, layer_color, layer_alpha, **opts):
@@ -53,7 +55,7 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
 
         filtered = {k: v for k, v in merged_opts.items() if k in allowed}
         plot_opts = Store.lookup_options('bokeh', element, 'plot').kwargs
-        tools = plot_opts.get('tools', []) + ['box_select']
+        tools = [*plot_opts.get('tools', []), 'box_select']
         return element.opts(backend='bokeh', clone=True, tools=tools,
                             **filtered)
 

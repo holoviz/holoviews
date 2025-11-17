@@ -1,8 +1,19 @@
 """
 Tests of Layout and related classes
 """
-from holoviews import AdjointLayout, NdLayout, GridSpace, Layout, Element, HoloMap, Overlay
-from holoviews.element import HLine, Curve
+import numpy as np
+import pytest
+
+from holoviews import (
+    AdjointLayout,
+    Element,
+    GridSpace,
+    HoloMap,
+    Layout,
+    NdLayout,
+    Overlay,
+)
+from holoviews.element import Curve, HLine, Image
 from holoviews.element.comparison import ComparisonTestCase
 
 
@@ -54,7 +65,7 @@ class AdjointLayoutTest(CompositeTest):
 
     def test_adjointlayout_iter(self):
         layout = self.view3 << self.view2 << self.view1
-        for el, view in zip(layout, [self.view3, self.view2, self.view1]):
+        for el, view in zip(layout, [self.view3, self.view2, self.view1], strict=None):
             self.assertEqual(el, view)
 
     def test_adjointlayout_add_operator(self):
@@ -121,7 +132,14 @@ class AdjointLayoutTest(CompositeTest):
         with self.assertRaises(ValueError):
             (self.view1 << self.view2 << self.view3) * (self.hmap << dim_view)
 
+    @pytest.mark.usefixtures("mpl_backend")
+    def test_histogram_image_hline_overlay(self):
+        image = Image(np.arange(100).reshape(10, 10))
+        overlay = image * HLine(y=0)
+        element = overlay.hist()
 
+        assert isinstance(element, AdjointLayout)
+        assert element.main == overlay
 
 class NdLayoutTest(CompositeTest):
 
@@ -199,25 +217,25 @@ class GridTest(CompositeTest):
     def test_grid_init(self):
         vals = [self.view1, self.view2, self.view3, self.view2]
         keys = [(0,0), (0,1), (1,0), (1,1)]
-        grid = GridSpace(zip(keys, vals))
+        grid = GridSpace(zip(keys, vals, strict=None))
         self.assertEqual(grid.shape, (2,2))
 
     def test_grid_index_snap(self):
         vals = [self.view1, self.view2, self.view3, self.view2]
         keys = [(0,0), (0,1), (1,0), (1,1)]
-        grid = GridSpace(zip(keys, vals))
+        grid = GridSpace(zip(keys, vals, strict=None))
         self.assertEqual(grid[0.1, 0.1], self.view1)
 
     def test_grid_index_strings(self):
         vals = [self.view1, self.view2, self.view3, self.view2]
         keys = [('A', 0), ('B', 1), ('C', 0), ('D', 1)]
-        grid = GridSpace(zip(keys, vals))
+        grid = GridSpace(zip(keys, vals, strict=None))
         self.assertEqual(grid['B', 1], self.view2)
 
     def test_grid_index_one_axis(self):
         vals = [self.view1, self.view2, self.view3, self.view2]
         keys = [('A', 0), ('B', 1), ('C', 0), ('D', 1)]
-        grid = GridSpace(zip(keys, vals))
+        grid = GridSpace(zip(keys, vals, strict=None))
         self.assertEqual(grid[:, 0], GridSpace([(('A', 0), self.view1), (('C', 0), self.view3)]))
 
     def test_gridspace_overlay_element(self):

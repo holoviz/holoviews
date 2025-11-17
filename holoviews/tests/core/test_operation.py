@@ -3,7 +3,7 @@ import param
 from holoviews.core.operation import Operation
 from holoviews.element import Curve
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import Stream, Params
+from holoviews.streams import Params, Stream
 
 
 class ExampleOperation(Operation):

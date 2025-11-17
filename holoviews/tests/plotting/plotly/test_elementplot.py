@@ -1,10 +1,13 @@
+import re
 from collections import deque
 
 import numpy as np
 import pandas as pd
+import pytest
 
+from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import DynamicMap
-from holoviews.element import Curve, Scatter3D, Path3D
+from holoviews.element import Curve, Path3D, QuadMesh, Scatter, Scatter3D
 from holoviews.streams import PointerX
 
 from .test_plot import TestPlotlyPlot, plotly_renderer
@@ -13,7 +16,8 @@ from .test_plot import TestPlotlyPlot, plotly_renderer
 class TestElementPlot(TestPlotlyPlot):
 
     def test_stream_callback_single_call(self):
-        def history_callback(x, history=deque(maxlen=10)):
+        history = deque(maxlen=10)
+        def history_callback(x):
             history.append(x)
             return Curve(list(history))
         stream = PointerX(x=0)
@@ -32,6 +36,11 @@ class TestElementPlot(TestPlotlyPlot):
         curve = Curve(range(10), label='Not Called').opts(hooks=[hook])
         plot = plotly_renderer.get_plot(curve)
         self.assertEqual(plot.state['layout']['title'], 'Called')
+
+    def test_title_fontsize(self):
+        curve = Curve([1, 2, 3]).opts(title='Test',fontsize={'title': 42})
+        plot = plotly_renderer.get_plot(curve)
+        assert plot.state["layout"]["title"]["font"]["size"] == 42
 
     ### Axis labelling ###
 
@@ -181,6 +190,21 @@ class TestElementPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['scene']['zaxis']['tickvals'], [0, 500, 1000])
         self.assertEqual(state['layout']['scene']['zaxis']['ticktext'], ['A', 'B', 'C'])
 
+    ### Aspect ratio ###
+    def test_aspect_non_matching_types(self):
+        X = pd.date_range(start="1/1/2018", end="1/08/2018", periods=100)
+        Y = np.linspace(1, 100, 100)
+        Z = np.random.randn(100, 100)
+        qm = QuadMesh((X, Y, Z)).opts(aspect='equal')
+        msg = (
+            "The aspect is set to 'equal', but the axes does not have the same type: "
+            "x-axis timedelta64 and y-axis float64. "
+            "Either have the axes be the same type or or set '.opts(aspect=)' "
+            "to either a number or 'square'."
+        )
+        with pytest.raises(TypeError, match=re.escape(msg)):
+            plotly_renderer.get_plot(qm)
+
 
 class TestOverlayPlot(TestPlotlyPlot):
 
@@ -226,6 +250,7 @@ class TestOverlayPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['scene']['zaxis']['title']['text'], 'Z-Axis')
 
 class TestColorbarPlot(TestPlotlyPlot):
+
     def test_base(self):
         df = pd.DataFrame(np.random.random((10, 4)), columns=list("XYZT"))
         scatter = Scatter3D(data=df)
@@ -249,3 +274,11 @@ class TestColorbarPlot(TestPlotlyPlot):
         state = self._get_plot_state(scatter)
         assert "colorbar" in state["data"][0]["marker"]
         assert state["data"][0]["marker"]["colorbar"]["title"]["text"] == "some-title"
+
+    def test_style_map_dimension_object(self):
+        x = Dimension("x")
+        y = Dimension("y")
+        scatter = Scatter([1, 2, 3], kdims=[x], vdims=[y]).opts(color=x)
+        state = self._get_plot_state(scatter)
+        assert state["data"][0]["marker"]["cmin"] == 0
+        assert state["data"][0]["marker"]["cmax"] == 2

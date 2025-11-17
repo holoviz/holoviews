@@ -1,5 +1,4 @@
-"""
-Data normalization operations.
+"""Data normalization operations.
 
 Normalizing input data into a valid range is a common operation and
 often required before further processing. The semantics of
@@ -11,24 +10,28 @@ subclasses are used to implement the appropriate normalization
 operations per element type. Unlike display normalization, data
 normalizations result in transformations to the stored data within
 each element.
-"""
 
+"""
+from collections import defaultdict
+
+import numpy as np
 import param
-from ..core.operation import Operation
-from ..element import Raster
+
 from ..core import Overlay
+from ..core.operation import Operation
 from ..core.util import match_spec
+from ..element import Chart, Raster
 
 
 class Normalization(Operation):
-    """
-    Base class for all normalization operation.
+    """Base class for all normalization operation.
 
     This class standardizes how normalization is specified using the
     ranges and keys parameter. The ranges parameter is designed to be
     very flexible, allowing a concise description for simple
     normalization while allowing complex key- and element- specific
     normalization to also be specified.
+
     """
 
     data_range = param.Boolean(default=False, doc="""
@@ -79,21 +82,25 @@ class Normalization(Operation):
        normalization.""")
 
 
-    def __call__(self, element, ranges={}, keys=None, **params):
+    def __call__(self, element, ranges=None, keys=None, **params):
+        if ranges is None:
+            ranges = {}
         params = dict(params,ranges=ranges, keys=keys)
         return super().__call__(element, **params)
 
 
-    def process_element(self, element, key, ranges={}, keys=None, **params):
+    def process_element(self, element, key, ranges=None, keys=None, **params):
+        if ranges is None:
+            ranges = {}
         params = dict(params,ranges=ranges, keys=keys)
         self.p = param.ParamOverrides(self, params)
         return self._process(element, key)
 
 
     def get_ranges(self, element, key):
-        """
-        Method to get the appropriate normalization range dictionary
+        """Method to get the appropriate normalization range dictionary
         given a key and element.
+
         """
         keys = self.p['keys']
         ranges = self.p['ranges']
@@ -112,7 +119,7 @@ class Normalization(Operation):
                 index = keys.index(key)
                 specs = ranges[index]
             except Exception:
-                raise KeyError("Could not match element key to defined keys")
+                raise KeyError("Could not match element key to defined keys") from None
         else:
             raise ValueError("Key list length must match length of supplied ranges")
 
@@ -125,8 +132,7 @@ class Normalization(Operation):
 
 
 class raster_normalization(Normalization):
-    """
-    Normalizes elements of type Raster.
+    """Normalizes elements of type Raster.
 
     For Raster elements containing (NxM) data, this will normalize the
     array/matrix into the specified range if value_dimension matches
@@ -136,6 +142,7 @@ class raster_normalization(Normalization):
     third dimensional are normalized independently if the
     corresponding value dimensions are selected by the ranges
     dictionary.
+
     """
 
     def _process(self, raster, key=None):
@@ -170,3 +177,61 @@ class raster_normalization(Normalization):
                 if range:
                     norm_raster.data[:,:,depth] /= range
         return norm_raster
+
+
+class subcoordinate_group_ranges(Operation):
+    """Compute the data range group-wise in a subcoordinate_y overlay,
+    and set the dimension range of each Chart element based on the
+    value computed for its group.
+
+    This operation is useful to visually apply a group-wise min-max
+    normalisation.
+
+    """
+
+    def _process(self, overlay, key=None):
+        # If there are groups AND there are subcoordinate_y elements without a group.
+        if any(el.group != type(el).__name__ for el in overlay) and any(
+            el.opts.get('plot').kwargs.get('subcoordinate_y', False)
+            and el.group == type(el).__name__
+            for el in overlay
+        ):
+            self.param.warning(
+                'The subcoordinate_y overlay contains elements with a defined group, each '
+                'subcoordinate_y element in the overlay must have a defined group.'
+            )
+
+        vmins = defaultdict(list)
+        vmaxs = defaultdict(list)
+        include_chart = False
+        for el in overlay:
+            # Only applies to Charts.
+            # `group` is the Element type per default (e.g. Curve, Spike).
+            if not isinstance(el, Chart) or el.group == type(el).__name__:
+                continue
+            if not el.opts.get('plot').kwargs.get('subcoordinate_y', False):
+                self.param.warning(
+                    f"All elements in group {el.group!r} must set the option "
+                    f"'subcoordinate_y=True'. Not found for: {el}"
+                )
+            vmin, vmax = el.range(1)
+            vmins[el.group].append(vmin)
+            vmaxs[el.group].append(vmax)
+            include_chart = True
+
+        if not include_chart or not vmins:
+            return overlay
+
+        minmax = {
+            group: (np.min(vmins[group]), np.max(vmaxs[group]))
+            for group in vmins
+        }
+        new = []
+        for el in overlay:
+            if not isinstance(el, Chart):
+                new.append(el)
+                continue
+            y_dimension = el.vdims[0]
+            y_dimension = y_dimension.clone(range=minmax[el.group])
+            new.append(el.redim(**{y_dimension.name: y_dimension}))
+        return overlay.clone(data=new)

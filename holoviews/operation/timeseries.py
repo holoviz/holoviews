@@ -1,17 +1,15 @@
-import param
 import numpy as np
-import pandas as pd
-from packaging.version import Version
+import param
 
-from ..core import Operation, Element
+from ..core import Element, Operation
 from ..core.data import PandasInterface
-from ..core.util import pandas_version
+from ..core.util import _PANDAS_FUNC_LOOKUP
 from ..element import Scatter
 
 
 class RollingBase(param.Parameterized):
-    """
-    Parameters shared between `rolling` and `rolling_outlier_std`.
+    """Parameters shared between `rolling` and `rolling_outlier_std`.
+
     """
 
     center = param.Boolean(default=True, doc="""
@@ -32,11 +30,11 @@ class RollingBase(param.Parameterized):
 
 
 class rolling(Operation,RollingBase):
-    """
-    Applies a function over a rolling window.
+    """Applies a function over a rolling window.
+
     """
 
-    window_type = param.ObjectSelector(default=None, allow_None=True,
+    window_type = param.Selector(default=None, allow_None=True,
         objects=['boxcar', 'triang', 'blackman', 'hamming', 'bartlett',
                  'parzen', 'bohman', 'blackmanharris', 'nuttall',
                  'barthann', 'kaiser', 'gaussian', 'general_gaussian',
@@ -51,8 +49,7 @@ class rolling(Operation,RollingBase):
         df = df.set_index(xdim).rolling(win_type=self.p.window_type,
                                         **self._roll_kwargs())
         if self.p.window_type is None:
-            kwargs = {'raw': True} if pandas_version >= Version('0.23.0') else {}
-            rolled = df.apply(self.p.function, **kwargs)
+            rolled = df.apply(self.p.function, raw=True)
         elif self.p.function is np.mean:
             rolled = df.mean()
         elif self.p.function is np.sum:
@@ -67,17 +64,17 @@ class rolling(Operation,RollingBase):
 
 
 class resample(Operation):
-    """
-    Resamples a timeseries of dates with a frequency and function.
+    """Resamples a timeseries of dates with a frequency and function.
+
     """
 
-    closed = param.ObjectSelector(default=None, objects=['left', 'right'],
+    closed = param.Selector(default=None, objects=['left', 'right'],
         doc="Which side of bin interval is closed", allow_None=True)
 
     function = param.Callable(default=np.mean, doc="""
         Function for computing new values out of existing ones.""")
 
-    label = param.ObjectSelector(default='right', doc="""
+    label = param.Selector(default='right', doc="""
         The bin edge to label the bin with.""")
 
     rule = param.String(default='D', doc="""
@@ -89,15 +86,15 @@ class resample(Operation):
         resample_kwargs = {'rule': self.p.rule, 'label': self.p.label,
                            'closed': self.p.closed}
         df = df.set_index(xdim).resample(**resample_kwargs)
-        return element.clone(df.apply(self.p.function).reset_index())
+        fn = _PANDAS_FUNC_LOOKUP.get(self.p.function, self.p.function)
+        return element.clone(df.apply(fn).reset_index())
 
     def _process(self, element, key=None):
         return element.map(self._process_layer, Element)
 
 
 class rolling_outlier_std(Operation, RollingBase):
-    """
-    Detect outliers using the standard deviation within a rolling window.
+    """Detect outliers using the standard deviation within a rolling window.
 
     Outliers are the array elements outside `sigma` standard deviations from
     the smoothed trend line, as calculated from the trend line residuals.
@@ -105,12 +102,14 @@ class rolling_outlier_std(Operation, RollingBase):
     The rolling window is controlled by parameters shared with the
     `rolling` operation via the base class RollingBase, to make it
     simpler to use the same settings for both.
+
     """
 
     sigma = param.Number(default=2.0, doc="""
         Minimum sigma before a value is considered an outlier.""")
 
     def _process_layer(self, element, key=None):
+        import pandas as pd
         ys = element.dimension_values(1)
 
         # Calculate the variation in the distribution of the residual

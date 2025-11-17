@@ -1,15 +1,15 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
+from holoviews.core.options import AbbreviatedException
 from holoviews.core.overlay import NdOverlay
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Points
-from holoviews.core.options import AbbreviatedException
 
-from .test_plot import TestMPLPlot, mpl_renderer
 from ..utils import ParamLogStream
+from .test_plot import TestMPLPlot, mpl_renderer
 
-import matplotlib.pyplot as plt
 
 class TestPointPlot(TestMPLPlot):
 
@@ -132,7 +132,7 @@ class TestPointPlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.3483695221017129)
 
     def test_points_padding_datetime_square(self):
-        points = Points([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).opts(
+        points = Points([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)]).opts(
             padding=0.1
         )
         plot = mpl_renderer.get_plot(points)
@@ -143,7 +143,7 @@ class TestPointPlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.2)
 
     def test_points_padding_datetime_nonsquare(self):
-        points = Points([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).opts(
+        points = Points([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)]).opts(
             padding=0.1, aspect=2
         )
         plot = mpl_renderer.get_plot(points)
@@ -312,7 +312,7 @@ class TestPointPlot(TestMPLPlot):
                              for i, marker in enumerate(markers)},
                             'Marker').opts('Points', marker='Marker')
         plot = mpl_renderer.get_plot(overlay)
-        for subplot, marker in zip(plot.subplots.values(), markers):
+        for subplot, marker in zip(plot.subplots.values(), markers, strict=None):
             style = dict(subplot.style[subplot.cyclic_index])
             style = subplot._apply_transforms(subplot.current_frame, {}, style)
             self.assertEqual(style['marker'], marker)

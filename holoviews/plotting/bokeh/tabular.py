@@ -1,15 +1,21 @@
 import param
-
 from bokeh.models import Column
 from bokeh.models.widgets import (
-    DataTable, TableColumn, NumberEditor, NumberFormatter, DateFormatter,
-    DateEditor, StringFormatter, StringEditor, IntEditor
+    DataTable,
+    DateEditor,
+    DateFormatter,
+    IntEditor,
+    NumberEditor,
+    NumberFormatter,
+    StringEditor,
+    StringFormatter,
+    TableColumn,
 )
 
 from ...core import Dataset, Dimension
+from ...core.util import dimension_sanitizer, dtype_kind, isdatetime
 from ...element import ItemTable
 from ...streams import Buffer
-from ...core.util import dimension_sanitizer, isdatetime
 from ..plot import GenericElementPlot
 from .plot import BokehPlot
 from .selection import TabularSelectionDisplay
@@ -52,8 +58,8 @@ class TablePlot(BokehPlot, GenericElementPlot):
                  for d in element.dimensions()}, {}, style)
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
-        """
-        Initializes a new plot object with the last available frame.
+        """Initializes a new plot object with the last available frame.
+
         """
         # Get element key and ranges for frame
         element = self.hmap.last
@@ -95,7 +101,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
         columns = []
         for d in element.dimensions():
             col = dimension_sanitizer(d.name)
-            kind = data[col].dtype.kind
+            kind = dtype_kind(data[col])
             if kind == 'i':
                 formatter = NumberFormatter()
                 editor = IntEditor()
@@ -117,9 +123,9 @@ class TablePlot(BokehPlot, GenericElementPlot):
 
 
     def update_frame(self, key, ranges=None, plot=None):
-        """
-        Updates an existing plot with data corresponding
+        """Updates an existing plot with data corresponding
         to the key.
+
         """
         element = self._get_frame(key)
         self.param.update(**self.lookup_options(element, 'plot').options)

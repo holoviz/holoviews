@@ -1,23 +1,35 @@
-from unittest import SkipTest
-
 import numpy as np
+import pytest
 
-from holoviews import NdOverlay, Overlay, Dimension
+from holoviews import Dimension, NdOverlay, Overlay
+from holoviews.core.options import Cycle
 from holoviews.core.spaces import DynamicMap, HoloMap
-from holoviews.core.options import Store, Cycle
+from holoviews.element import (
+    Area,
+    Curve,
+    HLine,
+    Image,
+    Path,
+    Points,
+    Scatter,
+    VectorField,
+)
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.element import (Image, Scatter, Curve, Points,
-                               Area, VectorField, HLine, Path)
 from holoviews.operation import operation
 from holoviews.plotting.util import (
-    compute_overlayable_zorders, get_min_distance, process_cmap,
-    initialize_dynamic, split_dmap_overlay, _get_min_distance_numpy,
-    bokeh_palette_to_palette, mplcmap_to_palette, color_intervals,
-    get_range, get_axis_padding)
+    _get_min_distance_numpy,
+    bokeh_palette_to_palette,
+    color_intervals,
+    compute_overlayable_zorders,
+    get_axis_padding,
+    get_min_distance,
+    get_range,
+    initialize_dynamic,
+    mplcmap_to_palette,
+    process_cmap,
+    split_dmap_overlay,
+)
 from holoviews.streams import PointerX
-
-from holoviews.plotting.bokeh import util
-bokeh_renderer = Store.renderers['bokeh']
 
 
 class TestOverlayableZorders(ComparisonTestCase):
@@ -190,6 +202,13 @@ class TestOverlayableZorders(ComparisonTestCase):
         self.assertIn(curve, sources[2])
         self.assertNotIn(ndoverlay, sources[2])
 
+    def test_dynamic_compute_overlayable_zorders_ndoverlays_as_input(self):
+        ndoverlay1 = NdOverlay({i: Area(range(10+i)) for i in range(2)}).apply(lambda el: el.get(0), dynamic=True)
+        ndoverlay2 = NdOverlay({i: Area((range(15, 25+i), range(10+i))) for i in range(2)}).apply(lambda el: el.get(0), dynamic=True)
+        combined = ndoverlay1*ndoverlay2
+        combined[()]
+        sources = compute_overlayable_zorders(combined)
+        assert len(sources) == 2
 
     def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_dynamic_ndoverlay_with_streams(self):
         ndoverlay = DynamicMap(lambda x: NdOverlay({i: Area(range(10+i)) for i in range(2)}),
@@ -352,61 +371,61 @@ class TestSplitDynamicMapOverlay(ComparisonTestCase):
         test = self.dmap_ndoverlay
         initialize_dynamic(test)
         layers = [self.dmap_ndoverlay, self.dmap_ndoverlay]
-        self.assertEqual(split_dmap_overlay(test), layers)
+        self.assertEqual(split_dmap_overlay(test)[0], layers)
 
     def test_dmap_overlay(self):
         test = self.dmap_overlay
         initialize_dynamic(test)
         layers = [self.dmap_overlay, self.dmap_overlay]
-        self.assertEqual(split_dmap_overlay(test), layers)
+        self.assertEqual(split_dmap_overlay(test)[0], layers)
 
     def test_dmap_element_mul_dmap_overlay(self):
         test = self.dmap_element * self.dmap_overlay
         initialize_dynamic(test)
         layers = [self.dmap_element, self.dmap_overlay, self.dmap_overlay]
-        self.assertEqual(split_dmap_overlay(test), layers)
+        self.assertEqual(split_dmap_overlay(test)[0], layers)
 
     def test_dmap_element_mul_dmap_ndoverlay(self):
         test = self.dmap_element * self.dmap_ndoverlay
         initialize_dynamic(test)
         layers = [self.dmap_element, self.dmap_ndoverlay]
-        self.assertEqual(split_dmap_overlay(test), layers)
+        self.assertEqual(split_dmap_overlay(test)[0], layers)
 
     def test_dmap_element_mul_element(self):
         test = self.dmap_element * self.element
         initialize_dynamic(test)
         layers = [self.dmap_element, self.element]
-        self.assertEqual(split_dmap_overlay(test), layers)
+        self.assertEqual(split_dmap_overlay(test)[0], layers)
 
     def test_dmap_element_mul_overlay(self):
         test = self.dmap_element * self.overlay
         initialize_dynamic(test)
         layers = [self.dmap_element, self.el1, self.el2]
-        self.assertEqual(split_dmap_overlay(test), layers)
+        self.assertEqual(split_dmap_overlay(test)[0], layers)
 
     def test_dmap_element_mul_ndoverlay(self):
         test = self.dmap_element * self.ndoverlay
         initialize_dynamic(test)
         layers = [self.dmap_element, self.ndoverlay]
-        self.assertEqual(split_dmap_overlay(test), layers)
+        self.assertEqual(split_dmap_overlay(test)[0], layers)
 
     def test_dmap_overlay_mul_dmap_ndoverlay(self):
         test = self.dmap_overlay * self.dmap_ndoverlay
         initialize_dynamic(test)
         layers = [self.dmap_overlay, self.dmap_overlay, self.dmap_ndoverlay]
-        self.assertEqual(split_dmap_overlay(test), layers)
+        self.assertEqual(split_dmap_overlay(test)[0], layers)
 
     def test_dmap_overlay_mul_element(self):
         test = self.dmap_overlay * self.element
         initialize_dynamic(test)
         layers = [self.dmap_overlay, self.dmap_overlay, self.element]
-        self.assertEqual(split_dmap_overlay(test), layers)
+        self.assertEqual(split_dmap_overlay(test)[0], layers)
 
     def test_dmap_overlay_mul_overlay(self):
         test = self.dmap_overlay * self.overlay
         initialize_dynamic(test)
         layers = [self.dmap_overlay, self.dmap_overlay, self.el1, self.el2]
-        self.assertEqual(split_dmap_overlay(test), layers)
+        self.assertEqual(split_dmap_overlay(test)[0], layers)
 
     def test_dmap_all_combinations(self):
         test = (self.dmap_overlay * self.element * self.dmap_ndoverlay *
@@ -415,28 +434,28 @@ class TestSplitDynamicMapOverlay(ComparisonTestCase):
         layers = [self.dmap_overlay, self.dmap_overlay, self.element,
                   self.dmap_ndoverlay, self.el1, self.el2, self.dmap_element,
                   self.ndoverlay]
-        self.assertEqual(split_dmap_overlay(test), layers)
+        self.assertEqual(split_dmap_overlay(test)[0], layers)
 
     def test_dmap_overlay_operation_mul_dmap_ndoverlay(self):
         mapped = operation(self.dmap_overlay)
         test = mapped * self.dmap_ndoverlay
         initialize_dynamic(test)
         layers = [mapped, mapped, self.dmap_ndoverlay]
-        self.assertEqual(split_dmap_overlay(test), layers)
+        self.assertEqual(split_dmap_overlay(test)[0], layers)
 
     def test_dmap_overlay_linked_operation_mul_dmap_ndoverlay(self):
         mapped = operation(self.dmap_overlay, link_inputs=True)
         test = mapped * self.dmap_ndoverlay
         initialize_dynamic(test)
         layers = [mapped, mapped, self.dmap_ndoverlay]
-        self.assertEqual(split_dmap_overlay(test), layers)
+        self.assertEqual(split_dmap_overlay(test)[0], layers)
 
     def test_dmap_overlay_linked_operation_mul_dmap_element_ndoverlay(self):
         mapped = self.dmap_overlay.map(lambda x: x.get(0), Overlay)
         test = mapped * self.element * self.dmap_ndoverlay
         initialize_dynamic(test)
         layers = [mapped, self.element, self.dmap_ndoverlay]
-        self.assertEqual(split_dmap_overlay(test), layers)
+        self.assertEqual(split_dmap_overlay(test)[0], layers)
 
 
 class TestPlotColorUtils(ComparisonTestCase):
@@ -458,10 +477,8 @@ class TestPlotColorUtils(ComparisonTestCase):
             process_cmap({'A', 'B', 'C'}, 3)
 
 
+@pytest.mark.usefixtures("mpl_backend")
 class TestMPLColormapUtils(ComparisonTestCase):
-
-    def setUp(self):
-        import holoviews.plotting.mpl # noqa
 
     def test_mpl_colormap_fire(self):
         colors = process_cmap('fire', 3, provider='matplotlib')
@@ -521,11 +538,8 @@ class TestMPLColormapUtils(ComparisonTestCase):
         self.assertEqual(colors, ['#440154', '#30678d', '#35b778', '#fde724'][::-1])
 
 
+@pytest.mark.usefixtures("bokeh_backend")
 class TestBokehPaletteUtils(ComparisonTestCase):
-
-    def setUp(self):
-        import bokeh.palettes # noqa
-        import holoviews.plotting.bokeh # noqa
 
     def test_bokeh_palette_categorical_palettes_not_interpolated(self):
         # Ensure categorical palettes are not expanded
@@ -581,7 +595,7 @@ class TestBokehPaletteUtils(ComparisonTestCase):
     def test_color_intervals(self):
         levels = [0, 38, 73, 95, 110, 130, 156]
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20']
-        cmap, lims = color_intervals(colors, levels, N=10)
+        cmap, _lims = color_intervals(colors, levels, N=10)
         self.assertEqual(cmap, ['#5ebaff', '#5ebaff', '#00faf4',
                                 '#00faf4', '#ffffcc', '#ffe775',
                                 '#ffc140', '#ff8f20', '#ff8f20'])
@@ -591,7 +605,7 @@ class TestBokehPaletteUtils(ComparisonTestCase):
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
         cmap, lims = color_intervals(colors, levels, clip=(10, 90), N=100)
         self.assertEqual(cmap, ['#5ebaff', '#5ebaff', '#5ebaff', '#00faf4', '#00faf4',
-                                '#00faf4', '#00faf4', '#ffffcc'])
+                                '#00faf4', '#00faf4', '#ffffcc', '#ffffcc'])
         self.assertEqual(lims, (10, 90))
 
 
@@ -656,38 +670,3 @@ class TestRangeUtilities(ComparisonTestCase):
         self.assertEqual(drange, (-0.5, 2.5))
         self.assertEqual(srange, (-1, 4))
         self.assertEqual(hrange, (-1, 3))
-
-
-
-class TestBokehUtils(ComparisonTestCase):
-
-    def setUp(self):
-        try:
-            import pscript # noqa
-        except ImportError:
-            raise SkipTest("Flexx required to test transpiling formatter functions.")
-
-
-    def test_py2js_funcformatter_single_arg(self):
-        def test(x):  return f'{x}$'
-        jsfunc = util.py2js_tickformatter(test)
-        js_func = ('var x = tick;\nvar formatter;\nformatter = function () {\n'
-                   '    return "" + x + "$";\n};\n\nreturn formatter();\n')
-        self.assertEqual(jsfunc, js_func)
-
-
-    def test_py2js_funcformatter_two_args(self):
-        def test(x, pos):  return f'{x}$'
-        jsfunc = util.py2js_tickformatter(test)
-        js_func = ('var x = tick;\nvar formatter;\nformatter = function () {\n'
-                   '    return "" + x + "$";\n};\n\nreturn formatter();\n')
-        self.assertEqual(jsfunc, js_func)
-
-
-    def test_py2js_funcformatter_arg_and_kwarg(self):
-        def test(x, pos=None):  return f'{x}$'
-        jsfunc = util.py2js_tickformatter(test)
-        js_func = ('var x = tick;\nvar formatter;\nformatter = function () {\n'
-                   '    pos = (pos === undefined) ? null: pos;\n    return "" '
-                   '+ x + "$";\n};\n\nreturn formatter();\n')
-        self.assertEqual(jsfunc, js_func)

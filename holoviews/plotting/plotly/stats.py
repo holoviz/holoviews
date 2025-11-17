@@ -1,8 +1,9 @@
 import param
 
-from .selection import PlotlyOverlaySelectionDisplay
+from ..mixins import MultiDistributionMixin
 from .chart import ChartPlot
-from .element import ElementPlot, ColorbarPlot
+from .element import ColorbarPlot, ElementPlot
+from .selection import PlotlyOverlaySelectionDisplay
 
 
 class BivariatePlot(ChartPlot, ColorbarPlot):
@@ -75,10 +76,7 @@ class DistributionPlot(ElementPlot):
         return {'type': 'scatter', 'mode': 'lines'}
 
 
-class MultiDistributionPlot(ElementPlot):
-
-    def _get_axis_dims(self, element):
-        return element.kdims, element.vdims[0]
+class MultiDistributionPlot(MultiDistributionMixin, ElementPlot):
 
     def get_data(self, element, ranges, style, **kwargs):
         if element.kdims:
@@ -89,22 +87,20 @@ class MultiDistributionPlot(ElementPlot):
         axis = 'x' if self.invert_axes else 'y'
         for key, group in groups:
             if element.kdims:
-                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
+                if isinstance(key, str):
+                    key = (key,)
+                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key, strict=None)])
             else:
                 label = key
             data = {axis: group.dimension_values(group.vdims[0]), 'name': label}
             plots.append(data)
         return plots
 
-    def get_extents(self, element, ranges, range_type='combined'):
-        return super().get_extents(
-            element, ranges, range_type, 'categorical', element.vdims[0]
-        )
 
 
 class BoxWhiskerPlot(MultiDistributionPlot):
 
-    boxpoints = param.ObjectSelector(objects=["all", "outliers",
+    boxpoints = param.Selector(objects=["all", "outliers",
                                               "suspectedoutliers", False],
                                      default='outliers', doc="""
         Which points to show, valid options are 'all', 'outliers',
@@ -116,7 +112,7 @@ class BoxWhiskerPlot(MultiDistributionPlot):
         the sample points are drawn in a random jitter of width equal
         to the width of the box(es).""")
 
-    mean = param.ObjectSelector(default=False, objects=[True, False, 'sd'],
+    mean = param.Selector(default=False, objects=[True, False, 'sd'],
                                 doc="""
         If "True", the mean of the box(es)' underlying distribution
         is drawn as a dashed line inside the box(es). If "sd" the

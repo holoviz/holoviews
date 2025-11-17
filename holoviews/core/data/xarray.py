@@ -1,18 +1,19 @@
 import sys
 import types
 
-from collections import OrderedDict
-
 import numpy as np
-import pandas as pd
 
 from .. import util
 from ..dimension import Dimension, asdim, dimension_name
-from ..ndmapping import NdMapping, item_check, sorted_context
 from ..element import Element
+from ..ndmapping import NdMapping, item_check, sorted_context
+from ..util import dtype_kind
+from ..util.dependencies import _no_import_version
 from .grid import GridInterface
-from .interface import Interface, DataError
+from .interface import DataError, Interface
 from .util import dask_array_module, finite_range
+
+XARRAY_VERSION = _no_import_version("xarray")
 
 
 def is_cupy(array):
@@ -66,7 +67,7 @@ class XArrayInterface(GridInterface):
             array = dataset.data[dataset.vdims[0].name]
         if not gridded:
             return (np.prod(array.shape, dtype=np.intp), len(dataset.dimensions()))
-        shape_map = dict(zip(array.dims, array.shape))
+        shape_map = dict(zip(array.dims, array.shape, strict=None))
         return tuple(shape_map.get(kd.name, np.nan) for kd in dataset.kdims[::-1])
 
     @classmethod
@@ -95,7 +96,7 @@ class XArrayInterface(GridInterface):
         if isinstance(data, xr.DataArray):
             kdim_len = len(kdim_param.default) if kdims is None else len(kdims)
             vdim_len = len(vdim_param.default) if vdims is None else len(vdims)
-            if vdim_len > 1 and kdim_len == len(data.dims)-1 and data.shape[-1] == vdim_len:
+            if kdim_len == len(data.dims)-1 and data.shape[-1] == vdim_len:
                 packed = True
             elif vdims:
                 vdim = vdims[0]
@@ -107,24 +108,53 @@ class XArrayInterface(GridInterface):
                 if isinstance(label, str):
                     vdim.label = label
             elif len(vdim_param.default) == 1:
-                vdim = vdim_param.default[0]
+                vdim = asdim(vdim_param.default[0])
                 if vdim.name in data.dims:
                     raise DataError("xarray DataArray does not define a name, "
-                                    "and the default of '%s' clashes with a "
+                                    f"and the default of '{vdim.name}' clashes with a "
                                     "coordinate dimension. Give the DataArray "
-                                    "a name or supply an explicit value dimension."
-                                    % vdim.name, cls)
+                                    "a name or supply an explicit value dimension.", cls)
             else:
                 raise DataError("xarray DataArray does not define a name "
-                                "and %s does not define a default value "
+                                f"and {eltype.__name__} does not define a default value "
                                 "dimension. Give the DataArray a name or "
-                                "supply an explicit vdim." % eltype.__name__,
+                                "supply an explicit vdim.",
                                 cls)
             if not packed:
-                vdims = [vdim]
-                data = data.to_dataset(name=vdim.name)
+                if vdim in data.dims:
+                    data = data.to_dataset(vdim.name)
+                    vdims = [asdim(vd) for vd in data.data_vars]
+                else:
+                    vdims = [vdim]
+                    data = data.to_dataset(name=vdim.name)
 
-        if not isinstance(data, (xr.Dataset, xr.DataArray)):
+        if isinstance(data, (xr.Dataset, xr.DataArray)):
+            # Started to warn in xarray 2023.12.0:
+            # The return type of `Dataset.dims` will be changed to return a
+            # set of dimension names in future, in order to be more consistent
+            # with `DataArray.dims`. To access a mapping from dimension names to
+            # lengths, please use `Dataset.sizes`.
+            data_info =  data.sizes if hasattr(data, "sizes") else data.dims
+            if not data.coords:
+                data = data.assign_coords(**{k: range(v) for k, v in data_info.items()})
+            if vdims is None:
+                vdims = list(data.data_vars)
+            if kdims is None:
+                xrdims = list(data_info)
+                xrcoords = list(data.coords)
+                kdims = [name for name in data.indexes.keys()
+                         if isinstance(data[name].data, np.ndarray)]
+                kdims = sorted(kdims, key=lambda x: (xrcoords.index(x) if x in xrcoords else float('inf'), x))
+                if packed:
+                    kdims = kdims[:-1]
+                elif set(xrdims) != set(kdims):
+                    virtual_dims = [xd for xd in xrdims if xd not in kdims]
+                    for c in data.coords:
+                        if c not in kdims and set(data[c].dims) == set(virtual_dims):
+                            kdims.append(c)
+            kdims = [retrieve_unit_and_label(kd) for kd in kdims]
+            vdims = [retrieve_unit_and_label(vd) for vd in vdims]
+        else:
             if kdims is None:
                 kdims = kdim_param.default
             if vdims is None:
@@ -140,11 +170,11 @@ class XArrayInterface(GridInterface):
                 if (len(data) != len(dimensions) and len(data) == (ndims+1) and
                     len(data[-1].shape) == (ndims+1)):
                     value_array = data[-1]
-                    data = {d: v for d, v in zip(dimensions, data[:-1])}
+                    data = {d: v for d, v in zip(dimensions, data[:-1], strict=None)}
                     packed = True
                 else:
-                    data = {d: v for d, v in zip(dimensions, data)}
-            elif isinstance(data, list) and data == []:
+                    data = {d: v for d, v in zip(dimensions, data, strict=None)}
+            elif isinstance(data, (list, np.ndarray)) and len(data) == 0:
                 dimensions = [d.name for d in kdims + vdims]
                 data = {d: np.array([]) for d in dimensions[:ndims]}
                 data.update({d: np.empty((0,) * ndims) for d in dimensions[ndims:]})
@@ -153,8 +183,8 @@ class XArrayInterface(GridInterface):
             data = {d: np.asarray(values) if d in kdims else values
                     for d, values in data.items()}
             coord_dims = [data[kd.name].ndim for kd in kdims]
-            dims = tuple('dim_%d' % i for i in range(max(coord_dims)))[::-1]
-            coords = OrderedDict()
+            dims = tuple(f'dim_{i}' for i in range(max(coord_dims)))[::-1]
+            coords = {}
             for kd in kdims:
                 coord_vals = data[kd.name]
                 if coord_vals.ndim > 1:
@@ -164,7 +194,7 @@ class XArrayInterface(GridInterface):
                 coords[kd.name] = coord
             xr_kwargs = {'dims': dims if max(coord_dims) > 1 else list(coords)[::-1]}
             if packed:
-                xr_kwargs['dims'] = list(coords)[::-1] + ['band']
+                xr_kwargs['dims'] = [*list(coords)[::-1], 'band']
                 coords['band'] = list(range(len(vdims)))
                 data = xr.DataArray(value_array, coords=coords, **xr_kwargs)
             else:
@@ -175,26 +205,6 @@ class XArrayInterface(GridInterface):
                         arr = xr.DataArray(arr, coords=coords, **xr_kwargs)
                     arrays[vdim.name] = arr
                 data = xr.Dataset(arrays)
-        else:
-            if not data.coords:
-                data = data.assign_coords(**{k: range(v) for k, v in data.dims.items()})
-            if vdims is None:
-                vdims = list(data.data_vars)
-            if kdims is None:
-                xrdims = list(data.dims)
-                xrcoords = list(data.coords)
-                kdims = [name for name in data.indexes.keys()
-                         if isinstance(data[name].data, np.ndarray)]
-                kdims = sorted(kdims, key=lambda x: (xrcoords.index(x) if x in xrcoords else float('inf'), x))
-                if packed:
-                    kdims = kdims[:-1]
-                elif set(xrdims) != set(kdims):
-                    virtual_dims = [xd for xd in xrdims if xd not in kdims]
-                    for c in data.coords:
-                        if c not in kdims and set(data[c].dims) == set(virtual_dims):
-                            kdims.append(c)
-            kdims = [retrieve_unit_and_label(kd) for kd in kdims]
-            vdims = [retrieve_unit_and_label(vd) for vd in vdims]
 
         not_found = []
         for d in kdims:
@@ -205,8 +215,7 @@ class XArrayInterface(GridInterface):
             raise TypeError('Data must be be an xarray Dataset type.')
         elif not_found:
             raise DataError("xarray Dataset must define coordinates "
-                            "for all defined kdims, %s coordinates not found."
-                            % not_found, cls)
+                            f"for all defined kdims, {not_found} coordinates not found.", cls)
 
         for vdim in vdims:
             if packed:
@@ -229,13 +238,13 @@ class XArrayInterface(GridInterface):
                 undeclared.append(c)
             if undeclared and eltype.param.kdims.bounds[1] not in (0, None):
                 raise DataError(
-                    'The coordinates on the {!r} DataArray do not match the '
+                    f'The coordinates on the {vdim.name!r} DataArray do not match the '
                     'provided key dimensions (kdims). The following coords '
-                    'were left unspecified: {!r}. If you are requesting a '
+                    f'were left unspecified: {undeclared!r}. If you are requesting a '
                     'lower dimensional view such as a histogram cast '
                     'the xarray to a columnar format using the .to_dataframe '
                     'or .to_dask_dataframe methods before providing it to '
-                    'HoloViews.'.format(vdim.name, undeclared))
+                    'HoloViews.')
         return data, {'kdims': kdims, 'vdims': vdims}, {}
 
 
@@ -249,7 +258,7 @@ class XArrayInterface(GridInterface):
             if not_found:
                 raise DataError("Supplied data does not contain specified "
                                 "dimensions, the following dimensions were "
-                                "not found: %s" % repr(not_found), cls)
+                                f"not found: {not_found!r}", cls)
 
         # Check whether irregular (i.e. multi-dimensional) coordinate
         # array dimensionality matches
@@ -261,12 +270,11 @@ class XArrayInterface(GridInterface):
             nonmatching = [f'{kd}: {dims}' for kd, dims in irregular[1:]
                            if set(dims) != set(irregular[0][1])]
             if nonmatching:
-                nonmatching = ['{}: {}'.format(*irregular[0])] + nonmatching
+                nonmatching = ['{}: {}'.format(*irregular[0]), *nonmatching]
                 raise DataError("The dimensions of coordinate arrays "
                                 "on irregular data must match. The "
                                 "following kdims were found to have "
-                                "non-matching array dimensions:\n\n%s"
-                                % ('\n'.join(nonmatching)), cls)
+                                "non-matching array dimensions:\n\n{}".format('\n'.join(nonmatching)), cls)
 
     @classmethod
     def compute(cls, dataset):
@@ -292,8 +300,8 @@ class XArrayInterface(GridInterface):
                 data = cls.replace_value(data, dimension.nodata)
 
         if not len(data):
-            dmin, dmax = np.NaN, np.NaN
-        elif data.dtype.kind == 'M' or not edges:
+            dmin, dmax = np.nan, np.nan
+        elif dtype_kind(data) == 'M' or not edges:
             dmin, dmax = data.min(), data.max()
             if not edges:
                 dmin, dmax = dmin.data, dmax.data
@@ -321,8 +329,7 @@ class XArrayInterface(GridInterface):
         invalid = [d for d in index_dims if dataset.data[d.name].ndim > 1]
         if invalid:
             if len(invalid) == 1: invalid = f"'{invalid[0]}'"
-            raise ValueError("Cannot groupby irregularly sampled dimension(s) %s."
-                             % invalid)
+            raise ValueError(f"Cannot groupby irregularly sampled dimension(s) {invalid}.")
 
         group_kwargs = {}
         if group_type != 'raw' and issubclass(group_type, Element):
@@ -335,15 +342,15 @@ class XArrayInterface(GridInterface):
         group_by = [d.name for d in index_dims]
         data = []
         if len(dimensions) == 1:
-            for k, v in dataset.data.groupby(index_dims[0].name):
+            for k, v in dataset.data.groupby(index_dims[0].name, squeeze=False):
                 if drop_dim:
                     v = v.to_dataframe().reset_index()
                 data.append((k, group_type(v, **group_kwargs)))
         else:
             unique_iters = [cls.values(dataset, d, False) for d in group_by]
-            indexes = zip(*util.cartesian_product(unique_iters))
+            indexes = zip(*util.cartesian_product(unique_iters), strict=None)
             for k in indexes:
-                sel = dataset.data.sel(**dict(zip(group_by, k)))
+                sel = dataset.data.sel(**dict(zip(group_by, k, strict=None)))
                 if drop_dim:
                     sel = sel.to_dataframe().reset_index()
                 data.append((k, group_type(sel, **group_kwargs)))
@@ -438,11 +445,14 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def unpack_scalar(cls, dataset, data):
-        """
-        Given a dataset object and data in the appropriate format for
+        """Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
         """
-        if not cls.packed(dataset) and len(data.data_vars) == 1:
+        if cls.packed(dataset):
+            array = data.squeeze()
+            if len(array.shape) == 0:
+                return array.item()
+        elif len(data.data_vars) == 1:
             array = data[dataset.vdims[0].name].squeeze()
             if len(array.shape) == 0:
                 return array.item()
@@ -454,7 +464,7 @@ class XArrayInterface(GridInterface):
         kdims = [d for d in dataset.kdims[::-1]]
         adjusted_indices = []
         slice_dims = []
-        for kd, ind in zip(kdims, indices):
+        for kd, ind in zip(kdims, indices, strict=None):
             if cls.irregular(dataset, kd):
                 coords = [c for c in dataset.data.coords if c not in dataset.data.dims]
                 dim = dataset.data[kd.name].dims[coords.index(kd.name)]
@@ -472,23 +482,23 @@ class XArrayInterface(GridInterface):
                     start = None if ind.stop is None else ncoords-ind.stop
                     stop = None if ind.start is None else ncoords-ind.start
                     ind = slice(start, stop, ind.step)
-                elif isinstance(ind, np.ndarray) and ind.dtype.kind == 'b':
+                elif isinstance(ind, np.ndarray) and dtype_kind(ind) == 'b':
                     ind = ind[::-1]
                 elif isinstance(ind, (np.ndarray, list)):
                     ind = [ncoords-i-1 for i in ind]
             if isinstance(ind, list):
                 ind = np.array(ind)
-            if isinstance(ind, np.ndarray) and ind.dtype.kind == 'b':
+            if isinstance(ind, np.ndarray) and dtype_kind(ind) == 'b':
                 ind = np.where(ind)[0]
             adjusted_indices.append(ind)
 
-        isel = dict(zip(slice_dims, adjusted_indices))
+        isel = dict(zip(slice_dims, adjusted_indices, strict=None))
         all_scalar = all(map(np.isscalar, indices))
         if all_scalar and len(indices) == len(kdims) and len(dataset.vdims) == 1:
             return dataset.data[dataset.vdims[0].name].isel(**isel).values.item()
 
         # Detect if the indexing is selecting samples or slicing the array
-        sampled = (all(isinstance(ind, np.ndarray) and ind.dtype.kind != 'b'
+        sampled = (all(isinstance(ind, np.ndarray) and dtype_kind(ind) != 'b'
                        for ind in adjusted_indices) and len(indices) == len(kdims))
         if sampled or (all_scalar and len(indices) == len(kdims)):
             import xarray as xr
@@ -506,8 +516,13 @@ class XArrayInterface(GridInterface):
     @classmethod
     def concat_dim(cls, datasets, dim, vdims):
         import xarray as xr
-        return xr.concat([ds.assign_coords(**{dim.name: c}) for c, ds in datasets.items()],
-                         dim=dim.name)
+        concat_kwargs = {"dim": dim.name}
+        if XARRAY_VERSION >= (2025, 8, 0):
+            concat_kwargs["join"] = "outer"
+        return xr.concat(
+            [ds.assign_coords(**{dim.name: c}) for c, ds in datasets.items()],
+            **concat_kwargs
+        )
 
     @classmethod
     def redim(cls, dataset, dimensions):
@@ -533,7 +548,9 @@ class XArrayInterface(GridInterface):
         return dataset.data
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         return dataset
 
     @classmethod
@@ -583,7 +600,7 @@ class XArrayInterface(GridInterface):
                 dim_vals = dataset.data[k].values
                 upper = None if v[1] is None else v[1]-sys.float_info.epsilon*10
                 v = v[0], upper
-                if dim_vals.dtype.kind not in 'OSU' and np.all(dim_vals[1:] < dim_vals[:-1]):
+                if dtype_kind(dim_vals) not in 'OSU' and np.all(dim_vals[1:] < dim_vals[:-1]):
                     # If coordinates are inverted invert slice
                     v = v[::-1]
                 validated[dim] = slice(*v)
@@ -595,13 +612,13 @@ class XArrayInterface(GridInterface):
 
         # Restore constant dimensions
         indexed = cls.indexed(dataset, selection)
-        dropped = OrderedDict((d.name, np.atleast_1d(data[d.name]))
+        dropped = dict((d.name, np.atleast_1d(data[d.name]))
                    for d in dataset.kdims
                    if not data[d.name].data.shape)
         if dropped and not indexed:
             data = data.expand_dims(dropped)
             # see https://github.com/pydata/xarray/issues/2891
-            # since we only exapanded on dimnesions of size 1
+            # since we only expanded on dimensions of size 1
             # we can monkeypatch the dataarray back to writeable.
             for d in data.values():
                 if hasattr(d.data, 'flags'):
@@ -632,7 +649,7 @@ class XArrayInterface(GridInterface):
     def dframe(cls, dataset, dimensions):
         import xarray as xr
         if cls.packed(dataset):
-            bands = {vd.name: dataset.data[..., i].drop('band')
+            bands = {vd.name: dataset.data[..., i].drop_vars('band')
                      for i, vd in enumerate(dataset.vdims)}
             data = xr.Dataset(bands)
         else:
@@ -643,9 +660,13 @@ class XArrayInterface(GridInterface):
         return data
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
+        import pandas as pd
+
+        if samples is None:
+            samples = []
         names = [kd.name for kd in dataset.kdims]
-        samples = [dataset.data.sel(**{k: [v] for k, v in zip(names, s)}).to_dataframe().reset_index()
+        samples = [dataset.data.sel(**{k: [v] for k, v in zip(names, s, strict=None)}).to_dataframe().reset_index()
                    for s in samples]
         return pd.concat(samples)
 
@@ -667,12 +688,12 @@ class XArrayInterface(GridInterface):
         prev_coords = set.intersection(*[
             set(var.coords) for var in data.data_vars.values()
         ])
-        coords = OrderedDict()
+        coords = {}
         for k, v in new_data.items():
             if k not in dataset.kdims:
                 continue
             elif isinstance(v, xr.DataArray):
-                coords[k] = v.rename(**{v.name: k})
+                coords[k] = v.rename(**({v.name: k} if v.name != k else {}))
                 continue
             coord_vals = cls.coords(dataset, k)
             if not coord_vals.ndim > 1 and np.all(coord_vals[1:] < coord_vals[:-1]):
@@ -682,7 +703,7 @@ class XArrayInterface(GridInterface):
             data = data.assign_coords(**coords)
 
         dims = tuple(kd.name for kd in dataset.kdims[::-1])
-        vars = OrderedDict()
+        vars = {}
         for k, v in new_data.items():
             if k in dataset.kdims:
                 continue

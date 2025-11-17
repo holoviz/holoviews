@@ -1,18 +1,13 @@
-import time
 import sys
+import time
 
-try:
-    from IPython.core.magic import Magics, magics_class, line_magic, line_cell_magic
-except ImportError:
-    from unittest import SkipTest
-    raise SkipTest("IPython extension requires IPython >= 0.13")
-
+from IPython.core.magic import Magics, line_cell_magic, line_magic, magics_class
+from IPython.display import HTML, display
 
 from ..core.options import Options, Store, StoreOptions, options_policy
 from ..core.pprint import InfoPrinter
-
-from IPython.display import display, HTML
 from ..operation import Compositor
+from ..util.warnings import deprecated
 
 #========#
 # Magics #
@@ -24,15 +19,19 @@ try:
 except ImportError:
     pyparsing = None
 else:
-    from holoviews.util.parser import CompositorSpec
-    from holoviews.util.parser import OptsSpec
+    from holoviews.util.parser import CompositorSpec, OptsSpec
 
 
 # Set to True to automatically run notebooks.
 STORE_HISTORY = False
 
 from IPython.core import page
+
 InfoPrinter.store = Store
+
+
+def _magic_deprecation():
+    deprecated("1.23.0", old="IPython magic", repr_old=False)
 
 
 @magics_class
@@ -46,8 +45,8 @@ class OutputMagic(Magics):
 
     @classmethod
     def pprint(cls):
-        """
-        Pretty print the current element options
+        """Pretty print the current element options
+
         """
         current, count = '', 0
         for k,v in Store.output_settings.options.items():
@@ -83,6 +82,7 @@ class OutputMagic(Magics):
 
     @line_cell_magic
     def output(self, line, cell=None):
+        _magic_deprecation()
 
         if line == '':
             self.pprint()
@@ -107,19 +107,20 @@ class OutputMagic(Magics):
 
 @magics_class
 class CompositorMagic(Magics):
-    """
-    Magic allowing easy definition of compositor operations.
+    """Magic allowing easy definition of compositor operations.
     Consult %compositor? for more information.
+
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         lines = ['The %compositor line magic is used to define compositors.']
-        self.compositor.__func__.__doc__ = '\n'.join(lines + [CompositorSpec.__doc__])
+        self.compositor.__func__.__doc__ = '\n'.join([*lines, CompositorSpec.__doc__])
 
 
     @line_magic
     def compositor(self, line):
+        _magic_deprecation()
         if line.strip():
             for definition in CompositorSpec.parse(line.strip(), ns=self.shell.user_ns):
                 group = {group:Options() for group in Options._option_groups}
@@ -152,14 +153,17 @@ class CompositorMagic(Magics):
 
 
 class OptsCompleter:
+    """Implements the TAB-completion for the %%opts magic.
+
     """
-    Implements the TAB-completion for the %%opts magic.
-    """
+
     _completions = {} # Contains valid plot and style keywords per Element
 
     @classmethod
     def setup_completer(cls):
-        "Get the dictionary of valid completions"
+        """Get the dictionary of valid completions
+
+        """
         try:
             for element in Store.options().keys():
                 options = Store.options()['.'.join(element)]
@@ -173,16 +177,16 @@ class OptsCompleter:
 
     @classmethod
     def dotted_completion(cls, line, sorted_keys, compositor_defs):
-        """
-        Supply the appropriate key in Store.options and supply
+        """Supply the appropriate key in Store.options and supply
         suggestions for further completion.
+
         """
         completion_key, suggestions = None, []
         tokens = [t for t in reversed(line.replace('.', ' ').split())]
         for i, token in enumerate(tokens):
             key_checks =[]
             if i >= 0:  # Undotted key
-                key_checks.append(tokens[i])
+                key_checks.append(token)
             if i >= 1:  # Single dotted key
                 key_checks.append('.'.join([key_checks[-1], tokens[i-1]]))
             if i >= 2:  # Double dotted key
@@ -207,7 +211,9 @@ class OptsCompleter:
 
     @classmethod
     def option_completer(cls, k,v):
-        "Tab completion hook for the %%opts cell magic."
+        """Tab completion hook for the %%opts cell magic.
+
+        """
         line = v.text_until_cursor
         completions = cls.setup_completer()
         compositor_defs = {el.group:el.output_type.__name__
@@ -242,22 +248,23 @@ class OptsCompleter:
 
 @magics_class
 class OptsMagic(Magics):
-    """
-    Magic for easy customising of normalization, plot and style options.
+    """Magic for easy customising of normalization, plot and style options.
     Consult %%opts? for more information.
+
     """
+
     error_message = None # If not None, the error message that will be displayed
     opts_spec = None       # Next id to propagate, binding displayed object together.
     strict = False
 
     @classmethod
     def process_element(cls, obj):
-        """
-        To be called by the display hook which supplies the element to
+        """To be called by the display hook which supplies the element to
         be displayed. Any customisation of the object can then occur
         before final display. If there is any error, a HTML message
         may be returned. If None is returned, display will proceed as
         normal.
+
         """
         if cls.error_message:
             if cls.strict:
@@ -279,31 +286,30 @@ class OptsMagic(Magics):
 
     @classmethod
     def _partition_lines(cls, line, cell):
-        """
-        Check the code for additional use of %%opts. Enables
+        """Check the code for additional use of %%opts. Enables
         multi-line use of %%opts in a single call to the magic.
+
         """
         if cell is None: return (line, cell)
         specs, code = [line], []
-        for line in cell.splitlines():
-            if line.strip().startswith('%%opts'):
-                specs.append(line.strip()[7:])
+        for cell_line in cell.splitlines():
+            if cell_line.strip().startswith('%%opts'):
+                specs.append(cell_line.strip()[7:])
             else:
-                code.append(line)
+                code.append(cell_line)
         return ' '.join(specs), '\n'.join(code)
 
 
     @line_cell_magic
     def opts(self, line='', cell=None):
-        """
-        The opts line/cell magic with tab-completion.
+        """The opts line/cell magic with tab-completion.
 
         %%opts [ [path] [normalization] [plotting options] [style options]]+
 
-        path:             A dotted type.group.label specification
+        path :             A dotted type.group.label specification
                           (e.g. Image.Grayscale.Photo)
 
-        normalization:    List of normalization options delimited by braces.
+        normalization :    List of normalization options delimited by braces.
                           One of | -axiswise | -framewise | +axiswise | +framewise |
                           E.g. { +axiswise +framewise }
 
@@ -319,7 +325,9 @@ class OptsMagic(Magics):
 
         More information may be found in the class docstring of
         util.parser.OptsSpec.
+
         """
+        _magic_deprecation()
         line, cell = self._partition_lines(line, cell)
         try:
             spec = OptsSpec.parse(line, ns=self.shell.user_ns)
@@ -360,11 +368,11 @@ class OptsMagic(Magics):
 
 @magics_class
 class TimerMagic(Magics):
-    """
-    A line magic for measuring the execution time of multiple cells.
+    """A line magic for measuring the execution time of multiple cells.
 
     After you start/reset the timer with '%timer start' you may view
     elapsed time with any subsequent calls to %timer.
+
     """
 
     start_time = None
@@ -374,7 +382,7 @@ class TimerMagic(Magics):
         seconds = time.time() -  TimerMagic.start_time
         minutes = seconds // 60
         hours = minutes // 60
-        return "Timer elapsed: %02d:%02d:%02d" % (hours, minutes % 60, seconds % 60)
+        return f"Timer elapsed: {hours:02d}:{minutes % 60:02d}:{seconds % 60:02d}"
 
     @classmethod
     def option_completer(cls, k,v):
@@ -382,8 +390,7 @@ class TimerMagic(Magics):
 
     @line_magic
     def timer(self, line=''):
-        """
-        Timer magic to print initial date/time information and
+        """Timer magic to print initial date/time information and
         subsequent elapsed time intervals.
 
         To start the timer, run:
@@ -395,7 +402,9 @@ class TimerMagic(Magics):
         Subsequent calls to %timer will print the elapsed time
         relative to the time when %timer start was called. Subsequent
         calls to %timer start may also be used to reset the timer.
+
         """
+        _magic_deprecation()
         if line.strip() not in ['', 'start']:
             print("Invalid argument to %timer. For more information consult %timer?")
             return

@@ -1,24 +1,24 @@
-"""
-Bounding regions and bounding boxes.
+"""Bounding regions and bounding boxes.
 
 File originally part of the Topographica project.
+
 """
 ### JABALERT: The aarect information should probably be rewritten in
 ### matrix notation, not list notation, so that it can be scaled,
 ### translated, etc. easily.
 ###
-import param
 from param.parameterized import get_occupied_slots
+
 from .util import datetime_types
-from ..util.warnings import deprecated
 
 
 class BoundingRegion:
-    """
-    Abstract bounding region class, for any portion of a 2D plane.
+    """Abstract bounding region class, for any portion of a 2D plane.
 
     Only subclasses can be instantiated directly.
+
     """
+
     __abstract = True
 
     __slots__ = ['_aarect']
@@ -51,8 +51,8 @@ class BoundingRegion:
 
 
     def centroid(self):
-        """
-        Return the coordinates of the center of this BoundingBox
+        """Return the coordinates of the center of this BoundingBox
+
         """
         return self.aarect().centroid()
 
@@ -77,19 +77,20 @@ class BoundingRegion:
 
 
 class BoundingBox(BoundingRegion):
-    """
-    A rectangular bounding box defined either by two points forming
+    """A rectangular bounding box defined either by two points forming
     an axis-aligned rectangle (or simply a radius for a square).
+
     """
+
     __slots__ = []
 
 
     def __str__(self):
-        """
-        Return BoundingBox(points=((left,bottom),(right,top)))
+        """Return BoundingBox(points=((left,bottom),(right,top)))
 
         Reimplemented here so that 'print' for a BoundingBox
         will display the bounds.
+
         """
         l, b, r, t = self._aarect.lbrt()
         if (not isinstance(r, datetime_types) and r == -l and
@@ -103,8 +104,10 @@ class BoundingBox(BoundingRegion):
         return self.__str__()
 
 
-    def script_repr(self, imports=[], prefix="    "):
+    def script_repr(self, imports=None, prefix="    "):
         # Generate import statement
+        if imports is None:
+            imports = []
         cls = self.__class__.__name__
         mod = self.__module__
         imports.append(f"from {mod} import {cls}")
@@ -112,13 +115,13 @@ class BoundingBox(BoundingRegion):
 
 
     def __init__(self, **args):
-        """
-        Create a BoundingBox.
+        """Create a BoundingBox.
 
         Either 'radius' or 'points' can be specified for the AARectangle.
 
         If neither radius nor points is passed in, create a default
         AARectangle defined by (-0.5,-0.5),(0.5,0.5).
+
         """
         # if present, 'radius', 'min_radius', and 'points' are deleted from
         # args before they're passed to the superclass (because they
@@ -146,30 +149,30 @@ class BoundingBox(BoundingRegion):
 
 
     def contains(self, x, y):
-        """
-        Returns true if the given point is contained within the
+        """Returns true if the given point is contained within the
         bounding box, where all boundaries of the box are
         considered to be inclusive.
+
         """
         left, bottom, right, top = self.aarect().lbrt()
         return (left <= x <= right) and (bottom <= y <= top)
 
 
     def contains_exclusive(self, x, y):
-        """
-        Return True if the given point is contained within the
+        """Return True if the given point is contained within the
         bounding box, where the bottom and right boundaries are
         considered exclusive.
+
         """
         left, bottom, right, top = self._aarect.lbrt()
         return (left <= x < right) and (bottom < y <= top)
 
 
     def containsbb_exclusive(self, x):
-        """
-        Returns true if the given BoundingBox x is contained within the
+        """Returns true if the given BoundingBox x is contained within the
         bounding box, where at least one of the boundaries of the box has
         to be exclusive.
+
         """
         left, bottom, right, top = self.aarect().lbrt()
         leftx, bottomx, rightx, topx = x.aarect().lbrt()
@@ -178,9 +181,9 @@ class BoundingBox(BoundingRegion):
 
 
     def containsbb_inclusive(self, x):
-        """
-        Returns true if the given BoundingBox x is contained within the
+        """Returns true if the given BoundingBox x is contained within the
         bounding box, including cases of exact match.
+
         """
         left, bottom, right, top = self.aarect().lbrt()
         leftx, bottomx, rightx, topx = x.aarect().lbrt()
@@ -189,12 +192,12 @@ class BoundingBox(BoundingRegion):
 
 
     def upperexclusive_contains(self, x, y):
-        """
-        Returns true if the given point is contained within the
+        """Returns true if the given point is contained within the
         bounding box, where the right and upper boundaries
         are exclusive, and the left and lower boundaries are
         inclusive.  Useful for tiling a plane into non-overlapping
         regions.
+
         """
         left, bottom, right, top = self.aarect().lbrt()
         return (left <= x < right) and (bottom <= y < top)
@@ -205,8 +208,8 @@ class BoundingBox(BoundingRegion):
 
 
     def lbrt(self):
-        """
-        return left,bottom,right,top values for the BoundingBox.
+        """Return left,bottom,right,top values for the BoundingBox.
+
         """
         return self._aarect.lbrt()
 
@@ -217,13 +220,17 @@ class BoundingBox(BoundingRegion):
         else:
             return False
 
+    def __hash__(self):
+        return hash(self.aarect)
+
 
 
 class BoundingEllipse(BoundingBox):
-    """
-    Similar to BoundingBox, but the region is the ellipse
+    """Similar to BoundingBox, but the region is the ellipse
     inscribed within the rectangle.
+
     """
+
     __slots__ = []
 
 
@@ -244,15 +251,18 @@ class BoundingEllipse(BoundingBox):
 # and use the slot itself instead.
 ###################################################
 class AARectangle:
-    """
-    Axis-aligned rectangle class.
+    """Axis-aligned rectangle class.
 
     Defines the smallest axis-aligned rectangle that encloses a set of
     points.
 
-    Usage:  aar = AARectangle( (x1,y1),(x2,y2), ... , (xN,yN) )
+    Examples
+    --------
+    >>> aar = AARectangle( (x1,y1),(x2,y2), ... , (xN,yN) )
+
     """
-    __slots__ = ['_left', '_bottom', '_right', '_top']
+
+    __slots__ = ['_bottom', '_left', '_right', '_top']
 
 
     def __init__(self, *points):
@@ -277,33 +287,43 @@ class AARectangle:
 
 
     def top(self):
-        """Return the y-coordinate of the top of the rectangle."""
+        """Return the y-coordinate of the top of the rectangle.
+
+        """
         return self._top
 
 
     def bottom(self):
-        """Return the y-coordinate of the bottom of the rectangle."""
+        """Return the y-coordinate of the bottom of the rectangle.
+
+        """
         return self._bottom
 
 
     def left(self):
-        """Return the x-coordinate of the left side of the rectangle."""
+        """Return the x-coordinate of the left side of the rectangle.
+
+        """
         return self._left
 
 
     def right(self):
-        """Return the x-coordinate of the right side of the rectangle."""
+        """Return the x-coordinate of the right side of the rectangle.
+
+        """
         return self._right
 
 
     def lbrt(self):
-        """Return (left,bottom,right,top) as a tuple."""
+        """Return (left,bottom,right,top) as a tuple.
+
+        """
         return self._left, self._bottom, self._right, self._top
 
 
     def centroid(self):
-        """
-        Return the centroid of the rectangle.
+        """Return the centroid of the rectangle.
+
         """
         left, bottom, right, top = self.lbrt()
         return (right + left) / 2.0, (top + bottom) / 2.0
@@ -332,44 +352,3 @@ class AARectangle:
     def empty(self):
         l, b, r, t = self.lbrt()
         return (r <= l) or (t <= b)
-
-
-def identity_hook(obj, val): return val
-
-
-### JABALERT: Should classes like this inherit from something like
-### ClassInstanceParameter, which takes a class name and verifies that
-### the value is in that class?
-###
-### Do we also need a BoundingBoxParameter?
-class BoundingRegionParameter(param.Parameter):
-    """
-    Parameter whose value can be any BoundingRegion instance, enclosing a
-    region in a 2D plane.
-    """
-
-    __slots__ = ['set_hook']
-
-
-    def __init__(self, default=None, **params):
-        deprecated("1.18", "BoundingRegionParameter")
-        if default is None:
-            default = BoundingBox(radius=0.5)
-        self.set_hook = identity_hook
-        super().__init__(default=default, instantiate=True, **params)
-
-    def __set__(self, obj, val):
-        """
-        Set a non default bounding box, use the installed set hook to
-        apply any conversion or transformation on the coordinates and
-        create a new bounding box with the converted coordinate set.
-        """
-        coords = [self.set_hook(obj, point) for point in val.lbrt()]
-        if coords != val.lbrt():
-            val = BoundingBox(
-                points=[(coords[0], coords[1]), (coords[2], coords[3])])
-
-        if not isinstance(val, BoundingRegion):
-            raise ValueError("Parameter must be a BoundingRegion.")
-        else:
-            super().__set__(obj, val)

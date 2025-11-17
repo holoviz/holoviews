@@ -1,7 +1,7 @@
 import numpy as np
 
-from holoviews.core import HoloMap, NdOverlay, DynamicMap
-from holoviews.element import Image, Curve
+from holoviews.core import DynamicMap, HoloMap, NdOverlay
+from holoviews.element import Curve, Image
 from holoviews.streams import Stream
 
 from ...utils import LoggingComparisonTestCase
@@ -35,7 +35,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestMPLPlot):
         positions = [(0, 0), (0, 1), (1, 0), (2, 0), (3, 0)]
         self.assertEqual(sorted(plot.subplots.keys()), positions)
         nums = [1, 5, 2, 3, 4]
-        for pos, num in zip(positions, nums):
+        for pos, num in zip(positions, nums, strict=None):
             adjoint = plot.subplots[pos]
             if 'main' in adjoint.subplots:
                 self.assertEqual(adjoint.subplots['main'].layout_num, num)
@@ -58,3 +58,25 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestMPLPlot):
         cp1, cp2 = plot.traverse(lambda x: x, [CurvePlot])
         self.assertTrue(cp1.handles['axis'].get_ylim(), (1, 3))
         self.assertTrue(cp2.handles['axis'].get_ylim(), (10, 30))
+
+    def test_layout_sublabel_offset(self):
+        from holoviews.plotting.mpl import CurvePlot
+        layout = Curve([]) + Curve([]) + Curve([]) + Curve([])
+        layout.opts(sublabel_offset=1)
+        plot = mpl_renderer.get_plot(layout)
+        cps = plot.traverse(lambda x: x, [CurvePlot])
+        assert cps[0].handles["sublabel"].get_text() == "B"
+        assert cps[1].handles["sublabel"].get_text() == "C"
+        assert cps[2].handles["sublabel"].get_text() == "D"
+        assert cps[3].handles["sublabel"].get_text() == "E"
+
+    def test_layout_sublabel_skip(self):
+        from holoviews.plotting.mpl import CurvePlot
+        layout = Curve([]) + Curve([]) + Curve([]) + Curve([])
+        layout.opts(sublabel_skip=[1, 3])
+        plot = mpl_renderer.get_plot(layout)
+        cps = plot.traverse(lambda x: x, [CurvePlot])
+        assert "sublabel" not in cps[0].handles
+        assert cps[1].handles["sublabel"].get_text() == "A"
+        assert "sublabel" not in cps[2].handles
+        assert cps[3].handles["sublabel"].get_text() == "B"

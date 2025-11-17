@@ -1,18 +1,17 @@
 """
 Test cases for rendering exporters
 """
-from collections import OrderedDict
-
 import panel as pn
 import param
+import pytest
+from panel.widgets import DiscreteSlider, FloatSlider, Player
+from pyviz_comms import CommManager
 
-from holoviews import (DynamicMap, HoloMap, Store, Curve)
+from holoviews import Curve, DynamicMap, HoloMap, Store
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.plotly import PlotlyRenderer
 from holoviews.plotting.renderer import Renderer
 from holoviews.streams import Stream
-from panel.widgets import DiscreteSlider, Player, FloatSlider
-from pyviz_comms import CommManager
 
 
 class PlotlyRendererTest(ComparisonTestCase):
@@ -51,7 +50,7 @@ class PlotlyRendererTest(ComparisonTestCase):
         widgets = obj.layout.select(DiscreteSlider)
         self.assertEqual(len(widgets), 1)
         slider = widgets[0]
-        self.assertEqual(slider.options, OrderedDict([(str(i), i) for i in range(5)]))
+        self.assertEqual(slider.options, dict([(str(i), i) for i in range(5)]))
 
     def test_render_holomap_embedded(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
@@ -93,11 +92,12 @@ class PlotlyRendererTest(ComparisonTestCase):
         self.assertEqual(obj.widget_location, 'top')
         self.assertEqual(obj.widget_type, 'individual')
 
+    @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm:UserWarning')
     def test_render_dynamicmap_with_dims(self):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
 
         y = plot.handles['fig']['data'][0]['y']
         self.assertEqual(y[2], 0.1)
@@ -106,12 +106,13 @@ class PlotlyRendererTest(ComparisonTestCase):
         y = plot.handles['fig']['data'][0]['y']
         self.assertEqual(y[2], 3.1)
 
+    @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm:UserWarning')
     def test_render_dynamicmap_with_stream(self):
         stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
 
         y = plot.handles['fig']['data'][0]['y']
         self.assertEqual(y[2], 2)
@@ -119,13 +120,14 @@ class PlotlyRendererTest(ComparisonTestCase):
         y = plot.handles['fig']['data'][0]['y']
         self.assertEqual(y[2], 3)
 
+    @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm:UserWarning')
     def test_render_dynamicmap_with_stream_dims(self):
         stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda x, y: Curve([x, 1, y]), kdims=['x', 'y'],
                           streams=[stream]).redim.values(x=[1, 2, 3])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
 
         y = plot.handles['fig']['data'][0]['y']
         self.assertEqual(y[2], 2)

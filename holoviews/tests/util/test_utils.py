@@ -1,39 +1,53 @@
 """
 Unit tests of the helper functions in utils
 """
-from collections import OrderedDict
+from unittest import SkipTest
 
-from holoviews import notebook_extension
-from holoviews.element.comparison import ComparisonTestCase
-from holoviews import Store
-from holoviews.util import output, opts, OutputSettings, Options
-
-from holoviews.core.options import OptionTree
 from pyviz_comms import CommManager
 
-from holoviews.plotting import mpl
+from holoviews import Store
+from holoviews.core.options import OptionTree
+from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting import bokeh
+from holoviews.util import Options, OutputSettings, opts, output
 
 BACKENDS = ['matplotlib', 'bokeh']
 
 from ..utils import LoggingComparisonTestCase
 
+try:
+    import notebook
+except ImportError:
+    notebook = None
+
+try:
+    from holoviews.plotting import mpl
+except ImportError:
+    mpl = None
+
+
 
 class TestOutputUtil(ComparisonTestCase):
 
     def setUp(self):
+        if notebook is None:
+            raise SkipTest("Jupyter Notebook not available")
+        if mpl is None:
+            raise SkipTest("Matplotlib not available")
+        from holoviews.ipython import notebook_extension
+
         notebook_extension(*BACKENDS)
         Store.current_backend = 'matplotlib'
         Store.renderers['matplotlib'] = mpl.MPLRenderer.instance()
         Store.renderers['bokeh'] = bokeh.BokehRenderer.instance()
-        OutputSettings.options =  OrderedDict(OutputSettings.defaults.items())
+        OutputSettings.options =  dict(OutputSettings.defaults.items())
 
         super().setUp()
 
     def tearDown(self):
         Store.renderers['matplotlib'] = mpl.MPLRenderer.instance()
         Store.renderers['bokeh'] = bokeh.BokehRenderer.instance()
-        OutputSettings.options =  OrderedDict(OutputSettings.defaults.items())
+        OutputSettings.options =  dict(OutputSettings.defaults.items())
         for renderer in Store.renderers.values():
             renderer.comm_manager = CommManager
         super().tearDown()
@@ -68,6 +82,8 @@ class TestOptsUtil(LoggingComparisonTestCase):
     """
 
     def setUp(self):
+        if mpl is None:
+            raise SkipTest("Matplotlib not available")
         self.backend = Store.current_backend
         Store.current_backend = 'matplotlib'
         self.store_copy = OptionTree(sorted(Store.options().items()),
@@ -77,7 +93,6 @@ class TestOptsUtil(LoggingComparisonTestCase):
     def tearDown(self):
         Store.current_backend = self.backend
         Store.options(val=self.store_copy)
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super().tearDown()
 
     def test_opts_builder_repr(self):

@@ -1,18 +1,30 @@
+import unittest
 from unittest.mock import MagicMock, patch
+
+try:
+    import dash  # noqa: F401
+except ImportError:
+    raise unittest.SkipTest("Dash not installed")
 
 from dash._callback_context import CallbackContext
 
-from .test_plot import TestPlotlyPlot
+from holoviews import Bounds, DynamicMap, Scatter
 from holoviews.plotting.plotly.dash import (
-    to_dash, DashComponents, encode_store_data, decode_store_data
+    DashComponents,
+    decode_store_data,
+    encode_store_data,
+    to_dash,
 )
-from holoviews import Scatter, DynamicMap, Bounds
 from holoviews.streams import BoundsXY, RangeXY, Selection1D
+
+from .test_plot import TestPlotlyPlot
+
 try:
     from dash_core_components import Store
 except ImportError:
     from dash.dcc import Store
 import plotly.io as pio
+
 pio.templates.default = None
 
 
@@ -65,7 +77,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         self.assertEqual(len(components.resets), 1)
 
         # Get arguments passed to @app.callback decorator
-        decorator_args = list(self.app.callback.call_args_list[0])[0]
+        decorator_args = next(iter(self.app.callback.call_args_list[0]))
         outputs, inputs, states = decorator_args
 
         # Check outputs
@@ -206,7 +218,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         self.assertEqual(len(components.resets), 1)
 
         # Get arguments passed to @app.callback decorator
-        decorator_args = list(self.app.callback.call_args_list[0])[0]
+        decorator_args = next(iter(self.app.callback.call_args_list[0]))
         outputs, inputs, states = decorator_args
 
         # Check outputs
@@ -296,7 +308,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         self.assertEqual(len(components.resets), 1)
 
         # Get arguments passed to @app.callback decorator
-        decorator_args = list(self.app.callback.call_args_list[0])[0]
+        decorator_args = next(iter(self.app.callback.call_args_list[0]))
         outputs, inputs, states = decorator_args
 
         # Check outputs
@@ -329,7 +341,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         )
 
         # Check initial figures
-        fig1 = components.graphs[0].figure
+        _fig1 = components.graphs[0].figure
         fig2 = components.graphs[1].figure
 
         # Figure holds the scatter trace
@@ -354,7 +366,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
                 CallbackContext, "triggered",
                 [{"prop_id": inputs[0].component_id + ".selectedData"}]
         ):
-            [fig1, fig2, new_store] = callback_fn(
+            [_fig1, fig2, new_store] = callback_fn(
                 {"points": [
                     {
                         "curveNumber": 0,
@@ -391,7 +403,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
                 CallbackContext, "triggered",
                 [{"prop_id": components.resets[0].id + ".n_clicks"}]
         ):
-            [fig1, fig2, new_store] = callback_fn(
+            [_fig1, fig2, new_store] = callback_fn(
                 {}, {}, 1, store
             )
 
@@ -428,7 +440,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         self.assertEqual(len(components.resets), 0)
 
         # Get arguments passed to @app.callback decorator
-        decorator_args = list(self.app.callback.call_args_list[0])[0]
+        decorator_args = next(iter(self.app.callback.call_args_list[0]))
         outputs, inputs, states = decorator_args
 
         # Check outputs
@@ -444,7 +456,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
             (g.id, prop)
             for g in components.graphs
             for prop in ["selectedData", "relayoutData"]
-        ] + [(list(components.kdims.values())[0].children[1].id, 'value')]
+        ] + [(next(iter(components.kdims.values())).children[1].id, 'value')]
 
         self.assertEqual(
             [(ip.component_id, ip.component_property) for ip in inputs],
@@ -466,7 +478,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         # mimic initial callback invocation
         store_value = encode_store_data({"streams": {}})
         with patch.object(CallbackContext, "triggered", []):
-            [fig, new_store] = callback_fn(
+            [fig, _new_store] = callback_fn(
                 {}, {}, 3, None, store_value
             )
 

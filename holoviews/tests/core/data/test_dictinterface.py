@@ -1,10 +1,8 @@
-from collections import OrderedDict
-
 import numpy as np
 
 from holoviews.core.data import Dataset
 
-from .base import HeterogeneousColumnTests, ScalarColumnTests, InterfaceTests
+from .base import HeterogeneousColumnTests, InterfaceTests, ScalarColumnTests
 
 
 class DictDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTests):
@@ -13,7 +11,7 @@ class DictDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
     """
 
     datatype = 'dictionary'
-    data_type = (OrderedDict,)
+    data_type = (dict,)
 
     __test__ = True
 

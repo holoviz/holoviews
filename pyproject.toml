@@ -1,13 +1,95 @@
 [build-system]
-requires = [
-    "param >=1.12.0,<3.0",
-    "pyct >=0.4.4",
-    "setuptools >=30.3.0",
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "holoviews"
+dynamic = ["version"]
+description = "A high-level plotting API for the PyData ecosystem built on HoloViews."
+readme = "README.md"
+license = "BSD-3-Clause"
+license-files = ["LICENSE.txt"]
+requires-python = ">=3.10"
+authors = [
+    { name = "Jean-Luc Stevens", email = "developers@holoviz.org" },
+    { name = "Philipp Rudiger", email = "developers@holoviz.org" },
+]
+maintainers = [{ name = "HoloViz developers", email = "developers@holoviz.org" }]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Framework :: Matplotlib",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "bokeh >=3.1",
+    "colorcet",
+    "narwhals >=2",
+    "numpy >=1.21",
+    "packaging",
+    "pandas >=1.3",
+    "panel >=1.0",
+    "param >=2.0,<3.0",
+    "python-dateutil >=2.8.2",
+    "pyviz_comms >=2.1",
 ]
 
+[project.urls]
+"Issue Tracker" = "https://github.com/holoviz/holoviews/issues?q=sort%3Aupdated-desc+is%3Aissue+is%3Aopen"
+Blog = "https://blog.holoviz.org/"
+Changelog = "https://github.com/holoviz/holoviews/blob/main/doc/releases.md"
+Discord = "https://discord.gg/AXRHnJU6sP"
+Discourse = "https://discourse.holoviz.org"
+Discussions = "https://github.com/holoviz/holoviews/discussions"
+Documentation = "https://holoviews.org/"
+Funding = "https://opencollective.com/holoviz"
+HoloViz = "https://holoviz.org/"
+Homepage = "https://holoviews.org"
+Repository = "https://github.com/holoviz/holoviews"
+
+[project.optional-dependencies]
+recommended = ["matplotlib >=3", "plotly >=4.0"]
+
+[dependency-groups]
+tests = ["pytest", "pytest-rerunfailures", "pytest-asyncio"]
+
+[project.scripts]
+holoviews = "holoviews.util.command:main"
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { version_scheme = "no-guess-dev" }
+
+[tool.hatch.build.targets.wheel]
+include = ["holoviews"]
+
+[tool.hatch.build.targets.sdist]
+include = ["holoviews", "scripts"]
+
+[tool.hatch.build.targets.sdist.force-include]
+examples = "holoviews/examples"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "holoviews/_version.py"
+
 [tool.pytest.ini_options]
-addopts = "-p no:dash"
+addopts = ["--strict-config", "--strict-markers", "--color=yes"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+minversion = "7"
+xfail_strict = true
+log_cli_level = "INFO"
 filterwarnings = [
+    "error",
     # Numpy warning triggered in Bokeh, when timedelta or datetime numpy scalar are compared to a numerical scalar
     "ignore:elementwise comparison failed:DeprecationWarning:bokeh.core.property.bases",
     "ignore:dropping variables using `drop` will be deprecated; using drop_vars is encouraged:PendingDeprecationWarning:xarray.core.dataarray",
@@ -18,26 +100,69 @@ filterwarnings = [
     # 2022-12: Warnings which should be fixed in Panel
     "ignore:make_current is deprecated; start the event loop first:DeprecationWarning:panel.io.server",
     # 2023-01: Numpy 1.24 warnings
-    "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:bokeh",  # https://github.com/bokeh/bokeh/pull/12690
-    "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:cupy",  # https://github.com/cupy/cupy/pull/7245
-    "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:plotly.express.imshow_utils",  # https://github.com/plotly/plotly.py/pull/3997
-    "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:skimage.util.dtype",  # https://github.com/scikit-image/scikit-image/pull/6637
+    "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:bokeh", # https://github.com/bokeh/bokeh/pull/12690
+    "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:cupy", # https://github.com/cupy/cupy/pull/7245
+    "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:plotly.express.imshow_utils", # https://github.com/plotly/plotly.py/pull/3997
+    "ignore:`.+?` is a deprecated alias for `.+?`.:DeprecationWarning:skimage.util.dtype", # https://github.com/scikit-image/scikit-image/pull/6637
     # 2023-01: Sqlalchemy 2.0 warning:
-    "ignore: Deprecated API features detected:DeprecationWarning:ibis.backends.base.sql.alchemy",  # https://github.com/ibis-project/ibis/issues/5048
+    "ignore: Deprecated API features detected:DeprecationWarning:ibis.backends.base.sql.alchemy", # https://github.com/ibis-project/ibis/issues/5048
     # 2023-03: Already handling the nested sequence
-    "ignore:Creating an ndarray from ragged nested sequences:numpy.VisibleDeprecationWarning:holoviews.core.data.spatialpandas"
+    "ignore:Creating an ndarray from ragged nested sequences::holoviews.core.data.spatialpandas",
+    # 2023-09: Dash needs to update their code to use the comm module and pkg_resources
+    "ignore:The `.+?` class has been deprecated:DeprecationWarning:dash._jupyter",
+    "ignore:pkg_resources is deprecated as an API:DeprecationWarning:dash.dash",
+    # 2023-09: See https://github.com/bokeh/bokeh/issues/13324
+    "ignore:log_path has been deprecated, please use log_output:DeprecationWarning:bokeh.io.webdriver",
+    # 2023-09: Not a relevant warning for HoloViews
+    "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning",
+    # 2023-09: `pkg_resources` is deprecated
+    "ignore:Deprecated call to `pkg_resources.+?'mpl_toolkits:DeprecationWarning", # https://github.com/matplotlib/matplotlib/issues/25244
+    "ignore:Deprecated call to `pkg_resources.+?'sphinxcontrib:DeprecationWarning", # https://github.com/mgaitan/sphinxcontrib-mermaid/issues/119
+    # 2023-10: Datetime's utctimestamp() and utcnow() is deprecated in Python 3.12
+    "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:dateutil.tz.tz", # https://github.com/dateutil/dateutil/pull/1285
+    "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:bokeh", # https://github.com/bokeh/bokeh/issues/13125
+    "ignore:datetime.datetime.utcnow():DeprecationWarning:bokeh", # https://github.com/bokeh/bokeh/issues/13125
+    # 2024-01: Pandas 2.2
+    "ignore:\\s*Pyarrow will become a required dependency of pandas:DeprecationWarning", # Will go away by itself in Pandas 3.0
+    "ignore:Passing a (SingleBlockManager|BlockManager) to (Series|GeoSeries|DataFrame|GeoDataFrame) is deprecated:DeprecationWarning", # https://github.com/holoviz/spatialpandas/issues/137
+    # 2024-04
+    "ignore:No data was collected:coverage.exceptions.CoverageWarning", # https://github.com/pytest-dev/pytest-cov/issues/627
+    # 2024-05
+    "ignore:backend2gui is deprecated since IPython 8.24:DeprecationWarning", # https://github.com/holoviz/holoviews/pull/6227#issuecomment-2104401396
+    # 2024-06
+    "ignore:\\s*Dask dataframe query planning is disabled because dask-expr is not installed:FutureWarning", # OK
+    "ignore:unclosed file <_io.TextIOWrapper name='/dev/null' mode='w':ResourceWarning", # OK
+    # 2024-07
+    "ignore:The (non_)?interactive_bk attribute was deprecated in Matplotlib 3.9", # OK - Only happening in debug mode
+    "ignore: Jitify is performing a one-time only warm::cupy", # OK,
+    # 2024-10
+    "ignore::ResourceWarning",
+    # 2024-11
+    "ignore:The legacy Dask DataFrame implementation is deprecated:FutureWarning", # https://github.com/holoviz/spatialpandas/issues/146
+    # 2025-05
+    "ignore:The 'shapely.geos' module is deprecated, and will be removed in a future version:DeprecationWarning", # https://github.com/geopandas/geopandas/pull/3453
+    # 2025-10
+    "ignore:`duckdb.typing` is deprecated and will be removed in a future version. Please use `duckdb.sqltypes` instead.", # https://github.com/narwhals-dev/narwhals/issues/3137
+    "ignore:'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16", # https://github.com/holoviz/panel/issues/8239
+    "ignore:'asyncio.WindowsSelectorEventLoopPolicy' is deprecated and slated for removal in Python 3.16", # https://github.com/holoviz/panel/issues/8239
+    "ignore:'_UnionGenericAlias' is deprecated and slated for removal in Python 3.17", # OK
 ]
 
 [tool.coverage]
-run.concurrency = ["greenlet"]
+omit = ["holoviews/__version.py"]
+exclude_also = ["if __name__ == .__main__.:", "if TYPE_CHECKING:", "if ._pyodide. in sys.modules:"]
 
 [tool.ruff]
-target-version = "py38"
+fix = true
 
+[tool.ruff.lint]
 select = [
+    "B",
+    "D",
     "E",
     "F",
     "FLY",
+    "I",
     "ICN",
     "NPY",
     "PIE",
@@ -51,36 +176,76 @@ select = [
 ]
 
 ignore = [
-    "E402",     # Module level import not at top of file
-    "E501",     # Line too long
-    "E701",     # Multiple statements on one line
-    "E712",     # Comparison to true should be is
-    "E731",     # Do not assign a lambda expression, use a def
-    "E741",     # Ambiguous variable name
-    "F405",     # From star imports
-    "PLC1901",  # empty string is falsey
-    "PLE0604",  # Invalid object in `__all__`, must contain only strings
-    "PLE0605",  # Invalid format for `__all__`
-    "PLR091",   # Too many arguments/branches/statements
-    "PLR2004",  # Magic value used in comparison
-    "PLW2901",  # `for` loop variable is overwritten
-    "RUF005",   # Consider {expr} instead of concatenation
-    "RUF012",   # Mutable class attributes should use `typing.ClassVar`
+    "E402", # Module level import not at top of file
+    "E501", # Line too long
+    "E701", # Multiple statements on one line
+    "E712", # Comparison to true should be is
+    "E731", # Do not assign a lambda expression, use a def
+    "E741", # Ambiguous variable name
+    "F405", # From star imports
+    "PLC0415", # `import` should be at the top-level of a file
+    "PLE0604", # Invalid object in `__all__`, must contain only strings
+    "PLE0605", # Invalid format for `__all__`
+    "PLR091", # Too many arguments/branches/statements
+    "PLR2004", # Magic value used in comparison
+    "PLW2901", # `for` loop variable is overwritten
+    "RUF012", # Mutable class attributes should use `typing.ClassVar`
+    "RUF021", # parenthesize-chained-operators
+    "D1", # Undocumented code
+    "D200", # Unnecessary-multiline-docstring
+    "D205", # Missing-blank-line-after-summary
+    "D400", # Missing-trailing-period
+    "D401", # Non-imperative-mood
+    "D404", # Docstring-starts-with-this
+]
+extend-unsafe-fixes = [
+    "F401", # Unused imports
+    "F841", # Unused variables
 ]
 
-fix = true
-unfixable = [
-    "F401",     # Unused imports
-]
-
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F403"]
 "holoviews/tests/*" = [
-    "RUF001", "RUF002", "RUF003",  # Ambiguous unicode character
-    "NPY002",  # Replace legacy `np.random.rand` call with Generator
+    "RUF001", # Ambiguous unicode character
+    "RUF002", # Ambiguous unicode character
+    "RUF003", # Ambiguous unicode character
+    "NPY002", # Replace legacy `np.random.rand` call with Generator
+    "B904", # Within an `except` clause, raise exceptions with from err or None
+    "D", # pydocstyle
+]
+"examples/*" = [
+    "B905", # zip zip-without-explicit-strict
+    "NPY002", # Replace legacy `np.random.rand` call with Generator
+    "PLW0603", # Using global statement
+    "RUF001", # Ambiguous unicode character
+    "RUF002", # Ambiguous unicode character
+    "RUF003", # Ambiguous unicode character
 ]
 
-[tool.codespell]
-ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn"
-skip = "doc/generate_modules.py"
-write-changes = true
+[tool.ruff.lint.isort]
+known-first-party = ["holoviews"]
+combine-as-imports = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.typos.default]
+extend-ignore-re = [
+    ".*(?:#|--|//|/*).*(?:typos):\\s?ignore[^\\n]*\\n",
+    ".*(?:typos):\\s?ignore-next-line[^\\n]*\\n[^\\n]*",
+]
+
+[tool.typos.default.extend-words]
+anc = "anc"
+arange = "arange"
+ba = "ba"
+iy = "iy"
+lod = "lod"
+nd = "nd"
+pn = "pn"
+ser = "ser"
+spreaded = "spreaded"
+
+[tool.typos.default.extend-identifiers]
+les_mis = "les_mis"
+LesMis = "LesMis"

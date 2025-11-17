@@ -1,9 +1,9 @@
 from ..core import HoloMap
-from ..core.data import Dataset, DataConversion
+from ..core.data import DataConversion, Dataset
 from .annotation import *
 from .chart import *
-from .geom import *
 from .chart3d import *
+from .geom import *
 from .graphs import *
 from .path import *
 from .raster import *
@@ -14,10 +14,10 @@ from .tiles import *
 
 
 class ElementConversion(DataConversion):
-    """
-    ElementConversion is a subclass of DataConversion providing
+    """ElementConversion is a subclass of DataConversion providing
     concrete methods to convert a Dataset to specific Element
     types.
+
     """
 
     def bars(self, kdims=None, vdims=None, groupby=None, **kwargs):
@@ -35,7 +35,9 @@ class ElementConversion(DataConversion):
     def errorbars(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(ErrorBars, kdims, vdims, groupby, **kwargs)
 
-    def distribution(self, dim=None, groupby=[], **kwargs):
+    def distribution(self, dim=None, groupby=None, **kwargs):
+        if groupby is None:
+            groupby = []
         if dim is None:
             if self._element.vdims:
                 dim = self._element.vdims[0]

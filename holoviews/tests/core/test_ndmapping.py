@@ -1,12 +1,17 @@
-from collections import OrderedDict
 
+import numpy as np
+
+from holoviews import Dataset, HoloMap
 from holoviews.core import Dimension
 from holoviews.core.ndmapping import (
-    MultiDimensionalMapping, NdMapping, UniformNdMapping
+    MultiDimensionalMapping,
+    NdMapping,
+    UniformNdMapping,
 )
+from holoviews.core.overlay import Overlay
+from holoviews.element import Curve
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews import HoloMap, Dataset
-import numpy as np
+
 
 class DimensionTest(ComparisonTestCase):
 
@@ -38,7 +43,7 @@ class NdIndexableMappingTest(ComparisonTestCase):
     def setUp(self):
         self.init_items_1D_list = [(1, 'a'), (5, 'b')]
         self.init_item_list = [((1, 2.0), 'a'), ((5, 3.0), 'b')]
-        self.init_item_odict = OrderedDict([((1, 2.0), 'a'), ((5, 3.0), 'b')])
+        self.init_item_odict = dict([((1, 2.0), 'a'), ((5, 3.0), 'b')])
         self.dimension_labels = ['intdim', 'floatdim']
         self.dim1 = Dimension('intdim', type=int)
         self.dim2 = Dimension('floatdim', type=float)
@@ -269,3 +274,39 @@ class HoloMapTest(ComparisonTestCase):
         hists = hmap.hist(dimension=['x', 'y'])
         self.assertEqual(hists['right'].last.kdims, ['y'])
         self.assertEqual(hists['top'].last.kdims, ['x'])
+
+    def test_holomap_collapse_overlay_no_function(self):
+        hmap = HoloMap({
+            (1,0): Curve(np.arange(8)) * Curve(-np.arange(8)),
+            (2,0): Curve(np.arange(8)**2) * Curve(-np.arange(8)**3)
+        }, kdims=["A","B"])
+        self.assertEqual(hmap.collapse(), Overlay([
+            (('Curve', 'I'), Dataset({
+                'A': np.concatenate([np.ones(8), np.ones(8)*2]),
+                'B': np.zeros(16),
+                'x': np.tile(np.arange(8), 2),
+                'y': np.concatenate([np.arange(8), np.arange(8)**2])
+            }, kdims=['A', 'B', 'x'], vdims=['y'])),
+            (('Curve', 'II'), Dataset({
+                'A': np.concatenate([np.ones(8), np.ones(8)*2]),
+                'B': np.zeros(16),
+                'x': np.tile(np.arange(8), 2),
+                'y': np.concatenate([-np.arange(8), -np.arange(8)**3])
+            }, kdims=['A', 'B', 'x'], vdims=['y']))
+        ]))
+
+    def test_holomap_collapse_overlay_max(self):
+        hmap = HoloMap({
+            (1,0): Curve(np.arange(8)) * Curve(-np.arange(8)),
+            (2,0): Curve(np.arange(8)**2) * Curve(-np.arange(8)**3)
+        }, kdims=["A","B"])
+        self.assertEqual(hmap.collapse(function=np.max), Overlay([
+            (('Curve', 'I'), Curve({
+                'x': np.arange(8),
+                'y': np.arange(8)**2
+            }, kdims=['x'], vdims=['y'])),
+            (('Curve', 'II'), Curve({
+                'x': np.arange(8),
+                'y': -np.arange(8)
+            }, kdims=['x'], vdims=['y']))
+        ]))

@@ -1,6 +1,9 @@
 import numpy as np
 
+from holoviews.core.options import Cycle
+from holoviews.core.spaces import HoloMap
 from holoviews.element import Labels, Tiles
+from holoviews.plotting.plotly.util import PLOTLY_MAP
 
 from .test_plot import TestPlotlyPlot
 
@@ -84,7 +87,7 @@ class TestMapboxLabelsPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][1]['text'], ['A', 'B', 'C'])
         self.assertEqual(state['data'][1]['mode'], 'text')
         self.assertEqual(
-            state['layout']['mapbox']['center'], {
+            state['layout'][PLOTLY_MAP]['center'], {
                 'lat': self.lat_center, 'lon': self.lon_center
             }
         )
@@ -132,3 +135,12 @@ class TestMapboxLabelsPlot(TestPlotlyPlot):
         element = Tiles("") * Labels([(0, 3, 0), (1, 2, 1), (2, 1, 1)]).opts(visible=False)
         state = self._get_plot_state(element)
         self.assertEqual(state['data'][1]['visible'], False)
+
+    def test_labels_text_color_cycle(self):
+        hm = HoloMap(
+            {i: Labels([
+                (0, 0 + i, "Label 1"),
+                (1, 1 + i, "Label 2")
+            ]) for i in range(3)}
+        ).overlay()
+        assert isinstance(hm[0].opts["color"], Cycle)

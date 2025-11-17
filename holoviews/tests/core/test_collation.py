@@ -2,9 +2,10 @@
 Test cases for Collator
 """
 import itertools
+
 import numpy as np
 
-from holoviews.core import Collator, HoloMap, NdOverlay, Overlay, GridSpace
+from holoviews.core import Collator, GridSpace, HoloMap, NdOverlay, Overlay
 from holoviews.element import Curve
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -15,7 +16,7 @@ class TestCollation(ComparisonTestCase):
         Bs = list(range(100))
         coords = itertools.product(*(range(n) for n in [alphas, betas, deltas]))
         mus=np.random.rand(alphas, betas, 100, 10)
-        self.phase_boundaries = {(a, b, d): Curve(zip(Bs, mus[a, b, :, i]*a+b))
+        self.phase_boundaries = {(a, b, d): Curve(zip(Bs, mus[a, b, :, i]*a+b, strict=None))
                                  for i in range(10) for a, b, d in coords}
         self.dimensions = ['alpha', 'beta', 'delta']
         self.nesting_hmap = HoloMap(self.phase_boundaries, kdims=self.dimensions)

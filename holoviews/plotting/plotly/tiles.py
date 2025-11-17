@@ -1,28 +1,49 @@
-from holoviews.plotting.plotly import ElementPlot
-from holoviews.plotting.plotly.util import STYLE_ALIASES
 import numpy as np
+
 from holoviews.element.tiles import _ATTRIBUTIONS
+from holoviews.plotting.plotly import ElementPlot
+from holoviews.plotting.plotly.util import (
+    PLOTLY_GE_6_0_0,
+    PLOTLY_MAP,
+    PLOTLY_SCATTERMAP,
+    STYLE_ALIASES,
+)
+from holoviews.util.warnings import warn
 
 
 class TilePlot(ElementPlot):
-    style_opts = ['min_zoom', 'max_zoom', "alpha", "accesstoken", "mapboxstyle"]
+    style_opts = [
+        "min_zoom",
+        "max_zoom",
+        "alpha",
+        "mapstyle",
+        # Only needed for Plotly <6
+        "accesstoken",
+        "mapboxstyle",
+    ]
 
     _supports_geo = True
 
     @classmethod
     def trace_kwargs(cls, **kwargs):
-        return {'type': 'scattermapbox'}
+        return {'type': PLOTLY_SCATTERMAP}
 
     def get_data(self, element, ranges, style, **kwargs):
         return [{
-            "type": "scattermapbox", "lat": [], "lon": [], "subplot": "mapbox",
+            "type": PLOTLY_SCATTERMAP, "lat": [], "lon": [], "subplot": PLOTLY_MAP,
             "showlegend": False,
         }]
 
     def graph_options(self, element, ranges, style, **kwargs):
         style = dict(style)
+        if PLOTLY_GE_6_0_0 and (mapboxstyle := style.pop("mapboxstyle", None)):
+            warn("'mapboxstyle' no longer supported with Plotly 6.0 use 'mapstyle' instead", category=UserWarning)
+            style["mapstyle"] = mapboxstyle
+        if PLOTLY_GE_6_0_0 and style.pop("accesstoken", None):
+            warn("'accesstoken' no longer needed with Plotly 6.0", category=UserWarning)
+
         opts = dict(
-            style=style.pop("mapboxstyle", "white-bg"),
+            style=style.pop("mapstyle", "white-bg"),
             accesstoken=style.pop("accesstoken", None),
         )
         # Extract URL and lower case wildcard characters for mapbox
@@ -39,7 +60,7 @@ class TilePlot(ElementPlot):
                 layer['maxzoom'] = element.data.get("max_zoom", 20)
             else:
                 for v in ["X", "Y", "Z"]:
-                    url = url.replace("{%s}" % v, "{%s}" % v.lower())
+                    url = url.replace(f"{{{v}}}", f"{{{v.lower()}}}")
                 layer["source"] = [url]
 
                 for key, attribution in _ATTRIBUTIONS.items():
@@ -53,7 +74,7 @@ class TilePlot(ElementPlot):
 
         return opts
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         extents = super().get_extents(element, ranges, range_type)
         if (not self.overlaid and all(e is None or not np.isfinite(e) for e in extents)
             and range_type in ('combined', 'data')):
@@ -64,10 +85,10 @@ class TilePlot(ElementPlot):
         return extents
 
     def init_graph(self, datum, options, index=0, **kwargs):
-        return {'traces': [datum], "mapbox": options}
+        return {'traces': [datum], PLOTLY_MAP: options}
 
     def generate_plot(self, key, ranges, element=None, is_geo=False):
-        """
-        Override to force is_geo to True
+        """Override to force is_geo to True
+
         """
         return super().generate_plot(key, ranges, element, is_geo=True)

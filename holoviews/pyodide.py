@@ -1,7 +1,6 @@
 import asyncio
 import sys
 
-
 from bokeh.document import Document
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import standalone_docs_json_and_render_items
@@ -12,7 +11,6 @@ from panel.pane import panel as as_panel
 from .core.dimension import LabelledData
 from .core.options import Store
 from .util import extension as _extension
-
 
 #-----------------------------------------------------------------------------
 # Private API
@@ -51,9 +49,9 @@ def render_html(obj):
     return {'text/html': wrap_in_script_tag(script)}, {}
 
 def render_image(element, fmt):
-    """
-    Used to render elements to an image format (svg or png) if requested
+    """Used to render elements to an image format (svg or png) if requested
     in the display formats.
+
     """
     if fmt not in Store.display_formats:
         return None
@@ -79,7 +77,7 @@ def render_svg(element):
 
 def in_jupyterlite():
     import js
-    return hasattr(js, "_JUPYTERLAB")
+    return hasattr(js, "_JUPYTERLAB") or hasattr(js, "webpackChunk_jupyterlite_pyodide_kernel_extension") or not hasattr(js, "document")
 
 #-----------------------------------------------------------------------------
 # Public API

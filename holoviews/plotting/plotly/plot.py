@@ -1,16 +1,20 @@
 import param
 
 from holoviews.plotting.util import attach_streams
-from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
-                     HoloMap, GridSpace, GridMatrix)
-from ...element import Histogram
+
+from ...core import AdjointLayout, Empty, GridMatrix, GridSpace, HoloMap, NdLayout
 from ...core.options import Store
 from ...core.util import wrap_tuple
+from ...element import Histogram
 from ..plot import (
-    DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
-    GenericElementPlot, GenericAdjointLayoutPlot, CallbackPlot
+    CallbackPlot,
+    DimensionedPlot,
+    GenericAdjointLayoutPlot,
+    GenericCompositePlot,
+    GenericElementPlot,
+    GenericLayoutPlot,
 )
-from .util import figure_grid, configure_matching_axes_from_dims
+from .util import configure_matching_axes_from_dims, figure_grid
 
 
 class PlotlyPlot(DimensionedPlot, CallbackPlot):
@@ -25,15 +29,17 @@ class PlotlyPlot(DimensionedPlot, CallbackPlot):
 
     @property
     def state(self):
-        """
-        The plotting state that gets updated via the update method and
+        """The plotting state that gets updated via the update method and
         used by the renderer to generate output.
+
         """
         return self.handles['fig']
 
 
     def _trigger_refresh(self, key):
-        "Triggers update to a plot on a refresh event"
+        """Triggers update to a plot on a refresh event
+
+        """
         if self.top_level:
             self.update(key)
         else:
@@ -80,7 +86,7 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         layout_count = 0
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
-        frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
+        frame_ranges = dict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in self.keys])
         layout_items = layout.grid_items()
         layout_dimensions = layout.kdims if isinstance(layout, NdLayout) else None
@@ -103,7 +109,7 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
             # to create the correct subaxes for all plots in the layout
             layout_key, _ = layout_items.get((r, c), (None, None))
             if isinstance(layout, NdLayout) and layout_key:
-                layout_dimensions = OrderedDict(zip(layout_dimensions, layout_key))
+                layout_dimensions = dict(zip(layout_dimensions, layout_key, strict=None))
 
             # Generate the axes and create the subplots with the appropriate
             # axis objects, handling any Empty objects.
@@ -129,12 +135,12 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
 
 
     def _create_subplots(self, layout, positions, layout_dimensions, ranges, num=0):
-        """
-        Plot all the views contained in the AdjointLayout Object using axes
+        """Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
         supplied by LayoutPlot - the purpose of the call is to
         invoke subplots with correct options and styles and hide any
         empty axes as necessary.
+
         """
         subplots = {}
         adjoint_clone = layout.clone(shared_data=False, id=layout.id)
@@ -169,8 +175,8 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
 
             if plot_type is None:
                 self.param.warning(
-                    "Plotly plotting class for %s type not found, "
-                    "object will not be rendered." % vtype.__name__)
+                    f"Plotly plotting class for {vtype.__name__} type not found, "
+                    "object will not be rendered.")
                 continue
             num = num if len(self.coords) > 1 else 0
             subplot = plot_type(element, keys=self.keys,
@@ -250,12 +256,12 @@ class AdjointLayoutPlot(PlotlyPlot, GenericAdjointLayoutPlot):
         super().__init__(subplots=subplots, **params)
 
     def initialize_plot(self, ranges=None, is_geo=False):
-        """
-        Plot all the views contained in the AdjointLayout Object using axes
+        """Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
         supplied by LayoutPlot - the purpose of the call is to
         invoke subplots with correct options and styles and hide any
         empty axes as necessary.
+
         """
         return self.generate_plot(self.keys[-1], ranges, is_geo=is_geo)
 
@@ -275,9 +281,9 @@ class AdjointLayoutPlot(PlotlyPlot, GenericAdjointLayoutPlot):
 
 
 class GridPlot(PlotlyPlot, GenericCompositePlot):
-    """
-    Plot a group of elements in a grid layout based on a GridSpace element
+    """Plot a group of elements in a grid layout based on a GridSpace element
     object.
+
     """
 
     hspacing = param.Number(default=15, bounds=(0, None))
@@ -302,9 +308,9 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
 
 
     def _create_subplots(self, layout, ranges):
-        subplots = OrderedDict()
+        subplots = {}
         frame_ranges = self.compute_ranges(layout, None, ranges)
-        frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
+        frame_ranges = dict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in self.keys])
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         for coord in layout.keys(full_grid=True):
@@ -328,8 +334,8 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
             if plotting_class is None:
                 if view is not None:
                     self.param.warning(
-                        "Plotly plotting class for %s type not found, "
-                        "object will not be rendered." % vtype.__name__)
+                        f"Plotly plotting class for {vtype.__name__} type not found, "
+                        "object will not be rendered.")
             else:
                 subplot = plotting_class(view, dimensions=self.dimensions,
                                          show_title=False, subplot=True,

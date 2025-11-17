@@ -5,14 +5,14 @@ from unittest import SkipTest
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from holoviews.core.data import Dataset
 from holoviews.element.chart import Points
-from holoviews.element.graphs import (
-    Graph, Nodes, TriMesh, Chord)
-from holoviews.element.sankey import Sankey
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.element.util import connect_edges, connect_edges_pd, circular_layout
+from holoviews.element.graphs import Chord, Graph, Nodes, TriMesh
+from holoviews.element.sankey import Sankey
+from holoviews.element.util import circular_layout, connect_edges, connect_edges_pd
 
 
 class GraphTests(ComparisonTestCase):
@@ -39,7 +39,7 @@ class GraphTests(ComparisonTestCase):
         segments = connect_edges(self.graph)
         paths = []
         nodes = np.column_stack(self.nodes)
-        for start, end in zip(nodes[self.source], nodes[self.target]):
+        for start, end in zip(nodes[self.source], nodes[self.target], strict=None):
             paths.append(np.array([start[:2], end[:2]]))
         self.assertEqual(segments, paths)
 
@@ -63,14 +63,14 @@ class GraphTests(ComparisonTestCase):
     def test_graph_node_info_merge_on_index_partial(self):
         node_info = Dataset((np.arange(5), np.arange(1,6)), 'index', 'label')
         graph = Graph(((self.source, self.target), node_info))
-        expected = np.array([1., 2., 3., 4., 5., np.NaN, np.NaN, np.NaN])
+        expected = np.array([1., 2., 3., 4., 5., np.nan, np.nan, np.nan])
         self.assertEqual(graph.nodes.dimension_values(3), expected)
 
     def test_graph_edge_segments_pd(self):
         segments = connect_edges_pd(self.graph)
         paths = []
         nodes = np.column_stack(self.nodes)
-        for start, end in zip(nodes[self.source], nodes[self.target]):
+        for start, end in zip(nodes[self.source], nodes[self.target], strict=None):
             paths.append(np.array([start[:2], end[:2]]))
         self.assertEqual(segments, paths)
 
@@ -90,32 +90,32 @@ class GraphTests(ComparisonTestCase):
 
     def test_select_by_node_in_edges_selection_mode(self):
         graph = Graph(((self.source, self.target),))
-        selection = Graph(([(1, 0), (2, 0)], list(zip(*self.nodes))[0:3]))
+        selection = Graph(([(1, 0), (2, 0)], list(zip(*self.nodes, strict=None))[0:3]))
         self.assertEqual(graph.select(index=(1, 3)), selection)
 
     def test_select_by_node_in_nodes_selection_mode(self):
         graph = Graph(((self.source, self.source+1), self.nodes))
-        selection = Graph(([(1, 2)], list(zip(*self.nodes))[1:3]))
+        selection = Graph(([(1, 2)], list(zip(*self.nodes, strict=None))[1:3]))
         self.assertEqual(graph.select(index=(1, 3), selection_mode='nodes'), selection)
 
     def test_select_by_source(self):
         graph = Graph(((self.source, self.target),))
-        selection = Graph(([(0,0), (1, 0)], list(zip(*self.nodes))[:2]))
+        selection = Graph(([(0,0), (1, 0)], list(zip(*self.nodes, strict=None))[:2]))
         self.assertEqual(graph.select(start=(0, 2)), selection)
 
     def test_select_by_target(self):
         graph = Graph(((self.source, self.target),))
-        selection = Graph(([(0,0), (1, 0)], list(zip(*self.nodes))[:2]))
+        selection = Graph(([(0,0), (1, 0)], list(zip(*self.nodes, strict=None))[:2]))
         self.assertEqual(graph.select(start=(0, 2)), selection)
 
     def test_select_by_source_and_target(self):
         graph = Graph(((self.source, self.source+1), self.nodes))
-        selection = Graph(([(0,1)], list(zip(*self.nodes))[:2]))
+        selection = Graph(([(0,1)], list(zip(*self.nodes, strict=None))[:2]))
         self.assertEqual(graph.select(start=(0, 3), end=1), selection)
 
     def test_select_by_edge_data(self):
         graph = Graph(((self.target, self.source, self.edge_info),), vdims=['info'])
-        selection = Graph(([(0, 0, 0), (0, 1, 1)], list(zip(*self.nodes))[:2]), vdims=['info'])
+        selection = Graph(([(0, 0, 0), (0, 1, 1)], list(zip(*self.nodes, strict=None))[:2]), vdims=['info'])
         self.assertEqual(graph.select(info=(0, 2)), selection)
 
     def test_graph_node_range(self):
@@ -128,6 +128,48 @@ class GraphTests(ComparisonTestCase):
         redimmed = graph.redim(x='x2', y='y2')
         self.assertEqual(redimmed.nodes, graph.nodes.redim(x='x2', y='y2'))
         self.assertEqual(redimmed.edgepaths, graph.edgepaths.redim(x='x2', y='y2'))
+
+
+class TestFromSparse:
+
+    def setup_method(self):
+        pytest.importorskip('scipy')
+
+    @pytest.mark.parametrize("sparse_func", ("coo_array", "coo_matrix"))
+    @pytest.mark.parametrize("graph_kwargs", (
+        {},
+        {"kdims": ["source", "target"]},
+        {"vdims": ["weight"]},
+    ))
+    def test_from_sparse(self, sparse_func, graph_kwargs):
+        import scipy.sparse as sp
+
+        row = np.array([0, 0, 1, 2])
+        col = np.array([1, 2, 2, 0])
+        data = np.array([1.0, 2.0, 3.0, 4.0])
+        sparse_data = getattr(sp, sparse_func)((data, (row, col)), shape=(3, 3))
+        nodes_data = {'x': [0.0, 1.0, 0.5], 'y': [0.0, 0.0, 1.0], 'index': [0, 1, 2]}
+        graph = Graph.from_sparse(sparse_data, nodes_data, **graph_kwargs)
+
+        if kdims := graph_kwargs.get("kdims"):
+            np.testing.assert_array_equal(graph.dimension_values(kdims[0]), row)
+            np.testing.assert_array_equal(graph.dimension_values(kdims[1]), col)
+        else:
+            np.testing.assert_array_equal(graph.dimension_values('start'), row)
+            np.testing.assert_array_equal(graph.dimension_values('end'), col)
+
+        if vdims := graph_kwargs.get("vdims"):
+            np.testing.assert_array_equal(graph.dimension_values(vdims[0]), data)
+        else:
+            np.testing.assert_array_equal(graph.dimension_values('data'), data)
+
+    def test_from_sparse_invalid_input(self):
+        regular_array = np.array([[1, 2], [3, 4]])
+        nodes_data = {'x': [0.0, 1.0], 'y': [0.0, 1.0], 'index': [0, 1]}
+
+        with pytest.raises(TypeError, match=r"edges expected to be a scipy.sparse array"):
+            Graph.from_sparse(regular_array, nodes_data)
+
 
 class FromNetworkXTests(ComparisonTestCase):
 
@@ -227,9 +269,9 @@ class ChordTests(ComparisonTestCase):
 
     def test_chord_constructor_self_reference(self):
         chord = Chord([('A', 'B', 2), ('B', 'A', 3), ('A', 'A', 2)])
-        nodes = np.array(
-            [[-0.5, 0.866025, 0],
-             [0.5, -0.866025, 1]]
+        nodes = pd.DataFrame(
+            [[-0.5, 0.866025, "A"], [0.5, -0.866025, "B"]],
+            columns=["x", "y", "index"]
         )
         self.assertEqual(chord.nodes, Nodes(nodes))
 
@@ -259,7 +301,7 @@ class TriMeshTests(ComparisonTestCase):
         self.assertEqual(trimesh.nodes.array(), np.empty((0, 3)))
 
     def test_trimesh_constructor_tuple_nodes(self):
-        nodes = tuple(zip(*self.nodes))[:2]
+        nodes = tuple(zip(*self.nodes, strict=None))[:2]
         trimesh = TriMesh((self.simplices, nodes))
         self.assertEqual(trimesh.array(), np.array(self.simplices))
         self.assertEqual(trimesh.nodes.array([0, 1]), np.array(nodes).T)
@@ -282,9 +324,9 @@ class TriMeshTests(ComparisonTestCase):
 
     def test_trimesh_edgepaths(self):
         trimesh = TriMesh((self.simplices, self.nodes))
-        paths = [np.array([(0, 0), (0.5, 1), (1, 0), (0, 0), (np.NaN, np.NaN),
+        paths = [np.array([(0, 0), (0.5, 1), (1, 0), (0, 0), (np.nan, np.nan),
                  (0.5, 1), (1, 0), (1.5, 1), (0.5, 1)])]
-        for p1, p2 in zip(trimesh.edgepaths.split(datatype='array'), paths):
+        for p1, p2 in zip(trimesh.edgepaths.split(datatype='array'), paths, strict=None):
             self.assertEqual(p1, p2)
 
     def test_trimesh_select(self):

@@ -1,8 +1,7 @@
 from collections.abc import Callable
 
-import param
 import numpy as np
-
+import param
 from bokeh.util.hex import cartesian_to_axial
 
 from ...core import Dimension, Operation
@@ -12,15 +11,15 @@ from ...element import HexTiles
 from ...util.transform import dim as dim_transform
 from .element import ColorbarPlot
 from .selection import BokehOverlaySelectionDisplay
-from .styles import base_properties, line_properties, fill_properties
+from .styles import base_properties, fill_properties, line_properties
 
 
 class hex_binning(Operation):
-    """
-    Applies hex binning by computing aggregates on a hexagonal grid.
+    """Applies hex binning by computing aggregates on a hexagonal grid.
 
     Should not be user facing as the returned element is not directly
     usable.
+
     """
 
     aggregator = param.ClassSelector(
@@ -35,7 +34,7 @@ class hex_binning(Operation):
 
     min_count = param.Number(default=None)
 
-    orientation = param.ObjectSelector(default='pointy', objects=['flat', 'pointy'])
+    orientation = param.Selector(default='pointy', objects=['flat', 'pointy'])
 
     def _process(self, element, key=None):
         gridsize, aggregator, orientation = self.p.gridsize, self.p.aggregator, self.p.orientation
@@ -116,7 +115,7 @@ class HexTilesPlot(ColorbarPlot):
       The display threshold before a bin is shown, by default bins with
       a count of less than 1 are hidden.""")
 
-    orientation = param.ObjectSelector(default='pointy', objects=['flat', 'pointy'],
+    orientation = param.Selector(default='pointy', objects=['flat', 'pointy'],
                                        doc="""
       The orientation of hexagon bins. By default the pointy side is on top.""")
 
@@ -146,21 +145,21 @@ class HexTilesPlot(ColorbarPlot):
 
     style_opts = base_properties + line_properties + fill_properties + ['cmap', 'scale']
 
-    _nonvectorized_styles = base_properties + ['cmap', 'line_dash']
+    _nonvectorized_styles = [*base_properties, 'cmap', 'line_dash']
     _plot_methods = dict(single='hex_tile')
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         xdim, ydim = element.kdims[:2]
-        ranges[xdim.name]['data'] = xdim.range
-        ranges[ydim.name]['data'] = ydim.range
+        ranges[xdim.label]['data'] = xdim.range
+        ranges[ydim.label]['data'] = ydim.range
         xd = element.cdims.get(xdim.name)
-        if xd and xdim.name in ranges:
-            ranges[xdim.name]['hard'] = xd.range
-            ranges[xdim.name]['soft'] = max_range([xd.soft_range, ranges[xdim.name]['soft']])
+        if xd and xdim.label in ranges:
+            ranges[xdim.label]['hard'] = xd.range
+            ranges[xdim.label]['soft'] = max_range([xd.soft_range, ranges[xdim.label]['soft']])
         yd = element.cdims.get(ydim.name)
-        if yd and ydim.name in ranges:
-            ranges[ydim.name]['hard'] = yd.range
-            ranges[ydim.name]['hard'] = max_range([yd.soft_range, ranges[ydim.name]['soft']])
+        if yd and ydim.label in ranges:
+            ranges[ydim.label]['hard'] = yd.range
+            ranges[ydim.label]['hard'] = max_range([yd.soft_range, ranges[ydim.label]['soft']])
         return super().get_extents(element, ranges, range_type)
 
     def _hover_opts(self, element):

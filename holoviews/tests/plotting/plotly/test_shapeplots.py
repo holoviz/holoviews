@@ -1,7 +1,17 @@
-from holoviews.element import (
-    VLine, HLine, Bounds, Box, Rectangles, Segments, Tiles, Path
-)
 import numpy as np
+
+from holoviews.element import (
+    Bounds,
+    Box,
+    HLine,
+    Path,
+    Rectangles,
+    Segments,
+    Tiles,
+    VLine,
+)
+from holoviews.plotting.plotly.util import PLOTLY_MAP, PLOTLY_SCATTERMAP
+
 from .test_plot import TestPlotlyPlot
 
 default_shape_color = '#2a3f5f'
@@ -122,7 +132,7 @@ class TestPathShape(TestShape):
         # Check svg path
         expected_path = 'M' + 'L'.join([
             f'{x} {y}' for x, y in
-            zip(element.dimension_values(0), element.dimension_values(1))]) + 'Z'
+            zip(element.dimension_values(0), element.dimension_values(1), strict=None)]) + 'Z'
 
         self.assertEqual(shape['path'], expected_path)
 
@@ -151,7 +161,7 @@ class TestMapboxPathShape(TestMapboxShape):
         )
 
         state = self._get_plot_state(path)
-        self.assertEqual(state["data"][1]["type"], "scattermapbox")
+        self.assertEqual(state["data"][1]["type"], PLOTLY_SCATTERMAP)
         self.assertEqual(state["data"][1]["mode"], "lines")
         self.assertEqual(state["data"][1]["lon"], np.array([
             self.lon_range[i] for i in (0, 1, 0, 0)
@@ -162,7 +172,7 @@ class TestMapboxPathShape(TestMapboxShape):
         self.assertEqual(state["data"][1]["showlegend"], False)
         self.assertEqual(state["data"][1]["line"]["color"], default_shape_color)
         self.assertEqual(
-            state['layout']['mapbox']['center'], {
+            state['layout'][PLOTLY_MAP]['center'], {
                 'lat': self.lat_center, 'lon': self.lon_center
             }
         )
@@ -212,7 +222,7 @@ class TestMapboxBounds(TestMapboxShape):
         )
 
         state = self._get_plot_state(bounds)
-        self.assertEqual(state["data"][1]["type"], "scattermapbox")
+        self.assertEqual(state["data"][1]["type"], PLOTLY_SCATTERMAP)
         self.assertEqual(state["data"][1]["mode"], "lines")
         self.assertEqual(state["data"][1]["lon"], np.array([
             self.lon_range[i] for i in (0, 0, 1, 1, 0)
@@ -223,7 +233,7 @@ class TestMapboxBounds(TestMapboxShape):
         self.assertEqual(state["data"][1]["showlegend"], False)
         self.assertEqual(state["data"][1]["line"]["color"], default_shape_color)
         self.assertEqual(
-            state['layout']['mapbox']['center'], {
+            state['layout'][PLOTLY_MAP]['center'], {
                 'lat': self.lat_center, 'lon': self.lon_center
             }
         )
@@ -238,10 +248,10 @@ class TestMapboxBounds(TestMapboxShape):
                   Tiles("") * bounds3 + Tiles("") * bounds4).cols(2)
 
         state = self._get_plot_state(layout)
-        self.assertEqual(state['data'][1]["subplot"], "mapbox")
-        self.assertEqual(state['data'][3]["subplot"], "mapbox2")
-        self.assertEqual(state['data'][5]["subplot"], "mapbox3")
-        self.assertEqual(state['data'][7]["subplot"], "mapbox4")
+        self.assertEqual(state['data'][1]["subplot"], PLOTLY_MAP)
+        self.assertEqual(state['data'][3]["subplot"], PLOTLY_MAP + "2")
+        self.assertEqual(state['data'][5]["subplot"], PLOTLY_MAP + "3")
+        self.assertEqual(state['data'][7]["subplot"], PLOTLY_MAP + "4")
         self.assertNotIn("xaxis", state['layout'])
         self.assertNotIn("yaxis", state['layout'])
 
@@ -290,7 +300,7 @@ class TestMapboxBox(TestMapboxShape):
         lon_box_range, lat_box_range = Tiles.easting_northing_to_lon_lat(x_box_range, y_box_range)
 
         state = self._get_plot_state(box)
-        self.assertEqual(state["data"][1]["type"], "scattermapbox")
+        self.assertEqual(state["data"][1]["type"], PLOTLY_SCATTERMAP)
         self.assertEqual(state["data"][1]["mode"], "lines")
         self.assertEqual(state["data"][1]["showlegend"], False)
         self.assertEqual(state["data"][1]["line"]["color"], default_shape_color)
@@ -302,7 +312,7 @@ class TestMapboxBox(TestMapboxShape):
         ]))
 
         self.assertEqual(
-            state['layout']['mapbox']['center'], {
+            state['layout'][PLOTLY_MAP]['center'], {
                 'lat': self.lat_center, 'lon': self.lon_center
             }
         )
@@ -335,7 +345,7 @@ class TestMapboxRectangles(TestMapboxShape):
         )
 
         state = self._get_plot_state(rectangles)
-        self.assertEqual(state["data"][1]["type"], "scattermapbox")
+        self.assertEqual(state["data"][1]["type"], PLOTLY_SCATTERMAP)
         self.assertEqual(state["data"][1]["mode"], "lines")
         self.assertEqual(state["data"][1]["showlegend"], False)
         self.assertEqual(state["data"][1]["line"]["color"], default_shape_color)
@@ -349,7 +359,7 @@ class TestMapboxRectangles(TestMapboxShape):
         ]))
 
         self.assertEqual(
-            state['layout']['mapbox']['center'], {
+            state['layout'][PLOTLY_MAP]['center'], {
                 'lat': self.lat_center, 'lon': self.lon_center
             }
         )
@@ -382,7 +392,7 @@ class TestMapboxSegments(TestMapboxShape):
         )
 
         state = self._get_plot_state(rectangles)
-        self.assertEqual(state["data"][1]["type"], "scattermapbox")
+        self.assertEqual(state["data"][1]["type"], PLOTLY_SCATTERMAP)
         self.assertEqual(state["data"][1]["mode"], "lines")
         self.assertEqual(state["data"][1]["showlegend"], False)
         self.assertEqual(state["data"][1]["line"]["color"], default_shape_color)
@@ -396,7 +406,7 @@ class TestMapboxSegments(TestMapboxShape):
         ]))
 
         self.assertEqual(
-            state['layout']['mapbox']['center'], {
+            state['layout'][PLOTLY_MAP]['center'], {
                 'lat': self.lat_center, 'lon': self.lon_center
             }
         )

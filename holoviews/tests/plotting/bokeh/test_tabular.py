@@ -1,9 +1,15 @@
 from datetime import datetime as dt
 
 from bokeh.models.widgets import (
-        NumberEditor, NumberFormatter, DateFormatter,
-    DateEditor, StringFormatter, StringEditor, IntEditor
+    DateEditor,
+    DateFormatter,
+    IntEditor,
+    NumberEditor,
+    NumberFormatter,
+    StringEditor,
+    StringFormatter,
 )
+
 from holoviews.core.options import Store
 from holoviews.core.spaces import DynamicMap
 from holoviews.element import Table
@@ -31,7 +37,7 @@ class TestBokehTablePlot(ComparisonTestCase):
         dims = table.dimensions()
         formatters = (NumberFormatter, NumberFormatter, StringFormatter)
         editors = (IntEditor, NumberEditor, StringEditor)
-        for dim, fmt, edit, column in zip(dims, formatters, editors, plot.state.columns):
+        for dim, fmt, edit, column in zip(dims, formatters, editors, plot.state.columns, strict=None):
             self.assertEqual(column.title, dim.pprint_label)
             self.assertIsInstance(column.formatter, fmt)
             self.assertIsInstance(column.editor, edit)
@@ -41,7 +47,7 @@ class TestBokehTablePlot(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(table)
         source = plot.handles['source']
         renderer = plot.handles['glyph_renderer']
-        self.assertEqual(list(source.data.keys())[0], renderer.columns[0].field)
+        self.assertEqual(next(iter(source.data.keys())), renderer.columns[0].field)
 
     def test_table_plot_datetimes(self):
         table = Table([dt.now(), dt.now()], 'Date')

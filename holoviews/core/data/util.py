@@ -56,14 +56,14 @@ def is_dask(array):
     return da and isinstance(array, da.Array)
 
 def cached(method):
-    """
-    Decorates an Interface method and using a cached version
+    """Decorates an Interface method and using a cached version
+
     """
     def cached(*args, **kwargs):
         cache = args[1]._cached
         if cache is None:
             return method(*args, **kwargs)
         else:
-            args = (cache,)+args[2:]
+            args = (cache, *args[2:])
             return getattr(cache.interface, method.__name__)(*args, **kwargs)
     return cached

@@ -1,19 +1,28 @@
+import re
 import uuid
+
 import numpy as np
 import param
-import re
 
 from ... import Tiles
 from ...core import util
+from ...core.dimension import Dimension
 from ...core.element import Element
 from ...core.spaces import DynamicMap
+from ...core.util import dtype_kind
 from ...streams import Stream
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dim_range_key
 from .plot import PlotlyPlot
 from .util import (
-    STYLE_ALIASES, get_colorscale, merge_figure, legend_trace_types, merge_layout)
+    PLOTLY_MAP,
+    STYLE_ALIASES,
+    get_colorscale,
+    legend_trace_types,
+    merge_figure,
+    merge_layout,
+)
 
 
 class ElementPlot(PlotlyPlot, GenericElementPlot):
@@ -29,7 +38,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     bgcolor = param.ClassSelector(class_=(str, tuple), default=None, doc="""
         If set bgcolor overrides the background color of the axis.""")
 
-    invert_axes = param.ObjectSelector(default=False, doc="""
+    invert_axes = param.Selector(default=False, doc="""
         Inverts the axes of the plot. Note that this parameter may not
         always be respected by all plots but should be respected by
         adjoined plots when appropriate.""")
@@ -65,7 +74,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    xaxis = param.ObjectSelector(default='bottom',
+    xaxis = param.Selector(default='bottom',
                                  objects=['top', 'bottom', 'bare', 'top-bare',
                                           'bottom-bare', None], doc="""
         Whether and where to display the xaxis, bare options allow suppressing
@@ -76,7 +85,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         Ticks along x-axis specified as an integer, explicit list of
         tick locations, list of tuples containing the locations.""")
 
-    yaxis = param.ObjectSelector(default='left',
+    yaxis = param.Selector(default='left',
                                       objects=['left', 'right', 'bare', 'left-bare',
                                                'right-bare', None], doc="""
         Whether and where to display the yaxis, bare options allow suppressing
@@ -117,8 +126,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         return {}
 
     def initialize_plot(self, ranges=None, is_geo=False):
-        """
-        Initializes a new plot object with the last available frame.
+        """Initializes a new plot object with the last available frame.
+
         """
         # Get element key and ranges for frame
         fig = self.generate_plot(self.keys[-1], ranges, is_geo=is_geo)
@@ -168,11 +177,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             ]
             if unsupported_opts:
                 raise ValueError(
-                    "The following {typ} style options are not supported by the Plotly "
-                    "backend when overlaid on Tiles:\n"
-                    "    {unsupported_opts}".format(
-                        typ=type(element).__name__, unsupported_opts=unsupported_opts
-                    )
+                    f"The following {type(element).__name__} style options are not supported by the Plotly "
+                    f"backend when overlaid on Tiles:\n    {unsupported_opts}"
                 )
 
         # Get data and options and merge them
@@ -205,8 +211,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                 components[k].extend(datum_components.get(k, []))
 
             # Handle mapbox
-            if "mapbox" in datum_components:
-                components["mapbox"] = datum_components["mapbox"]
+            if PLOTLY_MAP in datum_components:
+                components[PLOTLY_MAP] = datum_components[PLOTLY_MAP]
 
         self.handles['components'] = components
 
@@ -216,8 +222,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             layout.setdefault(k, [])
             layout[k].extend(components.get(k, []))
 
-        if "mapbox" in components:
-            merge_layout(layout.setdefault("mapbox", {}), components["mapbox"])
+        if PLOTLY_MAP in components:
+            merge_layout(layout.setdefault(PLOTLY_MAP, {}), components[PLOTLY_MAP])
 
         self.handles['layout'] = layout
 
@@ -266,31 +272,28 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         else:
             opts.update({STYLE_ALIASES.get(k, k): v
                          for k, v in style.items() if k != 'cmap'})
-
         return opts
 
     def init_graph(self, datum, options, index=0, **kwargs):
-        """
-        Initialize the plotly components that will represent the element
+        """Initialize the plotly components that will represent the element
 
         Parameters
         ----------
-        datum: dict
+        datum : dict
             An element of the data list returned by the get_data method
-        options: dict
+        options : dict
             Graph options that were returned by the graph_options method
-        index: int
+        index : int
             Index of datum in the original list returned by the get_data method
 
         Returns
         -------
         dict
-            Dictionary of the plotly components that represent the element.
-            Keys may include:
-             - 'traces': List of trace dicts
-             - 'annotations': List of annotations dicts
-             - 'images': List of image dicts
-             - 'shapes': List of shape dicts
+            Dictionary of the plotly components that represent the element. Keys may include:
+                - 'traces': List of trace dicts
+                - 'annotations': List of annotations dicts
+                - 'images': List of image dicts
+                - 'shapes': List of shape dicts
         """
         trace = dict(options)
         for k, v in datum.items():
@@ -313,9 +316,21 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
 
     def get_aspect(self, xspan, yspan):
+        """Computes the aspect ratio of the plot
+
         """
-        Computes the aspect ratio of the plot
-        """
+        if self.aspect == 'equal' and (
+            isinstance(xspan, util.datetime_types) ^ isinstance(yspan, util.datetime_types)
+            or isinstance(xspan, util.timedelta_types) ^ isinstance(yspan, util.timedelta_types)
+        ):
+            msg = (
+                "The aspect is set to 'equal', but the axes does not have the same type: "
+                f"x-axis {type(xspan).__name__} and y-axis {type(yspan).__name__}. "
+                "Either have the axes be the same type or or set '.opts(aspect=)' "
+                "to either a number or 'square'."
+            )
+            raise TypeError(msg)
+
         return self.width/self.height
 
 
@@ -325,6 +340,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         Should return a list of dimensions or list of lists of
         dimensions, which will be formatted to label the axis
         and to link axes.
+
         """
         dims = element.dimensions()[:3]
         pad = [None]*max(3-len(dims), 0)
@@ -334,20 +350,20 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     def _apply_transforms(self, element, ranges, style):
         new_style = dict(style)
         for k, v in dict(style).items():
-            if isinstance(v, str):
+            if isinstance(v, (Dimension, str)):
                 if k == 'marker' and v in 'xsdo':
                     continue
                 elif v in element:
-                    v = dim(v)
+                    v = dim(element.get_dimension(v))
                 elif any(d==v for d in self.overlay_dims):
-                    v = dim([d for d in self.overlay_dims if d==v][0])
+                    v = dim(next(d for d in self.overlay_dims if d==v))
 
             if not isinstance(v, dim):
                 continue
             elif (not v.applies(element) and v.dimension not in self.overlay_dims):
                 new_style.pop(k)
-                self.param.warning('Specified {} dim transform {!r} could not be applied, as not all '
-                             'dimensions could be resolved.'.format(k, v))
+                self.param.warning(f'Specified {k} dim transform {v!r} could not be applied, as not all '
+                             'dimensions could be resolved.')
                 continue
 
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:
@@ -362,17 +378,15 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             if not util.isscalar(val):
                 if k in self._nonvectorized_styles:
                     element = type(element).__name__
-                    raise ValueError('Mapping a dimension to the "{style}" '
+                    raise ValueError(f'Mapping a dimension to the "{k}" '
                                      'style option is not supported by the '
-                                     '{element} element using the {backend} '
-                                     'backend. To map the "{dim}" dimension '
-                                     'to the {style} use a groupby operation '
-                                     'to overlay your data along the dimension.'.format(
-                                         style=k, dim=v.dimension, element=element,
-                                         backend=self.renderer.backend))
+                                     f'{element} element using the {self.renderer.backend} '
+                                     f'backend. To map the "{v.dimension}" dimension '
+                                     f'to the {k} use a groupby operation '
+                                     'to overlay your data along the dimension.')
 
             # If color is not valid colorspec add colormapper
-            numeric = isinstance(val, np.ndarray) and val.dtype.kind in 'uifMm'
+            numeric = isinstance(val, np.ndarray) and dtype_kind(val) in 'uifMm'
             if ('color' in k and isinstance(val, np.ndarray) and numeric):
                 copts = self.get_color_opts(v, element, ranges, style)
                 new_style.pop('cmap', None)
@@ -380,16 +394,24 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             new_style[k] = val
         return new_style
 
+    def _format_title(self, key, separator=' '):
+      """Formats the title of the plot.
+
+      """
+      title = super()._format_title(key, separator)
+
+      if self.fontsize is not None and "title" in self.fontsize:
+          title = {"text": title, "font": {"size": self.fontsize["title"]}}
+
+      return title
 
     def init_layout(self, key, element, ranges, is_geo=False):
         el = element.traverse(lambda x: x, [Element])
         el = el[0] if el else element
-
         layout = dict(
             title=self._format_title(key, separator=' '),
             plot_bgcolor=self.bgcolor, uirevision=True
         )
-
         if not self.responsive:
             layout['width'] = self.width
             layout['height'] = self.height
@@ -526,7 +548,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                     max_y_zoom = (np.log2(max_delta / y_delta) -
                                 np.log2(mapbox_tile_size / viewport_height))
                 mapbox["zoom"] = min(max_x_zoom, max_y_zoom)
-            layout["mapbox"] = mapbox
+            layout[PLOTLY_MAP] = mapbox
 
         if isinstance(self.projection, str) and self.projection == '3d':
             scene = dict(xaxis=xaxis, yaxis=yaxis)
@@ -556,7 +578,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         axis_props = {}
         if isinstance(ticker, (tuple, list)):
             if all(isinstance(t, tuple) for t in ticker):
-                ticks, labels = zip(*ticker)
+                ticks, labels = zip(*ticker, strict=None)
                 labels = [l if isinstance(l, str) else str(l)
                               for l in labels]
                 axis_props['tickvals'] = ticks
@@ -566,9 +588,9 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             axis.update(axis_props)
 
     def update_frame(self, key, ranges=None, element=None, is_geo=False):
-        """
-        Updates an existing plot with data corresponding
+        """Updates an existing plot with data corresponding
         to the key.
+
         """
         self.generate_plot(key, ranges, element, is_geo=is_geo)
 
@@ -609,7 +631,7 @@ class ColorbarPlot(ElementPlot):
                 if isinstance(eldim, dim):
                     title = str(eldim)
                     if eldim.ops:
-                        title = title
+                        pass
                     elif title.startswith("dim('") and title.endswith("')"):
                         title = title[5:-2]
                     else:
@@ -627,7 +649,7 @@ class ColorbarPlot(ElementPlot):
                 cmin, cmax = self.clim
             elif dim_name in ranges:
                 if self.clim_percentile and 'robust' in ranges[dim_name]:
-                    low, high = ranges[dim_name]['robust']
+                    cmin, cmax = ranges[dim_name]['robust']
                 else:
                     cmin, cmax = ranges[dim_name]['combined']
             elif isinstance(eldim, dim):
@@ -678,11 +700,11 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         'padding', 'xlabel', 'ylabel', 'zlabel', 'xlim', 'ylim', 'zlim']
 
     def initialize_plot(self, ranges=None, is_geo=False):
-        """
-        Initializes a new plot object with the last available frame.
+        """Initializes a new plot object with the last available frame.
+
         """
         # Get element key and ranges for frame
-        return self.generate_plot(list(self.hmap.data.keys())[0], ranges, is_geo=is_geo)
+        return self.generate_plot(next(iter(self.hmap.data.keys())), ranges, is_geo=is_geo)
 
     def generate_plot(self, key, ranges, element=None, is_geo=False):
         if element is None:
@@ -710,7 +732,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
         for okey, subplot in self.subplots.items():
             if element is not None and subplot.drawn:
-                idx, spec, exact = self._match_subplot(okey, subplot, items, element)
+                idx, _spec, _exact = self._match_subplot(okey, subplot, items, element)
                 if idx is not None:
                     _, el = items.pop(idx)
                 else:

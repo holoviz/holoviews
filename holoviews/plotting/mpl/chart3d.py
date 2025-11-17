@@ -2,22 +2,21 @@ import numpy as np
 import param
 from matplotlib import cm
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
-from packaging.version import Version
 
 from ...core import Dimension
 from ...core.options import abbreviated_exception
 from ...util.transform import dim as dim_expr
 from ..util import map_colors
-from .element import ColorbarPlot
 from .chart import PointPlot
+from .element import ColorbarPlot
 from .path import PathPlot
-from .util import mpl_version
+from .util import MPL_VERSION
 
 
 class Plot3D(ColorbarPlot):
-    """
-    Plot3D provides a common baseclass for mplot3d based
+    """Plot3D provides a common baseclass for mplot3d based
     plots.
+
     """
 
     azimuth = param.Integer(default=-60, bounds=(-180, 180), doc="""
@@ -38,28 +37,28 @@ class Plot3D(ColorbarPlot):
     labelled = param.List(default=['x', 'y', 'z'], doc="""
         Whether to plot the 'x', 'y' and 'z' labels.""")
 
-    projection = param.ObjectSelector(default='3d', objects=['3d'], doc="""
+    projection = param.Selector(default='3d', objects=['3d'], doc="""
         The projection of the matplotlib axis.""")
 
     show_grid = param.Boolean(default=True, doc="""
         Whether to draw a grid in the figure.""")
 
-    xaxis = param.ObjectSelector(default='fixed',
+    xaxis = param.Selector(default='fixed',
                                  objects=['fixed', None], doc="""
         Whether and where to display the xaxis.""")
 
-    yaxis = param.ObjectSelector(default='fixed',
+    yaxis = param.Selector(default='fixed',
                                  objects=['fixed', None], doc="""
         Whether and where to display the yaxis.""")
 
-    zaxis = param.ObjectSelector(default='fixed',
+    zaxis = param.Selector(default='fixed',
                                  objects=['fixed', None], doc="""
         Whether and where to display the yaxis.""")
 
     def _finalize_axis(self, key, **kwargs):
-        """
-        Extends the ElementPlot _finalize_axis method to set appropriate
+        """Extends the ElementPlot _finalize_axis method to set appropriate
         labels, and axes options for 3D Plots.
+
         """
         axis = self.handles['axis']
         self.handles['fig'].set_frameon(False)
@@ -84,7 +83,7 @@ class Plot3D(ColorbarPlot):
         if self.disable_axes:
             axis.set_axis_off()
 
-        if mpl_version <= Version('1.5.9'):
+        if MPL_VERSION <= (1, 5, 9):
             axis.set_axis_bgcolor(self.bgcolor)
         else:
             axis.set_facecolor(self.bgcolor)
@@ -116,10 +115,10 @@ class Plot3D(ColorbarPlot):
 
 
 class Scatter3DPlot(Plot3D, PointPlot):
-    """
-    Subclass of PointPlot allowing plotting of Points
+    """Subclass of PointPlot allowing plotting of Points
     on a 3D axis, also allows mapping color and size
     onto a particular Dimension of the data.
+
     """
 
     color_index = param.ClassSelector(default=None, class_=(str, int),
@@ -154,8 +153,8 @@ class Scatter3DPlot(Plot3D, PointPlot):
 
 
 class Path3DPlot(Plot3D, PathPlot):
-    """
-    Allows plotting paths on a 3D axis.
+    """Allows plotting paths on a 3D axis.
+
     """
 
     style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible', 'cmap']
@@ -186,17 +185,17 @@ class Path3DPlot(Plot3D, PathPlot):
 
 
 class SurfacePlot(Plot3D):
-    """
-    Plots surfaces wireframes and contours in 3D space.
+    """Plots surfaces wireframes and contours in 3D space.
     Provides options to switch the display type via the
     plot_type parameter has support for a number of
     styling options including strides and colors.
+
     """
 
     colorbar = param.Boolean(default=False, doc="""
         Whether to add a colorbar to the plot.""")
 
-    plot_type = param.ObjectSelector(default='surface',
+    plot_type = param.Selector(default='surface',
                                      objects=['surface', 'wireframe',
                                               'contour'], doc="""
         Specifies the type of visualization for the Surface object.
@@ -224,7 +223,7 @@ class SurfacePlot(Plot3D):
         if self.invert_axes:
             coords = coords[::-1]
             data = data.T
-        cmesh_data = coords + [data]
+        cmesh_data = [*coords, data]
 
         if self.plot_type != 'wireframe' and 'cmap' in style:
             self._norm_kwargs(element, ranges, style, element.vdims[0])
@@ -233,9 +232,9 @@ class SurfacePlot(Plot3D):
 
 
 class TriSurfacePlot(Plot3D):
-    """
-    Plots a trisurface given a TriSurface element, containing
+    """Plots a trisurface given a TriSurface element, containing
     X, Y and Z coordinates.
+
     """
 
     colorbar = param.Boolean(default=False, doc="""

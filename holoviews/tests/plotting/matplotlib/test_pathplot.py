@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 
 from holoviews.core import NdOverlay
-from holoviews.core.spaces import HoloMap
-from holoviews.element import Polygons, Contours, Path
 from holoviews.core.options import AbbreviatedException
+from holoviews.core.spaces import HoloMap
+from holoviews.element import Contours, Path, Polygons
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -57,6 +57,72 @@ class TestPathPlot(TestMPLPlot):
         self.assertEqual(artist.get_linewidths(), [1, 7, 3, 2])
         plot.update((1,))
         self.assertEqual(artist.get_linewidths(), [3, 8, 2, 3])
+
+    def test_path_style_mapped_scalar_color_segments_array_and_cmap(self):
+        # Five paths, scalar 'c' per geometry; style-mapped color
+        n_pts = 3
+        data = [
+            {'x': np.arange(n_pts) + x,
+             'y': np.arange(n_pts) + 1,
+             'c': x * 10}
+            for x in range(5)
+        ]
+        path = Path(data, vdims=['c']).opts(color='c', cmap='viridis', colorbar=True)
+        plot = mpl_renderer.get_plot(path)
+        artist = plot.handles['artist']
+
+        # Must have a colormap and a data array
+        assert artist.get_cmap() is not None
+        arr = artist.get_array()
+        assert arr is not None
+
+        assert len(arr) == 5
+        # Value range should reflect our scalar-per-geometry inputs (0-40)
+        assert float(arr.min()) == 0.0
+        assert float(arr.max()) == 40.0
+
+    def test_path_style_mapped_per_vertex_color_segments_array(self):
+        # Five paths, per-vertex 'c' values; style-mapped color
+        n_pts = 7
+        data = [
+            {'x': np.arange(n_pts) + x,
+             'y': np.arange(n_pts) + 1,
+             'c': np.full(n_pts, x * 10)}  # per-vertex constant per geometry
+            for x in range(5)
+        ]
+        path = Path(data, vdims=['c']).opts(color='c', cmap='viridis', colorbar=True)
+        plot = mpl_renderer.get_plot(path)
+        artist = plot.handles['artist']
+
+        arr = artist.get_array()
+        assert arr is not None
+        assert len(arr) == 5
+        # Range again spans 0-40 for these inputs
+        assert float(arr.min()) == 0.0
+        assert float(arr.max()) == 40.0
+
+    def test_path_color_mapping(self):
+        n_pts = 3
+        data = [
+            {'x': np.arange(n_pts) + x,
+             'y': np.arange(n_pts) + 1,
+             'c': x * 10}
+            for x in range(5)
+        ]
+        path = Path(data, vdims=["c"]).opts(color="c", cmap="viridis", colorbar=True)
+
+        plot = mpl_renderer.get_plot(path)
+        artist = plot.handles['artist']
+
+        # Check that the color array has the expected values
+        arr = artist.get_array()
+        expected = np.array([0, 10, 20, 30, 40])
+        np.testing.assert_array_equal(arr, expected)
+
+        # Check that colormap is properly set
+        assert artist.get_cmap() is not None
+        # Check color limits span the full range
+        assert artist.get_clim() == (0, 40)
 
 
 class TestPolygonPlot(TestMPLPlot):

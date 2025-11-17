@@ -1,7 +1,16 @@
+import pytest
+from bokeh.models import Tool
+
+import holoviews as hv
 from holoviews.core import Store
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.plotting.bokeh.util import filter_batched_data, glyph_order
 from holoviews.plotting.bokeh.styles import expand_batched_style
+from holoviews.plotting.bokeh.util import (
+    TOOL_TYPES,
+    filter_batched_data,
+    glyph_order,
+    select_legends,
+)
 
 bokeh_renderer = Store.renderers['bokeh']
 
@@ -74,3 +83,37 @@ class TestBokehUtilsInstantiation(ComparisonTestCase):
         order = glyph_order(['scatter_1', 'patch_1', 'rect_1'],
                             ['scatter', 'patch'])
         self.assertEqual(order, ['scatter_1', 'patch_1', 'rect_1'])
+
+@pytest.mark.usefixtures("bokeh_backend")
+@pytest.mark.parametrize(
+    "figure_index,expected",
+    [
+        (0, [True, False]),
+        (1, [False, True]),
+        ([0], [True, False]),
+        ([1], [False, True]),
+        ([0, 1], [True, True]),
+        (True, [True, True]),
+        (False, [False, False]),
+        (None, [True, False]),
+    ],
+    ids=["int0", "int1", "list0", "list1", "list01", "True", "False", "None"],
+)
+def test_select_legends_figure_index(figure_index, expected):
+    overlays = [
+        hv.Curve([0, 0]) * hv.Curve([1, 1]),
+        hv.Curve([2, 2]) * hv.Curve([3, 3]),
+    ]
+    layout = hv.Layout(overlays)
+    select_legends(layout, figure_index)
+    output = [ol.opts["show_legend"] for ol in overlays]
+    assert expected == output
+
+
+def test_bokeh_tools_types():
+    bk_tools = Tool._known_aliases
+    assert len(bk_tools) == len(TOOL_TYPES)
+    assert sorted(bk_tools) == sorted(TOOL_TYPES)
+
+    for key in bk_tools:
+        assert isinstance(bk_tools[key](), TOOL_TYPES[key]), key

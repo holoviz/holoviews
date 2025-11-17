@@ -1,5 +1,4 @@
-"""
-The magics offered by the HoloViews IPython extension are powerful and
+"""The magics offered by the HoloViews IPython extension are powerful and
 support rich, compositional specifications. To avoid the the brittle,
 convoluted code that results from trying to support the syntax in pure
 Python, this file defines suitable parsers using pyparsing that are
@@ -7,6 +6,7 @@ cleaner and easier to understand.
 
 Pyparsing is required by matplotlib and will therefore be available if
 HoloViews is being used in conjunction with matplotlib.
+
 """
 from itertools import groupby
 
@@ -14,7 +14,7 @@ import numpy as np
 import param
 import pyparsing as pp
 
-from ..core.options import Options, Cycle, Palette
+from ..core.options import Cycle, Options, Palette
 from ..core.util import merge_option_dicts
 from ..operation import Compositor
 from .transform import dim
@@ -29,10 +29,11 @@ allowed = r'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&\
 class ParserWarning(param.Parameterized):pass
 parsewarning = ParserWarning(name='Warning')
 
+
 class Parser:
-    """
-    Base class for magic line parsers, designed for forgiving parsing
+    """Base class for magic line parsers, designed for forgiving parsing
     of keyword lists.
+
     """
 
     # Static namespace set in __init__.py of the extension
@@ -42,7 +43,9 @@ class Parser:
 
     @classmethod
     def _strip_commas(cls, kw):
-        "Strip out any leading/training commas from the token"
+        """Strip out any leading/training commas from the token
+
+        """
         kw = kw[:-1] if kw[-1]==',' else kw
         return kw[1:] if kw[0]==',' else kw
 
@@ -61,8 +64,8 @@ class Parser:
 
     @classmethod
     def collect_tokens(cls, parseresult, mode):
-        """
-        Collect the tokens from a (potentially) nested parse result.
+        """Collect the tokens from a (potentially) nested parse result.
+
         """
         inner = '(%s)' if mode=='parens' else '[%s]'
         if parseresult is None: return []
@@ -78,14 +81,16 @@ class Parser:
         return tokens
 
     @classmethod
-    def todict(cls, parseresult, mode='parens', ns={}):
-        """
-        Helper function to return dictionary given the parse results
+    def todict(cls, parseresult, mode='parens', ns=None):
+        """Helper function to return dictionary given the parse results
         from a pyparsing.nestedExpr object (containing keywords).
 
         The ns is a dynamic namespace (typically the IPython Notebook
         namespace) used to update the class-level namespace.
+
         """
+        if ns is None:
+            ns = {}
         grouped, kwargs = [], {}
         tokens = cls.collect_tokens(parseresult, mode)
         # Group tokens without '=' and append to last token containing '='
@@ -113,17 +118,16 @@ class Parser:
                                    dict(cls.namespace, **ns)))
             except Exception:
                 if cls.abort_on_eval_failure:
-                    raise SyntaxError(f"Could not evaluate keyword: {keyword!r}")
+                    raise SyntaxError(f"Could not evaluate keyword: {keyword!r}") from None
                 msg = "Ignoring keyword pair that fails to evaluate: '%s'"
-                parsewarning.warning(msg % keyword)
+                parsewarning.param.warning(msg % keyword)
 
         return kwargs
 
 
 
 class OptsSpec(Parser):
-    """
-    An OptsSpec is a string specification that describes an
+    """An OptsSpec is a string specification that describes an
     OptionTree. It is a list of tree path specifications (using dotted
     syntax) separated by keyword lists for any of the style, plotting
     or normalization options. These keyword lists are denoted
@@ -135,7 +139,7 @@ class OptsSpec(Parser):
 
     For instance, the following string:
 
-    Image (interpolation=None) plot(show_title=False) Curve style(color='r')
+        Image (interpolation=None) plot(show_title=False) Curve style(color='r')
 
     Would specify an OptionTree where Image has "interpolation=None"
     for style and 'show_title=False' for plot options. The Curve has a
@@ -145,6 +149,7 @@ class OptsSpec(Parser):
     optional and additional spaces are often allowed. The only
     restriction is that keywords *must* be immediately followed by the
     '=' sign (no space).
+
     """
 
     plot_options_short = pp.nestedExpr('[',
@@ -217,10 +222,10 @@ class OptsSpec(Parser):
 
     @classmethod
     def process_normalization(cls, parse_group):
-        """
-        Given a normalization parse group (i.e. the contents of the
+        """Given a normalization parse group (i.e. the contents of the
         braces), validate the option list and compute the appropriate
         integer value for the normalization plotting option.
+
         """
         if ('norm_options' not in parse_group): return None
         opts = parse_group['norm_options'][0].asList()
@@ -231,7 +236,7 @@ class OptsSpec(Parser):
         for normopt in options:
             if opts.count(normopt) > 1:
                 raise SyntaxError("Normalization specification must not"
-                                  " contain repeated %r" % normopt)
+                                  f" contain repeated {normopt!r}")
 
         if not all(opt in options for opt in opts):
             raise SyntaxError(f"Normalization option not one of {', '.join(options)}")
@@ -239,7 +244,7 @@ class OptsSpec(Parser):
         for pair in excluded:
             if all(exclude in opts for exclude in pair):
                 raise SyntaxError("Normalization specification cannot"
-                                  " contain both {} and {}".format(pair[0], pair[1]))
+                                  f" contain both {pair[0]} and {pair[1]}")
 
         # If unspecified, default is -axiswise and -framewise
         if len(opts) == 1 and opts[0].endswith('framewise'):
@@ -258,14 +263,14 @@ class OptsSpec(Parser):
 
     @classmethod
     def _group_paths_without_options(cls, line_parse_result):
-        """
-        Given a parsed options specification as a list of groups, combine
+        """Given a parsed options specification as a list of groups, combine
         groups without options with the first subsequent group which has
         options.
         A line of the form
             'A B C [opts] D E [opts_2]'
         results in
             [({A, B, C}, [opts]), ({D, E}, [opts_2])]
+
         """
         active_pathspecs = set()
         for group in line_parse_result:
@@ -288,22 +293,26 @@ class OptsSpec(Parser):
 
     @classmethod
     def apply_deprecations(cls, path):
-        "Convert any potentially deprecated paths and issue appropriate warnings"
+        """Convert any potentially deprecated paths and issue appropriate warnings
+
+        """
         split = path.split('.')
         msg = 'Element {old} deprecated. Use {new} instead.'
         for old, new in cls.deprecations:
             if split[0] == old:
                 parsewarning.warning(msg.format(old=old, new=new))
-                return '.'.join([new] + split[1:])
+                return '.'.join([new, *split[1:]])
         return path
 
 
     @classmethod
-    def parse(cls, line, ns={}):
-        """
-        Parse an options specification, returning a dictionary with
+    def parse(cls, line, ns=None):
+        """Parse an options specification, returning a dictionary with
         path keys and {'plot':<options>, 'style':<options>} values.
+
         """
+        if ns is None:
+            ns = {}
         parses  = [p for p in cls.opts_spec.scanString(line)]
         if len(parses) != 1:
             raise SyntaxError("Invalid specification syntax.")
@@ -344,11 +353,13 @@ class OptsSpec(Parser):
         }
 
     @classmethod
-    def parse_options(cls, line, ns={}):
-        """
-        Similar to parse but returns a list of Options objects instead
+    def parse_options(cls, line, ns=None):
+        """Similar to parse but returns a list of Options objects instead
         of the dictionary format.
+
         """
+        if ns is None:
+            ns = {}
         parsed = cls.parse(line, ns=ns)
         options_list = []
         for spec in sorted(parsed.keys()):
@@ -363,20 +374,24 @@ class OptsSpec(Parser):
 
 
 class CompositorSpec(Parser):
-    """
-    The syntax for defining a set of compositor is as follows:
+    """The syntax for defining a set of compositor is as follows:
 
     [ mode op(spec) [settings] value ]+
 
     The components are:
 
-    mode      : Operation mode, either 'data' or 'display'.
-    group     : Value identifier with capitalized initial letter.
-    op        : The name of the operation to apply.
-    spec      : Overlay specification of form (A * B) where A and B are
-                 dotted path specifications.
-    settings  : Optional list of keyword arguments to be used as
-                parameters to the operation (in square brackets).
+        mode      : Operation mode, either 'data' or 'display'.
+
+        group     : Value identifier with capitalized initial letter.
+
+        op        : The name of the operation to apply.
+
+        spec      : Overlay specification of form (A * B) where A and B are
+        dotted path specifications.
+
+        settings  : Optional list of keyword arguments to be used as
+        parameters to the operation (in square brackets).
+
     """
 
     mode = pp.Word(pp.alphas+pp.nums+'_').setResultsName("mode")
@@ -400,10 +415,12 @@ class CompositorSpec(Parser):
 
 
     @classmethod
-    def parse(cls, line, ns={}):
+    def parse(cls, line, ns=None):
+        """Parse compositor specifications, returning a list Compositors
+
         """
-        Parse compositor specifications, returning a list Compositors
-        """
+        if ns is None:
+            ns = {}
         definitions = []
         parses  = [p for p in cls.compositor_spec.scanString(line)]
         if len(parses) != 1:
@@ -426,8 +443,7 @@ class CompositorSpec(Parser):
             spec = ' '.join(group['spec'].asList()[0])
 
             if  group['op'] not in opmap:
-                raise SyntaxError("Operation %s not available for use with compositors."
-                                  % group['op'])
+                raise SyntaxError("Operation {} not available for use with compositors.".format(group['op']))
             if  'op_settings' in group:
                 kwargs = cls.todict(group['op_settings'][0], 'brackets', ns=ns)
 

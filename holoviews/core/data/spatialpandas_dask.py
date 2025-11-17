@@ -70,7 +70,7 @@ class DaskSpatialPandasInterface(SpatialPandasInterface):
 
     @classmethod
     def iloc(cls, dataset, index):
-        rows, cols = index
+        rows, _cols = index
         if rows is not None:
             raise NotImplementedError
         return super().iloc(dataset, index)

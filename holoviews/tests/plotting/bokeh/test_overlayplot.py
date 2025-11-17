@@ -1,17 +1,27 @@
 import numpy as np
+import pandas as pd
 import panel as pn
+import pytest
+from bokeh.models import FactorRange, FixedTicker, HoverTool, Range1d, Span
 
-from holoviews.core import NdOverlay, HoloMap, DynamicMap, Overlay
-from holoviews.core.options import Cycle
-from holoviews.element import Bars, Box, Curve, ErrorBars, HLine, Points, Scatter, Text, VLine
-from holoviews.streams import Stream, Tap
-from holoviews.util import Dynamic
+from holoviews.core import DynamicMap, HoloMap, NdOverlay, Overlay
+from holoviews.element import (
+    Bars,
+    Box,
+    Curve,
+    ErrorBars,
+    HLine,
+    Points,
+    Scatter,
+    Text,
+    VLine,
+)
 from holoviews.plotting.bokeh.util import property_to_dict
+from holoviews.streams import Pipe, Stream, Tap
+from holoviews.util import Dynamic
 
 from ...utils import LoggingComparisonTestCase
 from .test_plot import TestBokehPlot, bokeh_renderer
-
-from bokeh.models import FixedTicker, HoverTool, FactorRange, Span, Range1d
 
 
 class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
@@ -186,7 +196,7 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(x_range.factors, ['A', 'B', 'C', 'D', 'E'])
         self.assertIsInstance(y_range, Range1d)
         error_plot = plot.subplots[('ErrorBars', 'I')]
-        for xs, factor in zip(error_plot.handles['source'].data['base'], factors):
+        for xs, factor in zip(error_plot.handles['source'].data['base'], factors, strict=None):
             self.assertEqual(factor, xs)
 
     def test_overlay_categorical_two_level(self):
@@ -270,11 +280,147 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         _, vline_plot = plot.subplots.values()
         assert vline_plot.handles['glyph'].location == 1
 
-    def test_overlay_iterable(self):
-        # Related to https://github.com/holoviz/holoviews/issues/5315
-        c1 = Curve([0, 1])
-        c2 = Curve([10, 20])
-        Overlay({'a': c1, 'b': c2}.values())
+    def test_ndoverlay_subcoordinate_y_no_batching(self):
+        overlay = NdOverlay({
+            i: Curve(np.arange(10)*i).opts(subcoordinate_y=True) for i in range(10)
+        }).opts(legend_limit=1)
+        plot = bokeh_renderer.get_plot(overlay)
+
+        assert plot.batched == False
+        assert len(plot.subplots) == 10
+
+    def test_ndoverlay_subcoordinate_y_ranges(self):
+        data = {
+            'x': np.arange(10),
+            'A': np.arange(10),
+            'B': np.arange(10)*2,
+            'C': np.arange(10)*3
+        }
+        overlay = NdOverlay({
+            'A': Curve(data, 'x', ('A', 'y')).opts(subcoordinate_y=True),
+            'B': Curve(data, 'x', ('B', 'y')).opts(subcoordinate_y=True),
+            'C': Curve(data, 'x', ('C', 'y')).opts(subcoordinate_y=True),
+        })
+        plot = bokeh_renderer.get_plot(overlay)
+
+        assert plot.state.y_range.start == -0.5
+        assert plot.state.y_range.end == 2.5
+        for sp in plot.subplots.values():
+            assert sp.handles['y_range'].start == 0
+            assert sp.handles['y_range'].end == 27
+
+    def test_ndoverlay_subcoordinate_y_ranges_update(self):
+        def lines(data):
+            return NdOverlay({
+                'A': Curve(data, 'x', ('A', 'y1')).opts(subcoordinate_y=True, framewise=True),
+                'B': Curve(data, 'x', ('B', 'y2')).opts(subcoordinate_y=True, framewise=True),
+                'C': Curve(data, 'x', ('C', 'y3')).opts(subcoordinate_y=True, framewise=True),
+            })
+        data = {
+            'x': np.arange(10),
+            'A': np.arange(10),
+            'B': np.arange(10)*2,
+            'C': np.arange(10)*3
+        }
+        stream = Pipe(data=data)
+        dmap = DynamicMap(lines, streams=[stream])
+        plot = bokeh_renderer.get_plot(dmap)
+
+        assert plot.state.y_range.start == -0.5
+        assert plot.state.y_range.end == 2.5
+        for sp in plot.subplots.values():
+            y_range = sp.handles['y_range']
+            assert y_range.start == 0
+            assert y_range.end == data[y_range.name].max()
+
+        new_data = {
+            'x': np.arange(10),
+            'A': data['A'] + 1,
+            'B': data['B'] + 2,
+            'C': data['C'] + 3
+        }
+        stream.event(data=new_data)
+        for sp in plot.subplots.values():
+            y_range = sp.handles['y_range']
+            ydata = new_data[y_range.name]
+            assert y_range.start == ydata.min()
+            assert y_range.end == ydata.max()
+
+    def test_overlay_subcoordinate_y_ranges(self):
+        data = {
+            'x': np.arange(10),
+            'A': np.arange(10),
+            'B': np.arange(10)*2,
+            'C': np.arange(10)*3
+        }
+        overlay = Overlay([
+            Curve(data, 'x', ('A', 'y'), label='A').opts(subcoordinate_y=True),
+            Curve(data, 'x', ('B', 'y'), label='B').opts(subcoordinate_y=True),
+            Curve(data, 'x', ('C', 'y'), label='C').opts(subcoordinate_y=True),
+        ])
+        plot = bokeh_renderer.get_plot(overlay)
+
+        assert plot.state.y_range.start == -0.5
+        assert plot.state.y_range.end == 2.5
+        for sp in plot.subplots.values():
+            assert sp.handles['y_range'].start == 0
+            assert sp.handles['y_range'].end == 27
+
+    def test_overlay_subcoordinate_y_ranges_update(self):
+        def lines(data):
+            return Overlay([
+                Curve(data, 'x', ('A', 'y1'), label='A').opts(subcoordinate_y=True, framewise=True),
+                Curve(data, 'x', ('B', 'y2'), label='B').opts(subcoordinate_y=True, framewise=True),
+                Curve(data, 'x', ('C', 'y3'), label='C').opts(subcoordinate_y=True, framewise=True),
+            ])
+        data = {
+            'x': np.arange(10),
+            'A': np.arange(10),
+            'B': np.arange(10)*2,
+            'C': np.arange(10)*3
+        }
+        stream = Pipe(data=data)
+        dmap = DynamicMap(lines, streams=[stream])
+        plot = bokeh_renderer.get_plot(dmap)
+
+        assert plot.state.y_range.start == -0.5
+        assert plot.state.y_range.end == 2.5
+        for sp in plot.subplots.values():
+            y_range = sp.handles['y_range']
+            assert y_range.start == 0
+            assert y_range.end == data[y_range.name].max()
+
+        new_data = {
+            'x': np.arange(10),
+            'A': data['A'] + 1,
+            'B': data['B'] + 2,
+            'C': data['C'] + 3
+        }
+        stream.event(data=new_data)
+        for sp in plot.subplots.values():
+            y_range = sp.handles['y_range']
+            ydata = new_data[y_range.name]
+            assert y_range.start == ydata.min()
+            assert y_range.end == ydata.max()
+
+
+@pytest.mark.parametrize('order', [("str", "date"), ("date", "str")])
+def test_ndoverlay_categorical_y_ranges(order):
+    df = pd.DataFrame(
+        {
+            "str": ["apple", "banana", "cherry", "date", "elderberry"],
+            "date": pd.to_datetime(
+                ["2023-01-01", "2023-02-14", "2023-03-21", "2023-04-30", "2023-05-15"]
+            ),
+        }
+    )
+    overlay = NdOverlay(
+        {col: Scatter(df, kdims="index", vdims=col) for col in order}
+    )
+    plot = bokeh_renderer.get_plot(overlay)
+    output = plot.handles["y_range"].factors
+    expected = sorted(map(str, df.values.ravel()))
+    assert output == expected
 
 
 class TestLegends(TestBokehPlot):
@@ -291,21 +437,6 @@ class TestLegends(TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay)
         legend_labels = [l.label['value'] for l in plot.state.legend[0].items]
         self.assertEqual(legend_labels, ['A Curve', 'B Curve'])
-
-    def test_dynamic_subplot_remapping(self):
-        # Checks that a plot is appropriately updated when reused
-        def cb(X):
-            return NdOverlay({i: Curve(np.arange(10)+i) for i in range(X-2, X)})
-        dmap = DynamicMap(cb, kdims=['X']).redim.range(X=(1, 10))
-        plot = bokeh_renderer.get_plot(dmap)
-        plot.update((3,))
-        legend_labels = [property_to_dict(item.label) for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': '1'}, {'value': '2'}])
-        colors = Cycle().values
-        for i, (subplot, color) in enumerate(zip(plot.subplots.values(), colors[3:])):
-            self.assertEqual(subplot.handles['glyph'].line_color, color)
-            self.assertEqual(subplot.cyclic_index, i+3)
-            self.assertEqual(list(subplot.overlay_dims.values()), [i+1])
 
     def test_holomap_legend_updates(self):
         hmap = HoloMap({i: Curve([1, 2, 3], label=chr(65+i+2)) * Curve([1, 2, 3], label='B')
@@ -341,10 +472,10 @@ class TestLegends(TestBokehPlot):
         self.assertEqual(legend_labels, [{'value': 'C'}, {'value': 'B'}])
         plot.update((1,))
         legend_labels = [property_to_dict(item.label) for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'D'}, {'value': 'B'}])
+        self.assertEqual(legend_labels, [{'value': 'B'}, {'value': 'D'}])
         plot.update((2,))
         legend_labels = [property_to_dict(item.label) for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'E'}, {'value': 'B'}])
+        self.assertEqual(legend_labels, [{'value': 'B'}, {'value': 'E'}])
 
     def test_dynamicmap_legend_updates_add_dynamic_plots(self):
         hmap = HoloMap({i: Overlay([Curve([1, 2, j], label=chr(65+j)) for j in range(i)]) for i in range(1, 4)})

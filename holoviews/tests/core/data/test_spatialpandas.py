@@ -4,12 +4,18 @@ Tests for the spatialpandas interface.
 from unittest import SkipTest
 
 import numpy as np
+import pandas as pd
 
 try:
     import spatialpandas
     from spatialpandas.geometry import (
-        MultiPolygonArray, LineDtype, PointDtype, PolygonDtype,
-        MultiLineDtype, MultiPointDtype, MultiPolygonDtype
+        LineDtype,
+        MultiLineDtype,
+        MultiPointDtype,
+        MultiPolygonArray,
+        MultiPolygonDtype,
+        PointDtype,
+        PolygonDtype,
     )
 except ImportError:
     spatialpandas = None
@@ -19,10 +25,14 @@ try:
 except ImportError:
     dd = None
 
+from holoviews import Dimension
 from holoviews.core.data import (
-    Dataset, SpatialPandasInterface, DaskSpatialPandasInterface
+    DaskSpatialPandasInterface,
+    Dataset,
+    SpatialPandasInterface,
 )
 from holoviews.core.data.interface import DataError
+from holoviews.core.data.spatialpandas import get_value_array
 from holoviews.element import Path, Points, Polygons
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -100,8 +110,8 @@ class RoundTripTests(ComparisonTestCase):
         self.assertIsInstance(poly.data.geometry.dtype, PolygonDtype)
         roundtrip = poly.clone(datatype=['multitabular'])
         self.assertEqual(roundtrip.interface.datatype, 'multitabular')
-        expected = Polygons([{'x': xs+[1], 'y': ys+[2], 'z': 0},
-                             {'x': [3]+xs, 'y': [7]+ys, 'z': 1}],
+        expected = Polygons([{'x': [*xs, 1], 'y': [*ys, 2], 'z': 0},
+                             {'x': [3, *xs], 'y': [7, *ys], 'z': 1}],
                             ['x', 'y'], 'z', datatype=['multitabular'])
         self.assertEqual(roundtrip, expected)
 
@@ -294,3 +304,14 @@ class DaskSpatialPandasTest(GeomTests, RoundTripTests):
 
     def test_sort_by_value(self):
         raise SkipTest("Not supported")
+
+
+
+def test_regression_get_value_array():
+    # See: https://github.com/holoviz/holoviews/pull/6519
+    df = pd.DataFrame(
+        {"Longitude": [0, 1, 2], "Latitude": [0, 1, 2], "Sensor": ["S1", "S2", "S1"]}
+    )
+    result = get_value_array(df, Dimension("Sensor"), False, None, None, None)
+
+    np.testing.assert_array_equal(df.Sensor, result)

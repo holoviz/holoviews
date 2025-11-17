@@ -1,18 +1,17 @@
-from unittest import skipIf
-
 import param
+import pytest
 
-from holoviews.core import HoloMap, NdOverlay, Overlay, GridSpace, DynamicMap
+from holoviews.core import DynamicMap, GridSpace, HoloMap, NdOverlay, Overlay
 from holoviews.element import Points
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import Stream, PlotSize, RangeXY
+from holoviews.streams import PlotSize, RangeXY, Stream
 
 try:
-    from holoviews.operation.datashader import spread, datashade
+    from holoviews.operation.datashader import datashade, spread
 except ImportError:
     spread = datashade = None
 
-datashade_skip = skipIf(datashade is None, "datashade is not available")
+datashade_skip = pytest.mark.skipif(datashade is None, reason="datashade is not available")
 
 
 class XY(Stream):

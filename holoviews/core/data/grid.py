@@ -1,20 +1,19 @@
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 
 import numpy as np
 
-from .dictionary import DictInterface
-from .interface import Interface, DataError
+from .. import util
 from ..dimension import dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from .. import util
-from .util import finite_range, is_dask, dask_array_module, get_array_types
-
+from ..util import dtype_kind
+from .dictionary import DictInterface
+from .interface import DataError, Interface
+from .util import dask_array_module, finite_range, get_array_types, is_dask
 
 
 class GridInterface(DictInterface):
-    """
-    Interface for simple dictionary-based dataset format using a
+    """Interface for simple dictionary-based dataset format using a
     compressed representation that uses the cartesian product between
     key dimensions. As with DictInterface, the dictionary keys correspond
     to the column (i.e. dimension) names and the values are NumPy arrays
@@ -26,9 +25,10 @@ class GridInterface(DictInterface):
     instance, given an temperature recordings sampled regularly across
     the earth surface, a list of N unique latitudes and M unique
     longitudes can specify the position of NxM temperature samples.
+
     """
 
-    types = (dict, OrderedDict)
+    types = (dict,)
 
     datatype = 'grid'
 
@@ -53,30 +53,30 @@ class GridInterface(DictInterface):
             if (len(data) != len(dimensions) and len(data) == (ndims+1) and
                 len(data[-1].shape) == (ndims+1)):
                 value_array = data[-1]
-                data = {d: v for d, v in zip(dimensions, data[:-1])}
+                data = {d: v for d, v in zip(dimensions, data[:-1], strict=None)}
                 data[vdim_tuple] = value_array
             else:
-                data = {d: v for d, v in zip(dimensions, data)}
+                data = {d: v for d, v in zip(dimensions, data, strict=None)}
         elif (isinstance(data, list) and data == []):
             if len(kdims) == 1:
-                data = OrderedDict([(d, []) for d in dimensions])
+                data = dict([(d, []) for d in dimensions])
             else:
-                data = OrderedDict([(d.name, np.array([])) for d in kdims])
+                data = dict([(d.name, np.array([])) for d in kdims])
                 if len(vdims) == 1:
                     data[vdims[0].name] = np.zeros((0, 0))
                 else:
                     data[vdim_tuple] = np.zeros((0, 0, len(vdims)))
         elif not any(isinstance(data, tuple(t for t in interface.types if t is not None))
                      for interface in cls.interfaces.values()):
-            data = {k: v for k, v in zip(dimensions, zip(*data))}
+            data = {k: v for k, v in zip(dimensions, zip(*data, strict=None), strict=None)}
         elif isinstance(data, np.ndarray):
             if data.shape == (0, 0) and len(vdims) == 1:
                 array = data
-                data = OrderedDict([(d.name, np.array([])) for d in kdims])
+                data = dict([(d.name, np.array([])) for d in kdims])
                 data[vdims[0].name] = array
             elif data.shape == (0, 0, len(vdims)):
                 array = data
-                data = OrderedDict([(d.name, np.array([])) for d in kdims])
+                data = dict([(d.name, np.array([])) for d in kdims])
                 data[vdim_tuple] = array
             else:
                 if data.ndim == 1:
@@ -123,18 +123,18 @@ class GridInterface(DictInterface):
                 if shape[-1] != len(vdims):
                     raise error('The shape of the value array does not match the number of value dimensions.')
                 shape = shape[:-1]
-            if (not expected and shape == (1,)) or (len(set((shape,)+shapes)) == 1 and len(shape) > 1):
+            if (not expected and shape == (1,)) or (len(shape) > 1 and len({shape, *shapes}) == 1):
                 # If empty or an irregular mesh
                 pass
             elif len(shape) != len(expected):
-                raise error('The shape of the %s value array does not '
+                raise error(f'The shape of the {vdim} value array does not '
                             'match the expected dimensionality indicated '
-                            'by the key dimensions. Expected %d-D array, '
-                            'found %d-D array.' % (vdim, len(expected), len(shape)))
-            elif any((s!=e and (s+1)!=e) for s, e in zip(shape, valid_shape)):
-                raise error('Key dimension values and value array {} '
-                            'shapes do not match. Expected shape {}, '
-                            'actual shape: {}'.format(vdim, valid_shape, shape), cls)
+                            f'by the key dimensions. Expected {len(expected)}-D array, '
+                            f'found {len(shape)}-D array.')
+            elif any((e not in (s, s + 1)) for s, e in zip(shape, valid_shape, strict=None)):
+                raise error(f'Key dimension values and value array {vdim} '
+                            f'shapes do not match. Expected shape {valid_shape}, '
+                            f'actual shape: {shape}', cls)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
@@ -154,7 +154,7 @@ class GridInterface(DictInterface):
 
     @classmethod
     def concat_dim(cls, datasets, dim, vdims):
-        values, grids = zip(*datasets.items())
+        values, grids = zip(*datasets.items(), strict=None)
         new_data = {k: v for k, v in grids[0].items() if k not in vdims}
         new_data[dim.name] = np.array(values)
         for vdim in vdims:
@@ -162,8 +162,8 @@ class GridInterface(DictInterface):
             shapes = {arr.shape for arr in arrays}
             if len(shapes) > 1:
                 raise DataError('When concatenating gridded data the shape '
-                                'of arrays must match. {} found that arrays '
-                                'along the {} dimension do not match.'.format(cls.__name__, vdim.name))
+                                f'of arrays must match. {cls.__name__} found that arrays '
+                                f'along the {vdim.name} dimension do not match.')
             stack = dask_array_module().stack if any(is_dask(arr) for arr in arrays) else np.stack
             new_data[vdim.name] = stack(arrays, -1)
         return new_data
@@ -188,7 +188,7 @@ class GridInterface(DictInterface):
         if not_found and tuple(not_found) not in dataset.data:
             raise DataError("Supplied data does not contain specified "
                             "dimensions, the following dimensions were "
-                            "not found: %s" % repr(not_found), cls)
+                            f"not found: {not_found!r}", cls)
 
 
     @classmethod
@@ -246,6 +246,7 @@ class GridInterface(DictInterface):
         >>> GridInterface._infer_interval_breaks([[0, 1], [3, 4]], axis=1)
         array([[-0.5,  0.5,  1.5],
                [ 2.5,  3.5,  4.5]])
+
         """
         coord = np.asarray(coord)
         if coord.shape[axis] == 0:
@@ -263,10 +264,10 @@ class GridInterface(DictInterface):
 
     @classmethod
     def coords(cls, dataset, dim, ordered=False, expanded=False, edges=False):
-        """
-        Returns the coordinates along a dimension.  Ordered ensures
+        """Returns the coordinates along a dimension.  Ordered ensures
         coordinates are in ascending order and expanded creates
         ND-array matching the dimensionality of the dataset.
+
         """
         dim = dataset.get_dimension(dim, strict=True)
         irregular = cls.irregular(dataset, dim)
@@ -298,9 +299,8 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def canonicalize(cls, dataset, data, data_coords=None, virtual_coords=[]):
-        """
-        Canonicalize takes an array of values as input and reorients
+    def canonicalize(cls, dataset, data, data_coords=None, virtual_coords=None):
+        """Canonicalize takes an array of values as input and reorients
         and transposes it to match the canonical format expected by
         plotting functions. In certain cases the dimensions defined
         via the kdims of an Element may not match the dimensions of
@@ -312,7 +312,10 @@ class GridInterface(DictInterface):
         by some interfaces (e.g. xarray) to index irregular datasets
         with a virtual integer index. This ensures these coordinates
         are not simply dropped.
+
         """
+        if virtual_coords is None:
+            virtual_coords = []
         if data_coords is None:
             data_coords = dataset.dimensions('key', label='name')[::-1]
 
@@ -375,7 +378,7 @@ class GridInterface(DictInterface):
         selected = {}
         adjusted_inds = []
         all_scalar = True
-        for kd, ind in zip(dataset.kdims[::-1], indices):
+        for kd, ind in zip(dataset.kdims[::-1], indices, strict=None):
             coords = cls.coords(dataset, kd.name, True)
             if np.isscalar(ind):
                 ind = [ind]
@@ -445,8 +448,7 @@ class GridInterface(DictInterface):
         invalid = [d for d in dimensions if dataset.data[d.name].ndim > 1]
         if invalid:
             if len(invalid) == 1: invalid = f"'{invalid[0]}'"
-            raise ValueError("Cannot groupby irregularly sampled dimension(s) %s."
-                             % invalid)
+            raise ValueError(f"Cannot groupby irregularly sampled dimension(s) {invalid}.")
 
         # Update the kwargs appropriately for Element group types
         group_kwargs = {}
@@ -466,8 +468,8 @@ class GridInterface(DictInterface):
 
         # Iterate over the unique entries applying selection masks
         grouped_data = []
-        for unique_key in zip(*util.cartesian_product(keys)):
-            select = dict(zip(dim_names, unique_key))
+        for unique_key in zip(*util.cartesian_product(keys), strict=None):
+            select = dict(zip(dim_names, unique_key, strict=None))
             if drop_dim:
                 group_data = dataset.select(**select)
                 group_data = group_data if np.isscalar(group_data) else group_data.columns()
@@ -476,7 +478,7 @@ class GridInterface(DictInterface):
 
             if np.isscalar(group_data) or (isinstance(group_data, get_array_types()) and group_data.shape == ()):
                 group_data = {dataset.vdims[0].name: np.atleast_1d(group_data)}
-                for dim, v in zip(dim_names, unique_key):
+                for dim, v in zip(dim_names, unique_key, strict=None):
                     group_data[dim] = np.atleast_1d(v)
             elif not drop_dim:
                 if isinstance(group_data, get_array_types()):
@@ -497,7 +499,7 @@ class GridInterface(DictInterface):
 
     @classmethod
     def key_select_mask(cls, dataset, values, ind):
-        if values.dtype.kind == 'M':
+        if dtype_kind(values) == 'M':
             ind = util.parse_datetime_selection(ind)
         if isinstance(ind, tuple):
             ind = slice(*ind)
@@ -557,8 +559,8 @@ class GridInterface(DictInterface):
             if irregular:
                 if np.isscalar(ind) or isinstance(ind, (set, list)):
                     raise IndexError("Indexing not supported for irregularly "
-                                     "sampled data. {} value along {} dimension."
-                                     "must be a slice or 2D boolean mask.".format(ind, dim))
+                                     f"sampled data. {ind} value along {dim} dimension."
+                                     "must be a slice or 2D boolean mask.")
                 mask = mask.max(axis=i)
             elif dataset._binned:
                 edges = cls.coords(dataset, dim, False, edges=True)
@@ -566,11 +568,11 @@ class GridInterface(DictInterface):
                 if np.isscalar(ind):
                     emin, emax = edges.min(), edges.max()
                     if ind < emin:
-                        raise IndexError("Index {} less than lower bound "
-                                         "of {} for {} dimension.".format(ind, emin, dim))
+                        raise IndexError(f"Index {ind} less than lower bound "
+                                         f"of {emin} for {dim} dimension.")
                     elif ind >= emax:
-                        raise IndexError("Index {} more than or equal to upper bound "
-                                         "of {} for {} dimension.".format(ind, emax, dim))
+                        raise IndexError(f"Index {ind} more than or equal to upper bound "
+                                         f"of {emax} for {dim} dimension.")
                     idx = max([np.digitize([ind], edges)[0]-1, 0])
                     mask = np.zeros(len(values), dtype=np.bool_)
                     mask[idx] = True
@@ -621,7 +623,7 @@ class GridInterface(DictInterface):
     def mask(cls, dataset, mask, mask_val=np.nan):
         mask = cls.canonicalize(dataset, mask)
         packed = cls.packed(dataset)
-        masked = OrderedDict(dataset.data)
+        masked = dict(dataset.data)
         if packed:
             masked = dataset.data[packed].copy()
             try:
@@ -641,10 +643,12 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def sample(cls, dataset, samples=[]):
+    def sample(cls, dataset, samples=None):
+        """Samples the gridded data into dataset of samples.
+
         """
-        Samples the gridded data into dataset of samples.
-        """
+        if samples is None:
+            samples = []
         ndims = dataset.ndims
         dimensions = dataset.dimensions(label='name')
         arrays = [dataset.data[vdim.name] for vdim in dataset.vdims]
@@ -656,15 +660,15 @@ class GridInterface(DictInterface):
                 sample = [sample[i] if i < len(sample) else None
                           for i in range(ndims)]
             sampled, int_inds = [], []
-            for d, ind in zip(dimensions, sample):
+            for d, ind in zip(dimensions, sample, strict=None):
                 cdata = dataset.data[d]
                 mask = cls.key_select_mask(dataset, cdata, ind)
                 inds = np.arange(len(cdata)) if mask is None else np.argwhere(mask)
                 int_inds.append(inds)
                 sampled.append(cdata[mask])
-            for d, arr in zip(dimensions, np.meshgrid(*sampled)):
+            for d, arr in zip(dimensions, np.meshgrid(*sampled), strict=None):
                 data[d].append(arr)
-            for vdim, array in zip(dataset.vdims, arrays):
+            for vdim, array in zip(dataset.vdims, arrays, strict=None):
                 da = dask_array_module()
                 flat_index = np.ravel_multi_index(tuple(int_inds)[::-1], array.shape)
                 if da and isinstance(array, da.Array):
@@ -742,7 +746,9 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def sort(cls, dataset, by=[], reverse=False):
+    def sort(cls, dataset, by=None, reverse=False):
+        if by is None:
+            by = []
         if not by or by in [dataset.kdims, dataset.dimensions()]:
             return dataset.data
         else:
@@ -789,22 +795,22 @@ class GridInterface(DictInterface):
 
         da = dask_array_module()
         if len(array) == 0:
-            return np.NaN, np.NaN
+            return np.nan, np.nan
 
-        if array.dtype.kind == 'M':
+        if dtype_kind(array) == 'M':
             dmin, dmax = array.min(), array.max()
         else:
             try:
                 dmin, dmax = (np.nanmin(array), np.nanmax(array))
             except TypeError:
-                return np.NaN, np.NaN
+                return np.nan, np.nan
         if da and isinstance(array, da.Array):
             return finite_range(array, *da.compute(dmin, dmax))
         return finite_range(array, dmin, dmax)
 
     @classmethod
     def assign(cls, dataset, new_data):
-        data = OrderedDict(dataset.data)
+        data = dict(dataset.data)
         for k, v in new_data.items():
             if k in dataset.kdims:
                 coords = cls.coords(dataset, k)

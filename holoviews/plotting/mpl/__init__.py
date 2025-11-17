@@ -1,13 +1,13 @@
 import os
+from contextlib import suppress
 
-from matplotlib import rc_params_from_file
-from matplotlib.colors import ListedColormap, LinearSegmentedColormap
-from param import concrete_descendents
 from colorcet import kbc, register_cmap
-from packaging.version import Version
+from matplotlib import rc_params_from_file
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap
+from param import concrete_descendents
 
-from ...core import Layout, Collator, GridMatrix, config
-from ...core.options import Cycle, Palette, Options
+from ...core import Collator, GridMatrix, Layout, config
+from ...core.options import Cycle, Options, Palette
 from ...core.overlay import NdOverlay, Overlay
 from ...element import *
 from ..plot import PlotSelector
@@ -23,27 +23,21 @@ from .hex_tiles import *
 from .path import *
 from .plot import *
 from .raster import *
+from .renderer import MPLRenderer
 from .sankey import *
 from .stats import *
 from .tabular import *
+from .util import MPL_VERSION
 
-from .renderer import MPLRenderer
-
-
-mpl_ge_150 = Version(mpl.__version__) >= Version('1.5.0')
-
-try:
+with suppress(ImportError):
     from pandas.plotting import register_matplotlib_converters
     register_matplotlib_converters()
-except ImportError:
-    from pandas.tseries import converter
-    converter.register()
 
 
 def set_style(key):
-    """
-    Select a style by name, e.g. set_style('default'). To revert to the
+    """Select a style by name, e.g. set_style('default'). To revert to the
     previous style use the key 'unset' or False.
+
     """
     if key is None:
         return
@@ -64,7 +58,7 @@ def set_style(key):
 
 # Define matplotlib based style cycles and Palettes
 def get_color_cycle():
-    if mpl_ge_150:
+    if MPL_VERSION >= (1, 5, 0):
         cyl = mpl.rcParams['axes.prop_cycle']
         # matplotlib 1.5 verifies that axes.prop_cycle *is* a cycler
         # but no guarantee that there's a `color` key.
@@ -152,6 +146,7 @@ Store.register({Curve: CurvePlot,
                                        False: HeatMapPlot},
                                       True),
                 Image: RasterPlot,
+                ImageStack: RGBPlot,
                 RGB: RGBPlot,
                 HSV: RGBPlot,
 
@@ -164,6 +159,10 @@ Store.register({Curve: CurvePlot,
                 Sankey: SankeyPlot,
 
                 # Annotation plots
+                VLines: VLinesAnnotationPlot,
+                HLines: HLinesAnnotationPlot,
+                HSpans: HSpansAnnotationPlot,
+                VSpans: VSpansAnnotationPlot,
                 VLine: VLinePlot,
                 HLine: HLinePlot,
                 VSpan: VSpanPlot,
@@ -179,6 +178,7 @@ Store.register({Curve: CurvePlot,
                 Path:     PathPlot,
                 Box:      PathPlot,
                 Bounds:   PathPlot,
+                Dendrogram: PathPlot,
                 Ellipse:  PathPlot,
                 Polygons: PolygonPlot,
 
@@ -270,12 +270,19 @@ options.Slope = Options('style', color=Cycle())
 options.VSpan = Options('style', alpha=0.5, facecolor=Cycle())
 options.HSpan = Options('style', alpha=0.5, facecolor=Cycle())
 options.Spline = Options('style', edgecolor=Cycle())
+options.HLines = Options('style', color=Cycle())
+options.VLines = Options('style', color=Cycle())
+options.VSpans = Options('style', alpha=0.5, facecolor=Cycle())
+options.HSpans = Options('style', alpha=0.5, facecolor=Cycle())
+options.Labels = Options('style', color=Cycle())
 
 options.Arrow = Options('style', color='k', linewidth=2, textsize=13)
 # Paths
 options.Contours = Options('style', color=Cycle(), cmap=dflt_cmap)
 options.Contours = Options('plot', show_legend=True)
 options.Path = Options('style', color=Cycle(), cmap=dflt_cmap)
+options.Dendrogram = Options('style', color="black")
+options.Dendrogram = Options('plot', xaxis=None, yaxis=None)
 options.Polygons = Options('style', facecolor=Cycle(), edgecolor='black',
                            cmap=dflt_cmap)
 options.Rectangles = Options('style', cmap=dflt_cmap)
@@ -306,4 +313,5 @@ options.Sankey = Options('style', edge_color='grey', node_edgecolors='black',
 # Statistics
 options.Distribution = Options('style', facecolor=Cycle(), edgecolor='black',
                                alpha=0.5)
+options.Distribution = Options('plot', show_legend=True)
 options.Violin = Options('style', facecolors=Cycle(), showextrema=False, alpha=0.7)

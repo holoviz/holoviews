@@ -1,15 +1,18 @@
 from unittest.mock import Mock
 
-import holoviews as hv
-import panel as pn
 import numpy as np
-
-from holoviews.streams import (
-    Stream, Selection1D, RangeXY, BoundsXY,
-)
-
+import panel as pn
 from bokeh.document import Document
 from pyviz_comms import Comm
+
+import holoviews as hv
+from holoviews.plotting.plotly.util import _convert_numpy_in_fig_dict
+from holoviews.streams import (
+    BoundsXY,
+    RangeXY,
+    Selection1D,
+    Stream,
+)
 
 from .test_plot import TestPlotlyPlot
 
@@ -42,7 +45,7 @@ class TestDynamicMap(TestPlotlyPlot):
         _, plotly_pane = next(iter(dmap_pane._plots.values()))
 
         # Check initial data
-        data = plotly_pane.object['data']
+        data = _convert_numpy_in_fig_dict(plotly_pane.object['data'])
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]['type'], 'scatter')
         np.testing.assert_equal(data[0]['y'], ys)
@@ -55,12 +58,12 @@ class TestDynamicMap(TestPlotlyPlot):
         scale_stream.event(scale=2.0)
 
         # Check that figure object was updated
-        data = plotly_pane.object['data']
+        data = _convert_numpy_in_fig_dict(plotly_pane.object['data'])
         np.testing.assert_equal(data[0]['y'], ys * 2.0)
 
         # Check that object callback was triggered
         fn.assert_called_once()
-        args, kwargs = fn.call_args_list[0]
+        args, _kwargs = fn.call_args_list[0]
         event = args[0]
         self.assertIs(event.obj, plotly_pane)
         self.assertIs(event.new, plotly_pane.object)
@@ -135,7 +138,7 @@ class TestInteractiveStream(TestPlotlyPlot):
         self.assertEqual(boundsxy2a.bounds, (10, 11, 20, 22))
         self.assertEqual(boundsxy2b.bounds, (10, 11, 20, 22))
 
-        # Box selecrt on third subplot
+        # Box select on third subplot
         plotly_pane.selected_data = {
             'points': [
                 {'curveNumber': 2, 'pointNumber': 0},

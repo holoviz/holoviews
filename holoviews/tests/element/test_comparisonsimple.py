@@ -5,6 +5,7 @@ Int, float, numpy array and BoundingBox comparisons are tested.
 """
 
 import numpy as np
+
 from holoviews.core import BoundingBox
 from holoviews.element.comparison import ComparisonTestCase
 

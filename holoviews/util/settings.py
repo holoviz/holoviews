@@ -1,16 +1,18 @@
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
+
 from ..core import Store
 
 
 class KeywordSettings:
-    """
-    Base class for options settings used to specified collections of
+    """Base class for options settings used to specified collections of
     keyword options.
+
     """
+
     # Dictionary from keywords to allowed bounds/values
     allowed = {}
-    defaults = OrderedDict([])  # Default keyword values.
-    options =  OrderedDict(defaults.items()) # Current options
+    defaults = dict([])  # Default keyword values.
+    options =  dict(defaults.items()) # Current options
 
     # Callables accepting (value, keyword, allowed) for custom exceptions
     custom_exceptions = {}
@@ -21,14 +23,16 @@ class KeywordSettings:
 
     @classmethod
     def update_options(cls, options, items):
-        """
-        Allows updating options depending on class attributes
+        """Allows updating options depending on class attributes
         and unvalidated options.
+
         """
 
     @classmethod
     def get_options(cls, items, options, warnfn):
-        "Given a keyword specification, validate and compute options"
+        """Given a keyword specification, validate and compute options
+
+        """
         options = cls.update_options(options, items)
         for keyword in cls.defaults:
             if keyword in items:
@@ -55,21 +59,23 @@ class KeywordSettings:
                         raise ValueError(f"Value {value!r} for key {keyword!r} not one of {allowed}")
                 elif isinstance(allowed, tuple):
                     if not (allowed[0] <= value <= allowed[1]):
-                        info = (keyword,value)+allowed
+                        info = (keyword, value, *allowed)
                         raise ValueError("Value {!r} for key {!r} not between {} and {}".format(*info))
                 options[keyword] = value
         return cls._validate(options, items, warnfn)
 
     @classmethod
     def _validate(cls, options, items, warnfn):
-        "Allows subclasses to check options are valid."
+        """Allows subclasses to check options are valid.
+
+        """
         raise NotImplementedError("KeywordSettings is an abstract base class.")
 
 
     @classmethod
     def extract_keywords(cls, line, items):
-        """
-        Given the keyword string, parse a dictionary of options.
+        """Given the keyword string, parse a dictionary of options.
+
         """
         unprocessed = list(reversed(line.split('=')))
         while unprocessed:
@@ -94,7 +100,7 @@ class KeywordSettings:
             try:
                 items.update(eval(f'dict({keyword})'))
             except Exception:
-                raise SyntaxError(f"Could not evaluate keyword: {keyword}")
+                raise SyntaxError(f"Could not evaluate keyword: {keyword}") from None
         return items
 
 
@@ -111,16 +117,16 @@ def list_backends():
 
 
 def list_formats(format_type, backend=None):
-    """
-    Returns list of supported formats for a particular
+    """Returns list of supported formats for a particular
     backend.
+
     """
     if backend is None:
         backend = Store.current_backend
-        mode = Store.renderers[backend].mode if backend in Store.renderers else None
+        _mode = Store.renderers[backend].mode if backend in Store.renderers else None
     else:
         split = backend.split(':')
-        backend, mode = split if len(split)==2 else (split[0], 'default')
+        backend, _mode = split if len(split)==2 else (split[0], 'default')
 
     if backend in Store.renderers:
         return Store.renderers[backend].mode_formats[format_type]
@@ -130,8 +136,8 @@ def list_formats(format_type, backend=None):
 
 
 class OutputSettings(KeywordSettings):
-    """
-    Class for controlling display and output settings.
+    """Class for controlling display and output settings.
+
     """
 
     # Lists: strict options, Set: suggested options, Tuple: numeric bounds.
@@ -156,7 +162,7 @@ class OutputSettings(KeywordSettings):
                                             'max-width', 'min-width', 'max-height',
                                             'min-height', 'outline', 'float']}}
 
-    defaults = OrderedDict([('backend'      , None),
+    defaults = dict([('backend'      , None),
                             ('center'       , True),
                             ('fig'          , None),
                             ('holomap'      , None),
@@ -178,7 +184,7 @@ class OutputSettings(KeywordSettings):
     render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css',
                      'widget_mode', 'mode', 'widget_location', 'center']
 
-    options = OrderedDict()
+    options = {}
     _backend_options = defaultdict(dict)
 
     # Used to disable info output in testing
@@ -215,14 +221,11 @@ class OutputSettings(KeywordSettings):
         holomap = "holomap      : The display type for holomaps"
         widgets = "widgets      : The widget mode for widgets"
         fps =    "fps          : The frames per second used for animations"
-        max_frames=  ("max_frames   : The max number of frames rendered (default %r)"
-                      % cls.defaults['max_frames'])
+        max_frames=  ("max_frames   : The max number of frames rendered (default {!r})".format(cls.defaults['max_frames']))
         size =   "size         : The percentage size of displayed output"
         dpi =    "dpi          : The rendered dpi of the figure"
-        filename =  ("filename    : The filename of the saved output, if any (default %r)"
-                     % cls.defaults['filename'])
-        info = ("info    : The information to page about the displayed objects (default %r)"
-                % cls.defaults['info'])
+        filename =  ("filename    : The filename of the saved output, if any (default {!r})".format(cls.defaults['filename']))
+        info = ("info    : The information to page about the displayed objects (default {!r})".format(cls.defaults['info']))
         css =   ("css     : Optional css style attributes to apply to the figure image tag")
         widget_location = "widget_location : The position of the widgets relative to the plot"
 
@@ -231,14 +234,14 @@ class OutputSettings(KeywordSettings):
         keywords = ['backend', 'fig', 'holomap', 'widgets', 'fps', 'max_frames',
                     'size', 'dpi', 'filename', 'info', 'css', 'widget_location']
         if signature:
-            doc_signature = '\noutput(%s)\n' % ', '.join('%s=None' % kw for kw in keywords)
-            return '\n'.join([doc_signature] + intro + descriptions)
+            doc_signature = '\noutput({})\n'.format(', '.join(f'{kw}=None' for kw in keywords))
+            return '\n'.join([doc_signature, *intro, *descriptions])
         else:
             return '\n'.join(intro + descriptions)
 
     @classmethod
     def _generate_signature(cls):
-        from inspect import Signature, Parameter
+        from inspect import Parameter, Signature
         keywords = ['backend', 'fig', 'holomap', 'widgets', 'fps', 'max_frames',
                     'size', 'dpi', 'filename', 'info', 'css', 'widget_location']
         return Signature([Parameter(kw, Parameter.KEYWORD_ONLY) for kw in keywords])
@@ -246,8 +249,9 @@ class OutputSettings(KeywordSettings):
 
     @classmethod
     def _validate(cls, options, items, warnfn):
-        "Validation of edge cases and incompatible options"
+        """Validation of edge cases and incompatible options
 
+        """
         if 'html' in Store.display_formats:
             pass
         elif 'fig' in items and items['fig'] not in Store.display_formats:
@@ -293,7 +297,7 @@ class OutputSettings(KeywordSettings):
             if line is not None:
                 # Parse line
                 line = line.split('#')[0].strip()
-                kwargs = cls.extract_keywords(line, OrderedDict())
+                kwargs = cls.extract_keywords(line, {})
 
             options = cls.get_options(kwargs, {}, warnfn)
 
@@ -317,10 +321,10 @@ class OutputSettings(KeywordSettings):
             OutputSettings.options = prev_restore
             cls.set_backend(prev_backend)
             if backend not in Store.renderers:
-                raise ValueError("The selected plotting extension {ext} "
+                raise ValueError(f"The selected plotting extension {backend!r} "
                                  "has not been loaded, ensure you load it "
-                                 "with hv.extension({ext}) before using "
-                                 "hv.output.".format(ext=repr(backend)))
+                                 f"with hv.extension({backend!r}) before using "
+                                 "hv.output.") from e
             print(f'Error: {e}')
             if help_prompt:
                 print(help_prompt)
@@ -339,9 +343,9 @@ class OutputSettings(KeywordSettings):
 
     @classmethod
     def update_options(cls, options, items):
-        """
-        Switch default options and backend if new backend is supplied in
+        """Switch default options and backend if new backend is supplied in
         items.
+
         """
         # Get new backend
         backend_spec = items.get('backend', Store.current_backend)
@@ -410,8 +414,8 @@ class OutputSettings(KeywordSettings):
 
     @classmethod
     def _set_render_options(cls, options, backend=None):
-        """
-        Set options on current Renderer.
+        """Set options on current Renderer.
+
         """
         if backend:
             backend = backend.split(':')[0]

@@ -1,17 +1,22 @@
-import numpy as np
-from matplotlib import style
+import re
 
+import numpy as np
+import pandas as pd
+import pytest
+from matplotlib import style
+from matplotlib.projections import PolarAxes
+from matplotlib.ticker import FormatStrFormatter, FuncFormatter, PercentFormatter
+
+from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import DynamicMap
-from holoviews.element import Image, Curve, Scatter, Scatter3D
+from holoviews.element import Curve, HeatMap, Image, QuadMesh, Scatter, Scatter3D
 from holoviews.streams import Stream
 
+from ...utils import LoggingComparisonTestCase
 from .test_plot import TestMPLPlot, mpl_renderer
 
-from matplotlib.ticker import FormatStrFormatter, FuncFormatter, PercentFormatter
-from matplotlib.projections import PolarAxes
 
-
-class TestElementPlot(TestMPLPlot):
+class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
 
     def test_stream_cleanup(self):
         stream = Stream.define('Test', test=1)()
@@ -186,6 +191,268 @@ class TestElementPlot(TestMPLPlot):
         self.assertIsInstance(ax, PolarAxes)
         self.assertEqual(ax.get_xlim(), (0, 2 * np.pi))
 
+    #################################################################
+    # Custom opts tests
+    #################################################################
+
+    def test_element_backend_opts(self):
+        heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
+            colorbar=True,
+            backend_opts={
+                "colorbar.set_label": "Testing",
+                "colorbar.set_ticks": [3.5, 5],
+                "colorbar.ax.yticklabels": ["A", "B"],
+            },
+        )
+        plot = mpl_renderer.get_plot(heat_map)
+        colorbar = plot.handles['cbar']
+        self.assertEqual(colorbar.ax.yaxis.get_label().get_text(), "Testing")
+        self.assertEqual(colorbar.get_ticks(), (3.5, 5))
+        ticklabels = [ticklabel.get_text() for ticklabel in colorbar.ax.get_yticklabels()]
+        self.assertEqual(ticklabels, ["A", "B"])
+
+    def test_element_backend_opts_alias(self):
+        heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
+            colorbar=True,
+            backend_opts={
+                "cbar.set_label": "Testing",
+                "cbar.set_ticks": [3.5, 5],
+                "cbar.ax.yticklabels": ["A", "B"]
+            },
+        )
+        plot = mpl_renderer.get_plot(heat_map)
+        colorbar = plot.handles['cbar']
+        self.assertEqual(colorbar.ax.yaxis.get_label().get_text(), "Testing")
+        self.assertEqual(colorbar.get_ticks(), (3.5, 5))
+        ticklabels = [ticklabel.get_text() for ticklabel in colorbar.ax.get_yticklabels()]
+        self.assertEqual(ticklabels, ["A", "B"])
+
+    def test_element_backend_opts_method(self):
+        a = Curve([1, 2, 3], label="a")
+        b = Curve([1, 4, 9], label="b")
+        curve = (a * b).opts(
+            show_legend=True,
+            backend_opts={
+                "legend.frame_on": False,
+            }
+        )
+        plot = mpl_renderer.get_plot(curve)
+        legend = plot.handles['legend']
+        self.assertFalse(legend.get_frame_on())
+
+    def test_element_backend_opts_sequential_method(self):
+        a = Curve([1, 2, 3], label="a")
+        b = Curve([1, 4, 9], label="b")
+        curve = (a * b).opts(
+            show_legend=True,
+            backend_opts={
+                "legend.get_title().set_fontsize": 188,
+            }
+        )
+        plot = mpl_renderer.get_plot(curve)
+        legend = plot.handles['legend']
+        self.assertEqual(legend.get_title().get_fontsize(), 188)
+
+    def test_element_backend_opts_getitem(self):
+        a = Curve([1, 2, 3], label="a")
+        b = Curve([1, 4, 9], label="b")
+        c = Curve([1, 4, 18], label="c")
+        d = Curve([1, 4, 36], label="d")
+        e = Curve([1, 4, 36], label="e")
+        curve = (a * b * c * d * e).opts(
+            show_legend=True,
+            backend_opts={
+                "legend.get_texts()[0].fontsize": 188,
+                "legend.get_texts()[1:3].fontsize": 288,
+                "legend.get_texts()[3,4].fontsize": 388,
+            }
+        )
+        plot = mpl_renderer.get_plot(curve)
+        legend = plot.handles['legend']
+        self.assertEqual(legend.get_texts()[0].get_fontsize(), 188)
+        self.assertEqual(legend.get_texts()[1].get_fontsize(), 288)
+        self.assertEqual(legend.get_texts()[2].get_fontsize(), 288)
+        self.assertEqual(legend.get_texts()[3].get_fontsize(), 388)
+        self.assertEqual(legend.get_texts()[4].get_fontsize(), 388)
+
+    def test_element_backend_opts_two_accessors(self):
+        heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
+            colorbar=True, backend_opts={"colorbar": "Testing"},
+        )
+        mpl_renderer.get_plot(heat_map)
+        self.log_handler.assertContains(
+            "WARNING", "Custom option 'colorbar' expects at least two"
+        )
+
+    def test_element_backend_opts_model_not_resolved(self):
+        heat_map = HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
+            colorbar=True, backend_opts={"cb.title": "Testing"},
+        )
+        mpl_renderer.get_plot(heat_map)
+        self.log_handler.assertContains(
+            "WARNING", "cb model could not be"
+        )
+
+    def test_element_backend_opts_model_invalid_method(self):
+        a = Curve([1, 2, 3], label="a")
+        b = Curve([1, 4, 9], label="b")
+        curve = (a * b).opts(
+            show_legend=True,
+            backend_opts={
+                "legend.get_texts()[0,1].f0ntzise": 811,
+            }
+        )
+        mpl_renderer.get_plot(curve)
+        self.log_handler.assertContains(
+            "WARNING", "valid method on the specified model"
+        )
+
+    ### Aspect ratio ###
+    def test_aspect_non_matching_types(self):
+        X = pd.date_range(start="1/1/2018", end="1/08/2018", periods=100)
+        Y = np.linspace(1, 100, 100)
+        Z = np.random.randn(100, 100)
+        qm = QuadMesh((X, Y, Z)).opts(aspect='equal')
+        msg = (
+            "The aspect is set to 'equal', but the axes does not have the same type: "
+            "x-axis timedelta64 and y-axis float64. "
+            "Either have the axes be the same type or or set '.opts(aspect=)' "
+            "to either a number or 'square'."
+        )
+        with pytest.raises(TypeError, match=re.escape(msg)):
+            mpl_renderer.get_plot(qm)
+
+    ### Grid ###
+    def test_grid_both(self):
+        curve = Curve(range(10)).opts(gridstyle={'grid_color': 'red', 'grid_linestyle': '--', 'grid_alpha': 0.5, 'grid_linewidth': 2}, show_grid=True)
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        gridlines = ax.get_xgridlines() + ax.get_ygridlines()
+        for line in gridlines:
+            self.assertEqual(line.get_color(), 'red')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+
+    def test_grid_both_show_grid_False(self):
+        curve = Curve(range(10)).opts(gridstyle={'grid_color': 'red', 'grid_linestyle': '--', 'grid_alpha': 0.5, 'grid_linewidth': 2}, show_grid=False)
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        assert not any(line.get_visible() for line in ax.get_xgridlines() + ax.get_ygridlines())
+
+    def test_grid_both_no_grid_prefix(self):
+        curve = Curve(range(10)).opts(gridstyle={'color': 'red', 'linestyle': '--', 'alpha': 0.5, 'linewidth': 2}, show_grid=True)
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        gridlines = ax.get_xgridlines() + ax.get_ygridlines()
+        for line in gridlines:
+            self.assertEqual(line.get_color(), 'red')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+
+    def test_grid_x(self):
+        curve = Curve(range(10)).opts(gridstyle={'xgrid_color': 'blue', 'xgrid_linestyle': '--', 'xgrid_alpha': 0.5, 'xgrid_linewidth': 2}, show_grid=True)
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        xgridlines = ax.get_xgridlines()
+        for line in xgridlines:
+            self.assertEqual(line.get_color(), 'blue')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+        ygridlines = ax.get_ygridlines()
+        for line in ygridlines:
+            self.assertNotEqual(line.get_color(), 'blue')
+            self.assertNotEqual(line.get_linestyle(), '--')
+            self.assertNotEqual(line.get_alpha(), 0.5)
+            self.assertNotEqual(line.get_linewidth(), 2)
+
+    def test_grid_x_no_grid_prefix(self):
+        curve = Curve(range(10)).opts(gridstyle={'color': 'blue', 'linestyle': '--', 'alpha': 0.5, 'linewidth': 2}, show_grid=True)
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        xgridlines = ax.get_xgridlines()
+        for line in xgridlines:
+            self.assertEqual(line.get_color(), 'blue')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+        ygridlines = ax.get_ygridlines()
+        for line in ygridlines:
+            self.assertEqual(line.get_color(), 'blue')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+
+    def test_grid_y(self):
+        curve = Curve(range(10)).opts(gridstyle={'ygrid_color': 'green', 'ygrid_linestyle': '--', 'ygrid_alpha': 0.5, 'ygrid_linewidth': 2}, show_grid=True)
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        ygridlines = ax.get_ygridlines()
+        for line in ygridlines:
+            self.assertEqual(line.get_color(), 'green')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+        xgridlines = ax.get_xgridlines()
+        for line in xgridlines:
+            self.assertNotEqual(line.get_color(), 'green')
+            self.assertNotEqual(line.get_linestyle(), '--')
+            self.assertNotEqual(line.get_alpha(), 0.5)
+            self.assertNotEqual(line.get_linewidth(), 2)
+
+    def test_grid_y_no_grid_prefix(self):
+        curve = Curve(range(10)).opts(gridstyle={'color': 'green', 'linestyle': '--', 'alpha': 0.5, 'linewidth': 2}, show_grid=True)
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        ygridlines = ax.get_ygridlines()
+        for line in ygridlines:
+            self.assertEqual(line.get_color(), 'green')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+        xgridlines = ax.get_xgridlines()
+        for line in xgridlines:
+            self.assertEqual(line.get_color(), 'green')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+
+    def test_grid_mix(self):
+        curve = Curve(range(10)).opts(gridstyle={'grid_color': 'red', 'ygrid_linestyle': '--', 'ygrid_alpha': 0.5, 'ygrid_linewidth': 2}, show_grid=True)
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        xgridlines = ax.get_xgridlines()
+        for line in xgridlines:
+            self.assertEqual(line.get_color(), 'red')
+            self.assertNotEqual(line.get_linestyle(), '--')
+            self.assertNotEqual(line.get_alpha(), 0.5)
+            self.assertNotEqual(line.get_linewidth(), 2)
+        ygridlines = ax.get_ygridlines()
+        for line in ygridlines:
+            self.assertEqual(line.get_color(), 'red')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+
+    def test_grid_mix_no_grid_prefix(self):
+        curve = Curve(range(10)).opts(gridstyle={'color': 'red', 'y_linestyle': '--', 'y_alpha': 0.5, 'y_linewidth': 2}, show_grid=True)
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        xgridlines = ax.get_xgridlines()
+        for line in xgridlines:
+            self.assertEqual(line.get_color(), 'red')
+            self.assertNotEqual(line.get_linestyle(), '--')
+            self.assertNotEqual(line.get_alpha(), 0.5)
+            self.assertNotEqual(line.get_linewidth(), 2)
+        ygridlines = ax.get_ygridlines()
+        for line in ygridlines:
+            self.assertEqual(line.get_color(), 'red')
+            self.assertEqual(line.get_linestyle(), '--')
+            self.assertEqual(line.get_alpha(), 0.5)
+            self.assertEqual(line.get_linewidth(), 2)
+
 
 class TestColorbarPlot(TestMPLPlot):
 
@@ -243,6 +510,14 @@ class TestColorbarPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(scatter)
         cbar_ax = plot.handles['cax']
         self.assertEqual(cbar_ax.get_ylabel(), 'color')
+
+    def test_style_map_dimension_object(self):
+        x = Dimension('x')
+        y = Dimension('y')
+        scatter = Scatter([1, 2, 3], kdims=[x], vdims=[y]).opts(color=x)
+        plot = mpl_renderer.get_plot(scatter)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_clim(), (0, 2))
 
 
 class TestOverlayPlot(TestMPLPlot):

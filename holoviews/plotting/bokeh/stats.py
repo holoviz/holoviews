@@ -1,31 +1,35 @@
 from collections import defaultdict
 from functools import partial
 
-import param
 import numpy as np
+import param
+from bokeh.models import Circle, FactorRange, HBar, VBar
 
-from bokeh.models import FactorRange, Circle, VBar, HBar
-
-from .selection import BokehOverlaySelectionDisplay
 from ...core import NdOverlay
 from ...core.dimension import Dimension, Dimensioned
 from ...core.ndmapping import sorted_context
 from ...core.util import (
-    dimension_sanitizer, wrap_tuple, unique_iterator, isfinite,
-    is_dask_array, is_cupy_array
+    dimension_sanitizer,
+    is_cupy_array,
+    is_dask_array,
+    isfinite,
+    unique_iterator,
+    wrap_tuple,
 )
 from ...operation.stats import univariate_kde
 from ...util.transform import dim
+from ..mixins import MultiDistributionMixin
 from .chart import AreaPlot
-from .element import CompositeElementPlot, ColorbarPlot, LegendPlot
+from .element import ColorbarPlot, CompositeElementPlot, LegendPlot
 from .path import PolygonPlot
+from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties
 from .util import decode_bytes
 
 
 class DistributionPlot(AreaPlot):
-    """
-    DistributionPlot visualizes a distribution of values as a KDE.
+    """DistributionPlot visualizes a distribution of values as a KDE.
+
     """
 
     bandwidth = param.Number(default=None, doc="""
@@ -41,11 +45,11 @@ class DistributionPlot(AreaPlot):
 
 
 class BivariatePlot(PolygonPlot):
-    """
-    Bivariate plot visualizes two-dimensional kernel density
+    """Bivariate plot visualizes two-dimensional kernel density
     estimates. Additionally, by enabling the joint option, the
     marginals distributions can be plotted alongside each axis (does
     not animate or compose).
+
     """
 
     bandwidth = param.Number(default=None, doc="""
@@ -63,10 +67,13 @@ class BivariatePlot(PolygonPlot):
     selection_display = BokehOverlaySelectionDisplay(color_prop='cmap', is_cmap=True)
 
 
-class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
+class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
+
+    outlier_radius = param.Number(default=0.01, doc="""
+        The radius of the circle marker for the outliers.""")
 
     # Deprecated options
 
@@ -85,19 +92,11 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                   ['outlier_'+p for p in fill_properties+line_properties] +
                   ['box_width', 'cmap', 'box_cmap'])
 
-    _nonvectorized_styles = base_properties + ['box_width', 'whisker_width', 'cmap', 'box_cmap']
+    _nonvectorized_styles = [*base_properties, 'box_width', 'whisker_width', 'cmap', 'box_cmap']
 
     _stream_data = False # Plot does not support streaming data
 
     selection_display = BokehOverlaySelectionDisplay(color_prop='box_color')
-
-    def get_extents(self, element, ranges, range_type='combined'):
-        return super().get_extents(
-            element, ranges, range_type, 'categorical', element.vdims[0]
-        )
-
-    def _get_axis_dims(self, element):
-        return element.kdims, element.vdims[0]
 
     def _glyph_properties(self, plot, element, source, ranges, style, group=None):
         properties = dict(style, source=source)
@@ -118,8 +117,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         return super()._apply_transforms(element, data, ranges, style, group)
 
     def _get_factors(self, element, ranges):
-        """
-        Get factors for categorical axes.
+        """Get factors for categorical axes.
+
         """
         if not element.kdims:
             xfactors, yfactors = [element.label], []
@@ -127,7 +126,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             factors = [key for key in element.groupby(element.kdims).data.keys()]
             if element.ndims > 1:
                 factors = sorted(factors)
-            factors = [tuple(d.pprint_value(k) for d, k in zip(element.kdims, key))
+            factors = [tuple(d.pprint_value(k) for d, k in zip(element.kdims, key, strict=None))
                        for key in factors]
             factors = [f[0] if len(f) == 1 else f for f in factors]
             xfactors, yfactors = factors, []
@@ -195,11 +194,11 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         if self.invert_axes:
             vbar_map = {'y': 'index', 'left': 'top', 'right': 'bottom', 'height': width}
             seg_map = {'y0': 'x0', 'y1': 'x1', 'x0': 'y0', 'x1': 'y1'}
-            out_map = {'y': 'index', 'x': vdim}
+            out_map = {'y': 'index', 'x': vdim, 'radius': self.outlier_radius}
         else:
             vbar_map = {'x': 'index', 'top': 'top', 'bottom': 'bottom', 'width': width}
             seg_map = {'x0': 'x0', 'x1': 'x1', 'y0': 'y0', 'y1': 'y1'}
-            out_map = {'x': 'index', 'y': vdim}
+            out_map = {'x': 'index', 'y': vdim, 'radius': self.outlier_radius}
         vbar2_map = dict(vbar_map)
 
         # Get color values
@@ -210,11 +209,11 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             cdim, cidx = None, None
 
         factors = []
-        vdim = element.vdims[0].name
+        vdim = dimension_sanitizer(element.vdims[0].name)
         for key, g in groups.items():
             # Compute group label
             if element.kdims:
-                label = tuple(d.pprint_value(v) for d, v in zip(element.kdims, key))
+                label = tuple(d.pprint_value(v) for d, v in zip(element.kdims, key, strict=None))
                 if len(label) == 1:
                     label = label[0]
             else:
@@ -238,8 +237,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 data['x0'].append(label)
                 data['x1'].append(label)
             for data in [w1_data, w2_data]:
-                data['x0'].append(wrap_tuple(label)+(-whisker_width,))
-                data['x1'].append(wrap_tuple(label)+(whisker_width,))
+                data['x0'].append((*wrap_tuple(label), -whisker_width))
+                data['x1'].append((*wrap_tuple(label), whisker_width))
             r1_data['top'].append(q2)
             r2_data['top'].append(q1)
             r1_data['bottom'].append(q3)
@@ -256,10 +255,10 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 out_data['index'] += [label]*len(outliers)
                 out_data[vdim] += list(outliers)
                 if hover:
-                    for kd, k in zip(element.kdims, wrap_tuple(key)):
+                    for kd, k in zip(element.kdims, wrap_tuple(key), strict=None):
                         out_data[dimension_sanitizer(kd.name)] += [k]*len(outliers)
             if hover:
-                for kd, k in zip(element.kdims, wrap_tuple(key)):
+                for kd, k in zip(element.kdims, wrap_tuple(key), strict=None):
                     kd_name = dimension_sanitizer(kd.name)
                     if kd_name in r1_data:
                         r1_data[kd_name].append(k)
@@ -327,7 +326,7 @@ class ViolinPlot(BoxWhiskerPlot):
     cut = param.Number(default=5, doc="""
         Draw the estimate to cut * bw from the extreme data points.""")
 
-    inner = param.ObjectSelector(objects=['box', 'quartiles', 'stick', None],
+    inner = param.Selector(objects=['box', 'quartiles', 'stick', None],
                                  default='box', doc="""
         Inner visual indicator for distribution values:
 
@@ -373,8 +372,8 @@ class ViolinPlot(BoxWhiskerPlot):
         return kdims, element.vdims[0]
 
     def _get_factors(self, element, ranges):
-        """
-        Get factors for categorical axes.
+        """Get factors for categorical axes.
+
         """
         split_dim = dim(self.split) if isinstance(self.split, str) else self.split
         kdims = [kd for kd in element.kdims if not split_dim or kd != split_dim.dimension]
@@ -384,7 +383,7 @@ class ViolinPlot(BoxWhiskerPlot):
             factors = [key for key in element.groupby(kdims).data.keys()]
             if element.ndims > 1:
                 factors = sorted(factors)
-            factors = [tuple(d.pprint_value(k) for d, k in zip(kdims, key))
+            factors = [tuple(d.pprint_value(k) for d, k in zip(kdims, key, strict=None))
                        for key in factors]
             factors = [f[0] if len(f) == 1 else f for f in factors]
             xfactors, yfactors = factors, []
@@ -432,8 +431,8 @@ class ViolinPlot(BoxWhiskerPlot):
 
             if split_dim:
                 if len(_xs):
-                    fill_xs.append([x_range[0]]+list(_xs)+[x_range[-1]])
-                    fill_ys.append([0]+list(_ys)+[0])
+                    fill_xs.append([x_range[0], *_xs, x_range[-1]])
+                    fill_ys.append([0, *_ys, 0])
                 else:
                     fill_xs.append([])
                     fill_ys.append([])
@@ -448,10 +447,10 @@ class ViolinPlot(BoxWhiskerPlot):
         # this scales the width
         if split_dim:
             fill_xs = [np.asarray(x) for x in fill_xs]
-            fill_ys = [[key + (y,) for y in (fy/np.abs(ys).max())*(self.violin_width/scale)]
+            fill_ys = [[(*key, y) for y in (fy/np.abs(ys).max())*(self.violin_width/scale)]
                        if len(fy) else [] for fy in fill_ys]
         ys = (ys/np.nanmax(np.abs(ys)))*(self.violin_width/scale) if len(ys) else []
-        ys = [key + (y,) for y in ys]
+        ys = [(*key, y) for y in ys]
 
         line = {'ys': xs, 'xs': ys}
         if split_dim:
@@ -474,7 +473,7 @@ class ViolinPlot(BoxWhiskerPlot):
                     sidx = np.argmin(np.abs(xs-stat))
                     sx, sy = xs[sidx], ys[sidx]
                     segments['x'].append(sx)
-                    segments['y0'].append(key+(-sy[-1],))
+                    segments['y0'].append((*key, -sy[-1]))
                     segments['y1'].append(sy)
         elif self.inner == 'stick':
             if len(xs):
@@ -482,10 +481,10 @@ class ViolinPlot(BoxWhiskerPlot):
                     sidx = np.argmin(np.abs(xs-value))
                     sx, sy = xs[sidx], ys[sidx]
                     segments['x'].append(sx)
-                    segments['y0'].append(key+(-sy[-1],))
+                    segments['y0'].append((*key, -sy[-1]))
                     segments['y1'].append(sy)
         elif self.inner == 'box':
-            xpos = key+(0,)
+            xpos = (*key, 0)
             q1, q2, q3, upper, lower, _ = self._box_stats(values)
             segments['x'].append(xpos)
             segments['y0'].append(lower)
@@ -510,7 +509,7 @@ class ViolinPlot(BoxWhiskerPlot):
             groups = dict([((element.label,), element)])
 
         if split_dim:
-            split_name = split_dim.dimension.name
+            split_name = split_dim.dimension.label
             if split_name in ranges and not split_dim.ops and 'factors' in ranges[split_name]:
                 split_cats = ranges[split_name].get('factors')
             elif split_dim:
@@ -548,7 +547,7 @@ class ViolinPlot(BoxWhiskerPlot):
         for key, g in groups.items():
             key = decode_bytes(key)
             if element.kdims:
-                key = tuple(d.pprint_value(k) for d, k in zip(element.kdims, key))
+                key = tuple(d.pprint_value(k) for d, k in zip(element.kdims, key, strict=None))
             kde, line, segs, bars, scatter = self._kde_data(
                 element, g, key, split_dim, split_cats, **kwargs
             )

@@ -1,49 +1,74 @@
-from itertools import groupby
 from collections import defaultdict
+from itertools import groupby
 
 import numpy as np
 import param
-
 from bokeh.layouts import gridplot
 from bokeh.models import (
-    ColumnDataSource, Column, Row, Div, Title, Legend, Axis, ColorBar
+    Axis,
+    ColorBar,
+    Column,
+    ColumnDataSource,
+    Div,
+    Legend,
+    Row,
+    Title,
 )
-from bokeh.models.layouts import Tabs
+from bokeh.models.layouts import TabPanel, Tabs
 
-from ...selection import NoOpSelectionDisplay
 from ...core import (
-    OrderedDict, Store, AdjointLayout, NdLayout, Layout, Empty,
-    GridSpace, HoloMap, Element
+    AdjointLayout,
+    Element,
+    Empty,
+    GridSpace,
+    HoloMap,
+    Layout,
+    NdLayout,
+    Store,
 )
 from ...core.options import SkipRendering
 from ...core.util import (
-    cftime_to_timestamp, cftime_types, get_method_owner,
-    is_param_method, unique_iterator, wrap_tuple, wrap_tuple_streams,
-    _STANDARD_CALENDARS
+    _STANDARD_CALENDARS,
+    cftime_to_timestamp,
+    cftime_types,
+    get_method_owner,
+    is_param_method,
+    unique_iterator,
+    wrap_tuple,
+    wrap_tuple_streams,
 )
+from ...selection import NoOpSelectionDisplay
 from ..links import Link
 from ..plot import (
-    DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
-    GenericElementPlot, GenericOverlayPlot, GenericAdjointLayoutPlot,
-    CallbackPlot
+    CallbackPlot,
+    DimensionedPlot,
+    GenericAdjointLayoutPlot,
+    GenericCompositePlot,
+    GenericElementPlot,
+    GenericLayoutPlot,
+    GenericOverlayPlot,
 )
-from ..util import attach_streams, displayable, collate
+from ..util import attach_streams, collate, displayable
 from .links import LinkCallback
 from .util import (
-    bokeh3, filter_toolboxes, make_axis, update_shared_sources, empty_plot,
-    decode_bytes, theme_attr_json, cds_column_replace, get_default, merge_tools
+    cds_column_replace,
+    decode_bytes,
+    empty_plot,
+    filter_toolboxes,
+    get_default,
+    make_axis,
+    merge_tools,
+    select_legends,
+    sync_legends,
+    theme_attr_json,
+    update_shared_sources,
 )
-
-if bokeh3:
-    from bokeh.models.layouts import TabPanel
-else:
-    from bokeh.models.layouts import Panel as TabPanel
 
 
 class BokehPlot(DimensionedPlot, CallbackPlot):
-    """
-    Plotting baseclass for the Bokeh backends, implementing the basic
+    """Plotting baseclass for the Bokeh backends, implementing the basic
     plotting interface for Bokeh based plots.
+
     """
 
     shared_datasource = param.Boolean(default=True, doc="""
@@ -57,12 +82,20 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
 
     title_format = param.String(default=None, doc="Alias for title.")
 
-    toolbar = param.ObjectSelector(default='above',
+    toolbar = param.Selector(default='above',
                                    objects=["above", "below",
                                             "left", "right", None],
                                    doc="""
         The toolbar location, must be one of 'above', 'below',
-        'left', 'right', None.""")
+        'left', 'right', None.""",
+    )
+
+    autohide_toolbar = param.Boolean(
+        default=False,
+        doc="""
+        Whether to automatically hide the toolbar until the user hovers over the plot.
+        This parameter has no effect if the toolbar is disabled (toolbar=None).""",
+    )
 
     width = param.Integer(default=None, bounds=(0, None), doc="""
         The width of the component (in pixels). This can be either
@@ -93,11 +126,11 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
 
 
     def get_data(self, element, ranges, style):
-        """
-        Returns the data from an element in the appropriate format for
+        """Returns the data from an element in the appropriate format for
         initializing or updating a ColumnDataSource and a dictionary
         which maps the expected keywords arguments of a glyph to
         the column in the datasource.
+
         """
         raise NotImplementedError
 
@@ -111,8 +144,8 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                     s.update(index=self.selected)
 
     def _init_datasource(self, data):
-        """
-        Initializes a data source to be passed into the bokeh glyph.
+        """Initializes a data source to be passed into the bokeh glyph.
+
         """
         data = self._postprocess_data(data)
         cds = ColumnDataSource(data=data)
@@ -122,44 +155,45 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
 
 
     def _postprocess_data(self, data):
-        """
-        Applies necessary type transformation to the data before
+        """Applies necessary type transformation to the data before
         it is set on a ColumnDataSource.
+
         """
         new_data = {}
         for k, values in data.items():
             values = decode_bytes(values) # Bytes need decoding to strings
-
             # Certain datetime types need to be converted
             if len(values) and isinstance(values[0], cftime_types):
                 if any(v.calendar not in _STANDARD_CALENDARS for v in values):
                     self.param.warning(
                         'Converting cftime.datetime from a non-standard '
-                        'calendar (%s) to a standard calendar for plotting. '
+                        f'calendar ({values[0].calendar}) to a standard calendar for plotting. '
                         'This may lead to subtle errors in formatting '
                         'dates, for accurate tick formatting switch to '
-                        'the matplotlib backend.' % values[0].calendar)
+                        'the matplotlib backend.')
                 values = cftime_to_timestamp(values, 'ms')
             new_data[k] = values
         return new_data
 
 
     def _update_datasource(self, source, data):
-        """
-        Update datasource with data for a new frame.
-        """
-        if not self.document:
-            return
+        """Update datasource with data for a new frame.
 
+        """
         data = self._postprocess_data(data)
         empty = all(len(v) == 0 for v in data.values())
         if (self.streaming and self.streaming[0].data is self.current_frame.data
             and self._stream_data and not empty):
             stream = self.streaming[0]
-            if stream._triggering:
-                data = {k: v[-stream._chunk_length:] for k, v in data.items()}
-                source.stream(data, stream.length)
-            return
+            if stream._count == ((self._stream_count or 0) + 1):
+                if stream._triggering and stream.following:
+                    data = {k: v[-stream._chunk_length:] for k, v in data.items()}
+                    source.stream(data, stream.length)
+                    self._stream_count = stream._count
+                return
+            elif not stream.following:
+                return
+            self._stream_count = stream._count
 
         if cds_column_replace(source, data):
             source.data = data
@@ -172,18 +206,18 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
 
     @property
     def state(self):
-        """
-        The plotting state that gets updated via the update method and
+        """The plotting state that gets updated via the update method and
         used by the renderer to generate output.
+
         """
         return self.handles['plot']
 
 
     @property
     def current_handles(self):
-        """
-        Should return a list of plot objects that have changed and
+        """Should return a list of plot objects that have changed and
         should be updated.
+
         """
         return []
 
@@ -207,10 +241,10 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
 
 
     def cleanup(self):
-        """
-        Cleans up references to the plot after the plot has been
+        """Cleans up references to the plot after the plot has been
         deleted. Traverses through all plots cleaning up Callbacks and
         Stream subscribers.
+
         """
         plots = self.traverse(lambda x: x, [BokehPlot])
         for plot in plots:
@@ -223,10 +257,12 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
             if plot.subplots:
                 plot.subplots.clear()
 
-            if isinstance(plot, GenericElementPlot):
-                for callback in plot.callbacks:
-                    streams += callback.streams
-                    callback.cleanup()
+            if not isinstance(plot, (GenericElementPlot, GenericOverlayPlot)):
+                continue
+
+            for callback in plot.callbacks:
+                streams += callback.streams
+                callback.cleanup()
 
             for stream in set(streams):
                 stream._subscribers = [
@@ -235,11 +271,10 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                     get_method_owner(subscriber) not in plots
                 ]
 
-
     def _fontsize(self, key, label='fontsize', common=True):
-        """
-        Converts integer fontsizes to a string specifying
+        """Converts integer fontsizes to a string specifying
         fontsize in pt.
+
         """
         size = super()._fontsize(key, label, common)
         return {k: v if isinstance(v, str) else f'{v}pt'
@@ -271,18 +306,17 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
 
         if 'title' in self.handles:
             title_div = self.handles['title']
-        elif bokeh3:
-            title_div = Div(width=width, styles={"white-space": "nowrap"})  # so it won't wrap long titles easily
         else:
-            title_div = Div(width=width, style={"white-space": "nowrap"})  # so it won't wrap long titles easily
+            # so it won't wrap long titles easily
+            title_div = Div(width=width, styles={"white-space": "nowrap"})
         title_div.text = title_tags
 
         return title_div
 
     def sync_sources(self):
-        """
-        Syncs data sources between Elements, which draw data
+        """Syncs data sources between Elements, which draw data
         from the same object.
+
         """
         get_sources = lambda x: (id(x.current_frame.data), x)
         filter_fn = lambda x: (x.shared_datasource and x.current_frame is not None and
@@ -310,8 +344,6 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                         renderer.update(data_source=new_source)
                     else:
                         renderer.update(source=new_source)
-                    if not bokeh3 and hasattr(renderer, 'view'):
-                        renderer.view.update(source=new_source)
                     plot.handles['source'] = plot.handles['cds'] = new_source
                     plots.append(plot)
                 shared_sources.append(new_source)
@@ -331,19 +363,19 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
             cb = Link._callbacks['bokeh'][type(link)]
             if src_plot is None or (link._requires_target and tgt_plot is None):
                 continue
+            # The link callback (`cb`) is instantiated (with side-effects).
             callbacks.append(cb(self.root, link, src_plot, tgt_plot))
         return callbacks
 
 
-
 class CompositePlot(BokehPlot):
-    """
-    CompositePlot is an abstract baseclass for plot types that draw
+    """CompositePlot is an abstract baseclass for plot types that draw
     render multiple axes. It implements methods to add an overall title
     to such a plot.
+
     """
 
-    sizing_mode = param.ObjectSelector(default=None, objects=[
+    sizing_mode = param.Selector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None], doc="""
 
@@ -391,9 +423,9 @@ class CompositePlot(BokehPlot):
           {'title': '15pt'}""")
 
     def _link_dimensioned_streams(self):
-        """
-        Should perform any linking required to update titles when dimensioned
+        """Should perform any linking required to update titles when dimensioned
         streams change.
+
         """
         streams = [s for s in self.streams if any(k in self.dimensions for k in s.contents)]
         for s in streams:
@@ -401,24 +433,24 @@ class CompositePlot(BokehPlot):
 
     def _stream_update(self, **kwargs):
         contents = [k for s in self.streams for k in s.contents]
-        key = tuple(None if d in contents else k for d, k in zip(self.dimensions, self.current_key))
+        key = tuple(None if d in contents else k for d, k in zip(self.dimensions, self.current_key, strict=None))
         key = wrap_tuple_streams(key, self.dimensions, self.streams)
         self._get_title_div(key)
 
     @property
     def current_handles(self):
-        """
-        Should return a list of plot objects that have changed and
+        """Should return a list of plot objects that have changed and
         should be updated.
+
         """
         return [self.handles['title']] if 'title' in self.handles else []
 
 
 
 class GridPlot(CompositePlot, GenericCompositePlot):
-    """
-    Plot a group of elements in a grid layout based on a GridSpace element
+    """Plot a group of elements in a grid layout based on a GridSpace element
     object.
+
     """
 
     axis_offset = param.Integer(default=50, doc="""
@@ -448,12 +480,12 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     show_legend = param.Boolean(default=False, doc="""
         Adds a legend based on the entries of the middle-right plot""")
 
-    xaxis = param.ObjectSelector(default=True,
+    xaxis = param.Selector(default=True,
                                  objects=['bottom', 'top', None, True, False], doc="""
         Whether and where to display the xaxis, supported options are
         'bottom', 'top' and None.""")
 
-    yaxis = param.ObjectSelector(default=True,
+    yaxis = param.Selector(default=True,
                                  objects=['left', 'right', None, True, False], doc="""
         Whether and where to display the yaxis, supported options are
         'left', 'right' and None.""")
@@ -468,6 +500,9 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         Defines the width and height of each plot in the grid, either
         as a tuple specifying width and height or an integer for a
         square plot.""")
+
+    sync_legends = param.Boolean(default=True, doc="""
+        Whether to sync the legend when muted/unmuted based on the name""")
 
     def __init__(self, layout, ranges=None, layout_num=1, keys=None, **params):
         if not isinstance(layout, GridSpace):
@@ -492,10 +527,10 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         else:
             width, height = self.plot_size, self.plot_size
 
-        subplots = OrderedDict()
+        subplots = {}
         frame_ranges = self.compute_ranges(layout, None, ranges)
         keys = self.keys[:1] if self.dynamic else self.keys
-        frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
+        frame_ranges = dict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in keys])
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         for i, coord in enumerate(layout.keys(full_grid=True)):
@@ -552,8 +587,8 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             if plotting_class is None:
                 if view is not None:
                     self.param.warning(
-                        "Bokeh plotting class for %s type not found, "
-                        "object will not be rendered." % vtype.__name__)
+                        f"Bokeh plotting class for {vtype.__name__} type not found, "
+                        "object will not be rendered.")
             else:
                 subplot = plotting_class(view, dimensions=self.dimensions,
                                          show_title=False, subplot=True,
@@ -567,7 +602,9 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         return subplots, collapsed_layout
 
 
-    def initialize_plot(self, ranges=None, plots=[]):
+    def initialize_plot(self, ranges=None, plots=None):
+        if plots is None:
+            plots = []
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         passed_plots = list(plots)
         plots = [[None for c in range(self.cols)] for r in range(self.rows)]
@@ -583,13 +620,14 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 passed_plots.append(None)
 
         plot = gridplot(plots[::-1],
-                        merge_tools=self.merge_tools,
+                        merge_tools=False,
                         sizing_mode=self.sizing_mode,
                         toolbar_location=self.toolbar)
+        if self.sync_legends:
+            sync_legends(plot)
         plot = self._make_axes(plot)
-        if bokeh3 and hasattr(plot, "toolbar"):
-            plot.toolbar = merge_tools(plots)
-
+        if hasattr(plot, "toolbar") and self.merge_tools:
+            plot.toolbar = merge_tools(plots, hide_toolbar=True)
         title = self._get_title_div(self.keys[-1])
         if title:
             plot = Column(title, plot)
@@ -639,7 +677,9 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             if self.shared_yaxis:
                 x_axis.margin = (0, 0, 0, 50)
                 r1, r2 = r1[::-1], r2[::-1]
-            plot = gridplot([r1, r2])
+            plot = gridplot([r1, r2], merge_tools=False)
+            if self.merge_tools:
+                plot.toolbar = merge_tools([r1, r2], autohide=self.autohide_toolbar)
         elif y_axis:
             models = [y_axis, plot]
             if self.shared_yaxis: models = models[::-1]
@@ -653,10 +693,10 @@ class GridPlot(CompositePlot, GenericCompositePlot):
 
     @update_shared_sources
     def update_frame(self, key, ranges=None):
-        """
-        Update the internal state of the Plot to represent the given
+        """Update the internal state of the Plot to represent the given
         key tuple (where integers represent frames). Returns this
         state.
+
         """
         ranges = self.compute_ranges(self.layout, key, ranges)
         for coord in self.layout.keys(full_grid=True):
@@ -682,6 +722,24 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
     merge_tools = param.Boolean(default=True, doc="""
         Whether to merge all the tools into a single toolbar""")
 
+    sync_legends = param.Boolean(default=True, doc="""
+        Whether to sync the legend when muted/unmuted based on the name""")
+
+    show_legends = param.ClassSelector(default=None, class_=(list, int, bool), doc="""
+        Whether to show the legend for a particular subplot by index. If True all legends
+        will be shown. If False no legends will be shown.""")
+
+    legend_position = param.Selector(objects=["top_right",
+                                                    "top_left",
+                                                    "bottom_left",
+                                                    "bottom_right",
+                                                    'right', 'left',
+                                                    'top', 'bottom'],
+                                                    default="top_right",
+                                                    doc="""
+        Allows selecting between a number of predefined legend position
+        options. Will only be applied if show_legend is not None.""")
+
     tabs = param.Boolean(default=False, doc="""
         Whether to display overlaid plots in separate panes""")
 
@@ -692,6 +750,11 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
+    @param.depends('show_legends', 'legend_position', watch=True, on_init=True)
+    def _update_show_legend(self):
+        if self.show_legends is not None:
+            select_legends(self.layout, self.show_legends, self.legend_position)
+
     def _init_layout(self, layout):
         # Situate all the Layouts in the grid and compute the gridspec
         # indices for all the axes required by each LayoutPlot.
@@ -699,7 +762,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
         keys = self.keys[:1] if self.dynamic else self.keys
-        frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
+        frame_ranges = dict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in keys])
         layout_items = layout.grid_items()
         layout_dimensions = layout.kdims if isinstance(layout, NdLayout) else None
@@ -722,7 +785,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             # to create the correct subaxes for all plots in the layout
             layout_key, _ = layout_items.get((r, c), (None, None))
             if isinstance(layout, NdLayout) and layout_key:
-                layout_dimensions = OrderedDict(zip(layout_dimensions, layout_key))
+                layout_dimensions = dict(zip(layout_dimensions, layout_key, strict=None))
 
             # Generate the axes and create the subplots with the appropriate
             # axis objects, handling any Empty objects.
@@ -750,12 +813,12 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
 
     def _create_subplots(self, layout, positions, layout_dimensions, ranges, num=0):
-        """
-        Plot all the views contained in the AdjointLayout Object using axes
+        """Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
         supplied by LayoutPlot - the purpose of the call is to
         invoke subplots with correct options and styles and hide any
         empty axes as necessary.
+
         """
         subplots = {}
         adjoint_clone = layout.clone(shared_data=False, id=layout.id)
@@ -800,8 +863,8 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                 continue
             elif plot_type is None:
                 self.param.warning(
-                    "Bokeh plotting class for %s type not found, object "
-                    " will not be rendered." % vtype.__name__)
+                    f"Bokeh plotting class for {vtype.__name__} type not found, object "
+                    " will not be rendered.")
                 continue
             num = num if len(self.coords) > 1 else 0
             subplot = plot_type(element, keys=self.keys,
@@ -824,9 +887,9 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
 
     def _compute_grid(self):
-        """
-        Computes an empty grid to position the plots on by expanding
+        """Computes an empty grid to position the plots on by expanding
         any AdjointLayouts into multiple rows and columns.
+
         """
         widths = []
         for c in range(self.cols):
@@ -919,11 +982,11 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                     else:
                         children = [subplots] if nsubplots == 2 else [[subplots[2], None], subplots[:2]]
                         grid = gridplot(children,
-                                        merge_tools=self.merge_tools,
+                                        merge_tools=False,
                                         toolbar_location=self.toolbar,
                                         sizing_mode=sizing_mode)
-                        if bokeh3:
-                            grid.toolbar = merge_tools(children)
+                        if self.merge_tools:
+                            grid.toolbar = merge_tools(children, autohide=self.autohide_toolbar)
                     tab_plots.append((title, grid))
                     continue
 
@@ -959,11 +1022,13 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             layout_plot = gridplot(
                 children=plot_grid,
                 toolbar_location=self.toolbar,
-                merge_tools=self.merge_tools,
+                merge_tools=False,
                 sizing_mode=sizing_mode
             )
-            if bokeh3:
-                layout_plot.toolbar = merge_tools(plot_grid)
+            if self.sync_legends:
+                sync_legends(layout_plot)
+            if self.merge_tools:
+                layout_plot.toolbar = merge_tools(plot_grid, autohide=self.autohide_toolbar)
 
         title = self._get_title_div(self.keys[-1])
         if title:
@@ -985,10 +1050,10 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
     @update_shared_sources
     def update_frame(self, key, ranges=None):
-        """
-        Update the internal state of the Plot to represent the given
+        """Update the internal state of the Plot to represent the given
         key tuple (where integers represent frames). Returns this
         state.
+
         """
         ranges = self.compute_ranges(self.layout, key, ranges)
         for r, c in self.coords:
@@ -1015,14 +1080,16 @@ class AdjointLayoutPlot(BokehPlot, GenericAdjointLayoutPlot):
         # The supplied (axes, view) objects as indexed by position
         super().__init__(subplots=subplots, **params)
 
-    def initialize_plot(self, ranges=None, plots=[]):
-        """
-        Plot all the views contained in the AdjointLayout Object using axes
+    def initialize_plot(self, ranges=None, plots=None):
+        """Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
         supplied by LayoutPlot - the purpose of the call is to
         invoke subplots with correct options and styles and hide any
         empty axes as necessary.
+
         """
+        if plots is None:
+            plots = []
         if plots is None: plots = []
         adjoined_plots = []
         for pos in self.view_positions:
@@ -1035,8 +1102,7 @@ class AdjointLayoutPlot(BokehPlot, GenericAdjointLayoutPlot):
                 passed_plots = plots + adjoined_plots
                 adjoined_plots.append(subplot.initialize_plot(ranges=ranges, plots=passed_plots))
         self.drawn = True
-        if not adjoined_plots: adjoined_plots = [None]
-        return adjoined_plots
+        return adjoined_plots or [None]
 
     def update_frame(self, key, ranges=None):
         plot = None

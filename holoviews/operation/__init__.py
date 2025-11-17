@@ -1,8 +1,8 @@
+from ..core import Overlay  # noqa (API import)
 from ..core.operation import Operation
 from ..core.options import Compositor
-
 from .element import *
-from ..core import Overlay  # noqa (API import)
+
 
 def public(obj):
     if not isinstance(obj, type): return False
@@ -17,4 +17,4 @@ for _k, _v in _current_locals:
     if public(_v) and issubclass(_v, Operation):
         Compositor.operations.append(_v)
 
-__all__ = _public + ['Compositor']
+__all__ = [*_public, 'Compositor']

@@ -1,21 +1,20 @@
-"""
-Operations manipulate Elements, HoloMaps and Layouts, typically for
+"""Operations manipulate Elements, HoloMaps and Layouts, typically for
 the purposes of analysis or visualization.
+
 """
 import param
 
+from . import Dataset, util
 from .dimension import ViewableElement
 from .element import Element
 from .layout import Layout
 from .options import Store
 from .overlay import NdOverlay, Overlay
 from .spaces import Callable, HoloMap
-from . import util, Dataset
 
 
 class Operation(param.ParameterizedFunction):
-    """
-    An Operation process an Element or HoloMap at the level of
+    """An Operation process an Element or HoloMap at the level of
     individual elements or overlays. If a holomap is passed in as input,
     a processed holomap is returned as output where the individual
     elements have been transformed accordingly. An Operation may turn
@@ -26,13 +25,14 @@ class Operation(param.ParameterizedFunction):
     dynamically. An Operation may also supply a list of Stream classes
     on a streams parameter, which can allow dynamic control over the
     parameters on the operation.
+
     """
 
     group = param.String(default='Operation', doc="""
        The group string used to identify the output of the
        Operation. By default this should match the operation name.""")
 
-    dynamic = param.ObjectSelector(default='default',
+    dynamic = param.Selector(default='default',
                                    objects=['default', True, False], doc="""
        Whether the operation should be applied dynamically when a
        specific frame is requested, specified as a Boolean. If set to
@@ -84,12 +84,12 @@ class Operation(param.ParameterizedFunction):
 
     @classmethod
     def search(cls, element, pattern):
-        """
-        Helper method that returns a list of elements that match the
+        """Helper method that returns a list of elements that match the
         given path pattern of form {type}.{group}.{label}.
 
         The input may be a Layout, an Overlay type or a single
         Element.
+
         """
         if isinstance(element, Layout):
             return [el for cell in element for el in cls.search(cell, pattern)]
@@ -101,9 +101,9 @@ class Operation(param.ParameterizedFunction):
 
     @classmethod
     def get_overlay_label(cls, overlay, default_label=''):
-        """
-        Returns a label if all the elements of an overlay agree on a
+        """Returns a label if all the elements of an overlay agree on a
         consistent label, otherwise returns the default label.
+
         """
         if all(el.label==overlay.get(0).label for el in overlay):
             return overlay.get(0).label
@@ -113,9 +113,9 @@ class Operation(param.ParameterizedFunction):
 
     @classmethod
     def get_overlay_bounds(cls, overlay):
-        """
-        Returns the extents if all the elements of an overlay agree on
+        """Returns the extents if all the elements of an overlay agree on
         a consistent extents, otherwise raises an exception.
+
         """
         if all(el.bounds==overlay.get(0).bounds for el in overlay):
             return overlay.get(0).bounds
@@ -124,9 +124,9 @@ class Operation(param.ParameterizedFunction):
 
 
     def _apply(self, element, key=None):
-        """
-        Applies the operation to the element, executing any pre- and
+        """Applies the operation to the element, executing any pre- and
         post-processor hooks if defined.
+
         """
         kwargs = {}
         for hook in self._preprocess_hooks:
@@ -155,28 +155,26 @@ class Operation(param.ParameterizedFunction):
             and isinstance(element, Dataset) and not in_method):
             ret._dataset = element.dataset.clone()
             ret._pipeline = element_pipeline.instance(
-                operations=element_pipeline.operations + [
-                    self.instance(**self.p)
-                ],
+                operations=[*element_pipeline.operations, self.instance(**self.p)],
             )
             ret._transforms = element._transforms
         return ret
 
 
     def _process(self, element, key=None):
-        """
-        Process a single input element and outputs new single element
+        """Process a single input element and outputs new single element
         or overlay. If a HoloMap is passed into an Operation, the
         individual components are processed sequentially with the
         corresponding key passed as the optional key argument.
+
         """
         return element
 
 
     def process_element(self, element, key, **params):
-        """
-        The process_element method allows a single element to be
+        """The process_element method allows a single element to be
         operated on given an externally supplied key.
+
         """
         if self._per_element and not isinstance(element, Element):
             return element.clone({k: self.process_element(el, key, **params)
@@ -222,10 +220,10 @@ class Operation(param.ParameterizedFunction):
 
 
 class OperationCallable(Callable):
-    """
-    OperationCallable allows wrapping an Operation and the objects it is
+    """OperationCallable allows wrapping an Operation and the objects it is
     processing to allow traversing the operations applied on a
     DynamicMap.
+
     """
 
     operation = param.ClassSelector(class_=Operation, doc="""

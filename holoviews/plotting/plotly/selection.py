@@ -1,12 +1,11 @@
-from ...core.overlay import NdOverlay, Overlay
-
-from ...selection import OverlaySelectionDisplay
 from ...core.options import Store
+from ...core.overlay import NdOverlay, Overlay
+from ...selection import OverlaySelectionDisplay
 
 
 class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
-    """
-    Overlay selection display subclass for use with plotly backend
+    """Overlay selection display subclass for use with plotly backend
+
     """
 
     def _build_element_layer(self, element, layer_color, layer_alpha, **opts):

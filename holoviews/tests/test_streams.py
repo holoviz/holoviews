@@ -6,18 +6,21 @@ from unittest import SkipTest
 
 import pandas as pd
 import param
+import pytest
 from panel.widgets import IntSlider
 
+import holoviews as hv
 from holoviews.core.spaces import DynamicMap
-from holoviews.core.util import Version
-from holoviews.element import Points, Scatter, Curve, Histogram, Polygons
+from holoviews.core.util import NUMPY_GE_2_0_0, PARAM_VERSION
+from holoviews.element import Curve, Histogram, Points, Polygons, Scatter
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import * # noqa (Test all available streams)
+from holoviews.streams import *  # noqa (Test all available streams)
 from holoviews.util import Dynamic, extension
 from holoviews.util.transform import dim
 
 from .utils import LoggingComparisonTestCase
 
+PARAM_GE_2_0_0 = PARAM_VERSION >= (2, 0, 0)
 
 def test_all_stream_parameters_constant():
     all_stream_cls = [v for v in globals().values() if
@@ -71,24 +74,36 @@ class TestStreamsDefine(ComparisonTestCase):
         self.assertEqual(xy.y, 2)
 
     def test_XY_set_invalid_class_x(self):
-        regexp = "Parameter 'x' only takes numeric values"
+        if PARAM_GE_2_0_0:
+            regexp = "Number parameter 'XY.x' only takes numeric values"
+        else:
+            regexp = "Parameter 'x' only takes numeric values"
         with self.assertRaisesRegex(ValueError, regexp):
             self.XY.x = 'string'
 
     def test_XY_set_invalid_class_y(self):
-        regexp = "Parameter 'y' only takes numeric values"
+        if PARAM_GE_2_0_0:
+            regexp = "Number parameter 'XY.y' only takes numeric values"
+        else:
+            regexp = "Parameter 'y' only takes numeric values"
         with self.assertRaisesRegex(ValueError, regexp):
             self.XY.y = 'string'
 
     def test_XY_set_invalid_instance_x(self):
         xy = self.XY(x=1,y=2)
-        regexp = "Parameter 'x' only takes numeric values"
+        if PARAM_GE_2_0_0:
+            regexp = "Number parameter 'XY.x' only takes numeric values"
+        else:
+            regexp = "Parameter 'x' only takes numeric values"
         with self.assertRaisesRegex(ValueError, regexp):
             xy.x = 'string'
 
     def test_XY_set_invalid_instance_y(self):
         xy = self.XY(x=1,y=2)
-        regexp = "Parameter 'y' only takes numeric values"
+        if PARAM_GE_2_0_0:
+            regexp = "Number parameter 'XY.y' only takes numeric values"
+        else:
+            regexp = "Parameter 'y' only takes numeric values"
         with self.assertRaisesRegex(ValueError, regexp):
             xy.y = 'string'
 
@@ -223,7 +238,7 @@ class TestParamsStream(LoggingComparisonTestCase):
     def test_param_parameter_instance_separate_parameters(self):
         inner = self.inner()
 
-        valid, invalid = Stream._process_streams([inner.param.x, inner.param.y])
+        valid, _invalid = Stream._process_streams([inner.param.x, inner.param.y])
         xparam, yparam = valid
 
         self.assertIs(xparam.parameterized, inner)
@@ -326,10 +341,81 @@ class TestParamsStream(LoggingComparisonTestCase):
         assert len(p.hashkey) == 3  # the two widgets + _memoize_key
 
 
+
+class TestParamRefsStream(LoggingComparisonTestCase):
+
+    def setUp(self):
+        super().setUp()
+        class Inner(param.Parameterized):
+
+            x = param.Number(default = 0)
+            y = param.Number(default = 0)
+
+        class InnerAction(Inner):
+
+            action = param.Action(default=lambda o: o.param.trigger('action'))
+
+        self.inner = Inner
+        self.inner_action = InnerAction
+
+    def test_param_stream_class(self):
+        stream = ParamRefs(refs={'x': self.inner.param.x, 'y': self.inner.param.y})
+        self.assertEqual(stream.contents, {'x': 0, 'y': 0})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+
+        stream.add_subscriber(subscriber)
+        self.inner.x = 1
+        self.assertEqual(values, [{'x': 1, 'y': 0}])
+
+    def test_param_stream_instance(self):
+        inner = self.inner(x=2)
+        stream = ParamRefs(refs={'x': inner.param.x, 'y': inner.param.y})
+        self.assertEqual(stream.contents, {'x': 2, 'y': 0})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+
+        stream.add_subscriber(subscriber)
+        inner.y = 2
+        self.assertEqual(values, [{'x': 2, 'y': 2}])
+        inner.param.update(x=3, y=3)
+        self.assertEqual(values, [{'x': 2, 'y': 2}, {'x': 3, 'y': 3}])
+
+    def test_param_stream_instance_separate_parameters(self):
+        inner = self.inner()
+
+        xparam = ParamRefs(refs={'x': inner.param.x})
+        yparam = ParamRefs(refs={'y': inner.param.y})
+
+        valid, invalid = Stream._process_streams([xparam, yparam])
+        self.assertEqual(len(valid), 2)
+        self.assertEqual(len(invalid), 0)
+
+    def test_param_stream_memoization(self):
+        inner = self.inner_action()
+        stream = ParamRefs(refs={'action': inner.param.action, 'x': inner.param.x})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+            self.assertEqual(
+                set(stream.hashkey),
+                {'action', 'x', '_memoize_key'})
+
+        stream.add_subscriber(subscriber)
+        inner.action(inner)
+        inner.x = 0
+        self.assertEqual(values, [{'action': inner.action, 'x': 0}])
+
+
 class TestParamMethodStream(ComparisonTestCase):
 
     def setUp(self):
-        if Version(param.__version__) < Version('1.8.0'):
+        if PARAM_VERSION < (1, 8, 0):
             raise SkipTest('Params stream requires param >= 1.8.0')
 
         class Inner(param.Parameterized):
@@ -582,6 +668,24 @@ class TestParamMethodStream(ComparisonTestCase):
         self.assertEqual(values_x, [])
         self.assertEqual(values_y, [{}])
 
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_dynamicmap_partial_bind_and_streams():
+    # Ref: https://github.com/holoviz/holoviews/issues/6008
+
+    def make_plot(z, x_range, y_range):
+        return Curve([1, 2, 3, 4, z])
+
+    slider = IntSlider(name='Slider', start=0, end=10)
+    range_xy = RangeXY()
+
+    dmap = DynamicMap(param.bind(make_plot, z=slider), streams=[range_xy])
+
+    bk_figure = hv.render(dmap)
+
+    assert bk_figure.renderers[0].data_source.data["y"][-1] == 0
+    assert range_xy.x_range == (0, 4)
+    assert range_xy.y_range == (-0.4, 4.4)
 
 
 class TestSubscribers(ComparisonTestCase):
@@ -906,7 +1010,7 @@ class TestBufferDataFrameStream(ComparisonTestCase):
     def test_init_buffer_dframe_with_index(self):
         data = pd.DataFrame({'x': np.array([1]), 'y': np.array([2])})
         buff = Buffer(data)
-        self.assertEqual(buff.data, data.reset_index())
+        self.assertEqual(buff.data, data)
 
     def test_buffer_dframe_send(self):
         data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
@@ -920,7 +1024,7 @@ class TestBufferDataFrameStream(ComparisonTestCase):
         buff = Buffer(data)
         buff.send(pd.DataFrame({'x': np.array([1]), 'y': np.array([2])}))
         dframe = pd.DataFrame({'x': np.array([0, 1]), 'y': np.array([1, 2])}, index=[0, 0])
-        self.assertEqual(buff.data.values, dframe.reset_index().values)
+        pd.testing.assert_frame_equal(buff.data, dframe)
 
     def test_buffer_dframe_larger_than_length(self):
         data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
@@ -948,7 +1052,7 @@ class TestBufferDataFrameStream(ComparisonTestCase):
         data = pd.DataFrame({'a': [1, 2, 3]})
         buff = Buffer(data)
         buff.clear()
-        self.assertEqual(buff.data, data.iloc[:0, :].reset_index())
+        pd.testing.assert_frame_equal(buff.data, data.iloc[:0, :])
 
 
 class Sum(Derived):
@@ -1389,6 +1493,7 @@ class TestExprSelectionStream(ComparisonTestCase):
 
 
     def test_selection_expr_stream_polygon_index_cols(self):
+        # TODO: Should test both spatialpandas and shapely
         # Create SelectionExpr on element
         try: import shapely # noqa
         except ImportError:
@@ -1412,10 +1517,12 @@ class TestExprSelectionStream(ComparisonTestCase):
         self.assertIsNone(expr_stream.bbox)
         self.assertIsNone(expr_stream.selection_expr)
 
+        fmt = lambda x: list(map(np.str_, x)) if NUMPY_GE_2_0_0 else x
+
         expr_stream.input_streams[2].event(index=[0, 1])
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(['a', 'b']))
+            repr(dim('cat').isin(fmt(['a', 'b'])))
         )
         self.assertEqual(expr_stream.bbox, None)
         self.assertEqual(len(events), 1)
@@ -1424,7 +1531,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream.input_streams[0].event(bounds=(0, 0, 4, 1))
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(['a', 'b']))
+            repr(dim('cat').isin(fmt(['a', 'b'])))
         )
         self.assertEqual(len(events), 1)
 
@@ -1432,7 +1539,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream.input_streams[1].event(geometry=np.array([(0, 0), (4, 0), (4, 2), (0, 2)]))
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(['a', 'b', 'c']))
+            repr(dim('cat').isin(fmt(['a', 'b', 'c'])))
         )
         self.assertEqual(len(events), 2)
 
@@ -1440,7 +1547,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream.input_streams[2].event(index=[1, 2])
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(['b', 'c']))
+            repr(dim('cat').isin(fmt(['b', 'c'])))
         )
         self.assertEqual(expr_stream.bbox, None)
         self.assertEqual(len(events), 3)

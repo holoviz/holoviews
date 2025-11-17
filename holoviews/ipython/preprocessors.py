@@ -1,16 +1,17 @@
-"""
-Prototype demo:
+"""Prototype demo:
 
 python holoviews/ipython/convert.py Conversion_Example.ipynb | python
+
 """
 import ast
+
 from nbconvert.preprocessors import Preprocessor
 
 
 def comment_out_magics(source):
-    """
-    Utility used to make sure AST parser does not choke on unrecognized
+    """Utility used to make sure AST parser does not choke on unrecognized
     magics.
+
     """
     filtered = []
     for line in source.splitlines():
@@ -22,12 +23,12 @@ def comment_out_magics(source):
 
 
 def wrap_cell_expression(source, template='{expr}'):
-    """
-    If a cell ends in an expression that could be displaying a HoloViews
+    """If a cell ends in an expression that could be displaying a HoloViews
     object (as determined using the AST), wrap it with a given prefix
     and suffix string.
 
     If the cell doesn't end in an expression, return the source unchanged.
+
     """
     cell_output_types = (ast.IfExp, ast.BoolOp, ast.BinOp, ast.Call,
                          ast.Name, ast.Attribute)
@@ -54,12 +55,12 @@ def wrap_cell_expression(source, template='{expr}'):
 
 
 def filter_magic(source, magic, strip=True):
-    """
-    Given the source of a cell, filter out the given magic and collect
+    """Given the source of a cell, filter out the given magic and collect
     the lines using the magic into a list.
 
     If strip is True, the IPython syntax part of the magic (e.g. %magic
     or %%magic) is stripped from the returned lines.
+
     """
     filtered, magic_lines=[],[]
     for line in source.splitlines():
@@ -73,8 +74,8 @@ def filter_magic(source, magic, strip=True):
 
 
 def strip_magics(source):
-    """
-    Given the source of a cell, filter out all cell and line magics.
+    """Given the source of a cell, filter out all cell and line magics.
+
     """
     filtered=[]
     for line in source.splitlines():
@@ -84,9 +85,9 @@ def strip_magics(source):
 
 
 def replace_line_magic(source, magic, template='{line}'):
-    """
-    Given a cell's source, replace line magics using a formatting
+    """Given a cell's source, replace line magics using a formatting
     template, where {line} is the string that follows the magic.
+
     """
     filtered = []
     for line in source.splitlines():
@@ -100,9 +101,9 @@ def replace_line_magic(source, magic, template='{line}'):
 
 
 class OptsMagicProcessor(Preprocessor):
-    """
-    Preprocessor to convert notebooks to Python source to convert use of
+    """Preprocessor to convert notebooks to Python source to convert use of
     opts magic to use the util.opts utility instead.
+
     """
 
     def preprocess_cell(self, cell, resources, index):
@@ -122,9 +123,9 @@ class OptsMagicProcessor(Preprocessor):
 
 
 class OutputMagicProcessor(Preprocessor):
-    """
-    Preprocessor to convert notebooks to Python source to convert use of
+    """Preprocessor to convert notebooks to Python source to convert use of
     output magic to use the util.output utility instead.
+
     """
 
     def preprocess_cell(self, cell, resources, index):
@@ -143,10 +144,10 @@ class OutputMagicProcessor(Preprocessor):
 
 
 class StripMagicsProcessor(Preprocessor):
-    """
-    Preprocessor to convert notebooks to Python source to strips out all
+    """Preprocessor to convert notebooks to Python source to strips out all
     magics. To be applied after the preprocessors that can handle
     holoviews magics appropriately.
+
     """
 
     def preprocess_cell(self, cell, resources, index):
@@ -158,8 +159,7 @@ class StripMagicsProcessor(Preprocessor):
 
 
 class Substitute(Preprocessor):
-    """
-    An nbconvert preprocessor that substitutes one set of HTML data
+    """An nbconvert preprocessor that substitutes one set of HTML data
     output for another, adding annotation to the output as required.
 
     The constructor accepts the notebook format version and a
@@ -168,7 +168,9 @@ class Substitute(Preprocessor):
     {source_html:(target_html, annotation)}
 
     Where the annotation may be None (i.e. no annotation).
+
     """
+
     annotation = '<center><b>%s</b></center>'
 
     def __init__(self, version, substitutions, **kw):
@@ -181,7 +183,9 @@ class Substitute(Preprocessor):
 
 
     def replace(self, src):
-        "Given some source html substitute and annotated as applicable"
+        """Given some source html substitute and annotated as applicable
+
+        """
         for html in self.substitutions.keys():
             if src == html:
                 annotation = self.annotation % self.substitutions[src][1]

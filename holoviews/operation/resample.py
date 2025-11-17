@@ -1,17 +1,16 @@
 import numpy as np
 import param
-
 from param.parameterized import bothmethod
 
 from ..core import Dataset, Operation
 from ..core.util import datetime_types, dt_to_int, isfinite, max_range
 from ..element import Image
-from ..streams import RangeX, RangeXY, PlotSize
+from ..streams import PlotSize, RangeX, RangeXY
 
 
 class LinkableOperation(Operation):
-    """
-    Abstract baseclass for operations supporting linked inputs.
+    """Abstract baseclass for operations supporting linked inputs.
+
     """
 
     link_inputs = param.Boolean(default=True, doc="""
@@ -26,8 +25,8 @@ class LinkableOperation(Operation):
 
 
 class ResampleOperation1D(LinkableOperation):
-    """
-    Abstract baseclass for resampling operations
+    """Abstract baseclass for resampling operations
+
     """
 
     dynamic = param.Boolean(default=True, doc="""
@@ -50,16 +49,20 @@ class ResampleOperation1D(LinkableOperation):
     height = param.Integer(default=400, doc="""
        The height of the output image in pixels.""")
 
-    pixel_ratio = param.Number(default=1, bounds=(1,None), doc="""
+    pixel_ratio = param.Number(default=None, bounds=(0,None),
+                               inclusive_bounds=(False,False), doc="""
        Pixel ratio applied to the height and width. Useful for higher
        resolution screens where the PlotSize stream reports 'nominal'
        dimensions in pixels that do not match the physical pixels. For
        instance, setting pixel_ratio=2 can give better results on Retina
-       displays.""")
+       displays. Also useful for using lower resolution for speed.
+       If not set explicitly, the zoom level of the browsers will be used,
+       if available.""")
+
 
 class ResampleOperation2D(ResampleOperation1D):
-    """
-    Abstract baseclass for resampling operations
+    """Abstract baseclass for resampling operations
+
     """
 
     dynamic = param.Boolean(default=True, doc="""
@@ -180,6 +183,11 @@ class ResampleOperation2D(ResampleOperation1D):
             if y and element.get_dimension_type(y[0]) in datetime_types:
                 ytype = 'datetime'
 
+        # Adjust width and height depending on pixel ratio
+        pixel_ratio = self._get_pixel_ratio()
+        width = int(width * pixel_ratio)
+        height = int(height * pixel_ratio)
+
         # Compute highest allowed sampling density
         xspan = xend - xstart
         yspan = yend - ystart
@@ -195,12 +203,22 @@ class ResampleOperation2D(ResampleOperation1D):
             yunit, height = 0, 0
         else:
             yunit = float(yspan)/height
-        xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
-                  np.linspace(ystart+yunit/2., yend-yunit/2., height))
 
-        width = int(width * self.p.pixel_ratio)
-        height = int(height * self.p.pixel_ratio)
+        xs, ys = (
+            np.linspace(xstart+xunit/2., xend-xunit/2., width),
+            np.linspace(ystart+yunit/2., yend-yunit/2., height)
+        )
         return ((xstart, xend), (ystart, yend)), (xs, ys), (width, height), (xtype, ytype)
+
+    def _get_pixel_ratio(self):
+        if self.p.pixel_ratio is None:
+            from panel import state
+            if state.browser_info and isinstance(state.browser_info.device_pixel_ratio, (int, float)):
+                return state.browser_info.device_pixel_ratio
+            else:
+                return 1
+        else:
+            return self.p.pixel_ratio
 
     def _dt_transform(self, x_range, y_range, xs, ys, xtype, ytype):
         (xstart, xend), (ystart, yend) = x_range, y_range

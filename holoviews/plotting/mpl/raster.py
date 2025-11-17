@@ -1,18 +1,16 @@
 import sys
 
-import param
 import numpy as np
-from packaging.version import Version
+import param
 
-from ...core import CompositeOverlay, Element
-from ...core import traversal
+from ...core import CompositeOverlay, Element, traversal
 from ...core.util import isfinite, match_spec, max_range, unique_iterator
-from ...element.raster import Image, Raster, RGB
+from ...element.raster import RGB, Image, Raster
 from ..util import categorical_legend
 from .chart import PointPlot
-from .element import ElementPlot, ColorbarPlot, LegendPlot, OverlayPlot
-from .plot import MPLPlot, GridPlot, mpl_rc_context
-from .util import get_raster_array, mpl_version
+from .element import ColorbarPlot, ElementPlot, LegendPlot, OverlayPlot
+from .plot import GridPlot, MPLPlot, mpl_rc_context
+from .util import MPL_VERSION, get_raster_array
 
 
 class RasterBasePlot(ElementPlot):
@@ -37,7 +35,7 @@ class RasterBasePlot(ElementPlot):
 
     _plot_methods = dict(single='imshow')
 
-    def get_extents(self, element, ranges, range_type='combined'):
+    def get_extents(self, element, ranges, range_type='combined', **kwargs):
         extents = super().get_extents(element, ranges, range_type)
         if self.situate_axes or range_type not in ('combined', 'data'):
             return extents
@@ -180,7 +178,7 @@ class QuadMeshPlot(ColorbarPlot):
         if self.invert_axes:
             coords = coords[::-1]
             data = data.T
-        cmesh_data = coords + [data]
+        cmesh_data = [*coords, data]
         if expanded:
             style['locs'] = np.concatenate(coords)
         vdim = element.vdims[0]
@@ -191,7 +189,10 @@ class QuadMeshPlot(ColorbarPlot):
         locs = plot_kwargs.pop('locs', None)
         artist = ax.pcolormesh(*plot_args, **plot_kwargs)
         colorbar = self.handles.get('cbar')
-        if colorbar and mpl_version < Version('3.1'):
+        if 'norm' in plot_kwargs: # vmin/vmax should now be exclusively in norm
+            plot_kwargs.pop('vmin', None)
+            plot_kwargs.pop('vmax', None)
+        if colorbar and MPL_VERSION < (3, 1, 0):
             colorbar.set_norm(artist.norm)
             if hasattr(colorbar, 'set_array'):
                 # Compatibility with mpl < 3
@@ -205,11 +206,11 @@ class QuadMeshPlot(ColorbarPlot):
 
 
 class RasterGridPlot(GridPlot, OverlayPlot):
-    """
-    RasterGridPlot evenly spaces out plots of individual projections on
+    """RasterGridPlot evenly spaces out plots of individual projections on
     a grid, even when they differ in size. Since this class uses a single
     axis to generate all the individual plots it is much faster than the
     equivalent using subplots.
+
     """
 
     padding = param.Number(default=0.1, doc="""
@@ -272,7 +273,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         self.overlaid = False
         self.hmap = layout
         if layout.ndims > 1:
-            xkeys, ykeys = zip(*layout.keys())
+            xkeys, ykeys = zip(*layout.keys(), strict=None)
         else:
             xkeys = layout.keys()
             ykeys = [None]
@@ -294,7 +295,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     def _finalize_artist(self, key):
         pass
 
-    def get_extents(self, view, ranges, range_type='combined'):
+    def get_extents(self, view, ranges, range_type='combined', **kwargs):
         if range_type == 'hard':
             return (np.nan,)*4
         width, height, _, _, _, _ = self.border_extents
@@ -321,14 +322,14 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                     vmap = self.layout.get((xkey, ykey), None)
                 else:
                     vmap = self.layout.get(xkey, None)
-                pane = vmap.select(**{d.name: val for d, val in zip(self.dimensions, key)
+                pane = vmap.select(**{d.name: val for d, val in zip(self.dimensions, key, strict=None)
                                     if d in vmap.kdims})
                 pane = vmap.last.values()[-1] if issubclass(vmap.type, CompositeOverlay) else vmap.last
                 data = get_raster_array(pane) if pane else None
                 ranges = self.compute_ranges(vmap, key, ranges)
                 opts = self.lookup_options(pane, 'style')[self.cyclic_index]
                 plot = self.handles['axis'].imshow(data, extent=(x,x+w, y, y+h), **opts)
-                cdim = pane.vdims[0].name
+                cdim = pane.vdims[0].label
                 valrange = match_spec(pane, ranges).get(cdim, pane.range(cdim))['combined']
                 plot.set_clim(valrange)
                 if data is None:

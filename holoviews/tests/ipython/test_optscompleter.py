@@ -3,8 +3,9 @@ Tests the OptsCompleter class for tab-completion in the opts magic.
 """
 
 from unittest import SkipTest
+
 try:
-    from holoviews.ipython import IPTestCase
+    from holoviews.element.comparison import IPTestCase
     from holoviews.ipython.magics import OptsCompleter
 except ImportError:
     raise SkipTest("Required dependencies not satisfied for testing OptsCompleter")
@@ -25,7 +26,7 @@ class TestOptsCompleter(IPTestCase):
                 ['styleoptC1', 'styleoptC2'])}
 
         self.compositor_defs = {}
-        self.all_keys = sorted(self.completions.keys()) + ['style(', 'plot[', 'norm{']
+        self.all_keys = [*sorted(self.completions.keys()), "style(", "plot[", "norm{"]
 
         super().setUp()
 

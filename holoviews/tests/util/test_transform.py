@@ -4,18 +4,16 @@ Unit tests for dim transforms
 import pickle
 import warnings
 
-import holoviews as hv
-
-from collections import OrderedDict
-from unittest import skipIf
-
 import numpy as np
 import pandas as pd
 import param
+import pytest
+
+import holoviews as hv
 
 try:
-    import dask.dataframe as dd
     import dask.array as da
+    import dask.dataframe as dd
 except ImportError:
     da, dd = None, None
 
@@ -24,7 +22,20 @@ try:
 except ImportError:
     xr = None
 
-xr_skip = skipIf(xr is None, "xarray not available")
+xr_skip = pytest.mark.skipif(xr is None, reason="xarray not available")
+
+try:
+    import spatialpandas as spd
+except ImportError:
+    spd = None
+
+try:
+    import shapely
+except ImportError:
+    shapely = None
+
+shapelib_available = pytest.mark.skipif(shapely is None and spd is None,
+                            reason='Neither shapely nor spatialpandas are available')
 
 from holoviews.core.data import Dataset
 from holoviews.element.comparison import ComparisonTestCase
@@ -64,7 +75,7 @@ class TestDimTransforms(ComparisonTestCase):
         array = np.arange(100).reshape(5, 20)
         darray = xr.DataArray(
             data=array,
-            coords=OrderedDict([('x', x), ('y', y)]),
+            coords=dict([('x', x), ('y', y)]),
             dims=['y','x']
         )
         self.dataset_xarray = Dataset(darray, vdims=['z'])
@@ -72,7 +83,7 @@ class TestDimTransforms(ComparisonTestCase):
             dask_array = da.from_array(array)
             dask_da = xr.DataArray(
                 data=dask_array,
-                coords=OrderedDict([('x', x), ('y', y)]),
+                coords=dict([('x', x), ('y', y)]),
                 dims=['y','x']
             )
             self.dataset_xarray_dask = Dataset(dask_da, vdims=['z'])
@@ -468,7 +479,7 @@ class TestDimTransforms(ComparisonTestCase):
         with warnings.catch_warnings():
             # The kwargs is {'axis': None} and is already handled by the code.
             # This context manager can be removed, when it raises an TypeError instead of warning.
-            warnings.simplefilter("ignore", "Passing additional kwargs to Rolling.mean")
+            warnings.filterwarnings("ignore", "Passing additional kwargs to Rolling.mean")
             self.assert_apply(expr, self.linear_ints.rolling(1).mean())
 
 
@@ -524,6 +535,7 @@ class TestDimTransforms(ComparisonTestCase):
         self.assertEqual(expr, expr2)
 
 
+@shapelib_available
 def test_dataset_transform_by_spatial_select_expr_index_not_0_based():
     """Ensure 'spatial_select' expression works when index not zero-based.
     Use 'spatial_select' defined by four nodes to select index 104, 105.
