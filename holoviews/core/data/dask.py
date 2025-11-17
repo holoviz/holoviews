@@ -1,19 +1,18 @@
 import sys
 
 import numpy as np
-import pandas as pd
 
 from .. import util
 from ..dimension import Dimension
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
+from ..util import dtype_kind
 from .interface import Interface
 from .pandas import PandasInterface
 
 
 class DaskInterface(PandasInterface):
-    """
-    The DaskInterface allows a Dataset objects to wrap a dask
+    """The DaskInterface allows a Dataset objects to wrap a dask
     DataFrame object. Using dask allows loading data lazily
     and performing out-of-core operations on the data, making
     it possible to work on datasets larger than memory.
@@ -22,12 +21,15 @@ class DaskInterface(PandasInterface):
     by the PandasInterface with two notable exceptions:
 
     1) Sorting is not supported and any attempt at sorting will
-       be ignored with an warning.
+       be ignored with a warning.
+
     2) Dask does not easily support adding a new column to an existing
        dataframe unless it is a scalar, add_dimension will therefore
        error when supplied a non-scalar value.
-    4) Not all functions can be easily applied to a dask dataframe so
+
+    3) Not all functions can be easily applied to a dask dataframe so
        some functions applied with aggregate and reduce will not work.
+
     """
 
     types = ()
@@ -81,9 +83,12 @@ class DaskInterface(PandasInterface):
         import dask.dataframe as dd
         dimension = dataset.get_dimension(dimension, strict=True)
         column = dataset.data[dimension.name]
-        if column.dtype.kind == 'O':
-            column = np.sort(column[column.notnull()].compute())
-            return (column[0], column[-1]) if len(column) else (None, None)
+        if dtype_kind(column) == 'O':
+            try:
+                column = np.sort(column[column.notnull()].compute())
+                return (column[0], column[-1]) if len(column) else (None, None)
+            except TypeError:
+                return (None, None)
         else:
             if dimension.nodata is not None:
                 column = cls.replace_value(column, dimension.nodata)
@@ -109,11 +114,11 @@ class DaskInterface(PandasInterface):
 
     @classmethod
     def select_mask(cls, dataset, selection):
-        """
-        Given a Dataset object and a dictionary with dimension keys and
+        """Given a Dataset object and a dictionary with dimension keys and
         selection keys (i.e. tuple ranges, slices, sets, lists. or literals)
         return a boolean mask over the rows in the Dataset object that
         have been selected.
+
         """
         select_mask = None
         for dim, k in selection.items():
@@ -154,6 +159,9 @@ class DaskInterface(PandasInterface):
     def select(cls, dataset, selection_mask=None, **selection):
         df = dataset.data
         if selection_mask is not None:
+            import dask.array as da
+            if isinstance(selection_mask, da.Array):
+                return df.loc[selection_mask]
             return df[selection_mask]
         selection_mask = cls.select_mask(dataset, selection)
         indexed = cls.indexed(dataset, selection)
@@ -161,6 +169,23 @@ class DaskInterface(PandasInterface):
         if indexed and len(df) == 1 and len(dataset.vdims) == 1:
             return df[dataset.vdims[0].name].compute().iloc[0]
         return df
+
+    @classmethod
+    def _select_mask_neighbor(cls, dataset, selection):
+        """Runs select mask and expand the True values to include its neighbors
+
+        Example
+
+        select_mask =          [False, False, True, True, False, False]
+        select_mask_neighbor = [False, True,  True, True, True,  False]
+
+        """
+        mask = cls.select_mask(dataset, selection)
+        mask = mask.to_dask_array().compute_chunk_sizes()
+        extra = mask[1:] ^ mask[:-1]
+        mask[1:] |= extra
+        mask[:-1] |= extra
+        return mask
 
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
@@ -195,7 +220,7 @@ class DaskInterface(PandasInterface):
         for coord in indices:
             if any(isinstance(c, float) and np.isnan(c) for c in coord):
                 continue
-            if len(coord) == 1:
+            if len(coord) == 1 and not util.PANDAS_GE_2_2_0:
                 coord = coord[0]
             group = group_type(groupby.get_group(coord), **group_kwargs)
             data.append((coord, group))
@@ -211,8 +236,8 @@ class DaskInterface(PandasInterface):
         cols = [d.name for d in dataset.kdims if d in dimensions]
         vdims = dataset.dimensions('value', label='name')
         dtypes = data.dtypes
-        numeric = [c for c, dtype in zip(dtypes.index, dtypes.values)
-                   if dtype.kind in 'iufc' and c in vdims]
+        numeric = [c for c, dtype in zip(dtypes.index, dtypes.values, strict=None)
+                   if dtype_kind(dtype) in 'iufc' and c in vdims]
         reindexed = data[cols+numeric]
 
         inbuilts = {'amin': 'min', 'amax': 'max', 'mean': 'mean',
@@ -229,6 +254,7 @@ class DaskInterface(PandasInterface):
                 agg = getattr(reindexed, inbuilts[function.__name__])()
             else:
                 raise NotImplementedError
+            import pandas as pd
             df = pd.DataFrame(agg.compute()).T
 
         dropped = []
@@ -239,9 +265,9 @@ class DaskInterface(PandasInterface):
 
     @classmethod
     def unpack_scalar(cls, dataset, data):
-        """
-        Given a dataset object and data in the appropriate format for
+        """Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
+
         """
         import dask.dataframe as dd
         if len(data.columns) > 1 or len(data) != 1:
@@ -259,7 +285,7 @@ class DaskInterface(PandasInterface):
         mask = None
         for sample in samples:
             if np.isscalar(sample): sample = [sample]
-            for c, v in zip(dims, sample):
+            for c, v in zip(dims, sample, strict=None):
                 dim_mask = data[c]==v
                 if mask is None:
                     mask = dim_mask
@@ -298,9 +324,9 @@ class DaskInterface(PandasInterface):
 
     @classmethod
     def iloc(cls, dataset, index):
-        """
-        Dask does not support iloc, therefore iloc will execute
+        """Dask does not support iloc, therefore iloc will execute
         the call graph and lose the laziness of the operation.
+
         """
         rows, cols = index
         scalar = False

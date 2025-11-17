@@ -18,6 +18,7 @@ from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting import Renderer
 from holoviews.plotting.bokeh.callbacks import Callback, RangeXYCallback, ResetCallback
 from holoviews.plotting.bokeh.renderer import BokehRenderer
+from holoviews.plotting.bokeh.util import BOKEH_GE_3_8_0
 from holoviews.streams import PlotReset, RangeXY, Stream
 
 bokeh_renderer = BokehRenderer.instance(mode='server')
@@ -48,8 +49,12 @@ class TestBokehServerSetup(ComparisonTestCase):
     def test_render_server_doc_element(self):
         obj = Curve([])
         doc = bokeh_renderer.server_doc(obj)
-        self.assertIs(doc, curdoc())
-        self.assertIs(bokeh_renderer.last_plot.document, curdoc())
+        if not BOKEH_GE_3_8_0:
+            # Updating the config which is introduced in Bokeh 3.8 changes the curdoc()
+            # Something like this is done in Panel:
+            # curdoc().config.update(notifications=None)
+            assert doc == curdoc()
+        assert bokeh_renderer.last_plot.document == doc
 
     def test_render_explicit_server_doc_element(self):
         obj = Curve([])
@@ -80,6 +85,7 @@ class TestBokehServerSetup(ComparisonTestCase):
 
 
 
+@pytest.mark.flaky(reruns=3)
 class TestBokehServer(ComparisonTestCase):
 
     def setUp(self):
@@ -120,7 +126,7 @@ class TestBokehServer(ComparisonTestCase):
         stream = RangeXY(source=el)
 
         obj, _ = bokeh_renderer._validate(el, None)
-        server, _ = self._launcher(obj, port=6002)
+        _server, _ = self._launcher(obj, port=6002)
         [(plot, _)] = obj._plots.values()
 
         cb = plot.callbacks[0]
@@ -128,7 +134,6 @@ class TestBokehServer(ComparisonTestCase):
         self.assertEqual(cb.streams, [stream])
         assert 'rangesupdate' in plot.state._event_callbacks
 
-    @pytest.mark.flaky(reruns=3)
     def test_launch_server_with_complex_plot(self):
         dmap = DynamicMap(lambda x_range, y_range: Curve([]), streams=[RangeXY()])
         overlay = dmap * HLine(0)
@@ -141,7 +146,7 @@ class TestBokehServer(ComparisonTestCase):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
         obj, _ = bokeh_renderer._validate(dmap, None)
         _, session = self._launcher(obj, port=6004)
-        [(plot, _)] = obj._plots.values()
+        [(_plot, _)] = obj._plots.values()
         [(doc, _)] = obj._documents.items()
 
         cds = session.document.roots[0].select_one({'type': ColumnDataSource})
@@ -163,6 +168,9 @@ class TestBokehServer(ComparisonTestCase):
 
         cds = session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(cds.data['y'][2], 2)
+        def loaded():
+            state._schedule_on_load(doc, None)
+        doc.add_next_tick_callback(loaded)
         def run():
             stream.event(y=3)
         doc.add_next_tick_callback(run)
@@ -180,6 +188,9 @@ class TestBokehServer(ComparisonTestCase):
 
         orig_cds = session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(orig_cds.data['y'][2], 2)
+        def loaded():
+            state._schedule_on_load(doc, None)
+        doc.add_next_tick_callback(loaded)
         def run():
             stream.event(y=3)
         doc.add_next_tick_callback(run)

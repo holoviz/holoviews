@@ -2,13 +2,19 @@
 Unit tests of the StoreOptions class used to control custom options on
 Store as used by the %opts magic.
 """
+from unittest import SkipTest
+
 import numpy as np
 
 from holoviews import Curve, HoloMap, Image, Overlay
 from holoviews.core.options import Store, StoreOptions
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.plotting import mpl  # noqa Register backend
+from holoviews.plotting import bokeh  # noqa: F401
 
+try:
+    from holoviews.plotting import mpl
+except ImportError:
+    mpl = None
 
 class TestStoreOptionsMerge(ComparisonTestCase):
 
@@ -43,13 +49,16 @@ class TestStoreOptsMethod(ComparisonTestCase):
     """
 
     def setUp(self):
+        if mpl is None:
+            raise SkipTest("Matplotlib required to test Store inheritance")
+
         Store.current_backend = 'matplotlib'
 
     def test_overlay_options_partitioned(self):
         """
         The new style introduced in #73
         """
-        data = [zip(range(10),range(10)), zip(range(5),range(5))]
+        data = [zip(range(10),range(10), strict=None), zip(range(5),range(5), strict=None)]
         o = Overlay([Curve(c) for c in data]).opts(
             {'Curve.Curve': {'show_grid': False, 'color':'k'}}
         )
@@ -67,7 +76,7 @@ class TestStoreOptsMethod(ComparisonTestCase):
         """
         Complete specification style.
         """
-        data = [zip(range(10),range(10)), zip(range(5),range(5))]
+        data = [zip(range(10),range(10), strict=None), zip(range(5),range(5), strict=None)]
         o = Overlay([Curve(c) for c in data]).opts(
             {'Curve.Curve': {'show_grid':True, 'color':'b'}})
 

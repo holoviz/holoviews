@@ -19,13 +19,13 @@ from .streams import BoxEdit, CurveEdit, PointDraw, PolyDraw, PolyEdit, Selectio
 
 
 def preprocess(function, current=None):
-    """
-    Turns a param.depends watch call into a preprocessor method, i.e.
+    """Turns a param.depends watch call into a preprocessor method, i.e.
     skips all downstream events triggered by it.
-    NOTE: This is a temporary hack while the addition of preprocessors
+    NOTE : This is a temporary hack while the addition of preprocessors
           in param is under discussion. This only works for the first
           method which depends on a particular parameter.
           (see https://github.com/pyviz/param/issues/332)
+
     """
     if current is None:
         current = []
@@ -40,12 +40,12 @@ def preprocess(function, current=None):
 
 
 class annotate(param.ParameterizedFunction):
-    """
-    The annotate function allows drawing, editing and annotating any
+    """The annotate function allows drawing, editing and annotating any
     given Element (if it is supported). The annotate function returns
     a Layout of the editable plot and an Overlay of table(s), which
     allow editing the data of the element. The edited and annotated
     data may be accessed using the element and selected properties.
+
     """
 
     annotator = param.Parameter(doc="""The current Annotator instance.""")
@@ -101,11 +101,14 @@ class annotate(param.ParameterizedFunction):
         The composed Layout will contain all the elements in the
         supplied annotators and an overlay of all editor tables.
 
-        Args:
-            annotators: Annotator layouts or elements to compose
+        Parameters
+        ----------
+        annotators
+            Annotator layouts or elements to compose
 
-        Returns:
-            A new layout consisting of the overlaid plots and tables
+        Returns
+        -------
+        A new layout consisting of the overlaid plots and tables
         """
         layers = []
         tables = []
@@ -120,8 +123,7 @@ class annotate(param.ParameterizedFunction):
             elif isinstance(annotator, (HoloMap, ViewableElement)):
                 layers.append(annotator)
             else:
-                raise ValueError("Cannot compose %s type with annotators." %
-                                 type(annotator).__name__)
+                raise ValueError(f"Cannot compose {type(annotator).__name__} type with annotators.")
         tables = Overlay(tables, group='Annotator')
         return (Overlay(layers).collate() + tables)
 
@@ -130,11 +132,11 @@ class annotate(param.ParameterizedFunction):
 
         layers = []
         annotator_type = None
-        for element in overlay:
+        for el in overlay:
             matches = []
             for eltype, atype in self._annotator_types.items():
-                if isinstance(element, eltype):
-                    matches.append((getmro(type(element)).index(eltype), atype))
+                if isinstance(el, eltype):
+                    matches.append((getmro(type(el)).index(eltype), atype))
             if matches:
                 if annotator_type is not None:
                     msg = ('An annotate call may only annotate a single element. '
@@ -143,17 +145,17 @@ class annotate(param.ParameterizedFunction):
                            'method to combine them into a single layout.')
                     raise ValueError(msg)
                 annotator_type = sorted(matches)[0][1]
-                self.annotator = annotator_type(element, **params)
+                self.annotator = annotator_type(el, **params)
                 tables = Overlay([t[0].object for t in self.annotator.editor], group='Annotator')
                 layout = (self.annotator.plot + tables)
                 layers.append(layout)
             else:
-                layers.append(element)
+                layers.append(el)
 
         if annotator_type is None:
             obj = overlay if isinstance(overlay, Overlay) else element
             raise ValueError('Could not find an Element to annotate on'
-                             '%s object.' % type(obj).__name__)
+                             f'{type(obj).__name__} object.')
 
         if len(layers) == 1:
             return layers[0]
@@ -161,12 +163,12 @@ class annotate(param.ParameterizedFunction):
 
 
 class Annotator(PaneBase):
-    """
-    An Annotator allows drawing, editing and annotating a specific
+    """An Annotator allows drawing, editing and annotating a specific
     type of element. Each Annotator consists of the `plot` to draw and
     edit the element and the `editor`, which contains a list of tables,
     which make it possible to annotate each object in the element with
     additional properties defined in the `annotations`.
+
     """
 
     annotations = param.ClassSelector(default=[], class_=(dict, list), doc="""
@@ -286,11 +288,14 @@ class Annotator(PaneBase):
         The composed Panel will contain all the elements in the
         supplied Annotators and Tabs containing all editors.
 
-        Args:
-            annotators: Annotator objects or elements to compose
+        Parameters
+        ----------
+        annotators
+            Annotator objects or elements to compose
 
-        Returns:
-            A new Panel consisting of the overlaid plots and tables
+        Returns
+        -------
+        A new Panel consisting of the overlaid plots and tables
         """
         layers, tables = [], []
         for a in annotators:
@@ -303,7 +308,7 @@ class Annotator(PaneBase):
 
     @property
     def tables(self):
-        return list(zip(self.editor._names, self.editor))
+        return list(zip(self.editor._names, self.editor, strict=None))
 
     @property
     def selected(self):
@@ -312,9 +317,9 @@ class Annotator(PaneBase):
 
 
 class PathAnnotator(Annotator):
-    """
-    Annotator which allows drawing and editing Paths and associating
+    """Annotator which allows drawing and editing Paths and associating
     values with each path and each vertex of a path using a table.
+
     """
 
     edit_vertices = param.Boolean(default=True, doc="""
@@ -386,7 +391,7 @@ class PathAnnotator(Annotator):
         if validate and len({len(v) for v in poly_data.values()}) != 1:
             raise ValueError('annotations must refer to value dimensions '
                              'which vary per path while at least one of '
-                             '%s varies by vertex.' % validate)
+                             f'{validate} varies by vertex.')
 
         # Add options to element
         tools = [tool() for tool in self._tools]
@@ -438,9 +443,9 @@ class PathAnnotator(Annotator):
 
 
 class PolyAnnotator(PathAnnotator):
-    """
-    Annotator which allows drawing and editing Polygons and associating
+    """Annotator which allows drawing and editing Polygons and associating
     values with each polygon and each vertex of a Polygon using a table.
+
     """
 
     object = param.ClassSelector(class_=Polygons, doc="""
@@ -486,9 +491,9 @@ class _GeomAnnotator(Annotator):
 
 
 class PointAnnotator(_GeomAnnotator):
-    """
-    Annotator which allows drawing and editing Points and associating
+    """Annotator which allows drawing and editing Points and associating
     values with each point using a table.
+
     """
 
     default_opts = param.Dict(default={'responsive': True, 'min_height': 400,
@@ -503,9 +508,9 @@ class PointAnnotator(_GeomAnnotator):
 
 
 class CurveAnnotator(_GeomAnnotator):
-    """
-    Annotator which allows editing a Curve element and associating values
+    """Annotator which allows editing a Curve element and associating values
     with each vertex using a Table.
+
     """
 
     default_opts = param.Dict(default={'responsive': True, 'min_height': 400,
@@ -529,9 +534,9 @@ class CurveAnnotator(_GeomAnnotator):
 
 
 class RectangleAnnotator(_GeomAnnotator):
-    """
-    Annotator which allows drawing and editing Rectangles and associating
+    """Annotator which allows drawing and editing Rectangles and associating
     values with each point using a table.
+
     """
 
     object = param.ClassSelector(class_=Rectangles, doc="""

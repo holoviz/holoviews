@@ -1,5 +1,5 @@
-"""
-Defines valid style options, validation and utilities
+"""Defines valid style options, validation and utilities
+
 """
 
 import numpy as np
@@ -29,14 +29,22 @@ property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
 
 base_properties = ['visible', 'muted']
 
-line_properties = ['line_color', 'line_alpha', 'color', 'alpha', 'line_width',
-                   'line_join', 'line_cap', 'line_dash']
-line_properties += [f'{prefix}_{prop}' for prop in line_properties
-                    for prefix in property_prefixes]
+line_base_properties = ['line_color', 'line_alpha', 'color', 'alpha', 'line_width',
+                        'line_join', 'line_cap', 'line_dash', 'line_dash_offset']
+line_properties = line_base_properties + [f'{prefix}_{prop}'
+                                          for prop in line_base_properties
+                                          for prefix in property_prefixes]
 
-fill_properties = ['fill_color', 'fill_alpha']
-fill_properties += [f'{prefix}_{prop}' for prop in fill_properties
-                    for prefix in property_prefixes]
+fill_base_properties = ['fill_color', 'fill_alpha']
+fill_properties = fill_base_properties + [f'{prefix}_{prop}'
+                                          for prop in fill_base_properties
+                                          for prefix in property_prefixes]
+
+border_properties = ['border_' + prop for prop in [*line_base_properties, 'radius']]
+
+hatch_properties = ['hatch_color', 'hatch_scale', 'hatch_weight',
+                    'hatch_extra', 'hatch_pattern', 'hatch_alpha']
+background_properties = ['background_' + prop for prop in fill_base_properties + hatch_properties]
 
 text_properties = ['text_font', 'text_font_size', 'text_font_style', 'text_color',
                    'text_alpha', 'text_align', 'text_baseline']
@@ -48,7 +56,6 @@ legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_wid
 
 markers = {
     '+': {'marker': 'cross'},
-    'x': {'marker': 'cross', 'angle': np.pi/4},
     's': {'marker': 'square'},
     'd': {'marker': 'diamond'},
     '^': {'marker': 'triangle', 'angle': 0},
@@ -65,10 +72,10 @@ markers = {
 
 
 def mpl_to_bokeh(properties):
-    """
-    Utility to process style properties converting any
+    """Utility to process style properties converting any
     matplotlib specific options to their nearest bokeh
     equivalent.
+
     """
     new_properties = {}
     for k, v in properties.items():
@@ -119,26 +126,25 @@ def get_validator(style):
 
 
 def validate(style, value, scalar=False):
-    """
-    Validates a style and associated value.
+    """Validates a style and associated value.
 
-    Arguments
-    ---------
-    style: str
+    Parameters
+    ----------
+    style : str
        The style to validate (e.g. 'color', 'size' or 'marker')
-    value:
+    value :
        The style value to validate
-    scalar: bool
+    scalar : bool
 
     Returns
     -------
-    valid: boolean or None
+    valid : boolean or None
        If validation is supported returns boolean, otherwise None
     """
     validator = get_validator(style)
     if validator is None:
         return None
-    if isinstance(value, arraylike_types+(list,)):
+    if isinstance(value, (*arraylike_types, list)):
         if scalar:
             return False
         return all(validator(v) for v in value)
@@ -147,8 +153,8 @@ def validate(style, value, scalar=False):
 # Utilities
 
 def rgba_tuple(rgba):
-    """
-    Ensures RGB(A) tuples in the range 0-1 are scaled to 0-255.
+    """Ensures RGB(A) tuples in the range 0-1 are scaled to 0-255.
+
     """
     if isinstance(rgba, tuple):
         return tuple(int(c*255) if i<3 else c for i, c in enumerate(rgba))
@@ -157,11 +163,11 @@ def rgba_tuple(rgba):
 
 
 def expand_batched_style(style, opts, mapping, nvals):
-    """
-    Computes styles applied to a batched plot by iterating over the
+    """Computes styles applied to a batched plot by iterating over the
     supplied list of style options and expanding any options found in
     the supplied style dictionary returning a data and mapping defining
     the data that should be added to the ColumnDataSource.
+
     """
     opts = sorted(opts, key=lambda x: x in ['color', 'alpha'])
     applied_styles = set(mapping)

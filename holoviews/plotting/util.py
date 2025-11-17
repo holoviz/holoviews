@@ -27,6 +27,7 @@ from ..core.util import (
     arraylike_types,
     closest_match,
     disable_constant,
+    dtype_kind,
     get_overlay_spec,
     is_number,
     isfinite,
@@ -40,9 +41,9 @@ from ..util.transform import dim
 
 
 def displayable(obj):
-    """
-    Predicate that returns whether the object is displayable or not
+    """Predicate that returns whether the object is displayable or not
     (i.e. whether the object obeys the nesting hierarchy)
+
     """
     if isinstance(obj, Overlay) and any(isinstance(o, (HoloMap, GridSpace, AdjointLayout))
                                         for o in obj):
@@ -65,30 +66,30 @@ def collate(obj):
         nested_type = next(type(o).__name__ for o in obj
                        if isinstance(o, (HoloMap, GridSpace, AdjointLayout)))
         display_warning.param.warning(
-            "Nesting %ss within an Overlay makes it difficult to "
+            f"Nesting {nested_type}s within an Overlay makes it difficult to "
             "access your data or control how it appears; we recommend "
             "calling .collate() on the Overlay in order to follow the "
             "recommended nesting structure shown in the Composing Data "
-            "user guide (http://goo.gl/2YS8LJ)" % nested_type)
+            "user guide (https://goo.gl/2YS8LJ)")
 
         return obj.collate()
     if isinstance(obj, DynamicMap):
         if obj.type in [DynamicMap, HoloMap]:
             obj_name = obj.type.__name__
-            raise Exception("Nesting a %s inside a DynamicMap is not "
+            raise Exception(f"Nesting a {obj_name} inside a DynamicMap is not "
                             "supported. Ensure that the DynamicMap callback "
                             "returns an Element or (Nd)Overlay. If you have "
                             "applied an operation ensure it is not dynamic by "
-                            "setting dynamic=False." % obj_name)
+                            "setting dynamic=False.")
         return obj.collate()
     if isinstance(obj, HoloMap):
         display_warning.param.warning(
-            "Nesting {0}s within a {1} makes it difficult to access "
-            "your data or control how it appears; we recommend "
-            "calling .collate() on the {1} in order to follow the "
-            "recommended nesting structure shown in the Composing "
-            "Data user guide (https://goo.gl/2YS8LJ)".format(
-                obj.type.__name__, type(obj).__name__))
+            f"Nesting {obj.type.__name__}s within a {type(obj).__name__} "
+            "makes it difficult to access your data or control how it appears; "
+            f"we recommend calling .collate() on the {type(obj).__name__} "
+            "in order to follow the recommended nesting structure shown "
+            "in the Composing Data user guide (https://goo.gl/2YS8LJ)"
+        )
         return obj.collate()
     elif isinstance(obj, (Layout, NdLayout)):
         try:
@@ -111,16 +112,16 @@ def collate(obj):
 
 
 def isoverlay_fn(obj):
+    """Determines whether object is a DynamicMap returning (Nd)Overlay types.
+
     """
-    Determines whether object is a DynamicMap returning (Nd)Overlay types.
-    """
-    return isinstance(obj, DynamicMap) and (isinstance(obj.last, CompositeOverlay))
+    return isinstance(obj, CompositeOverlay) or (isinstance(obj, DynamicMap) and (isinstance(obj.last, CompositeOverlay)))
 
 
 def overlay_depth(obj):
-    """
-    Computes the depth of a DynamicMap overlay if it can be determined
+    """Computes the depth of a DynamicMap overlay if it can be determined
     otherwise return None.
+
     """
     if isinstance(obj, DynamicMap):
         if isinstance(obj.last, CompositeOverlay):
@@ -133,8 +134,7 @@ def overlay_depth(obj):
 
 
 def compute_overlayable_zorders(obj, path=None):
-    """
-    Traverses an overlayable composite container to determine which
+    """Traverses an overlayable composite container to determine which
     objects are associated with specific (Nd)Overlay layers by
     z-order, making sure to take DynamicMap Callables into
     account. Returns a mapping between the zorders of each layer and a
@@ -142,10 +142,11 @@ def compute_overlayable_zorders(obj, path=None):
 
     Used to determine which overlaid subplots should be linked with
     Stream callbacks.
+
     """
     if path is None:
         path = []
-    path = path+[obj]
+    path = [*path, obj]
     zorder_map = defaultdict(list)
 
     # Process non-dynamic layers
@@ -157,7 +158,7 @@ def compute_overlayable_zorders(obj, path=None):
             for el in obj.values():
                 if isinstance(el, CompositeOverlay):
                     for k, v in compute_overlayable_zorders(el, path).items():
-                        zorder_map[k] += v + [obj]
+                        zorder_map[k] += [*v, obj]
                 else:
                     zorder_map[0] += [obj, el]
         elif obj not in zorder_map[0]:
@@ -211,9 +212,9 @@ def compute_overlayable_zorders(obj, path=None):
 
 
 def is_dynamic_overlay(dmap):
-    """
-    Traverses a DynamicMap graph and determines if any components
+    """Traverses a DynamicMap graph and determines if any components
     were overlaid dynamically (i.e. by * on a DynamicMap).
+
     """
     if not isinstance(dmap, DynamicMap):
         return False
@@ -224,42 +225,49 @@ def is_dynamic_overlay(dmap):
 
 
 def split_dmap_overlay(obj, depth=0):
-    """
-    Splits a DynamicMap into the original component layers it was
+    """Splits a DynamicMap into the original component layers it was
     constructed from by traversing the graph to search for dynamically
     overlaid components (i.e. constructed by using * on a DynamicMap).
     Useful for assigning subplots of an OverlayPlot the streams that
     are responsible for driving their updates. Allows the OverlayPlot
     to determine if a stream update should redraw a particular
     subplot.
+
     """
-    layers = []
+    layers, streams = [], []
     if isinstance(obj, DynamicMap):
         initialize_dynamic(obj)
         if issubclass(obj.type, NdOverlay) and not depth:
             for _ in obj.last.values():
                 layers.append(obj)
+                streams.append(obj.streams)
         elif issubclass(obj.type, Overlay):
             if obj.callback.inputs and is_dynamic_overlay(obj):
                 for inp in obj.callback.inputs:
-                    layers += split_dmap_overlay(inp, depth+1)
+                    split, sub_streams = split_dmap_overlay(inp, depth+1)
+                    layers += split
+                    streams += [s+obj.streams for s in sub_streams]
             else:
                 for _ in obj.last.values():
                     layers.append(obj)
+                    streams.append(obj.streams)
         else:
             layers.append(obj)
-        return layers
+            streams.append(obj.streams)
+        return layers, streams
     if isinstance(obj, Overlay):
         for _k, v in obj.items():
             layers.append(v)
+            streams.append([])
     else:
         layers.append(obj)
-    return layers
+        streams.append([])
+    return layers, streams
 
 
 def initialize_dynamic(obj):
-    """
-    Initializes all DynamicMap objects contained by the object
+    """Initializes all DynamicMap objects contained by the object
+
     """
     dmaps = obj.traverse(lambda x: x, specs=[DynamicMap])
     for dmap in dmaps:
@@ -273,13 +281,18 @@ def initialize_dynamic(obj):
 def get_plot_frame(map_obj, key_map, cached=False):
     """Returns the current frame in a mapping given a key mapping.
 
-    Args:
-        obj: Nested Dimensioned object
-        key_map: Dictionary mapping between dimensions and key value
-        cached: Whether to allow looking up key in cache
+    Parameters
+    ----------
+    obj
+        Nested Dimensioned object
+    key_map
+        Dictionary mapping between dimensions and key value
+    cached
+        Whether to allow looking up key in cache
 
-    Returns:
-        The item in the mapping corresponding to the supplied key.
+    Returns
+    -------
+    The item in the mapping corresponding to the supplied key.
     """
     if (map_obj.kdims and len(map_obj.kdims) == 1 and map_obj.kdims[0] == 'Frame' and
         not isinstance(map_obj, DynamicMap)):
@@ -306,19 +319,24 @@ def get_nested_plot_frame(obj, key_map, cached=False):
     Replaces any HoloMap or DynamicMap in the nested data structure,
     with the item corresponding to the supplied key.
 
-    Args:
-        obj: Nested Dimensioned object
-        key_map: Dictionary mapping between dimensions and key value
-        cached: Whether to allow looking up key in cache
+    Parameters
+    ----------
+    obj
+        Nested Dimensioned object
+    key_map
+        Dictionary mapping between dimensions and key value
+    cached
+        Whether to allow looking up key in cache
 
-    Returns:
-        Nested datastructure where maps are replaced with single frames
+    Returns
+    -------
+    Nested datastructure where maps are replaced with single frames
     """
     clone = obj.map(lambda x: x)
 
     # Ensure that DynamicMaps in the cloned frame have
     # identical callback inputs to allow memoization to work
-    for it1, it2 in zip(obj.traverse(lambda x: x), clone.traverse(lambda x: x)):
+    for it1, it2 in zip(obj.traverse(lambda x: x), clone.traverse(lambda x: x), strict=None):
         if isinstance(it1, DynamicMap):
             with disable_constant(it2.callback):
                 it2.callback.inputs = it1.callback.inputs
@@ -328,10 +346,11 @@ def get_nested_plot_frame(obj, key_map, cached=False):
 
 
 def undisplayable_info(obj, html=False):
-    "Generate helpful message regarding an undisplayable object"
+    """Generate helpful message regarding an undisplayable object
 
+    """
     collate = '<tt>collate</tt>' if html else 'collate'
-    info = "For more information, please consult the Composing Data tutorial (http://git.io/vtIQh)"
+    info = "For more information, please consult the Composing Data tutorial (https://git.io/vtIQh)"
     if isinstance(obj, HoloMap):
         error = f"HoloMap of {obj.type.__name__} objects cannot be displayed."
         remedy = f"Please call the {collate} method to generate a displayable object"
@@ -346,16 +365,16 @@ def undisplayable_info(obj, html=False):
         return f'{error}\n{remedy}\n{info}'
     else:
         return "<center>{msg}</center>".format(msg=('<br>'.join(
-            ['<b>%s</b>' % error, remedy, '<i>%s</i>' % info])))
+            [f'<b>{error}</b>', remedy, f'<i>{info}</i>'])))
 
 
 def compute_sizes(sizes, size_fn, scaling_factor, scaling_method, base_size):
-    """
-    Scales point sizes according to a scaling factor,
+    """Scales point sizes according to a scaling factor,
     base size and size_fn, which will be applied before
     scaling.
+
     """
-    if sizes.dtype.kind not in ('i', 'f'):
+    if dtype_kind(sizes) not in ('i', 'f'):
         return None
     if scaling_method == 'area':
         pass
@@ -370,9 +389,9 @@ def compute_sizes(sizes, size_fn, scaling_factor, scaling_method, base_size):
 
 
 def get_axis_padding(padding):
-    """
-    Process a padding value supplied as a tuple or number and returns
+    """Process a padding value supplied as a tuple or number and returns
     padding values for x-, y- and z-axis.
+
     """
     if isinstance(padding, tuple):
         if len(padding) == 2:
@@ -390,9 +409,9 @@ def get_axis_padding(padding):
 
 
 def get_minimum_span(low, high, span):
-    """
-    If lower and high values are equal ensures they are separated by
+    """If lower and high values are equal ensures they are separated by
     the defined span.
+
     """
     if is_number(low) and low == high:
         if isinstance(low, np.datetime64):
@@ -402,15 +421,15 @@ def get_minimum_span(low, high, span):
 
 
 def get_range(element, ranges, dimension):
-    """
-    Computes the data, soft- and hard-range along a dimension given
+    """Computes the data, soft- and hard-range along a dimension given
     an element and a dictionary of ranges.
+
     """
     if dimension and dimension != 'categorical':
-        if ranges and dimension.name in ranges:
-            drange = ranges[dimension.name]['data']
-            srange = ranges[dimension.name]['soft']
-            hrange = ranges[dimension.name]['hard']
+        if ranges and dimension.label in ranges:
+            drange = ranges[dimension.label]['data']
+            srange = ranges[dimension.label]['soft']
+            hrange = ranges[dimension.label]['hard']
         else:
             drange = element.range(dimension, dimension_range=False)
             srange = dimension.soft_range
@@ -421,11 +440,11 @@ def get_range(element, ranges, dimension):
 
 
 def get_sideplot_ranges(plot, element, main, ranges):
-    """
-    Utility to find the range for an adjoined
+    """Utility to find the range for an adjoined
     plot given the plot, the element, the
     Element the plot is adjoined to and the
     dictionary of ranges.
+
     """
     key = plot.current_key
     dims = element.dimensions()
@@ -439,8 +458,8 @@ def get_sideplot_ranges(plot, element, main, ranges):
         range_item = HoloMap({0: main}, kdims=['Frame'])
         ranges = match_spec(range_item.last, ranges)
 
-    if dim.name in ranges:
-        main_range = ranges[dim.name]['combined']
+    if dim.label in ranges:
+        main_range = ranges[dim.label]['combined']
     else:
         framewise = plot.lookup_options(range_item.last, 'norm').options.get('framewise')
         if framewise and range_item.get(key, False):
@@ -458,7 +477,9 @@ def get_sideplot_ranges(plot, element, main, ranges):
 
 
 def within_range(range1, range2):
-    """Checks whether range1 is within the range specified by range2."""
+    """Checks whether range1 is within the range specified by range2.
+
+    """
     range1 = [r if isfinite(r) else None for r in range1]
     range2 = [r if isfinite(r) else None for r in range2]
     return ((range1[0] is None or range2[0] is None or range1[0] >= range2[0]) and
@@ -480,7 +501,9 @@ def validate_unbounded_mode(holomaps, dynmaps):
 
 
 def get_dynamic_mode(composite):
-    "Returns the common mode of the dynamic maps in given composite object"
+    """Returns the common mode of the dynamic maps in given composite object
+
+    """
     dynmaps = composite.traverse(lambda x: x, [DynamicMap])
     holomaps = composite.traverse(lambda x: x, ['HoloMap'])
     dynamic_unbounded = any(m.unbounded for m in dynmaps)
@@ -493,10 +516,10 @@ def get_dynamic_mode(composite):
 
 
 def initialize_unbounded(obj, dimensions, key):
+    """Initializes any DynamicMaps in unbounded mode.
+
     """
-    Initializes any DynamicMaps in unbounded mode.
-    """
-    select = dict(zip([d.name for d in dimensions], key))
+    select = dict(zip([d.name for d in dimensions], key, strict=None))
     try:
         obj.select(selection_specs=[DynamicMap], **select)
     except KeyError:
@@ -504,9 +527,9 @@ def initialize_unbounded(obj, dimensions, key):
 
 
 def dynamic_update(plot, subplot, key, overlay, items):
-    """
-    Given a plot, subplot and dynamically generated (Nd)Overlay
+    """Given a plot, subplot and dynamically generated (Nd)Overlay
     find the closest matching Element for that plot.
+
     """
     match_spec = get_overlay_spec(overlay,
                                   wrap_tuple(key),
@@ -521,9 +544,9 @@ def dynamic_update(plot, subplot, key, overlay, items):
 
 
 def map_colors(arr, crange, cmap, hex=True):
-    """
-    Maps an array of values to RGB hex strings, given
+    """Maps an array of values to RGB hex strings, given
     a color range and colormap.
+
     """
     if isinstance(crange, arraylike_types):
         xsorted = np.argsort(crange)
@@ -544,8 +567,8 @@ def map_colors(arr, crange, cmap, hex=True):
 
 
 def resample_palette(palette, ncolors, categorical, cmap_categorical):
-    """
-    Resample the number of colors in a palette to the selected number.
+    """Resample the number of colors in a palette to the selected number.
+
     """
     if len(palette) != ncolors:
         if categorical and cmap_categorical:
@@ -558,8 +581,8 @@ def resample_palette(palette, ncolors, categorical, cmap_categorical):
 
 
 def mplcmap_to_palette(cmap, ncolors=None, categorical=False):
-    """
-    Converts a matplotlib colormap to palette of RGB hex strings."
+    """Converts a matplotlib colormap to palette of RGB hex strings."
+
     """
     import matplotlib as mpl
     from matplotlib.colors import Colormap, ListedColormap
@@ -570,7 +593,7 @@ def mplcmap_to_palette(cmap, ncolors=None, categorical=False):
         if cmap.startswith('Category'):
             cmap = cmap.replace('Category', 'tab')
 
-        if Version(mpl.__version__) < Version("3.5"):
+        if Version(mpl.__version__).release < (3, 5, 0):
             from matplotlib import cm
             try:
                 cmap = cm.get_cmap(cmap)
@@ -655,8 +678,8 @@ def bokeh_palette_to_palette(cmap, ncolors=None, categorical=False):
 
 
 def linear_gradient(start_hex, finish_hex, n=10):
-    """
-    Interpolates the color gradient between to hex colors
+    """Interpolates the color gradient between to hex colors
+
     """
     s = hex2rgb(start_hex)
     f = hex2rgb(finish_hex)
@@ -668,8 +691,8 @@ def linear_gradient(start_hex, finish_hex, n=10):
 
 
 def polylinear_gradient(colors, n):
-    """
-    Interpolates the color gradients between a list of hex colors.
+    """Interpolates the color gradients between a list of hex colors.
+
     """
     n_out = int(float(n) / (len(colors)-1))
     gradient = linear_gradient(colors[0], colors[1], n_out)
@@ -689,10 +712,10 @@ providers = ['matplotlib', 'bokeh', 'colorcet']
 
 
 def _list_cmaps(provider=None, records=False):
-    """
-    List available colormaps by combining matplotlib, bokeh, and
+    """List available colormaps by combining matplotlib, bokeh, and
     colorcet colormaps or palettes if available. May also be
     narrowed down to a particular provider or list of providers.
+
     """
     if provider is None:
         provider = providers
@@ -747,8 +770,7 @@ def _list_cmaps(provider=None, records=False):
 
 
 def register_cmaps(category, provider, source, bg, names):
-    """
-    Maintain descriptions of colormaps that include the following information:
+    """Maintain descriptions of colormaps that include the following information:
 
     name     - string name for the colormap
     category - intended use or purpose, mostly following matplotlib
@@ -756,6 +778,7 @@ def register_cmaps(category, provider, source, bg, names):
     source   - original source or creator of the colormaps
     bg       - base/background color expected for the map
                ('light','dark','medium','any' (unknown or N/A))
+
     """
     for name in names:
         bisect.insort(cmap_info, CMapInfo(name=name, provider=provider,
@@ -765,8 +788,8 @@ def register_cmaps(category, provider, source, bg, names):
 
 def list_cmaps(provider=None, records=False, name=None, category=None, source=None,
                bg=None, reverse=None):
-    """
-    Return colormap names matching the specified filters.
+    """Return colormap names matching the specified filters.
+
     """
     # Only uses names actually imported and currently available
     available = _list_cmaps(provider=provider, records=True)
@@ -915,8 +938,8 @@ register_cmaps('Uniform Categorical', 'colorcet', 'cet', 'light',
 
 
 def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
-    """
-    Convert valid colormap specifications to a list of colors.
+    """Convert valid colormap specifications to a list of colors.
+
     """
     providers_checked="matplotlib, bokeh, or colorcet" if provider is None else provider
 
@@ -946,51 +969,48 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
             palette = None
     if not isinstance(palette, list):
         raise TypeError(f"cmap argument {cmap} expects a list, Cycle or valid {providers_checked} colormap or palette.")
-    if ncolors and len(palette) != ncolors:
-        return [palette[i%len(palette)] for i in range(ncolors)]
+    if ncolors and (n_palette := len(palette)) != ncolors:
+        return [palette[i%n_palette] for i in range(ncolors)]
     return palette
 
 
 def color_intervals(colors, levels, clip=None, N=255):
-    """
-    Maps the supplied colors into bins defined by the supplied levels.
+    """Maps the supplied colors into bins defined by the supplied levels.
     If a clip tuple is defined the bins are clipped to the defined
     range otherwise the range is computed from the levels and returned.
 
-    Arguments
-    ---------
-    colors: list
+    Parameters
+    ----------
+    colors : list
       List of colors (usually hex string or named colors)
-    levels: list or array_like
+    levels : list or array_like
       Levels specifying the bins to map the colors to
-    clip: tuple (optional)
+    clip : tuple, optional
       Lower and upper limits of the color range
-    N: int
+    N : int
       Number of discrete colors to map the range onto
 
     Returns
     -------
-    cmap: list
+    cmap : list
       List of colors
-    clip: tuple
+    clip : tuple
       Lower and upper bounds of the color range
     """
     if len(colors) != len(levels)-1:
         raise ValueError('The number of colors in the colormap '
                          'must match the intervals defined in the '
-                         'color_levels, expected %d colors found %d.'
-                         % (N, len(colors)))
+                         f'color_levels, expected {N} colors found {len(colors)}.')
     intervals = np.diff(levels)
     cmin, cmax = min(levels), max(levels)
     interval = cmax-cmin
     cmap = []
-    for intv, c in zip(intervals, colors):
-        cmap += [c]*int(round(N*(intv/interval)))
+    for intv, c in zip(intervals, colors, strict=None):
+        cmap += [c]*round(N*(intv/interval))
     if clip is not None:
         clmin, clmax = clip
-        lidx = int(round(N*((clmin-cmin)/interval)))
-        uidx = int(round(N*((cmax-clmax)/interval)))
-        uidx = N-uidx
+        lidx = round(N*((clmin-cmin)/interval))
+        uidx = len(cmap) - round(N*((cmax-clmax)/interval))
         if lidx == uidx:
             uidx = lidx+1
         cmap = cmap[lidx:uidx]
@@ -1001,16 +1021,16 @@ def color_intervals(colors, levels, clip=None, N=255):
 
 
 def dim_axis_label(dimensions, separator=', '):
-    """
-    Returns an axis label for one or more dimensions.
+    """Returns an axis label for one or more dimensions.
+
     """
     if not isinstance(dimensions, list): dimensions = [dimensions]
     return separator.join([d.pprint_label for d in dimensions])
 
 
 def scale_fontsize(size, scaling):
-    """
-    Scales a numeric or string font size.
+    """Scales a numeric or string font size.
+
     """
     ext = None
     if isinstance(size, str):
@@ -1031,8 +1051,8 @@ def scale_fontsize(size, scaling):
 
 
 def attach_streams(plot, obj, precedence=1.1):
-    """
-    Attaches plot refresh to all streams on the object.
+    """Attaches plot refresh to all streams on the object.
+
     """
     def append_refresh(dmap):
         for stream in get_nested_streams(dmap):
@@ -1042,16 +1062,16 @@ def attach_streams(plot, obj, precedence=1.1):
 
 
 def traverse_setter(obj, attribute, value):
-    """
-    Traverses the object and sets the supplied attribute on the
+    """Traverses the object and sets the supplied attribute on the
     object. Supports Dimensioned and DimensionedPlot types.
+
     """
     obj.traverse(lambda x: setattr(x, attribute, value))
 
 
 def _get_min_distance_numpy(element):
-    """
-    NumPy based implementation of get_min_distance
+    """NumPy based implementation of get_min_distance
+
     """
     xys = element.array([0, 1])
     with warnings.catch_warnings():
@@ -1066,9 +1086,9 @@ def _get_min_distance_numpy(element):
 
 
 def get_min_distance(element):
-    """
-    Gets the minimum sampling distance of the x- and y-coordinates
+    """Gets the minimum sampling distance of the x- and y-coordinates
     in a grid.
+
     """
     try:
         from scipy.spatial.distance import pdist
@@ -1078,9 +1098,9 @@ def get_min_distance(element):
 
 
 def get_directed_graph_paths(element, arrow_length):
-    """
-    Computes paths for a directed path which include an arrow to
+    """Computes paths for a directed path which include an arrow to
     indicate the directionality of each edge.
+
     """
     edgepaths = element._split_edgepaths
     edges = edgepaths.split(datatype='array', dimensions=edgepaths.kdims)
@@ -1100,8 +1120,8 @@ def get_directed_graph_paths(element, arrow_length):
 
 
 def rgb2hex(rgb):
-    """
-    Convert RGB(A) tuple to hex.
+    """Convert RGB(A) tuple to hex.
+
     """
     if len(rgb) > 3:
         rgb = rgb[:-1]
@@ -1109,20 +1129,23 @@ def rgb2hex(rgb):
 
 
 def dim_range_key(eldim):
-    """
-    Returns the key to look up a dimension range.
+    """Returns the key to look up a dimension range.
+
     """
     if isinstance(eldim, dim):
         dim_name = repr(eldim)
         if dim_name.startswith("dim('") and dim_name.endswith("')"):
             dim_name = dim_name[5:-2]
     else:
-        dim_name = eldim.name
+        dim_name = eldim.label
     return dim_name
 
 
 def hex2rgb(hex):
-  ''' "#FFFFFF" -> [255,255,255] '''
+  """Convert hex code to RGB integers
+  "#FFFFFF" -> [255,255,255]
+
+  """
   # Pass 16 to the integer function for change of base
   return [int(hex[i:i+2], 16) for i in range(1,6,2)]
 
@@ -1137,7 +1160,9 @@ class apply_nodata(Operation):
         that it is transparent (by default) when plotted.""")
 
     def _replace_value(self, data):
-        "Replace `nodata` value in data with NaN, if specified in opts"
+        """Replace `nodata` value in data with NaN, if specified in opts
+
+        """
         data = data.astype('float64')
         mask = data!=self.p.nodata
         if hasattr(data, 'where'):
@@ -1150,13 +1175,13 @@ class apply_nodata(Operation):
         if hasattr(element, 'interface'):
             vdim = element.vdims[0]
             dtype = element.interface.dtype(element, vdim)
-            if dtype.kind not in 'iu':
+            if dtype_kind(dtype) not in 'iu':
                 return element
             transform = dim(vdim, self._replace_value)
             return element.transform(**{vdim.name: transform})
         else:
             array = element.dimension_values(2, flat=False).T
-            if array.dtype.kind not in 'iu':
+            if dtype_kind(array) not in 'iu':
                 return element
             array = array.astype('float64')
             return element.clone(self._replace_value(array))
@@ -1179,7 +1204,7 @@ COLOR_ALIASES = {
 
 # linear_kryw_0_100_c71 (aka "fire"):
 # A perceptually uniform equivalent of matplotlib's "hot" colormap, from
-# http://peterkovesi.com/projects/colourmaps
+# https://peterkovesi.com/projects/colourmaps
 
 fire_colors = linear_kryw_0_100_c71 = [\
 [0,        0,           0         ],  [0.027065, 2.143e-05,   0         ],
@@ -1315,25 +1340,35 @@ fire_colors = linear_kryw_0_100_c71 = [\
 fire = [f'#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}'
         for r,g,b in fire_colors]
 
+# Qualitative color maps, for use in colorizing categories
+# Originally from Cynthia Brewer (http://colorbrewer2.org), via Bokeh
+# Sets 1, 2, and 3 combined, minus indistinguishable colors
+# Copied from datashader.colors
+Sets1to3 = [
+    '#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628',
+    '#f781bf', '#999999', '#66c2a5', '#fc8d62', '#8da0cb', '#a6d854', '#ffd92f',
+    '#e5c494', '#ffffb3', '#fb8072', '#fdb462', '#fccde5', '#d9d9d9', '#ccebc5',
+    '#ffed6f',
+]
 
 class categorical_legend(Operation):
-    """
-    Generates a Points element which contains information for generating
+    """Generates a Points element which contains information for generating
     a legend by inspecting the pipeline of a datashaded RGB element.
+
     """
 
-    backend = param.String()
+    backend = param.String(doc="Backend to use for rendering the categorical legend.")
+
+    cmap = param.Parameter(default=Sets1to3, allow_None=False, doc="""
+        Colormap used to color the categories in the legend.
+    """)
 
     def _process(self, element, key=None):
         import datashader as ds
 
         from ..operation.datashader import datashade, rasterize, shade
         rasterize_op = element.pipeline.find(rasterize, skip_nonlinked=False)
-        if isinstance(rasterize_op, datashade):
-            shade_op = rasterize_op
-        else:
-            shade_op = element.pipeline.find(shade, skip_nonlinked=False)
-        if None in (shade_op, rasterize_op):
+        if rasterize_op is None:
             return None
         hvds = element.dataset
         input_el = element.pipeline.operations[0](hvds)
@@ -1347,14 +1382,25 @@ class categorical_legend(Operation):
             except TypeError:
                 # Issue #5619, cudf.core.index.StringIndex is not iterable.
                 cats = list(hvds.data.dtypes[column].categories.to_pandas())
+            except AttributeError:
+                cats = list(unique_iterator(hvds.data[column]))
             if cats == ['__UNKNOWN_CATEGORIES__']:
                 cats = list(hvds.data[column].cat.as_known().categories)
         else:
             cats = list(hvds.dimension_values(column, expanded=False))
-        colors = shade_op.color_key or ds.colors.Sets1to3
+
+        if isinstance(rasterize_op, datashade):
+            shade_op = rasterize_op
+        else:
+            shade_op = element.pipeline.find(shade, skip_nonlinked=False)
+        if shade_op is None:
+            colors = process_cmap(self.p.cmap, ncolors=len(cats), categorical=True)
+        else:
+            colors = shade_op.color_key or self.p.cmap
         color_data = [(0, 0, cat) for cat in cats]
         if isinstance(colors, list):
-            cat_colors = {cat: colors[i] for i, cat in enumerate(cats)}
+            ncolors = len(colors)
+            cat_colors = {cat: colors[i % ncolors] for i, cat in enumerate(cats)}
         else:
             cat_colors = {cat: colors[cat] for cat in cats}
         cmap = {}
@@ -1368,12 +1414,12 @@ class categorical_legend(Operation):
 
 
 class flatten_stack(Operation):
-    """
-    Thin wrapper around datashader's shade operation to flatten
+    """Thin wrapper around datashader's shade operation to flatten
     ImageStacks into RGB elements.
 
     Used for the MPL and Plotly backends because these backends
     do not natively support ImageStacks, unlike Bokeh.
+
     """
 
     shade_params = param.Dict(default={}, doc="""

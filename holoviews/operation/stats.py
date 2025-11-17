@@ -9,7 +9,9 @@ from .element import contours
 
 
 def _kde_support(bin_range, bw, gridsize, cut, clip):
-    """Establish support for a kernel density estimate."""
+    """Establish support for a kernel density estimate.
+
+    """
     kmin, kmax = bin_range[0] - bw * cut, bin_range[1] + bw * cut
     if isfinite(clip[0]):
         kmin = max(kmin, clip[0])
@@ -19,8 +21,7 @@ def _kde_support(bin_range, bw, gridsize, cut, clip):
 
 
 class univariate_kde(Operation):
-    """
-    Computes a 1D kernel density estimate (KDE) along the supplied
+    """Computes a 1D kernel density estimate (KDE) along the supplied
     dimension. Kernel density estimation is a non-parametric way to
     estimate the probability density function of a random variable.
 
@@ -28,9 +29,10 @@ class univariate_kde(Operation):
     the supplied bandwidth. These kernels are then summed to produce
     the density estimate. By default a good bandwidth is determined
     using the bw_method but it may be overridden by an explicit value.
+
     """
 
-    bw_method = param.ObjectSelector(default='scott', objects=['scott', 'silverman'], doc="""
+    bw_method = param.Selector(default='scott', objects=['scott', 'silverman'], doc="""
         Method of automatically determining KDE bandwidth""")
 
     bandwidth = param.Number(default=None, doc="""
@@ -85,9 +87,8 @@ class univariate_kde(Operation):
             else:
                 dimensions = element.vdims+element.kdims
                 if not dimensions:
-                    raise ValueError("%s element does not declare any dimensions "
-                                     "to compute the kernel density estimate on." %
-                                     type(element).__name__)
+                    raise ValueError(f"{type(element).__name__} element does not declare any dimensions "
+                                     "to compute the kernel density estimate on.")
                 selected_dim = dimensions[0]
             vdim_name = f'{selected_dim.name}_density'
             vdims = [Dimension(vdim_name, label='Density')]
@@ -123,8 +124,7 @@ class univariate_kde(Operation):
 
 
 class bivariate_kde(Operation):
-    """
-    Computes a 2D kernel density estimate (KDE) of the first two
+    """Computes a 2D kernel density estimate (KDE) of the first two
     dimensions in the input data. Kernel density estimation is a
     non-parametric way to estimate the probability density function of
     a random variable.
@@ -133,13 +133,14 @@ class bivariate_kde(Operation):
     the supplied bandwidth. These kernels are then summed to produce
     the density estimate. By default a good bandwidth is determined
     using the bw_method but it may be overridden by an explicit value.
+
     """
 
     contours = param.Boolean(default=True, doc="""
         Whether to compute contours from the KDE, determines whether to
         return an Image or Contours/Polygons.""")
 
-    bw_method = param.ObjectSelector(default='scott', objects=['scott', 'silverman'], doc="""
+    bw_method = param.Selector(default='scott', objects=['scott', 'silverman'], doc="""
         Method of automatically determining KDE bandwidth""")
 
     bandwidth = param.Number(default=None, doc="""

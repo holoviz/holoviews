@@ -79,7 +79,7 @@ class DynamicMapConstructor(ComparisonTestCase):
         DynamicMap(lambda x: x, streams=dict(x=ExampleParameterized.param.example))
 
     def test_simple_constructor_streams_dict_invalid(self):
-        regexp = "Cannot handle value 3 in streams dictionary"
+        regexp = "Cannot handle 'x' value 3 in streams dictionary"
         with self.assertRaisesRegex(TypeError, regexp):
             DynamicMap(lambda x: x, streams=dict(x=3))
 
@@ -1209,7 +1209,7 @@ class DynamicCollate(LoggingComparisonTestCase):
             return GridSpace({j: Curve([], label=str(j)) for j in range(i)}, 'X')
         dmap = DynamicMap(callback, kdims=['i']).redim.range(i=(2, 10))
         layout = dmap.collate()
-        dmap1, dmap2 = layout.values()
+        dmap1, _dmap2 = layout.values()
         err = 'Collated DynamicMaps must return GridSpace with consistent number of items.'
         with self.assertRaisesRegex(ValueError, err):
             dmap1[4]
@@ -1221,7 +1221,7 @@ class DynamicCollate(LoggingComparisonTestCase):
             return GridSpace({j: eltype([], label=str(j)) for j in range(i, i+2)}, 'X')
         dmap = DynamicMap(callback, kdims=['i']).redim.range(i=(2, 10))
         layout = dmap.collate()
-        dmap1, dmap2 = layout.values()
+        dmap1, _dmap2 = layout.values()
         err = ('The objects in a GridSpace returned by a DynamicMap must '
                'consistently return the same number of items of the same type.')
         with self.assertRaisesRegex(ValueError, err):

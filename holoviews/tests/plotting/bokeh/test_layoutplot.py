@@ -296,13 +296,26 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(data['D'], np.full_like(hmap1[1].dimension_values(0), np.nan))
 
     def test_shared_axes(self):
-        curve = Curve(range(10))
+        curve = Curve(range(10), )
         img = Image(np.random.rand(10,10))
         plot = bokeh_renderer.get_plot(curve+img)
-        plot = plot.subplots[(0, 1)].subplots['main']
-        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
-        self.assertEqual((x_range.start, x_range.end), (-.5, 9))
-        self.assertEqual((y_range.start, y_range.end), (-.5, 9))
+        plot1 = plot.subplots[(0, 0)].subplots['main']
+        plot2 = plot.subplots[(0, 1)].subplots['main']
+        x_range1, y_range1 = plot1.handles['x_range'], plot1.handles['y_range']
+        x_range2, y_range2 = plot2.handles['x_range'], plot2.handles['y_range']
+        assert x_range1 is x_range2
+        assert y_range1 is y_range2
+
+    def test_shared_axes_different_dimension_names(self):
+        curve = Curve(range(10), ('x1', 'foo'), ('y1', 'bar'))
+        img = Image(np.random.rand(10,10), [('x2', 'foo'), ('y2', 'bar')])
+        plot = bokeh_renderer.get_plot(curve+img)
+        plot1 = plot.subplots[(0, 0)].subplots['main']
+        plot2 = plot.subplots[(0, 1)].subplots['main']
+        x_range1, y_range1 = plot1.handles['x_range'], plot1.handles['y_range']
+        x_range2, y_range2 = plot2.handles['x_range'], plot2.handles['y_range']
+        assert x_range1 is x_range2
+        assert y_range1 is y_range2
 
     def test_shared_axes_disable(self):
         curve = Curve(range(10))
@@ -356,8 +369,8 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         p1, p2 = (sp.subplots['main'] for sp in plot.subplots.values())
         self.assertIs(p1.handles['y_range'], p2.handles['y_range'])
 
-    def test_layout_axis_not_linked_mismatching_name(self):
-        layout = Curve([1, 2, 3], vdims=('b', 'A')) + Curve([1, 2, 3], vdims=('a', 'A'))
+    def test_layout_axis_not_linked_mismatching_label(self):
+        layout = Curve([1, 2, 3], vdims=('a', 'A')) + Curve([1, 2, 3], vdims=('a', 'B'))
         plot = bokeh_renderer.get_plot(layout)
         p1, p2 = (sp.subplots['main'] for sp in plot.subplots.values())
         self.assertIsNot(p1.handles['y_range'], p2.handles['y_range'])

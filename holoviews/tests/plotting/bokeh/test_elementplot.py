@@ -3,6 +3,7 @@ from unittest import SkipTest
 
 import numpy as np
 import panel as pn
+import param
 import pytest
 from bokeh.document import Document
 from bokeh.models import (
@@ -16,11 +17,14 @@ from bokeh.models import (
     tools,
 )
 
-from holoviews.core import DynamicMap, HoloMap, NdOverlay
+from holoviews import opts
+from holoviews.core import Dimension, DynamicMap, HoloMap, NdOverlay, Overlay
+from holoviews.core.options import AbbreviatedException
 from holoviews.core.util import dt_to_int
 from holoviews.element import Curve, HeatMap, Image, Labels, Scatter
+from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0, BOKEH_GE_3_6_0
 from holoviews.plotting.util import process_cmap
-from holoviews.streams import PointDraw, Stream
+from holoviews.streams import Pipe, PointDraw, Stream
 from holoviews.util import render
 
 from ...utils import LoggingComparisonTestCase
@@ -107,6 +111,26 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(xaxis.minor_tick_line_color, None)
         self.assertEqual(xaxis.major_tick_line_color, None)
         self.assertTrue(xaxis in plot.state.above)
+
+    def test_element_yaxis_true(self):
+        curve = Curve(range(10)).opts(yaxis=True)
+        plot = bokeh_renderer.get_plot(curve)
+        yaxis = plot.handles['yaxis']
+        assert yaxis in plot.state.left
+
+    def test_element_yaxis_false(self):
+        curve = Curve(range(10)).opts(yaxis=False)
+        plot = bokeh_renderer.get_plot(curve)
+        yaxis = plot.handles['yaxis']
+        assert yaxis in plot.state.left
+        assert not yaxis.visible
+
+    def test_element_yaxis_none(self):
+        curve = Curve(range(10)).opts(yaxis=None)
+        plot = bokeh_renderer.get_plot(curve)
+        yaxis = plot.handles['yaxis']
+        assert yaxis in plot.state.left
+        assert not yaxis.visible
 
     def test_element_yaxis_right(self):
         curve = Curve(range(10)).opts(yaxis='right')
@@ -431,6 +455,12 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         plot = bokeh_renderer.get_plot(curve)
         x_range = plot.handles['x_range']
         self.assertEqual(x_range.factors, [])
+
+    def test_style_map_dimension_object(self):
+        x = Dimension('x')
+        y = Dimension('y')
+        scatter = Scatter([1, 2, 3], kdims=[x], vdims=[y]).opts(color=x)
+        self._test_colormapping(scatter, 'x', prefix='color_')
 
     #################################################################
     # Aspect tests
@@ -793,6 +823,153 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
             "WARNING", "cb model could not be"
         )
 
+    def test_dynamicmap_subcoordinate_y_enabled_labels_mismatched(self):
+        cases = [  # TODO: pytest.mark.parametrize
+            ("", "", "", "1"),
+            ("", "1", "", "2"),
+            ("", "1", "2", "1"),
+            ("", "1", "2", "3"),
+            ("1", "2", "1", "4"),
+            ("1", "2", "4", "1"),
+            ("1", "2", "3", "4"),
+        ]
+
+        def func(data, plot_labels):
+            if not data:
+                return (
+                        Curve([], label=plot_labels[0]) *
+                        Curve([], label=plot_labels[1])
+                )
+            plot1 = Curve([0, 1], label=plot_labels[2]).opts(subcoordinate_y=True)
+            plot2 = Curve([2, 1], label=plot_labels[3]).opts(subcoordinate_y=True)
+            return plot1 * plot2
+
+        for labels in cases:
+            pipe = Pipe(data=False)
+            dmap = DynamicMap(lambda data, labels=labels: func(data, labels), streams=[pipe])
+            bokeh_renderer.get_plot(dmap)
+
+            msg = 'Failed retrieving "subcoordinate_y". Labels mismatched for initial and updated DynamicMap plots.'
+            with pytest.raises(AbbreviatedException, match=msg):
+                pipe.send(True)
+
+    def test_dynamicmap_subcoordinate_y_enabled_labels_matched(self):
+        cases = [  # TODO: pytest.mark.parametrize
+            ("1", "2", "2", "1"),
+            ("1", "2", "1", "2"),
+        ]
+        def func(data, plot_labels):
+            if not data:
+                return (
+                        Curve([], label=plot_labels[0]) *
+                        Curve([], label=plot_labels[1])
+                )
+            plot1 = Curve([0, 1], label=plot_labels[2]).opts(subcoordinate_y=True)
+            plot2 = Curve([2, 1], label=plot_labels[3]).opts(subcoordinate_y=True)
+            return plot1 * plot2
+
+        for labels in cases:
+            pipe = Pipe(data=False)
+            dmap = DynamicMap(lambda data, labels=labels: func(data, labels), streams=[pipe])
+            bokeh_renderer.get_plot(dmap)
+            # works with no issue
+            pipe.send(True)
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+@pytest.mark.skipif(not BOKEH_GE_3_4_0, reason="requires Bokeh >= 3.4")
+class TestScalebarPlot:
+
+    def get_scalebar(self, element):
+        plot = bokeh_renderer.get_plot(element)
+        return plot.handles.get('scalebar')
+
+    def test_scalebar(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=True)
+        scalebar = self.get_scalebar(curve)
+        assert scalebar.visible
+        assert scalebar.location == 'bottom_right'
+        assert scalebar.background_fill_alpha == 0.8
+        assert scalebar.unit == "m"
+
+    def test_no_scalebar(self):
+        curve = Curve([1, 2, 3])
+        scalebar = self.get_scalebar(curve)
+        assert scalebar is None
+
+    def test_scalebar_unit(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=True, scalebar_unit='cm')
+        scalebar = self.get_scalebar(curve)
+        assert scalebar.visible
+        assert scalebar.unit == "cm"
+
+    def test_dim_unit(self):
+        dim = Dimension("dim", unit="cm")
+        curve = Curve([1, 2, 3], kdims=dim).opts(scalebar=True)
+        scalebar = self.get_scalebar(curve)
+        assert scalebar.visible
+        assert scalebar.unit == "cm"
+
+    def test_scalebar_custom_opts(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=True, scalebar_opts={'background_fill_alpha': 1})
+        scalebar = self.get_scalebar(curve)
+        assert scalebar.visible
+        assert scalebar.background_fill_alpha == 1
+
+    def test_scalebar_label(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=True, scalebar_label='Test')
+        scalebar = self.get_scalebar(curve)
+        assert scalebar.visible
+        assert scalebar.label == 'Test'
+
+    def test_scalebar_icon(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=True)
+        plot = bokeh_renderer.get_plot(curve)
+        toolbar = plot.handles['plot'].toolbar
+        scalebar_icon = [tool for tool in toolbar.tools if tool.description == "Toggle ScaleBar"]
+        assert len(scalebar_icon) == 1
+
+    def test_scalebar_no_icon(self):
+        curve = Curve([1, 2, 3]).opts(scalebar=False)
+        plot = bokeh_renderer.get_plot(curve)
+        toolbar = plot.handles['plot'].toolbar
+        scalebar_icon = [tool for tool in toolbar.tools if tool.description == "Toggle ScaleBar"]
+        assert len(scalebar_icon) == 0
+
+    def test_scalebar_icon_multiple_overlay(self):
+        curve1 = Curve([1, 2, 3]).opts(scalebar=True)
+        curve2 = Curve([1, 2, 3]).opts(scalebar=True)
+        plot = bokeh_renderer.get_plot(curve1 * curve2)
+        toolbar = plot.handles['plot'].toolbar
+        scalebar_icon = [tool for tool in toolbar.tools if tool.description == "Toggle ScaleBar"]
+        assert len(scalebar_icon) == 1
+
+    @pytest.mark.skipif(not BOKEH_GE_3_6_0, reason="requires Bokeh >= 3.6")
+    @pytest.mark.parametrize("enabled1", [True, False])
+    @pytest.mark.parametrize("enabled2", [True, False])
+    @pytest.mark.parametrize("enabled3", [True, False])
+    def test_scalebar_with_subcoordinate_y(self, enabled1, enabled2, enabled3):
+        from bokeh.models import ScaleBar
+
+        enabled = [enabled1, enabled2, enabled3]
+        curve1 = Curve([1, 2, 3], label='c1').opts(scalebar=enabled1, subcoordinate_y=True)
+        curve2 = Curve([1, 2, 3], label='c2').opts(scalebar=enabled2, subcoordinate_y=True)
+        curve3 = Curve([1, 2, 3], label='c3').opts(scalebar=enabled3, subcoordinate_y=True)
+        curves = curve1 * curve2 * curve3
+
+        plot = bokeh_renderer.get_plot(curves).handles["plot"]
+        coordinates = [r.coordinates for r in plot.renderers][::-1]
+        sb = (c for c in plot.center if isinstance(c, ScaleBar))
+        scalebars = [next(sb) if e else None for e in enabled]
+        assert sum(map(bool, scalebars)) == sum(enabled)
+
+        for coordinate, scalebar, idx in zip(coordinates, scalebars, "123", strict=None):
+            assert coordinate.y_source.name == f"c{idx}"
+            if scalebar is None:
+                continue
+            assert coordinate.y_source is scalebar.range
+
+
 class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
 
     def test_colormapper_symmetric(self):
@@ -882,6 +1059,51 @@ class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(cds.data['Category_str__'], ['0', '1', '2', '3'])
         self.assertEqual(cmapper.factors, ['0', '1', '2', '3'])
         self.assertEqual(cmapper.palette, ['blue', 'red', 'green', 'purple'])
+
+    def test_cticks_int(self):
+        img = Image(np.array([[0, 1], [2, 3]])).opts(cticks=3, colorbar=True)
+        plot = bokeh_renderer.get_plot(img)
+        colorbar = plot.handles["colorbar"]
+        ticker = colorbar.ticker
+        assert ticker.desired_num_ticks == 3
+
+    def test_cticks_list(self):
+        img = Image(np.array([[0, 1], [2, 3]])).opts(cticks=[1, 2], colorbar=True)
+        plot = bokeh_renderer.get_plot(img)
+        colorbar = plot.handles["colorbar"]
+        ticker = colorbar.ticker
+        assert ticker.ticks == [1, 2]
+
+    def test_cticks_tuple(self):
+        img = Image(np.array([[0, 1], [2, 3]])).opts(cticks=(1, 2), colorbar=True)
+        plot = bokeh_renderer.get_plot(img)
+        colorbar = plot.handles["colorbar"]
+        ticker = colorbar.ticker
+        assert ticker.ticks == (1, 2)
+
+    def test_cticks_np_array(self):
+        img = Image(np.array([[0, 1], [2, 3]])).opts(cticks=np.array([1, 2]), colorbar=True)
+        plot = bokeh_renderer.get_plot(img)
+        colorbar = plot.handles["colorbar"]
+        ticker = colorbar.ticker
+        assert ticker.ticks == [1, 2]
+
+    def test_cticks_labels(self):
+        img = Image(np.array([[0, 1], [2, 3]])).opts(cticks=[(1, "A"), (2, "B")], colorbar=True)
+        plot = bokeh_renderer.get_plot(img)
+        colorbar = plot.handles["colorbar"]
+        assert colorbar.major_label_overrides == {1: "A", 2: "B"}
+        ticker = colorbar.ticker
+        assert ticker.ticks == [1, 2]
+
+    def test_cticks_ticker(self):
+        img = Image(np.array([[0, 1], [2, 3]])).opts(
+            cticks=FixedTicker(ticks=[0, 1]), colorbar=True
+        )
+        plot = bokeh_renderer.get_plot(img)
+        colorbar = plot.handles["colorbar"]
+        ticker = colorbar.ticker
+        assert ticker.ticks == [0, 1]
 
 
 class TestOverlayPlot(TestBokehPlot):
@@ -993,3 +1215,102 @@ class TestOverlayPlot(TestBokehPlot):
         low, high = plot.ranges[('Image',)]['z']['robust']
         assert low > 0
         assert high < 1
+
+    def test_propagate_tools(self):
+        scatter = lambda: Scatter([]).opts(default_tools=[])
+        overlay = scatter() * scatter()
+        plot = bokeh_renderer.get_plot(overlay)
+        assert plot.default_tools == []
+
+class TestApplyHardBounds(TestBokehPlot):
+    def test_apply_hard_bounds(self):
+        """Test `apply_hard_bounds` with a single element."""
+        x_values = np.linspace(10, 50, 5)
+        y_values = np.array([10, 20, 30, 40, 50])
+        curve = Curve((x_values, y_values)).opts(apply_hard_bounds=True)
+        plot = bokeh_renderer.get_plot(curve)
+        assert plot.handles['x_range'].bounds == (10, 50)
+
+    def test_apply_hard_bounds_overlay(self):
+        """Test `apply_hard_bounds` with an overlay of curves."""
+        x1_values = np.linspace(10, 50, 5)
+        x2_values = np.linspace(10, 90, 5)
+        y_values = np.array([10, 20, 30, 40, 50])
+        curve1 = Curve((x1_values, y_values))
+        curve2 = Curve((x2_values, y_values))
+        overlay = Overlay([curve1, curve2]).opts(opts.Curve(apply_hard_bounds=True))
+        plot = bokeh_renderer.get_plot(overlay)
+        # Check if the large of the data range can be navigated to
+        assert plot.handles['x_range'].bounds == (10, 90)
+
+    def test_apply_hard_bounds_with_xlim(self):
+        """Test `apply_hard_bounds` with `xlim` set. Initial view should be within xlim but allow panning to data range."""
+        x_values = np.linspace(10, 50, 5)
+        y_values = np.array([10, 20, 30, 40, 50])
+        curve = Curve((x_values, y_values)).opts(apply_hard_bounds=True, xlim=(15, 35))
+        plot = bokeh_renderer.get_plot(curve)
+        initial_view_range = (plot.handles['x_range'].start, plot.handles['x_range'].end)
+        assert initial_view_range == (15, 35)
+        # Check if data beyond xlim can be navigated to
+        assert plot.handles['x_range'].bounds == (10, 50)
+
+    def test_apply_hard_bounds_with_redim_range(self):
+        """Test `apply_hard_bounds` with `.redim.range(x=...)`. Hard bounds should strictly apply."""
+        x_values = np.linspace(10, 50, 5)
+        y_values = np.array([10, 20, 30, 40, 50])
+        curve = Curve((x_values, y_values)).redim.range(x=(25, None)).opts(apply_hard_bounds=True)
+        plot = bokeh_renderer.get_plot(curve)
+        # Expected to strictly adhere to any redim.range bounds, otherwise the data range
+        assert (plot.handles['x_range'].start, plot.handles['x_range'].end)  == (25, 50)
+        assert plot.handles['x_range'].bounds == (25, 50)
+
+    def test_apply_hard_bounds_datetime(self):
+        """Test datetime axes with hard bounds."""
+        target_xlim_l = dt.datetime(2020, 1, 3)
+        target_xlim_h = dt.datetime(2020, 1, 7)
+        dates = [dt.datetime(2020, 1, i) for i in range(1, 11)]
+        values = np.linspace(0, 100, 10)
+        curve = Curve((dates, values)).opts(
+            apply_hard_bounds=True,
+            xlim=(target_xlim_l, target_xlim_h)
+        )
+        plot = bokeh_renderer.get_plot(curve)
+        initial_view_range = (dt_to_int(plot.handles['x_range'].start), dt_to_int(plot.handles['x_range'].end))
+        assert initial_view_range == (dt_to_int(target_xlim_l), dt_to_int(target_xlim_h))
+        # Validate navigation bounds include entire data range
+        hard_bounds = (dt_to_int(plot.handles['x_range'].bounds[0]), dt_to_int(plot.handles['x_range'].bounds[1]))
+        assert hard_bounds == (dt_to_int(dt.datetime(2020, 1, 1)), dt_to_int(dt.datetime(2020, 1, 10)))
+
+    def test_dynamic_map_bounds_update(self):
+        """Test that `apply_hard_bounds` applies correctly when DynamicMap is updated."""
+
+        def curve_data(choice):
+            datasets = {
+                'set1': (np.linspace(0, 5, 100), np.random.rand(100)),
+                'set2': (np.linspace(0, 20, 100), np.random.rand(100)),
+            }
+            x, y = datasets[choice]
+            return Curve((x, y))
+
+        ChoiceStream = Stream.define(
+            'Choice',
+            choice=param.Selector(default='set1', objects=['set1', 'set2'])
+        )
+        choice_stream = ChoiceStream()
+        dmap = DynamicMap(curve_data, kdims=[], streams=[choice_stream])
+        dmap = dmap.opts(opts.Curve(apply_hard_bounds=True, xlim=(2,3), framewise=True))
+        dmap = dmap.redim.values(choice=['set1', 'set2'])
+        plot = bokeh_renderer.get_plot(dmap)
+
+        # Keeping the xlim consistent between updates, and change data range bounds
+        # Initially select 'set1'
+        dmap.event(choice='set1')
+        assert plot.handles['x_range'].start == 2
+        assert plot.handles['x_range'].end == 3
+        assert plot.handles['x_range'].bounds == (0, 5)
+
+        # Update to 'set2'
+        dmap.event(choice='set2')
+        assert plot.handles['x_range'].start == 2
+        assert plot.handles['x_range'].end == 3
+        assert plot.handles['x_range'].bounds == (0, 20)

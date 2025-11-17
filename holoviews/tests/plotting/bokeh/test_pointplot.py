@@ -2,12 +2,22 @@ import datetime as dt
 
 import numpy as np
 import pandas as pd
-from bokeh.models import CategoricalColorMapper, FactorRange, LinearColorMapper, Scatter
+import pytest
+from bokeh.core.enums import MarkerType
+from bokeh.models import (
+    CategoricalColorMapper,
+    Circle,
+    FactorRange,
+    LinearColorMapper,
+    Scatter,
+)
 
+import holoviews as hv
 from holoviews.core import NdOverlay
 from holoviews.core.options import Cycle
 from holoviews.element import Points
-from holoviews.plotting.bokeh.util import property_to_dict
+from holoviews.plotting.bokeh.chart import SizebarMixin
+from holoviews.plotting.bokeh.util import BOKEH_GE_3_8_0, property_to_dict
 from holoviews.streams import Stream
 
 from ..utils import ParamLogStream
@@ -157,6 +167,17 @@ class TestPointPlot(TestBokehPlot):
         fig = plot.state
         self.assertEqual(len(fig.legend), 0)
 
+    def test_native_marker_legend(self):
+        """When one plots with a native bokeh marker, the legend uses that marker."""
+        for marker in MarkerType:
+            with self.subTest(marker=marker):
+                # Plot with a categorical color mapper solely to obtain a legend.
+                points = Points([(0, 0, "A"), (0, 1, "B")], vdims="color").opts(
+                    color="color", marker=marker
+                )
+                plot = bokeh_renderer.get_plot(points)
+                assert plot.state.legend[0].items[0].renderers[0].glyph.marker == marker
+
     def test_points_non_numeric_size_warning(self):
         data = (np.arange(10), np.arange(10), list(map(chr, range(94,104))))
         points = Points(data, vdims=['z']).opts(size_index=2)
@@ -182,7 +203,7 @@ class TestPointPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(points*points2)
         x_range = plot.handles['x_range']
         self.assertIsInstance(x_range, FactorRange)
-        self.assertEqual(x_range.factors, list(map(str, range(10))) + ['A', 'B', 'C', '2.0'])
+        self.assertEqual(x_range.factors, [*map(str, range(10)), 'A', 'B', 'C', '2.0'])
 
     def test_points_categorical_xaxis_invert_axes(self):
         points = Points((['A', 'B', 'C'], (1,2,3))).opts(invert_axes=True)
@@ -270,7 +291,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.3483695221017129)
 
     def test_points_padding_datetime_square(self):
-        points = Points([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).opts(
+        points = Points([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)]).opts(
             padding=0.1
         )
         plot = bokeh_renderer.get_plot(points)
@@ -281,7 +302,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_points_padding_datetime_nonsquare(self):
-        points = Points([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).opts(
+        points = Points([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)]).opts(
             padding=0.1, width=600
         )
         plot = bokeh_renderer.get_plot(points)
@@ -501,7 +522,7 @@ class TestPointPlot(TestBokehPlot):
         markers = ['circle', 'triangle']
         overlay = NdOverlay({marker: Points(np.arange(i)) for i, marker in enumerate(markers)}, 'Marker').opts('Points', marker='Marker')
         plot = bokeh_renderer.get_plot(overlay)
-        for subplot, glyph_type, marker in zip(plot.subplots.values(), [Scatter, Scatter], markers):
+        for subplot, glyph_type, marker in zip(plot.subplots.values(), [Scatter, Scatter], markers, strict=None):
             self.assertIsInstance(subplot.handles['glyph'], glyph_type)
             self.assertEqual(subplot.handles['glyph'].marker, marker)
 
@@ -540,3 +561,126 @@ class TestPointPlot(TestBokehPlot):
             "size_index; ignoring the size_index.\n"
         )
         self.assertEqual(log_msg, warning)
+
+    def test_point_radius(self):
+        x, y = 4, 5
+        xs = np.arange(x)
+        ys = np.arange(y)
+        zs = np.arange(x * y).reshape(y, x)
+        plot = Points((xs, ys, zs,), kdims=["xs", "ys"], vdims="zs")
+        plot.opts(radius=hv.dim("zs").norm() / 2)
+
+        handles = bokeh_renderer.get_plot(plot).handles
+        glyph = handles["glyph"]
+        assert isinstance(glyph, Circle)
+        assert glyph.radius_dimension == "min"
+
+        norm = zs.T.ravel() / np.max(zs) / 2
+        np.testing.assert_array_equal(handles["cds"].data["radius"], norm)
+
+    def test_point_radius_then_size_then_radius(self):
+        plot = Points([1, 2, 3])
+        plot.opts(radius=1)
+
+        handles = bokeh_renderer.get_plot(plot).handles
+        glyph = handles["glyph"]
+        assert isinstance(glyph, Circle)
+
+        plot.opts(radius=None, size=1)
+        handles = bokeh_renderer.get_plot(plot).handles
+        glyph = handles["glyph"]
+        assert isinstance(glyph, Scatter)
+
+        plot.opts(radius=1)
+        handles = bokeh_renderer.get_plot(plot).handles
+        glyph = handles["glyph"]
+        assert isinstance(glyph, Circle)
+
+
+@pytest.mark.skipif(not BOKEH_GE_3_8_0, reason="Needs Bokeh 3.8")
+class TestSizeBar:
+
+    def setup_method(self):
+        np.random.seed(1)
+        N = 100
+        x = np.random.random(size=N) * 100
+        y = np.random.random(size=N) * 100
+        radii = np.random.random(size=N) * 10
+        self.plot = hv.Points((x, y, radii), vdims=["radii"]).opts(radius="radii")
+
+    def get_handles(self):
+        return bokeh_renderer.get_plot(self.plot).handles
+
+    def get_sizebar(self):
+        return self.get_handles().get("sizebar")
+
+    def test_init(self):
+        from bokeh.models import SizeBar
+
+        assert self.get_sizebar() is None
+
+        self.plot.opts(sizebar=True)
+        assert isinstance(self.get_sizebar(), SizeBar)
+
+    @pytest.mark.parametrize("location", [SizebarMixin.param.sizebar_location.default])
+    def test_location(self, location):
+        self.plot.opts(sizebar=True, sizebar_location=location)
+        handles = self.get_handles()
+        assert handles["sizebar"] in getattr(handles["plot"], location)
+
+    @pytest.mark.parametrize("orientation", [SizebarMixin.param.sizebar_orientation.default])
+    def test_orientation(self, orientation):
+        self.plot.opts(sizebar=True, sizebar_orientation=orientation)
+        assert self.get_sizebar().orientation == orientation
+
+    def test_style(self):
+        self.plot.opts(sizebar=True, sizebar_color="red", sizebar_alpha = 0.1)
+        sizebar = self.get_sizebar()
+        assert sizebar.glyph_fill_alpha == 0.1
+        assert sizebar.glyph_fill_color == "red"
+
+    @pytest.mark.parametrize("bounds", [(0, 10), (0, float("inf"))])
+    def test_bounds(self, bounds):
+        self.plot.opts(sizebar=True, sizebar_bounds=bounds)
+        assert self.get_sizebar().bounds == bounds
+
+    @pytest.mark.parametrize("location", [SizebarMixin.param.sizebar_location.default])
+    @pytest.mark.parametrize("orientation", [SizebarMixin.param.sizebar_orientation.default])
+    @pytest.mark.parametrize("set_width", [True, False])
+    def test_max_size(self, location, orientation, set_width):
+        self.plot.opts(sizebar=True, sizebar_location=location, sizebar_orientation=orientation)
+        if set_width:
+            self.plot.opts(sizebar_opts={"width": 216})  # Using 216 as it will never be a default
+
+        width = self.get_sizebar().width
+        match (location, orientation, set_width):
+            case ("above" | "below", "horizontal", False):
+                assert width == "max"
+            case ("left" | "right", "vertical", False):
+                assert width == "max"
+            case _:
+                if set_width:
+                    assert width == 216
+                else:
+                    assert width != "max"
+
+    def test_overlay(self):
+        # Mainly just to check it does not raise an exception
+        p1 = self.plot.opts(sizebar=True)
+        p2 = hv.Curve([1, 2, 3])
+        combined = p1 * p2
+
+        bk_element = hv.render(combined)
+        assert len(bk_element.renderers) == 2  # the two plots
+        assert len(bk_element.below) == 2  # axis and sizebar
+
+    def test_layout(self):
+        # Mainly just to check it does not raise an exception
+        p1 = self.plot.opts(sizebar=True)
+        p2 = hv.Curve([1, 2, 3])
+        combined = p1 + p2
+
+        bk_element = hv.render(combined)
+        assert len(bk_element.children) == 2
+        assert len(bk_element.children[0][0].below) == 2
+        assert len(bk_element.children[1][0].below) == 1

@@ -2,6 +2,7 @@ import datetime as dt
 from unittest import SkipTest
 
 import numpy as np
+import pytest
 
 from holoviews import HSV, RGB, Curve, Dataset, Dimension, Image, Table
 from holoviews.core.data.interface import DataError
@@ -428,7 +429,7 @@ class BaseRGBElementInterfaceTests(InterfaceTests):
 
     def test_sample_xcoord(self):
         ys = np.linspace(0.5, 9.5, 10)
-        data = (ys,) + tuple(self.rgb_array[:, 7, i] for i in range(3))
+        data = (ys, *(self.rgb_array[:, 7, i] for i in range(3)))
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.rgb):
             self.assertEqual(self.rgb.sample(x=5),
                              self.rgb.clone(data, kdims=['y'],
@@ -436,7 +437,7 @@ class BaseRGBElementInterfaceTests(InterfaceTests):
 
     def test_sample_ycoord(self):
         xs = np.linspace(-9, 9, 10)
-        data = (xs,) + tuple(self.rgb_array[4, :, i] for i in range(3))
+        data = (xs, *(self.rgb_array[4, :, i] for i in range(3)))
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.rgb):
             self.assertEqual(self.rgb.sample(y=5),
                              self.rgb.clone(data, kdims=['x'],
@@ -465,17 +466,9 @@ class RGBElement_ImageInterfaceTests(BaseRGBElementInterfaceTests):
 
     __test__ = True
 
+    @pytest.mark.xfail(reason="Raises DataError in ImageInterface")
     def test_reduce_to_single_values(self):
-        try:
-            super().test_reduce_to_single_values()
-        except DataError:
-            msg = (
-                "RGB element can't run with this command: "
-                "'pytest holoviews/tests -k test_reduce_to_single_values'"
-                "but runs fine with 'pytest holoviews/tests/core/'"
-            )
-            raise SkipTest(msg)
-
+        super().test_reduce_to_single_values()
 
 class BaseHSVElementInterfaceTests(InterfaceTests):
 

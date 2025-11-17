@@ -2,8 +2,6 @@
 Test cases for the Comparisons class over the Chart elements
 """
 
-from unittest import skipIf
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -30,6 +28,7 @@ from holoviews.element import (
 )
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element.selection import spatial_select_columnar
+from holoviews.util.transform import dim
 
 try:
     import datashader as ds
@@ -51,12 +50,35 @@ try:
 except ImportError:
     dd = None
 
-spd_available = skipIf(spd is None, "spatialpandas is not available")
-shapelib_available = skipIf(shapely is None and spd is None,
-                            'Neither shapely nor spatialpandas are available')
-shapely_available = skipIf(shapely is None, 'shapely is not available')
-ds_available = skipIf(ds is None, 'datashader not available')
+spd_available = pytest.mark.skipif(spd is None, reason="spatialpandas is not available")
+shapelib_available = pytest.mark.skipif(shapely is None and spd is None,
+                            reason='Neither shapely nor spatialpandas are available')
+shapely_available = pytest.mark.skipif(shapely is None, reason='shapely is not available')
+ds_available = pytest.mark.skipif(ds is None, reason='datashader not available')
 dd_available = pytest.mark.skipif(dd is None, reason='dask.dataframe not available')
+
+
+class TestIndexExpr(ComparisonTestCase):
+
+    def setUp(self):
+        import holoviews.plotting.bokeh # noqa
+        super().setUp()
+        self._backend = Store.current_backend
+        Store.set_current_backend('bokeh')
+
+    def tearDown(self):
+        Store.current_backend = self._backend
+
+    def test_index_selection_on_id_column(self):
+        # tests issue in https://github.com/holoviz/holoviews/pull/6336
+        x, y = np.random.randn(2, 100)
+        idx = np.arange(100)
+
+        points = Points(
+            {'x': x, 'y': y, 'id': idx}, kdims=['x', 'y'], vdims=['id'], datatype=['dataframe']
+        )
+        sel, _, _ = points._get_index_selection([3, 7], ['id'])
+        assert sel == dim('id').isin([3, 7])
 
 
 class TestSelection1DExpr(ComparisonTestCase):
@@ -271,7 +293,7 @@ class TestSelection2DExpr(ComparisonTestCase):
         self.assertEqual(bbox, {'x': np.array([-0.1, 1.4, 1.4, -0.1]),
                                 'y': np.array([-0.1, 0, 2.2, 2.2])})
         self.assertEqual(expr.apply(points), np.array([False, True, False, False, False]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(-0.1, -0.1)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (-0.1, -0.1)]]))
 
     @shapelib_available
     def test_points_selection_geom_inverted(self):
@@ -281,7 +303,7 @@ class TestSelection2DExpr(ComparisonTestCase):
         self.assertEqual(bbox, {'y': np.array([-0.1, 1.4, 1.4, -0.1]),
                                 'x': np.array([-0.1, 0, 2.2, 2.2])})
         self.assertEqual(expr.apply(points), np.array([False, False, True, False, False]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(-0.1, -0.1)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (-0.1, -0.1)]]))
 
     def test_points_selection_categorical(self):
         points = Points((['B', 'A', 'C', 'D', 'E'], [3, 2, 1, 3, 4]))
@@ -371,7 +393,7 @@ class TestSelection2DExpr(ComparisonTestCase):
             [np.nan, np.nan, np.nan],
             [np.nan, np.nan, np.nan]
         ]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(-0.4, -0.1)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (-0.4, -0.1)]]))
 
     @ds_available
     def test_img_selection_geom_inverted(self):
@@ -386,7 +408,7 @@ class TestSelection2DExpr(ComparisonTestCase):
             [ False,  False, False],
             [False, False, False]
         ]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(-0.4, -0.1)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (-0.4, -0.1)]]))
 
     def test_rgb_selection_numeric(self):
         img = RGB(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3, 3)))
@@ -493,7 +515,7 @@ class TestSelectionGeomExpr(ComparisonTestCase):
                                 'x1': np.array([-0.4, 2.2, 2.2, -0.1]),
                                 'y1': np.array([-0.1, -0.1, 4.1, 4.2])})
         self.assertEqual(expr.apply(rect), np.array([True, True, False]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(-0.4, -0.1)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (-0.4, -0.1)]]))
 
     @shapely_available
     def test_rect_geom_selection_inverted(self):
@@ -505,7 +527,7 @@ class TestSelectionGeomExpr(ComparisonTestCase):
                                 'y1': np.array([-0.4, 3.2, 3.2, -0.1]),
                                 'x1': np.array([-0.1, -0.1, 4.1, 4.2])})
         self.assertEqual(expr.apply(rect), np.array([True, False, False]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(-0.4, -0.1)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (-0.4, -0.1)]]))
 
     def test_segments_selection_numeric(self):
         segs = Segments([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)])
@@ -539,7 +561,7 @@ class TestSelectionGeomExpr(ComparisonTestCase):
                                 'x1': np.array([-0.4, 2.2, 2.2, -0.1]),
                                 'y1': np.array([-0.1, -0.1, 4.1, 4.2])})
         self.assertEqual(expr.apply(rect), np.array([True, True, False]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(-0.4, -0.1)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (-0.4, -0.1)]]))
 
     @shapely_available
     def test_segs_geom_selection_inverted(self):
@@ -551,7 +573,7 @@ class TestSelectionGeomExpr(ComparisonTestCase):
                                 'y1': np.array([-0.4, 3.2, 3.2, -0.1]),
                                 'x1': np.array([-0.1, -0.1, 4.1, 4.2])})
         self.assertEqual(expr.apply(rect), np.array([True, False, False]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(-0.4, -0.1)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (-0.4, -0.1)]]))
 
 
 class TestSelectionPolyExpr(ComparisonTestCase):
@@ -599,7 +621,7 @@ class TestSelectionPolyExpr(ComparisonTestCase):
         self.assertEqual(bbox, {'x': np.array([0.2, 0.5, 0.75, 0.1]),
                                 'y': np.array([-0.15, 0, 0.6, 0.45])})
         self.assertEqual(expr.apply(poly, expanded=False), np.array([False, True, True]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(0.2, -0.15)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (0.2, -0.15)]]))
 
     @shapely_available
     def test_poly_geom_selection_inverted(self):
@@ -613,11 +635,13 @@ class TestSelectionPolyExpr(ComparisonTestCase):
         self.assertEqual(bbox, {'y': np.array([0.2, 0.5, 0.75, 0.1]),
                                 'x': np.array([-0.15, 0, 0.6, 0.6])})
         self.assertEqual(expr.apply(poly, expanded=False), np.array([False, False, True]))
-        self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(0.2, -0.15)]]))
+        self.assertEqual(region, Rectangles([]) * Path([[*geom, (0.2, -0.15)]]))
 
 
-@pytest.mark.skipif(shapely is None and spd is None, reason='Neither shapely nor spatialpandas are available')
 class TestSpatialSelectColumnar:
+    __test__ = False
+    method = None
+
     geometry_encl = np.array([
         [-1, 0.5],
         [ 1, 0.5],
@@ -655,30 +679,65 @@ class TestSpatialSelectColumnar:
                   -1,-1,-1]
         }, dtype=float)
 
-    @dd_available
+
     @pytest.fixture(scope="function")
     def dask_df(self, pandas_df):
         return dd.from_pandas(pandas_df, npartitions=2)
 
+    @pytest.fixture(scope="function")
+    def _method(self):
+        return self.method
+
     @pytest.mark.parametrize("geometry,pt_mask", [(geometry_encl, pt_mask_encl),(geometry_noencl, pt_mask_noencl)])
     class TestSpatialSelectColumnarPtMask:
-        def test_pandas(self, geometry, pt_mask, pandas_df):
-            mask = spatial_select_columnar(pandas_df.x, pandas_df.y, geometry)
+
+        def test_pandas(self, geometry, pt_mask, pandas_df, _method):
+            mask = spatial_select_columnar(pandas_df.x, pandas_df.y, geometry, _method)
             assert np.array_equal(mask, pt_mask)
 
         @dd_available
-        def test_dask(self, geometry, pt_mask, dask_df):
-            mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry)
+        def test_dask(self, geometry, pt_mask, dask_df, _method):
+            mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry, _method)
             assert np.array_equal(mask.compute(), pt_mask)
 
-        def test_numpy(self, geometry, pt_mask, pandas_df):
-            mask = spatial_select_columnar(pandas_df.x.to_numpy(copy=True), pandas_df.y.to_numpy(copy=True), geometry)
+        def test_numpy(self, geometry, pt_mask, pandas_df, _method):
+            mask = spatial_select_columnar(pandas_df.x.to_numpy(copy=True), pandas_df.y.to_numpy(copy=True), geometry, _method)
             assert np.array_equal(mask, pt_mask)
 
+        @pytest.mark.gpu
+        def test_cudf(self, geometry, pt_mask, pandas_df, _method, unimport):
+            import cudf
+            import cupy as cp
+            unimport('cuspatial')
+
+            df = cudf.from_pandas(pandas_df)
+            mask = spatial_select_columnar(df.x, df.y, geometry, _method)
+            assert np.array_equal(cp.asnumpy(mask), pt_mask)
+
+        @pytest.mark.gpu
+        def test_cuspatial(self, geometry, pt_mask, pandas_df, _method):
+            import cudf
+            import cupy as cp
+
+            df = cudf.from_pandas(pandas_df)
+            mask = spatial_select_columnar(df.x, df.y, geometry, _method)
+            assert np.array_equal(cp.asnumpy(mask), pt_mask)
 
     @pytest.mark.parametrize("geometry", [geometry_encl, geometry_noencl])
     class TestSpatialSelectColumnarDaskMeta:
         @dd_available
-        def test_meta_dtype(self, geometry, dask_df):
-            mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry)
+        def test_meta_dtype(self, geometry, dask_df, _method):
+            mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry, _method)
             assert mask._meta.dtype == np.bool_
+
+
+@pytest.mark.skipif(shapely is None, reason='Shapely not available')
+class TestSpatialSelectColumnarShapely(TestSpatialSelectColumnar):
+    __test__ = True
+    method = 'shapely'
+
+
+@pytest.mark.skipif(spd is None, reason='Spatialpandas not available')
+class TestSpatialSelectColumnarSpatialpandas(TestSpatialSelectColumnar):
+    __test__ = True
+    method = 'spatialpandas'

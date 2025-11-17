@@ -1,5 +1,10 @@
+import pytest
+
+pytest.importorskip("IPython")
+
 from holoviews import Curve, Store
-from holoviews.ipython import IPTestCase, notebook_extension
+from holoviews.element.comparison import IPTestCase
+from holoviews.ipython import notebook_extension
 
 
 class TestDisplayHooks(IPTestCase):
@@ -12,9 +17,7 @@ class TestDisplayHooks(IPTestCase):
         Store.display_formats = self.format
 
     def tearDown(self):
-        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         self.ip.run_line_magic("unload_ext", "holoviews.ipython")
-        del self.ip
         Store.display_hooks = self.backup
         notebook_extension._loaded = False
         super().tearDown()
@@ -28,7 +31,7 @@ class TestHTMLDisplay(TestDisplayHooks):
 
     def test_store_render_html(self):
         curve = Curve([1, 2, 3])
-        data, metadata = Store.render(curve)
+        data, _metadata = Store.render(curve)
         mime_types = {'text/html'}
         self.assertEqual(set(data), mime_types)
 
@@ -41,7 +44,7 @@ class TestPNGDisplay(TestDisplayHooks):
 
     def test_store_render_png(self):
         curve = Curve([1, 2, 3])
-        data, metadata = Store.render(curve)
+        data, _metadata = Store.render(curve)
         mime_types = {'image/png'}
         self.assertEqual(set(data), mime_types)
 
@@ -54,7 +57,7 @@ class TestSVGDisplay(TestDisplayHooks):
 
     def test_store_render_svg(self):
         curve = Curve([1, 2, 3])
-        data, metadata = Store.render(curve)
+        data, _metadata = Store.render(curve)
         mime_types = {'image/svg+xml'}
         self.assertEqual(set(data), mime_types)
 
@@ -67,6 +70,6 @@ class TestCombinedDisplay(TestDisplayHooks):
 
     def test_store_render_combined(self):
         curve = Curve([1, 2, 3])
-        data, metadata = Store.render(curve)
+        data, _metadata = Store.render(curve)
         mime_types = {'text/html', 'image/svg+xml', 'image/png'}
         self.assertEqual(set(data), mime_types)

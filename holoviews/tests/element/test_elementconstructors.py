@@ -65,7 +65,7 @@ class ElementConstructorTest(ComparisonTestCase):
         self.assertEqual(failed_elements, [])
 
     def test_chart_zipconstruct(self):
-        self.assertEqual(Curve(zip(self.xs, self.sin)), self.curve)
+        self.assertEqual(Curve(zip(self.xs, self.sin, strict=None)), self.curve)
 
     def test_chart_tuple_construct(self):
         self.assertEqual(Curve((self.xs, self.sin)), self.curve)
@@ -77,10 +77,10 @@ class ElementConstructorTest(ComparisonTestCase):
         self.assertEqual(Path([(self.xs, self.sin), (self.xs, self.cos)]), self.path)
 
     def test_path_ziplist_construct(self):
-        self.assertEqual(Path([list(zip(self.xs, self.sin)), list(zip(self.xs, self.cos))]), self.path)
+        self.assertEqual(Path([list(zip(self.xs, self.sin, strict=None)), list(zip(self.xs, self.cos, strict=None))]), self.path)
 
     def test_hist_zip_construct(self):
-        self.assertEqual(Histogram(list(zip(self.hxs, self.sin))), self.histogram)
+        self.assertEqual(Histogram(list(zip(self.hxs, self.sin, strict=None))), self.histogram)
 
     def test_hist_array_construct(self):
         self.assertEqual(Histogram(np.column_stack((self.hxs, self.sin))), self.histogram)
@@ -117,9 +117,11 @@ class ElementConstructorTest(ComparisonTestCase):
     def test_heatmap_construct_partial_sorted(self):
         data = [(chr(65+i),chr(97+j), i*j) for i in range(3) for j in [2, 0, 1] if i!=j]
         hmap = HeatMap(data)
-        dataset = Dataset({'x': ['A', 'B', 'C'], 'y': ['c', 'b', 'a'],
-                           'z': [[0, 2, np.nan], [np.nan, 0, 0], [0, np.nan, 2]]},
-                          kdims=['x', 'y'], vdims=['z'], label='unique')
+        dataset = Dataset({
+            'x': ['A', 'B', 'C'],
+            'y': ['b', 'a', 'c'],
+            'z': [[0, np.nan, 2], [np.nan, 0, 0], [0, 2, np.nan]]
+        }, kdims=['x', 'y'], vdims=['z'], label='unique')
         self.assertEqual(hmap.gridded, dataset)
 
     def test_heatmap_construct_and_sort(self):

@@ -7,11 +7,14 @@ import param
 from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping
+from ..util import dtype_kind
 from .util import finite_range
 
 
 class DataError(ValueError):
-    "DataError is raised when the data cannot be interpreted"
+    """DataError is raised when the data cannot be interpreted
+
+    """
 
     def __init__(self, msg, interface=None):
         if interface is not None:
@@ -39,7 +42,7 @@ class Accessor:
                     args=[index],
                 )
                 res._pipeline = self.dataset.pipeline.instance(
-                    operations=self.dataset.pipeline.operations + [getitem_op],
+                    operations=[*self.dataset.pipeline.operations, getitem_op],
                     output_type=type(self.dataset)
                 )
         finally:
@@ -53,12 +56,12 @@ class Accessor:
 
 
 class iloc(Accessor):
-    """
-    iloc is small wrapper object that allows row, column based
+    """iloc is small wrapper object that allows row, column based
     indexing into a Dataset using the ``.iloc`` property.  It supports
     the usual numpy and pandas iloc indexing semantics including
     integer indices, slices, lists and arrays of values. For more
     information see the ``Dataset.iloc`` property docstring.
+
     """
 
     @classmethod
@@ -91,7 +94,7 @@ class iloc(Accessor):
             kdims = [d for d in dims if d in kdims]
             vdims = [d for d in dims if d in vdims]
 
-        datatypes = util.unique_iterator([dataset.interface.datatype]+dataset.datatype)
+        datatypes = util.unique_iterator([dataset.interface.datatype, *dataset.datatype])
         datatype = [dt for dt in datatypes if dt in Interface.interfaces and
                     not Interface.interfaces[dt].gridded]
         if not datatype: datatype = ['dataframe', 'dictionary']
@@ -99,13 +102,14 @@ class iloc(Accessor):
 
 
 class ndloc(Accessor):
-    """
-    ndloc is a small wrapper object that allows ndarray-like indexing
+    """ndloc is a small wrapper object that allows ndarray-like indexing
     for gridded Datasets using the ``.ndloc`` property. It supports
     the standard NumPy ndarray indexing semantics including
     integer indices, slices, lists and arrays of values. For more
     information see the ``Dataset.ndloc`` property docstring.
+
     """
+
     @classmethod
     def _perform_getitem(cls, dataset, indices):
         ds = dataset
@@ -118,7 +122,7 @@ class ndloc(Accessor):
         params = {}
         if hasattr(ds, 'bounds'):
             params['bounds'] = None
-        return dataset.clone(selected, datatype=[ds.interface.datatype]+ds.datatype, **params)
+        return dataset.clone(selected, datatype=[ds.interface.datatype, *ds.datatype], **params)
 
 
 class Interface(param.Parameterized):
@@ -140,19 +144,19 @@ class Interface(param.Parameterized):
 
     @classmethod
     def loaded(cls):
-        """
-        Indicates whether the required dependencies are loaded.
+        """Indicates whether the required dependencies are loaded.
+
         """
         return True
 
     @classmethod
     def applies(cls, obj):
-        """
-        Indicates whether the interface is designed specifically to
+        """Indicates whether the interface is designed specifically to
         handle the supplied object's type. By default simply checks
         if the object is one of the types declared on the class,
         however if the type is expensive to import at load time the
         method may be overridden.
+
         """
         return type(obj) in cls.types
 
@@ -162,10 +166,10 @@ class Interface(param.Parameterized):
 
     @classmethod
     def cast(cls, datasets, datatype=None, cast_type=None):
-        """
-        Given a list of Dataset objects, cast them to the specified
+        """Given a list of Dataset objects, cast them to the specified
         datatype (by default the format matching the current interface)
         with the given cast_type (if specified).
+
         """
         datatype = datatype or cls.datatype
         cast = []
@@ -178,7 +182,7 @@ class Interface(param.Parameterized):
     @classmethod
     def error(cls):
         info = dict(interface=cls.__name__)
-        url = "http://holoviews.org/user_guide/%s_Datasets.html"
+        url = "https://holoviews.org/user_guide/%s_Datasets.html"
         if cls.multi:
             datatype = 'a list of tabular'
             info['url'] = url % 'Tabular'
@@ -278,19 +282,19 @@ class Interface(param.Parameterized):
         if not_found:
             raise DataError("Supplied data does not contain specified "
                             "dimensions, the following dimensions were "
-                            "not found: %s" % repr(not_found), cls)
+                            f"not found: {not_found!r}", cls)
 
     @classmethod
     def persist(cls, dataset):
-        """
-        Should return a persisted version of the Dataset.
+        """Should return a persisted version of the Dataset.
+
         """
         return dataset
 
     @classmethod
     def compute(cls, dataset):
-        """
-        Should return a computed version of the Dataset.
+        """Should return a computed version of the Dataset.
+
         """
         return dataset
 
@@ -304,9 +308,9 @@ class Interface(param.Parameterized):
 
     @classmethod
     def isunique(cls, dataset, dim, per_geom=False):
-        """
-        Compatibility method introduced for v1.13.0 to smooth
+        """Compatibility method introduced for v1.13.0 to smooth
         over addition of per_geom kwarg for isscalar method.
+
         """
         try:
             return cls.isscalar(dataset, dim, per_geom)
@@ -324,8 +328,8 @@ class Interface(param.Parameterized):
 
     @classmethod
     def replace_value(cls, data, nodata):
-        """
-        Replace `nodata` value in data with NaN
+        """Replace `nodata` value in data with NaN
+
         """
         data = data.astype('float64')
         mask = data != nodata
@@ -335,11 +339,11 @@ class Interface(param.Parameterized):
 
     @classmethod
     def select_mask(cls, dataset, selection):
-        """
-        Given a Dataset object and a dictionary with dimension keys and
+        """Given a Dataset object and a dictionary with dimension keys and
         selection keys (i.e. tuple ranges, slices, sets, lists, or literals)
         return a boolean mask over the rows in the Dataset object that
         have been selected.
+
         """
         mask = np.ones(len(dataset), dtype=np.bool_)
         for dim, sel in selection.items():
@@ -377,12 +381,27 @@ class Interface(param.Parameterized):
                     mask &= index_mask
         return mask
 
+    @classmethod
+    def _select_mask_neighbor(cls, dataset, selection):
+        """Runs select mask and expand the True values to include its neighbors
+
+        Example
+
+        select_mask =          [False, False, True, True, False, False]
+        select_mask_neighbor = [False, True,  True, True, True,  False]
+
+        """
+        mask = cls.select_mask(dataset, selection)
+        extra = mask[1:] ^ mask[:-1]
+        mask[1:] |= extra
+        mask[:-1] |= extra
+        return mask
 
     @classmethod
     def indexed(cls, dataset, selection):
-        """
-        Given a Dataset object and selection to be applied returns
+        """Given a Dataset object and selection to be applied returns
         boolean to indicate whether a scalar value has been indexed.
+
         """
         selected = list(selection.keys())
         all_scalar = all((not isinstance(sel, (tuple, slice, set, list))
@@ -394,38 +413,38 @@ class Interface(param.Parameterized):
     @classmethod
     def range(cls, dataset, dimension):
         column = dataset.dimension_values(dimension)
-        if column.dtype.kind == 'M':
+        if dtype_kind(column) == 'M':
             return column.min(), column.max()
         elif len(column) == 0:
             return np.nan, np.nan
         else:
             try:
-                assert column.dtype.kind not in 'SUO'
+                assert dtype_kind(column) not in 'SUO'
                 with warnings.catch_warnings():
                     warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
                     return finite_range(column, np.nanmin(column), np.nanmax(column))
             except (AssertionError, TypeError):
                 column = [v for v in util.python2sort(column) if v is not None]
-                if not len(column):
+                if not column:
                     return np.nan, np.nan
                 return column[0], column[-1]
 
     @classmethod
     def concatenate(cls, datasets, datatype=None, new_type=None):
-        """
-        Utility function to concatenate an NdMapping of Dataset objects.
+        """Utility function to concatenate an NdMapping of Dataset objects.
+
         """
         from . import Dataset, default_datatype
         new_type = new_type or Dataset
         if isinstance(datasets, NdMapping):
             dimensions = datasets.kdims
-            keys, datasets = zip(*datasets.data.items())
+            keys, datasets = zip(*datasets.data.items(), strict=True)
         elif isinstance(datasets, list) and all(not isinstance(v, tuple) for v in datasets):
             # Allow concatenating list of datasets (by declaring no dimensions and keys)
             dimensions, keys = [], [()]*len(datasets)
         else:
             raise DataError('Concatenation only supported for NdMappings '
-                            'and lists of Datasets, found %s.' % type(datasets).__name__)
+                            f'and lists of Datasets, found {type(datasets).__name__}.')
 
         template = datasets[0]
         datatype = datatype or template.interface.datatype
@@ -437,14 +456,14 @@ class Interface(param.Parameterized):
             datatype = 'grid'
 
         if len(datasets) > 1 and not dimensions and cls.interfaces[datatype].gridded:
-            raise DataError('Datasets with %s datatype cannot be concatenated '
+            raise DataError(f'Datasets with {datatype} datatype cannot be concatenated '
                             'without defining the dimensions to concatenate along. '
                             'Ensure you pass in a NdMapping (e.g. a HoloMap) '
-                            'of Dataset types, not a list.' % datatype)
+                            'of Dataset types, not a list.')
 
         datasets = template.interface.cast(datasets, datatype)
         template = datasets[0]
-        data = list(zip(keys, datasets)) if keys else datasets
+        data = list(zip(keys, datasets, strict=None)) if keys else datasets
         concat_data = template.interface.concat(data, dimensions, vdims=template.vdims)
         return template.clone(concat_data, kdims=dimensions+template.kdims, new_type=new_type)
 
@@ -509,8 +528,8 @@ class Interface(param.Parameterized):
 
     @classmethod
     def as_dframe(cls, dataset):
-        """
-        Returns the data of a Dataset as a dataframe avoiding copying
+        """Returns the data of a Dataset as a dataframe avoiding copying
         if it already a dataframe type.
+
         """
         return dataset.dframe()

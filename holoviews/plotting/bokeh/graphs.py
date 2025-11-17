@@ -14,7 +14,7 @@ from bokeh.models import (
 
 from ...core.data import Dataset
 from ...core.options import Cycle, abbreviated_exception
-from ...core.util import dimension_sanitizer, unique_array
+from ...core.util import dimension_sanitizer, dtype_kind, unique_array
 from ...util.transform import dim
 from ..mixins import ChordMixin, GraphMixin
 from ..util import get_directed_graph_paths, process_cmap
@@ -39,11 +39,11 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
       Whether to draw arrows on the graph edges to indicate the
       directionality of each edge.""")
 
-    selection_policy = param.ObjectSelector(default='nodes', objects=['edges', 'nodes', None], doc="""
+    selection_policy = param.Selector(default='nodes', objects=['edges', 'nodes', None], doc="""
         Determines policy for inspection of graph components, i.e. whether to highlight
         nodes or edges when selecting connected edges and nodes respectively.""")
 
-    inspection_policy = param.ObjectSelector(default='nodes', objects=['edges', 'nodes', None], doc="""
+    inspection_policy = param.Selector(default='nodes', objects=['edges', 'nodes', None], doc="""
         Determines policy for inspection of graph components, i.e. whether to highlight
         nodes or edges when hovering over connected edges and nodes respectively.""")
 
@@ -69,7 +69,7 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
                   ['node_size', 'cmap', 'edge_cmap', 'node_cmap',
                    'node_radius', 'node_marker'])
 
-    _nonvectorized_styles =  base_properties + ['cmap', 'edge_cmap', 'node_cmap']
+    _nonvectorized_styles =  [*base_properties, 'cmap', 'edge_cmap', 'node_cmap']
 
     # Filled is only supported for subclasses
     filled = False
@@ -92,9 +92,9 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
     def _hover_opts(self, element):
         if self.inspection_policy == 'nodes':
             dims = element.nodes.dimensions()
-            dims = [(dims[2].pprint_label, '@{index_hover}')]+dims[3:]
+            dims = [(dims[2].pprint_label, '@{index_hover}'), *dims[3:]]
         elif self.inspection_policy == 'edges':
-            kdims = [(kd.pprint_label, '@{%s_values}' % kd)
+            kdims = [(kd.pprint_label, f'@{{{kd}_values}}')
                      if kd in ('start', 'end') else kd for kd in element.kdims]
             dims = kdims+element.vdims
         else:
@@ -115,7 +115,7 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         cvals = element.dimension_values(cdim)
         if idx in self._node_columns:
             factors = element.nodes.dimension_values(2, expanded=False)
-        elif idx == 2 and cvals.dtype.kind in 'uif':
+        elif idx == 2 and dtype_kind(cvals) in 'uif':
             factors = None
         else:
             factors = unique_array(cvals)
@@ -123,13 +123,13 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         default_cmap = 'viridis' if factors is None else 'tab20'
         cmap = style.get('edge_cmap', style.get('cmap', default_cmap))
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
-        if factors is None or (factors.dtype.kind in 'uif' and idx not in self._node_columns):
+        if factors is None or (dtype_kind(factors) in 'uif' and idx not in self._node_columns):
             colors, factors = None, None
         else:
-            if factors.dtype.kind == 'f':
+            if dtype_kind(factors) == 'f':
                 cvals = cvals.astype(np.int32)
                 factors = factors.astype(np.int32)
-            if factors.dtype.kind not in 'SU':
+            if dtype_kind(factors) not in 'SU':
                 field += '_str__'
                 cvals = [str(f) for f in cvals]
                 factors = (str(f) for f in factors)
@@ -161,11 +161,11 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
                 mapping = {'xs': 'xs', 'ys': 'ys'}
             else:
                 raise ValueError("Edge paths do not match the number of supplied edges."
-                                 "Expected %d, found %d paths." % (len(element), len(edges)))
+                                 f"Expected {len(element)}, found {len(edges)} paths.")
         elif self.directed:
             xdim, ydim = element.nodes.kdims[:2]
-            x_range = ranges[xdim.name]['combined']
-            y_range = ranges[ydim.name]['combined']
+            x_range = ranges[xdim.label]['combined']
+            y_range = ranges[ydim.label]['combined']
             arrow_len = np.hypot(y_range[1]-y_range[0], x_range[1]-x_range[0])*self.arrowhead_length
             arrows = get_directed_graph_paths(element, arrow_len)
             path_data['xs'] = [arr[:, 0] for arr in arrows]
@@ -183,15 +183,15 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         nodes = element.nodes.dimension_values(2)
         node_positions = element.nodes.array([0, 1])
         # Map node indices to integers
-        if nodes.dtype.kind not in 'uif':
+        if dtype_kind(nodes) not in 'uif':
             node_indices = {v: i for i, v in enumerate(nodes)}
             index = np.array([node_indices[n] for n in nodes], dtype=np.int32)
             layout = {node_indices[k]: (y, x) if self.invert_axes else (x, y)
-                      for k, (x, y) in zip(nodes, node_positions)}
+                      for k, (x, y) in zip(nodes, node_positions, strict=None)}
         else:
             index = nodes.astype(np.int32)
             layout = {k: (y, x) if self.invert_axes else (x, y)
-                      for k, (x, y) in zip(index, node_positions)}
+                      for k, (x, y) in zip(index, node_positions, strict=None)}
 
         point_data = {'index': index}
 
@@ -219,9 +219,9 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         edge_mapping = {}
         nan_node = index.max()+1 if len(index) else 0
         start, end = (element.dimension_values(i) for i in range(2))
-        if nodes.dtype.kind == 'f':
+        if dtype_kind(nodes) == 'f':
             start, end = start.astype(np.int32), end.astype(np.int32)
-        elif nodes.dtype.kind not in 'ui':
+        elif dtype_kind(nodes) not in 'ui':
             start = np.array([node_indices.get(x, nan_node) for x in start], dtype=np.int32)
             end = np.array([node_indices.get(y, nan_node) for y in end], dtype=np.int32)
         path_data = dict(start=start, end=end)
@@ -250,8 +250,8 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
 
 
     def _update_datasource(self, source, data):
-        """
-        Update datasource with data for a new frame.
+        """Update datasource with data for a new frame.
+
         """
         if isinstance(source, ColumnDataSource):
             if self.handles['static_source']:
@@ -262,7 +262,9 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
             source.graph_layout = data
 
     def _init_filled_edges(self, renderer, properties, edge_mapping):
-        "Replace edge renderer with filled renderer"
+        """Replace edge renderer with filled renderer
+
+        """
         glyph_model = Patches if self.filled else Bezier
         allowed_properties = glyph_model.properties()
         for glyph_type in ('', 'selection_', 'nonselection_', 'hover_', 'muted_'):
@@ -277,7 +279,9 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
 
 
     def _get_graph_properties(self, plot, element, data, mapping, ranges, style):
-        "Computes the args and kwargs for the GraphRenderer"
+        """Computes the args and kwargs for the GraphRenderer
+
+        """
         sources = []
         properties, mappings = {}, {}
 
@@ -312,10 +316,12 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         layout = StaticLayoutProvider(graph_layout=layout)
         self.handles['layout_source'] = layout
 
-        return tuple(sources+[layout]), properties
+        return (*sources, layout), properties
 
     def _reorder_renderers(self, plot, renderer, mapping):
-        "Reorders renderers based on the defined draw order"
+        """Reorders renderers based on the defined draw order
+
+        """
         renderers = dict({r: self.handles[r+'_glyph_renderer']
                           for r in mapping}, graph=renderer)
         other = [r for r in plot.renderers if r not in renderers.values()]
@@ -461,7 +467,7 @@ class ChordPlot(ChordMixin, GraphPlot):
         nodes = element.nodes
         if element.vdims:
             values = element.dimension_values(element.vdims[0])
-            if values.dtype.kind in 'uif':
+            if dtype_kind(values) in 'uif':
                 edges = Dataset(element)[values>0]
                 nodes = list(np.unique([edges.dimension_values(i) for i in range(2)]))
                 nodes = element.nodes.select(**{element.nodes.kdims[2].name: nodes})
@@ -479,8 +485,8 @@ class ChordPlot(ChordMixin, GraphPlot):
 
 
 class NodePlot(PointPlot):
-    """
-    Simple subclass of PointPlot which hides x, y position on hover.
+    """Simple subclass of PointPlot which hides x, y position on hover.
+
     """
 
     def _hover_opts(self, element):

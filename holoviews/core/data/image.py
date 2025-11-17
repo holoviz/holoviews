@@ -12,9 +12,9 @@ from .util import finite_range
 
 
 class ImageInterface(GridInterface):
-    """
-    Interface for 2 or 3D arrays representing images
+    """Interface for 2 or 3D arrays representing images
     of raw luminance values, RGB values or HSV values.
+
     """
 
     types = (np.ndarray,)
@@ -33,15 +33,15 @@ class ImageInterface(GridInterface):
         kwargs = {}
         dimensions = [dimension_name(d) for d in kdims + vdims]
         if isinstance(data, tuple):
-            data = dict(zip(dimensions, data))
+            data = dict(zip(dimensions, data, strict=None))
         if isinstance(data, dict):
             xs, ys = np.asarray(data[kdims[0].name]), np.asarray(data[kdims[1].name])
             xvalid = util.validate_regular_sampling(xs, eltype.rtol or util.config.image_rtol)
             yvalid = util.validate_regular_sampling(ys, eltype.rtol or util.config.image_rtol)
             if not xvalid or not yvalid:
                 raise ValueError('ImageInterface only supports regularly sampled coordinates')
-            l, r, xdensity, invertx = util.bound_range(xs, None, eltype._time_unit)
-            b, t, ydensity, inverty = util.bound_range(ys, None, eltype._time_unit)
+            l, r, _xdensity, invertx = util.bound_range(xs, None, eltype._time_unit)
+            b, t, _ydensity, inverty = util.bound_range(ys, None, eltype._time_unit)
             kwargs['bounds'] = BoundingBox(points=((l, b), (r, t)))
             if len(vdims) == 1:
                 data = np.flipud(np.asarray(data[vdims[0].name]))
@@ -69,7 +69,9 @@ class ImageInterface(GridInterface):
 
     @classmethod
     def irregular(cls, dataset, dim):
-        "ImageInterface does not support irregular data"
+        """ImageInterface does not support irregular data
+
+        """
         return False
 
     @classmethod
@@ -148,7 +150,7 @@ class ImageInterface(GridInterface):
                 density = obj.xdensity
             halfd = (1./density)/2.
             if isinstance(low, util.datetime_types):
-                halfd = np.timedelta64(int(round(halfd)), obj._time_unit)
+                halfd = np.timedelta64(round(halfd), obj._time_unit)
             drange = (low+halfd, high-halfd)
         elif 1 < dim_idx < len(obj.vdims) + 2:
             dim_idx -= 2
@@ -165,8 +167,8 @@ class ImageInterface(GridInterface):
     def values(
             cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False
     ):
-        """
-        The set of samples available along a particular dimension.
+        """The set of samples available along a particular dimension.
+
         """
         dim_idx = dataset.get_dimension_index(dim)
         if dim_idx in [0, 1]:
@@ -214,8 +216,8 @@ class ImageInterface(GridInterface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
-        """
-        Slice the underlying numpy array in sheet coordinates.
+        """Slice the underlying numpy array in sheet coordinates.
+
         """
         selection = {k: slice(*sel) if isinstance(sel, tuple) else sel
                      for k, sel in selection.items()}
@@ -240,20 +242,20 @@ class ImageInterface(GridInterface):
 
     @classmethod
     def sample(cls, dataset, samples=None):
-        """
-        Sample the Raster along one or both of its dimensions,
+        """Sample the Raster along one or both of its dimensions,
         returning a reduced dimensionality type, which is either
         a ItemTable, Curve or Scatter. If two dimension samples
         and a new_xaxis is provided the sample will be the value
         of the sampled unit indexed by the value in the new_xaxis
         tuple.
+
         """
         if samples is None:
             samples = []
         if len(samples[0]) == 1:
             select = {dataset.kdims[0].name: [s[0] for s in samples]}
             return tuple(dataset.select(**select).columns().values())
-        return [c+(dataset.data[dataset._coord2matrix(c)],) for c in samples]
+        return [(*c, dataset.data[dataset._coord2matrix(c)]) for c in samples]
 
 
     @classmethod
@@ -278,9 +280,9 @@ class ImageInterface(GridInterface):
                        for i in range(dataset.data.shape[abs(didx-1)])]
             data = np.flipud(dataset.data)
             groups = [(c, group_type((xvals, data[s]), **group_kwargs))
-                       for s, c in zip(samples, coords)]
+                       for s, c in zip(samples, coords, strict=None)]
         else:
-            data = zip(*[dataset.dimension_values(i) for i in range(len(dataset.dimensions()))])
+            data = zip(*[dataset.dimension_values(i) for i in range(len(dataset.dimensions()))], strict=None)
             groups = [(g[:dataset.ndims], group_type([g[dataset.ndims:]], **group_kwargs))
                       for g in data]
 
@@ -293,9 +295,9 @@ class ImageInterface(GridInterface):
 
     @classmethod
     def unpack_scalar(cls, dataset, data):
-        """
-        Given a dataset object and data in the appropriate format for
+        """Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
+
         """
         if np.isscalar(data) or len(data) != 1:
             return data
@@ -316,7 +318,7 @@ class ImageInterface(GridInterface):
             if len(dataset.vdims) == 1:
                 return (data if np.isscalar(data) else data[0], [])
             else:
-                return ({vd.name: np.array([v]) for vd, v in zip(dataset.vdims, data)}, [])
+                return ({vd.name: np.array([v]) for vd, v in zip(dataset.vdims, data, strict=None)}, [])
         elif len(axes) == 1:
             return ({kdims[0]: cls.values(dataset, axes[0], expanded=False),
                     dataset.vdims[0].name: data[::-1] if axes[0] else data}, [])

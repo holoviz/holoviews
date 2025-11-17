@@ -14,6 +14,7 @@ from holoviews.plotting.plotly.callbacks import (
     RangeYCallback,
     Selection1DCallback,
 )
+from holoviews.plotting.plotly.util import PLOTLY_MAP, PLOTLY_SCATTERMAP
 from holoviews.streams import (
     BoundsX,
     BoundsXY,
@@ -95,9 +96,9 @@ class TestCallbacks(TestCase):
 
         self.mapbox_fig_dict = go.Figure({
             'data': [
-                {'type': 'scattermapbox', 'uid': 'first', 'subplot': 'mapbox'},
-                {'type': 'scattermapbox', 'uid': 'second', 'subplot': 'mapbox2'},
-                {'type': 'scattermapbox', 'uid': 'third', 'subplot': 'mapbox3'}
+                {'type': PLOTLY_SCATTERMAP, 'uid': 'first', 'subplot': PLOTLY_MAP},
+                {'type': PLOTLY_SCATTERMAP, 'uid': 'second', 'subplot': PLOTLY_MAP + '2'},
+                {'type': PLOTLY_SCATTERMAP, 'uid': 'third', 'subplot': PLOTLY_MAP + '3'}
             ],
             'layout': {
                 'title': {'text': 'Figure Title'},
@@ -211,8 +212,8 @@ class TestCallbacks(TestCase):
 
     def testMapboxRangeXYCallbackEventData(self):
         relayout_data = {
-            'mapbox._derived': {"coordinates": self.mapbox_coords1},
-            'mapbox3._derived': {"coordinates": self.mapbox_coords2}
+            f'{PLOTLY_MAP}._derived': {"coordinates": self.mapbox_coords1},
+            f'{PLOTLY_MAP}3._derived': {"coordinates": self.mapbox_coords2}
         }
 
         event_data = RangeXYCallback.get_event_data_from_property_update(
@@ -226,8 +227,8 @@ class TestCallbacks(TestCase):
 
     def testMapboxRangeXCallbackEventData(self):
         relayout_data = {
-            'mapbox._derived': {"coordinates": self.mapbox_coords1},
-            'mapbox3._derived': {"coordinates": self.mapbox_coords2}
+            f'{PLOTLY_MAP}._derived': {"coordinates": self.mapbox_coords1},
+            f'{PLOTLY_MAP}3._derived': {"coordinates": self.mapbox_coords2}
         }
 
         event_data = RangeXCallback.get_event_data_from_property_update(
@@ -241,8 +242,8 @@ class TestCallbacks(TestCase):
 
     def testMapboxRangeYCallbackEventData(self):
         relayout_data = {
-            'mapbox._derived': {"coordinates": self.mapbox_coords1},
-            'mapbox3._derived': {"coordinates": self.mapbox_coords2}
+            f'{PLOTLY_MAP}._derived': {"coordinates": self.mapbox_coords1},
+            f'{PLOTLY_MAP}3._derived': {"coordinates": self.mapbox_coords2}
         }
 
         event_data = RangeYCallback.get_event_data_from_property_update(
@@ -259,17 +260,17 @@ class TestCallbacks(TestCase):
         # Build callbacks
         range_classes = [RangeXYCallback, RangeXCallback, RangeYCallback]
 
-        xyplots, xystreamss, xycallbacks, xyevents = build_callback_set(
+        _xyplots, xystreamss, _xycallbacks, xyevents = build_callback_set(
             RangeXYCallback, ['first', 'second', 'third', 'forth', 'other'],
             RangeXY, 2
         )
 
-        xplots, xstreamss, xcallbacks, xevents = build_callback_set(
+        _xplots, xstreamss, _xcallbacks, xevents = build_callback_set(
             RangeXCallback, ['first', 'second', 'third', 'forth', 'other'],
             RangeX, 2
         )
 
-        yplots, ystreamss, ycallbacks, yevents = build_callback_set(
+        _yplots, ystreamss, _y_callbacks, yevents = build_callback_set(
             RangeYCallback, ['first', 'second', 'third', 'forth', 'other'],
             RangeY, 2
         )
@@ -289,7 +290,7 @@ class TestCallbacks(TestCase):
         for xystream, xstream, ystream in zip(
                 xystreamss[0] + xystreamss[1],
                 xstreamss[0] + xstreamss[1],
-                ystreamss[0] + ystreamss[1],
+                ystreamss[0] + ystreamss[1], strict=None,
         ):
             assert xystream.x_range == (1, 4)
             assert xystream.y_range == (-1, 5)
@@ -300,7 +301,7 @@ class TestCallbacks(TestCase):
         for xystream, xstream, ystream in zip(
                 xystreamss[2] + xystreamss[3],
                 xstreamss[2] + xstreamss[3],
-                ystreamss[2] + ystreamss[3],
+                ystreamss[2] + ystreamss[3], strict=None,
         ):
             assert xystream.x_range is None
             assert xystream.y_range is None
@@ -316,7 +317,7 @@ class TestCallbacks(TestCase):
 
         # Check that all streams attached to 'third' were triggered
         for xystream, xstream, ystream in zip(
-                xystreamss[2], xstreamss[2], ystreamss[2]
+                xystreamss[2], xstreamss[2], ystreamss[2], strict=None
         ):
             assert xystream.x_range == (2, 5)
             assert xystream.y_range == (0, 6)
@@ -332,7 +333,7 @@ class TestCallbacks(TestCase):
 
         # Check that all streams attached to 'forth' were triggered
         for xystream, xstream, ystream in zip(
-                xystreamss[3], xstreamss[3], ystreamss[3]
+                xystreamss[3], xstreamss[3], ystreamss[3], strict=None
         ):
             assert xystream.x_range == (3, 6)
             assert xystream.y_range == (1, 7)
@@ -341,7 +342,7 @@ class TestCallbacks(TestCase):
 
         # Check that streams attached to a trace not in this plot are not triggered
         for xyevent, xevent, yevent in zip(
-                xyevents[4], xevents[4], yevents[4]
+                xyevents[4], xevents[4], yevents[4], strict=None
         ):
             assert len(xyevent) == 0
             assert len(xevent) == 0
@@ -387,7 +388,7 @@ class TestCallbacks(TestCase):
         })
 
     def testMapboxBoundsXYCallbackEventData(self):
-        selected_data = {"range": {'mapbox2': [
+        selected_data = {"range": {f'{PLOTLY_MAP}2': [
             [self.lon_range1[0], self.lat_range1[0]],
             [self.lon_range1[1], self.lat_range1[1]]
         ]}}
@@ -406,7 +407,7 @@ class TestCallbacks(TestCase):
         })
 
     def testMapboxBoundsXCallbackEventData(self):
-        selected_data = {"range": {'mapbox': [
+        selected_data = {"range": {f'{PLOTLY_MAP}': [
             [self.lon_range1[0], self.lat_range1[0]],
             [self.lon_range1[1], self.lat_range1[1]]
         ]}}
@@ -424,7 +425,7 @@ class TestCallbacks(TestCase):
         })
 
     def testMapboxBoundsYCallbackEventData(self):
-        selected_data = {"range": {'mapbox3': [
+        selected_data = {"range": {f'{PLOTLY_MAP}3': [
             [self.lon_range1[0], self.lat_range1[0]],
             [self.lon_range1[1], self.lat_range1[1]]
         ]}}
@@ -446,17 +447,17 @@ class TestCallbacks(TestCase):
         # Build callbacks
         bounds_classes = [BoundsXYCallback, BoundsXCallback, BoundsYCallback]
 
-        xyplots, xystreamss, xycallbacks, xyevents = build_callback_set(
+        _xyplots, xystreamss, _xycallbacks, xyevents = build_callback_set(
             BoundsXYCallback, ['first', 'second', 'third', 'forth', 'other'],
             BoundsXY, 2
         )
 
-        xplots, xstreamss, xcallbacks, xevents = build_callback_set(
+        _xplots, xstreamss, _xcallbacks, xevents = build_callback_set(
             BoundsXCallback, ['first', 'second', 'third', 'forth', 'other'],
             BoundsX, 2
         )
 
-        yplots, ystreamss, ycallbacks, yevents = build_callback_set(
+        _yplots, ystreamss, _ycallbacks, yevents = build_callback_set(
             BoundsYCallback, ['first', 'second', 'third', 'forth', 'other'],
             BoundsY, 2
         )
@@ -472,7 +473,7 @@ class TestCallbacks(TestCase):
         for xystream, xstream, ystream in zip(
                 xystreamss[0] + xystreamss[1],
                 xstreamss[0] + xstreamss[1],
-                ystreamss[0] + ystreamss[1],
+                ystreamss[0] + ystreamss[1], strict=None,
         ):
             assert xystream.bounds == (1, -1, 4, 5)
             assert xstream.boundsx == (1, 4)
@@ -483,7 +484,7 @@ class TestCallbacks(TestCase):
         for xystream, xstream, ystream in zip(
                 xystreamss[2] + xystreamss[3],
                 xstreamss[2] + xstreamss[3],
-                ystreamss[2] + ystreamss[3],
+                ystreamss[2] + ystreamss[3], strict=None,
         ):
             assert xystream.bounds is None
             assert xstream.boundsx is None
@@ -498,7 +499,7 @@ class TestCallbacks(TestCase):
 
         # Check that all streams attached to 'second' were triggered
         for xystream, xstream, ystream in zip(
-                xystreamss[2], xstreamss[2], ystreamss[2],
+                xystreamss[2], xstreamss[2], ystreamss[2], strict=None,
         ):
             assert xystream.bounds == (2, 0, 5, 6)
             assert xstream.boundsx == (2, 5)
@@ -513,7 +514,7 @@ class TestCallbacks(TestCase):
 
         # Check that all streams attached to 'third' were triggered
         for xystream, xstream, ystream in zip(
-                xystreamss[3], xstreamss[3], ystreamss[3],
+                xystreamss[3], xstreamss[3], ystreamss[3], strict=None,
         ):
             assert xystream.bounds == (3, 1, 6, 7)
             assert xstream.boundsx == (3, 6)
@@ -531,7 +532,7 @@ class TestCallbacks(TestCase):
         for xystream, xstream, ystream in zip(
                 xystreamss[0] + xystreamss[1] + xystreamss[2] + xystreamss[3],
                 xstreamss[0] + xstreamss[1] + xstreamss[2] + xstreamss[3],
-                ystreamss[0] + ystreamss[1] + ystreamss[2] + ystreamss[3],
+                ystreamss[0] + ystreamss[1] + ystreamss[2] + ystreamss[3], strict=None,
         ):
             assert xystream.bounds is None
             assert xstream.boundsx is None
@@ -539,7 +540,7 @@ class TestCallbacks(TestCase):
 
         # Check that streams attached to plots not in this figure are not called
         for xyevent, xevent, yevent in zip(
-                xyevents[4], xevents[4], yevents[4]
+                xyevents[4], xevents[4], yevents[4], strict=None
         ):
             assert xyevent == []
             assert xevent == []
@@ -579,7 +580,7 @@ class TestCallbacks(TestCase):
         })
 
     def testSelection1DCallback(self):
-        plots, streamss, callbacks, sel_events = build_callback_set(
+        _plots, streamss, _callbacks, sel_events = build_callback_set(
             Selection1DCallback, ['first', 'second', 'third', 'forth', 'other'],
             Selection1D, 2
         )
@@ -594,7 +595,7 @@ class TestCallbacks(TestCase):
         )
 
         # Check that all streams attached to the 'first' plots were triggered
-        for stream, events in zip(streamss[0], sel_events[0]):
+        for stream, events in zip(streamss[0], sel_events[0], strict=None):
             assert stream.index == [0, 2]
             assert len(events) == 1
 
@@ -637,9 +638,9 @@ class TestCallbacks(TestCase):
         )
 
         # Check that all streams attached to the 'forth' plot were triggered
-        for stream, _events in zip(streamss[3], sel_events[3]):
+        for stream, _events in zip(streamss[3], sel_events[3], strict=None):
             assert stream.index == [0, 2]
 
         # Check that streams attached to plots not in this figure are not called
-        for _stream, events in zip(streamss[4], sel_events[4]):
+        for _stream, events in zip(streamss[4], sel_events[4], strict=None):
             assert len(events) == 0

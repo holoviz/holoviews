@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from bokeh.models import ColumnDataSource, RangeTool
 
+import holoviews as hv
 from holoviews.core.spaces import DynamicMap
 from holoviews.element import Curve, Image, Path, Points, Polygons, Scatter, Table
 from holoviews.plotting.links import DataLink, Link, RangeToolLink
@@ -207,7 +208,7 @@ class TestLinkCallbacks(TestBokehPlot):
     def test_data_link_nan(self):
         arr = np.random.rand(3, 5)
         arr[0, 0] = np.nan
-        data = {k: v for k, v in zip(['x', 'y', 'z'], arr)}
+        data = {k: v for k, v in zip(['x', 'y', 'z'], arr, strict=None)}
         a = Scatter(data, 'x', 'z')
         b = Scatter(data, 'x', 'y')
         DataLink(a, b)
@@ -215,3 +216,24 @@ class TestLinkCallbacks(TestBokehPlot):
             bokeh_renderer.get_plot(a+b)
         except Exception:
             self.fail()
+
+def test_range_tool_link_clones_axis():
+    x = np.linspace(0, 10, 100)
+    y = np.sin(x)
+    c0 = Curve((x, y)).opts(title="Source")
+    c1 = Curve((x, y)).opts(title="Target")
+
+    bk_grid = hv.render(c0 + c1)
+    bk_plot0 = bk_grid.children[0][0]
+    bk_plot1 = bk_grid.children[1][0]
+    assert bk_plot0.x_range is bk_plot1.x_range
+    assert bk_plot0.y_range is bk_plot1.y_range
+
+    # Will clone the source axis
+    RangeToolLink(c0, c1, axes=["x", "y"])
+
+    bk_grid = hv.render(c0 + c1)
+    bk_plot0 = bk_grid.children[0][0]
+    bk_plot1 = bk_grid.children[1][0]
+    assert bk_plot0.x_range is not bk_plot1.x_range
+    assert bk_plot0.y_range is not bk_plot1.y_range

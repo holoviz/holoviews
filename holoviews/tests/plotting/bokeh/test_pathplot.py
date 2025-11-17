@@ -1,12 +1,19 @@
 import datetime as dt
+import re
 
 import numpy as np
 import pandas as pd
-from bokeh.models import CategoricalColorMapper, LinearColorMapper
+import pytest
+from bokeh.models import (
+    CategoricalColorMapper,
+    LinearColorMapper,
+    MultiPolygons,
+    Patches,
+)
 
 from holoviews.core import HoloMap, NdOverlay
 from holoviews.core.options import Cycle
-from holoviews.element import Contours, Path, Polygons
+from holoviews.element import Contours, Dendrogram, Path, Polygons, Scatter
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.streams import PolyDraw
 from holoviews.util.transform import dim
@@ -131,7 +138,7 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(source.data['date'], np.array([date]*3))
         self.assertEqual(cmapper.low, 994)
         self.assertEqual(cmapper.high, 999)
-        self.assertEqual(cmapper.palette, colors[-1:])
+        self.assertEqual(np.unique(cmapper.palette), colors[-1:])
 
     def test_path_continuously_varying_alpha_op(self):
         xs = [1, 2, 3, 4]
@@ -167,7 +174,7 @@ class TestPathPlot(TestBokehPlot):
         colors = ["#FF0000", "#00FF00", "#0000FF"]
         levels=[0,1,2,3]
 
-        path = Path(data, vdims="cat").opts(color="cat", cmap=dict(zip(levels, colors)), line_width=4, show_legend=True)
+        path = Path(data, vdims="cat").opts(color="cat", cmap=dict(zip(levels, colors, strict=None)), line_width=4, show_legend=True)
         plot = bokeh_renderer.get_plot(path)
         item = plot.state.legend[0].items[0]
         legend = {'field': 'color_str__'}
@@ -184,7 +191,7 @@ class TestPathPlot(TestBokehPlot):
         colors = ["#FF0000", "#00FF00", "#0000FF"]
         levels=[0,1,2,3]
 
-        path = Path(data, vdims="cat").opts(color="cat", cmap=dict(zip(levels, colors)), line_width=4, show_legend=True, legend_labels={0: 'A', 1: 'B', 2: 'C'})
+        path = Path(data, vdims="cat").opts(color="cat", cmap=dict(zip(levels, colors, strict=None)), line_width=4, show_legend=True, legend_labels={0: 'A', 1: 'B', 2: 'C'})
         plot = bokeh_renderer.get_plot(path)
         cds = plot.handles['cds']
         item = plot.state.legend[0].items[0]
@@ -193,6 +200,92 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(property_to_dict(item.label), legend)
         self.assertEqual(item.renderers, [plot.handles['glyph_renderer']])
 
+    def test_path_multiple_segments_with_single_vdim(self):
+
+        # two segments, each with its own color
+        data = [{
+            'x': [0, 1, 1],
+            'y': [0, 0, 1],
+            'color': '#FF0000',
+        }, {
+            'x': [0, 0, 1],
+            'y': [0, 1, 1],
+            'color': '#0000FF',
+        }]
+
+        path = Path(data, vdims='color').opts(line_color='color')
+        plot = bokeh_renderer.get_plot(path)
+        cds = plot.handles['cds']
+        source = plot.handles['source']
+        np.testing.assert_equal(source.data['xs'], [np.array([0, 1]), np.array([1, 1]), np.array([0, 0]), np.array([0, 1])])
+        np.testing.assert_equal(source.data['ys'], [np.array([0, 0]), np.array([0, 1]), np.array([0, 1]), np.array([1, 1])])
+        assert list(cds.data['line_color']) == ['#FF0000', '#FF0000', '#0000FF', '#0000FF']
+
+    def test_path_style_mapped_scalar_segments_lengths_match(self):
+        # Five paths, scalar 'c' per geometry; style-mapped color
+        n_pts = 3
+        data = [
+            {'x': np.arange(n_pts) + x,
+             'y': np.arange(n_pts) + 1,
+             'c': x * 10}
+            for x in range(5)
+        ]
+        path = Path(data, vdims=['c']).opts(color='c', cmap='Turbo', colorbar=True)
+        plot = bokeh_renderer.get_plot(path)
+        source = plot.handles['source']
+        glyph = plot.handles['glyph']
+
+        # Expect 5 * (3-1) = 10 segments
+        assert len(source.data['xs']) == 10
+        assert len(source.data['ys']) == 10
+        # Color column should be present and aligned to segments
+        assert 'c' in source.data
+        assert len(source.data['c']) == 10
+        # line_color should map to the 'c' field with a transform
+        assert property_to_dict(glyph.line_color).get('field') == 'c'
+        assert 'transform' in property_to_dict(glyph.line_color)
+
+    def test_path_style_mapped_per_vertex_segments_lengths_match(self):
+        # Five paths, per-vertex 'c' values; style-mapped color
+        n_pts = 7
+        data = [
+            {'x': np.arange(n_pts) + x,
+             'y': np.arange(n_pts) + 1,
+             'c': np.full(n_pts, x * 10)}
+            for x in range(5)
+        ]
+        path = Path(data, vdims=['c']).opts(color='c', cmap='Turbo', colorbar=True)
+        plot = bokeh_renderer.get_plot(path)
+        source = plot.handles['source']
+
+        # Expect 5 * (7-1) = 30 segments
+        assert len(source.data['xs']) == 30
+        assert len(source.data['ys']) == 30
+        assert 'c' in source.data
+        assert len(source.data['c']) == 30
+
+    def test_path_color_mapping(self):
+        n_pts = 3
+        data = [
+            {'x': np.arange(n_pts) + x,
+             'y': np.arange(n_pts) + 1,
+             'c': x * 10}
+            for x in range(5)
+        ]
+        path = Path(data, vdims=["c"]).opts(color="c", cmap="Turbo", colorbar=True)
+
+        plot = bokeh_renderer.get_plot(path)
+        source = plot.handles['source']
+        output = source.data["c"]
+        expected = np.array([0, 0, 10, 10, 20, 20, 30, 30, 40, 40])
+        np.testing.assert_array_equal(output, expected)
+
+        glyph = plot.handles['glyph']
+        prop = property_to_dict(glyph.line_color)
+        assert prop.get('field') == 'c'
+        assert 'transform' in prop
+        cmapper = prop['transform']
+        assert isinstance(cmapper, LinearColorMapper)
 
 class TestPolygonPlot(TestBokehPlot):
 
@@ -353,7 +446,6 @@ class TestPolygonPlot(TestBokehPlot):
         self.assertEqual(cds.data['line_width'], np.array([7, 3]))
 
     def test_polygons_holes_initialize(self):
-        from bokeh.models import MultiPolygons
         xs = [1, 2, 3, np.nan, 6, 7, 3]
         ys = [2, 0, 7, np.nan, 7, 5, 2]
         holes = [
@@ -368,7 +460,6 @@ class TestPolygonPlot(TestBokehPlot):
         self.assertIsInstance(glyph, MultiPolygons)
 
     def test_polygons_no_holes_with_draw_tool(self):
-        from bokeh.models import Patches
         xs = [1, 2, 3, np.nan, 6, 7, 3]
         ys = [2, 0, 7, np.nan, 7, 5, 2]
         holes = [
@@ -494,3 +585,121 @@ class TestContoursPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
         self.assertEqual(property_to_dict(glyph.line_width), {'field': 'line_width'})
         self.assertEqual(cds.data['line_width'], np.array([7, 3]))
+
+class TestDendrogramPlot(TestBokehPlot):
+    @property
+    def x(self):
+        return np.array(
+            [
+                [35.0, 35.0, 45.0, 45.0],
+                [25.0, 25.0, 40.0, 40.0],
+                [15.0, 15.0, 32.5, 32.5],
+                [5.0, 5.0, 23.75, 23.75],
+            ]
+        )
+    @property
+    def y(self):
+        return np.array(
+            [
+                [0.0, 1.04158712, 1.04158712, 0.0],
+                [0.0, 1.18037928, 1.18037928, 1.04158712],
+                [0.0, 1.20879035, 1.20879035, 1.18037928],
+                [0.0, 1.31643301, 1.31643301, 1.20879035],
+            ]
+        )
+
+    def get_childrens(self, adjoint):
+        bk_childrens = bokeh_renderer.get_plot(adjoint).handles["plot"].children
+        if len(bk_childrens) == 2:
+            top, (main, *_), (right, *_) = (None, *bk_childrens)
+        else:
+            (top, *_), (main, *_), (right, *_) = bk_childrens
+        return top, main, right
+
+    def test_empty_plot(self):
+        dendrogram = Dendrogram([])
+        plot = bokeh_renderer.get_plot(dendrogram)
+        source = plot.handles['source']
+        assert len(source.data['xs']) == 0
+        assert len(source.data['ys']) == 0
+
+    def test_empty_plot_xy(self):
+        dendrogram = Dendrogram(x=[], y=[])
+        plot = bokeh_renderer.get_plot(dendrogram)
+        source = plot.handles['source']
+        assert len(source.data['xs']) == 0
+        assert len(source.data['ys']) == 0
+
+    def test_plot(self):
+        dendrogram = Dendrogram(zip(self.x, self.y, strict=None))
+        plot = bokeh_renderer.get_plot(dendrogram)
+        source = plot.handles['source']
+        assert len(source.data['xs']) == 4
+        assert len(source.data['ys']) == 4
+
+    def test_plot_xy(self):
+        dendrogram = Dendrogram(self.x, self.y)
+        plot = bokeh_renderer.get_plot(dendrogram)
+        source = plot.handles['source']
+        assert len(source.data['xs']) == 4
+        assert len(source.data['ys']) == 4
+
+    def test_plot_equals_path_zip(self):
+        dendrogram = Dendrogram(self.x, self.y)
+        path = Path(zip(self.x, self.y, strict=None))
+        dendro_plot = bokeh_renderer.get_plot(dendrogram)
+        dendro_source = dendro_plot.handles['source']
+        path_plot = bokeh_renderer.get_plot(path)
+        path_source = path_plot.handles['source']
+        np.testing.assert_array_equal(dendro_source.data["xs"], path_source.data["xs"])
+        np.testing.assert_array_equal(dendro_source.data["ys"], path_source.data["ys"])
+
+    def test_1_adjoint_plot_1_kdims_empty_main(self):
+        dendrogram = Dendrogram(self.x, self.y)
+        main = Scatter([])
+        adjoint = main << dendrogram
+        top, main, right = self.get_childrens(adjoint)
+        assert top is None
+        assert right.width == 80
+        assert main.y_range is right.y_range
+        assert main.y_scale is right.y_scale
+
+    def test_1_adjoint_plot_1_kdims(self):
+        dendrogram = Dendrogram(self.x, self.y)
+        main = Scatter([1, 2, 3])
+        adjoint = main << dendrogram
+        top, main, right = self.get_childrens(adjoint)
+        assert top is None
+        assert right.width == 80
+        assert main.y_range is right.y_range
+        assert main.y_scale is right.y_scale
+
+    def test_2_adjoint_plot_1_kdims(self):
+        dendrogram1 = Dendrogram(self.x, self.y)
+        dendrogram2 = Dendrogram(self.y, self.x)
+        main = Scatter([1, 2, 3])
+        adjoint = main << dendrogram1 << dendrogram2
+        top, main, right = self.get_childrens(adjoint)
+        assert top.height == 80
+        assert main.x_range is top.x_range
+        assert main.x_scale is top.x_scale
+        assert right.width == 80
+
+    def test_1_adjoint_plot_2_kdims(self):
+        dendrogram = Dendrogram(self.x, self.y)
+        main = Path(zip(self.x, self.y, strict=None))
+        adjoint = main << dendrogram
+        top, main, right = self.get_childrens(adjoint)
+        assert top is None
+        assert right.width == 80
+        assert main.y_range is right.y_range
+        assert main.y_scale is right.y_scale
+
+    def test_adjoint_plot_in_layout(self):
+        layout = (Scatter([]) << Dendrogram(self.x, self.y)) + Scatter([])
+        msg = "Adjoined dendrogram in a Layout, does not currently support `.opts(shared_axes=True)`"
+        with pytest.raises(NotImplementedError, match=re.escape(msg)):
+            bokeh_renderer(layout)
+
+        # Should not raise an exception
+        bokeh_renderer(layout.opts(shared_axes=False))

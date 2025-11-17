@@ -31,8 +31,7 @@ ANIMATION_OPTS = {
 
 
 class MPLRenderer(Renderer):
-    """
-    Exporter used to render data from matplotlib, either to a stream
+    """Exporter used to render data from matplotlib, either to a stream
     or directly to file.
 
     The __call__ method renders an HoloViews component to raw data of
@@ -42,7 +41,9 @@ class MPLRenderer(Renderer):
     The save_fig and save_anim methods are used to save matplotlib
     figure and animation objects. These match the two primary return
     types of plotting class implemented with matplotlib.
+
     """
+
     drawn = {}
 
     backend = param.String('matplotlib', doc="The backend name.")
@@ -50,13 +51,13 @@ class MPLRenderer(Renderer):
     dpi=param.Integer(default=72, doc="""
         The render resolution in dpi (dots per inch)""")
 
-    fig = param.ObjectSelector(default='auto',
+    fig = param.Selector(default='auto',
                                objects=['png', 'svg', 'pdf', 'pgf',
                                         'html', None, 'auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    holomap = param.ObjectSelector(default='auto',
+    holomap = param.Selector(default='auto',
                                    objects=['widgets', 'scrubber', 'webm','mp4', 'gif', None, 'auto'], doc="""
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
@@ -65,7 +66,7 @@ class MPLRenderer(Renderer):
         Whether to enable interactive plotting allowing interactive
         plotting with explicitly calling show.""")
 
-    mode = param.ObjectSelector(default='default', objects=['default'])
+    mode = param.Selector(default='default', objects=['default'])
 
 
     mode_formats = {'fig':     ['png', 'svg', 'pdf', 'pgf', 'html', None, 'auto'],
@@ -75,9 +76,9 @@ class MPLRenderer(Renderer):
     counter = 0
 
     def show(self, obj):
-        """
-        Renders the supplied object and displays it using the active
+        """Renders the supplied object and displays it using the active
         GUI backend.
+
         """
         if self.interactive:
             if isinstance(obj, list):
@@ -101,8 +102,7 @@ class MPLRenderer(Renderer):
 
     @classmethod
     def plot_options(cls, obj, percent_size):
-        """
-        Given a holoviews object and a percentage size, apply heuristics
+        """Given a holoviews object and a percentage size, apply heuristics
         to compute a suitable figure size. For instance, scaling layouts
         and grids linearly can result in unwieldy figure sizes when there
         are a large number of elements. As ad hoc heuristics are used,
@@ -112,6 +112,7 @@ class MPLRenderer(Renderer):
         Used by the IPython Notebook display hooks and the save
         utility. Note that this can be overridden explicitly per object
         using the fig_size and size plot options.
+
         """
         from .plot import MPLPlot
         factor = percent_size / 100.0
@@ -131,13 +132,13 @@ class MPLRenderer(Renderer):
 
 
     def _figure_data(self, plot, fmt, bbox_inches='tight', as_script=False, **kwargs):
-        """
-        Render matplotlib figure object and return the corresponding
+        """Render matplotlib figure object and return the corresponding
         data.  If as_script is True, the content will be split in an
         HTML and a JS component.
 
         Similar to IPython.core.pylabtools.print_figure but without
         any IPython dependency.
+
         """
         if fmt in ['gif', 'mp4', 'webm']:
             with mpl.rc_context(rc=plot.fig_rcparams):
@@ -183,8 +184,8 @@ class MPLRenderer(Renderer):
 
 
     def _anim_data(self, anim, fmt):
-        """
-        Render a matplotlib animation object and return the corresponding data.
+        """Render a matplotlib animation object and return the corresponding data.
+
         """
         (writer, _, anim_kwargs, extra_args) = ANIMATION_OPTS[fmt]
         if extra_args != []:
@@ -203,14 +204,14 @@ class MPLRenderer(Renderer):
 
 
     def _compute_bbox(self, fig, kw):
-        """
-        Compute the tight bounding box for each figure once, reducing
+        """Compute the tight bounding box for each figure once, reducing
         number of required canvas draw calls from N*2 to N+1 as a
         function of the number of frames.
 
         Tight bounding box computing code here mirrors:
         matplotlib.backend_bases.FigureCanvasBase.print_figure
         as it hasn't been factored out as a function.
+
         """
         fig_id = id(fig)
         if kw['bbox_inches'] == 'tight':
@@ -240,8 +241,8 @@ class MPLRenderer(Renderer):
 
     @classmethod
     def load_nb(cls, inline=True):
-        """
-        Initialize matplotlib backend
+        """Initialize matplotlib backend
+
         """
         import matplotlib.pyplot as plt
         backend = plt.get_backend()

@@ -3,13 +3,18 @@ Unit tests of the helper functions in core.utils
 """
 import datetime
 import math
+import os
 import unittest
 from itertools import product
+from pathlib import Path
 
+import narwhals.stable.v2 as nw
 import numpy as np
 import pandas as pd
+import pytest
 
 from holoviews import Dimension, Element
+from holoviews.core import util
 from holoviews.core.util import (
     closest_match,
     compute_density,
@@ -19,8 +24,11 @@ from holoviews.core.util import (
     deephash,
     dimension_range,
     dt_to_int,
+    dtype_kind,
     find_range,
     get_path,
+    is_nan,
+    is_null_or_na_scalar,
     isfinite,
     make_path_unique,
     max_range,
@@ -35,6 +43,20 @@ from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PointerXY
 
 sanitize_identifier = sanitize_identifier_fn.instance()
+
+
+@pytest.fixture
+def with_pandas(request, monkeypatch):
+  """Fixture to control pandas availability"""
+  if request.param:
+      pytest.importorskip("pandas")
+  else:
+      monkeypatch.setattr(util, 'pd', None)
+
+
+def with_and_without_pandas(func):
+  """Decorator to test both with and without pandas"""
+  return pytest.mark.parametrize("with_pandas", [True, False], indirect=True, ids=["with_pandas", "without_pandas"])(func)
 
 
 class TestDeepHash(ComparisonTestCase):
@@ -455,12 +477,12 @@ class TestTreePathUtils(unittest.TestCase):
     def test_make_path_unique_clash_without_label(self):
         path = ('Element',)
         new_path = make_path_unique(path, {path: 1}, True)
-        self.assertEqual(new_path, path+('I',))
+        self.assertEqual(new_path, (*path, 'I'))
 
     def test_make_path_unique_clash_with_label(self):
         path = ('Element', 'A')
         new_path = make_path_unique(path, {path: 1}, True)
-        self.assertEqual(new_path, path+('I',))
+        self.assertEqual(new_path, (*path, 'I'))
 
     def test_make_path_unique_no_clash_old(self):
         path = ('Element', 'A')
@@ -470,12 +492,12 @@ class TestTreePathUtils(unittest.TestCase):
     def test_make_path_unique_clash_without_label_old(self):
         path = ('Element',)
         new_path = make_path_unique(path, {path: 1}, False)
-        self.assertEqual(new_path, path+('I',))
+        self.assertEqual(new_path, (*path, 'I'))
 
     def test_make_path_unique_clash_with_label_old(self):
         path = ('Element', 'A')
         new_path = make_path_unique(path, {path: 1}, False)
-        self.assertEqual(new_path, path[:-1]+('I',))
+        self.assertEqual(new_path, (*path[:-1], 'I'))
 
 
 class TestDatetimeUtils(unittest.TestCase):
@@ -638,12 +660,12 @@ class TestNumericUtilities(ComparisonTestCase):
 
     def test_isfinite_pandas_period_index_nat(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D').to_period('D')
-        daily = pd.PeriodIndex(list(daily)+[pd.NaT])
+        daily = pd.PeriodIndex([*daily, pd.NaT])
         self.assertEqual(isfinite(daily), np.array([True, True, True, False]))
 
     def test_isfinite_pandas_period_series_nat(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D').to_period('D')
-        daily = pd.Series(list(daily)+[pd.NaT])
+        daily = pd.Series([*daily, pd.NaT])
         self.assertEqual(isfinite(daily), np.array([True, True, True, False]))
 
     def test_isfinite_pandas_timestamp_index(self):
@@ -656,12 +678,12 @@ class TestNumericUtilities(ComparisonTestCase):
 
     def test_isfinite_pandas_timestamp_index_nat(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D')
-        daily = pd.DatetimeIndex(list(daily)+[pd.NaT])
+        daily = pd.DatetimeIndex([*daily, pd.NaT])
         self.assertEqual(isfinite(daily), np.array([True, True, True, False]))
 
     def test_isfinite_pandas_timestamp_series_nat(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D')
-        daily = pd.Series(list(daily)+[pd.NaT])
+        daily = pd.Series([*daily, pd.NaT])
         self.assertEqual(isfinite(daily), np.array([True, True, True, False]))
 
     def test_isfinite_datetime64_array(self):
@@ -670,7 +692,7 @@ class TestNumericUtilities(ComparisonTestCase):
 
     def test_isfinite_datetime64_array_with_nat(self):
         dts = [np.datetime64(datetime.datetime(2017, 1, i)) for i in range(1, 4)]
-        dt64 = np.array(dts+[np.datetime64('NaT')])
+        dt64 = np.array([*dts, np.datetime64('NaT')])
         self.assertEqual(isfinite(dt64), np.array([True, True, True, False]))
 
 
@@ -796,7 +818,7 @@ class TestClosestMatch(ComparisonTestCase):
         self.assertEqual(closest_match(spec, specs), None)
 
 
-def test_seach_indices_dtype_object():
+def test_search_indices_dtype_object():
     values = np.array(["c0", "c0", np.nan], dtype=object)
     source = np.array(["c0", np.nan], dtype=object)
     search_indices(values, source)
@@ -806,3 +828,164 @@ def test_unique_array_categorial():
     ser = pd.Series(np.random.choice(["a", "b", "c"], 100)).astype("category")
     res = unique_array([ser])
     assert sorted(res) == ["a", "b", "c"]
+
+
+def test_is_nan():
+    assert is_nan(np.nan) == True
+    assert is_nan(None) == True
+    assert is_nan(pd.NA) == True
+    assert is_nan(pd.NaT) == True
+    assert is_nan([1, 1]) == False
+    assert is_nan([np.nan]) == True
+    assert is_nan([np.nan, np.nan]) == False
+
+
+def test_is_null_or_na_scalar():
+    assert is_null_or_na_scalar(np.nan)
+    assert is_null_or_na_scalar(pd.NA)
+    assert is_null_or_na_scalar(pd.NaT)
+    assert is_null_or_na_scalar(None)
+    assert is_null_or_na_scalar(np.datetime64("NAT"))
+
+    assert not is_null_or_na_scalar(datetime.datetime.today())
+    assert not is_null_or_na_scalar(pd.Timestamp.now())
+    assert not is_null_or_na_scalar("AAAA")
+    assert not is_null_or_na_scalar(...)
+    assert not is_null_or_na_scalar([1, 2])
+    assert not is_null_or_na_scalar((1, 2))
+    assert not is_null_or_na_scalar({1, 2})
+    assert not is_null_or_na_scalar({"a": 1, "b": 2})
+    assert not is_null_or_na_scalar(slice(None))
+    assert not is_null_or_na_scalar(np.array([1, 2]))
+    assert not is_null_or_na_scalar(pd.DataFrame([1, 2]))
+
+
+def test_is_null_or_na_scalar_polars():
+    pl = pytest.importorskip("polars")
+    assert is_null_or_na_scalar(pl.Null)
+    assert not is_null_or_na_scalar(pl.DataFrame([1, 2]))
+    assert not is_null_or_na_scalar(pl.LazyFrame([1, 2]))
+
+
+@pytest.mark.parametrize(["data", "dtype", "expected_kind"], [
+    # Boolean
+    ([True, False, True], 'bool', 'b'),
+
+    # Integer types
+    ([1, 2, 3], 'int8', 'i'),
+    ([1, 2, 3], 'int16', 'i'),
+    ([1, 2, 3], 'int32', 'i'),
+    ([1, 2, 3], 'int64', 'i'),
+    ([1, 2, 3], 'uint8', 'u'),
+    ([1, 2, 3], 'uint16', 'u'),
+    ([1, 2, 3], 'uint32', 'u'),
+    ([1, 2, 3], 'uint64', 'u'),
+
+    # Float types
+    pytest.param([1.1, 2.2, 3.3], 'float16', 'f', marks=pytest.mark.xfail(reason="narwhals don't support float16")),
+    ([1.1, 2.2, 3.3], 'float32', 'f'),
+    ([1.1, 2.2, 3.3], 'float64', 'f'),
+
+    # Datetime and timedelta
+    (pd.to_datetime(['2021-01-01', '2021-01-02', '2021-01-03']), None, 'M'),
+    (pd.to_timedelta(['1 days', '2 days', '3 days']), None, 'm'),
+
+    # Categorical
+    (pd.Categorical(['A', 'B', 'A']), None, 'O'),
+
+    # Object (mixed types)
+    ([1, 'a', None], None, 'O'),
+
+    # String types
+    pytest.param(['x', 'y', 'z'], 'string[python]', 'U', marks=pytest.mark.xfail(reason="pandas dtype is object")),
+    pytest.param(['x', 'y', 'z'], 'object', 'O', marks=pytest.mark.xfail(reason="narwhals dtype is string")),
+])
+def test_dtype_kind_pandas_narwhals_consistency(data, dtype, expected_kind):
+    """Test dtype_kind gives same results for pandas and narwhals DataFrames"""
+    pd_df = pd.DataFrame({'col': data})
+    if dtype is not None:
+        pd_df = pd_df.astype({'col': dtype})
+    nw_df = nw.from_native(pd_df)
+
+    pd_kind = dtype_kind(pd_df['col'])
+    nw_kind = dtype_kind(nw_df['col'])
+
+    assert pd_kind == expected_kind
+    assert nw_kind == expected_kind
+
+
+def test_dtype_kind_usage_count():
+    holoviews_path = Path(__file__).parents[2]
+    file_counts = {}
+    for py_file in holoviews_path.rglob('*.py'):
+        rel_path = py_file.relative_to(holoviews_path)
+        if '__pycache__' in rel_path.parts or 'tests' in rel_path.parts:
+            continue
+
+        with open(py_file, encoding='utf-8') as f:
+            content = f.read()
+            count = content.count('dtype.kind')
+
+        if count > 0:
+            file_counts[str(rel_path).replace(os.sep, "/")] = count
+
+    expected_files = {'core/util/__init__.py': 1}
+    assert file_counts == expected_files, "Don't use dtype.kind, use dtype_kind"
+
+
+@with_and_without_pandas
+@pytest.mark.parametrize(
+    ["test_input","expected_output"],
+    [
+        (np.array([3, 1, 2, 1, 3, 4, 2]), np.array([3, 1, 2, 4])),
+        (np.array([1, 2, 3, 4, 5]), np.array([1, 2, 3, 4, 5])),
+        (np.array([5, 5, 5, 5]), np.array([5])),
+        (np.array([42]), np.array([42])),
+        (np.array(['b', 'a', 'c', 'a', 'b']), np.array(['b', 'a', 'c'])),
+        (np.array([1.5, 2.3, 1.5, 3.7, 2.3]), np.array([1.5, 2.3, 3.7])),
+        (np.array([1, 'a', 2, 'a', 1, 'b'], dtype=object), np.array([1, 'a', 2, 'b'], dtype=object)),
+        (np.array([]), np.array([])),
+], ids=[
+    "numeric_with_duplicates",
+    "already_unique",
+    "all_same",
+    "single_element",
+    "string_array",
+    "float_array",
+    "object_array_mixed_types",
+    "empty_array",
+])
+def test_unique(test_input, expected_output, with_pandas, monkeypatch):
+    result = util._unique(test_input)
+    np.testing.assert_array_equal(result, expected_output)
+
+
+@with_and_without_pandas
+@pytest.mark.parametrize(["test_input" ,"expected_output"], [
+    (np.datetime64('2023-01-15T12:30:45'), np.datetime64('2023-01-15T12:30:45')),
+    (datetime.datetime(2023, 1, 15, 12, 30, 45), np.datetime64('2023-01-15T12:30:45', 'ns')),
+    (datetime.date(2023, 1, 15), np.datetime64('2023-01-15T00:00:00', 'ns')),
+    ('2023-01-15T12:30:45', np.datetime64('2023-01-15T12:30:45', 'ns')),
+    ('2023-01-15', np.datetime64('2023-01-15T00:00:00', 'ns')),
+    ('2023/01/15', np.datetime64('2023-01-15T00:00:00', 'ns')),
+    (datetime.datetime(2023, 1, 15, 12, 30, 45, tzinfo=datetime.timezone.utc), np.datetime64('2023-01-15T12:30:45', 'ns')),
+    (
+        datetime.datetime(
+            2023, 1, 15, 17, 30, 45, tzinfo=datetime.timezone(datetime.timedelta(hours=5))
+        ),
+        np.datetime64('2023-01-15T12:30:45', 'ns'),
+    )],
+    ids=[
+    "numpy_datetime64",
+    "python_datetime",
+    "python_date",
+    "string_iso_format",
+    "string_simple_date",
+    "string_slash_format",
+    "timezone_aware",
+    "timezone_conversion",
+])
+def test_parse_datetime(test_input, expected_output, with_pandas, monkeypatch):
+    result = util.parse_datetime(test_input)
+    assert isinstance(result, np.datetime64)
+    assert result == expected_output

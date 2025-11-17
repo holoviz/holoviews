@@ -1,6 +1,6 @@
-"""
-Implements NotebookArchive used to automatically capture notebook data
+"""Implements NotebookArchive used to automatically capture notebook data
 and export it to disk via the display hooks.
+
 """
 
 import os
@@ -20,11 +20,12 @@ from .preprocessors import Substitute
 
 
 class NotebookArchive(FileArchive):
-    """
-    FileArchive that can automatically capture notebook data via the
+    """FileArchive that can automatically capture notebook data via the
     display hooks and automatically adds a notebook HTML snapshot to
     the archive upon export.
+
     """
+
     exporters = param.List(default=[Pickler])
 
     skip_notebook_export = param.Boolean(default=False, doc="""
@@ -43,9 +44,6 @@ class NotebookArchive(FileArchive):
     export_name = param.String(default='{notebook}', doc="""
         Similar to FileArchive.filename_formatter except with support
         for the notebook name field as {notebook}.""")
-
-
-    auto = param.Boolean(False)
 
     # Used for debugging to view Exceptions raised from Javascript
     traceback = None
@@ -71,8 +69,8 @@ class NotebookArchive(FileArchive):
 
 
     def get_namespace(self):
-        """
-        Find the name the user is using to access holoviews.
+        """Find the name the user is using to access holoviews.
+
         """
         if 'holoviews' not in sys.modules:
             raise ImportError('HoloViews does not seem to be imported')
@@ -84,7 +82,9 @@ class NotebookArchive(FileArchive):
 
 
     def last_export_status(self):
-        "Helper to show the status of the last call to the export method."
+        """Helper to show the status of the last call to the export method.
+
+        """
         if self.export_success is True:
             print("The last call to holoviews.archive.export was successful.")
             return
@@ -100,16 +100,16 @@ class NotebookArchive(FileArchive):
 
 
     def auto(self, enabled=True, clear=False, **kwargs):
-        """
-        Method to enable or disable automatic capture, allowing you to
+        """Method to enable or disable automatic capture, allowing you to
         simultaneously set the instance parameters.
+
         """
         self.namespace = self.get_namespace()
         self.notebook_name = "{notebook}"
         self._timestamp = tuple(time.localtime())
         kernel = r'var kernel = IPython.notebook.kernel; '
         nbname = r"var nbname = IPython.notebook.get_notebook_name(); "
-        nbcmd = (r"var name_cmd = '%s.notebook_name = \"' + nbname + '\"'; " % self.namespace)
+        nbcmd = (rf"var name_cmd = '{self.namespace}.notebook_name = \"' + nbname + '\"'; ")
         cmd = (kernel + nbname + nbcmd + "kernel.execute(name_cmd); ")
         display(Javascript(cmd))
         time.sleep(0.5)
@@ -123,8 +123,8 @@ class NotebookArchive(FileArchive):
                  tstamp if enabled else ''))
 
     def export(self, timestamp=None):
-        """
-        Get the current notebook data and export.
+        """Get the current notebook data and export.
+
         """
         if self._timestamp is None:
             raise Exception("No timestamp set. Has the archive been initialized?")
@@ -136,7 +136,7 @@ class NotebookArchive(FileArchive):
         self.export_success = None
         name = self.get_namespace()
         # Unfortunate javascript hacks to get at notebook data
-        capture_cmd = ((r"var capture = '%s._notebook_data=r\"\"\"'" % name)
+        capture_cmd = ((rf"var capture = '{name}._notebook_data=r\"\"\"'")
                        + r"+json_string+'\"\"\"'; ")
         cmd = (r'var kernel = IPython.notebook.kernel; '
                + r'var json_data = IPython.notebook.toJSON(); '
@@ -147,14 +147,15 @@ class NotebookArchive(FileArchive):
 
         tstamp = time.strftime(self.timestamp_format, self._timestamp)
         export_name = self._format(self.export_name, {'timestamp':tstamp, 'notebook':self.notebook_name})
-        print(('Export name: {!r}\nDirectory    {!r}'.format(export_name,
-                                                     os.path.join(os.path.abspath(self.root))))
+        print((f'Export name: {export_name!r}\nDirectory    {os.path.join(os.path.abspath(self.root))!r}')
                + '\n\nIf no output appears, please check holoviews.archive.last_export_status()')
         display(Javascript(cmd))
 
 
     def add(self, obj=None, filename=None, data=None, info=None, html=None):
-        "Similar to FileArchive.add but accepts html strings for substitution"
+        """Similar to FileArchive.add but accepts html strings for substitution
+
+        """
         if info is None:
             info = {}
         initial_last_key = list(self._files.keys())[-1] if len(self) else None
@@ -193,7 +194,9 @@ class NotebookArchive(FileArchive):
 
 
     def _export_with_html(self):                    # pragma: no cover
-        "Computes substitutions before using nbconvert with preprocessors"
+        """Computes substitutions before using nbconvert with preprocessors
+
+        """
         self.export_success = False
         try:
             tstamp = time.strftime(self.timestamp_format, self._timestamp)
@@ -244,7 +247,9 @@ class NotebookArchive(FileArchive):
             self.export_success = True
 
     def _get_notebook_node(self):                   # pragma: no cover
-        "Load captured notebook node"
+        """Load captured notebook node
+
+        """
         size = len(self._notebook_data)
         if size == 0:
             raise Exception("Captured buffer size for notebook node is zero.")

@@ -9,10 +9,10 @@ from .plot import mpl_rc_context
 
 
 class TablePlot(ElementPlot):
-    """
-    A TablePlot can plot both TableViews and ViewMaps which display
+    """A TablePlot can plot both TableViews and ViewMaps which display
     as either a single static table or as an animated table
     respectively.
+
     """
 
     border = param.Number(default=0.05, bounds=(0.0, 0.5), doc="""
@@ -77,8 +77,7 @@ class TablePlot(ElementPlot):
                     cell_text = element.pprint_cell(adjusted_row, col)
                     if len(cell_text) > self.max_value_len:
                         cell_text = cell_text[:(self.max_value_len-3)]+'...'
-                if len(cell_text) + 2 > cell_widths[col]:
-                    cell_widths[col] = len(cell_text) + 2
+                cell_widths[col] = max(len(cell_text) + 2, cell_widths[col])
 
     def _cell_value(self, element, row, col):
         summarize = element.rows > self.max_rows

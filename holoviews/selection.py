@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 
 import numpy as np
 import param
@@ -60,8 +60,7 @@ _SelectionStreams = namedtuple(
 )
 
 class _base_link_selections(param.ParameterizedFunction):
-    """
-    Baseclass for linked selection functions.
+    """Baseclass for linked selection functions.
 
     Subclasses override the _build_selection_streams class method to construct
     a _SelectionStreams namedtuple instance that includes the required streams
@@ -70,6 +69,7 @@ class _base_link_selections(param.ParameterizedFunction):
     Subclasses also override the _expr_stream_updated method. This allows
     subclasses to control whether new selections override prior selections or
     whether they are combined with prior selections
+
     """
 
     link_inputs = param.Boolean(default=False, doc="""
@@ -87,6 +87,7 @@ class _base_link_selections(param.ParameterizedFunction):
         inst._selection_override = _SelectionExprOverride()
         inst._selection_expr_streams = {}
         inst._plot_reset_streams = {}
+        inst._streams = defaultdict(list)
 
         # Init selection streams
         inst._selection_streams = self_or_cls._build_selection_streams(inst)
@@ -103,10 +104,10 @@ class _base_link_selections(param.ParameterizedFunction):
         elif event.new == 'subtract':
             self.selection_mode = 'inverse'
 
-    def _register(self, hvobj):
-        """
-        Register an Element or DynamicMap that may be capable of generating
+    def _register(self, hvobj, origin=None):
+        """Register an Element or DynamicMap that may be capable of generating
         selection expressions in response to user interaction events
+
         """
         from .element import Table
 
@@ -119,7 +120,7 @@ class _base_link_selections(param.ParameterizedFunction):
         self._selection_expr_streams[hvobj] = selection_expr_seq
         self._cross_filter_stream.append_input_stream(selection_expr_seq)
 
-        self._plot_reset_streams[hvobj] = PlotReset(source=hvobj)
+        self._plot_reset_streams[hvobj] = reset_stream = PlotReset(source=hvobj)
 
         # Register reset
         def clear_stream_history(resetting, stream=selection_expr_seq.history_stream):
@@ -127,6 +128,7 @@ class _base_link_selections(param.ParameterizedFunction):
                 stream.clear_history()
                 stream.event()
 
+        mode_stream = None
         if not isinstance(hvobj, Table):
             mode_stream = SelectMode(source=hvobj)
             mode_stream.param.watch(self._update_mode, 'mode')
@@ -134,6 +136,41 @@ class _base_link_selections(param.ParameterizedFunction):
         self._plot_reset_streams[hvobj].param.watch(
             clear_stream_history, ['resetting']
         )
+        self._streams[origin].append((selection_expr_seq, mode_stream, reset_stream))
+
+    def unlink(self, hvobj):
+        """
+        Unlinks an object which has previously been added to the
+        link_selections function.
+
+        Parameters
+        ----------
+        hvobj
+            Component to unsubscribe from link_selections
+
+        Examples
+        --------
+        >>> ls = link_selections.instance()
+        >>> points1 = hv.Points(data1)
+        >>> points2 = hv.Points(data2)
+        >>> linked_layout = ls(points1) + ls(points2)
+        >>> ls.unlink(points1)
+        """
+        for streams in self._streams.pop(hvobj, []):
+            for stream in streams:
+                if stream is None:
+                    continue
+                stream.source = None
+                stream.clear()
+                if hasattr(stream, 'cleanup'):
+                    stream.cleanup()
+                for obj, ses in list(self._selection_expr_streams.items()):
+                    if ses is stream:
+                        del self._selection_expr_streams[obj]
+                for obj, prs in list(self._plot_reset_streams.items()):
+                    if prs is stream:
+                        del self._plot_reset_streams[obj]
+                del stream
 
     def __call__(self, hvobj, **kwargs):
         # Apply kwargs as params
@@ -141,30 +178,32 @@ class _base_link_selections(param.ParameterizedFunction):
 
         if Store.current_backend not in Store.renderers:
             raise RuntimeError("Cannot perform link_selections operation "
-                               "since the selected backend %r is not "
+                               f"since the selected backend {Store.current_backend!r} is not "
                                "loaded. Load the plotting extension with "
                                "hv.extension or import the plotting "
-                               "backend explicitly." % Store.current_backend)
+                               "backend explicitly.")
 
         # Perform transform
-        return self._selection_transform(hvobj.clone())
+        return self._selection_transform(hvobj)
 
-    def _selection_transform(self, hvobj, operations=()):
+    def _selection_transform(self, hvobj, operations=(), origin=None):
         """
         Transform an input HoloViews object into a dynamic object with linked
         selections enabled.
+
         """
         from .plotting.util import initialize_dynamic
         if isinstance(hvobj, DynamicMap):
             callback = hvobj.callback
             if len(callback.inputs) > 1:
                 return Overlay([
-                    self._selection_transform(el) for el in callback.inputs
+                    self._selection_transform(el, operations, hvobj if origin is None else origin)
+                    for el in callback.inputs
                 ]).collate()
 
             initialize_dynamic(hvobj)
             if issubclass(hvobj.type, Element):
-                self._register(hvobj)
+                self._register(hvobj, hvobj if origin is None else origin)
                 chart = Store.registry[Store.current_backend][hvobj.type]
                 return chart.selection_display(hvobj).build_selection(
                     self._selection_streams, hvobj, operations,
@@ -190,17 +229,17 @@ class _base_link_selections(param.ParameterizedFunction):
         elif isinstance(hvobj, Element):
             # Register hvobj to receive selection expression callbacks
             chart = Store.registry[Store.current_backend][type(hvobj)]
-            if getattr(chart, 'selection_display', None) is not None:
+            if getattr(chart, 'selection_display', None):
                 element = hvobj.clone(link=self.link_inputs)
-                self._register(element)
+                self._register(element, hvobj if origin is None else origin)
                 return chart.selection_display(element).build_selection(
                     self._selection_streams, element, operations,
                     self._selection_expr_streams.get(element, None), cache=self._cache
                 )
             return hvobj
         elif isinstance(hvobj, (Layout, Overlay, NdOverlay, GridSpace, AdjointLayout)):
-            data = dict([(k, self._selection_transform(v, operations))
-                                 for k, v in hvobj.items()])
+            data = dict([(k, self._selection_transform(v, operations, origin))
+                         for k, v in hvobj.items()])
             if isinstance(hvobj, NdOverlay):
                 def compose(*args, **kwargs):
                     new = []
@@ -223,15 +262,14 @@ class _base_link_selections(param.ParameterizedFunction):
 
     @classmethod
     def _build_selection_streams(cls, inst):
-        """
-        Subclasses should override this method to return a _SelectionStreams
+        """Subclasses should override this method to return a _SelectionStreams
         instance
+
         """
         raise NotImplementedError()
 
     def _expr_stream_updated(self, hvobj, selection_expr, bbox, region_element, **kwargs):
-        """
-        Called when one of the registered HoloViews objects produces a new
+        """Called when one of the registered HoloViews objects produces a new
         selection expression.  Subclasses should override this method, and
         they should use the input expression to update the `exprs_stream`
         property of the _SelectionStreams instance that was produced by
@@ -240,16 +278,17 @@ class _base_link_selections(param.ParameterizedFunction):
         Subclasses have the flexibility to control whether the new selection
         express overrides previous selections, or whether it is combined with
         previous selections.
+
         """
         raise NotImplementedError()
 
 
 class link_selections(_base_link_selections):
-    """
-    Operation which automatically links selections between elements
+    """Operation which automatically links selections between elements
     in the supplied HoloViews object. Can be used a single time or
     be used as an instance to apply the linked selections across
     multiple objects.
+
     """
 
     cross_filter_mode = param.Selector(
@@ -289,6 +328,8 @@ class link_selections(_base_link_selections):
         inst._obj_selections = {}
         inst._obj_regions = {}
         inst._reset_regions = True
+        inst._user_show_regions = inst.show_regions
+        inst._updating_show_regions_internal = False
 
         # _datasets caches
         inst._datasets = []
@@ -297,6 +338,12 @@ class link_selections(_base_link_selections):
         self_or_cls._install_param_callbacks(inst)
 
         return inst
+
+    @param.depends('show_regions', watch=True)
+    def _update_user_show_regions(self):
+        if self._updating_show_regions_internal:
+            return
+        self._user_show_regions = self.show_regions
 
     @param.depends('selection_expr', watch=True)
     def _update_pipes(self):
@@ -314,36 +361,42 @@ class link_selections(_base_link_selections):
             pipe.event(data=sel_ds.data if raw else sel_ds)
 
     def selection_param(self, data):
-        """
-        Returns a parameter which reflects the current selection
+        """Returns a parameter which reflects the current selection
         when applied to the supplied data, making it easy to create
         a callback which depends on the current selection.
 
-        Args:
-            data: A Dataset type or data which can be cast to a Dataset
+        Parameters
+        ----------
+        data
+            A Dataset type or data which can be cast to a Dataset
 
-        Returns:
-            A parameter which reflects the current selection
+        Returns
+        -------
+        A parameter which reflects the current selection
         """
         raw = False
         if not isinstance(data, Dataset):
             raw = True
             data = Dataset(data)
-        pipe = Pipe(data=data.data)
+        pipe = Pipe()
         self._datasets.append((pipe, data, raw))
+        self._update_pipes()
         return pipe.param.data
 
     def filter(self, data, selection_expr=None):
-        """
-        Filters the provided data based on the current state of the
+        """Filters the provided data based on the current state of the
         current selection expression.
 
-        Args:
-            data: A Dataset type or data which can be cast to a Dataset
-            selection_expr: Optionally provide your own selection expression
+        Parameters
+        ----------
+        data
+            A Dataset type or data which can be cast to a Dataset
+        selection_expr
+            Optionally provide your own selection expression
 
-        Returns:
-            The filtered data
+        Returns
+        -------
+        The filtered data
         """
         expr = self.selection_expr if selection_expr is None else selection_expr
         if expr is None:
@@ -387,10 +440,17 @@ class link_selections(_base_link_selections):
             new_selection_expr = inst.selection_expr
             current_selection_expr = inst._cross_filter_stream.selection_expr
             if repr(new_selection_expr) != repr(current_selection_expr):
+                # Reset the streams
+                for s in inst._selection_expr_streams.values():
+                    s.reset()
+                    s.event()
                 # Disable regions if setting selection_expr directly
-                if inst.show_regions:
+                if inst._user_show_regions:
+                    inst._updating_show_regions_internal = True
                     inst.show_regions = False
+                    inst._updating_show_regions_internal = False
                 inst._selection_override.event(selection_expr=new_selection_expr)
+                inst._cross_filter_stream.selection_expr = new_selection_expr
 
         inst.param.watch(
             update_selection_expr, ['selection_expr']
@@ -400,6 +460,10 @@ class link_selections(_base_link_selections):
             new_selection_expr = inst._cross_filter_stream.selection_expr
             if repr(inst.selection_expr) != repr(new_selection_expr):
                 inst.selection_expr = new_selection_expr
+                if inst._user_show_regions:
+                    inst._updating_show_regions_internal = True
+                    inst.show_regions = True
+                    inst._updating_show_regions_internal = False
 
         inst._cross_filter_stream.param.watch(
             selection_expr_changed, ['selection_expr']
@@ -410,7 +474,6 @@ class link_selections(_base_link_selections):
             def clear_stream_history(resetting, stream=stream):
                 if resetting:
                     stream.clear_history()
-            print("registering reset for ", stream)
             stream.plot_reset_stream.param.watch(
                 clear_stream_history, ['resetting']
             )
@@ -452,8 +515,8 @@ class link_selections(_base_link_selections):
 
     @property
     def unselected_cmap(self):
-        """
-        The datashader colormap for unselected data
+        """The datashader colormap for unselected data
+
         """
         if self.unselected_color is None:
             return None
@@ -461,18 +524,18 @@ class link_selections(_base_link_selections):
 
     @property
     def selected_cmap(self):
-        """
-        The datashader colormap for selected data
+        """The datashader colormap for selected data
+
         """
         return None if self.selected_color is None else _color_to_cmap(self.selected_color)
 
 
 class SelectionDisplay:
-    """
-    Base class for selection display classes.  Selection display classes are
+    """Base class for selection display classes.  Selection display classes are
     responsible for transforming an element (or DynamicMap that produces an
     element) into a HoloViews object that represents the current selection
     state.
+
     """
 
     def __call__(self, element):
@@ -523,7 +586,7 @@ class SelectionDisplay:
                                     f"display selection for all elements: {key_error} on '{element!r}'.") from e
             except Exception as e:
                 raise CallbackError("linked_selection aborted because it could not "
-                                    "display selection for all elements: %s." % e) from e
+                                    f"display selection for all elements: {e}.") from e
             ds_cache[selection_expr] = mask
         else:
             selection = element
@@ -532,9 +595,9 @@ class SelectionDisplay:
 
 
 class NoOpSelectionDisplay(SelectionDisplay):
-    """
-    Selection display class that returns input element unchanged. For use with
+    """Selection display class that returns input element unchanged. For use with
     elements that don't support displaying selections.
+
     """
 
     def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache=None):
@@ -542,9 +605,9 @@ class NoOpSelectionDisplay(SelectionDisplay):
 
 
 class OverlaySelectionDisplay(SelectionDisplay):
-    """
-    Selection display base class that represents selections by overlaying
+    """Selection display base class that represents selections by overlaying
     colored subsets on top of the original element in an Overlay container.
+
     """
 
     def __init__(self, color_prop='color', is_cmap=False, supports_region=True):
@@ -572,7 +635,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
             obj = hvobj.clone(link=False) if layer_number == 1 else hvobj
             cmap_stream = selection_streams.cmap_streams[layer_number]
             layer = obj.apply(
-                self._build_layer_callback, streams=[cmap_stream]+streams,
+                self._build_layer_callback, streams=[cmap_stream, *streams],
                 layer_number=layer_number, cache=cache, per_element=True
             )
             layers.append(layer)
@@ -643,9 +706,9 @@ class OverlaySelectionDisplay(SelectionDisplay):
 
 
 class ColorListSelectionDisplay(SelectionDisplay):
-    """
-    Selection display class for elements that support coloring by a
+    """Selection display class for elements that support coloring by a
     vectorized color list.
+
     """
 
     def __init__(self, color_prop='color', alpha_prop='alpha', backend=None):
@@ -667,11 +730,11 @@ class ColorListSelectionDisplay(SelectionDisplay):
             backup_clr = linear_gradient(unselected_color, "#000000", 7)[2]
             selected_colors = [c or backup_clr for c in colors[1:]]
             n = len(ds)
-            clrs = np.array([unselected_color] + list(selected_colors))
+            clrs = np.array([unselected_color, *selected_colors])
 
             color_inds = np.zeros(n, dtype='int8')
 
-            for i, expr in zip(range(1, len(clrs)), selection_exprs):
+            for i, expr in zip(range(1, len(clrs)), selection_exprs, strict=None):
                 if not expr:
                     color_inds[:] = i
                 else:
@@ -691,8 +754,8 @@ class ColorListSelectionDisplay(SelectionDisplay):
 
 
 def _color_to_cmap(color):
-    """
-    Create a light to dark cmap list from a base color
+    """Create a light to dark cmap list from a base color
+
     """
     from .plotting.util import linear_gradient
     # Lighten start color by interpolating toward white

@@ -1,9 +1,10 @@
+import sys
 from io import BytesIO
-from unittest import SkipTest
 
 import numpy as np
 import panel as pn
 import param
+import pytest
 from bokeh.io import curdoc
 from bokeh.themes.theme import Theme
 from panel.widgets import DiscreteSlider, FloatSlider, Player
@@ -16,6 +17,7 @@ from holoviews.plotting.bokeh import BokehRenderer
 from holoviews.streams import Stream
 
 
+@pytest.mark.usefixtures("bokeh_backend")
 class BokehRendererTest(ComparisonTestCase):
 
     def setUp(self):
@@ -84,13 +86,12 @@ class BokehRendererTest(ComparisonTestCase):
         self.renderer.components(plot, 'html')
         self.assertEqual(plot.state.outline_line_color, '#444444')
 
+    @pytest.mark.skipif(sys.platform == "linux", reason="2025-03: Flaky test on Linux")
     def test_render_to_png(self):
+        pytest.importorskip("selenium")
         curve = Curve([])
         renderer = BokehRenderer.instance(fig='png')
-        try:
-            png, info = renderer(curve)
-        except RuntimeError:
-            raise SkipTest("Test requires selenium")
+        png, info = renderer(curve)
         self.assertIsInstance(png, bytes)
         self.assertEqual(info['file-ext'], 'png')
 
@@ -154,11 +155,12 @@ class BokehRendererTest(ComparisonTestCase):
         self.assertEqual(obj.widget_location, 'top')
         self.assertEqual(obj.widget_type, 'individual')
 
+    @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm')
     def test_render_dynamicmap_with_dims(self):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
         cds = plot.handles['cds']
 
         self.assertEqual(cds.data['y'][2], 0.1)
@@ -166,25 +168,27 @@ class BokehRendererTest(ComparisonTestCase):
         slider.value = 3.1
         self.assertEqual(cds.data['y'][2], 3.1)
 
+    @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm')
     def test_render_dynamicmap_with_stream(self):
         stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
         cds = plot.handles['cds']
 
         self.assertEqual(cds.data['y'][2], 2)
         stream.event(y=3)
         self.assertEqual(cds.data['y'][2], 3)
 
+    @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm')
     def test_render_dynamicmap_with_stream_dims(self):
         stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda x, y: Curve([x, 1, y]), kdims=['x', 'y'],
                           streams=[stream]).redim.values(x=[1, 2, 3])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
-        [(plot, pane)] = obj._plots.values()
+        [(plot, _pane)] = obj._plots.values()
         cds = plot.handles['cds']
 
         self.assertEqual(cds.data['y'][2], 2)

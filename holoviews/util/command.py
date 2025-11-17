@@ -1,8 +1,8 @@
 #! /usr/bin/env python
-"""
-python -m holoviews.util.command Conversion_Example.ipynb
+"""python -m holoviews.util.command Conversion_Example.ipynb
 OR
 holoviews Conversion_Example.ipynb
+
 """
 
 import argparse
@@ -72,7 +72,7 @@ def export_to_python(filename=None, preprocessors=None):
         exporter = nbconvert.PythonExporter()
         for preprocessor in preprocessors:
             exporter.register_preprocessor(preprocessor)
-        source, meta = exporter.from_notebook_node(nb)
+        source, _meta = exporter.from_notebook_node(nb)
         return source
 
 

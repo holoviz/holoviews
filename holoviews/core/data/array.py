@@ -4,6 +4,7 @@ from .. import util
 from ..dimension import dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
+from ..util import dtype_kind
 from .interface import DataError, Interface
 
 
@@ -30,17 +31,17 @@ class ArrayInterface(Interface):
         if ((isinstance(data, dict) or util.is_dataframe(data)) and
             all(d in data for d in dimensions)):
             dataset = [d if isinstance(d, np.ndarray) else np.asarray(data[d]) for d in dimensions]
-            if len({d.dtype.kind for d in dataset}) > 1:
+            if len({dtype_kind(d) for d in dataset}) > 1:
                 raise ValueError('ArrayInterface expects all columns to be of the same dtype')
             data = np.column_stack(dataset)
         elif isinstance(data, dict) and not all(d in data for d in dimensions):
             dict_data = sorted(data.items())
             dataset = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
-                            for k, v in dict_data))
+                            for k, v in dict_data), strict=None)
             data = np.column_stack(list(dataset))
         elif isinstance(data, tuple):
             data = [d if isinstance(d, np.ndarray) else np.asarray(d) for d in data]
-            if len({d.dtype.kind for d in data}) > 1:
+            if len({dtype_kind(d) for d in data}) > 1:
                 raise ValueError('ArrayInterface expects all columns to be of the same dtype')
             elif cls.expanded(data):
                 data = np.column_stack(data)
@@ -60,7 +61,7 @@ class ArrayInterface(Interface):
         if vdims is None:
             vdims = eltype.vdims
 
-        if data is None or data.ndim > 2 or data.dtype.kind in ['S', 'U', 'O']:
+        if data is None or data.ndim > 2 or dtype_kind(data) in ['S', 'U', 'O']:
             raise ValueError("ArrayInterface interface could not handle input type.")
         elif data.ndim == 1:
             if eltype._auto_indexable_1d and len(kdims)+len(vdims)>1:
@@ -76,7 +77,7 @@ class ArrayInterface(Interface):
         ncols = dataset.data.shape[1] if dataset.data.ndim > 1 else 1
         if ncols < ndims:
             raise DataError("Supplied data does not match specified "
-                            "dimensions, expected at least %s columns." % ndims, cls)
+                            f"dimensions, expected at least {ndims} columns.", cls)
 
 
     @classmethod
@@ -229,9 +230,9 @@ class ArrayInterface(Interface):
 
     @classmethod
     def unpack_scalar(cls, dataset, data):
-        """
-        Given a dataset object and data in the appropriate format for
+        """Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
+
         """
         if data.shape == (1, 1):
             return data[0, 0]
@@ -247,7 +248,7 @@ class ArrayInterface(Interface):
             idx = dataset.get_dimension_index(d)
             data[:, idx] = arr
         new_cols = [arr for d, arr in new_data.items() if dataset.get_dimension(d) is None]
-        return np.column_stack([data]+new_cols)
+        return np.column_stack([data, *new_cols])
 
 
     @classmethod

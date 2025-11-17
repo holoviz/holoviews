@@ -2,7 +2,8 @@ import numpy as np
 from bokeh.models import CustomJS, Toolbar
 from bokeh.models.tools import RangeTool
 
-from ...core.util import isscalar
+from ...core.spaces import HoloMap
+from ...core.util import dtype_kind, isscalar
 from ..links import (
     DataLink,
     Link,
@@ -12,6 +13,7 @@ from ..links import (
     VertexTableLink,
 )
 from ..plot import GenericElementPlot, GenericOverlayPlot
+from .util import BOKEH_GE_3_4_0, BOKEH_GE_3_5_0
 
 
 class LinkCallback:
@@ -40,7 +42,7 @@ class LinkCallback:
         references = {k: v for k, v in link.param.values().items()
                       if k not in ('source', 'target', 'name')}
 
-        for sh in self.source_handles+[self.source_model]:
+        for sh in [*self.source_handles, self.source_model]:
             key = f'source_{sh}'
             references[key] = source_plot.handles[sh]
 
@@ -50,7 +52,7 @@ class LinkCallback:
             references[p] = value
 
         if target_plot is not None:
-            for sh in self.target_handles+[self.target_model]:
+            for sh in [*self.target_handles, self.target_model]:
                 key = f'target_{sh}'
                 references[key] = target_plot.handles[sh]
 
@@ -78,9 +80,9 @@ class LinkCallback:
 
     @classmethod
     def find_links(cls, root_plot):
-        """
-        Traverses the supplied plot and searches for any Links on
+        """Traverses the supplied plot and searches for any Links on
         the plotted objects.
+
         """
         plot_fn = lambda x: isinstance(x, (GenericElementPlot, GenericOverlayPlot))
         plots = root_plot.traverse(lambda x: x, [plot_fn])
@@ -93,43 +95,61 @@ class LinkCallback:
                     # If link has no target don't look further
                     found.append((link, plot, None))
                     continue
-                potentials = [cls.find_link(p, link) for p in plots]
+                potentials = [cls.find_link(p, link, target=True) for p in plots]
                 tgt_links = [p for p in potentials if p is not None]
                 if tgt_links:
                     found.append((link, plot, tgt_links[0][0]))
         return found
 
     @classmethod
-    def find_link(cls, plot, link=None):
+    def find_link(cls, plot, link=None, target=False):
+        """Searches a plot for any Links declared on the sources of the plot.
+
+        Parameters
+        ----------
+        plot
+            The plot to search for Links
+        link
+            A Link instance to check for matches
+        target
+            Whether to check against the Link.target
+
+        Returns
+        -------
+        A tuple containing the matched plot and list of matching Links.
         """
-        Searches a GenericElementPlot for a Link.
-        """
-        registry = Link.registry.items()
+        attr = 'target' if target else 'source'
+        if link is None:
+            candidates = list(Link.registry.items())
+        else:
+            candidates = [(getattr(link, attr), [link])]
         for source in plot.link_sources:
-            if link is None:
-                links = [
-                    l for src, links in registry for l in links
-                    if src is source or (src._plot_id is not None and
-                                         src._plot_id == source._plot_id)]
+            for link_src, src_links in candidates:
+                if not plot._sources_match(link_src, source):
+                    continue
+                links = []
+                for src_link in src_links:
+                    # Skip if Link.target is an overlay but the plot isn't
+                    # or if the target is an element but the plot isn't
+                    src = getattr(src_link, attr)
+                    src_el = src.last if isinstance(src, HoloMap) else src
+                    if not plot._matching_plot_type(src_el):
+                        continue
+                    links.append(src_link)
                 if links:
                     return (plot, links)
-            elif ((link.target is source) or
-                (link.target is not None and
-                    link.target._plot_id is not None and
-                    link.target._plot_id == source._plot_id)):
-                return (plot, [link])
 
     def validate(self):
-        """
-        Should be subclassed to check if the source and target plots
+        """Should be subclassed to check if the source and target plots
         are compatible to perform the linking.
+
         """
 
 
 class RangeToolLinkCallback(LinkCallback):
-    """
-    Attaches a RangeTool to the source plot and links it to the
+    """Attaches a RangeTool to the source plot and links it to the
     specified axes on the target plot
+
     """
 
     def __init__(self, root_model, link, source_plot, target_plot):
@@ -140,28 +160,81 @@ class RangeToolLinkCallback(LinkCallback):
             if axis not in link.axes:
                 continue
 
-            axes[f'{axis}_range'] = target_plot.handles[f'{axis}_range']
-            bounds = getattr(link, f'bounds{axis}', None)
-            if bounds is None:
-                continue
+            range_name = f'{axis}_range'
+            if f'subcoordinate_{axis}_range' in target_plot.handles:
+                target_range_name = f'subcoordinate_{range_name}'
+            else:
+                target_range_name = range_name
+            axes[range_name] = ax = target_plot.handles[target_range_name]
+            if ax is source_plot.handles.get(target_range_name):
+                # Cloning the axis as it does not make sense to have a link
+                # for the same axis
+                new_ax = ax.clone()
+                source_plot.handles[target_range_name] = new_ax
+                setattr(source_plot.handles["plot"], range_name, new_ax)
+                # So it is not re-linked by pn.pane.HoloViews(..., linked_axes=True)
+                new_ax.tags = []
+            interval = getattr(link, f'intervals{axis}', None)
+            if interval is not None and BOKEH_GE_3_4_0:
+                min, max = interval
+                if min is not None:
+                    ax.min_interval = min
+                if max is not None:
+                    ax.max_interval = max
+                    self._set_range_for_interval(ax, max)
 
-            start, end = bounds
-            if start is not None:
-                axes[f'{axis}_range'].start = start
-                axes[f'{axis}_range'].reset_start = start
-            if end is not None:
-                axes[f'{axis}_range'].end = end
-                axes[f'{axis}_range'].reset_end = end
+            bounds = getattr(link, f'bounds{axis}', None)
+            if bounds is not None:
+                start, end = bounds
+                if start is not None:
+                    ax.start = start
+                    ax.reset_start = start
+                if end is not None:
+                    ax.end = end
+                    ax.reset_end = end
 
         tool = RangeTool(**axes)
+
+        if BOKEH_GE_3_5_0:
+            use_handles = getattr(link, 'use_handles', True)
+            start_gesture = getattr(link, 'start_gesture', 'tap')
+            inverted = getattr(link, 'inverted', True)
+
+            tool.overlay.use_handles = use_handles
+            tool.start_gesture = start_gesture
+            tool.overlay.inverted = inverted
+
+            if use_handles:
+                tool.overlay.handles.all.hover_fill_color = "grey"
+                tool.overlay.handles.all.hover_fill_alpha = 0.25
+                tool.overlay.handles.all.hover_line_alpha = 0
+                tool.overlay.handles.all.fill_alpha = 0.1
+                tool.overlay.handles.all.line_alpha = 0.25
+
         source_plot.state.add_tools(tool)
         if toolbars:
             toolbars[0].tools.append(tool)
 
+    def _set_range_for_interval(self, axis, max):
+        # Changes the existing Range1d axis range to be in the interval
+        for n in ("", "reset_"):
+            start = getattr(axis, f"{n}start")
+            try:
+                end = start + max
+            except Exception as e:
+                # Handle combinations of datetime axis and timedelta interval
+                # Likely a better way to do this
+                try:
+                    import pandas as pd
+                    end = (pd.array([start]) + pd.array([max]))[0]
+                except Exception:
+                    raise e from None
+            setattr(axis, f"{n}end", end)
+
 
 class DataLinkCallback(LinkCallback):
-    """
-    Merges the source and target ColumnDataSource
+    """Merges the source and target ColumnDataSource
+
     """
 
     def __init__(self, root_model, link, source_plot, target_plot):
@@ -174,8 +247,8 @@ class DataLinkCallback(LinkCallback):
         tgt_len = [len(v) for v in tgt_cds.data.values()]
         if src_len and tgt_len and (src_len[0] != tgt_len[0]):
             raise ValueError('DataLink source data length must match target '
-                            'data length, found source length of %d and '
-                            'target length of %d.' % (src_len[0], tgt_len[0]))
+                            f'data length, found source length of {src_len[0]} and '
+                            f'target length of {tgt_len[0]}.')
 
         # Ensure the data sources are compatible (i.e. overlapping columns are equal)
         for k, v in tgt_cds.data.items():
@@ -186,11 +259,11 @@ class DataLinkCallback(LinkCallback):
             if len(v) and isinstance(v[0], np.ndarray):
                 continue # Skip ragged arrays
             if not ((isscalar(v) and v == col) or
-                    (v.dtype.kind not in 'iufc' and (v==col).all()) or
+                    (dtype_kind(v) not in 'iufc' and (v==col).all()) or
                     np.allclose(v, np.asarray(src_cds.data[k]), equal_nan=True)):
                 raise ValueError('DataLink can only be applied if overlapping '
-                                 'dimension values are equal, %s column on source '
-                                 'does not match target' % k)
+                                 f'dimension values are equal, {k} column on source '
+                                 'does not match target')
 
         src_cds.data.update(tgt_cds.data)
         renderer = target_plot.handles.get('glyph_renderer')

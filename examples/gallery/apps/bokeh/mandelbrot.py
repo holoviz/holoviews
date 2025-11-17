@@ -5,11 +5,11 @@ interactive exploration of the mandelbrot set.
 """
 
 import numpy as np
-import holoviews as hv
+from numba import jit
 
+import holoviews as hv
 from holoviews import opts
 from holoviews.streams import RangeXY
-from numba import jit
 
 renderer = hv.renderer('bokeh')
 

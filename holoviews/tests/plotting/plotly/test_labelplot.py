@@ -3,6 +3,7 @@ import numpy as np
 from holoviews.core.options import Cycle
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Labels, Tiles
+from holoviews.plotting.plotly.util import PLOTLY_MAP
 
 from .test_plot import TestPlotlyPlot
 
@@ -86,7 +87,7 @@ class TestMapboxLabelsPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][1]['text'], ['A', 'B', 'C'])
         self.assertEqual(state['data'][1]['mode'], 'text')
         self.assertEqual(
-            state['layout']['mapbox']['center'], {
+            state['layout'][PLOTLY_MAP]['center'], {
                 'lat': self.lat_center, 'lon': self.lon_center
             }
         )

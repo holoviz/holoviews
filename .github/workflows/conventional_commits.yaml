@@ -1,0 +1,50 @@
+name: "Validate PR title"
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
+permissions:
+  pull-requests: read
+
+jobs:
+  main:
+    name: Validate PR title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            build
+            chore
+            ci
+            compat
+            docs
+            enh
+            feat
+            fix
+            perf
+            refactor
+            test
+            type
+          scopes: |
+            dev
+            data
+            plotting
+            bokeh
+            matplotlib
+            plotly
+            notebook
+          ignoreLabels: |
+            ignore-semantic-pull-request
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the configured pattern. Please ensure that the subject
+            doesn't start with an uppercase character. Also make sure that the
+            type ends with a colol, e.g. `docs:`
