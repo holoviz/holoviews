@@ -386,8 +386,8 @@ class TestMaxRange(unittest.TestCase):
 
     def test_max_range2(self):
         lower, upper = max_range(self.ranges2)
-        self.assertTrue(math.isnan(lower))
-        self.assertTrue(math.isnan(upper))
+        assert math.isnan(lower)
+        assert math.isnan(upper)
 
     def test_max_range3(self):
         periods = [(pd.Period("1990", freq="M"), pd.Period("1991", freq="M"))]
@@ -608,16 +608,16 @@ class TestDatetimeUtils(unittest.TestCase):
 class TestNumericUtilities(ComparisonTestCase):
 
     def test_isfinite_none(self):
-        self.assertFalse(isfinite(None))
+        assert not isfinite(None)
 
     def test_isfinite_nan(self):
-        self.assertFalse(isfinite(float('NaN')))
+        assert not isfinite(float('NaN'))
 
     def test_isfinite_inf(self):
-        self.assertFalse(isfinite(float('inf')))
+        assert not isfinite(float('inf'))
 
     def test_isfinite_float(self):
-        self.assertTrue(isfinite(1.2))
+        assert isfinite(1.2)
 
     def test_isfinite_float_array_nan(self):
         array = np.array([1.2, 3.0, np.nan])
@@ -629,27 +629,27 @@ class TestNumericUtilities(ComparisonTestCase):
 
     def test_isfinite_datetime(self):
         dt = datetime.datetime(2017, 1, 1)
-        self.assertTrue(isfinite(dt))
+        assert isfinite(dt)
 
     def test_isfinite_datetime64(self):
         dt64 = np.datetime64(datetime.datetime(2017, 1, 1))
-        self.assertTrue(isfinite(dt64))
+        assert isfinite(dt64)
 
     def test_isfinite_datetime64_nat(self):
         dt64 = np.datetime64('NaT')
-        self.assertFalse(isfinite(dt64))
+        assert not isfinite(dt64)
 
     def test_isfinite_timedelta64_nat(self):
         dt64 = np.timedelta64('NaT')
-        self.assertFalse(isfinite(dt64))
+        assert not isfinite(dt64)
 
     def test_isfinite_pandas_timestamp_nat(self):
         dt64 = pd.Timestamp('NaT')
-        self.assertFalse(isfinite(dt64))
+        assert not isfinite(dt64)
 
     def test_isfinite_pandas_period_nat(self):
         dt64 = pd.Period('NaT')
-        self.assertFalse(isfinite(dt64))
+        assert not isfinite(dt64)
 
     def test_isfinite_pandas_period_index(self):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D').to_period('D')

@@ -22,9 +22,9 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
         stream = Stream.define('Test', test=1)()
         dmap = DynamicMap(lambda test: Curve([]), streams=[stream])
         plot = mpl_renderer.get_plot(dmap)
-        self.assertTrue(bool(stream._subscribers))
+        assert bool(stream._subscribers)
         plot.cleanup()
-        self.assertFalse(bool(stream._subscribers))
+        assert not bool(stream._subscribers)
 
     def test_element_hooks(self):
         def hook(plot, element):
@@ -112,7 +112,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
         plot = mpl_renderer.get_plot(curve)
         xaxis = plot.handles['axis'].xaxis
         xformatter = xaxis.get_major_formatter()
-        self.assertIsInstance(xformatter, FormatStrFormatter)
+        assert isinstance(xformatter, FormatStrFormatter)
         self.assertEqual(xformatter.fmt, '%d')
 
     def test_element_yformatter_string(self):
@@ -120,7 +120,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
         plot = mpl_renderer.get_plot(curve)
         yaxis = plot.handles['axis'].yaxis
         yformatter = yaxis.get_major_formatter()
-        self.assertIsInstance(yformatter, FormatStrFormatter)
+        assert isinstance(yformatter, FormatStrFormatter)
         self.assertEqual(yformatter.fmt, '%d')
 
     def test_element_zformatter_string(self):
@@ -128,7 +128,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
         plot = mpl_renderer.get_plot(curve)
         zaxis = plot.handles['axis'].zaxis
         zformatter = zaxis.get_major_formatter()
-        self.assertIsInstance(zformatter, FormatStrFormatter)
+        assert isinstance(zformatter, FormatStrFormatter)
         self.assertEqual(zformatter.fmt, '%d')
 
     def test_element_xformatter_function(self):
@@ -138,7 +138,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
         plot = mpl_renderer.get_plot(curve)
         xaxis = plot.handles['axis'].xaxis
         xformatter = xaxis.get_major_formatter()
-        self.assertIsInstance(xformatter, FuncFormatter)
+        assert isinstance(xformatter, FuncFormatter)
 
     def test_element_yformatter_function(self):
         def formatter(value):
@@ -147,7 +147,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
         plot = mpl_renderer.get_plot(curve)
         yaxis = plot.handles['axis'].yaxis
         yformatter = yaxis.get_major_formatter()
-        self.assertIsInstance(yformatter, FuncFormatter)
+        assert isinstance(yformatter, FuncFormatter)
 
     def test_element_zformatter_function(self):
         def formatter(value):
@@ -156,7 +156,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
         plot = mpl_renderer.get_plot(curve)
         zaxis = plot.handles['axis'].zaxis
         zformatter = zaxis.get_major_formatter()
-        self.assertIsInstance(zformatter, FuncFormatter)
+        assert isinstance(zformatter, FuncFormatter)
 
     def test_element_xformatter_instance(self):
         formatter = PercentFormatter()
@@ -164,7 +164,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
         plot = mpl_renderer.get_plot(curve)
         xaxis = plot.handles['axis'].xaxis
         xformatter = xaxis.get_major_formatter()
-        self.assertIs(xformatter, formatter)
+        assert xformatter is formatter
 
     def test_element_yformatter_instance(self):
         formatter = PercentFormatter()
@@ -172,7 +172,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
         plot = mpl_renderer.get_plot(curve)
         yaxis = plot.handles['axis'].yaxis
         yformatter = yaxis.get_major_formatter()
-        self.assertIs(yformatter, formatter)
+        assert yformatter is formatter
 
     def test_element_zformatter_instance(self):
         formatter = PercentFormatter()
@@ -180,7 +180,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
         plot = mpl_renderer.get_plot(curve)
         zaxis = plot.handles['axis'].zaxis
         zformatter = zaxis.get_major_formatter()
-        self.assertIs(zformatter, formatter)
+        assert zformatter is formatter
 
     def test_element_polar_xlimits(self):
         theta = np.arange(0, 5.4, 0.1)
@@ -188,7 +188,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
         scatter = Scatter((theta, r), 'theta', 'r').opts(projection='polar')
         plot = mpl_renderer.get_plot(scatter)
         ax = plot.handles['axis']
-        self.assertIsInstance(ax, PolarAxes)
+        assert isinstance(ax, PolarAxes)
         self.assertEqual(ax.get_xlim(), (0, 2 * np.pi))
 
     #################################################################
@@ -238,7 +238,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
         )
         plot = mpl_renderer.get_plot(curve)
         legend = plot.handles['legend']
-        self.assertFalse(legend.get_frame_on())
+        assert not legend.get_frame_on()
 
     def test_element_backend_opts_sequential_method(self):
         a = Curve([1, 2, 3], label="a")

@@ -130,7 +130,7 @@ class DaskDatasetTest(BasePandasInterfaceTests):
         new_ds = ds.select(selection_expr=dim('b') == 10)
 
         # Make sure that selecting by expression didn't cause evaluation
-        self.assertIsInstance(new_ds.data, dd.DataFrame)
+        assert isinstance(new_ds.data, dd.DataFrame)
         self.assertEqual(new_ds.data.compute(), df[df.b == 10])
 
     def test_dataset_get_dframe_by_dimension(self):

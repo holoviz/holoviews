@@ -16,4 +16,4 @@ class TestRenderer(ComparisonTestCase):
         for mime in mime_types:
             info = {'mime_type': mime}
             encoded = Renderer.encode(('Testing «ταБЬℓσ»: 1<2 & 4+1>3', info))
-            self.assertTrue(isinstance(encoded, bytes))
+            assert isinstance(encoded, bytes)

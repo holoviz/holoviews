@@ -35,12 +35,12 @@ class TestBivariatePlot(TestPlotlyPlot):
         bivariate.opts(colorbar=True)
         state = self._get_plot_state(bivariate)
         trace = state['data'][0]
-        self.assertTrue(trace['showscale'])
+        assert trace['showscale']
 
         bivariate.opts(colorbar=False)
         state = self._get_plot_state(bivariate)
         trace = state['data'][0]
-        self.assertFalse(trace['showscale'])
+        assert not trace['showscale']
 
     def test_visible(self):
         element = Bivariate(([3, 2, 1], [0, 1, 2])).opts(visible=False)

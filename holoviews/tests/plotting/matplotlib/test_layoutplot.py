@@ -45,9 +45,9 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestMPLPlot):
         dmap = DynamicMap(lambda test: Curve([]), kdims=['test'], streams=[stream])
         layout = dmap + Curve([])
         plot = mpl_renderer.get_plot(layout)
-        self.assertIn('test: 0', plot.handles['title'].get_text())
+        assert 'test: 0' in plot.handles['title'].get_text()
         stream.event(test=1)
-        self.assertIn('test: 1', plot.handles['title'].get_text())
+        assert 'test: 1' in plot.handles['title'].get_text()
         plot.cleanup()
         self.assertEqual(stream._subscribers, [])
 
@@ -56,8 +56,8 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestMPLPlot):
         layout = (Curve([1, 2, 3]) + Curve([10, 20, 30])).opts(shared_axes=False)
         plot = mpl_renderer.get_plot(layout)
         cp1, cp2 = plot.traverse(lambda x: x, [CurvePlot])
-        self.assertTrue(cp1.handles['axis'].get_ylim(), (1, 3))
-        self.assertTrue(cp2.handles['axis'].get_ylim(), (10, 30))
+        assert cp1.handles['axis'].get_ylim(), (1, 3)
+        assert cp2.handles['axis'].get_ylim(), (10, 30)
 
     def test_layout_sublabel_offset(self):
         from holoviews.plotting.mpl import CurvePlot

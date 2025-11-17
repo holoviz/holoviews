@@ -50,7 +50,7 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestMPLPlot):
     def test_overlay_apply_ranges_disabled(self):
         overlay = (Curve(range(10)) * Curve(range(10))).opts('Curve', apply_ranges=False)
         plot = mpl_renderer.get_plot(overlay)
-        self.assertTrue(all(np.isnan(e) for e in plot.get_extents(overlay, {})))
+        assert all(np.isnan(e) for e in plot.get_extents(overlay, {}))
 
     def test_overlay_empty_element_extent(self):
         overlay = Curve([]).redim.range(x=(-10, 10)) * Scatter([]).redim.range(y=(-20, 20))

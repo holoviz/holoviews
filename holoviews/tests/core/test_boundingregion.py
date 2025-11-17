@@ -43,15 +43,15 @@ class TestBoundingBox(unittest.TestCase):
         self.xc,self.yc = self.region.aarect().centroid()
 
     def test_way_inside(self):
-        self.assertTrue(self.region.contains(0,0))
+        assert self.region.contains(0, 0)
     def test_above(self):
-        self.assertFalse(self.region.contains(0,1))
+        assert not self.region.contains(0, 1)
     def test_below(self):
-        self.assertFalse(self.region.contains(0,-1))
+        assert not self.region.contains(0, -1)
     def test_left_of(self):
-        self.assertFalse(self.region.contains(-1,0))
+        assert not self.region.contains(-1, 0)
     def test_right_of(self):
-        self.assertFalse(self.region.contains(1,0))
+        assert not self.region.contains(1, 0)
 
     def test_centroid_x(self):
         self.assertEqual(self.xc, (self.left+self.right)/2.0)
@@ -59,10 +59,10 @@ class TestBoundingBox(unittest.TestCase):
         self.assertEqual(self.yc, (self.bottom+self.top)/2.0)
 
     def test_left_boundary(self):
-        self.assertTrue(self.region.contains(self.left,self.yc))
+        assert self.region.contains(self.left, self.yc)
     def test_right_boundary(self):
-        self.assertTrue(self.region.contains(self.right,self.yc))
+        assert self.region.contains(self.right, self.yc)
     def test_bottom_boundary(self):
-        self.assertTrue(self.region.contains(self.xc, self.bottom))
+        assert self.region.contains(self.xc, self.bottom)
     def test_top_boundary(self):
-        self.assertTrue(self.region.contains(self.xc, self.top))
+        assert self.region.contains(self.xc, self.top)

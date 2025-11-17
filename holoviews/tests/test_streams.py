@@ -241,9 +241,9 @@ class TestParamsStream(LoggingComparisonTestCase):
         valid, _invalid = Stream._process_streams([inner.param.x, inner.param.y])
         xparam, yparam = valid
 
-        self.assertIs(xparam.parameterized, inner)
+        assert xparam.parameterized is inner
         self.assertEqual(xparam.parameters, [inner.param.x])
-        self.assertIs(yparam.parameterized, inner)
+        assert yparam.parameterized is inner
         self.assertEqual(yparam.parameters, [inner.param.y])
 
     def test_param_parameter_instance_overlapping_parameters(self):
@@ -557,7 +557,7 @@ class TestParamMethodStream(ComparisonTestCase):
         dmap = DynamicMap(inner.method)
         self.assertEqual(len(dmap.streams), 1)
         stream = dmap.streams[0]
-        self.assertIsInstance(stream, ParamMethod)
+        assert isinstance(stream, ParamMethod)
         self.assertEqual(stream.contents, {})
 
         values = []
@@ -606,7 +606,7 @@ class TestParamMethodStream(ComparisonTestCase):
         self.assertEqual(len(dmap.streams), 1)
         stream = dmap.streams[0]
         self.assertEqual(set(stream.parameters), {inner.param.action})
-        self.assertIsInstance(stream, ParamMethod)
+        assert isinstance(stream, ParamMethod)
         self.assertEqual(stream.contents, {})
 
         values = []
@@ -625,7 +625,7 @@ class TestParamMethodStream(ComparisonTestCase):
         self.assertEqual(len(dmap.streams), 1)
         stream = dmap.streams[0]
         self.assertEqual(set(stream.parameters), {inner.param.action, inner.param.x})
-        self.assertIsInstance(stream, ParamMethod)
+        assert isinstance(stream, ParamMethod)
         self.assertEqual(stream.contents, {})
 
         values = []
@@ -652,7 +652,7 @@ class TestParamMethodStream(ComparisonTestCase):
         self.assertEqual(len(op_dmap.streams), 1)
         stream = op_dmap.streams[0]
         self.assertEqual(set(stream.parameters), {inner.param.y})
-        self.assertIsInstance(stream, ParamMethod)
+        assert isinstance(stream, ParamMethod)
         self.assertEqual(stream.contents, {})
 
         values_x, values_y = [], []
@@ -773,31 +773,31 @@ class TestStreamSource(ComparisonTestCase):
     def test_source_empty_element(self):
         points = Points([])
         stream = PointerX(source=points)
-        self.assertIs(stream.source, points)
+        assert stream.source is points
 
     def test_source_empty_element_remap(self):
         points = Points([])
         stream = PointerX(source=points)
-        self.assertIs(stream.source, points)
+        assert stream.source is points
         curve = Curve([])
         stream.source = curve
-        self.assertNotIn(points, Stream.registry)
-        self.assertIn(curve, Stream.registry)
+        assert points not in Stream.registry
+        assert curve in Stream.registry
 
     def test_source_empty_dmap(self):
         points_dmap = DynamicMap(lambda x: Points([]), kdims=['X'])
         stream = PointerX(source=points_dmap)
-        self.assertIs(stream.source, points_dmap)
+        assert stream.source is points_dmap
 
     def test_source_registry(self):
         points = Points([(0, 0)])
         PointerX(source=points)
-        self.assertIn(points, Stream.registry)
+        assert points in Stream.registry
 
     def test_source_registry_empty_element(self):
         points = Points([])
         PointerX(source=points)
-        self.assertIn(points, Stream.registry)
+        assert points in Stream.registry
 
 
 class TestParameterRenaming(ComparisonTestCase):
@@ -1234,11 +1234,11 @@ class TestExprSelectionStream(ComparisonTestCase):
 
             # Check stream properties
             self.assertEqual(len(expr_stream.input_streams), 3)
-            self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
-            self.assertIsInstance(expr_stream.input_streams[1], Lasso)
-            self.assertIsInstance(expr_stream.input_streams[2], Selection1D)
-            self.assertIsNone(expr_stream.bbox)
-            self.assertIsNone(expr_stream.selection_expr)
+            assert isinstance(expr_stream.input_streams[0], SelectionXY)
+            assert isinstance(expr_stream.input_streams[1], Lasso)
+            assert isinstance(expr_stream.input_streams[2], Selection1D)
+            assert expr_stream.bbox is None
+            assert expr_stream.selection_expr is None
 
             # Simulate interactive update by triggering source stream
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
@@ -1262,9 +1262,9 @@ class TestExprSelectionStream(ComparisonTestCase):
 
             # Check stream properties
             self.assertEqual(len(expr_stream.input_streams), 1)
-            self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
-            self.assertIsNone(expr_stream.bbox)
-            self.assertIsNone(expr_stream.selection_expr)
+            assert isinstance(expr_stream.input_streams[0], SelectionXY)
+            assert expr_stream.bbox is None
+            assert expr_stream.selection_expr is None
 
             # Simulate interactive update by triggering source stream
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
@@ -1289,11 +1289,11 @@ class TestExprSelectionStream(ComparisonTestCase):
 
             # Check stream properties
             self.assertEqual(len(expr_stream.input_streams), 3)
-            self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
-            self.assertIsInstance(expr_stream.input_streams[1], Lasso)
-            self.assertIsInstance(expr_stream.input_streams[2], Selection1D)
-            self.assertIsNone(expr_stream.bbox)
-            self.assertIsNone(expr_stream.selection_expr)
+            assert isinstance(expr_stream.input_streams[0], SelectionXY)
+            assert isinstance(expr_stream.input_streams[1], Lasso)
+            assert isinstance(expr_stream.input_streams[2], Selection1D)
+            assert expr_stream.bbox is None
+            assert expr_stream.selection_expr is None
 
             # Simulate interactive update by triggering source stream
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
@@ -1317,9 +1317,9 @@ class TestExprSelectionStream(ComparisonTestCase):
 
             # Check stream properties
             self.assertEqual(len(expr_stream.input_streams), 1)
-            self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
-            self.assertIsNone(expr_stream.bbox)
-            self.assertIsNone(expr_stream.selection_expr)
+            assert isinstance(expr_stream.input_streams[0], SelectionXY)
+            assert expr_stream.bbox is None
+            assert expr_stream.selection_expr is None
 
             # Simulate interactive update by triggering source stream
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
@@ -1347,11 +1347,11 @@ class TestExprSelectionStream(ComparisonTestCase):
 
             # Check stream properties
             self.assertEqual(len(expr_stream.input_streams), 3)
-            self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
-            self.assertIsInstance(expr_stream.input_streams[1], Lasso)
-            self.assertIsInstance(expr_stream.input_streams[2], Selection1D)
-            self.assertIsNone(expr_stream.bbox)
-            self.assertIsNone(expr_stream.selection_expr)
+            assert isinstance(expr_stream.input_streams[0], SelectionXY)
+            assert isinstance(expr_stream.input_streams[1], Lasso)
+            assert isinstance(expr_stream.input_streams[2], Selection1D)
+            assert expr_stream.bbox is None
+            assert expr_stream.selection_expr is None
 
             # Simulate interactive update by triggering source stream
             expr_stream.input_streams[0].event(bounds=(3, 4, 1, 1))
@@ -1379,9 +1379,9 @@ class TestExprSelectionStream(ComparisonTestCase):
 
             # Check stream properties
             self.assertEqual(len(expr_stream.input_streams), 1)
-            self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
-            self.assertIsNone(expr_stream.bbox)
-            self.assertIsNone(expr_stream.selection_expr)
+            assert isinstance(expr_stream.input_streams[0], SelectionXY)
+            assert expr_stream.bbox is None
+            assert expr_stream.selection_expr is None
 
             # Simulate interactive update by triggering source stream
             expr_stream.input_streams[0].event(bounds=(3, 4, 1, 1))
@@ -1403,9 +1403,9 @@ class TestExprSelectionStream(ComparisonTestCase):
 
         # Check stream properties
         self.assertEqual(len(expr_stream.input_streams), 1)
-        self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
-        self.assertIsNone(expr_stream.bbox)
-        self.assertIsNone(expr_stream.selection_expr)
+        assert isinstance(expr_stream.input_streams[0], SelectionXY)
+        assert expr_stream.bbox is None
+        assert expr_stream.selection_expr is None
 
         # Simulate interactive update by triggering source stream.
         # Select second and forth bar.
@@ -1435,9 +1435,9 @@ class TestExprSelectionStream(ComparisonTestCase):
 
         # Check stream properties
         self.assertEqual(len(expr_stream.input_streams), 1)
-        self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
-        self.assertIsNone(expr_stream.bbox)
-        self.assertIsNone(expr_stream.selection_expr)
+        assert isinstance(expr_stream.input_streams[0], SelectionXY)
+        assert expr_stream.bbox is None
+        assert expr_stream.selection_expr is None
 
         # Simulate interactive update by triggering source stream.
         # Select second and forth bar.
@@ -1468,9 +1468,9 @@ class TestExprSelectionStream(ComparisonTestCase):
 
         # Check stream properties
         self.assertEqual(len(expr_stream.input_streams), 1)
-        self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
-        self.assertIsNone(expr_stream.bbox)
-        self.assertIsNone(expr_stream.selection_expr)
+        assert isinstance(expr_stream.input_streams[0], SelectionXY)
+        assert expr_stream.bbox is None
+        assert expr_stream.selection_expr is None
 
         # Simulate interactive update by triggering source stream.
         # Select second and forth bar.
@@ -1511,11 +1511,11 @@ class TestExprSelectionStream(ComparisonTestCase):
 
         # Check stream properties
         self.assertEqual(len(expr_stream.input_streams), 3)
-        self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
-        self.assertIsInstance(expr_stream.input_streams[1], Lasso)
-        self.assertIsInstance(expr_stream.input_streams[2], Selection1D)
-        self.assertIsNone(expr_stream.bbox)
-        self.assertIsNone(expr_stream.selection_expr)
+        assert isinstance(expr_stream.input_streams[0], SelectionXY)
+        assert isinstance(expr_stream.input_streams[1], Lasso)
+        assert isinstance(expr_stream.input_streams[2], Selection1D)
+        assert expr_stream.bbox is None
+        assert expr_stream.selection_expr is None
 
         fmt = lambda x: list(map(np.str_, x)) if NUMPY_GE_2_0_0 else x
 
@@ -1561,9 +1561,9 @@ class TestExprSelectionStream(ComparisonTestCase):
 
             # Check stream properties
             self.assertEqual(len(expr_stream.input_streams), 3)
-            self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
-            self.assertIsNone(expr_stream.bbox)
-            self.assertIsNone(expr_stream.selection_expr)
+            assert isinstance(expr_stream.input_streams[0], SelectionXY)
+            assert expr_stream.bbox is None
+            assert expr_stream.selection_expr is None
 
             # Simulate interactive update by triggering source stream
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
@@ -1587,9 +1587,9 @@ class TestExprSelectionStream(ComparisonTestCase):
 
             # Check stream properties
             self.assertEqual(len(expr_stream.input_streams), 1)
-            self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
-            self.assertIsNone(expr_stream.bbox)
-            self.assertIsNone(expr_stream.selection_expr)
+            assert isinstance(expr_stream.input_streams[0], SelectionXY)
+            assert expr_stream.bbox is None
+            assert expr_stream.selection_expr is None
 
             # Simulate interactive update by triggering source stream
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))

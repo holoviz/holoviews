@@ -25,7 +25,7 @@ class TestGridPlot(TestBokehPlot):
                           for i in range(2) for j in range(3)})
         plot = bokeh_renderer.get_plot(grid)
         title = plot.handles['title']
-        self.assertIsInstance(title, Div)
+        assert isinstance(title, Div)
         text = ('<span style="color:black;font-family:Arial;'
                 'font-style:bold;font-weight:bold;font-size:16pt">X: 0</span>')
         self.assertEqual(title.text, text)
@@ -37,7 +37,7 @@ class TestGridPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(grid)
         plot.update(1)
         title = plot.handles['title']
-        self.assertIsInstance(title, Div)
+        assert isinstance(title, Div)
         text = ('<span style="color:black;font-family:Arial;'
                 'font-style:bold;font-weight:bold;font-size:16pt">X: 1</span>')
         self.assertEqual(title.text, text)
@@ -108,14 +108,14 @@ class TestGridPlot(TestBokehPlot):
     def test_grid_set_toolbar_location(self):
         grid = GridSpace({0: Curve([]), 1: Points([])}, 'X').opts(toolbar='left')
         plot = bokeh_renderer.get_plot(grid)
-        self.assertIsInstance(plot.state, Column)
-        self.assertIsInstance(plot.state.children[0].toolbar, Toolbar)
+        assert isinstance(plot.state, Column)
+        assert isinstance(plot.state.children[0].toolbar, Toolbar)
 
 
     def test_grid_disable_toolbar(self):
         grid = GridSpace({0: Curve([]), 1: Points([])}, 'X').opts(toolbar=None)
         plot = bokeh_renderer.get_plot(grid)
-        self.assertIsInstance(plot.state, Column)
+        assert isinstance(plot.state, Column)
         self.assertEqual([p for p in plot.state.children if isinstance(p, Toolbar)], [])
 
     def test_grid_dimensioned_stream_title_update(self):
@@ -123,8 +123,8 @@ class TestGridPlot(TestBokehPlot):
         dmap = DynamicMap(lambda test: Curve([]), kdims=['test'], streams=[stream])
         grid = GridMatrix({0: dmap, 1: Curve([])}, 'X')
         plot = bokeh_renderer.get_plot(grid)
-        self.assertIn('test: 0', plot.handles['title'].text)
+        assert 'test: 0' in plot.handles['title'].text
         stream.event(test=1)
-        self.assertIn('test: 1', plot.handles['title'].text)
+        assert 'test: 1' in plot.handles['title'].text
         plot.cleanup()
         self.assertEqual(stream._subscribers, [])

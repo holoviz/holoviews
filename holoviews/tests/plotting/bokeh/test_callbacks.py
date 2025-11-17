@@ -97,7 +97,7 @@ class TestCallbacks(CallbackTestCase):
         PointerXY(source=points)
         plot = bokeh_server_renderer.get_plot(points.clone(link=False))
         bokeh_server_renderer(plot)
-        self.assertTrue(len(plot.callbacks) == 0)
+        assert len(plot.callbacks) == 0
 
     async def test_stream_callback_with_ids(self):
         dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PointerXY()])
@@ -132,11 +132,11 @@ class TestCallbacks(CallbackTestCase):
         stream = PointerX(x=0)
         dmap = DynamicMap(lambda x: Curve([x]), streams=[stream])
         plot = bokeh_server_renderer.get_plot(dmap)
-        self.assertTrue(bool(stream._subscribers))
-        self.assertTrue(bool(Callback._callbacks))
+        assert bool(stream._subscribers)
+        assert bool(Callback._callbacks)
         plot.cleanup()
-        self.assertFalse(bool(stream._subscribers))
-        self.assertFalse(bool(Callback._callbacks))
+        assert not bool(stream._subscribers)
+        assert not bool(Callback._callbacks)
 
     def test_selection1d_syncs_to_selected(self):
         points = Points([(0, 0), (1, 1), (2, 2)]).opts(selected=[0, 2])
@@ -157,7 +157,7 @@ class TestResetCallback(CallbackTestCase):
         plot = bokeh_server_renderer.get_plot(curve)
         await plot.callbacks[0].on_msg({'reset': True})
         self.assertEqual(resets, [True])
-        self.assertIs(stream.source, curve)
+        assert stream.source is curve
 
 
 
@@ -169,7 +169,7 @@ class TestPointerCallbacks(CallbackTestCase):
         plot = bokeh_server_renderer.get_plot(points)
         set_curdoc(plot.document)
         callback = plot.callbacks[0]
-        self.assertIsInstance(callback, PointerXCallback)
+        assert isinstance(callback, PointerXCallback)
         msg = callback._process_msg({'x': 1000})
         self.assertEqual(msg['x'], np.datetime64(dt.datetime(2017, 1, 1)))
         msg = callback._process_msg({'x': 10000000000000})
@@ -181,7 +181,7 @@ class TestPointerCallbacks(CallbackTestCase):
         plot = bokeh_server_renderer.get_plot(points)
         set_curdoc(plot.document)
         callback = plot.callbacks[0]
-        self.assertIsInstance(callback, TapCallback)
+        assert isinstance(callback, TapCallback)
         msg = callback._process_msg({'x': 1000, 'y': 2})
         self.assertEqual(msg, {})
         msg = callback._process_msg({'x': 10000000000000, 'y': 1})
@@ -195,7 +195,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         points = Points([(0, 1)])
         point_draw = PointDraw(source=points)
         plot = bokeh_server_renderer.get_plot(points)
-        self.assertIsInstance(plot.callbacks[0], PointDrawCallback)
+        assert isinstance(plot.callbacks[0], PointDrawCallback)
         callback = plot.callbacks[0]
         data = {'x': [1, 2, 3], 'y': [1, 2, 3]}
         await callback.on_msg({'data': data})
@@ -217,7 +217,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         points = Points([(0, 1, 'A')], vdims=['A'])
         point_draw = PointDraw(source=points)
         plot = bokeh_server_renderer.get_plot(points)
-        self.assertIsInstance(plot.callbacks[0], PointDrawCallback)
+        assert isinstance(plot.callbacks[0], PointDrawCallback)
         callback = plot.callbacks[0]
         data = {'x': [1, 2, 3], 'y': [1, 2, 3], 'A': [None, None, 1]}
         await callback.on_msg({'data': data})
@@ -228,7 +228,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
         poly_draw = PolyDraw(source=polys)
         plot = bokeh_server_renderer.get_plot(polys)
-        self.assertIsInstance(plot.callbacks[0], PolyDrawCallback)
+        assert isinstance(plot.callbacks[0], PolyDrawCallback)
         callback = plot.callbacks[0]
         data = {'x': [[1, 2, 3], [3, 4, 5]], 'y': [[1, 2, 3], [3, 4, 5]]}
         await callback.on_msg({'data': data})
@@ -245,7 +245,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         polys = Polygons([{'x': [0, 2, 4], 'y': [0, 2, 0], 'A': 1}], vdims=['A'])
         poly_draw = PolyDraw(source=polys)
         plot = bokeh_server_renderer.get_plot(polys)
-        self.assertIsInstance(plot.callbacks[0], PolyDrawCallback)
+        assert isinstance(plot.callbacks[0], PolyDrawCallback)
         callback = plot.callbacks[0]
         data = {'x': [[1, 2, 3], [3, 4, 5]], 'y': [[1, 2, 3], [3, 4, 5]], 'A': [1, 2]}
         await callback.on_msg({'data': data})
@@ -257,7 +257,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         polys = Polygons([{'x': [0, 2, 4], 'y': [0, 2, 0], 'A': 1}], vdims=['A']).options(color_index=None)
         poly_draw = PolyDraw(source=polys)
         plot = bokeh_server_renderer.get_plot(polys)
-        self.assertIsInstance(plot.callbacks[0], PolyDrawCallback)
+        assert isinstance(plot.callbacks[0], PolyDrawCallback)
         callback = plot.callbacks[0]
         data = {'x': [[1, 2, 3], [3, 4, 5]], 'y': [[1, 2, 3], [3, 4, 5]], 'A': [1, 2]}
         await callback.on_msg({'data': data})
@@ -269,7 +269,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         boxes = Rectangles([(-0.5, -0.5, 0.5, 0.5)])
         box_edit = BoxEdit(source=boxes)
         plot = bokeh_server_renderer.get_plot(boxes)
-        self.assertIsInstance(plot.callbacks[0], BoxEditCallback)
+        assert isinstance(plot.callbacks[0], BoxEditCallback)
         callback = plot.callbacks[0]
         source = plot.handles['cds']
         self.assertEqual(source.data['left'], [-0.5])
@@ -285,7 +285,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         boxes = Polygons([Box(0, 0, 1)])
         box_edit = BoxEdit(source=boxes)
         plot = bokeh_server_renderer.get_plot(boxes)
-        self.assertIsInstance(plot.callbacks[0], BoxEditCallback)
+        assert isinstance(plot.callbacks[0], BoxEditCallback)
         callback = plot.callbacks[0]
         source = plot.handles['cds']
         self.assertEqual(source.data['left'], [-0.5])
@@ -308,7 +308,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
         poly_edit = PolyEdit(source=polys)
         plot = bokeh_server_renderer.get_plot(polys)
-        self.assertIsInstance(plot.callbacks[0], PolyEditCallback)
+        assert isinstance(plot.callbacks[0], PolyEditCallback)
         callback = plot.callbacks[0]
         data = {'x': [[1, 2, 3], [3, 4, 5]], 'y': [[1, 2, 3], [3, 4, 5]]}
         await callback.on_msg({'data': data})
@@ -330,11 +330,11 @@ class TestEditToolCallbacks(CallbackTestCase):
         edit_tools = [t for t in plot.state.tools if isinstance(t, PolyEditTool)]
         self.assertEqual(len(edit_tools), 1)
         plot1, plot2 = plot.subplots.values()
-        self.assertIsInstance(plot1.callbacks[0], PolyEditCallback)
+        assert isinstance(plot1.callbacks[0], PolyEditCallback)
         callback = plot1.callbacks[0]
         data = {'x': [[1, 2, 3], [3, 4, 5]], 'y': [[1, 2, 3], [3, 4, 5]]}
         await callback.on_msg({'data': data})
-        self.assertIsInstance(plot2.callbacks[0], PolyEditCallback)
+        assert isinstance(plot2.callbacks[0], PolyEditCallback)
         callback = plot2.callbacks[0]
         data = {'x': [[1, 2, 3], [3, 4, 5]], 'y': [[1, 2, 3], [3, 4, 5]]}
         await callback.on_msg({'data': data})
@@ -347,11 +347,11 @@ class TestEditToolCallbacks(CallbackTestCase):
         table = Table(points.data, ['x', 'y'])
         layout = (points + table).opts(shared_datasource=True, clone=False)
         PointDraw(source=points)
-        self.assertIs(points.data, table.data)
+        assert points.data is table.data
         plot = bokeh_renderer.get_plot(layout)
         point_plot = plot.subplots[(0, 0)].subplots['main']
         table_plot = plot.subplots[(0, 1)].subplots['main']
-        self.assertIs(point_plot.handles['source'], table_plot.handles['source'])
+        assert point_plot.handles['source'] is table_plot.handles['source']
 
 
 class TestServerCallbacks(CallbackTestCase):

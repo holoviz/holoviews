@@ -60,7 +60,7 @@ class KDEOperationTests(ComparisonTestCase):
         bivariate = Bivariate(np.random.rand(100, 2))
         kde = bivariate_kde(bivariate, n_samples=100, x_range=(0, 1),
                             y_range=(0, 1), contours=True, levels=10)
-        self.assertIsInstance(kde, Contours)
+        assert isinstance(kde, Contours)
         self.assertEqual(len(kde.data), 9)
 
     def test_bivariate_kde_contours_filled(self):
@@ -68,7 +68,7 @@ class KDEOperationTests(ComparisonTestCase):
         bivariate = Bivariate(np.random.rand(100, 2))
         kde = bivariate_kde(bivariate, n_samples=100, x_range=(0, 1),
                             y_range=(0, 1), contours=True, filled=True, levels=10)
-        self.assertIsInstance(kde, Polygons)
+        assert isinstance(kde, Polygons)
         self.assertEqual(len(kde.data), 10)
 
     def test_bivariate_kde_nans(self):

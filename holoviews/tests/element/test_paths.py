@@ -12,7 +12,7 @@ class PathTests(ComparisonTestCase):
 
     def test_multi_path_list_constructor(self):
         path = Path([[(0, 1), (1, 2)], [(2, 3), (3, 4)]])
-        self.assertTrue(path.interface.multi)
+        assert path.interface.multi
         self.assertEqual(path.dimension_values(0), np.array([
             0, 1, np.nan, 2, 3]))
         self.assertEqual(path.dimension_values(1), np.array([
@@ -21,7 +21,7 @@ class PathTests(ComparisonTestCase):
     def test_multi_path_cast_path(self):
         path = Path([[(0, 1), (1, 2)], [(2, 3), (3, 4)]])
         path2 = Path(path)
-        self.assertTrue(path2.interface.multi)
+        assert path2.interface.multi
         self.assertEqual(path2.dimension_values(0), np.array([
             0, 1, np.nan, 2, 3]))
         self.assertEqual(path2.dimension_values(1), np.array([
@@ -29,7 +29,7 @@ class PathTests(ComparisonTestCase):
 
     def test_multi_path_tuple(self):
         path = Path(([0, 1], [[1, 3], [2, 4]]))
-        self.assertTrue(path.interface.multi)
+        assert path.interface.multi
         self.assertEqual(path.dimension_values(0), np.array([
             0, 1, np.nan, 0, 1]))
         self.assertEqual(path.dimension_values(1), np.array([
@@ -37,7 +37,7 @@ class PathTests(ComparisonTestCase):
 
     def test_multi_path_unpack_single_paths(self):
         path = Path([Path([(0, 1), (1, 2)]), Path([(2, 3), (3, 4)])])
-        self.assertTrue(path.interface.multi)
+        assert path.interface.multi
         self.assertEqual(path.dimension_values(0), np.array([
             0, 1, np.nan, 2, 3]))
         self.assertEqual(path.dimension_values(1), np.array([
@@ -46,7 +46,7 @@ class PathTests(ComparisonTestCase):
     def test_multi_path_unpack_multi_paths(self):
         path = Path([Path([[(0, 1), (1, 2)]]),
                      Path([[(2, 3), (3, 4)], [(4, 5), (5, 6)]])])
-        self.assertTrue(path.interface.multi)
+        assert path.interface.multi
         self.assertEqual(path.dimension_values(0), np.array([
             0, 1, np.nan, 2, 3, np.nan, 4, 5]))
         self.assertEqual(path.dimension_values(1), np.array([
@@ -107,7 +107,7 @@ class PolygonsTests(ComparisonTestCase):
             {'x': [4, 6, 6], 'y': [0, 2, 1], 'value': 1}], vdims='value')
 
     def test_single_poly_holes_match(self):
-        self.assertTrue(self.single_poly.interface.has_holes(self.single_poly))
+        assert self.single_poly.interface.has_holes(self.single_poly)
         paths = self.single_poly.split(datatype='array')
         holes = self.single_poly.interface.holes(self.single_poly)
         self.assertEqual(len(paths), len(holes))
@@ -116,7 +116,7 @@ class PolygonsTests(ComparisonTestCase):
         self.assertEqual(len(holes[0][0]), 2)
 
     def test_multi_poly_holes_match(self):
-        self.assertTrue(self.multi_poly.interface.has_holes(self.multi_poly))
+        assert self.multi_poly.interface.has_holes(self.multi_poly)
         paths = self.multi_poly.split(datatype='array')
         holes = self.multi_poly.interface.holes(self.multi_poly)
         self.assertEqual(len(paths), len(holes))
@@ -127,11 +127,11 @@ class PolygonsTests(ComparisonTestCase):
 
     def test_multi_poly_empty_holes(self):
         poly = Polygons([])
-        self.assertFalse(poly.interface.has_holes(poly))
+        assert not poly.interface.has_holes(poly)
         self.assertEqual(poly.interface.holes(poly), [])
 
     def test_multi_poly_no_holes_match(self):
-        self.assertFalse(self.multi_poly_no_hole.interface.has_holes(self.multi_poly_no_hole))
+        assert not self.multi_poly_no_hole.interface.has_holes(self.multi_poly_no_hole)
         paths = self.multi_poly_no_hole.split(datatype='array')
         holes = self.multi_poly_no_hole.interface.holes(self.multi_poly_no_hole)
         self.assertEqual(len(paths), len(holes))
@@ -141,7 +141,7 @@ class PolygonsTests(ComparisonTestCase):
         self.assertEqual(len(holes[0][1]), 0)
 
     def test_distinct_multi_poly_holes_match(self):
-        self.assertTrue(self.distinct_polys.interface.has_holes(self.distinct_polys))
+        assert self.distinct_polys.interface.has_holes(self.distinct_polys)
         paths = self.distinct_polys.split(datatype='array')
         holes = self.distinct_polys.interface.holes(self.distinct_polys)
         self.assertEqual(len(paths), len(holes))

@@ -29,7 +29,7 @@ class TestOperationBroadcast(ComparisonTestCase):
         curve = Curve([1, 2, 3])
         applied = Operation(curve, dynamic=True, streams=[Stream])
         self.assertEqual(len(applied.streams), 1)
-        self.assertIsInstance(applied.streams[0], Stream)
+        assert isinstance(applied.streams[0], Stream)
         self.assertEqual(applied[()], curve)
 
     def test_element_not_dynamic_despite_streams(self):
@@ -42,7 +42,7 @@ class TestOperationBroadcast(ComparisonTestCase):
         inst = ParamClass(label='Test')
         applied = ExampleOperation(curve, label=inst.param.label)
         self.assertEqual(len(applied.streams), 1)
-        self.assertIsInstance(applied.streams[0], Params)
+        assert isinstance(applied.streams[0], Params)
         self.assertEqual(applied.streams[0].parameters, [inst.param.label])
         self.assertEqual(applied[()], curve.relabel('Test'))
 
@@ -51,7 +51,7 @@ class TestOperationBroadcast(ComparisonTestCase):
         inst = ParamClass(label='Test')
         applied = ExampleOperation(curve, label=inst.dynamic_label)
         self.assertEqual(len(applied.streams), 1)
-        self.assertIsInstance(applied.streams[0], Params)
+        assert isinstance(applied.streams[0], Params)
         self.assertEqual(applied.streams[0].parameters, [inst.param.label])
         self.assertEqual(applied[()], curve.relabel('Test!'))
         inst.label = 'New label'

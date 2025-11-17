@@ -51,7 +51,7 @@ class RoundTripTests(ComparisonTestCase):
         points = Points([{'x': 0, 'y': 1, 'z': 0},
                          {'x': 1, 'y': 0, 'z': 1}], ['x', 'y'],
                         'z', datatype=[self.datatype])
-        self.assertIsInstance(points.data.geometry.dtype, PointDtype)
+        assert isinstance(points.data.geometry.dtype, PointDtype)
         roundtrip = points.clone(datatype=['multitabular'])
         self.assertEqual(roundtrip.interface.datatype, 'multitabular')
         expected = Points([{'x': 0, 'y': 1, 'z': 0},
@@ -65,7 +65,7 @@ class RoundTripTests(ComparisonTestCase):
         points = Points([{'x': xs, 'y': ys, 'z': 0},
                          {'x': xs[::-1], 'y': ys[::-1], 'z': 1}],
                         ['x', 'y'], 'z', datatype=[self.datatype])
-        self.assertIsInstance(points.data.geometry.dtype, MultiPointDtype)
+        assert isinstance(points.data.geometry.dtype, MultiPointDtype)
         roundtrip = points.clone(datatype=['multitabular'])
         self.assertEqual(roundtrip.interface.datatype, 'multitabular')
         expected = Points([{'x': xs, 'y': ys, 'z': 0},
@@ -79,7 +79,7 @@ class RoundTripTests(ComparisonTestCase):
         path = Path([{'x': xs, 'y': ys, 'z': 1},
                      {'x': xs[::-1], 'y': ys[::-1], 'z': 2}],
                     ['x', 'y'], 'z', datatype=[self.datatype])
-        self.assertIsInstance(path.data.geometry.dtype, LineDtype)
+        assert isinstance(path.data.geometry.dtype, LineDtype)
         roundtrip = path.clone(datatype=['multitabular'])
         self.assertEqual(roundtrip.interface.datatype, 'multitabular')
         expected = Path([{'x': xs, 'y': ys, 'z': 1},
@@ -93,7 +93,7 @@ class RoundTripTests(ComparisonTestCase):
         path = Path([{'x': xs, 'y': ys, 'z': 0},
                      {'x': xs[::-1], 'y': ys[::-1], 'z': 1}],
                     ['x', 'y'], 'z', datatype=[self.datatype])
-        self.assertIsInstance(path.data.geometry.dtype, MultiLineDtype)
+        assert isinstance(path.data.geometry.dtype, MultiLineDtype)
         roundtrip = path.clone(datatype=['multitabular'])
         self.assertEqual(roundtrip.interface.datatype, 'multitabular')
         expected = Path([{'x': xs, 'y': ys, 'z': 0},
@@ -107,7 +107,7 @@ class RoundTripTests(ComparisonTestCase):
         poly = Polygons([{'x': xs, 'y': ys, 'z': 0},
                          {'x': xs[::-1], 'y': ys[::-1], 'z': 1}],
                         ['x', 'y'], 'z', datatype=[self.datatype])
-        self.assertIsInstance(poly.data.geometry.dtype, PolygonDtype)
+        assert isinstance(poly.data.geometry.dtype, PolygonDtype)
         roundtrip = poly.clone(datatype=['multitabular'])
         self.assertEqual(roundtrip.interface.datatype, 'multitabular')
         expected = Polygons([{'x': [*xs, 1], 'y': [*ys, 2], 'z': 0},
@@ -125,7 +125,7 @@ class RoundTripTests(ComparisonTestCase):
         poly = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'z': 1},
                          {'x': xs[::-1], 'y': ys[::-1], 'z': 2}],
                         ['x', 'y'], 'z', datatype=[self.datatype])
-        self.assertIsInstance(poly.data.geometry.dtype, MultiPolygonDtype)
+        assert isinstance(poly.data.geometry.dtype, MultiPolygonDtype)
         roundtrip = poly.clone(datatype=['multitabular'])
         self.assertEqual(roundtrip.interface.datatype, 'multitabular')
         expected = Polygons([{'x': [1, 2, 3, 1, np.nan, 6, 3, 7, 6],
@@ -156,14 +156,14 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
     def test_array_points_iloc_index_rows_index_cols(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
         mds = Dataset(arrays, kdims=['x', 'y'], datatype=[self.datatype])
-        self.assertIs(mds.interface, self.interface)
+        assert mds.interface is self.interface
         with self.assertRaises(DataError):
             mds.iloc[3, 0]
 
     def test_point_constructor(self):
         points = Points([{'x': 0, 'y': 1}, {'x': 1, 'y': 0}], ['x', 'y'],
                         datatype=[self.datatype])
-        self.assertIsInstance(points.data.geometry.dtype, PointDtype)
+        assert isinstance(points.data.geometry.dtype, PointDtype)
         self.assertEqual(points.data.iloc[0, 0].flat_values, np.array([0, 1]))
         self.assertEqual(points.data.iloc[1, 0].flat_values, np.array([1, 0]))
 
@@ -172,7 +172,7 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
         ys = [2, 0, 7, 4]
         points = Points([{'x': xs, 'y': ys}, {'x': xs[::-1], 'y': ys[::-1]}], ['x', 'y'],
                         datatype=[self.datatype])
-        self.assertIsInstance(points.data.geometry.dtype, MultiPointDtype)
+        assert isinstance(points.data.geometry.dtype, MultiPointDtype)
         self.assertEqual(points.data.iloc[0, 0].buffer_values,
                          np.array([1, 2, 2, 0, 3, 7, 2, 4]))
         self.assertEqual(points.data.iloc[1, 0].buffer_values,
@@ -183,7 +183,7 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
         ys = [2, 0, 7]
         path = Path([{'x': xs, 'y': ys}, {'x': xs[::-1], 'y': ys[::-1]}],
                     ['x', 'y'], datatype=[self.datatype])
-        self.assertIsInstance(path.data.geometry.dtype, LineDtype)
+        assert isinstance(path.data.geometry.dtype, LineDtype)
         self.assertEqual(path.data.iloc[0, 0].buffer_values,
                          np.array([1, 2, 2, 0, 3, 7]))
         self.assertEqual(path.data.iloc[1, 0].buffer_values,
@@ -194,7 +194,7 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
         ys = [2, 0, 7, np.nan, 7, 5, 2]
         path = Path([{'x': xs, 'y': ys}, {'x': xs[::-1], 'y': ys[::-1]}],
                     ['x', 'y'], datatype=[self.datatype])
-        self.assertIsInstance(path.data.geometry.dtype, MultiLineDtype)
+        assert isinstance(path.data.geometry.dtype, MultiLineDtype)
         self.assertEqual(path.data.iloc[0, 0].buffer_values,
                          np.array([1, 2, 2, 0, 3, 7, 6, 7, 7, 5, 3, 2]))
         self.assertEqual(path.data.iloc[1, 0].buffer_values,
@@ -208,7 +208,7 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
         ]
         path = Polygons([{'x': xs, 'y': ys, 'holes': holes}, {'x': xs[::-1], 'y': ys[::-1]}],
                         ['x', 'y'], datatype=[self.datatype])
-        self.assertIsInstance(path.data.geometry.dtype, PolygonDtype)
+        assert isinstance(path.data.geometry.dtype, PolygonDtype)
         self.assertEqual(path.data.iloc[0, 0].buffer_values,
                          np.array([1., 2., 2., 0., 3., 7., 1., 2., 1.5, 2., 2., 3.,
                                    1.6, 1.6, 1.5, 2., 2.1, 4.5, 2.5, 5., 2.3, 3.5, 2.1, 4.5]))
@@ -225,7 +225,7 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
         path = Polygons([{'x': xs, 'y': ys, 'holes': holes},
                          {'x': xs[::-1], 'y': ys[::-1]}],
                         ['x', 'y'], datatype=[self.datatype])
-        self.assertIsInstance(path.data.geometry.dtype, MultiPolygonDtype)
+        assert isinstance(path.data.geometry.dtype, MultiPolygonDtype)
         self.assertEqual(path.data.iloc[0, 0].buffer_values,
                          np.array([1., 2., 2., 0., 3., 7., 1., 2., 1.5, 2., 2., 3., 1.6, 1.6,
                                    1.5, 2., 2.1, 4.5, 2.5, 5., 2.3, 3.5, 2.1, 4.5, 6., 7., 3.,
@@ -248,7 +248,7 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
         ]) # Rectangular hole (CW order)
 
         path = Polygons(polygons)
-        self.assertIsInstance(path.data.geometry.dtype, MultiPolygonDtype)
+        assert isinstance(path.data.geometry.dtype, MultiPolygonDtype)
 
 
 class DaskSpatialPandasTest(GeomTests, RoundTripTests):

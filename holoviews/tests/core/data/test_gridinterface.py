@@ -399,7 +399,7 @@ class DaskGridInterfaceTests(GridInterfaceTests):
         import dask.array as da
         arr = da.from_array(np.arange(1, 12), 3)
         ds = Dataset({'x': range(11), 'y': arr}, 'x', 'y')
-        self.assertIsInstance(ds.select(x=(0, 5)).data['y'], da.Array)
+        assert isinstance(ds.select(x=(0, 5)).data['y'], da.Array)
 
     def test_dataset_add_dimensions_values_hm(self):
         arr = da.from_array(np.arange(1, 12), 3)

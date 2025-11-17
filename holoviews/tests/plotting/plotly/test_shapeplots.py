@@ -252,8 +252,8 @@ class TestMapboxBounds(TestMapboxShape):
         self.assertEqual(state['data'][3]["subplot"], PLOTLY_MAP + "2")
         self.assertEqual(state['data'][5]["subplot"], PLOTLY_MAP + "3")
         self.assertEqual(state['data'][7]["subplot"], PLOTLY_MAP + "4")
-        self.assertNotIn("xaxis", state['layout'])
-        self.assertNotIn("yaxis", state['layout'])
+        assert "xaxis" not in state['layout']
+        assert "yaxis" not in state['layout']
 
 
 class TestBox(TestPathShape):

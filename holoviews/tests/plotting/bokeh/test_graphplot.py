@@ -75,50 +75,50 @@ class TestBokehGraphPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(self.graph)
         renderer = plot.handles['glyph_renderer']
         hover = plot.handles['hover']
-        self.assertIsInstance(renderer.inspection_policy, NodesAndLinkedEdges)
+        assert isinstance(renderer.inspection_policy, NodesAndLinkedEdges)
         self.assertEqual(hover.tooltips, [('index', '@{index_hover}')])
-        self.assertIn(renderer, hover.renderers)
+        assert renderer in hover.renderers
 
     def test_graph_inspection_policy_edges(self):
         plot = bokeh_renderer.get_plot(self.graph.opts(inspection_policy='edges'))
         renderer = plot.handles['glyph_renderer']
         hover = plot.handles['hover']
-        self.assertIsInstance(renderer.inspection_policy, EdgesAndLinkedNodes)
+        assert isinstance(renderer.inspection_policy, EdgesAndLinkedNodes)
         self.assertEqual(hover.tooltips, [('start', '@{start_values}'), ('end', '@{end_values}')])
-        self.assertIn(renderer, hover.renderers)
+        assert renderer in hover.renderers
 
     def test_graph_inspection_policy_edges_non_default_names(self):
         graph = self.graph.redim(start='source', end='target')
         plot = bokeh_renderer.get_plot(graph.opts(inspection_policy='edges'))
         renderer = plot.handles['glyph_renderer']
         hover = plot.handles['hover']
-        self.assertIsInstance(renderer.inspection_policy, EdgesAndLinkedNodes)
+        assert isinstance(renderer.inspection_policy, EdgesAndLinkedNodes)
         self.assertEqual(hover.tooltips, [('source', '@{source}'), ('target', '@{target}')])
-        self.assertIn(renderer, hover.renderers)
+        assert renderer in hover.renderers
 
     def test_graph_inspection_policy_none(self):
         plot = bokeh_renderer.get_plot(self.graph.opts(inspection_policy=None))
         renderer = plot.handles['glyph_renderer']
-        self.assertIsInstance(renderer.inspection_policy, NodesOnly)
+        assert isinstance(renderer.inspection_policy, NodesOnly)
 
     def test_graph_selection_policy_nodes(self):
         plot = bokeh_renderer.get_plot(self.graph)
         renderer = plot.handles['glyph_renderer']
         hover = plot.handles['hover']
-        self.assertIsInstance(renderer.selection_policy, NodesAndLinkedEdges)
-        self.assertIn(renderer, hover.renderers)
+        assert isinstance(renderer.selection_policy, NodesAndLinkedEdges)
+        assert renderer in hover.renderers
 
     def test_graph_selection_policy_edges(self):
         plot = bokeh_renderer.get_plot(self.graph.opts(selection_policy='edges'))
         renderer = plot.handles['glyph_renderer']
         hover = plot.handles['hover']
-        self.assertIsInstance(renderer.selection_policy, EdgesAndLinkedNodes)
-        self.assertIn(renderer, hover.renderers)
+        assert isinstance(renderer.selection_policy, EdgesAndLinkedNodes)
+        assert renderer in hover.renderers
 
     def test_graph_selection_policy_none(self):
         plot = bokeh_renderer.get_plot(self.graph.opts(selection_policy=None))
         renderer = plot.handles['glyph_renderer']
-        self.assertIsInstance(renderer.selection_policy, NodesOnly)
+        assert isinstance(renderer.selection_policy, NodesOnly)
 
     def test_graph_nodes_categorical_colormapped(self):
         g = self.graph2.opts(color_index='Label', cmap='Set1')
@@ -126,7 +126,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         cmapper = plot.handles['color_mapper']
         node_source = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
-        self.assertIsInstance(cmapper, CategoricalColorMapper)
+        assert isinstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['Output', 'Input'])
         self.assertEqual(node_source.data['Label'], self.node_info['Label'])
         self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'Label', 'transform': cmapper})
@@ -137,7 +137,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         cmapper = plot.handles['color_mapper']
         node_source = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
-        self.assertIsInstance(cmapper, LinearColorMapper)
+        assert isinstance(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, self.weights.min())
         self.assertEqual(cmapper.high, self.weights.max())
         self.assertEqual(node_source.data['Weight'], self.node_info2['Weight'])
@@ -149,7 +149,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         cmapper = plot.handles['edge_colormapper']
         edge_source = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
-        self.assertIsInstance(cmapper, CategoricalColorMapper)
+        assert isinstance(cmapper, CategoricalColorMapper)
         factors = ['0', '1', '2', '3', '4', '5', '6', '7']
         self.assertEqual(cmapper.factors, factors)
         self.assertEqual(edge_source.data['start_str__'], factors)
@@ -161,7 +161,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         cmapper = plot.handles['edge_colormapper']
         edge_source = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
-        self.assertIsInstance(cmapper, LinearColorMapper)
+        assert isinstance(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, self.weights.min())
         self.assertEqual(cmapper.high, self.weights.max())
         self.assertEqual(edge_source.data['Weight'], self.node_info2['Weight'])
@@ -331,7 +331,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         node_source = plot.handles['scatter_1_source']
         edge_source = plot.handles['patches_1_source']
         layout_source = plot.handles['layout_source']
-        self.assertIsInstance(plot.handles['patches_1_glyph'], Patches)
+        assert isinstance(plot.handles['patches_1_glyph'], Patches)
         self.assertEqual(node_source.data['index'], np.arange(4))
         self.assertEqual(edge_source.data['start'], np.arange(2))
         self.assertEqual(edge_source.data['end'], np.arange(1, 3))
@@ -346,7 +346,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         cmapper = plot.handles['edge_colormapper']
         edge_source = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
-        self.assertIsInstance(cmapper, CategoricalColorMapper)
+        assert isinstance(cmapper, CategoricalColorMapper)
         factors = ['0', '1', '2', '3']
         self.assertEqual(cmapper.factors, factors)
         self.assertEqual(edge_source.data['node1_str__'], ['0', '1'])
@@ -360,7 +360,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         cmapper = plot.handles['edge_colormapper']
         edge_source = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
-        self.assertIsInstance(cmapper, LinearColorMapper)
+        assert isinstance(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 1)
         self.assertEqual(edge_source.data['weight'], np.array([0, 1]))
@@ -534,7 +534,7 @@ class TestBokehChordPlot(TestBokehPlot):
         renderers = plot.state.renderers
         graph_renderer = plot.handles['glyph_renderer']
         arc_renderer = plot.handles['multi_line_2_glyph_renderer']
-        self.assertTrue(renderers.index(arc_renderer)<renderers.index(graph_renderer))
+        assert renderers.index(arc_renderer) < renderers.index(graph_renderer)
 
     def test_chord_label_draw_order(self):
         g = self.chord.opts(labels='Label')
@@ -542,7 +542,7 @@ class TestBokehChordPlot(TestBokehPlot):
         renderers = plot.state.renderers
         graph_renderer = plot.handles['glyph_renderer']
         label_renderer = plot.handles['text_1_glyph_renderer']
-        self.assertTrue(renderers.index(graph_renderer)<renderers.index(label_renderer))
+        assert renderers.index(graph_renderer) < renderers.index(label_renderer)
 
     def test_chord_nodes_label_text(self):
         g = self.chord.opts(label_index='Label')
@@ -565,7 +565,7 @@ class TestBokehChordPlot(TestBokehPlot):
         source = plot.handles['scatter_1_source']
         arc_source = plot.handles['multi_line_2_source']
         glyph = plot.handles['scatter_1_glyph']
-        self.assertIsInstance(cmapper, CategoricalColorMapper)
+        assert isinstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
         self.assertEqual(cmapper.palette, ['#FFFFFF', '#888888', '#000000'])
         self.assertEqual(source.data['Label'], np.array(['A', 'B', 'C']))
@@ -582,7 +582,7 @@ class TestBokehChordPlot(TestBokehPlot):
         arc_source = plot.handles['multi_line_2_source']
         glyph = plot.handles['scatter_1_glyph']
         arc_glyph = plot.handles['multi_line_2_glyph']
-        self.assertIsInstance(cmapper, CategoricalColorMapper)
+        assert isinstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
         self.assertEqual(cmapper.palette, ['#FFFFFF', '#888888', '#000000'])
         self.assertEqual(source.data['Label'], np.array(['A', 'B', 'C']))
@@ -598,7 +598,7 @@ class TestBokehChordPlot(TestBokehPlot):
         cmapper = plot.handles['edge_colormapper']
         edge_source = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
-        self.assertIsInstance(cmapper, CategoricalColorMapper)
+        assert isinstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.palette, ['#FFFFFF', '#000000', '#FFFFFF'])
         self.assertEqual(cmapper.factors, ['0', '1', '2'])
         self.assertEqual(edge_source.data['start_str__'], ['0', '0', '1'])
@@ -612,7 +612,7 @@ class TestBokehChordPlot(TestBokehPlot):
         cmapper = plot.handles['edge_color_color_mapper']
         edge_source = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
-        self.assertIsInstance(cmapper, CategoricalColorMapper)
+        assert isinstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.palette, ['#FFFFFF', '#000000', '#FFFFFF'])
         self.assertEqual(cmapper.factors, ['0', '1', '2'])
         self.assertEqual(edge_source.data['edge_color'], np.array(['0', '0', '1']))

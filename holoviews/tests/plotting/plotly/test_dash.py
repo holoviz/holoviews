@@ -46,10 +46,10 @@ class TestHoloViewsDash(TestPlotlyPlot):
         components = to_dash(self.app, [scatter])
 
         # Check returned components
-        self.assertIsInstance(components, DashComponents)
+        assert isinstance(components, DashComponents)
         self.assertEqual(len(components.graphs), 1)
         self.assertEqual(len(components.kdims), 0)
-        self.assertIsInstance(components.store, Store)
+        assert isinstance(components.store, Store)
         self.assertEqual(len(components.resets), 0)
 
         # Check initial figure
@@ -70,10 +70,10 @@ class TestHoloViewsDash(TestPlotlyPlot):
         components = to_dash(self.app, [scatter, dmap], reset_button=True)
 
         # Check returned components
-        self.assertIsInstance(components, DashComponents)
+        assert isinstance(components, DashComponents)
         self.assertEqual(len(components.graphs), 2)
         self.assertEqual(len(components.kdims), 0)
-        self.assertIsInstance(components.store, Store)
+        assert isinstance(components.store, Store)
         self.assertEqual(len(components.resets), 1)
 
         # Get arguments passed to @app.callback decorator
@@ -211,10 +211,10 @@ class TestHoloViewsDash(TestPlotlyPlot):
         components = to_dash(self.app, [scatter, dmap], reset_button=True)
 
         # Check returned components
-        self.assertIsInstance(components, DashComponents)
+        assert isinstance(components, DashComponents)
         self.assertEqual(len(components.graphs), 2)
         self.assertEqual(len(components.kdims), 0)
-        self.assertIsInstance(components.store, Store)
+        assert isinstance(components.store, Store)
         self.assertEqual(len(components.resets), 1)
 
         # Get arguments passed to @app.callback decorator
@@ -301,10 +301,10 @@ class TestHoloViewsDash(TestPlotlyPlot):
         components = to_dash(self.app, [scatter, dmap], reset_button=True)
 
         # Check returned components
-        self.assertIsInstance(components, DashComponents)
+        assert isinstance(components, DashComponents)
         self.assertEqual(len(components.graphs), 2)
         self.assertEqual(len(components.kdims), 0)
-        self.assertIsInstance(components.store, Store)
+        assert isinstance(components.store, Store)
         self.assertEqual(len(components.resets), 1)
 
         # Get arguments passed to @app.callback decorator
@@ -433,10 +433,10 @@ class TestHoloViewsDash(TestPlotlyPlot):
         components = to_dash(self.app, [dmap])
 
         # Check returned components
-        self.assertIsInstance(components, DashComponents)
+        assert isinstance(components, DashComponents)
         self.assertEqual(len(components.graphs), 1)
         self.assertEqual(len(components.kdims), 1)
-        self.assertIsInstance(components.store, Store)
+        assert isinstance(components.store, Store)
         self.assertEqual(len(components.resets), 0)
 
         # Get arguments passed to @app.callback decorator

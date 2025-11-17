@@ -87,7 +87,7 @@ class TestLinkSelections(ComparisonTestCase):
         current_obj = linked[()]
 
         # Check initial state of linked dynamic map
-        self.assertIsInstance(current_obj, hv.Overlay)
+        assert isinstance(current_obj, hv.Overlay)
         unselected, selected, region, _region2 = current_obj.values()
 
         # Check initial base layer
@@ -101,7 +101,7 @@ class TestLinkSelections(ComparisonTestCase):
             lnk_sel._selection_expr_streams, hv.Points
         ).input_streams[0].input_stream.input_streams[0]
 
-        self.assertIsInstance(selectionxy, hv.streams.SelectionXY)
+        assert isinstance(selectionxy, hv.streams.SelectionXY)
         selectionxy.event(bounds=(0, 1, 5, 5))
         unselected, selected, region, _region2 = linked[()].values()
 
@@ -178,17 +178,17 @@ class TestLinkSelections(ComparisonTestCase):
 
     def test_select_expr_show_regions(self):
         lnk_sel = link_selections.instance()
-        self.assertTrue(lnk_sel.show_regions)
+        assert lnk_sel.show_regions
         se = (
             (hv.dim('x') >= 0) & (hv.dim('x') <= 1) &
             (hv.dim('y') >= 0) & (hv.dim('y') <= 1)
         )
         lnk_sel.selection_expr = se
-        self.assertFalse(lnk_sel.show_regions)
+        assert not lnk_sel.show_regions
         lnk_sel.selection_expr = None
-        self.assertFalse(lnk_sel.show_regions)
+        assert not lnk_sel.show_regions
         lnk_sel._cross_filter_stream.selection_expr = se
-        self.assertTrue(lnk_sel.show_regions)
+        assert lnk_sel.show_regions
 
     def test_overlay_points_errorbars(self, dynamic=False):
         points = Points(self.data)
@@ -264,7 +264,7 @@ class TestLinkSelections(ComparisonTestCase):
             lnk_sel._selection_expr_streams, hv.Points
         ).input_streams[0].input_stream.input_streams[0]
 
-        self.assertIsInstance(selectionxy, SelectionXY)
+        assert isinstance(selectionxy, SelectionXY)
         selectionxy.event(bounds=(0, 1, 5, 5))
         current_obj = linked[()]
 
@@ -329,7 +329,7 @@ class TestLinkSelections(ComparisonTestCase):
             lnk_sel._selection_expr_streams, hv.Points
         ).input_streams[0].input_stream.input_streams[0]
 
-        self.assertIsInstance(selectionxy, SelectionXY)
+        assert isinstance(selectionxy, SelectionXY)
         selectionxy.event(bounds=(0, 1, 5, 5))
         current_obj = linked[()]
 
@@ -368,7 +368,7 @@ class TestLinkSelections(ComparisonTestCase):
         selectionxy = TestLinkSelections.get_value_with_key_type(
             lnk_sel._selection_expr_streams, hv.Points
         ).input_streams[0].input_stream.input_streams[0]
-        self.assertIsInstance(selectionxy, hv.streams.SelectionXY)
+        assert isinstance(selectionxy, hv.streams.SelectionXY)
         selectionxy.event(bounds=(0, 0, 4, 2))
         current_obj = linked[()]
 
@@ -455,7 +455,7 @@ class TestLinkSelections(ComparisonTestCase):
         points_selectionxy = TestLinkSelections.get_value_with_key_type(
             lnk_sel._selection_expr_streams, hv.Points
         ).input_streams[0].input_stream.input_streams[0]
-        self.assertIsInstance(points_selectionxy, SelectionXY)
+        assert isinstance(points_selectionxy, SelectionXY)
         points_selectionxy.event(bounds=(1, 1, 4, 4))
 
         # Get current object
@@ -486,7 +486,7 @@ class TestLinkSelections(ComparisonTestCase):
             lnk_sel._selection_expr_streams, hv.Histogram
         ).input_streams[0].input_stream.input_streams[0]
 
-        self.assertIsInstance(hist_selectionxy, SelectionXY)
+        assert isinstance(hist_selectionxy, SelectionXY)
         hist_selectionxy.event(bounds=(0, 0, 2.5, 2))
 
         _points_unsel, points_sel, points_region, _points_region_poly = current_obj[0][()].values()
@@ -525,7 +525,7 @@ class TestLinkSelections(ComparisonTestCase):
             lnk_sel._selection_expr_streams, hv.Points
         ).input_streams[0].input_stream.input_streams[0]
 
-        self.assertIsInstance(points_selectionxy, SelectionXY)
+        assert isinstance(points_selectionxy, SelectionXY)
         points_selectionxy.event(bounds=(0, 0, 4, 2.5))
 
         # Check selection overlay points contains only second point
@@ -554,7 +554,7 @@ class TestLinkSelections(ComparisonTestCase):
             lnk_sel._selection_expr_streams, hv.Histogram
         ).input_streams[0].input_stream.input_streams[0]
 
-        self.assertIsInstance(hist_selectionxy, SelectionXY)
+        assert isinstance(hist_selectionxy, SelectionXY)
         hist_selectionxy.event(bounds=(1.5, 0, 3.5, 2))
 
         # Check points selection overlay
@@ -717,7 +717,7 @@ class TestLinkSelections(ComparisonTestCase):
         linked = lnk_sel(points)
 
         current_obj = linked[()]
-        self.assertIsInstance(current_obj, hv.Overlay)
+        assert isinstance(current_obj, hv.Overlay)
         selectionxy = TestLinkSelections.get_value_with_key_type(
             lnk_sel._selection_expr_streams, hv.Points
         ).input_streams[0].input_stream.input_streams[0]
@@ -725,7 +725,7 @@ class TestLinkSelections(ComparisonTestCase):
         _unselected, selected, _region, _region2 = linked[()].values()
         self.check_overlay_points_like(selected, lnk_sel, self.data.iloc[1:])
 
-        self.assertIn(points, lnk_sel._streams)
+        assert points in lnk_sel._streams
         self.assertEqual(len(lnk_sel._selection_expr_streams), 1)
         self.assertEqual(len(lnk_sel._plot_reset_streams), 1)
         self.assertEqual(len(lnk_sel._cross_filter_stream.input_streams), 1)
@@ -734,9 +734,9 @@ class TestLinkSelections(ComparisonTestCase):
 
         lnk_sel.unlink(points)
 
-        self.assertNotIn(points, lnk_sel._streams)
+        assert points not in lnk_sel._streams
         self.assertEqual(len(lnk_sel._selection_expr_streams), 0)
-        self.assertTrue(len(lnk_sel._plot_reset_streams) == 0)
+        assert len(lnk_sel._plot_reset_streams) == 0
         self.assertEqual(len(lnk_sel._cross_filter_stream.input_streams), 1)
         self.assertEqual(len(lnk_sel._cross_filter_stream.input_streams[0].history_stream._subscribers), 0)
         self.assertEqual(len(lnk_sel._cross_filter_stream.input_streams[0].history_stream.values), 0)
@@ -751,23 +751,23 @@ class TestLinkSelections(ComparisonTestCase):
         linked = lnk_sel(layout)
 
         current_obj = linked[()]
-        self.assertIsInstance(current_obj[0][()], hv.Overlay)
+        assert isinstance(current_obj[0][()], hv.Overlay)
         selectionxy = TestLinkSelections.get_value_with_key_type(
             lnk_sel._selection_expr_streams, hv.Points
         ).input_streams[0].input_stream.input_streams[0]
         selectionxy.event(bounds=(0, 0, 4, 2))
 
-        self.assertIn(points, lnk_sel._streams)
-        self.assertIn(table, lnk_sel._streams)
+        assert points in lnk_sel._streams
+        assert table in lnk_sel._streams
         self.assertEqual(len(lnk_sel._selection_expr_streams), 2)
-        self.assertTrue(len(lnk_sel._plot_reset_streams) == 2)
+        assert len(lnk_sel._plot_reset_streams) == 2
 
         lnk_sel.unlink(points)
 
-        self.assertNotIn(points, lnk_sel._streams)
-        self.assertIn(table, lnk_sel._streams)
+        assert points not in lnk_sel._streams
+        assert table in lnk_sel._streams
         self.assertEqual(len(lnk_sel._selection_expr_streams), 1)
-        self.assertTrue(len(lnk_sel._plot_reset_streams) == 1)
+        assert len(lnk_sel._plot_reset_streams) == 1
 
     def test_unlink_dynamic(self):
         points = Points(self.data)
@@ -777,21 +777,21 @@ class TestLinkSelections(ComparisonTestCase):
         linked = lnk_sel(points_dynamic)
 
         current_obj = linked[()]
-        self.assertIsInstance(current_obj, hv.Overlay)
+        assert isinstance(current_obj, hv.Overlay)
         selectionxy = TestLinkSelections.get_value_with_key_type(
             lnk_sel._selection_expr_streams, hv.Points
         ).input_streams[0].input_stream.input_streams[0]
         selectionxy.event(bounds=(0, 1, 5, 5))
 
-        self.assertIn(points_dynamic, lnk_sel._streams)
+        assert points_dynamic in lnk_sel._streams
         self.assertEqual(len(lnk_sel._selection_expr_streams), 1)
-        self.assertTrue(len(lnk_sel._plot_reset_streams) == 1)
+        assert len(lnk_sel._plot_reset_streams) == 1
 
         lnk_sel.unlink(points_dynamic)
 
-        self.assertNotIn(points_dynamic, lnk_sel._streams)
+        assert points_dynamic not in lnk_sel._streams
         self.assertEqual(len(lnk_sel._selection_expr_streams), 0)
-        self.assertTrue(len(lnk_sel._plot_reset_streams) == 0)
+        assert len(lnk_sel._plot_reset_streams) == 0
 
     def test_unlink_multiple_objects(self):
         points1 = Points(self.data)
@@ -801,24 +801,24 @@ class TestLinkSelections(ComparisonTestCase):
         lnk_sel(points1)
         lnk_sel(points2)
 
-        self.assertIn(points1, lnk_sel._streams)
-        self.assertIn(points2, lnk_sel._streams)
+        assert points1 in lnk_sel._streams
+        assert points2 in lnk_sel._streams
         self.assertEqual(len(lnk_sel._selection_expr_streams), 2)
-        self.assertTrue(len(lnk_sel._plot_reset_streams) == 2)
+        assert len(lnk_sel._plot_reset_streams) == 2
 
         lnk_sel.unlink(points1)
 
-        self.assertNotIn(points1, lnk_sel._streams)
-        self.assertIn(points2, lnk_sel._streams)
+        assert points1 not in lnk_sel._streams
+        assert points2 in lnk_sel._streams
         self.assertEqual(len(lnk_sel._selection_expr_streams), 1)
-        self.assertTrue(len(lnk_sel._plot_reset_streams) == 1)
+        assert len(lnk_sel._plot_reset_streams) == 1
 
         lnk_sel.unlink(points2)
 
-        self.assertNotIn(points1, lnk_sel._streams)
-        self.assertNotIn(points2, lnk_sel._streams)
+        assert points1 not in lnk_sel._streams
+        assert points2 not in lnk_sel._streams
         self.assertEqual(len(lnk_sel._selection_expr_streams), 0)
-        self.assertTrue(len(lnk_sel._plot_reset_streams) == 0)
+        assert len(lnk_sel._plot_reset_streams) == 0
 
     def test_unlink_nonexistent_object_no_error(self):
         points1 = Points(self.data)
@@ -829,7 +829,7 @@ class TestLinkSelections(ComparisonTestCase):
 
         lnk_sel.unlink(points2)
 
-        self.assertIn(points1, lnk_sel._streams)
+        assert points1 in lnk_sel._streams
 
 
 # Backend implementations

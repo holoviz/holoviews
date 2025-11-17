@@ -48,9 +48,9 @@ class TestHeatMapPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(hmap)
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
-        self.assertIsInstance(x_range, FactorRange)
+        assert isinstance(x_range, FactorRange)
         self.assertEqual(x_range.factors, ['A', 'B'])
-        self.assertIsInstance(y_range, Range1d)
+        assert isinstance(y_range, Range1d)
         self.assertEqual(y_range.start, 0.5)
         self.assertEqual(y_range.end, 2.5)
 
@@ -60,9 +60,9 @@ class TestHeatMapPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(hmap)
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
-        self.assertIsInstance(x_range, FactorRange)
+        assert isinstance(x_range, FactorRange)
         self.assertEqual(x_range.factors, ['A', 'B'][::-1])
-        self.assertIsInstance(y_range, Range1d)
+        assert isinstance(y_range, Range1d)
         self.assertEqual(y_range.start, 2.5)
         self.assertEqual(y_range.end, 0.5)
 
@@ -71,10 +71,10 @@ class TestHeatMapPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(hmap)
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
-        self.assertIsInstance(x_range, Range1d)
+        assert isinstance(x_range, Range1d)
         self.assertEqual(x_range.start, 0.5)
         self.assertEqual(x_range.end, 2.5)
-        self.assertIsInstance(y_range, FactorRange)
+        assert isinstance(y_range, FactorRange)
         self.assertEqual(y_range.factors, ['A', 'B'])
 
     def test_heatmap_points_categorical_axes_string_int(self):
@@ -83,9 +83,9 @@ class TestHeatMapPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(hmap*points)
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
-        self.assertIsInstance(x_range, FactorRange)
+        assert isinstance(x_range, FactorRange)
         self.assertEqual(x_range.factors, ['A', 'B', 'C'])
-        self.assertIsInstance(y_range, Range1d)
+        assert isinstance(y_range, Range1d)
         self.assertEqual(y_range.start, 0.5)
         self.assertEqual(y_range.end, 3)
 
@@ -95,10 +95,10 @@ class TestHeatMapPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(hmap*points)
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
-        self.assertIsInstance(x_range, Range1d)
+        assert isinstance(x_range, Range1d)
         self.assertEqual(x_range.start, 0.5)
         self.assertEqual(x_range.end, 3)
-        self.assertIsInstance(y_range, FactorRange)
+        assert isinstance(y_range, FactorRange)
         self.assertEqual(y_range.factors, ['A', 'B', 'C'])
 
     def test_heatmap_invert_axes(self):
@@ -119,7 +119,7 @@ class TestHeatMapPlot(TestBokehPlot):
         hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).opts(dilate=True)
         plot = bokeh_renderer.get_plot(hmap)
         glyph = plot.handles['glyph']
-        self.assertTrue(glyph.dilate)
+        assert glyph.dilate
 
     def test_heatmap_single_x_value(self):
         hmap = HeatMap(([1], ['A', 'B'], np.array([[1], [2]])))

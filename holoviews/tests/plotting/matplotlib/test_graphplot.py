@@ -311,7 +311,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(self.trimesh)
         nodes = plot.handles['nodes']
         edges = plot.handles['edges']
-        self.assertIsInstance(edges, LineCollection)
+        assert isinstance(edges, LineCollection)
         self.assertEqual(np.asarray(nodes.get_offsets()), self.trimesh.nodes.array([0, 1]))
         self.assertEqual([p.vertices for p in edges.get_paths()],
                          [p.array() for p in self.trimesh._split_edgepaths.split()])
@@ -320,7 +320,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(self.trimesh.opts(filled=True))
         nodes = plot.handles['nodes']
         edges = plot.handles['edges']
-        self.assertIsInstance(edges, PolyCollection)
+        assert isinstance(edges, PolyCollection)
         self.assertEqual(np.asarray(nodes.get_offsets()), self.trimesh.nodes.array([0, 1]))
         paths = self.trimesh._split_edgepaths.split(datatype='array')
         self.assertEqual([p.vertices[:4] for p in edges.get_paths()],

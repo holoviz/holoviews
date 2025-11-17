@@ -53,8 +53,8 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         )
 
         # Check that xaxis and yaxis entries are not created
-        self.assertNotIn("xaxis", fig_dict["layout"])
-        self.assertNotIn("yaxis", fig_dict["layout"])
+        assert "xaxis" not in fig_dict["layout"]
+        assert "yaxis" not in fig_dict["layout"]
 
         # Check no layers are introduced when an empty tile server string is
         # passed
@@ -172,7 +172,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         self.assertEqual(dummy_trace["type"], PLOTLY_SCATTERMAP)
         self.assertEqual(dummy_trace["lon"], [])
         self.assertEqual(dummy_trace["lat"], [])
-        self.assertFalse(dummy_trace["showlegend"])
+        assert not dummy_trace["showlegend"]
 
         self.assertEqual(subplot["style"], "dark")
         if not PLOTLY_GE_6_0_0:
@@ -187,7 +187,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         self.assertEqual(dummy_trace["type"], PLOTLY_SCATTERMAP)
         self.assertEqual(dummy_trace["lon"], [])
         self.assertEqual(dummy_trace["lat"], [])
-        self.assertFalse(dummy_trace["showlegend"])
+        assert not dummy_trace["showlegend"]
 
         # Check raster_layer
         self.assertEqual(raster_layer["below"], "traces")
@@ -201,13 +201,13 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         self.assertEqual(dummy_trace["type"], PLOTLY_SCATTERMAP)
         self.assertEqual(dummy_trace["lon"], [None])
         self.assertEqual(dummy_trace["lat"], [None])
-        self.assertFalse(dummy_trace["showlegend"])
+        assert not dummy_trace["showlegend"]
 
         # Check rgb_layer
         self.assertEqual(rgb_layer["below"], "traces")
         self.assertEqual(rgb_layer["opacity"], 0.5)
         self.assertEqual(rgb_layer["sourcetype"], "image")
-        self.assertTrue(rgb_layer["source"].startswith("data:image/png;base64,iVBOR"))
+        assert rgb_layer["source"].startswith("data:image/png;base64,iVBOR")
         self.assertEqual(rgb_layer["coordinates"], [
             [self.lon_range[0], self.lat_range[1]],
             [self.lon_range[1], self.lat_range[1]],
@@ -236,5 +236,5 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         assert points_trace["showlegend"] is True
 
         # No xaxis/yaxis
-        self.assertNotIn("xaxis", fig_dict["layout"])
-        self.assertNotIn("yaxis", fig_dict["layout"])
+        assert "xaxis" not in fig_dict["layout"]
+        assert "yaxis" not in fig_dict["layout"]

@@ -67,21 +67,21 @@ class TestSegmentPlot(TestBokehPlot):
         segments = Segments((['A', 'B', 'C'], [1, 2, 3], ['A', 'B', 'C'], [4, 5, 6]))
         plot = bokeh_renderer.get_plot(segments)
         x_range = plot.handles['x_range']
-        self.assertIsInstance(x_range, FactorRange)
+        assert isinstance(x_range, FactorRange)
         self.assertEqual(x_range.factors, ['A', 'B', 'C'])
 
     def test_segments_categorical_yaxis(self):
         segments = Segments(([1, 2, 3], ['A', 'B', 'C'], [4, 5, 6], ['A', 'B', 'C']))
         plot = bokeh_renderer.get_plot(segments)
         y_range = plot.handles['y_range']
-        self.assertIsInstance(y_range, FactorRange)
+        assert isinstance(y_range, FactorRange)
         self.assertEqual(y_range.factors, ['A', 'B', 'C'])
 
     def test_segments_categorical_yaxis_invert_axes(self):
         segments = Segments(([1, 2, 3], ['A', 'B', 'C'], [4, 5, 6], ['A', 'B', 'C']))
         plot = bokeh_renderer.get_plot(segments)
         y_range = plot.handles['y_range']
-        self.assertIsInstance(y_range, FactorRange)
+        assert isinstance(y_range, FactorRange)
         self.assertEqual(y_range.factors, ['A', 'B', 'C'])
 
     def test_segments_overlay_categorical_yaxis(self):
@@ -89,7 +89,7 @@ class TestSegmentPlot(TestBokehPlot):
         segments2 = Segments(([1, 2, 3], ['B', 'C', 'D'], [4, 5, 6], ['B', 'C', 'D']))
         plot = bokeh_renderer.get_plot(segments*segments2)
         y_range = plot.handles['y_range']
-        self.assertIsInstance(y_range, FactorRange)
+        assert isinstance(y_range, FactorRange)
         self.assertEqual(y_range.factors, ['A', 'B', 'C', 'D'])
 
     def test_segments_overlay_categorical_yaxis_invert_yaxis(self):
@@ -97,7 +97,7 @@ class TestSegmentPlot(TestBokehPlot):
         segments2 = Segments(([1, 2, 3], ['B', 'C', 'D'], [4, 5, 6], ['B', 'C', 'D']))
         plot = bokeh_renderer.get_plot(segments*segments2)
         y_range = plot.handles['y_range']
-        self.assertIsInstance(y_range, FactorRange)
+        assert isinstance(y_range, FactorRange)
         self.assertEqual(y_range.factors, ['A', 'B', 'C', 'D'][::-1])
 
     def test_segments_overlay_categorical_xaxis_invert_axes(self):
@@ -105,5 +105,5 @@ class TestSegmentPlot(TestBokehPlot):
         segments2 = Segments(([1, 2, 3], ['B', 'C', 'D'], [4, 5, 6], ['B', 'C', 'D']))
         plot = bokeh_renderer.get_plot(segments*segments2)
         x_range = plot.handles['x_range']
-        self.assertIsInstance(x_range, FactorRange)
+        assert isinstance(x_range, FactorRange)
         self.assertEqual(x_range.factors, ['A', 'B', 'C', 'D'])

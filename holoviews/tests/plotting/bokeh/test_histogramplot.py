@@ -21,8 +21,8 @@ class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
         adjoint_plot = next(iter(plot.subplots.values()))
         main_plot = adjoint_plot.subplots['main']
         right_plot = adjoint_plot.subplots['right']
-        self.assertTrue('color_mapper' not in main_plot.handles)
-        self.assertTrue('color_mapper' not in right_plot.handles)
+        assert 'color_mapper' not in main_plot.handles
+        assert 'color_mapper' not in right_plot.handles
 
     def test_side_histogram_cmapper(self):
         """Assert histogram shares colormapper"""
@@ -33,8 +33,7 @@ class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
         adjoint_plot = next(iter(plot.subplots.values()))
         main_plot = adjoint_plot.subplots['main']
         right_plot = adjoint_plot.subplots['right']
-        self.assertIs(main_plot.handles['color_mapper'],
-                      right_plot.handles['color_mapper'])
+        assert main_plot.handles['color_mapper'] is right_plot.handles['color_mapper']
         self.assertEqual(main_plot.handles['color_dim'], img.vdims[0])
 
     def test_side_histogram_cmapper_weighted(self):
@@ -49,10 +48,8 @@ class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
         main_plot = adjoint_plot.subplots['main']
         right_plot = adjoint_plot.subplots['right']
         top_plot = adjoint_plot.subplots['top']
-        self.assertIs(main_plot.handles['color_mapper'],
-                      right_plot.handles['color_mapper'])
-        self.assertIs(main_plot.handles['color_mapper'],
-                      top_plot.handles['color_mapper'])
+        assert main_plot.handles['color_mapper'] is right_plot.handles['color_mapper']
+        assert main_plot.handles['color_mapper'] is top_plot.handles['color_mapper']
         self.assertEqual(main_plot.handles['color_dim'], img.vdims[0])
 
     def test_histogram_datetime64_plot(self):
@@ -75,7 +72,7 @@ class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
             self.assertEqual(source.data[k], v)
         xaxis = plot.handles['xaxis']
         range_x = plot.handles['x_range']
-        self.assertIsInstance(xaxis, DatetimeAxis)
+        assert isinstance(xaxis, DatetimeAxis)
         self.assertEqual(range_x.start, np.datetime64('2017-01-01T00:00:00.000000', 'us'))
         self.assertEqual(range_x.end, np.datetime64('2017-01-04T00:00:00.000000', 'us'))
 

@@ -54,12 +54,12 @@ class DatasetPropertyTestCase(ComparisonTestCase):
 class ConstructorTestCase(DatasetPropertyTestCase):
     def test_constructors_dataset(self):
         ds = Dataset(self.df)
-        self.assertIs(ds, ds.dataset)
+        assert ds is ds.dataset
 
         # Check pipeline
         ops = ds.pipeline.operations
         self.assertEqual(len(ops), 1)
-        self.assertIs(ops[0].output_type, Dataset)
+        assert ops[0].output_type is Dataset
         self.assertEqual(ds, ds.pipeline(ds.dataset))
 
     def test_constructor_curve(self):
@@ -74,7 +74,7 @@ class ConstructorTestCase(DatasetPropertyTestCase):
         # Check pipeline
         pipeline = element.pipeline
         self.assertEqual(len(pipeline.operations), 1)
-        self.assertIs(pipeline.operations[0].output_type, Curve)
+        assert pipeline.operations[0].output_type is Curve
         self.assertEqual(element, element.pipeline(element.dataset))
 
 
@@ -93,8 +93,8 @@ class ToTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve.pipeline.operations
         self.assertEqual(len(ops), 2)
-        self.assertIs(ops[0].output_type, Dataset)
-        self.assertIs(ops[1].output_type, Curve)
+        assert ops[0].output_type is Dataset
+        assert ops[1].output_type is Curve
 
         # Execute pipeline
         self.assertEqual(curve.pipeline(curve.dataset), curve)
@@ -174,7 +174,7 @@ class CloneTestCase(DatasetPropertyTestCase):
     def test_clone_dataset_kwarg_none(self):
         # Setting dataset=None prevents propagation of dataset to cloned object
         ds_clone = self.ds.clone(dataset=None)
-        self.assertIs(ds_clone, ds_clone.dataset)
+        assert ds_clone is ds_clone.dataset
 
 
 class ReindexTestCase(DatasetPropertyTestCase):
@@ -188,7 +188,7 @@ class ReindexTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_ab.pipeline.operations
         self.assertEqual(len(ops), 2)
-        self.assertIs(ops[0].output_type, Dataset)
+        assert ops[0].output_type is Dataset
         self.assertEqual(ops[1].method_name, 'reindex')
         self.assertEqual(ops[1].args, [])
         self.assertEqual(ops[1].kwargs, dict(kdims=['a'], vdims=['b']))
@@ -213,7 +213,7 @@ class ReindexTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_ab.pipeline.operations
         self.assertEqual(len(ops), 3)
-        self.assertIs(ops[0].output_type, Dataset)
+        assert ops[0].output_type is Dataset
         self.assertEqual(ops[1].method_name, 'reindex')
         self.assertEqual(ops[1].args, [])
         self.assertEqual(ops[1].kwargs, dict(kdims=['a'], vdims=['b', 'c']))
@@ -241,8 +241,8 @@ class ReindexTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve_ba.pipeline.operations
         self.assertEqual(len(ops), 3)
-        self.assertIs(ops[0].output_type, Dataset)
-        self.assertIs(ops[1].output_type, Curve)
+        assert ops[0].output_type is Dataset
+        assert ops[1].output_type is Curve
         self.assertEqual(ops[2].method_name, 'reindex')
         self.assertEqual(ops[2].args, [])
         self.assertEqual(ops[2].kwargs, dict(kdims='b', vdims='a'))
@@ -267,8 +267,8 @@ class ReindexTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve_ba.pipeline.operations
         self.assertEqual(len(ops), 4)
-        self.assertIs(ops[0].output_type, Dataset)
-        self.assertIs(ops[1].output_type, Curve)
+        assert ops[0].output_type is Dataset
+        assert ops[1].output_type is Curve
         self.assertEqual(ops[2].method_name, 'reindex')
         self.assertEqual(ops[2].args, [])
         self.assertEqual(ops[2].kwargs, dict(kdims='a', vdims='b'))
@@ -298,7 +298,7 @@ class IlocTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_iloc.pipeline.operations
         self.assertEqual(len(ops), 2)
-        self.assertIs(ops[0].output_type, Dataset)
+        assert ops[0].output_type is Dataset
         self.assertEqual(ops[1].method_name, '_perform_getitem')
         self.assertEqual(ops[1].args, [[0, 2]])
         self.assertEqual(ops[1].kwargs, {})
@@ -323,8 +323,8 @@ class IlocTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve_iloc.pipeline.operations
         self.assertEqual(len(ops), 3)
-        self.assertIs(ops[0].output_type, Dataset)
-        self.assertIs(ops[1].output_type, Curve)
+        assert ops[0].output_type is Dataset
+        assert ops[1].output_type is Curve
         self.assertEqual(ops[2].method_name, '_perform_getitem')
         self.assertEqual(ops[2].args, [[0, 2]])
         self.assertEqual(ops[2].kwargs, {})
@@ -374,7 +374,7 @@ class NdlocTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_grid_ndloc.pipeline.operations
         self.assertEqual(len(ops), 2)
-        self.assertIs(ops[0].output_type, Dataset)
+        assert ops[0].output_type is Dataset
         self.assertEqual(ops[1].method_name, '_perform_getitem')
         self.assertEqual(
             ops[1].args, [(slice(0, 2, None), slice(1, 3, None))]
@@ -406,7 +406,7 @@ class SelectTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_select.pipeline.operations
         self.assertEqual(len(ops), 2)
-        self.assertIs(ops[0].output_type, Dataset)
+        assert ops[0].output_type is Dataset
         self.assertEqual(ops[1].method_name, 'select')
         self.assertEqual(ops[1].args, [])
         self.assertEqual(ops[1].kwargs, {'b': 10})
@@ -431,8 +431,8 @@ class SelectTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve_select.pipeline.operations
         self.assertEqual(len(ops), 3)
-        self.assertIs(ops[0].output_type, Dataset)
-        self.assertIs(ops[1].output_type, Curve)
+        assert ops[0].output_type is Dataset
+        assert ops[1].output_type is Curve
         self.assertEqual(ops[2].method_name, 'select')
         self.assertEqual(ops[2].args, [])
         self.assertEqual(ops[2].kwargs, {'b': 10})
@@ -461,8 +461,8 @@ class SortTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve_sorted.pipeline.operations
         self.assertEqual(len(ops), 3)
-        self.assertIs(ops[0].output_type, Dataset)
-        self.assertIs(ops[1].output_type, Curve)
+        assert ops[0].output_type is Dataset
+        assert ops[1].output_type is Curve
         self.assertEqual(ops[2].method_name, 'sort')
         self.assertEqual(ops[2].args, ['a'])
         self.assertEqual(ops[2].kwargs, {})
@@ -491,8 +491,8 @@ class SampleTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve_sampled.pipeline.operations
         self.assertEqual(len(ops), 3)
-        self.assertIs(ops[0].output_type, Dataset)
-        self.assertIs(ops[1].output_type, Curve)
+        assert ops[0].output_type is Dataset
+        assert ops[1].output_type is Curve
         self.assertEqual(ops[2].method_name, 'sample')
         self.assertEqual(ops[2].args, [[1, 2]])
         self.assertEqual(ops[2].kwargs, {})
@@ -523,7 +523,7 @@ class ReduceTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_reduced.pipeline.operations
         self.assertEqual(len(ops), 3)
-        self.assertIs(ops[0].output_type, Dataset)
+        assert ops[0].output_type is Dataset
         self.assertEqual(ops[1].method_name, 'reindex')
         self.assertEqual(ops[2].method_name, 'reduce')
         self.assertEqual(ops[2].args, ['c'])
@@ -553,7 +553,7 @@ class AggregateTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_aggregated.pipeline.operations
         self.assertEqual(len(ops), 3)
-        self.assertIs(ops[0].output_type, Dataset)
+        assert ops[0].output_type is Dataset
         self.assertEqual(ops[1].method_name, 'reindex')
         self.assertEqual(ops[2].method_name, 'aggregate')
         self.assertEqual(ops[2].args, ['b'])
@@ -586,7 +586,7 @@ class GroupbyTestCase(DatasetPropertyTestCase):
             # Check pipeline
             ops = ds_group.pipeline.operations
             self.assertNotEqual(len(ops), 3)
-            self.assertIs(ops[0].output_type, Dataset)
+            assert ops[0].output_type is Dataset
             self.assertEqual(ops[1].method_name, 'reindex')
             self.assertEqual(ops[2].method_name, 'groupby')
             self.assertEqual(ops[2].args, ['b'])
@@ -613,7 +613,7 @@ class AddDimensionTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_dim_added.pipeline.operations
         self.assertEqual(len(ops), 2)
-        self.assertIs(ops[0].output_type, Dataset)
+        assert ops[0].output_type is Dataset
         self.assertEqual(ops[1].method_name, 'add_dimension')
         self.assertEqual(ops[1].args, ['new', 1, 17])
         self.assertEqual(ops[1].kwargs, {})
@@ -648,10 +648,10 @@ class HistogramTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = sub_hist.pipeline.operations
         self.assertEqual(len(ops), 4)
-        self.assertIs(ops[0].output_type, Dataset)
-        self.assertIs(ops[1].output_type, Apply)
+        assert ops[0].output_type is Dataset
+        assert ops[1].output_type is Apply
         self.assertEqual(ops[2].method_name, '__call__')
-        self.assertIsInstance(ops[2].args[0], histogram)
+        assert isinstance(ops[2].args[0], histogram)
         self.assertEqual(ops[3].method_name, 'select')
         self.assertEqual(ops[3].args, [])
         self.assertEqual(ops[3].kwargs, {'a': (1, None)})
@@ -679,10 +679,10 @@ class HistogramTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = sub_hist.pipeline.operations
         self.assertEqual(len(ops), 4)
-        self.assertIs(ops[0].output_type, Dataset)
-        self.assertIs(ops[1].output_type, Apply)
+        assert ops[0].output_type is Dataset
+        assert ops[1].output_type is Apply
         self.assertEqual(ops[2].method_name, '__call__')
-        self.assertIsInstance(ops[2].args[0], histogram)
+        assert isinstance(ops[2].args[0], histogram)
         self.assertEqual(ops[3].method_name, 'select')
         self.assertEqual(ops[3].args, [])
         self.assertEqual(ops[3].kwargs, {'a': (1, None), 'b': 100})
@@ -697,11 +697,11 @@ class HistogramTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve.pipeline.operations
         self.assertEqual(len(ops), 4)
-        self.assertIs(ops[0].output_type, Dataset)
-        self.assertIs(ops[1].output_type, Apply)
+        assert ops[0].output_type is Dataset
+        assert ops[1].output_type is Apply
         self.assertEqual(ops[2].method_name, '__call__')
-        self.assertIsInstance(ops[2].args[0], histogram)
-        self.assertIs(ops[3].output_type, Curve)
+        assert isinstance(ops[2].args[0], histogram)
+        assert ops[3].output_type is Curve
 
         # Execute pipeline
         self.assertEqual(curve.pipeline(curve.dataset), curve)
@@ -745,9 +745,9 @@ class DatashaderTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = img.pipeline.operations
         self.assertEqual(len(ops), 3)
-        self.assertIs(ops[0].output_type, Dataset)
-        self.assertIs(ops[1].output_type, Curve)
-        self.assertIsInstance(ops[2], rasterize)
+        assert ops[0].output_type is Dataset
+        assert ops[1].output_type is Curve
+        assert isinstance(ops[2], rasterize)
 
         # Execute pipeline
         self.assertEqual(img.pipeline(img.dataset), img)
@@ -768,10 +768,10 @@ class DatashaderTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = rgb.pipeline.operations
         self.assertEqual(len(ops), 4)
-        self.assertIs(ops[0].output_type, Dataset)
-        self.assertIs(ops[1].output_type, Curve)
-        self.assertIsInstance(ops[2], datashade)
-        self.assertIsInstance(ops[3], dynspread)
+        assert ops[0].output_type is Dataset
+        assert ops[1].output_type is Curve
+        assert isinstance(ops[2], datashade)
+        assert isinstance(ops[3], dynspread)
 
         # Execute pipeline
         self.assertEqual(rgb.pipeline(rgb.dataset), rgb)
@@ -791,9 +791,9 @@ class AccessorTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve.pipeline.operations
         self.assertEqual(len(ops), 4)
-        self.assertIs(ops[0].output_type, Dataset)
-        self.assertIs(ops[1].output_type, Curve)
-        self.assertIs(ops[2].output_type, Apply)
+        assert ops[0].output_type is Dataset
+        assert ops[1].output_type is Curve
+        assert ops[2].output_type is Apply
         self.assertEqual(ops[2].kwargs, {'mode': None})
         self.assertEqual(ops[3].method_name, '__call__')
 
@@ -816,9 +816,9 @@ class AccessorTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve.pipeline.operations
         self.assertEqual(len(ops), 4)
-        self.assertIs(ops[0].output_type, Dataset)
-        self.assertIs(ops[1].output_type, Curve)
-        self.assertIs(ops[2].output_type, Redim)
+        assert ops[0].output_type is Dataset
+        assert ops[1].output_type is Curve
+        assert ops[2].output_type is Redim
         self.assertEqual(ops[2].kwargs, {'mode': 'dataset'})
         self.assertEqual(ops[3].method_name, '__call__')
 

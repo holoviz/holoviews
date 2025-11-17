@@ -122,16 +122,16 @@ class OperationTests(ComparisonTestCase):
         op1 = CustomOp1.instance()
         op2 = CustomOp2.instance()
         ch_op = chain.instance(operations=[op1, op2])
-        self.assertIs(ch_op.find(CustomOp1, skip_nonlinked=False), op1)
-        self.assertIsNone(ch_op.find(CustomOp1, skip_nonlinked=True))
-        self.assertIs(ch_op.find(CustomOp2, skip_nonlinked=False), op2)
-        self.assertIs(ch_op.find(CustomOp2, skip_nonlinked=True), op2)
+        assert ch_op.find(CustomOp1, skip_nonlinked=False) is op1
+        assert ch_op.find(CustomOp1, skip_nonlinked=True) is None
+        assert ch_op.find(CustomOp2, skip_nonlinked=False) is op2
+        assert ch_op.find(CustomOp2, skip_nonlinked=True) is op2
 
     def test_operation_chain_find_apply(self):
         img = Image(np.random.rand(10, 10))
         tr_op = transform.instance(operator=lambda x: x*2)
         img_apply = img.apply(tr_op, dynamic=False)
-        self.assertIs(img_apply.pipeline.find(transform, skip_nonlinked=False), tr_op)
+        assert img_apply.pipeline.find(transform, skip_nonlinked=False) is tr_op
 
     def test_operation_chain_find_apply_chain(self):
         class CustomOp1(Operation): pass
@@ -142,10 +142,7 @@ class OperationTests(ComparisonTestCase):
         op2 = CustomOp2.instance()
         ch_op = chain.instance(operations=[op1,op2])
         img_apply = img.apply(ch_op, dynamic=False)
-        self.assertIs(
-            img_apply.pipeline.find(CustomOp1, skip_nonlinked=False),
-            op1,
-        )
+        assert img_apply.pipeline.find(CustomOp1, skip_nonlinked=False) is op1
 
     def test_image_threshold(self):
         img = Image(np.array([[0, 1, 0], [3, 4, 5.]]))
@@ -456,7 +453,7 @@ class OperationTests(ComparisonTestCase):
 
         hist = Histogram(([0, 3, 6, 9], [0.1, 0.1, 0.133333]),
                          vdims=('x_frequency', 'Frequency'))
-        self.assertIsInstance(op_hist.data['x_frequency'], da.Array)
+        assert isinstance(op_hist.data['x_frequency'], da.Array)
         self.assertEqual(op_hist, hist)
 
     @da_skip
@@ -468,7 +465,7 @@ class OperationTests(ComparisonTestCase):
 
         hist = Histogram(([0, 3, 6, 9], [0.3, 0.6, 1]),
                          vdims=('x_frequency', 'Frequency'))
-        self.assertIsInstance(op_hist.data['x_frequency'], da.Array)
+        assert isinstance(op_hist.data['x_frequency'], da.Array)
         self.assertEqual(op_hist, hist)
 
     @da_skip
@@ -481,7 +478,7 @@ class OperationTests(ComparisonTestCase):
 
         hist = Histogram(([0, 3, 6, 9], [0.022222, 0.088889, 0.222222]),
                          vdims='y')
-        self.assertIsInstance(op_hist.data['y'], da.Array)
+        assert isinstance(op_hist.data['y'], da.Array)
         self.assertEqual(op_hist, hist)
 
     @ibis_skip

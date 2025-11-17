@@ -54,7 +54,7 @@ class TestRasterPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(img)
         artist = plot.handles['artist']
         cmap = artist.get_cmap()
-        self.assertIsInstance(cmap, ListedColormap)
+        assert isinstance(cmap, ListedColormap)
         assert cmap.colors == colors
 
     def test_image_cbar_extend_both(self):

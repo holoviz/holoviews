@@ -98,7 +98,7 @@ class HomogeneousColumnTests:
     def test_dataset_array_init_hm(self):
         dataset = Dataset(np.column_stack([self.xs, self.xs_2]),
                           kdims=['x'], vdims=['x2'])
-        self.assertTrue(isinstance(dataset.data, self.data_type))
+        assert isinstance(dataset.data, self.data_type)
 
     def test_dataset_dtypes(self):
         self.assertEqual(self.dataset_hm.interface.dtype(self.dataset_hm, 'x'), np.dtype(int))
@@ -107,7 +107,7 @@ class HomogeneousColumnTests:
     def test_dataset_array_init_hm_tuple_dims(self):
         dataset = Dataset(np.column_stack([self.xs, self.xs_2]),
                           kdims=[('x', 'X')], vdims=[('x2', 'X2')])
-        self.assertTrue(isinstance(dataset.data, self.data_type))
+        assert isinstance(dataset.data, self.data_type)
 
     def test_dataset_dataframe_init_hm(self):
         "Tests support for homogeneous DataFrames"
@@ -115,7 +115,7 @@ class HomogeneousColumnTests:
             raise SkipTest("Only valid for non-dict frame")
         dataset = Dataset(self.frame({'x':self.xs, 'x2':self.xs_2}),
                           kdims=['x'], vdims=['x2'])
-        self.assertTrue(isinstance(dataset.data, self.data_type))
+        assert isinstance(dataset.data, self.data_type)
 
     def test_dataset_dataframe_init_hm_alias(self):
         "Tests support for homogeneous DataFrames"
@@ -123,7 +123,7 @@ class HomogeneousColumnTests:
             raise SkipTest("Only valid for non-dict frame")
         dataset = Dataset(self.frame({'x':self.xs, 'x2':self.xs_2}),
                           kdims=[('x', 'X-label')], vdims=[('x2', 'X2-label')])
-        self.assertTrue(isinstance(dataset.data, self.data_type))
+        assert isinstance(dataset.data, self.data_type)
 
     def test_dataset_empty_list_init(self):
         dataset = Dataset([], kdims=['x'], vdims=['y'])
@@ -441,7 +441,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
             raise SkipTest("Only valid for non-dict frame")
 
         dataset = Dataset(self.frame({'x':self.xs, 'y':self.ys}), kdims=['x'], vdims=['y'])
-        self.assertTrue(isinstance(dataset.data, self.data_type))
+        assert isinstance(dataset.data, self.data_type)
 
     def test_dataset_dataframe_init_ht_alias(self):
         "Tests support for heterogeneous DataFrames"
@@ -450,7 +450,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
 
         dataset = Dataset(self.frame({'x':self.xs, 'y':self.ys}),
                           kdims=[('x', 'X')], vdims=[('y', 'Y')])
-        self.assertTrue(isinstance(dataset.data, self.data_type))
+        assert isinstance(dataset.data, self.data_type)
 
     # Test dtypes
 
@@ -474,43 +474,43 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
 
     def test_dataset_implicit_indexing_init(self):
         dataset = Scatter(self.ys, kdims=['x'], vdims=['y'])
-        self.assertTrue(isinstance(dataset.data, self.data_type))
+        assert isinstance(dataset.data, self.data_type)
 
     def test_dataset_tuple_init(self):
         dataset = Dataset((self.xs, self.ys), kdims=['x'], vdims=['y'])
-        self.assertTrue(isinstance(dataset.data, self.data_type))
+        assert isinstance(dataset.data, self.data_type)
 
     def test_dataset_tuple_init_alias(self):
         dataset = Dataset((self.xs, self.ys), kdims=[('x', 'X')], vdims=[('y', 'Y')])
-        self.assertTrue(isinstance(dataset.data, self.data_type))
+        assert isinstance(dataset.data, self.data_type)
 
     def test_dataset_simple_zip_init(self):
         dataset = Dataset(zip(self.xs, self.ys, strict=None), kdims=['x'], vdims=['y'])
-        self.assertTrue(isinstance(dataset.data, self.data_type))
+        assert isinstance(dataset.data, self.data_type)
 
     def test_dataset_simple_zip_init_alias(self):
         dataset = Dataset(zip(self.xs, self.ys, strict=None), kdims=[('x', 'X')], vdims=[('y', 'Y')])
-        self.assertTrue(isinstance(dataset.data, self.data_type))
+        assert isinstance(dataset.data, self.data_type)
 
     def test_dataset_zip_init(self):
         dataset = Dataset(zip(self.gender, self.age,
                               self.weight, self.height, strict=None),
                           kdims=self.kdims, vdims=self.vdims)
-        self.assertTrue(isinstance(dataset.data, self.data_type))
+        assert isinstance(dataset.data, self.data_type)
 
     def test_dataset_zip_init_alias(self):
         dataset = self.alias_table.clone(zip(self.gender, self.age,
                                              self.weight, self.height, strict=None))
-        self.assertTrue(isinstance(dataset.data, self.data_type))
+        assert isinstance(dataset.data, self.data_type)
 
     def test_dataset_dict_init(self):
         dataset = Dataset(dict(zip(self.xs, self.ys, strict=None)), kdims=['A'], vdims=['B'])
-        self.assertTrue(isinstance(dataset.data, self.data_type))
+        assert isinstance(dataset.data, self.data_type)
 
     def test_dataset_dict_init_alias(self):
         dataset = Dataset(dict(zip(self.xs, self.ys, strict=None)),
                           kdims=[('a', 'A')], vdims=[('b', 'B')])
-        self.assertTrue(isinstance(dataset.data, self.data_type))
+        assert isinstance(dataset.data, self.data_type)
 
     def test_dataset_range_with_dimension_range(self):
         dt64 = np.array([np.datetime64(datetime.datetime(2017, 1, i)) for i in range(1, 4)])

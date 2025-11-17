@@ -84,20 +84,20 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
                    * Curve(range(10), vdims=['B'])).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         self.assertEqual(len(plot.state.yaxis), 2)
-        self.assertTrue(isinstance(plot.state.yaxis[0], LogAxis))
-        self.assertTrue(isinstance(plot.state.yaxis[1], LinearAxis))
+        assert isinstance(plot.state.yaxis[0], LogAxis)
+        assert isinstance(plot.state.yaxis[1], LinearAxis)
         extra_y_ranges = plot.handles['extra_y_scales']
-        self.assertTrue(isinstance(extra_y_ranges['B'], LinearScale))
+        assert isinstance(extra_y_ranges['B'], LinearScale)
 
     def test_multi_log_right_axis(self):
         overlay = (Curve(range(1,9), vdims=['A'])
                    * Curve(range(1, 9), vdims=['B']).opts(logy=True)).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         self.assertEqual(len(plot.state.yaxis), 2)
-        self.assertTrue(isinstance(plot.state.yaxis[0], LinearAxis))
-        self.assertTrue(isinstance(plot.state.yaxis[1], LogAxis))
+        assert isinstance(plot.state.yaxis[0], LinearAxis)
+        assert isinstance(plot.state.yaxis[1], LogAxis)
         extra_y_ranges = plot.handles['extra_y_scales']
-        self.assertTrue(isinstance(extra_y_ranges['B'], LogScale))
+        assert isinstance(extra_y_ranges['B'], LogScale)
 
 
     def test_multi_log_both_axes(self):
@@ -105,10 +105,10 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
                    * Curve(range(1, 9), vdims=['B']).opts(logy=True)).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         self.assertEqual(len(plot.state.yaxis), 2)
-        self.assertTrue(isinstance(plot.state.yaxis[0], LogAxis))
-        self.assertTrue(isinstance(plot.state.yaxis[1], LogAxis))
+        assert isinstance(plot.state.yaxis[0], LogAxis)
+        assert isinstance(plot.state.yaxis[1], LogAxis)
         extra_y_ranges = plot.handles['extra_y_scales']
-        self.assertTrue(isinstance(extra_y_ranges['B'], LogScale))
+        assert isinstance(extra_y_ranges['B'], LogScale)
 
     # BUG! left_axis is not warning (main axis)
 
@@ -117,10 +117,10 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
                    * Curve(range(10), vdims=['B']).opts(logy=True)).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         self.assertEqual(len(plot.state.yaxis), 2)
-        self.assertTrue(isinstance(plot.state.yaxis[0], LinearAxis))
-        self.assertTrue(isinstance(plot.state.yaxis[1], LogAxis))
+        assert isinstance(plot.state.yaxis[0], LinearAxis)
+        assert isinstance(plot.state.yaxis[1], LogAxis)
         extra_y_ranges = plot.handles['extra_y_scales']
-        self.assertTrue(isinstance(extra_y_ranges['B'], LogScale))
+        assert isinstance(extra_y_ranges['B'], LogScale)
         #print(self.log_handler)
         substr = "Logarithmic axis range encountered value less than or equal to zero, please supply explicit lower bound to override default of 0.010."
         self.log_handler.assertEndsWith('WARNING', substr)
@@ -180,7 +180,7 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
         print(extra_y_ranges['B'].start, extra_y_ranges['B'].end)
         self.assertEqual(extra_y_ranges['B'].start, 20)
         self.assertEqual(extra_y_ranges['B'].end, 2)
-        self.assertTrue(isinstance(plot.handles['extra_y_scales']['B'], LogScale))
+        assert isinstance(plot.handles['extra_y_scales']['B'], LogScale)
 
 
     # Test axis sharing in layouts

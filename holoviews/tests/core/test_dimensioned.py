@@ -206,13 +206,13 @@ class TestOptionsCleanup(CustomBackendTestCase):
     def test_opts_resassignment_cleans_unused_tree(self):
         obj = ExampleElement([]).opts(style_opt1='A').opts(plot_opt1='B')
         custom_options = Store._custom_options['backend_1']
-        self.assertIn(obj.id, custom_options)
+        assert obj.id in custom_options
         self.assertEqual(len(custom_options), 1)
 
     def test_opts_multiple_resassignment_cleans_unused_tree(self):
         obj = HoloMap({0: ExampleElement([]), 1: ExampleElement([])}).opts(style_opt1='A').opts(plot_opt1='B')
         custom_options = Store._custom_options['backend_1']
-        self.assertIn(obj.last.id, custom_options)
+        assert obj.last.id in custom_options
         self.assertEqual(len(custom_options), 2)
         for o in obj:
             o.id = None
@@ -221,10 +221,10 @@ class TestOptionsCleanup(CustomBackendTestCase):
     def test_opts_resassignment_cleans_unused_tree_cross_backend(self):
         obj = ExampleElement([]).opts(style_opt1='A').opts(plot_opt1='B', backend='backend_2')
         custom_options = Store._custom_options['backend_1']
-        self.assertIn(obj.id, custom_options)
+        assert obj.id in custom_options
         self.assertEqual(len(custom_options), 1)
         custom_options = Store._custom_options['backend_2']
-        self.assertIn(obj.id, custom_options)
+        assert obj.id in custom_options
         self.assertEqual(len(custom_options), 1)
 
     def test_garbage_collect_cleans_unused_tree(self):
@@ -239,7 +239,7 @@ class TestOptionsCleanup(CustomBackendTestCase):
         obj.pop(0)
         gc.collect()
         custom_options = Store._custom_options['backend_1']
-        self.assertIn(obj.last.id, custom_options)
+        assert obj.last.id in custom_options
         self.assertEqual(len(custom_options), 1)
         obj.pop(1)
         gc.collect()

@@ -110,12 +110,12 @@ class TestStoreOptsMethod(ComparisonTestCase):
     def test_holomap_opts(self):
         hmap = HoloMap({0: Image(np.random.rand(10,10))}).opts(xaxis=None)
         opts = Store.lookup_options('matplotlib', hmap.last, 'plot')
-        self.assertIs(opts.kwargs['xaxis'], None)
+        assert opts.kwargs['xaxis'] is None
 
     def test_holomap_options(self):
         hmap = HoloMap({0: Image(np.random.rand(10,10))}).options(xaxis=None)
         opts = Store.lookup_options('matplotlib', hmap.last, 'plot')
-        self.assertIs(opts.kwargs['xaxis'], None)
+        assert opts.kwargs['xaxis'] is None
 
 
     def test_holomap_options_empty_no_exception(self):

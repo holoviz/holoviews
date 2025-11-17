@@ -43,7 +43,7 @@ class BokehRendererTest(ComparisonTestCase):
     def test_render_get_plot_server_doc(self):
         renderer = self.renderer.instance(mode='server')
         plot = renderer.get_plot(self.image1)
-        self.assertIs(plot.document, curdoc())
+        assert plot.document is curdoc()
 
     def test_get_size_single_plot(self):
         plot = self.renderer.get_plot(self.image1)
@@ -92,21 +92,21 @@ class BokehRendererTest(ComparisonTestCase):
         curve = Curve([])
         renderer = BokehRenderer.instance(fig='png')
         png, info = renderer(curve)
-        self.assertIsInstance(png, bytes)
+        assert isinstance(png, bytes)
         self.assertEqual(info['file-ext'], 'png')
 
     def test_render_static(self):
         curve = Curve([])
         obj, _ = self.renderer._validate(curve, None)
-        self.assertIsInstance(obj, pn.pane.HoloViews)
+        assert isinstance(obj, pn.pane.HoloViews)
         self.assertEqual(obj.center, True)
-        self.assertIs(obj.renderer, self.renderer)
+        assert obj.renderer is self.renderer
         self.assertEqual(obj.backend, 'bokeh')
 
     def test_render_holomap_individual(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer._validate(hmap, None)
-        self.assertIsInstance(obj, pn.pane.HoloViews)
+        assert isinstance(obj, pn.pane.HoloViews)
         self.assertEqual(obj.center, True)
         self.assertEqual(obj.widget_location, 'right')
         self.assertEqual(obj.widget_type, 'individual')
@@ -118,7 +118,7 @@ class BokehRendererTest(ComparisonTestCase):
     def test_render_holomap_embedded(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         data, _ = self.renderer.components(hmap)
-        self.assertIn('State"', data['text/html'])
+        assert 'State"' in data['text/html']
 
     # def test_render_holomap_not_embedded(self):
     #     hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
@@ -128,7 +128,7 @@ class BokehRendererTest(ComparisonTestCase):
     def test_render_holomap_scrubber(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer._validate(hmap, 'scrubber')
-        self.assertIsInstance(obj, pn.pane.HoloViews)
+        assert isinstance(obj, pn.pane.HoloViews)
         self.assertEqual(obj.center, True)
         self.assertEqual(obj.widget_location, 'bottom')
         self.assertEqual(obj.widget_type, 'scrubber')
@@ -141,7 +141,7 @@ class BokehRendererTest(ComparisonTestCase):
     def test_render_holomap_scrubber_fps(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer.instance(fps=2)._validate(hmap, 'scrubber')
-        self.assertIsInstance(obj, pn.pane.HoloViews)
+        assert isinstance(obj, pn.pane.HoloViews)
         widgets = obj.layout.select(Player)
         self.assertEqual(len(widgets), 1)
         player = widgets[0]
@@ -150,7 +150,7 @@ class BokehRendererTest(ComparisonTestCase):
     def test_render_holomap_individual_widget_position(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer.instance(widget_location='top')._validate(hmap, None)
-        self.assertIsInstance(obj, pn.pane.HoloViews)
+        assert isinstance(obj, pn.pane.HoloViews)
         self.assertEqual(obj.center, True)
         self.assertEqual(obj.widget_location, 'top')
         self.assertEqual(obj.widget_type, 'individual')

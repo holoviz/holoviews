@@ -65,8 +65,8 @@ class TestDynamicMap(TestPlotlyPlot):
         fn.assert_called_once()
         args, _kwargs = fn.call_args_list[0]
         event = args[0]
-        self.assertIs(event.obj, plotly_pane)
-        self.assertIs(event.new, plotly_pane.object)
+        assert event.obj is plotly_pane
+        assert event.new is plotly_pane.object
 
 
 class TestInteractiveStream(TestPlotlyPlot):
@@ -118,10 +118,10 @@ class TestInteractiveStream(TestPlotlyPlot):
         self.assertEqual(rangexy3.y_range, (6, 8))
 
         plotly_pane.viewport = None
-        self.assertIsNone(rangexy1.x_range)
-        self.assertIsNone(rangexy1.y_range)
-        self.assertIsNone(rangexy3.x_range)
-        self.assertIsNone(rangexy3.y_range)
+        assert rangexy1.x_range is None
+        assert rangexy1.y_range is None
+        assert rangexy3.x_range is None
+        assert rangexy3.y_range is None
 
         # Simulate box selection and check that BoundsXY and Selection1D streams
         # update accordingly
@@ -155,12 +155,12 @@ class TestInteractiveStream(TestPlotlyPlot):
         self.assertEqual(selection1d3.index, [0, 3, 7])
 
         # bounds streams on scatter 2 are None
-        self.assertIsNone(boundsxy2a.bounds)
-        self.assertIsNone(boundsxy2b.bounds)
+        assert boundsxy2a.bounds is None
+        assert boundsxy2b.bounds is None
 
         # Clear selection
         plotly_pane.selected_data = None
-        self.assertIsNone(boundsxy3.bounds)
-        self.assertIsNone(boundsxy2a.bounds)
-        self.assertIsNone(boundsxy2b.bounds)
+        assert boundsxy3.bounds is None
+        assert boundsxy2a.bounds is None
+        assert boundsxy2b.bounds is None
         self.assertEqual(selection1d3.index, [])

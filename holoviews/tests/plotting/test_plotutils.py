@@ -82,14 +82,14 @@ class TestOverlayableZorders(ComparisonTestCase):
         combined = area_redim*curve_redim
         combined[()]
         sources = compute_overlayable_zorders(combined)
-        self.assertIn(area_redim, sources[0])
-        self.assertIn(area, sources[0])
-        self.assertNotIn(curve_redim, sources[0])
-        self.assertNotIn(curve, sources[0])
-        self.assertIn(curve_redim, sources[1])
-        self.assertIn(curve, sources[1])
-        self.assertNotIn(area_redim, sources[1])
-        self.assertNotIn(area, sources[1])
+        assert area_redim in sources[0]
+        assert area in sources[0]
+        assert curve_redim not in sources[0]
+        assert curve not in sources[0]
+        assert curve_redim in sources[1]
+        assert curve in sources[1]
+        assert area_redim not in sources[1]
+        assert area not in sources[1]
 
     def test_dynamic_compute_overlayable_zorders_three_deep_dynamic_layers(self):
         area = DynamicMap(lambda: Area(range(10)), kdims=[])
@@ -102,26 +102,26 @@ class TestOverlayableZorders(ComparisonTestCase):
         combined1 = (combined*curve2_redim)
         combined1[()]
         sources = compute_overlayable_zorders(combined1)
-        self.assertIn(area_redim, sources[0])
-        self.assertIn(area, sources[0])
-        self.assertNotIn(curve_redim, sources[0])
-        self.assertNotIn(curve, sources[0])
-        self.assertNotIn(curve2_redim, sources[0])
-        self.assertNotIn(curve2, sources[0])
+        assert area_redim in sources[0]
+        assert area in sources[0]
+        assert curve_redim not in sources[0]
+        assert curve not in sources[0]
+        assert curve2_redim not in sources[0]
+        assert curve2 not in sources[0]
 
-        self.assertIn(curve_redim, sources[1])
-        self.assertIn(curve, sources[1])
-        self.assertNotIn(area_redim, sources[1])
-        self.assertNotIn(area, sources[1])
-        self.assertNotIn(curve2_redim, sources[1])
-        self.assertNotIn(curve2, sources[1])
+        assert curve_redim in sources[1]
+        assert curve in sources[1]
+        assert area_redim not in sources[1]
+        assert area not in sources[1]
+        assert curve2_redim not in sources[1]
+        assert curve2 not in sources[1]
 
-        self.assertIn(curve2_redim, sources[2])
-        self.assertIn(curve2, sources[2])
-        self.assertNotIn(area_redim, sources[2])
-        self.assertNotIn(area, sources[2])
-        self.assertNotIn(curve_redim, sources[2])
-        self.assertNotIn(curve, sources[2])
+        assert curve2_redim in sources[2]
+        assert curve2 in sources[2]
+        assert area_redim not in sources[2]
+        assert area not in sources[2]
+        assert curve_redim not in sources[2]
+        assert curve not in sources[2]
 
     def test_dynamic_compute_overlayable_zorders_three_deep_dynamic_layers_cloned(self):
         area = DynamicMap(lambda: Area(range(10)), kdims=[])
@@ -135,26 +135,26 @@ class TestOverlayableZorders(ComparisonTestCase):
         combined1[()]
         sources = compute_overlayable_zorders(combined1)
 
-        self.assertIn(area_redim, sources[0])
-        self.assertIn(area, sources[0])
-        self.assertNotIn(curve_redim, sources[0])
-        self.assertNotIn(curve, sources[0])
-        self.assertNotIn(curve2_redim, sources[0])
-        self.assertNotIn(curve2, sources[0])
+        assert area_redim in sources[0]
+        assert area in sources[0]
+        assert curve_redim not in sources[0]
+        assert curve not in sources[0]
+        assert curve2_redim not in sources[0]
+        assert curve2 not in sources[0]
 
-        self.assertIn(curve_redim, sources[1])
-        self.assertIn(curve, sources[1])
-        self.assertNotIn(area_redim, sources[1])
-        self.assertNotIn(area, sources[1])
-        self.assertNotIn(curve2_redim, sources[1])
-        self.assertNotIn(curve2, sources[1])
+        assert curve_redim in sources[1]
+        assert curve in sources[1]
+        assert area_redim not in sources[1]
+        assert area not in sources[1]
+        assert curve2_redim not in sources[1]
+        assert curve2 not in sources[1]
 
-        self.assertIn(curve2_redim, sources[2])
-        self.assertIn(curve2, sources[2])
-        self.assertNotIn(area_redim, sources[2])
-        self.assertNotIn(area, sources[2])
-        self.assertNotIn(curve_redim, sources[2])
-        self.assertNotIn(curve, sources[2])
+        assert curve2_redim in sources[2]
+        assert curve2 in sources[2]
+        assert area_redim not in sources[2]
+        assert area not in sources[2]
+        assert curve_redim not in sources[2]
+        assert curve not in sources[2]
 
     def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_non_dynamic_overlays_reverse(self):
         area1 = Area(range(10))
@@ -166,19 +166,19 @@ class TestOverlayableZorders(ComparisonTestCase):
         combined[()]
         sources = compute_overlayable_zorders(combined)
 
-        self.assertIn(curve_redim, sources[0])
-        self.assertIn(curve, sources[0])
-        self.assertNotIn(overlay, sources[0])
+        assert curve_redim in sources[0]
+        assert curve in sources[0]
+        assert overlay not in sources[0]
 
-        self.assertIn(area1, sources[1])
-        self.assertIn(overlay, sources[1])
-        self.assertNotIn(curve_redim, sources[1])
-        self.assertNotIn(curve, sources[1])
+        assert area1 in sources[1]
+        assert overlay in sources[1]
+        assert curve_redim not in sources[1]
+        assert curve not in sources[1]
 
-        self.assertIn(area2, sources[2])
-        self.assertIn(overlay, sources[2])
-        self.assertNotIn(curve_redim, sources[2])
-        self.assertNotIn(curve, sources[2])
+        assert area2 in sources[2]
+        assert overlay in sources[2]
+        assert curve_redim not in sources[2]
+        assert curve not in sources[2]
 
     def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_non_dynamic_ndoverlays(self):
         ndoverlay = NdOverlay({i: Area(range(10+i)) for i in range(2)})
@@ -188,19 +188,19 @@ class TestOverlayableZorders(ComparisonTestCase):
         combined[()]
         sources = compute_overlayable_zorders(combined)
 
-        self.assertIn(ndoverlay[0], sources[0])
-        self.assertIn(ndoverlay, sources[0])
-        self.assertNotIn(curve_redim, sources[0])
-        self.assertNotIn(curve, sources[0])
+        assert ndoverlay[0] in sources[0]
+        assert ndoverlay in sources[0]
+        assert curve_redim not in sources[0]
+        assert curve not in sources[0]
 
-        self.assertIn(ndoverlay[1], sources[1])
-        self.assertIn(ndoverlay, sources[1])
-        self.assertNotIn(curve_redim, sources[1])
-        self.assertNotIn(curve, sources[1])
+        assert ndoverlay[1] in sources[1]
+        assert ndoverlay in sources[1]
+        assert curve_redim not in sources[1]
+        assert curve not in sources[1]
 
-        self.assertIn(curve_redim, sources[2])
-        self.assertIn(curve, sources[2])
-        self.assertNotIn(ndoverlay, sources[2])
+        assert curve_redim in sources[2]
+        assert curve in sources[2]
+        assert ndoverlay not in sources[2]
 
     def test_dynamic_compute_overlayable_zorders_ndoverlays_as_input(self):
         ndoverlay1 = NdOverlay({i: Area(range(10+i)) for i in range(2)}).apply(lambda el: el.get(0), dynamic=True)
@@ -219,17 +219,17 @@ class TestOverlayableZorders(ComparisonTestCase):
         combined[()]
         sources = compute_overlayable_zorders(combined)
 
-        self.assertIn(ndoverlay, sources[0])
-        self.assertNotIn(curve_redim, sources[0])
-        self.assertNotIn(curve, sources[0])
+        assert ndoverlay in sources[0]
+        assert curve_redim not in sources[0]
+        assert curve not in sources[0]
 
-        self.assertIn(ndoverlay, sources[1])
-        self.assertNotIn(curve_redim, sources[1])
-        self.assertNotIn(curve, sources[1])
+        assert ndoverlay in sources[1]
+        assert curve_redim not in sources[1]
+        assert curve not in sources[1]
 
-        self.assertIn(curve_redim, sources[2])
-        self.assertIn(curve, sources[2])
-        self.assertNotIn(ndoverlay, sources[2])
+        assert curve_redim in sources[2]
+        assert curve in sources[2]
+        assert ndoverlay not in sources[2]
 
     def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_dynamic_ndoverlay_with_streams_cloned(self):
         ndoverlay = DynamicMap(lambda x: NdOverlay({i: Area(range(10+i)) for i in range(2)}),
@@ -240,17 +240,17 @@ class TestOverlayableZorders(ComparisonTestCase):
         combined[()]
         sources = compute_overlayable_zorders(combined.clone())
 
-        self.assertIn(ndoverlay, sources[0])
-        self.assertNotIn(curve_redim, sources[0])
-        self.assertNotIn(curve, sources[0])
+        assert ndoverlay in sources[0]
+        assert curve_redim not in sources[0]
+        assert curve not in sources[0]
 
-        self.assertIn(ndoverlay, sources[1])
-        self.assertNotIn(curve_redim, sources[1])
-        self.assertNotIn(curve, sources[1])
+        assert ndoverlay in sources[1]
+        assert curve_redim not in sources[1]
+        assert curve not in sources[1]
 
-        self.assertIn(curve_redim, sources[2])
-        self.assertIn(curve, sources[2])
-        self.assertNotIn(ndoverlay, sources[2])
+        assert curve_redim in sources[2]
+        assert curve in sources[2]
+        assert ndoverlay not in sources[2]
 
     def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_non_dynamic_ndoverlays_reverse(self):
         ndoverlay = NdOverlay({i: Area(range(10+i)) for i in range(2)})
@@ -260,19 +260,19 @@ class TestOverlayableZorders(ComparisonTestCase):
         combined[()]
         sources = compute_overlayable_zorders(combined)
 
-        self.assertIn(curve_redim, sources[0])
-        self.assertIn(curve, sources[0])
-        self.assertNotIn(ndoverlay, sources[0])
+        assert curve_redim in sources[0]
+        assert curve in sources[0]
+        assert ndoverlay not in sources[0]
 
-        self.assertIn(ndoverlay[0], sources[1])
-        self.assertIn(ndoverlay, sources[1])
-        self.assertNotIn(curve_redim, sources[1])
-        self.assertNotIn(curve, sources[1])
+        assert ndoverlay[0] in sources[1]
+        assert ndoverlay in sources[1]
+        assert curve_redim not in sources[1]
+        assert curve not in sources[1]
 
-        self.assertIn(ndoverlay[1], sources[2])
-        self.assertIn(ndoverlay, sources[2])
-        self.assertNotIn(curve_redim, sources[2])
-        self.assertNotIn(curve, sources[2])
+        assert ndoverlay[1] in sources[2]
+        assert ndoverlay in sources[2]
+        assert curve_redim not in sources[2]
+        assert curve not in sources[2]
 
     def test_dynamic_compute_overlayable_zorders_three_deep_dynamic_layers_reduced(self):
         area = DynamicMap(lambda: Area(range(10)), kdims=[])
@@ -286,19 +286,19 @@ class TestOverlayableZorders(ComparisonTestCase):
         combined1[()]
         sources = compute_overlayable_zorders(combined1)
 
-        self.assertIn(curve_redim, sources[0])
-        self.assertIn(curve, sources[0])
-        self.assertIn(area_redim, sources[0])
-        self.assertIn(area, sources[0])
-        self.assertNotIn(curve2_redim, sources[0])
-        self.assertNotIn(curve2, sources[0])
+        assert curve_redim in sources[0]
+        assert curve in sources[0]
+        assert area_redim in sources[0]
+        assert area in sources[0]
+        assert curve2_redim not in sources[0]
+        assert curve2 not in sources[0]
 
-        self.assertIn(curve2_redim, sources[1])
-        self.assertIn(curve2, sources[1])
-        self.assertNotIn(area_redim, sources[1])
-        self.assertNotIn(area, sources[1])
-        self.assertNotIn(curve_redim, sources[1])
-        self.assertNotIn(curve, sources[1])
+        assert curve2_redim in sources[1]
+        assert curve2 in sources[1]
+        assert area_redim not in sources[1]
+        assert area not in sources[1]
+        assert curve_redim not in sources[1]
+        assert curve not in sources[1]
 
 
     def test_dynamic_compute_overlayable_zorders_three_deep_dynamic_layers_reduced_layers_by_one(self):
@@ -314,27 +314,27 @@ class TestOverlayableZorders(ComparisonTestCase):
         combined1[()]
         sources = compute_overlayable_zorders(combined1)
 
-        self.assertNotIn(curve_redim, sources[0])
-        self.assertNotIn(curve, sources[0])
-        self.assertNotIn(curve2_redim, sources[0])
-        self.assertNotIn(curve2, sources[0])
-        self.assertNotIn(area, sources[0])
-        self.assertNotIn(area_redim, sources[0])
-        self.assertNotIn(area2, sources[0])
+        assert curve_redim not in sources[0]
+        assert curve not in sources[0]
+        assert curve2_redim not in sources[0]
+        assert curve2 not in sources[0]
+        assert area not in sources[0]
+        assert area_redim not in sources[0]
+        assert area2 not in sources[0]
 
-        self.assertNotIn(area_redim, sources[1])
-        self.assertNotIn(area, sources[1])
-        self.assertNotIn(curve2_redim, sources[1])
-        self.assertNotIn(curve2, sources[1])
-        self.assertNotIn(area2, sources[0])
+        assert area_redim not in sources[1]
+        assert area not in sources[1]
+        assert curve2_redim not in sources[1]
+        assert curve2 not in sources[1]
+        assert area2 not in sources[0]
 
-        self.assertIn(curve2_redim, sources[2])
-        self.assertIn(curve2, sources[2])
-        self.assertNotIn(area_redim, sources[2])
-        self.assertNotIn(area, sources[2])
-        self.assertNotIn(area2, sources[0])
-        self.assertNotIn(curve_redim, sources[2])
-        self.assertNotIn(curve, sources[2])
+        assert curve2_redim in sources[2]
+        assert curve2 in sources[2]
+        assert area_redim not in sources[2]
+        assert area not in sources[2]
+        assert area2 not in sources[0]
+        assert curve_redim not in sources[2]
+        assert curve not in sources[2]
 
 
 class TestInitializeDynamic(ComparisonTestCase):
@@ -546,7 +546,7 @@ class TestBokehPaletteUtils(ComparisonTestCase):
         categorical = ('accent', 'category20', 'dark2', 'colorblind', 'pastel1',
                        'pastel2', 'set1', 'set2', 'set3', 'paired')
         for cat in categorical:
-            self.assertTrue(len(set(bokeh_palette_to_palette(cat))) <= 20)
+            assert len(set(bokeh_palette_to_palette(cat))) <= 20
 
     def test_bokeh_colormap_fire(self):
         colors = process_cmap('fire', 3, provider='bokeh')

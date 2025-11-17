@@ -61,7 +61,7 @@ class TestBokehPlot(ComparisonTestCase):
         self.assertEqual(cmapper.low, low)
         self.assertEqual(cmapper.high, high)
         mapper_type = LogColorMapper if log else LinearColorMapper
-        self.assertTrue(isinstance(cmapper, mapper_type))
+        assert isinstance(cmapper, mapper_type)
 
     def _test_hover_info(self, element, tooltips, line_policy='nearest', formatters=None):
         if formatters is None:
@@ -72,7 +72,7 @@ class TestBokehPlot(ComparisonTestCase):
         renderers = [r for r in plot.traverse(lambda x: x.handles.get('glyph_renderer'))
                      if r is not None]
         hover = fig.select(dict(type=HoverTool))
-        self.assertTrue(len(hover))
+        assert len(hover)
         self.assertEqual(hover[0].tooltips, tooltips)
         self.assertEqual(hover[0].formatters, formatters)
         self.assertEqual(hover[0].line_policy, line_policy)
@@ -81,11 +81,11 @@ class TestBokehPlot(ComparisonTestCase):
             cds = fig.select_one(dict(type=ColumnDataSource))
             for label, lookup in hover[0].tooltips:
                 if label in element.dimensions():
-                    self.assertIn(lookup[2:-1], cds.data)
+                    assert lookup[2:-1] in cds.data
 
         # Ensure all the glyph renderers have a hover tool
         for renderer in renderers:
-            self.assertTrue(any(renderer in h.renderers for h in hover))
+            assert any(renderer in h.renderers for h in hover)
 
 
 def test_element_plot_stream_cleanup():

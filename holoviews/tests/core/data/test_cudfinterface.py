@@ -48,8 +48,8 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
     def test_dataset_mixed_type_range(self):
         ds = Dataset((['A', 'B', 'C', None],), 'A')
         vmin, vmax = ds.range(0)
-        self.assertTrue(np.isnan(vmin))
-        self.assertTrue(np.isnan(vmax))
+        assert np.isnan(vmin)
+        assert np.isnan(vmax)
 
     @pytest.mark.xfail(reason="cuDF does not support variance aggregation")
     def test_dataset_aggregate_string_types_size(self):

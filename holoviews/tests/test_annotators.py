@@ -15,12 +15,12 @@ class Test_annotate(TestBokehPlot):
         overlay = combined.DynamicMap.I[()]
         tables = combined.Annotator.I[()]
 
-        self.assertIsInstance(overlay, Overlay)
+        assert isinstance(overlay, Overlay)
         self.assertEqual(len(overlay), 2)
         self.assertEqual(overlay.get(0), Points([], vdims='Label'))
         self.assertEqual(overlay.get(1), Path([], vdims='Name'))
 
-        self.assertIsInstance(tables, Overlay)
+        assert isinstance(tables, Overlay)
         self.assertEqual(len(tables), 3)
 
     def test_annotate_overlay(self):
@@ -29,18 +29,18 @@ class Test_annotate(TestBokehPlot):
         overlay = layout.DynamicMap.I[()]
         tables = layout.Annotator.PointAnnotator[()]
 
-        self.assertIsInstance(overlay, Overlay)
+        assert isinstance(overlay, Overlay)
         self.assertEqual(len(overlay), 2)
-        self.assertIsInstance(overlay.get(0), Tiles)
+        assert isinstance(overlay.get(0), Tiles)
         self.assertEqual(overlay.get(1), Points([], vdims='Label'))
 
-        self.assertIsInstance(tables, Overlay)
+        assert isinstance(tables, Overlay)
         self.assertEqual(len(tables), 1)
 
     def test_annotated_property(self):
         annotator = annotate.instance()
         annotator(Points([]), annotations=['Label'])
-        self.assertIn('Label', annotator.annotated)
+        assert 'Label' in annotator.annotated
 
     def test_selected_property(self):
         annotator = annotate.instance()
@@ -53,7 +53,7 @@ class TestPointAnnotator(TestBokehPlot):
 
     def test_add_annotations(self):
         annotator = PointAnnotator(Points([]), annotations=['Label'])
-        self.assertIn('Label', annotator.object)
+        assert 'Label' in annotator.object
 
     def test_add_name(self):
         annotator = PointAnnotator(name="Test Annotator", annotations=['Label'])
@@ -69,10 +69,10 @@ class TestPointAnnotator(TestBokehPlot):
     def test_replace_object(self):
         annotator = PointAnnotator(Points([]), annotations=['Label'])
         annotator.object = Points([(1, 2)])
-        self.assertIn('Label', annotator.object)
+        assert 'Label' in annotator.object
         expected = Table([(1, 2, '')], ['x', 'y'], vdims=['Label'], label='PointAnnotator')
         self.assertEqual(annotator._table, expected)
-        self.assertIs(annotator._link.target, annotator._table)
+        assert annotator._link.target is annotator._table
 
     def test_stream_update(self):
         annotator = PointAnnotator(Points([(1, 2)]), annotations=['Label'])
@@ -85,7 +85,7 @@ class TestPathAnnotator(TestBokehPlot):
 
     def test_add_annotations(self):
         annotator = PathAnnotator(Path([]), annotations=['Label'])
-        self.assertIn('Label', annotator.object)
+        assert 'Label' in annotator.object
 
     def test_add_name(self):
         annotator = PathAnnotator(name="Test Annotator", annotations=['Label'])
@@ -97,15 +97,15 @@ class TestPathAnnotator(TestBokehPlot):
 
     def test_add_vertex_annotations(self):
         annotator = PathAnnotator(Path([]), vertex_annotations=['Label'])
-        self.assertIn('Label', annotator.object)
+        assert 'Label' in annotator.object
 
     def test_replace_object(self):
         annotator = PathAnnotator(Path([]), annotations=['Label'], vertex_annotations=['Value'])
         annotator.object = Path([(1, 2), (2, 3), (0, 0)])
-        self.assertIn('Label', annotator.object)
+        assert 'Label' in annotator.object
         expected = Table([('')], kdims=['Label'], label='PathAnnotator')
         self.assertEqual(annotator._table, expected)
         expected = Table([], ['x', 'y'], 'Value', label='PathAnnotator Vertices')
         self.assertEqual(annotator._vertex_table, expected)
-        self.assertIs(annotator._link.target, annotator._table)
-        self.assertIs(annotator._vertex_link.target, annotator._vertex_table)
+        assert annotator._link.target is annotator._table
+        assert annotator._vertex_link.target is annotator._vertex_table

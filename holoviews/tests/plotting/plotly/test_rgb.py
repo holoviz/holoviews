@@ -303,6 +303,6 @@ class TestMapboxRGBPlot(TestPlotlyPlot):
             [self.lon_range[1], self.lat_range[0]],
             [self.lon_range[0], self.lat_range[0]]
         ])
-        self.assertTrue(rgb_layer["source"].startswith("data:image/png;base64,iVBOR"))
+        assert rgb_layer["source"].startswith("data:image/png;base64,iVBOR")
         self.assertEqual(rgb_layer["opacity"], 0.5)
         self.assertEqual(rgb_layer["sourcetype"], "image")

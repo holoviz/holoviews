@@ -41,7 +41,7 @@ class TestPointPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(points)
         plot.initialize_plot()
         cmapper = plot.handles['color_mapper']
-        self.assertIsInstance(cmapper, CategoricalColorMapper)
+        assert isinstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, list(points['b']))
 
     def test_points_color_selection_nonselection(self):
@@ -194,7 +194,7 @@ class TestPointPlot(TestBokehPlot):
         points = Points((['A', 'B', 'C'], (1,2,3)))
         plot = bokeh_renderer.get_plot(points)
         x_range = plot.handles['x_range']
-        self.assertIsInstance(x_range, FactorRange)
+        assert isinstance(x_range, FactorRange)
         self.assertEqual(x_range.factors, ['A', 'B', 'C'])
 
     def test_points_categorical_xaxis_mixed_type(self):
@@ -202,14 +202,14 @@ class TestPointPlot(TestBokehPlot):
         points2 = Points((['A', 'B', 'C', 1, 2.0], (1, 2, 3, 4, 5)))
         plot = bokeh_renderer.get_plot(points*points2)
         x_range = plot.handles['x_range']
-        self.assertIsInstance(x_range, FactorRange)
+        assert isinstance(x_range, FactorRange)
         self.assertEqual(x_range.factors, [*map(str, range(10)), 'A', 'B', 'C', '2.0'])
 
     def test_points_categorical_xaxis_invert_axes(self):
         points = Points((['A', 'B', 'C'], (1,2,3))).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(points)
         y_range = plot.handles['y_range']
-        self.assertIsInstance(y_range, FactorRange)
+        assert isinstance(y_range, FactorRange)
         self.assertEqual(y_range.factors, ['A', 'B', 'C'])
 
     def test_points_overlay_categorical_xaxis(self):
@@ -217,7 +217,7 @@ class TestPointPlot(TestBokehPlot):
         points2 = Points((['B', 'C', 'D'], (1,2,3)))
         plot = bokeh_renderer.get_plot(points*points2)
         x_range = plot.handles['x_range']
-        self.assertIsInstance(x_range, FactorRange)
+        assert isinstance(x_range, FactorRange)
         self.assertEqual(x_range.factors, ['A', 'B', 'C', 'D'])
 
     def test_points_overlay_categorical_xaxis_invert_axis(self):
@@ -225,7 +225,7 @@ class TestPointPlot(TestBokehPlot):
         points2 = Points((['B', 'C', 'D'], (1,2,3)))
         plot = bokeh_renderer.get_plot(points*points2)
         x_range = plot.handles['x_range']
-        self.assertIsInstance(x_range, FactorRange)
+        assert isinstance(x_range, FactorRange)
         self.assertEqual(x_range.factors, ['A', 'B', 'C', 'D'][::-1])
 
     def test_points_overlay_categorical_xaxis_invert_axes(self):
@@ -233,7 +233,7 @@ class TestPointPlot(TestBokehPlot):
         points2 = Points((['B', 'C', 'D'], (1,2,3)))
         plot = bokeh_renderer.get_plot(points*points2)
         y_range = plot.handles['y_range']
-        self.assertIsInstance(y_range, FactorRange)
+        assert isinstance(y_range, FactorRange)
         self.assertEqual(y_range.factors, ['A', 'B', 'C', 'D'])
 
     def test_points_padding_square(self):
@@ -523,7 +523,7 @@ class TestPointPlot(TestBokehPlot):
         overlay = NdOverlay({marker: Points(np.arange(i)) for i, marker in enumerate(markers)}, 'Marker').opts('Points', marker='Marker')
         plot = bokeh_renderer.get_plot(overlay)
         for subplot, glyph_type, marker in zip(plot.subplots.values(), [Scatter, Scatter], markers, strict=None):
-            self.assertIsInstance(subplot.handles['glyph'], glyph_type)
+            assert isinstance(subplot.handles['glyph'], glyph_type)
             self.assertEqual(subplot.handles['glyph'].marker, marker)
 
     def test_point_color_index_color_clash(self):

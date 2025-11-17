@@ -60,17 +60,17 @@ class TestBokehServerSetup(ComparisonTestCase):
         obj = Curve([])
         doc = Document()
         server_doc = bokeh_renderer.server_doc(obj, doc)
-        self.assertIs(server_doc, doc)
-        self.assertIs(bokeh_renderer.last_plot.document, doc)
+        assert server_doc is doc
+        assert bokeh_renderer.last_plot.document is doc
 
     def test_set_up_linked_change_stream_on_server_doc(self):
         obj = Curve([])
         stream = RangeXY(source=obj)
         server_doc = bokeh_renderer.server_doc(obj)
-        self.assertIsInstance(server_doc, Document)
+        assert isinstance(server_doc, Document)
         self.assertEqual(len(bokeh_renderer.last_plot.callbacks), 1)
         cb = bokeh_renderer.last_plot.callbacks[0]
-        self.assertIsInstance(cb, RangeXYCallback)
+        assert isinstance(cb, RangeXYCallback)
         self.assertEqual(cb.streams, [stream])
         assert 'rangesupdate' in bokeh_renderer.last_plot.state._event_callbacks
 
@@ -78,9 +78,9 @@ class TestBokehServerSetup(ComparisonTestCase):
         obj = Curve([])
         stream = PlotReset(source=obj)
         server_doc = bokeh_renderer.server_doc(obj)
-        self.assertIsInstance(server_doc, Document)
+        assert isinstance(server_doc, Document)
         cb = bokeh_renderer.last_plot.callbacks[0]
-        self.assertIsInstance(cb, ResetCallback)
+        assert isinstance(cb, ResetCallback)
         self.assertEqual(cb.streams, [stream])
 
 
@@ -130,7 +130,7 @@ class TestBokehServer(ComparisonTestCase):
         [(plot, _)] = obj._plots.values()
 
         cb = plot.callbacks[0]
-        self.assertIsInstance(cb, RangeXYCallback)
+        assert isinstance(cb, RangeXYCallback)
         self.assertEqual(cb.streams, [stream])
         assert 'rangesupdate' in plot.state._event_callbacks
 

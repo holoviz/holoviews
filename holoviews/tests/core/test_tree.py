@@ -15,7 +15,7 @@ class AttrTreeTest(ComparisonTestCase):
         self.assertEqual(self.tree.B.II, 2)
 
     def test_uppercase_attribute_create_node(self):
-        self.assertIsInstance(self.tree.C, AttrTree)
+        assert isinstance(self.tree.C, AttrTree)
 
     def test_uppercase_setattr(self):
         self.tree.C = 3
@@ -65,14 +65,14 @@ class AttrTreeTest(ComparisonTestCase):
     def test_delitem(self):
         Btree = self.tree.B
         del self.tree['B']
-        self.assertIsNot(self.tree.B, Btree)
-        self.assertNotIn(('B', 'II'), self.tree.data)
+        assert self.tree.B is not Btree
+        assert ('B', 'II') not in self.tree.data
 
     def test_delitem_on_node(self):
         del self.tree.B['II']
         self.assertNotEqual(self.tree.B.II, 2)
-        self.assertNotIn(('B', 'II'), self.tree.data)
-        self.assertNotIn(('II',), self.tree.B)
+        assert ('B', 'II') not in self.tree.data
+        assert ('II',) not in self.tree.B
 
     def test_delitem_keyerror(self):
         with self.assertRaises(KeyError):
@@ -81,13 +81,13 @@ class AttrTreeTest(ComparisonTestCase):
     def test_deep_delitem(self):
         BTree = self.tree.B
         del self.tree[('B', 'II')]
-        self.assertIsInstance(self.tree.B.II, AttrTree)
-        self.assertIs(self.tree.B, BTree)
-        self.assertNotIn(('B', 'II'), self.tree.data)
+        assert isinstance(self.tree.B.II, AttrTree)
+        assert self.tree.B is BTree
+        assert ('B', 'II') not in self.tree.data
 
     def test_deep_delitem_str(self):
         BTree = self.tree.B
         del self.tree['B.II']
-        self.assertIsInstance(self.tree.B.II, AttrTree)
-        self.assertIs(self.tree.B, BTree)
-        self.assertNotIn(('B', 'II'), self.tree.data)
+        assert isinstance(self.tree.B.II, AttrTree)
+        assert self.tree.B is BTree
+        assert ('B', 'II') not in self.tree.data

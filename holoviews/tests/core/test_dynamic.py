@@ -397,7 +397,7 @@ class DynamicMapMethods(ComparisonTestCase):
         dmap2 = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
         layout = (dmap1 + dmap2)
         mapped = layout.map(lambda x: x[10], DynamicMap, clone=False)
-        self.assertIs(mapped, layout)
+        assert mapped is layout
 
     def test_dynamic_reindex_reorder(self):
         history = deque(maxlen=10)
@@ -427,12 +427,12 @@ class DynamicMapMethods(ComparisonTestCase):
         buff = Buffer(data=np.empty((0, 3)))
         dmap = DynamicMap(plot_function, streams=[buff], kdims='mydim').redim.values(mydim=[0, 1, 2])
         ndlayout = dmap.groupby('mydim', container_type=NdLayout)
-        self.assertIsInstance(ndlayout[0], DynamicMap)
+        assert isinstance(ndlayout[0], DynamicMap)
         data = np.array([(0, 0, 0), (1, 1, 1), (2, 2, 2)])
         buff.send(data)
-        self.assertIs(ndlayout[0].callback.inputs[0], dmap)
-        self.assertIs(ndlayout[1].callback.inputs[0], dmap)
-        self.assertIs(ndlayout[2].callback.inputs[0], dmap)
+        assert ndlayout[0].callback.inputs[0] is dmap
+        assert ndlayout[1].callback.inputs[0] is dmap
+        assert ndlayout[2].callback.inputs[0] is dmap
         self.assertEqual(ndlayout[0][()], Scatter([(0, 0)]))
         self.assertEqual(ndlayout[1][()], Scatter([(1, 1)]))
         self.assertEqual(ndlayout[2][()], Scatter([(2, 2)]))
@@ -511,13 +511,13 @@ class DynamicMapOptionsTests(CustomBackendTestCase):
         styled_dmap = dmap.options(plot_opt1='red', clone=False)
         opts = Store.lookup_options('backend_1', dmap[0], 'plot')
         self.assertEqual(opts.options, {'plot_opt1': 'red'})
-        self.assertIs(styled_dmap, dmap)
-        self.assertTrue(dmap.callback.link_inputs)
+        assert styled_dmap is dmap
+        assert dmap.callback.link_inputs
         unstyled_dmap = dmap.callback.inputs[0].callback.inputs[0]
         opts = Store.lookup_options('backend_1', unstyled_dmap[0], 'plot')
         self.assertEqual(opts.options, {})
         original_dmap = unstyled_dmap.callback.inputs[0]
-        self.assertIs(stream, original_dmap.streams[0])
+        assert stream is original_dmap.streams[0]
 
 
 class DynamicMapUnboundedProperty(ComparisonTestCase):
@@ -558,7 +558,7 @@ class DynamicMapCurrentKeyProperty(ComparisonTestCase):
     def test_current_key_None_on_init(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap = DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
-        self.assertIsNone(dmap.current_key)
+        assert dmap.current_key is None
 
     def test_current_key_one_dimension(self):
         fn = lambda i: Image(sine_array(0,i))
@@ -664,7 +664,7 @@ class DynamicTestOperation(ComparisonTestCase):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=['i'])
         dmap_with_fn = Dynamic(dmap, link_inputs=False, operation=lambda x: x.clone(x.data*2))
-        self.assertTrue(dmap_with_fn.clone().callback.link_inputs)
+        assert dmap_with_fn.clone().callback.link_inputs
 
     def test_dynamic_operation_on_element(self):
         img = Image(sine_array(0,5))
@@ -792,14 +792,14 @@ class DynamicCallableMemoize(ComparisonTestCase):
 
     def test_dynamic_keydim_memoize(self):
         dmap = DynamicMap(lambda x: Curve([(0, x)]), kdims=['x'])
-        self.assertIs(dmap[0], dmap[0])
+        assert dmap[0] is dmap[0]
 
     def test_dynamic_keydim_memoize_disable(self):
         dmap = DynamicMap(Callable(lambda x: Curve([(0, x)]), memoize=False), kdims=['x'])
         first = dmap[0]
         del dmap.data[(0,)]
         second = dmap[0]
-        self.assertIsNot(first, second)
+        assert first is not second
 
     def test_dynamic_callable_memoize(self):
         # Always memoized only one of each held
@@ -1100,7 +1100,7 @@ class DynamicCollate(LoggingComparisonTestCase):
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
         self.assertEqual(list(layout.keys()), [('Image', 'I'), ('Text', 'I')])
-        self.assertIs(stream.source, layout.Image.I)
+        assert stream.source is layout.Image.I
 
     def test_dynamic_collate_layout_with_spec_stream_mapping(self):
         def callback(x, y):
@@ -1110,7 +1110,7 @@ class DynamicCollate(LoggingComparisonTestCase):
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
         self.assertEqual(list(layout.keys()), [('Image', 'I'), ('Text', 'I')])
-        self.assertIs(stream.source, layout.Image.I)
+        assert stream.source is layout.Image.I
 
     def test_dynamic_collate_ndlayout(self):
         def callback():
@@ -1128,7 +1128,7 @@ class DynamicCollate(LoggingComparisonTestCase):
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
         self.assertEqual(list(layout.keys()), [1, 2])
-        self.assertIs(stream.source, layout[1])
+        assert stream.source is layout[1]
 
     def test_dynamic_collate_ndlayout_with_key_stream_mapping(self):
         def callback(x, y):
@@ -1138,7 +1138,7 @@ class DynamicCollate(LoggingComparisonTestCase):
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
         self.assertEqual(list(layout.keys()), [1, 2])
-        self.assertIs(stream.source, layout[1])
+        assert stream.source is layout[1]
 
     def test_dynamic_collate_grid(self):
         def callback():

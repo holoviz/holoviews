@@ -79,7 +79,7 @@ class TestDecollation(ComparisonTestCase):
     def test_decollate_layout_kdims(self):
         layout = self.dmap_ab + self.dmap_b
         decollated = layout.decollate()
-        self.assertIsInstance(decollated, DynamicMap)
+        assert isinstance(decollated, DynamicMap)
         self.assertEqual(decollated.kdims, self.dmap_ab.kdims)
         self.assertEqual(
             decollated[2, 3],
@@ -93,7 +93,7 @@ class TestDecollation(ComparisonTestCase):
     def test_decollate_layout_streams(self):
         layout = self.dmap_xy + self.dmap_z
         decollated = layout.decollate()
-        self.assertIsInstance(decollated, DynamicMap)
+        assert isinstance(decollated, DynamicMap)
         self.assertEqual(decollated.kdims, [])
 
         # Update streams
@@ -111,7 +111,7 @@ class TestDecollation(ComparisonTestCase):
     def test_decollate_layout_kdims_and_streams(self):
         layout = self.dmap_ab + self.dmap_xy
         decollated = layout.decollate()
-        self.assertIsInstance(decollated, DynamicMap)
+        assert isinstance(decollated, DynamicMap)
         self.assertEqual(decollated.kdims, self.dmap_ab.kdims)
 
         # Update streams
@@ -129,7 +129,7 @@ class TestDecollation(ComparisonTestCase):
     @datashade_skip
     def test_decollate_spread(self):
         decollated = self.dmap_spread_points.decollate()
-        self.assertIsInstance(decollated, DynamicMap)
+        assert isinstance(decollated, DynamicMap)
 
         # Check top-level stream types
         self.assertEqual(
@@ -156,7 +156,7 @@ class TestDecollation(ComparisonTestCase):
     @datashade_skip
     def test_decollate_datashade_kdims(self):
         decollated = self.dmap_datashade_kdim_points.decollate()
-        self.assertIsInstance(decollated, DynamicMap)
+        assert isinstance(decollated, DynamicMap)
 
         # Check kdims
         self.assertEqual(decollated.kdims, self.dmap_ab.kdims)
@@ -189,7 +189,7 @@ class TestDecollation(ComparisonTestCase):
         layout = self.dmap_datashade_kdim_points + self.dmap_b
 
         decollated = layout.decollate()
-        self.assertIsInstance(decollated, DynamicMap)
+        assert isinstance(decollated, DynamicMap)
 
         # Check kdims
         self.assertEqual(decollated.kdims, self.dmap_ab.kdims)
@@ -223,7 +223,7 @@ class TestDecollation(ComparisonTestCase):
         ])
 
         decollated = overlay.decollate()
-        self.assertIsInstance(decollated, DynamicMap)
+        assert isinstance(decollated, DynamicMap)
         self.assertEqual(len(decollated.streams), 3)
 
         expected = Overlay([
@@ -262,7 +262,7 @@ class TestDecollation(ComparisonTestCase):
 
         # Decollate container
         decollated = container.decollate()
-        self.assertIsInstance(decollated, DynamicMap)
+        assert isinstance(decollated, DynamicMap)
         self.assertEqual(decollated.kdims, self.dmap_ab.kdims)
 
         # Check result of instantiating decollate DynamicMap for particular kdim values
@@ -294,7 +294,7 @@ class TestDecollation(ComparisonTestCase):
 
         # Decollate container
         decollated = container.decollate()
-        self.assertIsInstance(decollated, DynamicMap)
+        assert isinstance(decollated, DynamicMap)
         self.assertEqual(len(decollated.kdims), 0)
         self.assertEqual(len(decollated.streams), 1)
 
@@ -312,10 +312,10 @@ class TestDecollation(ComparisonTestCase):
         decollated = self.dmap_derived.decollate()
 
         # Check decollated types
-        self.assertIsInstance(decollated, DynamicMap)
+        assert isinstance(decollated, DynamicMap)
         self.assertEqual(len(decollated.streams), 3)
         for stream in decollated.streams:
-            self.assertIsInstance(stream, Val)
+            assert isinstance(stream, Val)
 
         # Compute expected result
         expected = self.dmap_derived.callback.callable(6.0)

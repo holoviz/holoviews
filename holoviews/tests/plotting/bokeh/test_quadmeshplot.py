@@ -30,8 +30,8 @@ class TestQuadMeshPlot(TestBokehPlot):
         ys = np.linspace(1, 10, n)
         qmesh = QuadMesh((xs, ys, np.random.rand(n-1, n-1))).opts(colorbar=True)
         plot = bokeh_renderer.get_plot(qmesh)
-        self.assertIsInstance(plot.handles['colorbar'], ColorBar)
-        self.assertIs(plot.handles['colorbar'].color_mapper, plot.handles['color_mapper'])
+        assert isinstance(plot.handles['colorbar'], ColorBar)
+        assert plot.handles['colorbar'].color_mapper is plot.handles['color_mapper']
 
     def test_quadmesh_inverted_coords(self):
         xs = [0, 1, 2]

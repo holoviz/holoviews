@@ -49,7 +49,7 @@ class TestPointPlot(TestMPLPlot):
         opts = dict(fig_rcparams={'text.usetex': True})
         points = Points(([0, 1], [0, 3])).opts(**opts)
         mpl_renderer.get_plot(points)
-        self.assertFalse(plt.rcParams['text.usetex'])
+        assert not plt.rcParams['text.usetex']
 
     def test_points_rcparams_used(self):
         opts = dict(fig_rcparams={'grid.color': 'red'})

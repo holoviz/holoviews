@@ -29,7 +29,7 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_overlay_apply_ranges_disabled(self):
         overlay = (Curve(range(10)) * Curve(range(10))).opts('Curve', apply_ranges=False)
         plot = bokeh_renderer.get_plot(overlay)
-        self.assertTrue(all(np.isnan(e) for e in plot.get_extents(overlay, {})))
+        assert all(np.isnan(e) for e in plot.get_extents(overlay, {}))
 
     def test_overlay_update_sources(self):
         hmap = HoloMap({i: (Curve(np.arange(i), label='A') *
@@ -68,11 +68,11 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         hmap2 = HoloMap({i: Curve(np.arange(i), label='B') for i in range(3, 5)})
         plot = bokeh_renderer.get_plot(hmap*hmap2)
         subplot1, subplot2 = plot.subplots.values()
-        self.assertTrue(subplot1.handles['glyph_renderer'].visible)
-        self.assertFalse(subplot2.handles['glyph_renderer'].visible)
+        assert subplot1.handles['glyph_renderer'].visible
+        assert not subplot2.handles['glyph_renderer'].visible
         plot.update((4,))
-        self.assertFalse(subplot1.handles['glyph_renderer'].visible)
-        self.assertTrue(subplot2.handles['glyph_renderer'].visible)
+        assert not subplot1.handles['glyph_renderer'].visible
+        assert subplot2.handles['glyph_renderer'].visible
 
     def test_hover_tool_instance_renderer_association(self):
         tooltips = [("index", "$index")]
@@ -81,7 +81,7 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay)
         curve_plot = plot.subplots[('Curve', 'I')]
         self.assertEqual(len(curve_plot.handles['hover'].renderers), 1)
-        self.assertIn(curve_plot.handles['glyph_renderer'], curve_plot.handles['hover'].renderers)
+        assert curve_plot.handles['glyph_renderer'] in curve_plot.handles['hover'].renderers
         self.assertEqual(plot.handles['hover'].tooltips, tooltips)
 
     # def test_hover_tool_overlay_renderers(self):
@@ -113,12 +113,12 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_overlay_no_xaxis(self):
         overlay = (Curve(range(10)) * Curve(range(10))).opts(xaxis=None)
         plot = bokeh_renderer.get_plot(overlay).state
-        self.assertFalse(plot.xaxis[0].visible)
+        assert not plot.xaxis[0].visible
 
     def test_overlay_no_yaxis(self):
         overlay = (Curve(range(10)) * Curve(range(10))).opts(yaxis=None)
         plot = bokeh_renderer.get_plot(overlay).state
-        self.assertFalse(plot.yaxis[0].visible)
+        assert not plot.yaxis[0].visible
 
     def test_overlay_xlabel_override(self):
         overlay = (Curve(range(10)) * Curve(range(10))).opts(xlabel='custom x-label')
@@ -153,13 +153,13 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_overlay_xticks_list(self):
         overlay = (Curve(range(10)) * Curve(range(10))).opts(xticks=[0, 5, 10])
         plot = bokeh_renderer.get_plot(overlay).state
-        self.assertIsInstance(plot.xaxis[0].ticker, FixedTicker)
+        assert isinstance(plot.xaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.xaxis[0].ticker.ticks, [0, 5, 10])
 
     def test_overlay_yticks_list(self):
         overlay = (Curve(range(10)) * Curve(range(10))).opts(yticks=[0, 5, 10])
         plot = bokeh_renderer.get_plot(overlay).state
-        self.assertIsInstance(plot.yaxis[0].ticker, FixedTicker)
+        assert isinstance(plot.yaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.yaxis[0].ticker.ticks, [0, 5, 10])
 
     def test_overlay_update_plot_opts(self):
@@ -191,10 +191,10 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay*error*text)
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
-        self.assertIsInstance(x_range, FactorRange)
+        assert isinstance(x_range, FactorRange)
         factors = ['A', 'B', 'C', 'D', 'E']
         self.assertEqual(x_range.factors, ['A', 'B', 'C', 'D', 'E'])
-        self.assertIsInstance(y_range, Range1d)
+        assert isinstance(y_range, Range1d)
         error_plot = plot.subplots[('ErrorBars', 'I')]
         for xs, factor in zip(error_plot.handles['source'].data['base'], factors, strict=None):
             self.assertEqual(factor, xs)
@@ -218,8 +218,8 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay*error*text)
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
-        self.assertIsInstance(x_range, Range1d)
-        self.assertIsInstance(y_range, FactorRange)
+        assert isinstance(x_range, Range1d)
+        assert isinstance(y_range, FactorRange)
         self.assertEqual(y_range.factors, ['A', 'B', 'C', 'D', 'E'])
 
     def test_overlay_empty_element_extent(self):
@@ -255,8 +255,8 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         overlay = Curve((np.arange(5)), label='increase') * Curve((np.arange(5)*-1+5), label='decrease').opts(muted=True)
         plot = bokeh_renderer.get_plot(overlay)
         unmuted, muted = plot.subplots.values()
-        self.assertFalse(unmuted.handles['glyph_renderer'].muted)
-        self.assertTrue(muted.handles['glyph_renderer'].muted)
+        assert not unmuted.handles['glyph_renderer'].muted
+        assert muted.handles['glyph_renderer'].muted
 
     def test_overlay_params_bind_linked_stream(self):
         tap = Tap()

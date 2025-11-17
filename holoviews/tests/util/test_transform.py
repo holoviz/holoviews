@@ -113,7 +113,7 @@ class TestDimTransforms(ComparisonTestCase):
             return
 
         # Make sure expected is a pandas Series
-        self.assertIsInstance(expected, pd.Series)
+        assert isinstance(expected, pd.Series)
 
         # Check using dataset backed by pandas DataFrame
         # keep_index=False
@@ -174,7 +174,7 @@ class TestDimTransforms(ComparisonTestCase):
             return
 
         # Make sure expected is a pandas Series
-        self.assertIsInstance(expected, xr.DataArray)
+        assert isinstance(expected, xr.DataArray)
 
         # Check using dataset backed by pandas DataFrame
         # keep_index=False

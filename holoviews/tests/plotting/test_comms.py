@@ -21,7 +21,7 @@ class TestComm(ComparisonTestCase):
             raise Exception('Test')
         def assert_error(msg=None, metadata=None):
             self.assertEqual(metadata['msg_type'], "Error")
-            self.assertTrue(metadata['traceback'].endswith('Exception: Test'))
+            assert metadata['traceback'].endswith('Exception: Test')
         comm = Comm(id='Test', on_msg=raise_error)
         comm.send = assert_error
         comm._handle_msg({})

@@ -46,8 +46,8 @@ class TestSankeyPlot(TestBokehPlot):
         quad_renderer = plot.handles['quad_1_glyph_renderer']
         text_renderer = plot.handles['text_1_glyph_renderer']
         graph_renderer = plot.handles['glyph_renderer']
-        self.assertTrue(renderers.index(graph_renderer)<renderers.index(quad_renderer))
-        self.assertTrue(renderers.index(quad_renderer)<renderers.index(text_renderer))
+        assert renderers.index(graph_renderer) < renderers.index(quad_renderer)
+        assert renderers.index(quad_renderer) < renderers.index(text_renderer)
 
 
     def test_sankey_label_index(self):
@@ -81,8 +81,8 @@ class TestSankeyPlot(TestBokehPlot):
         quad_renderer = plot.handles['quad_1_glyph_renderer']
         text_renderer = plot.handles['text_1_glyph_renderer']
         graph_renderer = plot.handles['glyph_renderer']
-        self.assertTrue(renderers.index(graph_renderer)<renderers.index(quad_renderer))
-        self.assertTrue(renderers.index(quad_renderer)<renderers.index(text_renderer))
+        assert renderers.index(graph_renderer) < renderers.index(quad_renderer)
+        assert renderers.index(quad_renderer) < renderers.index(text_renderer)
 
     def test_dimension_label(self):
         # Ref: https://github.com/holoviz/holoviews/issues/5386

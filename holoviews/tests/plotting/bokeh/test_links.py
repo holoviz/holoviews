@@ -23,7 +23,7 @@ class TestLinkCallbacks(TestBokehPlot):
         src_plot = plot.subplots[(0, 1)].subplots['main']
         range_tool = src_plot.state.select_one({'type': RangeTool})
         self.assertEqual(range_tool.x_range, tgt_plot.handles['x_range'])
-        self.assertIs(range_tool.y_range, None)
+        assert range_tool.y_range is None
 
     def test_range_tool_link_callback_single_axis_overlay_target(self):
         array = np.random.rand(100, 2)
@@ -36,7 +36,7 @@ class TestLinkCallbacks(TestBokehPlot):
         src_plot = plot.subplots[(0, 1)].subplots['main']
         range_tool = src_plot.state.select_one({'type': RangeTool})
         self.assertEqual(range_tool.x_range, tgt_plot.handles['x_range'])
-        self.assertIs(range_tool.y_range, None)
+        assert range_tool.y_range is None
 
     def test_range_tool_link_callback_single_axis_overlay_target_image_source(self):
         data = np.random.rand(50, 50)
@@ -49,7 +49,7 @@ class TestLinkCallbacks(TestBokehPlot):
         src_plot = plot.subplots[(0, 1)].subplots['main']
         range_tool = src_plot.state.select_one({'type': RangeTool})
         self.assertEqual(range_tool.x_range, tgt_plot.handles['x_range'])
-        self.assertIs(range_tool.y_range, None)
+        assert range_tool.y_range is None
 
     def test_range_tool_link_callback_single_axis_curve_target_image_dmap_source(self):
         # Choosing Image to exert the apply_nodata compositor
@@ -195,7 +195,7 @@ class TestLinkCallbacks(TestBokehPlot):
         layout = path + table
         plot = bokeh_renderer.get_plot(layout)
         path_plot, table_plot = (sp.subplots['main'] for sp in plot.subplots.values())
-        self.assertIs(path_plot.handles['source'], table_plot.handles['source'])
+        assert path_plot.handles['source'] is table_plot.handles['source']
 
     def test_data_link_idempotent(self):
         table1 = Table([], 'A', 'B')
@@ -203,7 +203,7 @@ class TestLinkCallbacks(TestBokehPlot):
         link1 = DataLink(table1, table2)
         DataLink(table1, table2)
         self.assertEqual(len(Link.registry[table1]), 1)
-        self.assertIn(link1, Link.registry[table1])
+        assert link1 in Link.registry[table1]
 
     def test_data_link_nan(self):
         arr = np.random.rand(3, 5)

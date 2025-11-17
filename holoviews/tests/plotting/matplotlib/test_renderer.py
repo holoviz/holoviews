@@ -81,7 +81,7 @@ class MPLRendererTest(ComparisonTestCase):
 
     def test_render_gif(self):
         data, _metadata = self.renderer.components(self.map1, 'gif')
-        self.assertIn("<img src='data:image/gif", data['text/html'])
+        assert "<img src='data:image/gif" in data['text/html']
 
     @pytest.mark.skipif(sys.platform == 'win32' and os.environ.get('GITHUB_RUN_ID'), reason='Skip on Windows CI')
     def test_render_mp4(self):
@@ -91,17 +91,17 @@ class MPLRendererTest(ComparisonTestCase):
         except Exception:
             raise SkipTest('ffmpeg not available, skipping mp4 export test')
         data, _metadata = self.renderer.components(self.map1, 'mp4')
-        self.assertIn("<source src='data:video/mp4", data['text/html'])
+        assert "<source src='data:video/mp4" in data['text/html']
 
     def test_render_static(self):
         curve = Curve([])
         obj, _ = self.renderer._validate(curve, None)
-        self.assertIsInstance(obj, CurvePlot)
+        assert isinstance(obj, CurvePlot)
 
     def test_render_holomap_individual(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer._validate(hmap, None)
-        self.assertIsInstance(obj, pn.pane.HoloViews)
+        assert isinstance(obj, pn.pane.HoloViews)
         self.assertEqual(obj.center, True)
         self.assertEqual(obj.widget_location, 'right')
         self.assertEqual(obj.widget_type, 'individual')
@@ -113,7 +113,7 @@ class MPLRendererTest(ComparisonTestCase):
     def test_render_holomap_embedded(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         data, _ = self.renderer.components(hmap)
-        self.assertIn('State"', data['text/html'])
+        assert 'State"' in data['text/html']
 
     # def test_render_holomap_not_embedded(self):
     #     hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
@@ -123,7 +123,7 @@ class MPLRendererTest(ComparisonTestCase):
     def test_render_holomap_scrubber(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer._validate(hmap, 'scrubber')
-        self.assertIsInstance(obj, pn.pane.HoloViews)
+        assert isinstance(obj, pn.pane.HoloViews)
         self.assertEqual(obj.center, True)
         self.assertEqual(obj.widget_location, 'bottom')
         self.assertEqual(obj.widget_type, 'scrubber')
@@ -136,7 +136,7 @@ class MPLRendererTest(ComparisonTestCase):
     def test_render_holomap_scrubber_fps(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer.instance(fps=2)._validate(hmap, 'scrubber')
-        self.assertIsInstance(obj, pn.pane.HoloViews)
+        assert isinstance(obj, pn.pane.HoloViews)
         widgets = obj.layout.select(Player)
         self.assertEqual(len(widgets), 1)
         player = widgets[0]
@@ -145,7 +145,7 @@ class MPLRendererTest(ComparisonTestCase):
     def test_render_holomap_individual_widget_position(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer.instance(widget_location='top')._validate(hmap, None)
-        self.assertIsInstance(obj, pn.pane.HoloViews)
+        assert isinstance(obj, pn.pane.HoloViews)
         self.assertEqual(obj.center, True)
         self.assertEqual(obj.widget_location, 'top')
         self.assertEqual(obj.widget_type, 'individual')

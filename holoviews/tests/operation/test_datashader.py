@@ -1110,8 +1110,8 @@ class DatashaderRasterizeTests(ComparisonTestCase):
 
         cache = ri._precomputed
         self.assertEqual(len(cache), 1)
-        self.assertIn(trimesh._plot_id, cache)
-        self.assertIsInstance(cache[trimesh._plot_id]['mesh'], dd.DataFrame)
+        assert trimesh._plot_id in cache
+        assert isinstance(cache[trimesh._plot_id]['mesh'], dd.DataFrame)
 
         array = np.array([
             [2.166667, 2.833333, 3.5     ],
@@ -1136,8 +1136,8 @@ class DatashaderRasterizeTests(ComparisonTestCase):
 
         cache = ri._precomputed
         self.assertEqual(len(cache), 1)
-        self.assertIn(trimesh._plot_id, cache)
-        self.assertIsInstance(cache[trimesh._plot_id]['mesh'], dd.DataFrame)
+        assert trimesh._plot_id in cache
+        assert isinstance(cache[trimesh._plot_id]['mesh'], dd.DataFrame)
 
         array = np.array([
             [0.5, 1.5, 1.5],
@@ -1162,8 +1162,8 @@ class DatashaderRasterizeTests(ComparisonTestCase):
 
         cache = ri._precomputed
         self.assertEqual(len(cache), 1)
-        self.assertIn(trimesh._plot_id, cache)
-        self.assertIsInstance(cache[trimesh._plot_id]['mesh'], dd.DataFrame)
+        assert trimesh._plot_id in cache
+        assert isinstance(cache[trimesh._plot_id]['mesh'], dd.DataFrame)
 
         array = np.array([
             [2.166667, 2.833333, 3.5     ],

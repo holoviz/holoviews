@@ -245,7 +245,7 @@ class TestPlotlyFigureGrid(TestPlotlyPlot):
         # Validate resulting figure object
         go.Figure(fig)
 
-        self.assertNotIn('title', fig['layout'])
+        assert 'title' not in fig['layout']
         self.assertEqual(len(fig['layout']['annotations']), 2)
         self.assertEqual(fig['layout']['annotations'][0]['text'], 'Scatter!')
         self.assertEqual(fig['layout']['annotations'][1]['text'], 'Bar!')

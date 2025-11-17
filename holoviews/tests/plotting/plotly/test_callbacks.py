@@ -144,26 +144,26 @@ class TestCallbacks(TestCase):
 
         # Check RangeXYCallback
         rangexy_cb = RangeXYCallback(plot1, [], None)
-        self.assertIn(plot1.trace_uid, RangeXYCallback.instances)
-        self.assertIs(rangexy_cb, RangeXYCallback.instances[plot1.trace_uid])
+        assert plot1.trace_uid in RangeXYCallback.instances
+        assert rangexy_cb is RangeXYCallback.instances[plot1.trace_uid]
 
         # Check BoundsXYCallback
         boundsxy_cb = BoundsXYCallback(plot2, [], None)
-        self.assertIn(plot2.trace_uid, BoundsXYCallback.instances)
-        self.assertIs(boundsxy_cb, BoundsXYCallback.instances[plot2.trace_uid])
+        assert plot2.trace_uid in BoundsXYCallback.instances
+        assert boundsxy_cb is BoundsXYCallback.instances[plot2.trace_uid]
 
         # Check Selection1DCallback
         selection1d_cb = Selection1DCallback(plot3, [], None)
-        self.assertIn(plot3.trace_uid, Selection1DCallback.instances)
-        self.assertIs(selection1d_cb, Selection1DCallback.instances[plot3.trace_uid])
+        assert plot3.trace_uid in Selection1DCallback.instances
+        assert selection1d_cb is Selection1DCallback.instances[plot3.trace_uid]
 
         # Check that objects don't show up as instances in the wrong class
-        self.assertNotIn(plot1.trace_uid, BoundsXYCallback.instances)
-        self.assertNotIn(plot1.trace_uid, Selection1DCallback.instances)
-        self.assertNotIn(plot2.trace_uid, RangeXYCallback.instances)
-        self.assertNotIn(plot2.trace_uid, Selection1DCallback.instances)
-        self.assertNotIn(plot3.trace_uid, RangeXYCallback.instances)
-        self.assertNotIn(plot3.trace_uid, BoundsXYCallback.instances)
+        assert plot1.trace_uid not in BoundsXYCallback.instances
+        assert plot1.trace_uid not in Selection1DCallback.instances
+        assert plot2.trace_uid not in RangeXYCallback.instances
+        assert plot2.trace_uid not in Selection1DCallback.instances
+        assert plot3.trace_uid not in RangeXYCallback.instances
+        assert plot3.trace_uid not in BoundsXYCallback.instances
 
     def testRangeXYCallbackEventData(self):
         for viewport in [

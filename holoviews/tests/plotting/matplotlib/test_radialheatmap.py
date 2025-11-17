@@ -75,4 +75,4 @@ class RadialHeatMapPlotTests(TestMPLPlot):
         hm = HoloMap({'A': HeatMap(np.random.randint(0, 10, (100, 3))),
                       'B': HeatMap(np.random.randint(0, 10, (100, 3)))})
         plot = mpl_renderer.get_plot(hm.opts(radial=True))
-        self.assertIsInstance(plot, RadialHeatMapPlot)
+        assert isinstance(plot, RadialHeatMapPlot)

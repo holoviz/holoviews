@@ -956,19 +956,19 @@ class TestLookupOptions(ComparisonTestCase):
         # Check matplotlib style options
         if 'matplotlib' in backends:
             for opt in ["cmap", "color", "marker"]:
-                self.assertIn(opt, options_matplotlib.keys())
-            self.assertNotIn("muted_alpha", options_matplotlib.keys())
+                assert opt in options_matplotlib.keys()
+            assert "muted_alpha" not in options_matplotlib.keys()
 
         # Check bokeh style options
         if 'bokeh' in backends:
             for opt in ["cmap", "color", "muted_alpha", "size"]:
-                self.assertIn(opt, options_bokeh.keys())
+                assert opt in options_bokeh.keys()
 
         # Check plotly style options
         if 'plotly' in backends:
             for opt in ["color"]:
-                self.assertIn(opt, options_plotly.keys())
-            self.assertNotIn("muted_alpha", options_matplotlib.keys())
+                assert opt in options_plotly.keys()
+            assert "muted_alpha" not in options_matplotlib.keys()
 
 
 @pytest.mark.usefixtures("bokeh_backend")

@@ -39,8 +39,8 @@ class TestBokehTablePlot(ComparisonTestCase):
         editors = (IntEditor, NumberEditor, StringEditor)
         for dim, fmt, edit, column in zip(dims, formatters, editors, plot.state.columns, strict=None):
             self.assertEqual(column.title, dim.pprint_label)
-            self.assertIsInstance(column.formatter, fmt)
-            self.assertIsInstance(column.editor, edit)
+            assert isinstance(column.formatter, fmt)
+            assert isinstance(column.editor, edit)
 
     def test_table_plot_escaped_dimension(self):
         table = Table([1, 2, 3], ['A Dimension'])
@@ -54,15 +54,15 @@ class TestBokehTablePlot(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(table)
         column = plot.state.columns[0]
         self.assertEqual(column.title, 'Date')
-        self.assertIsInstance(column.formatter, DateFormatter)
-        self.assertIsInstance(column.editor, DateEditor)
+        assert isinstance(column.formatter, DateFormatter)
+        assert isinstance(column.editor, DateEditor)
 
     def test_table_plot_callback(self):
         table = Table(([1, 2, 3], [1., 2., 3.], ['A', 'B', 'C']), ['x', 'y'], 'z')
         CDSStream(source=table)
         plot = bokeh_renderer.get_plot(table)
         self.assertEqual(len(plot.callbacks), 1)
-        self.assertIsInstance(plot.callbacks[0], CDSCallback)
+        assert isinstance(plot.callbacks[0], CDSCallback)
 
     def test_table_change_columns(self):
         lengths = {'a': 1, 'b': 2, 'c': 3}

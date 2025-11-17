@@ -273,7 +273,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
         ys = np.linspace(0.12, 0.391, 5)
         img = Image((xs, ys, arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype])
         sampled = img.sample([(0.15, 0.15), (0.15, 0.4), (0.8, 0.4), (0.8, 0.15)])
-        self.assertIsInstance(sampled, Table)
+        assert isinstance(sampled, Table)
         yidx = [0, 4, 4, 0]
         xidx = [0, 0, 9, 9]
         table = Table((xs[xidx], ys[yidx], arr[yidx, xidx]), kdims=['x', 'y'], vdims=['z'])

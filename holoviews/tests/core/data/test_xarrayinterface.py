@@ -211,11 +211,11 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         da = xr.DataArray(np.empty((2, 0)), dims=('y', 'x'), coords={'x': [], 'y': [0 ,1]}, name='A')
         ds = Dataset(da)
         x0, x1 = ds.range('x')
-        self.assertTrue(np.isnan(x0))
-        self.assertTrue(np.isnan(x1))
+        assert np.isnan(x0)
+        assert np.isnan(x1)
         z0, z1 = ds.range('A')
-        self.assertTrue(np.isnan(z0))
-        self.assertTrue(np.isnan(z1))
+        assert np.isnan(z0)
+        assert np.isnan(z1)
 
     def test_datetime_bins_range(self):
         xs = [dt.datetime(2018, 1, i) for i in range(1, 11)]
@@ -452,12 +452,12 @@ class ImageElement_XArrayInterfaceTests(BaseImageElementInterfaceTests):
         xrarr = xr.DataArray(zs, dims=('x','y'))
 
         img = Image(xrarr)
-        self.assertTrue(all(img.data.x == expected_xs))
-        self.assertTrue(all(img.data.y == expected_ys))
+        assert all(img.data.x == expected_xs)
+        assert all(img.data.y == expected_ys)
 
         img = Image(xrarr, kdims=['x', 'y'])
-        self.assertTrue(all(img.data.x == expected_xs))
-        self.assertTrue(all(img.data.y == expected_ys))
+        assert all(img.data.x == expected_xs)
+        assert all(img.data.y == expected_ys)
 
     def test_dataarray_with_some_coords(self):
         xs = [4.2, 1]

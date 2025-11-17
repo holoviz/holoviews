@@ -85,7 +85,7 @@ class TestApplyElement(ComparisonTestCase):
         # Check stream
         self.assertEqual(len(applied.streams), 1)
         stream = applied.streams[0]
-        self.assertIsInstance(stream, Params)
+        assert isinstance(stream, Params)
         self.assertEqual(stream.parameterized, pinst)
         self.assertEqual(stream.parameters, [pinst.param.label])
 
@@ -101,7 +101,7 @@ class TestApplyElement(ComparisonTestCase):
         # Check stream
         self.assertEqual(len(applied.streams), 1)
         stream = applied.streams[0]
-        self.assertIsInstance(stream, Params)
+        assert isinstance(stream, Params)
         self.assertEqual(stream.parameterized, pinst)
         self.assertEqual(stream.parameters, [pinst.param.label])
 
@@ -117,7 +117,7 @@ class TestApplyElement(ComparisonTestCase):
         # Check stream
         self.assertEqual(len(applied.streams), 1)
         stream = applied.streams[0]
-        self.assertIsInstance(stream, ParamMethod)
+        assert isinstance(stream, ParamMethod)
         self.assertEqual(stream.parameterized, pinst)
         self.assertEqual(stream.parameters, [pinst.param.label])
 
@@ -138,7 +138,7 @@ class TestApplyElement(ComparisonTestCase):
         # Check stream
         self.assertEqual(len(applied.streams), 1)
         stream = applied.streams[0]
-        self.assertIsInstance(stream, Params)
+        assert isinstance(stream, Params)
         self.assertEqual(stream.parameters, [pinst.param.label])
 
         # Check results
@@ -166,7 +166,7 @@ class TestApplyElement(ComparisonTestCase):
         # Check stream
         self.assertEqual(len(applied.streams), 1)
         stream = applied.streams[0]
-        self.assertIsInstance(stream, ParamMethod)
+        assert isinstance(stream, ParamMethod)
         self.assertEqual(stream.parameterized, pinst)
         self.assertEqual(stream.parameters, [pinst.param.label])
 
@@ -234,7 +234,7 @@ class TestApplyDynamicMap(ComparisonTestCase):
         # Check stream
         self.assertEqual(len(applied.streams), 1)
         stream = applied.streams[0]
-        self.assertIsInstance(stream, Params)
+        assert isinstance(stream, Params)
         self.assertEqual(stream.parameterized, pinst)
         self.assertEqual(stream.parameters, [pinst.param.label])
 
@@ -257,7 +257,7 @@ class TestApplyDynamicMap(ComparisonTestCase):
         # Check stream
         self.assertEqual(len(applied.streams), 1)
         stream = applied.streams[0]
-        self.assertIsInstance(stream, ParamMethod)
+        assert isinstance(stream, ParamMethod)
         self.assertEqual(stream.parameterized, pinst)
         self.assertEqual(stream.parameters, [pinst.param.label])
 
@@ -273,7 +273,7 @@ class TestApplyDynamicMap(ComparisonTestCase):
         # Check stream
         self.assertEqual(len(applied.streams), 1)
         stream = applied.streams[0]
-        self.assertIsInstance(stream, ParamMethod)
+        assert isinstance(stream, ParamMethod)
         self.assertEqual(stream.parameterized, pinst)
         self.assertEqual(stream.parameters, [pinst.param.label])
 

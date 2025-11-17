@@ -35,11 +35,11 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         subplot1, subplot2 = (p for k, p in sorted(plot.subplots.items()))
         subplot1 = subplot1.subplots['main']
         subplot2 = subplot2.subplots['main']
-        self.assertTrue(subplot1.handles['glyph_renderer'].visible)
-        self.assertFalse(subplot2.handles['glyph_renderer'].visible)
+        assert subplot1.handles['glyph_renderer'].visible
+        assert not subplot2.handles['glyph_renderer'].visible
         plot.update((4,))
-        self.assertFalse(subplot1.handles['glyph_renderer'].visible)
-        self.assertTrue(subplot2.handles['glyph_renderer'].visible)
+        assert not subplot1.handles['glyph_renderer'].visible
+        assert subplot2.handles['glyph_renderer'].visible
 
     def test_layout_framewise_norm(self):
         img1 = Image(np.mgrid[0:5, 0:5][0]).opts(framewise=True)
@@ -102,7 +102,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         hmap2 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
         plot = bokeh_renderer.get_plot(hmap1+hmap2)
         title = plot.handles['title']
-        self.assertIsInstance(title, Div)
+        assert isinstance(title, Div)
         text = ('<span style="color:black;font-family:Arial;font-style:bold;'
                 'font-weight:bold;font-size:12pt">Default: 0</span>')
         self.assertEqual(title.text, text)
@@ -126,7 +126,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         ).opts(opts.NdLayout(title=title_str), opts.Scatter(title=title_str))
         # Title of NdLayout
         title = bokeh_renderer.get_plot(layout).handles['title']
-        self.assertIsInstance(title, Div)
+        assert isinstance(title, Div)
         text = 'Label: the_label, group: the_group, dims: , type: NdLayout'
         self.assertEqual(re.split('>|</', title.text)[1], text)
         # Titles of subplots
@@ -146,7 +146,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         layout = Layout([hmap1, hmap2]).opts(fontsize={'title': '12pt'})
         plot = bokeh_renderer.get_plot(layout)
         title = plot.handles['title']
-        self.assertIsInstance(title, Div)
+        assert isinstance(title, Div)
         text = ('<span style="color:black;font-family:Arial;font-style:bold;'
                 'font-weight:bold;font-size:12pt">Default: 0</span>')
         self.assertEqual(title.text, text)
@@ -156,7 +156,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         hmap2 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
         layout = Layout([hmap1, hmap2]).opts(show_title=False)
         plot = bokeh_renderer.get_plot(layout)
-        self.assertTrue('title' not in plot.handles)
+        assert 'title' not in plot.handles
 
     def test_layout_title_update(self):
         hmap1 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
@@ -164,7 +164,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         plot = bokeh_renderer.get_plot(hmap1+hmap2)
         plot.update(1)
         title = plot.handles['title']
-        self.assertIsInstance(title, Div)
+        assert isinstance(title, Div)
         text = ('<span style="color:black;font-family:Arial;font-style:bold;'
                 'font-weight:bold;font-size:12pt">Default: 1</span>')
         self.assertEqual(title.text, text)
@@ -178,27 +178,27 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         layout_plot = bokeh_renderer.get_plot(layout)
         plot = layout_plot.state
 
-        self.assertIsInstance(plot, GridPlot)
+        assert isinstance(plot, GridPlot)
         self.assertEqual(len(plot.children), 3)
-        self.assertIsInstance(plot.toolbar, Toolbar)
+        assert isinstance(plot.toolbar, Toolbar)
 
         (grid1, *_), (grid2, *_), (fig, *_) = plot.children
-        self.assertIsInstance(grid1, GridPlot)
-        self.assertIsInstance(grid2, GridPlot)
-        self.assertIsInstance(fig, figure)
+        assert isinstance(grid1, GridPlot)
+        assert isinstance(grid2, GridPlot)
+        assert isinstance(fig, figure)
 
         self.assertEqual(len(grid1.children), 3)
         _, (inner_grid1, *_), _ = grid1.children
-        self.assertIsInstance(inner_grid1, GridPlot)
+        assert isinstance(inner_grid1, GridPlot)
 
         self.assertEqual(len(grid2.children), 3)
         _, (inner_grid2, *_), _ = grid2.children
-        self.assertIsInstance(inner_grid2, GridPlot)
+        assert isinstance(inner_grid2, GridPlot)
 
         for grid in [inner_grid1, inner_grid2]:
             self.assertEqual(len(grid.children), 4)
             for gfig, *_ in grid.children:
-                self.assertIsInstance(gfig, figure)
+                assert isinstance(gfig, figure)
 
     def test_layout_instantiate_subplots(self):
         layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
@@ -221,8 +221,8 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(len(adjoint_plot.subplots), 3)
         grid = plot.state
         (f1, *_), (f2, *_), (s1, *_) = grid.children
-        self.assertIsInstance(grid, GridPlot)
-        self.assertIsInstance(s1, Spacer)
+        assert isinstance(grid, GridPlot)
+        assert isinstance(s1, Spacer)
         self.assertEqual(s1.width, 0)
         self.assertEqual(s1.height, 0)
         self.assertEqual(f1.height, f2.height)
@@ -241,8 +241,8 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         plot = bokeh_renderer.get_plot(layout)
         grid = plot.state
         toolbar = grid.toolbar
-        self.assertIsInstance(toolbar, Toolbar)
-        self.assertIsInstance(grid, GridPlot)
+        assert isinstance(toolbar, Toolbar)
+        assert isinstance(grid, GridPlot)
         for (fig, _, _) in grid.children:
             self.assertIsInstance(fig, figure)
         self.assertTrue([len([r for r in f.renderers if isinstance(r, GlyphRenderer)])
@@ -251,10 +251,10 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_layout_plot_tabs_with_adjoints(self):
         layout = (Curve([]) + Curve([]).hist()).opts(tabs=True)
         plot = bokeh_renderer.get_plot(layout)
-        self.assertIsInstance(plot.state, Tabs)
+        assert isinstance(plot.state, Tabs)
         panel1, panel2 = plot.state.tabs
-        self.assertIsInstance(panel1, TabPanel)
-        self.assertIsInstance(panel2, TabPanel)
+        assert isinstance(panel1, TabPanel)
+        assert isinstance(panel2, TabPanel)
         self.assertEqual(panel1.title, 'Curve I')
         self.assertEqual(panel2.title, 'AdjointLayout I')
 
@@ -336,13 +336,13 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_layout_set_toolbar_location(self):
         layout = (Curve([]) + Points([])).opts(toolbar='left')
         plot = bokeh_renderer.get_plot(layout)
-        self.assertIsInstance(plot.state, GridPlot)
-        self.assertIsInstance(plot.state.toolbar, Toolbar)
+        assert isinstance(plot.state, GridPlot)
+        assert isinstance(plot.state.toolbar, Toolbar)
 
     def test_layout_disable_toolbar(self):
         layout = (Curve([]) + Points([])).opts(toolbar=None)
         plot = bokeh_renderer.get_plot(layout)
-        self.assertIsInstance(plot.state, GridPlot)
+        assert isinstance(plot.state, GridPlot)
         self.assertEqual(len(plot.state.children), 2)
 
     def test_layout_shared_inverted_yaxis(self):
@@ -357,9 +357,9 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         dmap = DynamicMap(lambda test: Curve([]), kdims=['test'], streams=[stream])
         layout = dmap + Curve([])
         plot = bokeh_renderer.get_plot(layout)
-        self.assertIn('test: 0', plot.handles['title'].text)
+        assert 'test: 0' in plot.handles['title'].text
         stream.event(test=1)
-        self.assertIn('test: 1', plot.handles['title'].text)
+        assert 'test: 1' in plot.handles['title'].text
         plot.cleanup()
         self.assertEqual(stream._subscribers, [])
 
@@ -367,27 +367,27 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         layout = Curve([1, 2, 3], vdims=('a', 'A')) + Curve([1, 2, 3], vdims=('a', 'A'))
         plot = bokeh_renderer.get_plot(layout)
         p1, p2 = (sp.subplots['main'] for sp in plot.subplots.values())
-        self.assertIs(p1.handles['y_range'], p2.handles['y_range'])
+        assert p1.handles['y_range'] is p2.handles['y_range']
 
     def test_layout_axis_not_linked_mismatching_label(self):
         layout = Curve([1, 2, 3], vdims=('a', 'A')) + Curve([1, 2, 3], vdims=('a', 'B'))
         plot = bokeh_renderer.get_plot(layout)
         p1, p2 = (sp.subplots['main'] for sp in plot.subplots.values())
-        self.assertIsNot(p1.handles['y_range'], p2.handles['y_range'])
+        assert p1.handles['y_range'] is not p2.handles['y_range']
 
     def test_layout_axis_linked_unit_and_no_unit(self):
         layout = (Curve([1, 2, 3], vdims=Dimension('length', unit='m')) +
                   Curve([1, 2, 3], vdims='length'))
         plot = bokeh_renderer.get_plot(layout)
         p1, p2 = (sp.subplots['main'] for sp in plot.subplots.values())
-        self.assertIs(p1.handles['y_range'], p2.handles['y_range'])
+        assert p1.handles['y_range'] is p2.handles['y_range']
 
     def test_layout_axis_not_linked_mismatching_unit(self):
         layout = (Curve([1, 2, 3], vdims=Dimension('length', unit='m')) +
                   Curve([1, 2, 3], vdims=Dimension('length', unit='cm')))
         plot = bokeh_renderer.get_plot(layout)
         p1, p2 = (sp.subplots['main'] for sp in plot.subplots.values())
-        self.assertIsNot(p1.handles['y_range'], p2.handles['y_range'])
+        assert p1.handles['y_range'] is not p2.handles['y_range']
 
     def test_dimensioned_streams_with_dynamic_callback_returns_layout(self):
         stream = Stream.define('aname', aname='a')()
@@ -401,7 +401,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         p = bokeh_renderer.get_plot(m)
         T = 'XYZT'
         stream.event(aname=T)
-        self.assertIn('aname: ' + T, p.handles['title'].text, p.handles['title'].text)
+        assert 'aname: ' + T in p.handles['title'].text, p.handles['title'].text
         p.cleanup()
         self.assertEqual(stream._subscribers, [])
 
@@ -409,7 +409,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         layout = (Curve([1, 2, 3]) + Curve([10, 20, 30])).opts(shared_axes=False)
         plot = bokeh_renderer.get_plot(layout)
         cp1, cp2 = plot.subplots[(0, 0)].subplots['main'], plot.subplots[(0, 1)].subplots['main']
-        self.assertFalse(cp1.handles['y_range'] is cp2.handles['y_range'])
+        assert cp1.handles['y_range'] is not cp2.handles['y_range']
         self.assertEqual(cp1.handles['y_range'].start, 1)
         self.assertEqual(cp1.handles['y_range'].end, 3)
         self.assertEqual(cp2.handles['y_range'].start, 10)
@@ -421,8 +421,8 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         layout = curve1 + curve2
         plot = bokeh_renderer.get_plot(layout)
         cp1, cp2 = plot.subplots[(0, 0)].subplots['main'], plot.subplots[(0, 1)].subplots['main']
-        self.assertIsNot(cp1.handles['x_range'], cp2.handles['x_range'])
-        self.assertIs(cp1.handles['y_range'], cp2.handles['y_range'])
+        assert cp1.handles['x_range'] is not cp2.handles['x_range']
+        assert cp1.handles['y_range'] is cp2.handles['y_range']
 
     def test_layout_datetime_numeric_type_axes_not_linked(self):
         curve1 = Curve([1, 2, 3])
@@ -430,5 +430,5 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         layout = curve1 + curve2
         plot = bokeh_renderer.get_plot(layout)
         cp1, cp2 = plot.subplots[(0, 0)].subplots['main'], plot.subplots[(0, 1)].subplots['main']
-        self.assertIsNot(cp1.handles['x_range'], cp2.handles['x_range'])
-        self.assertIs(cp1.handles['y_range'], cp2.handles['y_range'])
+        assert cp1.handles['x_range'] is not cp2.handles['x_range']
+        assert cp1.handles['y_range'] is cp2.handles['y_range']

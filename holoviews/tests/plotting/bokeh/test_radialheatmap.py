@@ -156,7 +156,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         glyphs_mapped = self.plot.get_default_mapping(None, None).keys()
         glyphs_plain = {x[:-2] for x in glyphs_mapped}
 
-        self.assertTrue(all([x in glyphs_plain for x in glyphs]))
+        assert all([x in glyphs_plain for x in glyphs])
 
     def test_get_seg_labels_data(self):
         """Test correct computation of a single segment label data point.
@@ -259,7 +259,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         for check in [data, mapping]:
             glyphs_mapped = check.keys()
             glyphs_plain = {x[:-2] for x in glyphs_mapped}
-            self.assertTrue(all([x in glyphs_plain for x in glyphs]))
+            assert all([x in glyphs_plain for x in glyphs])
 
     def test_plot_data_source(self):
         """Test initialization of ColumnDataSources.
@@ -276,12 +276,12 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         hm = HoloMap({'A': HeatMap(np.random.randint(0, 10, (100, 3))),
                       'B': HeatMap(np.random.randint(0, 10, (100, 3)))})
         plot = bokeh_renderer.get_plot(hm.opts(radial=True))
-        self.assertIsInstance(plot, RadialHeatMapPlot)
+        assert isinstance(plot, RadialHeatMapPlot)
 
     def test_radial_heatmap_colorbar(self):
         hm = HeatMap([(0, 0, 1), (0, 1, 2), (1, 0, 3)]).opts(radial=True, colorbar=True)
         plot = bokeh_renderer.get_plot(hm)
-        self.assertIsInstance(plot.handles.get('colorbar'), ColorBar)
+        assert isinstance(plot.handles.get('colorbar'), ColorBar)
 
     def test_radial_heatmap_ranges(self):
         hm = HeatMap([(0, 0, 1), (0, 1, 2), (1, 0, 3)]).opts(radial=True, colorbar=True)

@@ -403,7 +403,7 @@ class TestPolygonPlot(TestBokehPlot):
         self.assertEqual(glyph.line_color, 'black')
         self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
         self.assertEqual(cds.data['color'], np.array([7, 3]))
-        self.assertIsInstance(cmapper, LinearColorMapper)
+        assert isinstance(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, 3)
         self.assertEqual(cmapper.high, 7)
 
@@ -419,7 +419,7 @@ class TestPolygonPlot(TestBokehPlot):
         self.assertEqual(glyph.line_color, 'black')
         self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
         self.assertEqual(cds.data['color'], np.array(['b', 'a']))
-        self.assertIsInstance(cmapper, CategoricalColorMapper)
+        assert isinstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['b', 'a'])
 
     def test_polygons_alpha_op(self):
@@ -456,8 +456,8 @@ class TestPolygonPlot(TestBokehPlot):
                         1: Polygons([{'x': xs, 'y': ys}])})
         plot = bokeh_renderer.get_plot(poly)
         glyph = plot.handles['glyph']
-        self.assertTrue(plot._has_holes)
-        self.assertIsInstance(glyph, MultiPolygons)
+        assert plot._has_holes
+        assert isinstance(glyph, MultiPolygons)
 
     def test_polygons_no_holes_with_draw_tool(self):
         xs = [1, 2, 3, np.nan, 6, 7, 3]
@@ -471,8 +471,8 @@ class TestPolygonPlot(TestBokehPlot):
         PolyDraw(source=poly)
         plot = bokeh_renderer.get_plot(poly)
         glyph = plot.handles['glyph']
-        self.assertFalse(plot._has_holes)
-        self.assertIsInstance(glyph, Patches)
+        assert not plot._has_holes
+        assert isinstance(glyph, Patches)
 
 
 
@@ -508,7 +508,7 @@ class TestContoursPlot(TestBokehPlot):
         cmapper = plot.handles['color_color_mapper']
         self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
         self.assertEqual(cds.data['color'], np.array([7, 3]))
-        self.assertIsInstance(cmapper, LinearColorMapper)
+        assert isinstance(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, 3)
         self.assertEqual(cmapper.high, 7)
 
@@ -561,7 +561,7 @@ class TestContoursPlot(TestBokehPlot):
         cmapper = plot.handles['color_color_mapper']
         self.assertEqual(property_to_dict(glyph.line_color), {'field': 'color', 'transform': cmapper})
         self.assertEqual(cds.data['color'], np.array(['b', 'a']))
-        self.assertIsInstance(cmapper, CategoricalColorMapper)
+        assert isinstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['b', 'a'])
 
     def test_contours_alpha_op(self):

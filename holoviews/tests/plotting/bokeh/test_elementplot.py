@@ -80,7 +80,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         curve = Curve(range(10)).opts(xaxis='top')
         plot = bokeh_renderer.get_plot(curve)
         xaxis = plot.handles['xaxis']
-        self.assertTrue(xaxis in plot.state.above)
+        assert xaxis in plot.state.above
 
     def test_element_xaxis_bare(self):
         curve = Curve(range(10)).opts(xaxis='bare')
@@ -90,7 +90,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(xaxis.major_label_text_font_size, '0pt')
         self.assertEqual(xaxis.minor_tick_line_color, None)
         self.assertEqual(xaxis.major_tick_line_color, None)
-        self.assertTrue(xaxis in plot.state.below)
+        assert xaxis in plot.state.below
 
     def test_element_xaxis_bottom_bare(self):
         curve = Curve(range(10)).opts(xaxis='bottom-bare')
@@ -100,7 +100,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(xaxis.major_label_text_font_size, '0pt')
         self.assertEqual(xaxis.minor_tick_line_color, None)
         self.assertEqual(xaxis.major_tick_line_color, None)
-        self.assertTrue(xaxis in plot.state.below)
+        assert xaxis in plot.state.below
 
     def test_element_xaxis_top_bare(self):
         curve = Curve(range(10)).opts(xaxis='top-bare')
@@ -110,7 +110,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(xaxis.major_label_text_font_size, '0pt')
         self.assertEqual(xaxis.minor_tick_line_color, None)
         self.assertEqual(xaxis.major_tick_line_color, None)
-        self.assertTrue(xaxis in plot.state.above)
+        assert xaxis in plot.state.above
 
     def test_element_yaxis_true(self):
         curve = Curve(range(10)).opts(yaxis=True)
@@ -136,7 +136,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         curve = Curve(range(10)).opts(yaxis='right')
         plot = bokeh_renderer.get_plot(curve)
         yaxis = plot.handles['yaxis']
-        self.assertTrue(yaxis in plot.state.right)
+        assert yaxis in plot.state.right
 
     def test_element_yaxis_bare(self):
         curve = Curve(range(10)).opts(yaxis='bare')
@@ -146,7 +146,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(yaxis.major_label_text_font_size, '0pt')
         self.assertEqual(yaxis.minor_tick_line_color, None)
         self.assertEqual(yaxis.major_tick_line_color, None)
-        self.assertTrue(yaxis in plot.state.left)
+        assert yaxis in plot.state.left
 
     def test_element_yaxis_left_bare(self):
         curve = Curve(range(10)).opts(yaxis='left-bare')
@@ -156,7 +156,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(yaxis.major_label_text_font_size, '0pt')
         self.assertEqual(yaxis.minor_tick_line_color, None)
         self.assertEqual(yaxis.major_tick_line_color, None)
-        self.assertTrue(yaxis in plot.state.left)
+        assert yaxis in plot.state.left
 
     def test_element_yaxis_right_bare(self):
         curve = Curve(range(10)).opts(yaxis='right-bare')
@@ -166,7 +166,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(yaxis.major_label_text_font_size, '0pt')
         self.assertEqual(yaxis.minor_tick_line_color, None)
         self.assertEqual(yaxis.major_tick_line_color, None)
-        self.assertTrue(yaxis in plot.state.right)
+        assert yaxis in plot.state.right
 
     def test_element_title_format(self):
         title_str = ('Label: {label}, group: {group}, '
@@ -200,14 +200,14 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         curve = Curve(range(10)).opts(xformatter='%d')
         plot = bokeh_renderer.get_plot(curve)
         xaxis = plot.handles['xaxis']
-        self.assertIsInstance(xaxis.formatter, PrintfTickFormatter)
+        assert isinstance(xaxis.formatter, PrintfTickFormatter)
         self.assertEqual(xaxis.formatter.format, '%d')
 
     def test_element_yformatter_string(self):
         curve = Curve(range(10)).opts(yformatter='%d')
         plot = bokeh_renderer.get_plot(curve)
         yaxis = plot.handles['yaxis']
-        self.assertIsInstance(yaxis.formatter, PrintfTickFormatter)
+        assert isinstance(yaxis.formatter, PrintfTickFormatter)
         self.assertEqual(yaxis.formatter.format, '%d')
 
     def test_element_xformatter_instance(self):
@@ -215,29 +215,29 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         curve = Curve(range(10)).opts(xformatter=formatter)
         plot = bokeh_renderer.get_plot(curve)
         xaxis = plot.handles['xaxis']
-        self.assertIs(xaxis.formatter, formatter)
+        assert xaxis.formatter is formatter
 
     def test_element_yformatter_instance(self):
         formatter = NumeralTickFormatter()
         curve = Curve(range(10)).opts(yformatter=formatter)
         plot = bokeh_renderer.get_plot(curve)
         yaxis = plot.handles['yaxis']
-        self.assertIs(yaxis.formatter, formatter)
+        assert yaxis.formatter is formatter
 
     def test_empty_element_visibility(self):
         curve = Curve([])
         plot = bokeh_renderer.get_plot(curve)
-        self.assertTrue(plot.handles['glyph_renderer'].visible)
+        assert plot.handles['glyph_renderer'].visible
 
     def test_element_no_xaxis(self):
         curve = Curve(range(10)).opts(xaxis=None)
         plot = bokeh_renderer.get_plot(curve).state
-        self.assertFalse(plot.xaxis[0].visible)
+        assert not plot.xaxis[0].visible
 
     def test_element_no_yaxis(self):
         curve = Curve(range(10)).opts(yaxis=None)
         plot = bokeh_renderer.get_plot(curve).state
-        self.assertFalse(plot.yaxis[0].visible)
+        assert not plot.yaxis[0].visible
 
     def test_element_xrotation(self):
         curve = Curve(range(10)).opts(xrotation=90)
@@ -293,17 +293,17 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         source = plot.handles['source']
         self.assertEqual(source.data['image'][0].mean(), 1)
         stream.event(test=2)
-        self.assertTrue(plot.static_source)
+        assert plot.static_source
         self.assertEqual(source.data['image'][0].mean(), 2)
-        self.assertNotIn(source, plot.current_handles)
+        assert source not in plot.current_handles
 
     def test_stream_cleanup(self):
         stream = Stream.define('Test', test=1)()
         dmap = DynamicMap(lambda test: Curve([]), streams=[stream])
         plot = bokeh_renderer.get_plot(dmap)
-        self.assertTrue(bool(stream._subscribers))
+        assert bool(stream._subscribers)
         plot.cleanup()
-        self.assertFalse(bool(stream._subscribers))
+        assert not bool(stream._subscribers)
 
     def test_element_xticks_datetime(self):
         dates = [(dt.datetime(2016, 1, i), i) for i in range(1, 4)]
@@ -323,12 +323,12 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
     def test_element_grid_custom_xticker(self):
         curve = Curve([1, 2, 3]).opts(xticks=[0.5, 1.5], show_grid=True)
         plot = bokeh_renderer.get_plot(curve)
-        self.assertIs(plot.state.xgrid[0].ticker, plot.state.xaxis[0].ticker)
+        assert plot.state.xgrid[0].ticker is plot.state.xaxis[0].ticker
 
     def test_element_grid_custom_yticker(self):
         curve = Curve([1, 2, 3]).opts(yticks=[0.5, 2.5], show_grid=True)
         plot = bokeh_renderer.get_plot(curve)
-        self.assertIs(plot.state.ygrid[0].ticker, plot.state.yaxis[0].ticker)
+        assert plot.state.ygrid[0].ticker is plot.state.yaxis[0].ticker
 
     def test_element_grid_options(self):
         grid_style = {'grid_line_color': 'blue', 'grid_line_width': 1.5, 'ygrid_bounds': (0.3, 0.7),
@@ -414,27 +414,27 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         curve = Curve([1, 2, 3]).opts(active_tools=['box_zoom'])
         plot = bokeh_renderer.get_plot(curve)
         toolbar = plot.state.toolbar
-        self.assertIsInstance(toolbar.active_drag, tools.BoxZoomTool)
+        assert isinstance(toolbar.active_drag, tools.BoxZoomTool)
 
     def test_active_tools_scroll(self):
         curve = Curve([1, 2, 3]).opts(active_tools=['wheel_zoom'])
         plot = bokeh_renderer.get_plot(curve)
         toolbar = plot.state.toolbar
-        self.assertIsInstance(toolbar.active_scroll, tools.WheelZoomTool)
+        assert isinstance(toolbar.active_scroll, tools.WheelZoomTool)
 
     def test_active_tools_tap(self):
         curve = Curve([1, 2, 3]).opts(active_tools=['tap'], tools=['tap'])
         plot = bokeh_renderer.get_plot(curve)
         toolbar = plot.state.toolbar
-        self.assertIsInstance(toolbar.active_tap, tools.TapTool)
+        assert isinstance(toolbar.active_tap, tools.TapTool)
 
     def test_active_tools_draw_stream(self):
         scatter = Scatter([1, 2, 3]).opts(active_tools=['point_draw'])
         PointDraw(source=scatter)
         plot = bokeh_renderer.get_plot(scatter)
         toolbar = plot.state.toolbar
-        self.assertIsInstance(toolbar.active_tap, tools.PointDrawTool)
-        self.assertIsInstance(toolbar.active_drag, tools.PointDrawTool)
+        assert isinstance(toolbar.active_tap, tools.PointDrawTool)
+        assert isinstance(toolbar.active_drag, tools.PointDrawTool)
 
     def test_hover_tooltip_update(self):
         hmap = HoloMap({'a': Curve([1, 2, 3], vdims='a'), 'b': Curve([1, 2, 3], vdims='b')}).opts(
@@ -1065,7 +1065,7 @@ class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
         img = Image(np.array([[0, 1], [2, 3]])).opts(colorbar=True, colorbar_opts=dict(ticker=ticker))
         plot = bokeh_renderer.get_plot(img)
         colorbar = plot.handles['colorbar']
-        self.assertIs(colorbar.ticker, ticker)
+        assert colorbar.ticker is ticker
 
     def test_colorbar_fontsize_scaling(self):
         img = Image(np.array([[0, 1], [2, 3]])).opts(colorbar=True, fontscale=2)
@@ -1164,14 +1164,14 @@ class TestOverlayPlot(TestBokehPlot):
         overlay = NdOverlay({i: Curve(np.random.randn(10).cumsum()) for i in range(5)}).opts(legend_muted=True)
         plot = bokeh_renderer.get_plot(overlay)
         for sp in plot.subplots.values():
-            self.assertTrue(sp.handles['glyph_renderer'].muted)
+            assert sp.handles['glyph_renderer'].muted
 
     def test_overlay_legend_muted(self):
         overlay = (Curve(np.random.randn(10).cumsum(), label='A') *
                    Curve(np.random.randn(10).cumsum(), label='B')).opts(legend_muted=True)
         plot = bokeh_renderer.get_plot(overlay)
         for sp in plot.subplots.values():
-            self.assertTrue(sp.handles['glyph_renderer'].muted)
+            assert sp.handles['glyph_renderer'].muted
 
     def test_overlay_legend_opts(self):
         overlay = (
@@ -1189,7 +1189,7 @@ class TestOverlayPlot(TestBokehPlot):
         overlay = (scatter * curve).opts(active_tools=['box_zoom'])
         plot = bokeh_renderer.get_plot(overlay)
         toolbar = plot.state.toolbar
-        self.assertIsInstance(toolbar.active_drag, tools.BoxZoomTool)
+        assert isinstance(toolbar.active_drag, tools.BoxZoomTool)
 
     def test_active_tools_scroll(self):
         curve = Curve([1, 2, 3])
@@ -1197,7 +1197,7 @@ class TestOverlayPlot(TestBokehPlot):
         overlay = (scatter * curve).opts(active_tools=['wheel_zoom'])
         plot = bokeh_renderer.get_plot(overlay)
         toolbar = plot.state.toolbar
-        self.assertIsInstance(toolbar.active_scroll, tools.WheelZoomTool)
+        assert isinstance(toolbar.active_scroll, tools.WheelZoomTool)
 
     def test_active_tools_tap(self):
         curve = Curve([1, 2, 3])
@@ -1205,7 +1205,7 @@ class TestOverlayPlot(TestBokehPlot):
         overlay = (scatter * curve).opts(active_tools=['tap'])
         plot = bokeh_renderer.get_plot(overlay)
         toolbar = plot.state.toolbar
-        self.assertIsInstance(toolbar.active_tap, tools.TapTool)
+        assert isinstance(toolbar.active_tap, tools.TapTool)
 
     def test_active_tools_draw_stream(self):
         curve = Curve([1, 2, 3])
@@ -1214,8 +1214,8 @@ class TestOverlayPlot(TestBokehPlot):
         overlay = (scatter * curve)
         plot = bokeh_renderer.get_plot(overlay)
         toolbar = plot.state.toolbar
-        self.assertIsInstance(toolbar.active_tap, tools.PointDrawTool)
-        self.assertIsInstance(toolbar.active_drag, tools.PointDrawTool)
+        assert isinstance(toolbar.active_tap, tools.PointDrawTool)
+        assert isinstance(toolbar.active_drag, tools.PointDrawTool)
 
     def test_categorical_overlay_dimension_values(self):
         curve = Curve([('C', 1), ('B', 3)]).redim.values(x=['A', 'B', 'C'])

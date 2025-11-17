@@ -26,8 +26,8 @@ class TestCurvePlot(TestBokehPlot):
                                                   for i in range(2)}).opts(opts), kdims=[],
                              streams=[posx])
         plot = bokeh_renderer.get_plot(overlay)
-        self.assertIn(plot.refresh, posx.subscribers)
-        self.assertNotIn(next(iter(plot.subplots.values())).refresh, posx.subscribers)
+        assert plot.refresh in posx.subscribers
+        assert next(iter(plot.subplots.values())).refresh not in posx.subscribers
 
     def test_batched_curve_subscribers_correctly_linked(self):
         # Checks if a stream callback is created to link batched plot
@@ -125,14 +125,14 @@ class TestCurvePlot(TestBokehPlot):
         curve = Curve((['A', 'B', 'C'], [1,2,3]))
         plot = bokeh_renderer.get_plot(curve)
         x_range = plot.handles['x_range']
-        self.assertIsInstance(x_range, FactorRange)
+        assert isinstance(x_range, FactorRange)
         self.assertEqual(x_range.factors, ['A', 'B', 'C'])
 
     def test_curve_categorical_xaxis_invert_axes(self):
         curve = Curve((['A', 'B', 'C'], (1,2,3))).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(curve)
         y_range = plot.handles['y_range']
-        self.assertIsInstance(y_range, FactorRange)
+        assert isinstance(y_range, FactorRange)
         self.assertEqual(y_range.factors, ['A', 'B', 'C'])
 
     def test_curve_datetime64(self):
@@ -227,27 +227,27 @@ class TestCurvePlot(TestBokehPlot):
     def test_curve_xticks_list(self):
         curve = Curve(range(10)).opts(xticks=[0, 5, 10])
         plot = bokeh_renderer.get_plot(curve).state
-        self.assertIsInstance(plot.xaxis[0].ticker, FixedTicker)
+        assert isinstance(plot.xaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.xaxis[0].ticker.ticks, [0, 5, 10])
 
     def test_curve_xticks_list_of_tuples_xaxis(self):
         ticks = [(0, 'zero'), (5, 'five'), (10, 'ten')]
         curve = Curve(range(10)).opts(xticks=ticks)
         plot = bokeh_renderer.get_plot(curve).state
-        self.assertIsInstance(plot.xaxis[0].ticker, FixedTicker)
+        assert isinstance(plot.xaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.xaxis[0].major_label_overrides, dict(ticks))
 
     def test_curve_yticks_list(self):
         curve = Curve(range(10)).opts(yticks=[0, 5, 10])
         plot = bokeh_renderer.get_plot(curve).state
-        self.assertIsInstance(plot.yaxis[0].ticker, FixedTicker)
+        assert isinstance(plot.yaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.yaxis[0].ticker.ticks, [0, 5, 10])
 
     def test_curve_xticks_list_of_tuples_yaxis(self):
         ticks = [(0, 'zero'), (5, 'five'), (10, 'ten')]
         curve = Curve(range(10)).opts(yticks=ticks)
         plot = bokeh_renderer.get_plot(curve).state
-        self.assertIsInstance(plot.yaxis[0].ticker, FixedTicker)
+        assert isinstance(plot.yaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.yaxis[0].major_label_overrides, dict(ticks))
 
     def test_curve_padding_square(self):

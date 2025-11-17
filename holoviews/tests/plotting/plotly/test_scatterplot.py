@@ -92,8 +92,8 @@ class TestMapboxScatterPlot(TestPlotlyPlot):
         )
 
         # There xaxis and yaxis should not be in the layout
-        self.assertFalse('xaxis' in state['layout'])
-        self.assertFalse('yaxis' in state['layout'])
+        assert 'xaxis' not in state['layout']
+        assert 'yaxis' not in state['layout']
 
     def test_scatter_color_mapped(self):
         scatter = Tiles('') * Scatter([3, 2, 1]).opts(color='x')
