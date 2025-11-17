@@ -18,10 +18,6 @@ considered different.
 
 """
 import contextlib
-from functools import partial
-from unittest import SkipTest, TestCase
-from unittest.mock import patch
-from unittest.util import safe_repr
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_array_equal
@@ -43,13 +39,7 @@ from holoviews.core import (
     Overlay,
 )
 from holoviews.core.options import Cycle, Options
-from holoviews.core.util import (
-    cast_array_to_int64,
-    datetime_types,
-    dt_to_int,
-    dtype_kind,
-    is_float,
-)
+from holoviews.core.util import datetime_types, dt_to_int, dtype_kind, is_float
 from holoviews.core.util.dependencies import _is_installed
 
 _equality_type_funcs = {}
