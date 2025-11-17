@@ -899,8 +899,6 @@ class decimate(Operation):
         if element.interface not in column_interfaces:
             element = element.clone(tuple(element.columns().values()))
 
-        xstart, xend = element.range(0)
-        ystart, yend = element.range(1)
 
         # Slice element to current ranges
         xdim, ydim = element.dimensions(label=True)[0:2]
