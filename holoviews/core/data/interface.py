@@ -358,9 +358,9 @@ class Interface(param.Parameterized):
             if isinstance(sel, slice):
                 with warnings.catch_warnings():
                     warnings.filterwarnings('ignore', r'invalid value encountered')
-                    if sel.start is not None:
+                    if sel.start is not None and not np.isnan(sel.start):
                         mask &= sel.start <= arr
-                    if sel.stop is not None:
+                    if sel.stop is not None and not np.isnan(sel.stop):
                         mask &= arr < sel.stop
             elif isinstance(sel, (set, list)):
                 iter_slcs = []
