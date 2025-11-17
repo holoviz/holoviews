@@ -221,7 +221,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         self.assertEqual(points_trace["lon"], np.array([0, self.lon_range[1]]))
         self.assertEqual(points_trace["lat"], np.array([0, self.lat_range[1]]))
         self.assertEqual(points_trace["mode"], "markers")
-        self.assertTrue(points_trace.get("showlegend", True))
+        assert points_trace["showlegend"]
 
         # Check Bounds layer
         bounds_trace = traces[4]
