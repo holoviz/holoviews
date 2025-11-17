@@ -21,7 +21,7 @@ from holoviews import opts
 from holoviews.core import Dimension, DynamicMap, HoloMap, NdOverlay, Overlay
 from holoviews.core.options import AbbreviatedException
 from holoviews.core.util import dt_to_int
-from holoviews.element import Curve, HeatMap, Image, Labels, Scatter
+from holoviews.element import Curve, HeatMap, Image, Labels, Rectangles, Scatter
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0, BOKEH_GE_3_6_0, BOKEH_GE_3_8_0
 from holoviews.plotting.util import process_cmap
 from holoviews.streams import Pipe, PointDraw, Stream
@@ -1340,3 +1340,25 @@ class TestApplyHardBounds(TestBokehPlot):
         assert plot.handles['x_range'].start == 2
         assert plot.handles['x_range'].end == 3
         assert plot.handles['x_range'].bounds == (0, 20)
+
+def test_rectangles_colormapping_with_polars():
+    # Test for https://github.com/holoviz/holoviews/issues/6728
+    pl = pytest.importorskip("polars")
+
+    df = pl.DataFrame({
+        'a': [3, 4],
+        'b': [3, 4],
+        'c': [10, 20],
+        'd': [10, 20],
+        'e': [1, 2],
+    })
+    rectangles = Rectangles(df, kdims=['a', 'b', 'c', 'd']).opts(color='e')
+    plot = bokeh_renderer.get_plot(rectangles)
+    glyph_renderer = plot.handles['glyph_renderer']
+    fill_color = glyph_renderer.glyph.fill_color
+
+    assert fill_color['field'] == 'color'
+    assert isinstance(fill_color['transform'], LinearColorMapper)
+
+    color = list(glyph_renderer.data_source.data['color'])
+    assert color == [1, 2]
