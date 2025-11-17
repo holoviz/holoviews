@@ -101,6 +101,9 @@ def arraylike_types():
 
 @gen_types
 def masked_types():
+    if np:
+        yield np.ma.core.MaskedArray
+
     if pd:
         from pandas.core.arrays.masked import BaseMaskedArray
 
