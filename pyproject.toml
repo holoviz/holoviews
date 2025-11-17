@@ -86,7 +86,7 @@ addopts = ["--strict-config", "--strict-markers", "--color=yes"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 minversion = "7"
-xfail_strict = true
+xfail_strict = "true"
 log_cli_level = "INFO"
 filterwarnings = [
     "error",
