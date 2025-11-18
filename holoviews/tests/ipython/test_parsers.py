@@ -9,7 +9,7 @@ try:
     import pyparsing     # noqa (import test)
     from holoviews.util.parser import OptsSpec
 except ImportError:
-    pytest.skip("Required dependencies not satisfied for testing parsers")
+    pytest.skip("Required dependencies not satisfied for testing parsers", allow_module_level=True)
 
 
 from holoviews.core.options import Cycle, Options
