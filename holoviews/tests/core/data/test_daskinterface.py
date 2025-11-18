@@ -11,6 +11,7 @@ except ImportError:
 
 from holoviews.core.data import Dataset
 from holoviews.core.util import PANDAS_VERSION
+from holoviews.testing import assert_data_equal, assert_element_equal
 from holoviews.util.transform import dim
 
 from .test_pandasinterface import BasePandasInterfaceTests
@@ -99,19 +100,19 @@ class DaskDatasetTest(BasePandasInterfaceTests):
         df = pd.DataFrame({'x': np.arange(10), 'y': np.arange(10), 'z': np.random.rand(10)})
         ddf = dd.from_pandas(df, 1)
         ds = Dataset(ddf.groupby(['x', 'y']).mean(), ['x', 'y'])
-        self.assertEqual(ds, Dataset(df, ['x', 'y']))
+        assert_element_equal(ds, Dataset(df, ['x', 'y']))
 
     def test_dataset_from_multi_index_tuple_dims(self):
         raise SkipTest("Temporarily skipped")
         df = pd.DataFrame({'x': np.arange(10), 'y': np.arange(10), 'z': np.random.rand(10)})
         ddf = dd.from_pandas(df, 1)
         ds = Dataset(ddf.groupby(['x', 'y']).mean(), [('x', 'X'), ('y', 'Y')])
-        self.assertEqual(ds, Dataset(df, [('x', 'X'), ('y', 'Y')]))
+        assert_element_equal(ds, Dataset(df, [('x', 'X'), ('y', 'Y')]))
 
     def test_dataset_range_categorical_dimension(self):
         ddf = self.frame({'a': ['1', '2', '3']})
         ds = Dataset(ddf)
-        self.assertEqual(ds.range(0), ('1', '3'))
+        assert ds.range(0) == ('1', '3')
 
     def test_dataset_range_categorical_dimension_empty(self):
         ddf = self.frame({'a': ['1', '2', '3']})
@@ -131,9 +132,9 @@ class DaskDatasetTest(BasePandasInterfaceTests):
 
         # Make sure that selecting by expression didn't cause evaluation
         assert isinstance(new_ds.data, dd.DataFrame)
-        self.assertEqual(new_ds.data.compute(), df[df.b == 10])
+        assert_data_equal(new_ds.data.compute(), df[df.b == 10])
 
     def test_dataset_get_dframe_by_dimension(self):
         df = self.dataset_hm.dframe(['x'])
         expected = self.frame({'x': self.xs}, dtype=df.dtypes.iloc[0]).compute()
-        self.assertEqual(df, expected)
+        assert_data_equal(df, expected)
