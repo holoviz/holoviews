@@ -181,8 +181,15 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = (base_properties + text_properties
-                  + background_properties + border_properties + ['cmap', 'angle'])
+    style_opts = [
+        *base_properties,
+        *text_properties,
+        *background_properties,
+        *border_properties,
+        'cmap',
+        'angle',
+        'text_outline_color',
+    ]
 
     _nonvectorized_styles = [*base_properties, 'cmap']
 
