@@ -6,11 +6,11 @@ import logging
 
 import numpy as np
 import pandas as pd
+import pytest
 from param import get_logger
 
 from holoviews.core.data import Dataset, MultiInterface
 from holoviews.element import Path, Points, Polygons
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_data_equal, assert_element_equal
 
 try:
@@ -19,7 +19,7 @@ except ImportError:
     dd = None
 
 
-class GeomTests(ComparisonTestCase):
+class GeomTests:
     """
     Test of the MultiInterface.
     """
@@ -246,7 +246,7 @@ class GeomTests(ComparisonTestCase):
     def test_mixed_dims_raises(self):
         arrays = [{'x': range(10), 'y' if j else 'z': range(10)}
                   for i in range(2) for j in range(2)]
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             Path(arrays, kdims=['x', 'y'], datatype=[self.datatype])
 
     def test_split_into_arrays(self):
@@ -270,14 +270,14 @@ class GeomTests(ComparisonTestCase):
         arrays = [{'x': np.arange(i, i+2), 'y': i} for i in range(2)]
         mds = Dataset(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         assert mds.interface is self.interface
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             mds.groupby('x')
 
     def test_array_groupby_non_scalar(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
         mds = Dataset(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         assert mds.interface is self.interface
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             mds.groupby('x')
 
     def test_array_points_iloc_index_row(self):
@@ -499,18 +499,16 @@ class MultiBaseInterfaceTest(GeomTests):
 
     __test__ = False
 
-    def setUp(self):
+    def setup_method(self):
         logger = get_logger()
         self._log_level = logger.level
         get_logger().setLevel(logging.ERROR)
         self._subtypes = MultiInterface.subtypes
         MultiInterface.subtypes = [self.subtype]
-        super().setUp()
 
-    def tearDown(self):
+    def teardown_method(self):
         MultiInterface.subtypes = self._subtypes
         get_logger().setLevel(self._log_level)
-        super().tearDown()
 
 
 class MultiDictInterfaceTest(MultiBaseInterfaceTest):

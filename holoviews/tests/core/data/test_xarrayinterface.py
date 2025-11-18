@@ -1,13 +1,13 @@
 import datetime as dt
-from unittest import SkipTest
 
 import numpy as np
 import pandas as pd
+import pytest
 
 try:
     import xarray as xr
 except ImportError:
-    raise SkipTest("Could not import xarray, skipping XArrayInterface tests.")
+    pytest.skip("Could not import xarray, skipping XArrayInterface tests.", allow_module_level=True)
 
 from holoviews.core.data import Dataset, XArrayInterface, concat
 from holoviews.core.dimension import Dimension
@@ -319,31 +319,31 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
     # Disabled tests for NotImplemented methods
     def test_dataset_array_init_hm(self):
         "Tests support for arrays (homogeneous)"
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_add_dimensions_values_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_reverse_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_vdim_hm_alias(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_vdim_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_reverse_vdim_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sample_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sample_hm_alias(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
 
 
@@ -352,13 +352,13 @@ class DaskXArrayInterfaceTest(XArrayInterfaceTests):
     Tests for XArray interface wrapping dask arrays
     """
 
-    def setUp(self):
+    def setup_method(self):
         try:
             import dask.array # noqa
         except ImportError:
-            raise SkipTest('Dask could not be imported, cannot test '
+            pytest.skip('Dask could not be imported, cannot test '
                            'dask arrays with XArrayInterface')
-        super().setUp()
+        super().setup_method()
 
     def init_column_data(self):
         import dask.array
@@ -465,10 +465,10 @@ class ImageElement_XArrayInterfaceTests(BaseImageElementInterfaceTests):
         zs = np.arange(6).reshape(2, 3)
         xrarr = xr.DataArray(zs, dims=('x','y'), coords={'x': xs})
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             Image(xrarr)
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             Image(xrarr, kdims=['x', 'y'])
 
 

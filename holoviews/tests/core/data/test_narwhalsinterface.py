@@ -22,14 +22,14 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
     data_type = nw.DataFrame
     narwhals_backend = None
 
-    def setUp(self):
+    def setup_method(self):
         pytest.importorskip(self.narwhals_backend)
         NarwhalsInterface.narwhals_backend = self.narwhals_backend
-        super().setUp()
+        super().setup_method()
 
-    def tearDown(self):
+    def teardown_method(self):
         NarwhalsInterface.narwhals_backend = None
-        super().tearDown()
+        super().teardown_method()
 
     def frame(self, *args, **kwargs):
         mod = pytest.importorskip(self.narwhals_backend)
@@ -210,9 +210,9 @@ class DaskNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     narwhals_backend = "pandas"
     force_sort = True
 
-    def setUp(self):
+    def setup_method(self):
         pytest.importorskip("dask.dataframe")
-        super().setUp()
+        super().setup_method()
 
     def frame(self, *args, **kwargs):
         import dask.dataframe as dd
@@ -226,16 +226,14 @@ class IbisNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     narwhals_backend = "pyarrow"
     force_sort = True
 
-    def setUp(self):
+    def setup_class(self):
         ibis = pytest.importorskip("ibis")
-        super().setUp()
         ibis.set_backend("sqlite")
 
-    def tearDown(self):
+    def teardown_class(self):
         import ibis
 
         ibis.set_backend(None)
-        super().tearDown()
 
     def frame(self, *args, **kwargs):
         import ibis
@@ -270,9 +268,9 @@ class DuckdbNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     narwhals_backend = "pyarrow"
     force_sort = True
 
-    def setUp(self):
+    def setup_method(self):
         pytest.importorskip("duckdb")
-        super().setUp()
+        super().setup_method()
 
     def frame(self, *args, **kwargs):
         import duckdb

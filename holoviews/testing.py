@@ -82,6 +82,11 @@ class _DataComparison:
 
         # if _is_installed("xarray"):
 
+        if _is_installed("dask"):
+            import dask.array as da
+            cls.equality_funcs[da.Array] = cls.compare_arrays
+
+
         return cls.equality_funcs
 
     @classmethod

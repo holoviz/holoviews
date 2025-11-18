@@ -10,14 +10,13 @@ from holoviews.core.data.interface import DataError
 from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Histogram, QuadMesh
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_data_equal, assert_element_equal
 from holoviews.util.transform import dim
 
 
-class Binned1DTest(ComparisonTestCase):
+class Binned1DTest:
 
-    def setUp(self):
+    def setup_method(self):
         self.values = np.arange(10)
         self.edges =  np.arange(11)
         self.dataset1d = Histogram((self.edges, self.values))
@@ -88,11 +87,11 @@ class Binned1DTest(ComparisonTestCase):
         assert self.dataset1d[0] == 0
 
     def test_scalar_lowest_index_out_of_bounds(self):
-        with self.assertRaises(IndexError):
+        with pytest.raises(IndexError):
             self.dataset1d[-1]
 
     def test_scalar_highest_index_out_of_bounds(self):
-        with self.assertRaises(IndexError):
+        with pytest.raises(IndexError):
             self.dataset1d[10]
 
     def test_groupby_kdim(self):
@@ -102,9 +101,9 @@ class Binned1DTest(ComparisonTestCase):
         assert_element_equal(grouped, holomap)
 
 
-class Binned2DTest(ComparisonTestCase):
+class Binned2DTest:
 
-    def setUp(self):
+    def setup_method(self):
         n = 4
         self.xs = np.logspace(1, 3, n)
         self.ys = np.linspace(1, 10, n)
@@ -168,9 +167,9 @@ class Binned2DTest(ComparisonTestCase):
 
 
 
-class Irregular2DBinsTest(ComparisonTestCase):
+class Irregular2DBinsTest:
 
-    def setUp(self):
+    def setup_method(self):
         lon, lat = np.meshgrid(np.linspace(-20, 20, 6), np.linspace(0, 30, 4))
         lon += lat/10
         lat += lon/10
@@ -221,7 +220,7 @@ class Irregular2DBinsTest(ComparisonTestCase):
                           coords = {'lat': (('y', 'b'), self.ys),
                                     'lon': (('y', 'x'), self.xs),
                                     'z': [0, 1]}, name='A')
-        with self.assertRaises(DataError):
+        with pytest.raises(DataError):
             Dataset(da, ['z', 'lon', 'lat'])
 
     def test_3d_xarray_with_constant_dim_canonicalized_to_2d(self):

@@ -49,7 +49,7 @@ class BasePandasInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
 
     def test_dataset_df_duplicate_columns_raises(self):
         df = pd.DataFrame(np.random.randint(-100,100, size=(100, 2)), columns=list("AB"))
-        with self.assertRaises(DataError):
+        with pytest.raises(DataError):
             Dataset(df[['A', 'A']])
 
     def test_dataset_extract_vdims(self):
@@ -210,11 +210,11 @@ class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
 
     __test__ = True
 
-    def setUp(self):
+    def setup_method(self):
         frame = pd.DataFrame({"number": [1, 1, 2, 2], "color": ["red", "blue", "red", "blue"]})
         index = pd.MultiIndex.from_frame(frame, names=("number", "color"))
         self.df = pd.DataFrame(range(4), index=index, columns=["values"])
-        super().setUp()
+        super().setup_method()
 
     def test_lexsort_depth_import(self):
         # Indexing relies on knowing the lexsort_depth but this is a

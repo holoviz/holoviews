@@ -1,6 +1,5 @@
-from unittest import SkipTest
-
 import numpy as np
+import pytest
 
 from holoviews.core.data import Dataset
 from holoviews.testing import assert_element_equal
@@ -48,7 +47,7 @@ class ArrayDatasetTest(HomogeneousColumnTests, InterfaceTests):
         assert_element_equal(ds.sort(reverse=True), ds_sorted)
 
     def test_dataset_transform_replace_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_transform_add_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")

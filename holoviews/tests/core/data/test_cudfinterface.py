@@ -38,8 +38,8 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         assert isinstance(expected, self.data_type)
         assert_data_equal(df, expected.to_pandas())
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         logging.getLogger('numba.cuda.cudadrv.driver').setLevel(30)
 
     @pytest.mark.xfail(reason="cuDF does not support variance aggregation")

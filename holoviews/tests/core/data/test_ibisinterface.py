@@ -1,7 +1,6 @@
 import sqlite3
 import warnings
 from tempfile import NamedTemporaryFile
-from unittest import SkipTest
 
 import pytest
 
@@ -14,7 +13,7 @@ try:
         warnings.simplefilter("ignore")
         from ibis import sqlite
 except ImportError:
-    raise SkipTest("Could not import ibis, skipping IbisInterface tests.")
+    pytest.skip("Could not import ibis, skipping IbisInterface tests.", allow_module_level=True)
 
 import numpy as np
 import pandas as pd
@@ -46,7 +45,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
     __test__ = True
 
-    def setUp(self):
+    def setup_method(self):
         self.restore_datatype = self.element.datatype.copy()
         # TODO: This should work!
         # self.element.datatype = [self.datatype]
@@ -57,7 +56,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         self.init_grid_data()
         self.init_data()
 
-    def tearDown(self):
+    def teardown_method(self):
         self.element.datatype = self.restore_datatype
 
     def init_column_data(self):
@@ -116,58 +115,58 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         )
 
     def test_dataset_array_init_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_dict_dim_not_found_raises_on_scalar(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_array_init_hm_tuple_dims(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_dict_init(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_dict_init_alias(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_simple_zip_init(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_simple_zip_init_alias(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_zip_init(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_zip_init_alias(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_tuple_init(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_tuple_init_alias(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_implicit_indexing_init(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_dataframe_init_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_dataframe_init_hm_alias(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_dataframe_init_ht(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_dataframe_init_ht_alias(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_add_dimensions_values_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_add_dimensions_values_ht(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_dataset_ht_dtypes(self):
         int_dtype = "int64" if IBIS_VERSION >= (9, 0, 0) else "int32"
@@ -196,7 +195,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             kdims=self.kdims[:1],
             vdims=self.vdims,
         )
-        self.compare_dataset(
+        assert_element_equal(
             self.table.aggregate(["Gender"], np.mean).sort(), aggregated.sort()
         )
 
@@ -206,7 +205,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             kdims=self.alias_kdims[:1],
             vdims=self.alias_vdims,
         )
-        self.compare_dataset(
+        assert_element_equal(
             self.alias_table.aggregate("Gender", np.mean).sort(), aggregated.sort()
         )
 
@@ -265,58 +264,58 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
             result = self.table.aggregate("Gender", agg).sort()
 
-            self.compare_dataset(expected, result, msg=str(agg))
+            assert_element_equal(expected, result)
 
     def test_select_with_neighbor(self):
         try:
             # Not currently supported by Ibis
             super().test_select_with_neighbor()
         except NotImplementedError:
-            raise SkipTest("Not supported")
+            pytest.skip("Not supported")
 
     if not IbisInterface.has_rowid():
 
         def test_dataset_iloc_slice_rows_slice_cols(self):
-            raise SkipTest("Not supported")
+            pytest.skip("Not supported")
 
         def test_dataset_iloc_slice_rows_list_cols(self):
-            raise SkipTest("Not supported")
+            pytest.skip("Not supported")
 
         def test_dataset_iloc_slice_rows_index_cols(self):
-            raise SkipTest("Not supported")
+            pytest.skip("Not supported")
 
         def test_dataset_iloc_slice_rows(self):
-            raise SkipTest("Not supported")
+            pytest.skip("Not supported")
 
         def test_dataset_iloc_list_rows_slice_cols(self):
-            raise SkipTest("Not supported")
+            pytest.skip("Not supported")
 
         def test_dataset_iloc_list_rows_list_cols_by_name(self):
-            raise SkipTest("Not supported")
+            pytest.skip("Not supported")
 
         def test_dataset_iloc_list_rows_list_cols(self):
-            raise SkipTest("Not supported")
+            pytest.skip("Not supported")
 
         def test_dataset_iloc_list_rows(self):
-            raise SkipTest("Not supported")
+            pytest.skip("Not supported")
 
         def test_dataset_iloc_list_cols_by_name(self):
-            raise SkipTest("Not supported")
+            pytest.skip("Not supported")
 
         def test_dataset_iloc_list_cols(self):
-            raise SkipTest("Not supported")
+            pytest.skip("Not supported")
 
         def test_dataset_iloc_index_rows_slice_cols(self):
-            raise SkipTest("Not supported")
+            pytest.skip("Not supported")
 
         def test_dataset_iloc_index_rows_index_cols(self):
-            raise SkipTest("Not supported")
+            pytest.skip("Not supported")
 
         def test_dataset_iloc_ellipsis_list_cols_by_name(self):
-            raise SkipTest("Not supported")
+            pytest.skip("Not supported")
 
         def test_dataset_iloc_ellipsis_list_cols(self):
-            raise SkipTest("Not supported")
+            pytest.skip("Not supported")
 
         def test_dataset_boolean_index(self):
-            raise SkipTest("Not supported")
+            pytest.skip("Not supported")

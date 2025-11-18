@@ -1,9 +1,9 @@
 import datetime as dt
 from itertools import product
-from unittest import SkipTest
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from holoviews.core.data import Dataset
 from holoviews.core.data.interface import DataError
@@ -36,12 +36,12 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
     __test__ = False
 
     def test_dataset_dataframe_init_hm(self):
-        with self.assertRaises(DataError):
+        with pytest.raises(DataError):
             Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
                     kdims=['x'], vdims=['x2'])
 
     def test_dataset_dataframe_init_hm_alias(self):
-        with self.assertRaises(DataError):
+        with pytest.raises(DataError):
             Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
                     kdims=['x'], vdims=['x2'])
 
@@ -72,45 +72,45 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
         assert_data_equal(ds.interface.coords(ds, 'y'), ys)
 
     def test_dataset_sort_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_reverse_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_vdim_hm(self):
         exception = ('Compressed format cannot be sorted, either instantiate '
                      'in the desired order or use the expanded format.')
-        with self.assertRaisesRegex(Exception, exception):
+        with pytest.raises(Exception, match=exception):
             self.dataset_hm.sort('y')
 
     def test_dataset_sort_reverse_vdim_hm(self):
         exception = ('Compressed format cannot be sorted, either instantiate '
                      'in the desired order or use the expanded format.')
-        with self.assertRaisesRegex(Exception, exception):
+        with pytest.raises(Exception, match=exception):
             self.dataset_hm.sort('y', reverse=True)
 
     def test_dataset_sort_vdim_hm_alias(self):
         exception = ('Compressed format cannot be sorted, either instantiate '
                      'in the desired order or use the expanded format.')
-        with self.assertRaisesRegex(Exception, exception):
+        with pytest.raises(Exception, match=exception):
             self.dataset_hm.sort('y')
 
     def test_dataset_groupby(self):
         assert self.dataset_hm.groupby('x').keys() == list(self.xs)
 
     def test_dataset_add_dimensions_value_hm(self):
-        with self.assertRaisesRegex(Exception, 'Cannot add key dimension to a dense representation.'):
+        with pytest.raises(Exception, match='Cannot add key dimension to a dense representation'):
             self.dataset_hm.add_dimension('z', 1, 0)
 
     def test_dataset_add_dimensions_values_hm(self):
         table =  self.dataset_hm.add_dimension('z', 1, range(1,12), vdim=True)
         assert table.vdims[1] == 'z'
-        self.compare_arrays(table.dimension_values('z'), np.array(list(range(1,12))))
+        assert_data_equal(table.dimension_values('z'), np.array(list(range(1,12))))
 
     def test_dataset_add_dimensions_values_hm_alias(self):
         table =  self.dataset_hm.add_dimension(('z', 'Z'), 1, range(1,12), vdim=True)
         assert table.vdims[1] == 'Z'
-        self.compare_arrays(table.dimension_values('Z'), np.array(list(range(1,12))))
+        assert_data_equal(table.dimension_values('Z'), np.array(list(range(1,12))))
 
     def test_dataset_2D_columnar_shape(self):
         array = np.random.rand(11, 11)
@@ -358,10 +358,10 @@ class GridInterfaceTests(BaseGridInterfaceTests):
 
 class DaskGridInterfaceTests(GridInterfaceTests):
 
-    def setUp(self):
+    def setup_method(self):
         if da is None:
-            raise SkipTest('DaskGridInterfaceTests requires dask.')
-        super().setUp()
+            pytest.skip('DaskGridInterfaceTests requires dask.')
+        super().setup_method()
 
     def init_column_data(self):
         self.xs = np.arange(11)
@@ -408,13 +408,13 @@ class DaskGridInterfaceTests(GridInterfaceTests):
         arr = da.from_array(np.arange(1, 12), 3)
         table =  self.dataset_hm.add_dimension('z', 1, arr, vdim=True)
         assert table.vdims[1] == 'z'
-        self.compare_arrays(table.dimension_values('z'), np.arange(1,12))
+        assert_data_equal(table.dimension_values('z'), np.arange(1,12))
 
     def test_dataset_add_dimensions_values_hm_alias(self):
         arr = da.from_array(np.arange(1, 12), 3)
         table =  self.dataset_hm.add_dimension(('z', 'Z'), 1, arr, vdim=True)
         assert table.vdims[1] == 'Z'
-        self.compare_arrays(table.dimension_values('Z'), np.arange(1,12))
+        assert_data_equal(table.dimension_values('Z'), np.arange(1,12))
 
     def test_dataset_2D_columnar_shape(self):
         array = da.from_array(np.random.rand(11, 11), 3)

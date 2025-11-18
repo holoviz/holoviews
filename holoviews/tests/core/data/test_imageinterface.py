@@ -1,5 +1,4 @@
 import datetime as dt
-from unittest import SkipTest
 
 import numpy as np
 import pytest
@@ -43,16 +42,16 @@ class ImageInterfaceTests(GriddedInterfaceTests, InterfaceTests):
         assert ds.interface.dtype(ds, 'z') == np.dtype(int)
 
     def test_dataset_groupby_with_transposed_dimensions(self):
-        raise SkipTest('Image interface does not support multi-dimensional data.')
+        pytest.skip('Image interface does not support multi-dimensional data.')
 
     def test_dataset_dynamic_groupby_with_transposed_dimensions(self):
-        raise SkipTest('Image interface does not support multi-dimensional data.')
+        pytest.skip('Image interface does not support multi-dimensional data.')
 
     def test_dataset_slice_inverted_dimension(self):
-        raise SkipTest('Image interface does not support 1D data')
+        pytest.skip('Image interface does not support 1D data')
 
     def test_sample_2d(self):
-        raise SkipTest('Image interface only supports Image type')
+        pytest.skip('Image interface only supports Image type')
 
 
 
@@ -83,11 +82,11 @@ class BaseImageElementInterfaceTests(InterfaceTests):
         xs = np.arange(5)
         ys = np.arange(10)
         array = xs * ys[:, np.newaxis]
-        with self.assertRaises(DataError):
+        with pytest.raises(DataError):
             Image((ys, xs, array))
 
     def test_bounds_mismatch(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             Image((range(10), range(10), np.random.rand(10, 10)), bounds=0.5)
 
     def test_init_data_datetime_xaxis(self):
