@@ -90,7 +90,7 @@ class _DataComparison:
 
     @classmethod
     def compare_arrays(cls, arr1, arr2, msg='Arrays'):
-        if dtype_kind(arr1) in "UO":
+        if dtype_kind(arr1) in "UOM":
             assert_array_equal(arr1, arr2)
         else:
             assert_array_almost_equal(arr1, arr2)
