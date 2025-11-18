@@ -1,5 +1,3 @@
-from unittest import SkipTest
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -275,7 +273,7 @@ class _ImageStackBase(TestRasterPlot):
         try:
             import xarray as xr
         except ImportError:
-            raise SkipTest("xarray not available for core tests")
+            pytest.skip("xarray not available for core tests")
 
         x = np.arange(self.xsize)
         y = np.arange(self.ysize) + 5
@@ -301,7 +299,7 @@ class _ImageStackBase(TestRasterPlot):
         try:
             import xarray as xr
         except ImportError:
-            raise SkipTest("xarray not available for core tests")
+            pytest.skip("xarray not available for core tests")
 
         x = np.arange(self.xsize)
         y = np.arange(self.ysize) + 5

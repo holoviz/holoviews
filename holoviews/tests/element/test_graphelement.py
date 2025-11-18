@@ -1,8 +1,6 @@
 """
 Unit tests of Graph Element.
 """
-from unittest import SkipTest
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -177,7 +175,7 @@ class FromNetworkXTests(ComparisonTestCase):
         try:
             import networkx as nx # noqa
         except ImportError:
-            raise SkipTest('Test requires networkx to be installed')
+            pytest.skip('Test requires networkx to be installed')
 
     def test_from_networkx_with_node_attrs(self):
         import networkx as nx

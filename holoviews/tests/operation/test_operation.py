@@ -1,7 +1,6 @@
 import datetime as dt
 import random
 from importlib.util import find_spec
-from unittest import SkipTest
 
 import numpy as np
 import pandas as pd
@@ -189,7 +188,7 @@ class OperationTests(ComparisonTestCase):
 
     def test_image_contours_x_datetime(self):
         if mpl is None:
-            raise SkipTest("Matplotlib required to test datetime axes")
+            pytest.skip("Matplotlib required to test datetime axes")
 
         x = np.array(['2023-09-01', '2023-09-03', '2023-09-05'], dtype='datetime64')
         y = [14, 15]
@@ -215,7 +214,7 @@ class OperationTests(ComparisonTestCase):
 
     def test_image_contours_y_datetime(self):
         if mpl is None:
-            raise SkipTest("Matplotlib required to test datetime axes")
+            pytest.skip("Matplotlib required to test datetime axes")
         x = [14, 15, 16]
         y = np.array(['2023-09-01', '2023-09-03'], dtype='datetime64')
         z = np.array([[0, 1, 0], [0, 1, 0]])
@@ -241,7 +240,7 @@ class OperationTests(ComparisonTestCase):
 
     def test_image_contours_xy_datetime(self):
         if mpl is None:
-            raise SkipTest("Matplotlib required to test datetime axes")
+            pytest.skip("Matplotlib required to test datetime axes")
         x = np.array(['2023-09-01', '2023-09-03', '2023-09-05'], dtype='datetime64')
         y = np.array(['2023-10-07', '2023-10-08'], dtype='datetime64')
         z = np.array([[0, 1, 0], [0, 1, 0]])
@@ -273,7 +272,7 @@ class OperationTests(ComparisonTestCase):
 
     def test_image_contours_z_datetime(self):
         if mpl is None:
-            raise SkipTest("Matplotlib required to test datetime axes")
+            pytest.skip("Matplotlib required to test datetime axes")
         z = np.array([['2023-09-10', '2023-09-10'], ['2023-09-10', '2023-09-12']], dtype='datetime64')
         img = Image(z)
         op_contours = contours(img, levels=[np.datetime64('2023-09-11')])

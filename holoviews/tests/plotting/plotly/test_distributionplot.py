@@ -1,4 +1,4 @@
-from unittest import SkipTest
+import pytest
 
 from holoviews.element import Distribution
 
@@ -12,7 +12,7 @@ class TestDistributionPlot(TestPlotlyPlot):
         try:
             import scipy  # noqa
         except ImportError:
-            raise SkipTest("Test requires scipy")
+            pytest.skip("Test requires scipy")
 
     def test_distribution_filled(self):
         dist = Distribution([1, 1.1,  2.1, 3, 2, 1, 2.2])

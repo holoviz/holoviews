@@ -1,10 +1,11 @@
-import unittest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 try:
     import dash  # noqa: F401
 except ImportError:
-    raise unittest.SkipTest("Dash not installed")
+    pytest.skip("Dash not installed", allow_module_level=True)
 
 from dash._callback_context import CallbackContext
 

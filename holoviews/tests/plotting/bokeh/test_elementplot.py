@@ -1,5 +1,4 @@
 import datetime as dt
-from unittest import SkipTest
 
 import numpy as np
 import panel as pn
@@ -380,7 +379,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         try:
             import cftime
         except ImportError:
-            raise SkipTest('Test requires cftime library')
+            pytest.skip('Test requires cftime library')
         gregorian_dates = [cftime.DatetimeGregorian(2000, 2, 28),
                            cftime.DatetimeGregorian(2000, 3, 1),
                            cftime.DatetimeGregorian(2000, 3, 2)]
@@ -394,7 +393,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         try:
             import cftime
         except ImportError:
-            raise SkipTest('Test requires cftime library')
+            pytest.skip('Test requires cftime library')
         gregorian_dates = [cftime.DatetimeNoLeap(2000, 2, 28),
                            cftime.DatetimeNoLeap(2000, 3, 1),
                            cftime.DatetimeNoLeap(2000, 3, 2)]

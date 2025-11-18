@@ -1,7 +1,7 @@
 """
 Tests of the parsers implemented in ipython.parsers
 """
-from unittest import SkipTest
+import pytest
 
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -9,7 +9,7 @@ try:
     import pyparsing     # noqa (import test)
     from holoviews.util.parser import OptsSpec
 except ImportError:
-    raise SkipTest("Required dependencies not satisfied for testing parsers")
+    pytest.skip("Required dependencies not satisfied for testing parsers")
 
 
 from holoviews.core.options import Cycle, Options

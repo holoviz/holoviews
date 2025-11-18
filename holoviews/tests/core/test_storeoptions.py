@@ -2,9 +2,8 @@
 Unit tests of the StoreOptions class used to control custom options on
 Store as used by the %opts magic.
 """
-from unittest import SkipTest
-
 import numpy as np
+import pytest
 
 from holoviews import Curve, HoloMap, Image, Overlay
 from holoviews.core.options import Store, StoreOptions
@@ -50,7 +49,7 @@ class TestStoreOptsMethod(ComparisonTestCase):
 
     def setUp(self):
         if mpl is None:
-            raise SkipTest("Matplotlib required to test Store inheritance")
+            pytest.skip("Matplotlib required to test Store inheritance")
 
         Store.current_backend = 'matplotlib'
 

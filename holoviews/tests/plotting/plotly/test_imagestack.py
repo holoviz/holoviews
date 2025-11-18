@@ -1,10 +1,3 @@
-from unittest import SkipTest
-
-try:
-    import datashader  # noqa: F401
-except ImportError:
-   raise SkipTest("Test requires datashader")
-
 import numpy as np
 
 from holoviews.element import ImageStack

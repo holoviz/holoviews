@@ -2,7 +2,6 @@
 Unit test of the streams system
 """
 from collections import defaultdict
-from unittest import SkipTest
 
 import pandas as pd
 import param
@@ -416,7 +415,7 @@ class TestParamMethodStream(ComparisonTestCase):
 
     def setUp(self):
         if PARAM_VERSION < (1, 8, 0):
-            raise SkipTest('Params stream requires param >= 1.8.0')
+            pytest.skip('Params stream requires param >= 1.8.0')
 
         class Inner(param.Parameterized):
 
@@ -1498,7 +1497,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         try: import shapely # noqa
         except ImportError:
             try: import spatialpandas # noqa
-            except ImportError: raise SkipTest('Shapely required for polygon selection')
+            except ImportError: pytest.skip('Shapely required for polygon selection')
         poly = Polygons([
             [(0, 0, 'a'), (2, 0, 'a'), (1, 1, 'a')],
             [(2, 0, 'b'), (4, 0, 'b'), (3, 1, 'b')],

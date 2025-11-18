@@ -1,8 +1,7 @@
 """
 Unit tests of the helper functions in utils
 """
-from unittest import SkipTest
-
+import pytest
 from pyviz_comms import CommManager
 
 from holoviews import Store
@@ -31,9 +30,9 @@ class TestOutputUtil(ComparisonTestCase):
 
     def setUp(self):
         if notebook is None:
-            raise SkipTest("Jupyter Notebook not available")
+            pytest.skip("Jupyter Notebook not available")
         if mpl is None:
-            raise SkipTest("Matplotlib not available")
+            pytest.skip("Matplotlib not available")
         from holoviews.ipython import notebook_extension
 
         notebook_extension(*BACKENDS)
@@ -83,7 +82,7 @@ class TestOptsUtil(LoggingComparisonTestCase):
 
     def setUp(self):
         if mpl is None:
-            raise SkipTest("Matplotlib not available")
+            pytest.skip("Matplotlib not available")
         self.backend = Store.current_backend
         Store.current_backend = 'matplotlib'
         self.store_copy = OptionTree(sorted(Store.options().items()),

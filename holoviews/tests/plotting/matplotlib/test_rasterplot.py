@@ -1,6 +1,5 @@
-from unittest import SkipTest
-
 import numpy as np
+import pytest
 from matplotlib.colors import ListedColormap
 
 from holoviews.element import Image, ImageStack, Raster
@@ -82,7 +81,7 @@ class TestRasterPlot(TestMPLPlot):
         try:
             import datashader  # noqa: F401
         except ImportError:
-            raise SkipTest("Test requires datashader")
+            pytest.skip("Test requires datashader")
         x = np.arange(0, 3)
         y = np.arange(5, 8)
         a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])

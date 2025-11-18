@@ -1,11 +1,10 @@
-from unittest import SkipTest
+import numpy as np
+import pytest
 
 try:
     import scipy # noqa
 except ImportError:
-    raise SkipTest('SciPy not available')
-
-import numpy as np
+    pytest.skip('SciPy not available', allow_module_level=True)
 
 from holoviews import Area, Bivariate, Contours, Distribution, Image, Polygons
 from holoviews.element.comparison import ComparisonTestCase

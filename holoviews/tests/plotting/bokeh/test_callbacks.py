@@ -1,6 +1,6 @@
 import datetime as dt
 from collections import deque, namedtuple
-from unittest import IsolatedAsyncioTestCase, SkipTest
+from unittest import IsolatedAsyncioTestCase
 
 import numpy as np
 import pandas as pd
@@ -439,7 +439,7 @@ class TestServerCallbacks(CallbackTestCase):
         self.assertEqual(stream.y_range, (0.2, 0.8))
 
     def test_rangexy_framewise_reset(self):
-        raise SkipTest('The fix for this was reverted, see #4396')
+        pytest.skip('The fix for this was reverted, see #4396')
         stream = RangeXY(x_range=(0, 2), y_range=(0, 1))
         curve = DynamicMap(lambda z, x_range, y_range: Curve([1, 2, z]),
                            kdims=['z'], streams=[stream]).redim.range(z=(0, 3))

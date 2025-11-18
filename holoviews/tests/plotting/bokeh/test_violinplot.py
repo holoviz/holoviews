@@ -1,6 +1,5 @@
-from unittest import SkipTest
-
 import numpy as np
+import pytest
 from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
 from holoviews.element import Violin
@@ -17,7 +16,7 @@ class TestBokehViolinPlot(TestBokehPlot):
         try:
             import scipy # noqa
         except ImportError:
-            raise SkipTest('Violin plot requires SciPy to compute kde')
+            pytest.skip('Violin plot requires SciPy to compute kde')
         super().setUp()
 
     def test_violin_simple(self):

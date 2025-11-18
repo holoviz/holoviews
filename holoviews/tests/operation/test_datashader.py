@@ -1,6 +1,5 @@
 import datetime as dt
 from contextlib import suppress
-from unittest import SkipTest
 
 import colorcet as cc
 import numpy as np
@@ -41,7 +40,7 @@ from holoviews.util import render
 try:
     import datashader as ds
 except ImportError:
-    raise SkipTest('Datashader not available')
+    pytest.skip('Datashader not available')
 
 import dask.dataframe as dd
 import xarray as xr
@@ -820,7 +819,7 @@ class DatashaderCatAggregateTests(ComparisonTestCase):
 
     def setUp(self):
         if DATASHADER_VERSION < (0, 11, 0):
-            raise SkipTest('Regridding operations require datashader>=0.11.0')
+            pytest.skip('Regridding operations require datashader>=0.11.0')
 
     def test_aggregate_points_categorical(self):
         points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
@@ -1038,7 +1037,7 @@ class DatashaderRasterizeTests(ComparisonTestCase):
 
     def setUp(self):
         if DATASHADER_VERSION <= (0, 6, 4):
-            raise SkipTest('Regridding operations require datashader>=0.7.0')
+            pytest.skip('Regridding operations require datashader>=0.7.0')
 
         self.simplexes = [(0, 1, 2), (3, 2, 1)]
         self.vertices = [(0., 0.), (0., 1.), (1., 0), (1, 1)]
@@ -1548,7 +1547,7 @@ class DatashaderSpreadTests(ComparisonTestCase):
 
     def test_spread_img_1px(self):
         if DATASHADER_VERSION < (0, 12, 0):
-            raise SkipTest('Datashader does not support DataArray yet')
+            pytest.skip('Datashader does not support DataArray yet')
         arr = np.array([[0, 0, 0], [0, 0, 0], [1, 1, 1]]).T
         spreaded = spread(Image(arr))
         arr = np.array([[0, 0, 0], [2, 3, 2], [2, 3, 2]]).T
@@ -1595,7 +1594,7 @@ class GraphBundlingTests(ComparisonTestCase):
 
     def setUp(self):
         if DATASHADER_VERSION <= (0, 7, 0):
-            raise SkipTest('Regridding operations require datashader>=0.7.0')
+            pytest.skip('Regridding operations require datashader>=0.7.0')
         self.source = np.arange(8)
         self.target = np.zeros(8)
         self.graph = Graph(((self.source, self.target),))
@@ -1639,7 +1638,7 @@ class InspectorTests(ComparisonTestCase):
 
     def test_inspect_points_or_polygons(self):
         if spatialpandas is None:
-            raise SkipTest('Polygon inspect tests require spatialpandas')
+            pytest.skip('Polygon inspect tests require spatialpandas')
         polys = inspect(self.polysrgb,
                         max_indicators=3, dynamic=False, pixels=1, x=6, y=5)
         self.assertEqual(polys, Polygons([{'x': [6, 3, 7], 'y': [7, 2, 5], 'z': 2}], vdims='z'))
@@ -1707,7 +1706,7 @@ class InspectorTests(ComparisonTestCase):
 
     def test_polys_inspection_1px_mask_hit(self):
         if spatialpandas is None:
-            raise SkipTest('Polygon inspect tests require spatialpandas')
+            pytest.skip('Polygon inspect tests require spatialpandas')
         polys = inspect_polygons(self.polysrgb,
                                  max_indicators=3, dynamic=False, pixels=1, x=6, y=5)
         self.assertEqual(polys, Polygons([{'x': [6, 3, 7], 'y': [7, 2, 5], 'z': 2}],
@@ -1716,7 +1715,7 @@ class InspectorTests(ComparisonTestCase):
 
     def test_inspection_1px_mask_poly_df(self):
         if spatialpandas is None:
-            raise SkipTest('Polygon inspect tests require spatialpandas')
+            pytest.skip('Polygon inspect tests require spatialpandas')
         inspector = inspect.instance(max_indicators=3, dynamic=False, pixels=1, x=6, y=5)
         inspector(self.polysrgb)
         self.assertEqual(len(inspector.hits), 1)
@@ -1726,7 +1725,7 @@ class InspectorTests(ComparisonTestCase):
 
     def test_polys_inspection_1px_mask_miss(self):
         if spatialpandas is None:
-            raise SkipTest('Polygon inspect tests require spatialpandas')
+            pytest.skip('Polygon inspect tests require spatialpandas')
         polys = inspect_polygons(self.polysrgb,
                                  max_indicators=3, dynamic=False, pixels=1, x=0, y=0)
         self.assertEqual(polys, Polygons([], vdims='z'))

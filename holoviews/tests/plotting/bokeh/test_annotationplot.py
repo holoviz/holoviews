@@ -1,6 +1,5 @@
-import unittest
-
 import numpy as np
+import pytest
 
 import holoviews as hv
 from holoviews.element import (
@@ -246,7 +245,7 @@ class TestHVLinesPlot(TestBokehPlot):
 
     def setUp(self):
         if not BOKEH_GE_3_2_0:
-            raise unittest.SkipTest("Bokeh 3.2 added H/VLines")
+            pytest.skip("Bokeh 3.2 added H/VLines")
         super().setUp()
 
     def test_hlines_plot(self):
@@ -445,7 +444,7 @@ class TestHVSpansPlot(TestBokehPlot):
 
     def setUp(self):
         if not BOKEH_GE_3_2_0:
-            raise unittest.SkipTest("Bokeh 3.2 added H/VSpans")
+            pytest.skip("Bokeh 3.2 added H/VSpans")
         super().setUp()
 
     def test_hspans_plot(self):

@@ -1,6 +1,5 @@
 import contextlib
 import pickle
-from unittest import SkipTest
 
 import numpy as np
 import pytest
@@ -289,7 +288,7 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
 
     def setUp(self):
         if mpl is None:
-            raise SkipTest("Matplotlib required to test Store inheritance")
+            pytest.skip("Matplotlib required to test Store inheritance")
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         options = Store.options()
@@ -478,7 +477,7 @@ class TestStoreInheritance(ComparisonTestCase):
 
     def setUp(self):
         if mpl is None:
-            raise SkipTest("Matplotlib required to test Store inheritance")
+            pytest.skip("Matplotlib required to test Store inheritance")
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         self.store_copy = OptionTree(sorted(Store.options().items()),
@@ -562,7 +561,7 @@ class TestOptionsMethod(ComparisonTestCase):
 
     def setUp(self):
         if mpl is None:
-            raise SkipTest("Matplotlib required to test Store inheritance")
+            pytest.skip("Matplotlib required to test Store inheritance")
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         self.store_copy = OptionTree(sorted(Store.options().items()),
@@ -614,7 +613,7 @@ class TestOptsMethod(ComparisonTestCase):
 
     def setUp(self):
         if mpl is None:
-            raise SkipTest("Matplotlib required to test Store inheritance")
+            pytest.skip("Matplotlib required to test Store inheritance")
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         self.store_copy = OptionTree(sorted(Store.options().items()),
@@ -776,7 +775,7 @@ class TestCrossBackendOptions(ComparisonTestCase):
 
     def setUp(self):
         if mpl is None:
-            raise SkipTest("Matplotlib required to test Store inheritance")
+            pytest.skip("Matplotlib required to test Store inheritance")
         # Some tests require that plotly isn't loaded
         self.plotly_options = Store._options.pop('plotly', None)
         self.store_mpl = OptionTree(
@@ -933,7 +932,7 @@ class TestLookupOptions(ComparisonTestCase):
             import holoviews.plotting.mpl
             import holoviews.plotting.plotly  # noqa
         except ImportError:
-            raise SkipTest("Matplotlib or Plotly not installed")
+            pytest.skip("Matplotlib or Plotly not installed")
 
         backends = Store.loaded_backends()
 
@@ -979,7 +978,7 @@ class TestCrossBackendOptionSpecification(ComparisonTestCase):
 
     def setUp(self):
         if mpl is None:
-            raise SkipTest("Matplotlib required to test Store inheritance")
+            pytest.skip("Matplotlib required to test Store inheritance")
         # Some tests require that plotly isn't loaded
         self.plotly_options = Store._options.pop('plotly', None)
         self.store_mpl = OptionTree(

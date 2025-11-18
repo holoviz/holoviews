@@ -1,7 +1,6 @@
-from unittest import SkipTest
-
 import numpy as np
 import pandas as pd
+import pytest
 
 try:
     import dask.dataframe as dd
@@ -119,7 +118,7 @@ class ToTestCase(DatasetPropertyTestCase):
 
     def test_to_holomap_dask(self):
         if dd is None:
-            raise SkipTest("Dask required to test .to with dask dataframe.")
+            pytest.skip("Dask required to test .to with dask dataframe.")
         ddf = dd.from_pandas(self.df, npartitions=2)
         dds = Dataset(
             ddf,
@@ -727,7 +726,7 @@ class DatashaderTestCase(DatasetPropertyTestCase):
 
     def setUp(self):
         if None in (rasterize, datashade, dynspread):
-            raise SkipTest('Datashader could not be imported and cannot be tested.')
+            pytest.skip('Datashader could not be imported and cannot be tested.')
         super().setUp()
 
     def test_rasterize_curve(self):

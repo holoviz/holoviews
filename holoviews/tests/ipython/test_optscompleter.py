@@ -1,14 +1,13 @@
 """
 Tests the OptsCompleter class for tab-completion in the opts magic.
 """
-
-from unittest import SkipTest
+import pytest
 
 try:
     from holoviews.element.comparison import IPTestCase
     from holoviews.ipython.magics import OptsCompleter
 except ImportError:
-    raise SkipTest("Required dependencies not satisfied for testing OptsCompleter")
+    pytest.skip("Required dependencies not satisfied for testing OptsCompleter", allow_module_level=True)
 
 
 class TestOptsCompleter(IPTestCase):

@@ -4,7 +4,6 @@ Test cases for rendering exporters
 import os
 import subprocess
 import sys
-from unittest import SkipTest
 
 import numpy as np
 import panel as pn
@@ -89,7 +88,7 @@ class MPLRendererTest(ComparisonTestCase):
         try:
             subprocess.call(['ffmpeg', '-h'], stdout=devnull, stderr=devnull)
         except Exception:
-            raise SkipTest('ffmpeg not available, skipping mp4 export test')
+            pytest.skip('ffmpeg not available, skipping mp4 export test')
         data, _metadata = self.renderer.components(self.map1, 'mp4')
         assert "<source src='data:video/mp4" in data['text/html']
 
