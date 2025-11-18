@@ -40,7 +40,7 @@ from holoviews.util import render
 try:
     import datashader as ds
 except ImportError:
-    pytest.skip('Datashader not available')
+    pytest.skip('Datashader not available', allow_module_level=True)
 
 import dask.dataframe as dd
 import xarray as xr
