@@ -744,11 +744,12 @@ def assert_data_equal(element1, element2):
     _DataComparison.assert_equal(element1, element2)
 
 def assert_element_equal(element1, element2):
-    # data_types = _DataComparison.register().keys()
-    element_types = _ElementComparison.register()
-    # types = tuple(element_types - data_types) # TODO: Apply this
-    types = tuple(element_types)
+    types = tuple(_ElementComparison.register())
     assert isinstance(element1, types)
     assert isinstance(element2, types)
+
+    types = tuple(_DataComparison.register())
+    assert not isinstance(element1, types), "use hv.testing.assert_data_equal instead"
+    assert not isinstance(element2, types), "use hv.testing.assert_data_equal instead"
 
     _ElementComparison.assert_equal(element1, element2)

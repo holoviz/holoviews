@@ -953,7 +953,7 @@ class ScalarColumnTests:
 
     def test_dataset_scalar_constructor(self):
         ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
-        assert_element_equal(ds.dimension_values('A'), np.ones(10))
+        assert_data_equal(ds.dimension_values('A'), np.ones(10))
 
     def test_dataset_scalar_length(self):
         ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
@@ -961,37 +961,37 @@ class ScalarColumnTests:
 
     def test_dataset_scalar_array(self):
         ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
-        assert_element_equal(ds.array(), np.column_stack([np.ones(10), np.arange(10)]))
+        assert_data_equal(ds.array(), np.column_stack([np.ones(10), np.arange(10)]))
 
     def test_dataset_scalar_select(self):
         ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
-        assert_element_equal(ds.select(A=1).dimension_values('B'), np.arange(10))
+        assert_data_equal(ds.select(A=1).dimension_values('B'), np.arange(10))
 
     def test_dataset_scalar_select_expr(self):
         ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
-        assert_element_equal(
+        assert_data_equal(
             ds.select(selection_expr=dim('A') == 1).dimension_values('B'),
             np.arange(10)
         )
 
     def test_dataset_scalar_empty_select(self):
         ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
-        assert_element_equal(ds.select(A=0).dimension_values('B'), np.array([]))
+        assert_data_equal(ds.select(A=0).dimension_values('B'), np.array([]))
 
     def test_dataset_scalar_empty_select_expr(self):
         ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
-        assert_element_equal(
+        assert_data_equal(
             ds.select(selection_expr=dim('A') == 0).dimension_values('B'),
             np.array([])
         )
 
     def test_dataset_scalar_sample(self):
         ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
-        assert_element_equal(ds.sample([(1,)]).dimension_values('B'), np.arange(10))
+        assert_data_equal(ds.sample([(1,)]).dimension_values('B'), np.arange(10))
 
     def test_dataset_scalar_sort(self):
         ds = Dataset({'A': 1, 'B': np.arange(10)[::-1]}, kdims=['A', 'B'])
-        assert_element_equal(ds.sort().dimension_values('B'), np.arange(10))
+        assert_data_equal(ds.sort().dimension_values('B'), np.arange(10))
 
     def test_dataset_scalar_groupby(self):
         ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
@@ -1035,7 +1035,7 @@ class GriddedInterfaceTests:
         canonical = np.array([[ 0.05376789,  0.04669417,  0.03880118],
                               [ 0.06240918,  0.05800931,  0.04969735],
                               [ 0.06925999,  0.05800389,  0.05620127]])
-        assert_element_equal(dataset.dimension_values('z', flat=False),
+        assert_data_equal(dataset.dimension_values('z', flat=False),
                          canonical)
 
     def test_gridded_dtypes(self):
@@ -1147,67 +1147,67 @@ class GriddedInterfaceTests:
         assert_element_equal(ds.ndloc[1:, 2:5], sliced)
 
     def test_dataset_dim_vals_grid_kdims_xs(self):
-        assert_element_equal(self.dataset_grid.dimension_values(0, expanded=False),
+        assert_data_equal(self.dataset_grid.dimension_values(0, expanded=False),
                          np.array([0, 1]))
 
     def test_dataset_dim_vals_grid_kdims_xs_alias(self):
-        assert_element_equal(self.dataset_grid_alias.dimension_values('x', expanded=False),
+        assert_data_equal(self.dataset_grid_alias.dimension_values('x', expanded=False),
                          np.array([0, 1]))
-        assert_element_equal(self.dataset_grid_alias.dimension_values('X', expanded=False),
+        assert_data_equal(self.dataset_grid_alias.dimension_values('X', expanded=False),
                          np.array([0, 1]))
 
     def test_dataset_dim_vals_grid_kdims_xs_inv(self):
-        assert_element_equal(self.dataset_grid_inv.dimension_values(0, expanded=False),
+        assert_data_equal(self.dataset_grid_inv.dimension_values(0, expanded=False),
                          np.array([0, 1]))
 
     def test_dataset_dim_vals_grid_kdims_expanded_xs_flat(self):
         expanded_xs = np.array([0, 0, 0, 1, 1, 1])
-        assert_element_equal(self.dataset_grid.dimension_values(0),
+        assert_data_equal(self.dataset_grid.dimension_values(0),
                          expanded_xs)
 
     def test_dataset_dim_vals_grid_kdims_expanded_xs_flat_inv(self):
         expanded_xs = np.array([0, 0, 0, 1, 1, 1])
-        assert_element_equal(self.dataset_grid_inv.dimension_values(0),
+        assert_data_equal(self.dataset_grid_inv.dimension_values(0),
                          expanded_xs)
 
     def test_dataset_dim_vals_grid_kdims_expanded_xs(self):
         expanded_xs = np.array([[0, 1], [0, 1], [0, 1]])
-        assert_element_equal(self.dataset_grid.dimension_values(0, flat=False),
+        assert_data_equal(self.dataset_grid.dimension_values(0, flat=False),
                          expanded_xs)
 
     def test_dataset_dim_vals_grid_kdims_expanded_xs_inv(self):
         expanded_xs = np.array([[0, 1], [0, 1], [0, 1]])
-        assert_element_equal(self.dataset_grid_inv.dimension_values(0, flat=False),
+        assert_data_equal(self.dataset_grid_inv.dimension_values(0, flat=False),
                          expanded_xs)
 
     def test_dataset_dim_vals_grid_kdims_ys(self):
-        assert_element_equal(self.dataset_grid.dimension_values(1, expanded=False),
+        assert_data_equal(self.dataset_grid.dimension_values(1, expanded=False),
                          np.array([0.1, 0.2, 0.3]))
 
     def test_dataset_dim_vals_grid_kdims_ys_inv(self):
-        assert_element_equal(self.dataset_grid_inv.dimension_values(1, expanded=False),
+        assert_data_equal(self.dataset_grid_inv.dimension_values(1, expanded=False),
                          np.array([0.1, 0.2, 0.3]))
 
     def test_dataset_dim_vals_grid_kdims_expanded_ys_flat(self):
         expanded_ys = np.array([0.1, 0.2, 0.3,
                                 0.1, 0.2, 0.3])
-        assert_element_equal(self.dataset_grid.dimension_values(1),
+        assert_data_equal(self.dataset_grid.dimension_values(1),
                          expanded_ys)
 
     def test_dataset_dim_vals_grid_kdims_expanded_ys_flat_inv(self):
         expanded_ys = np.array([0.1, 0.2, 0.3,
                                 0.1, 0.2, 0.3])
-        assert_element_equal(self.dataset_grid_inv.dimension_values(1),
+        assert_data_equal(self.dataset_grid_inv.dimension_values(1),
                          expanded_ys)
 
     def test_dataset_dim_vals_grid_kdims_expanded_ys(self):
         expanded_ys = np.array([[0.1, 0.1], [0.2, 0.2], [0.3, 0.3]])
-        assert_element_equal(self.dataset_grid.dimension_values(1, flat=False),
+        assert_data_equal(self.dataset_grid.dimension_values(1, flat=False),
                          expanded_ys)
 
     def test_dataset_dim_vals_grid_kdims_expanded_ys_inv(self):
         expanded_ys = np.array([[0.1, 0.1], [0.2, 0.2], [0.3, 0.3]])
-        assert_element_equal(self.dataset_grid_inv.dimension_values(1, flat=False),
+        assert_data_equal(self.dataset_grid_inv.dimension_values(1, flat=False),
                          expanded_ys)
 
     def test_dataset_dim_vals_dimensions_match_shape(self):
@@ -1220,35 +1220,35 @@ class GriddedInterfaceTests:
 
     def test_dataset_dim_vals_grid_vdims_zs_flat(self):
         expanded_zs = np.array([0, 2, 4, 1, 3, 5])
-        assert_element_equal(self.dataset_grid.dimension_values(2),
+        assert_data_equal(self.dataset_grid.dimension_values(2),
                          expanded_zs)
 
     def test_dataset_dim_vals_grid_vdims_zs_flat_inv(self):
         expanded_zs = np.array([5, 3, 1, 4, 2, 0])
-        assert_element_equal(self.dataset_grid_inv.dimension_values(2),
+        assert_data_equal(self.dataset_grid_inv.dimension_values(2),
                          expanded_zs)
 
     def test_dataset_dim_vals_grid_vdims_zs(self):
         expanded_zs = np.array([[0, 1], [2, 3], [4, 5]])
-        assert_element_equal(self.dataset_grid.dimension_values(2, flat=False),
+        assert_data_equal(self.dataset_grid.dimension_values(2, flat=False),
                          expanded_zs)
 
     def test_dataset_dim_vals_grid_vdims_zs_inv(self):
         expanded_zs = np.array([[5, 4], [3, 2], [1, 0]])
-        assert_element_equal(self.dataset_grid_inv.dimension_values(2, flat=False),
+        assert_data_equal(self.dataset_grid_inv.dimension_values(2, flat=False),
                          expanded_zs)
 
     def test_dataset_groupby_with_transposed_dimensions(self):
         dat = np.zeros((3,5,7))
         dataset = Dataset((range(7), range(5), range(3), dat), ['z','x','y'], 'value')
         grouped = dataset.groupby('z', kdims=['y', 'x'])
-        assert_element_equal(grouped.last.dimension_values(2, flat=False), dat[:, :, -1].T)
+        assert_data_equal(grouped.last.dimension_values(2, flat=False), dat[:, :, -1].T)
 
     def test_dataset_dynamic_groupby_with_transposed_dimensions(self):
         dat = np.zeros((3,5,7))
         dataset = Dataset((range(7), range(5), range(3), dat), ['z','x','y'], 'value')
         grouped = dataset.groupby('z', kdims=['y', 'x'], dynamic=True)
-        assert_element_equal(grouped[2].dimension_values(2, flat=False), dat[:, :, -1].T)
+        assert_data_equal(grouped[2].dimension_values(2, flat=False), dat[:, :, -1].T)
 
     def test_dataset_slice_inverted_dimension(self):
         xs = np.arange(30)[::-1]
