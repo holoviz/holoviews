@@ -26,19 +26,19 @@ class TestStoreOptionsMerge(ComparisonTestCase):
         out = StoreOptions.merge_options(['plot', 'style'],
                options={ 'Image':{'plot':dict(fig_size=150),
                                   'style': dict(cmap='Blues')}})
-        self.assertEqual(out, self.expected)
+        assert out == self.expected
 
     def test_options_partitioned_format(self):
         out = StoreOptions.merge_options(['plot', 'style'],
             options = dict(plot={'Image':dict(fig_size=150)},
                            style={'Image':dict(cmap='Blues')}))
-        self.assertEqual(out, self.expected)
+        assert out == self.expected
 
     def test_partitioned_format(self):
         out = StoreOptions.merge_options(['plot', 'style'],
             plot={'Image':dict(fig_size=150)},
             style={'Image':dict(cmap='Blues')})
-        self.assertEqual(out, self.expected)
+        assert out == self.expected
 
 
 class TestStoreOptsMethod(ComparisonTestCase):
@@ -62,14 +62,10 @@ class TestStoreOptsMethod(ComparisonTestCase):
             {'Curve.Curve': {'show_grid': False, 'color':'k'}}
         )
 
-        self.assertEqual(Store.lookup_options('matplotlib',
-            o.Curve.I, 'plot').kwargs['show_grid'], False)
-        self.assertEqual(Store.lookup_options('matplotlib',
-            o.Curve.II, 'plot').kwargs['show_grid'], False)
-        self.assertEqual(Store.lookup_options('matplotlib',
-            o.Curve.I, 'style').kwargs['color'], 'k')
-        self.assertEqual(Store.lookup_options('matplotlib',
-            o.Curve.II, 'style').kwargs['color'], 'k')
+        assert not Store.lookup_options('matplotlib', o.Curve.I, 'plot').kwargs['show_grid']
+        assert not Store.lookup_options('matplotlib', o.Curve.II, 'plot').kwargs['show_grid']
+        assert Store.lookup_options('matplotlib', o.Curve.I, 'style').kwargs['color'] == 'k'
+        assert Store.lookup_options('matplotlib', o.Curve.II, 'style').kwargs['color'] == 'k'
 
     def test_overlay_options_complete(self):
         """
@@ -79,14 +75,10 @@ class TestStoreOptsMethod(ComparisonTestCase):
         o = Overlay([Curve(c) for c in data]).opts(
             {'Curve.Curve': {'show_grid':True, 'color':'b'}})
 
-        self.assertEqual(Store.lookup_options('matplotlib',
-            o.Curve.I, 'plot').kwargs['show_grid'], True)
-        self.assertEqual(Store.lookup_options('matplotlib',
-            o.Curve.II, 'plot').kwargs['show_grid'], True)
-        self.assertEqual(Store.lookup_options('matplotlib',
-            o.Curve.I, 'style').kwargs['color'], 'b')
-        self.assertEqual(Store.lookup_options('matplotlib',
-            o.Curve.II, 'style').kwargs['color'], 'b')
+        assert Store.lookup_options('matplotlib', o.Curve.I, 'plot').kwargs['show_grid']
+        assert Store.lookup_options('matplotlib', o.Curve.II, 'plot').kwargs['show_grid']
+        assert Store.lookup_options('matplotlib', o.Curve.I, 'style').kwargs['color'] == 'b'
+        assert Store.lookup_options('matplotlib', o.Curve.II, 'style').kwargs['color'] == 'b'
 
     def test_layout_options_short_style(self):
         """
@@ -94,8 +86,7 @@ class TestStoreOptsMethod(ComparisonTestCase):
         """
         im = Image(np.random.rand(10,10))
         layout = (im + im).opts({'Layout':dict({'hspace':5})})
-        self.assertEqual(Store.lookup_options('matplotlib',
-            layout, 'plot').kwargs['hspace'], 5)
+        assert Store.lookup_options('matplotlib', layout, 'plot').kwargs['hspace'] == 5
 
     def test_layout_options_long_style(self):
         """
@@ -103,8 +94,8 @@ class TestStoreOptsMethod(ComparisonTestCase):
         """
         im = Image(np.random.rand(10,10))
         layout = (im + im).opts({'Layout':dict({'hspace':10})})
-        self.assertEqual(Store.lookup_options('matplotlib',
-            layout, 'plot').kwargs['hspace'], 10)
+        assert Store.lookup_options('matplotlib',
+            layout, 'plot').kwargs['hspace'] == 10
 
     def test_holomap_opts(self):
         hmap = HoloMap({0: Image(np.random.rand(10,10))}).opts(xaxis=None)

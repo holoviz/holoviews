@@ -4,6 +4,7 @@ from holoviews.core.operation import Operation
 from holoviews.element import Curve
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import Params, Stream
+from holoviews.testing import assert_element_equal
 
 
 class ExampleOperation(Operation):
@@ -28,43 +29,43 @@ class TestOperationBroadcast(ComparisonTestCase):
     def test_element_dynamic_with_streams(self):
         curve = Curve([1, 2, 3])
         applied = Operation(curve, dynamic=True, streams=[Stream])
-        self.assertEqual(len(applied.streams), 1)
+        assert len(applied.streams) == 1
         assert isinstance(applied.streams[0], Stream)
-        self.assertEqual(applied[()], curve)
+        assert_element_equal(applied[()], curve)
 
     def test_element_not_dynamic_despite_streams(self):
         curve = Curve([1, 2, 3])
         applied = Operation(curve, dynamic=False, streams=[Stream])
-        self.assertEqual(applied, curve)
+        assert_element_equal(applied, curve)
 
     def test_element_dynamic_with_instance_param(self):
         curve = Curve([1, 2, 3])
         inst = ParamClass(label='Test')
         applied = ExampleOperation(curve, label=inst.param.label)
-        self.assertEqual(len(applied.streams), 1)
+        assert len(applied.streams) == 1
         assert isinstance(applied.streams[0], Params)
-        self.assertEqual(applied.streams[0].parameters, [inst.param.label])
-        self.assertEqual(applied[()], curve.relabel('Test'))
+        assert applied.streams[0].parameters == [inst.param.label]
+        assert_element_equal(applied[()], curve.relabel('Test'))
 
     def test_element_dynamic_with_param_method(self):
         curve = Curve([1, 2, 3])
         inst = ParamClass(label='Test')
         applied = ExampleOperation(curve, label=inst.dynamic_label)
-        self.assertEqual(len(applied.streams), 1)
+        assert len(applied.streams) == 1
         assert isinstance(applied.streams[0], Params)
-        self.assertEqual(applied.streams[0].parameters, [inst.param.label])
-        self.assertEqual(applied[()], curve.relabel('Test!'))
+        assert applied.streams[0].parameters == [inst.param.label]
+        assert_element_equal(applied[()], curve.relabel('Test!'))
         inst.label = 'New label'
-        self.assertEqual(applied[()], curve.relabel('New label!'))
+        assert_element_equal(applied[()], curve.relabel('New label!'))
 
     def test_element_not_dynamic_with_instance_param(self):
         curve = Curve([1, 2, 3])
         inst = ParamClass(label='Test')
         applied = ExampleOperation(curve, dynamic=False, label=inst.param.label)
-        self.assertEqual(applied, curve.relabel('Test'))
+        assert_element_equal(applied, curve.relabel('Test'))
 
     def test_element_not_dynamic_with_param_method(self):
         curve = Curve([1, 2, 3])
         inst = ParamClass(label='Test')
         applied = ExampleOperation(curve, dynamic=False, label=inst.dynamic_label)
-        self.assertEqual(applied, curve.relabel('Test!'))
+        assert_element_equal(applied, curve.relabel('Test!'))

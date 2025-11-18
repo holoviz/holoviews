@@ -11,19 +11,19 @@ class AttrTreeTest(ComparisonTestCase):
         self.tree = AttrTree([(('A', 'I'), 1), (('B', 'II'), 2)])
 
     def test_access_nodes(self):
-        self.assertEqual(self.tree.A.I, 1)
-        self.assertEqual(self.tree.B.II, 2)
+        assert self.tree.A.I == 1
+        assert self.tree.B.II == 2
 
     def test_uppercase_attribute_create_node(self):
         assert isinstance(self.tree.C, AttrTree)
 
     def test_uppercase_setattr(self):
         self.tree.C = 3
-        self.assertEqual(self.tree.C, 3)
+        assert self.tree.C == 3
 
     def test_deep_setattr(self):
         self.tree.C.I = 3
-        self.assertEqual(self.tree.C.I, 3)
+        assert self.tree.C.I == 3
 
     def test_lowercase_attribute_error(self):
         msg = r"'AttrTree' object has no attribute c\."
@@ -39,28 +39,28 @@ class AttrTreeTest(ComparisonTestCase):
             self.tree['c']
 
     def test_uppercase_getitem(self):
-        self.assertEqual(self.tree['A']['I'], 1)
-        self.assertEqual(self.tree['B']['II'], 2)
+        assert self.tree['A']['I'] == 1
+        assert self.tree['B']['II'] == 2
 
     def test_uppercase_setitem(self):
         self.tree['C'] = 1
-        self.assertEqual(self.tree.C, 1)
+        assert self.tree.C == 1
 
     def test_deep_getitem(self):
-        self.assertEqual(self.tree[('A', 'I')], 1)
-        self.assertEqual(self.tree[('B', 'II')], 2)
+        assert self.tree[('A', 'I')] == 1
+        assert self.tree[('B', 'II')] == 2
 
     def test_deep_getitem_str(self):
-        self.assertEqual(self.tree['A.I'], 1)
-        self.assertEqual(self.tree['B.II'], 2)
+        assert self.tree['A.I'] == 1
+        assert self.tree['B.II'] == 2
 
     def test_deep_setitem(self):
         self.tree[('C', 'I')] = 3
-        self.assertEqual(self.tree.C.I, 3)
+        assert self.tree.C.I == 3
 
     def test_deep_setitem_str(self):
         self.tree['C.I'] = 3
-        self.assertEqual(self.tree.C.I, 3)
+        assert self.tree.C.I == 3
 
     def test_delitem(self):
         Btree = self.tree.B
