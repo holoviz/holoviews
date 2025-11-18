@@ -735,21 +735,29 @@ class _ElementComparison(_DataComparison):
     def compare_cycles(cls, cycle1, cycle2, msg=None):
         cls.assert_equal(cycle1.values, cycle2.values)
 
+def _ptype(obj):
+    type_obj = type(obj)
+    mod = type_obj.__module__
+    name = type_obj.__name__
+    if mod == "builtins":
+        return str(name)
+    return f"{mod}.{name}"
+
 
 def assert_data_equal(element1, element2):
     types = tuple(_DataComparison.register())
-    assert isinstance(element1, types)
-    assert isinstance(element2, types)
+    assert isinstance(element1, types), f"not valid type {_ptype(element1)!r}"
+    assert isinstance(element2, types), f"not valid type {_ptype(element2)!r}"
 
     _DataComparison.assert_equal(element1, element2)
 
 def assert_element_equal(element1, element2):
     types = tuple(_ElementComparison.register())
-    assert isinstance(element1, types)
-    assert isinstance(element2, types)
+    assert isinstance(element1, types), f"not valid type {_ptype(element1)!r}"
+    assert isinstance(element2, types), f"not valid type {_ptype(element2)!r}"
 
     types = tuple(_DataComparison.register())
-    assert not isinstance(element1, types), "use hv.testing.assert_data_equal instead"
-    assert not isinstance(element2, types), "use hv.testing.assert_data_equal instead"
+    assert not isinstance(element1, types), "use 'hv.testing.assert_data_equal' instead"
+    assert not isinstance(element2, types), "use 'hv.testing.assert_data_equal' instead"
 
     _ElementComparison.assert_equal(element1, element2)
