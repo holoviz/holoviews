@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from holoviews.core.data import Dataset
+from holoviews.testing import assert_data_equal
 
 from .base import HeterogeneousColumnTests, InterfaceTests
 
@@ -35,7 +36,7 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         df = self.dataset_hm.dframe(['x'])
         expected = self.frame({'x': self.xs}, dtype=df.dtypes.iloc[0])
         assert isinstance(expected, self.data_type)
-        self.assertEqual(df, expected.to_pandas())
+        assert_data_equal(df, expected.to_pandas())
 
     def setUp(self):
         super().setUp()
