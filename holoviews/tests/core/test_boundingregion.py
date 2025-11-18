@@ -2,13 +2,11 @@
 Test cases for boundingregion
 """
 
-import unittest
-
 from holoviews.core import AARectangle, BoundingBox
 
 
-class TestAARectangle(unittest.TestCase):
-    def setUp(self):
+class TestAARectangle:
+    def setup_method(self):
         self.left    = -0.1
         self.bottom  = -0.2
         self.right   =  0.3
@@ -18,21 +16,21 @@ class TestAARectangle(unittest.TestCase):
         self.aar2 = AARectangle((self.right,self.bottom),(self.left,self.top))
 
     def test_left(self):
-        self.assertEqual(self.left, self.aar1.left())
+        assert self.left == self.aar1.left()
     def test_right(self):
-        self.assertEqual(self.right, self.aar1.right())
+        assert self.right == self.aar1.right()
     def test_bottom(self):
-        self.assertEqual(self.bottom, self.aar1.bottom())
+        assert self.bottom == self.aar1.bottom()
     def test_top(self):
-        self.assertEqual(self.top , self.aar1.top())
+        assert self.top == self.aar1.top()
     def test_lbrt(self):
-        self.assertEqual( self.lbrt, self.aar1.lbrt() )
+        assert self.lbrt == self.aar1.lbrt()
     def test_point_order(self):
-        self.assertEqual( self.aar1.lbrt(), self.aar2.lbrt() )
+        assert self.aar1.lbrt() == self.aar2.lbrt()
 
 
-class TestBoundingBox(unittest.TestCase):
-    def setUp(self):
+class TestBoundingBox:
+    def setup_method(self):
         self.left    = -0.1
         self.bottom  = -0.2
         self.right   =  0.3
@@ -54,9 +52,9 @@ class TestBoundingBox(unittest.TestCase):
         assert not self.region.contains(1, 0)
 
     def test_centroid_x(self):
-        self.assertEqual(self.xc, (self.left+self.right)/2.0)
+        assert self.xc == (self.left+self.right)/2.0
     def test_centroid_y(self):
-        self.assertEqual(self.yc, (self.bottom+self.top)/2.0)
+        assert self.yc == (self.bottom+self.top)/2.0
 
     def test_left_boundary(self):
         assert self.region.contains(self.left, self.yc)
