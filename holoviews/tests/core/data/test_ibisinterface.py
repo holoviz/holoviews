@@ -22,6 +22,7 @@ import pandas as pd
 from holoviews.core.data import Dataset
 from holoviews.core.data.ibis import IBIS_VERSION, IbisInterface
 from holoviews.core.spaces import HoloMap
+from holoviews.testing import assert_element_equal
 
 from .base import HeterogeneousColumnTests, InterfaceTests, ScalarColumnTests
 
@@ -171,19 +172,15 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
     def test_dataset_dataset_ht_dtypes(self):
         int_dtype = "int64" if IBIS_VERSION >= (9, 0, 0) else "int32"
         ds = self.table
-        self.assertEqual(ds.interface.dtype(ds, "Gender"), np.dtype("object"))
-        self.assertEqual(ds.interface.dtype(ds, "Age"), np.dtype(int_dtype))
-        self.assertEqual(ds.interface.dtype(ds, "Weight"), np.dtype(int_dtype))
-        self.assertEqual(ds.interface.dtype(ds, "Height"), np.dtype("float64"))
+        assert ds.interface.dtype(ds, "Gender") == np.dtype("object")
+        assert ds.interface.dtype(ds, "Age") == np.dtype(int_dtype)
+        assert ds.interface.dtype(ds, "Weight") == np.dtype(int_dtype)
+        assert ds.interface.dtype(ds, "Height") == np.dtype("float64")
 
     def test_dataset_dtypes(self):
-        int_dtype = "int64" if IBIS_VERSION >= (9, 0, 0) else "int32"
-        self.assertEqual(
-            self.dataset_hm.interface.dtype(self.dataset_hm, "x"), np.dtype(int_dtype)
-        )
-        self.assertEqual(
-            self.dataset_hm.interface.dtype(self.dataset_hm, "y"), np.dtype(int_dtype)
-        )
+        int_dtype = np.dtype("int64" if IBIS_VERSION >= (9, 0, 0) else "int32")
+        assert self.dataset_hm.interface.dtype(self.dataset_hm, "x") == int_dtype
+        assert self.dataset_hm.interface.dtype(self.dataset_hm, "y") == int_dtype
 
     def test_dataset_reduce_ht(self):
         reduced = Dataset(
@@ -191,7 +188,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             kdims=self.kdims[1:],
             vdims=self.vdims,
         )
-        self.assertEqual(self.table.reduce(["Gender"], np.mean).sort(), reduced.sort())
+        assert_element_equal(self.table.reduce(["Gender"], np.mean).sort(), reduced.sort())
 
     def test_dataset_aggregate_ht(self):
         aggregated = Dataset(
@@ -223,7 +220,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             ],
             kdims=["Gender"],
         )
-        self.assertEqual(
+        assert_element_equal(
             self.table.groupby(["Gender"]).apply("sort"), grouped.apply("sort")
         )
 
@@ -237,7 +234,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             ],
             kdims=[("gender", "Gender")],
         )
-        self.assertEqual(self.alias_table.groupby("Gender").apply("sort"), grouped)
+        assert_element_equal(self.alias_table.groupby("Gender").apply("sort"), grouped)
 
     def test_dataset_groupby_second_dim(self):
         group1 = {"Gender": ["M"], "Weight": [15], "Height": [0.8]}
@@ -252,7 +249,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             kdims=["Age"],
             sort=True,
         )
-        self.assertEqual(self.table.groupby(["Age"]), grouped)
+        assert_element_equal(self.table.groupby(["Age"]), grouped)
 
     def test_aggregation_operations(self):
         for agg in [
