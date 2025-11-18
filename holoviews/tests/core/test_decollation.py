@@ -5,6 +5,7 @@ from holoviews.core import DynamicMap, GridSpace, HoloMap, NdOverlay, Overlay
 from holoviews.element import Points
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PlotSize, RangeXY, Stream
+from holoviews.testing import assert_element_equal
 
 try:
     from holoviews.operation.datashader import datashade, spread
@@ -80,12 +81,12 @@ class TestDecollation(ComparisonTestCase):
         layout = self.dmap_ab + self.dmap_b
         decollated = layout.decollate()
         assert isinstance(decollated, DynamicMap)
-        self.assertEqual(decollated.kdims, self.dmap_ab.kdims)
-        self.assertEqual(
+        assert decollated.kdims == self.dmap_ab.kdims
+        assert_element_equal(
             decollated[2, 3],
             Points([2, 3]) + Points([3, 3])
         )
-        self.assertEqual(
+        assert_element_equal(
             decollated.callback.callable(2, 3),
             Points([2, 3]) + Points([3, 3])
         )
@@ -94,16 +95,16 @@ class TestDecollation(ComparisonTestCase):
         layout = self.dmap_xy + self.dmap_z
         decollated = layout.decollate()
         assert isinstance(decollated, DynamicMap)
-        self.assertEqual(decollated.kdims, [])
+        assert decollated.kdims == []
 
         # Update streams
         decollated.streams[0].event(x=1.0, y=2.0)
         decollated.streams[1].event(z=3.0)
-        self.assertEqual(
+        assert_element_equal(
             decollated[()],
             Points([1.0, 2.0]) + Points([3.0, 3.0])
         )
-        self.assertEqual(
+        assert_element_equal(
             decollated.callback.callable(dict(x=1.0, y=2.0), dict(z=3.0)),
             Points([1.0, 2.0]) + Points([3.0, 3.0])
         )
@@ -112,16 +113,16 @@ class TestDecollation(ComparisonTestCase):
         layout = self.dmap_ab + self.dmap_xy
         decollated = layout.decollate()
         assert isinstance(decollated, DynamicMap)
-        self.assertEqual(decollated.kdims, self.dmap_ab.kdims)
+        assert decollated.kdims == self.dmap_ab.kdims
 
         # Update streams
         decollated.streams[0].event(x=3.0, y=4.0)
-        self.assertEqual(
+        assert_element_equal(
             decollated[1.0, 2.0],
             Points([1.0, 2.0]) + Points([3.0, 4.0])
         )
 
-        self.assertEqual(
+        assert_element_equal(
             decollated.callback.callable(1.0, 2.0, dict(x=3.0, y=4.0)),
             Points([1.0, 2.0]) + Points([3.0, 4.0])
         )
@@ -132,10 +133,7 @@ class TestDecollation(ComparisonTestCase):
         assert isinstance(decollated, DynamicMap)
 
         # Check top-level stream types
-        self.assertEqual(
-            [PlotSize, RangeXY, PX],
-            [type(s) for s in decollated.streams]
-        )
+        assert [PlotSize, RangeXY, PX] == [type(s) for s in decollated.streams]
 
         # Get expected
         self.px_stream.event(px=3)
@@ -151,7 +149,7 @@ class TestDecollation(ComparisonTestCase):
             {"px": 3}
         )
 
-        self.assertEqual(expected, result)
+        assert_element_equal(expected, result)
 
     @datashade_skip
     def test_decollate_datashade_kdims(self):
@@ -159,13 +157,10 @@ class TestDecollation(ComparisonTestCase):
         assert isinstance(decollated, DynamicMap)
 
         # Check kdims
-        self.assertEqual(decollated.kdims, self.dmap_ab.kdims)
+        assert decollated.kdims == self.dmap_ab.kdims
 
         # Check top-level stream types
-        self.assertEqual(
-            [PlotSize, RangeXY],
-            [type(s) for s in decollated.streams]
-        )
+        assert [PlotSize, RangeXY] == [type(s) for s in decollated.streams]
 
         # Get expected
         self.px_stream.event(px=3)
@@ -181,7 +176,7 @@ class TestDecollation(ComparisonTestCase):
             {"x_range": (0, 10), "y_range": (0, 15)},
         )
 
-        self.assertEqual(expected, result)
+        assert_element_equal(expected, result)
 
 
     @datashade_skip
@@ -192,13 +187,10 @@ class TestDecollation(ComparisonTestCase):
         assert isinstance(decollated, DynamicMap)
 
         # Check kdims
-        self.assertEqual(decollated.kdims, self.dmap_ab.kdims)
+        assert decollated.kdims == self.dmap_ab.kdims
 
         # Check top-level stream types
-        self.assertEqual(
-            [PlotSize, RangeXY],
-            [type(s) for s in decollated.streams]
-        )
+        assert [PlotSize, RangeXY] == [type(s) for s in decollated.streams]
 
         # Get expected
         plot_size, range_xy = self.dmap_datashade_kdim_points.streams
@@ -213,7 +205,7 @@ class TestDecollation(ComparisonTestCase):
             {"x_range": (0, 10), "y_range": (0, 15)},
         )
 
-        self.assertEqual(expected, result)
+        assert_element_equal(expected, result)
 
     def test_decollate_overlay_of_dmaps(self):
         overlay = Overlay([
@@ -224,7 +216,7 @@ class TestDecollation(ComparisonTestCase):
 
         decollated = overlay.decollate()
         assert isinstance(decollated, DynamicMap)
-        self.assertEqual(len(decollated.streams), 3)
+        assert len(decollated.streams) == 3
 
         expected = Overlay([
             Points([1.0, 1.0]), Points([2.0, 2.0]), Points([3.0, 3.0])
@@ -235,11 +227,11 @@ class TestDecollation(ComparisonTestCase):
         decollated.streams[1].event(z=2.0)
         decollated.streams[2].event(z=3.0)
         result = decollated[()]
-        self.assertEqual(expected, result)
+        assert_element_equal(expected, result)
 
         # Build result by calling callback function
         result = decollated.callback.callable(dict(z=1.0), dict(z=2.0), dict(z=3.0))
-        self.assertEqual(expected, result)
+        assert_element_equal(expected, result)
 
 
     def test_decollate_dmap_gridspace_kdims(self):
@@ -263,14 +255,14 @@ class TestDecollation(ComparisonTestCase):
         # Decollate container
         decollated = container.decollate()
         assert isinstance(decollated, DynamicMap)
-        self.assertEqual(decollated.kdims, self.dmap_ab.kdims)
+        assert decollated.kdims == self.dmap_ab.kdims
 
         # Check result of instantiating decollate DynamicMap for particular kdim values
         a, b = 2.0, 3.0
         expected_data = [(d[0], d[1][a, b]) for d in data]
         expected = ContainerType(expected_data, kdims=["c"])
         result = decollated[a, b]
-        self.assertEqual(expected, result)
+        assert_element_equal(expected, result)
 
     def test_decollate_dmap_gridspace_streams(self):
         self.perform_decollate_dmap_container_streams(GridSpace)
@@ -295,8 +287,8 @@ class TestDecollation(ComparisonTestCase):
         # Decollate container
         decollated = container.decollate()
         assert isinstance(decollated, DynamicMap)
-        self.assertEqual(len(decollated.kdims), 0)
-        self.assertEqual(len(decollated.streams), 1)
+        assert len(decollated.kdims) == 0
+        assert len(decollated.streams) == 1
 
         # Check result of instantiating decollate DynamicMap for particular
         # stream values
@@ -305,7 +297,7 @@ class TestDecollation(ComparisonTestCase):
         expected_data = [(d[0], d[1][()]) for d in data]
         expected = ContainerType(expected_data, kdims=["c"])
         result = decollated[()]
-        self.assertEqual(expected, result)
+        assert_element_equal(expected, result)
 
     def test_traverse_derived_streams(self):
         from holoviews.tests.test_streams import Val
@@ -313,7 +305,7 @@ class TestDecollation(ComparisonTestCase):
 
         # Check decollated types
         assert isinstance(decollated, DynamicMap)
-        self.assertEqual(len(decollated.streams), 3)
+        assert len(decollated.streams) == 3
         for stream in decollated.streams:
             assert isinstance(stream, Val)
 
@@ -324,4 +316,4 @@ class TestDecollation(ComparisonTestCase):
         decollated.streams[2].event(v=3.0)
         result = decollated[()]
 
-        self.assertEqual(expected, result)
+        assert_element_equal(expected, result)
