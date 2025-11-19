@@ -204,7 +204,7 @@ class PandasInterfaceTests(BasePandasInterfaceTests):
         assert df.index.names == ['y']
 
 
-class PandasInterfaceMultiIndex(HeterogeneousColumnTests, InterfaceTests):
+class PandasInterfaceMultiIndexTests(HeterogeneousColumnTests, InterfaceTests):
     datatype = 'dataframe'
     data_type = pd.DataFrame
 

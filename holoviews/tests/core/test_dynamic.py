@@ -43,7 +43,7 @@ def sine_array(phase, freq):
 class ExampleParameterized(param.Parameterized):
     example = param.Number(default=1)
 
-class DynamicMapConstructor:
+class TestDynamicMapConstructor:
 
     def test_simple_constructor_kdims(self):
         DynamicMap(lambda x: x, kdims=['test'])
@@ -111,7 +111,7 @@ class DynamicMapConstructor:
             DynamicMap(foo, streams=[PointerXY()])
 
 
-class DynamicMapPositionalStreamArgs:
+class TestDynamicMapPositionalStreamArgs:
     def test_positional_stream_args_without_streams(self):
         fn = lambda i: Curve([i, i])
         dmap = DynamicMap(fn, kdims=['i'], positional_stream_args=True)
@@ -168,7 +168,7 @@ class DynamicMapPositionalStreamArgs:
         assert_element_equal(dmap[()], Points([1, 2]) + Curve([3, 4]))
 
 
-class DynamicMapMethods:
+class TestDynamicMapMethods:
 
     def test_deep_relabel_label(self):
         fn = lambda i: Image(sine_array(0,i))
@@ -520,7 +520,7 @@ class DynamicMapOptionsTests(CustomBackendTestCase):
         assert stream is original_dmap.streams[0]
 
 
-class DynamicMapUnboundedProperty:
+class TestDynamicMapUnboundedProperty:
 
     def test_callable_bounded_init(self):
         fn = lambda i: Image(sine_array(0,i))
@@ -553,7 +553,7 @@ class DynamicMapUnboundedProperty:
         assert dmap.redim.range(z=(-0.5,0.5)).unbounded == []
 
 
-class DynamicMapCurrentKeyProperty:
+class TestDynamicMapCurrentKeyProperty:
 
     def test_current_key_None_on_init(self):
         fn = lambda i: Image(sine_array(0,i))
@@ -569,7 +569,7 @@ class DynamicMapCurrentKeyProperty:
         assert dmap.current_key == 1
         dmap[0]
         assert dmap.current_key == 0
-        self.assertNotEqual(dmap.current_key, dmap.last_key)
+        assert dmap.current_key != dmap.last_key
 
     def test_current_key_multiple_dimensions(self):
         fn = lambda i, j: Curve([i, j])
@@ -583,7 +583,7 @@ class DynamicMapCurrentKeyProperty:
         assert dmap.current_key != dmap.last_key
 
 
-class DynamicTransferStreams:
+class TestDynamicTransferStreams:
 
     def setup_method(self):
         self.dimstream = PointerX(x=0)
@@ -781,7 +781,7 @@ class DynamicTestOverlay:
             dmap.event(x=1, y=2)
 
 
-class DynamicCallableMemoize:
+class TestDynamicCallableMemoize:
 
     def test_dynamic_keydim_not_memoize(self):
         dmap = DynamicMap(lambda x: Curve([(0, x)]), kdims=['x'])
@@ -845,7 +845,7 @@ class DynamicCallableMemoize:
         assert_element_equal(dmap[()], Curve([1, 1, 1, 2, 2, 2]))
 
 
-class DynamicMapRX:
+class TestDynamicMapRX:
 
     def test_dynamic_rx(self):
         freq = param.rx(1)
@@ -863,7 +863,7 @@ class DynamicMapRX:
         assert_element_equal(dmap[()], Curve(sine_array(0, 2)))
 
 
-class StreamSubscribersAddandClear:
+class TestStreamSubscribersAddandClear:
 
     def setup_method(self):
         self.fn1 = lambda x: x
@@ -903,7 +903,7 @@ class StreamSubscribersAddandClear:
         assert pointerx.subscribers == [self.fn1,self.fn2]
 
 
-class DynamicStreamReset:
+class TestDynamicStreamReset:
 
     def test_dynamic_callable_stream_transient(self):
         # Enable transient stream meaning memoization only happens when
@@ -1062,7 +1062,7 @@ class TestPeriodicStreamUpdate:
         assert (end - start) < 5
 
 
-class DynamicCollate(LoggingComparisonTestCase):
+class TestDynamicCollate(LoggingComparisonTestCase):
 
     def test_dynamic_collate_layout(self):
         def callback():
