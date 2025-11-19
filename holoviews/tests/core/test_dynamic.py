@@ -26,7 +26,7 @@ from holoviews.streams import (
 from holoviews.testing import assert_element_equal
 from holoviews.util import Dynamic
 
-from ..utils import LoggingComparisonTestCase
+from ..utils import LoggingComparison
 from .test_dimensioned import CustomBackendTestCase, ExampleElement
 
 XY = Stream.define('XY', x=0,y=0)
@@ -1062,7 +1062,7 @@ class TestPeriodicStreamUpdate:
         assert (end - start) < 5
 
 
-class TestDynamicCollate(LoggingComparisonTestCase):
+class TestDynamicCollate(LoggingComparison):
 
     def test_dynamic_collate_layout(self):
         def callback():

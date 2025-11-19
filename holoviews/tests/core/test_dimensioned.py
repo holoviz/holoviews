@@ -8,7 +8,7 @@ from holoviews.core.options import Keywords, Options, OptionTree, Store
 from holoviews.core.spaces import HoloMap
 from holoviews.element.chart import Curve
 
-from ..utils import LoggingComparisonTestCase
+from ..utils import LoggingComparison
 
 
 class ExampleElement(Element):
@@ -21,13 +21,12 @@ class MockRenderer:
         self.backend = backend
 
 
-class CustomBackendTestCase(LoggingComparisonTestCase):
+class CustomBackendTestCase(LoggingComparison):
     """
     Registers fake backends with the Store to test options on.
     """
 
     def setup_method(self):
-        super().setup_method()
         self.current_backend = Store.current_backend
         self.register_custom(ExampleElement, 'backend_1', ['plot_custom1'])
         self.register_custom(ExampleElement, 'backend_2', ['plot_custom2'])

@@ -14,7 +14,7 @@ from holoviews.element import Scatter
 from holoviews.operation import contours
 from holoviews.testing import assert_element_equal
 
-from ..utils import LoggingComparisonTestCase
+from ..utils import LoggingComparison
 
 
 class CallableClass:
@@ -96,7 +96,7 @@ class TestCallableName:
         assert Callable(opcallable).name == 'contours'
 
 
-class TestSimpleCallableInvocation(LoggingComparisonTestCase):
+class TestSimpleCallableInvocation(LoggingComparison):
 
     def test_callable_fn(self):
         def callback(x): return x

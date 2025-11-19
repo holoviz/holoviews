@@ -9,13 +9,10 @@ from holoviews.core import Dimension, Dimensioned
 from holoviews.core.util import NUMPY_GE_2_0_0
 from holoviews.testing import assert_element_equal
 
-from ..utils import LoggingComparisonTestCase
+from ..utils import LoggingComparison
 
 
-class DimensionNameLabelTest(LoggingComparisonTestCase):
-
-    def setup_method(self):
-        super().setup_method()
+class DimensionNameLabelTest(LoggingComparison):
 
     def test_dimension_name(self):
         dim = Dimension('test')
