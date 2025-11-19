@@ -61,6 +61,7 @@ from holoviews.operation.element import (
     threshold,
     transform,
 )
+from holoviews.testing import assert_element_equal
 
 mpl = find_spec("matplotlib")
 da_skip = pytest.mark.skipif(da is None, reason="dask.array is not available")
@@ -76,31 +77,31 @@ class OperationTests(ComparisonTestCase):
     def test_operation_element(self):
         img = Image(np.random.rand(10, 10))
         op_img = operation(img, op=lambda x, k: x.clone(x.data*2))
-        self.assertEqual(op_img, img.clone(img.data*2, group='Operation'))
+        assert_element_equal(op_img, img.clone(img.data*2, group='Operation'))
 
     def test_operation_ndlayout(self):
         ndlayout = NdLayout({i: Image(np.random.rand(10, 10)) for i in range(10)})
         op_ndlayout = operation(ndlayout, op=lambda x, k: x.clone(x.data*2))
         doubled = ndlayout.clone({k: v.clone(v.data*2, group='Operation')
                                   for k, v in ndlayout.items()})
-        self.assertEqual(op_ndlayout, doubled)
+        assert_element_equal(op_ndlayout, doubled)
 
     def test_operation_grid(self):
         grid = GridSpace({i: Image(np.random.rand(10, 10)) for i in range(10)}, kdims=['X'])
         op_grid = operation(grid, op=lambda x, k: x.clone(x.data*2))
         doubled = grid.clone({k: v.clone(v.data*2, group='Operation')
                               for k, v in grid.items()})
-        self.assertEqual(op_grid, doubled)
+        assert_element_equal(op_grid, doubled)
 
     def test_operation_holomap(self):
         hmap = HoloMap({1: Image(np.random.rand(10, 10))})
         op_hmap = operation(hmap, op=lambda x, k: x.clone(x.data*2))
-        self.assertEqual(op_hmap.last, hmap.last.clone(hmap.last.data*2, group='Operation'))
+        assert_element_equal(op_hmap.last, hmap.last.clone(hmap.last.data*2, group='Operation'))
 
     def test_image_transform(self):
         img = Image(np.random.rand(10, 10))
         op_img = transform(img, operator=lambda x: x*2)
-        self.assertEqual(op_img, img.clone(img.data*2, group='Transform'))
+        assert_element_equal(op_img, img.clone(img.data*2, group='Transform'))
 
     def test_operation_chain(self):
         img = Image(np.random.rand(10, 10))
@@ -110,7 +111,7 @@ class OperationTests(ComparisonTestCase):
                 transform.instance(operator=lambda x: x*2),
                 transform.instance(operator=lambda x: x*3),
         ])
-        self.assertEqual(op_img, img.clone(img.data*6, group='Transform'))
+        assert_element_equal(op_img, img.clone(img.data*6, group='Transform'))
 
     def test_operation_chain_find(self):
         class CustomOp1(Operation):
@@ -146,12 +147,12 @@ class OperationTests(ComparisonTestCase):
     def test_image_threshold(self):
         img = Image(np.array([[0, 1, 0], [3, 4, 5.]]))
         op_img = threshold(img)
-        self.assertEqual(op_img, img.clone(np.array([[0, 1, 0], [1, 1, 1]]), group='Threshold'))
+        assert_element_equal(op_img, img.clone(np.array([[0, 1, 0], [1, 1, 1]]), group='Threshold'))
 
     def test_image_gradient(self):
         img = Image(np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]]))
         op_img = gradient(img)
-        self.assertEqual(op_img, img.clone(np.array([[3.162278, 3.162278], [3.162278, 3.162278]]), group='Gradient'))
+        assert_element_equal(op_img, img.clone(np.array([[3.162278, 3.162278], [3.162278, 3.162278]]), group='Gradient'))
 
     def test_image_contours(self):
         img = Image(np.array([[0, 1, 0], [0, 1, 0]]))
@@ -161,14 +162,14 @@ class OperationTests(ComparisonTestCase):
                              (np.nan, np.nan, 0.5), (0.1666667, -0.25, 0.5),
                              (0.1666667, 0.25, 0.5)]],
                             vdims=img.vdims)
-        self.assertEqual(op_contours, contour)
+        assert_element_equal(op_contours, contour)
 
     def test_image_contours_empty(self):
         img = Image(np.array([[0, 1, 0], [0, 1, 0]]))
         # Contour level outside of data limits
         op_contours = contours(img, levels=[23.0])
         contour = Contours([], vdims=img.vdims)
-        self.assertEqual(op_contours, contour)
+        assert_element_equal(op_contours, contour)
 
     def test_image_contours_auto_levels(self):
         z = np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]])
@@ -184,7 +185,7 @@ class OperationTests(ComparisonTestCase):
         img = Image(np.zeros((2, 2)))
         op_contours = contours(img, levels=2)
         contour = Contours([], vdims=img.vdims)
-        self.assertEqual(op_contours, contour)
+        assert_element_equal(op_contours, contour)
 
     def test_image_contours_x_datetime(self):
         if mpl is None:
@@ -290,7 +291,7 @@ class OperationTests(ComparisonTestCase):
                              (np.nan, np.nan, 0.5), (1.5, 1., 0.5),
                              (2, 1.1, 0.5)]],
                             vdims=qmesh.vdims)
-        self.assertEqual(op_contours, contour)
+        assert_element_equal(op_contours, contour)
 
     def test_qmesh_curvilinear_contours(self):
         x = y = np.arange(3)
@@ -302,7 +303,7 @@ class OperationTests(ComparisonTestCase):
                              (np.nan, np.nan, 0.5), (1.5, 0.1, 0.5),
                              (2, 0.2, 0.5)]],
                             vdims=qmesh.vdims)
-        self.assertEqual(op_contours, contour)
+        assert_element_equal(op_contours, contour)
 
     def test_qmesh_curvilinear_edges_contours(self):
         x = y = np.arange(3)
@@ -318,7 +319,7 @@ class OperationTests(ComparisonTestCase):
                              (np.nan, np.nan, 0.5), (1.5, 0.1, 0.5),
                              (2, 0.2, 0.5)]],
                             vdims=qmesh.vdims)
-        self.assertEqual(op_contours, contour)
+        assert_element_equal(op_contours, contour)
 
     def test_image_contours_filled(self):
         img = Image(np.array([[0, 2, 0], [0, 2, 0]]))
@@ -328,7 +329,7 @@ class OperationTests(ComparisonTestCase):
                  (-0.25, 0.25, 1), (-0.25, -0.25, 1), (np.nan, np.nan, 1), (0.08333333, -0.25, 1),
                  (0.25, -0.25, 1), (0.25, 0.25, 1), (0.08333333, 0.25, 1), (0.08333333, -0.25, 1)]]
         polys = Polygons(data, vdims=img.vdims[0].clone(range=(0.5, 1.5)))
-        self.assertEqual(op_contours, polys)
+        assert_element_equal(op_contours, polys)
 
     def test_image_contours_filled_with_hole(self):
         img = Image(np.array([[0, 0, 0], [0, 1, 0.], [0, 0, 0]]))
@@ -337,7 +338,7 @@ class OperationTests(ComparisonTestCase):
         data = [[(-0.25, 0.0, 0.5), (0.0, -0.25, 0.5), (0.25, 0.0, 0.5), (0.0, 0.25, 0.5),
                   (-0.25, 0.0, 0.5)]]
         polys = Polygons(data, vdims=img.vdims[0].clone(range=(0.25, 0.75)))
-        self.assertEqual(op_contours, polys)
+        assert_element_equal(op_contours, polys)
         expected_holes = [[[np.array([[0.0, -0.08333333], [-0.08333333, 0.0], [0.0,  0.08333333],
                                       [0.08333333, 0.0], [0.0, -0.08333333]])]]]
         np.testing.assert_array_almost_equal(op_contours.holes(), expected_holes)
@@ -351,7 +352,7 @@ class OperationTests(ComparisonTestCase):
                  (0.2, 0.3333333, 0), (0, 0.3333333, 0), (-0.2, 0.3333333, 0), (-0.4, 0.3333333, 0),
                  (-0.4, 0, 0), (-0.4, -0.3333333, 0)]]
         polys = Polygons(data, vdims=img.vdims[0].clone(range=(-0.5, 0.5)))
-        self.assertEqual(op_contours, polys)
+        assert_element_equal(op_contours, polys)
         expected_holes = [[[np.array([[-0.2, -0.16666667], [-0.3, 0], [-0.2, 0.16666667], [-0.1, 0],
                                       [-0.2, -0.16666667]]),
                             np.array([[0.2, -0.16666667], [0.1, 0], [0.2, 0.16666667], [0.3, 0],
@@ -363,7 +364,7 @@ class OperationTests(ComparisonTestCase):
         # Contour level outside of data limits
         op_contours = contours(img, filled=True, levels=[20.0, 23.0])
         polys = Polygons([], vdims=img.vdims[0].clone(range=(20.0, 23.0)))
-        self.assertEqual(op_contours, polys)
+        assert_element_equal(op_contours, polys)
 
     def test_image_contours_filled_auto_levels(self):
         z = np.array([[0, 1, 0], [3, 4, 5], [6, 7, 8]])
@@ -391,14 +392,14 @@ class OperationTests(ComparisonTestCase):
 
         hist = Histogram(([0, 3, 6, 9], [0.1, 0.1, 0.133333]),
                          vdims=('x_frequency', 'Frequency'))
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     def test_dataset_histogram_empty_explicit_bins(self):
         ds = Dataset([np.nan, np.nan], ['x'])
         op_hist = histogram(ds, bins=[0, 1, 2])
 
         hist = Histogram(([0, 1, 2], [0, 0]), vdims=('x_count', 'Count'))
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     def test_dataset_histogram_groupby_range_shared(self):
         x = np.arange(10)
@@ -453,7 +454,7 @@ class OperationTests(ComparisonTestCase):
         hist = Histogram(([0, 3, 6, 9], [0.1, 0.1, 0.133333]),
                          vdims=('x_frequency', 'Frequency'))
         assert isinstance(op_hist.data['x_frequency'], da.Array)
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     @da_skip
     def test_dataset_cumulative_histogram_dask(self):
@@ -465,7 +466,7 @@ class OperationTests(ComparisonTestCase):
         hist = Histogram(([0, 3, 6, 9], [0.3, 0.6, 1]),
                          vdims=('x_frequency', 'Frequency'))
         assert isinstance(op_hist.data['x_frequency'], da.Array)
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     @da_skip
     def test_dataset_weighted_histogram_dask(self):
@@ -478,7 +479,7 @@ class OperationTests(ComparisonTestCase):
         hist = Histogram(([0, 3, 6, 9], [0.022222, 0.088889, 0.222222]),
                          vdims='y')
         assert isinstance(op_hist.data['y'], da.Array)
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     @ibis_skip
     @pytest.mark.usefixtures('ibis_sqlite_backend')
@@ -490,7 +491,7 @@ class OperationTests(ComparisonTestCase):
 
         hist = Histogram(([0, 3, 6, 9], [0.1, 0.1, 0.133333]),
                          vdims=('x_frequency', 'Frequency'))
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     @ibis_skip
     @pytest.mark.usefixtures('ibis_sqlite_backend')
@@ -502,7 +503,7 @@ class OperationTests(ComparisonTestCase):
 
         hist = Histogram(([0, 3, 6, 9], [0.3, 0.6, 1]),
                          vdims=('x_frequency', 'Frequency'))
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     @ibis_skip
     @pytest.mark.usefixtures('ibis_sqlite_backend')
@@ -514,7 +515,7 @@ class OperationTests(ComparisonTestCase):
 
         hist = Histogram(([0, 1, 3], [1, 3]),
                          vdims=('x_count', 'Count'))
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     @pytest.mark.gpu
     def test_dataset_histogram_cudf(self):
@@ -525,7 +526,7 @@ class OperationTests(ComparisonTestCase):
 
         hist = Histogram(([0, 3, 6, 9], [0.1, 0.1, 0.133333]),
                          vdims=('x_frequency', 'Frequency'))
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     @pytest.mark.gpu
     def test_dataset_cumulative_histogram_cudf(self):
@@ -536,7 +537,7 @@ class OperationTests(ComparisonTestCase):
 
         hist = Histogram(([0, 3, 6, 9], [0.3, 0.6, 1]),
                          vdims=('x_frequency', 'Frequency'))
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     @pytest.mark.gpu
     def test_dataset_histogram_explicit_bins_cudf(self):
@@ -547,7 +548,7 @@ class OperationTests(ComparisonTestCase):
 
         hist = Histogram(([0, 1, 3], [1, 3]),
                          vdims=('x_count', 'Count'))
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     def test_points_histogram_bin_range(self):
         points = Points([float(i) for i in range(10)])
@@ -555,7 +556,7 @@ class OperationTests(ComparisonTestCase):
 
         hist = Histogram(([0.25, 0.25, 0.5], [0., 1., 2., 3.]),
                          vdims=('x_frequency', 'Frequency'))
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     def test_points_histogram_explicit_bins(self):
         points = Points([float(i) for i in range(10)])
@@ -563,7 +564,7 @@ class OperationTests(ComparisonTestCase):
 
         hist = Histogram(([0, 1, 3], [1, 3]),
                          vdims=('x_count', 'Count'))
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     def test_points_histogram_cumulative(self):
         arr = np.arange(4)
@@ -572,7 +573,7 @@ class OperationTests(ComparisonTestCase):
 
         hist = Histogram(([0, 1, 2, 3], [1, 2, 4]),
                          vdims=('x_count', 'Count'))
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     def test_points_histogram_not_normed(self):
         points = Points([float(i) for i in range(10)])
@@ -580,7 +581,7 @@ class OperationTests(ComparisonTestCase):
 
         hist = Histogram(([0, 3, 6, 9], [3, 3, 4]),
                          vdims=('x_count', 'Count'))
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     def test_histogram_operation_datetime(self):
         dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)])
@@ -595,7 +596,7 @@ class OperationTests(ComparisonTestCase):
                 3.85802469e-18])
         }
         hist = Histogram(hist_data, kdims='Date', vdims=('Date_frequency', 'Frequency'))
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     def test_histogram_operation_datetime64(self):
         dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype('M')
@@ -610,7 +611,7 @@ class OperationTests(ComparisonTestCase):
                 3.85802469e-18])
         }
         hist = Histogram(hist_data, kdims='Date', vdims=('Date_frequency', 'Frequency'))
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     def test_histogram_operation_pd_period(self):
         dates = pd.date_range('2017-01-01', '2017-01-04', freq='D').to_period('D')
@@ -625,7 +626,7 @@ class OperationTests(ComparisonTestCase):
                 3.85802469e-18])
         }
         hist = Histogram(hist_data, kdims='Date', vdims=('Date_frequency', 'Frequency'))
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     def test_histogram_categorical(self):
         series = Dataset(pd.Series(['A', 'B', 'C']))
@@ -637,14 +638,14 @@ class OperationTests(ComparisonTestCase):
         points = Points([float(i) for i in range(10)])
         op_hist = histogram(points, num_bins=3, weight_dimension='y', normed=True)
         hist = Histogram(([0.022222, 0.088889, 0.222222], [0, 3, 6, 9]), vdims=['y'])
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     def test_points_histogram_mean_weighted(self):
         points = Points([float(i) for i in range(10)])
         op_hist = histogram(points, num_bins=3, weight_dimension='y',
                             mean_weighted=True, normed=True)
         hist = Histogram(([1.,  4., 7.5], [0, 3, 6, 9]), vdims=['y'])
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     def test_histogram_narwhals_pandas(self):
         df = pd.DataFrame({'x': range(10)})
@@ -653,7 +654,7 @@ class OperationTests(ComparisonTestCase):
 
         hist = Histogram(([0, 3, 6, 9], [3, 3, 4]),
                          vdims=('x_count', 'Count'))
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     def test_histogram_narwhals_polars(self):
         pl = pytest.importorskip("polars")
@@ -663,7 +664,7 @@ class OperationTests(ComparisonTestCase):
 
         hist = Histogram(([0, 3, 6, 9], [3, 3, 4]),
                          vdims=('x_count', 'Count'))
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     def test_histogram_narwhals_polars_lazy(self):
         pl = pytest.importorskip("polars")
@@ -673,7 +674,7 @@ class OperationTests(ComparisonTestCase):
 
         hist = Histogram(([0, 3, 6, 9], [3, 3, 4]),
                          vdims=('x_count', 'Count'))
-        self.assertEqual(op_hist, hist)
+        assert_element_equal(op_hist, hist)
 
     def test_histogram_narwhals_polars_lazy_groupby(self):
         pl = pytest.importorskip("polars")
@@ -685,7 +686,7 @@ class OperationTests(ComparisonTestCase):
         hist2 = Histogram(([1, 1.5, 2], [0, 1]), kdims="y", vdims=[('y_count', 'Count')])
         expected = NdOverlay({(1,): hist1, (2,): hist2}, kdims=['x'])
 
-        self.assertEqual(op_hist, expected)
+        assert_element_equal(op_hist, expected)
 
     @pytest.mark.usefixtures("mpl_backend")
     def test_histogram_dask_array_mpl(self):
@@ -709,13 +710,13 @@ class OperationTests(ComparisonTestCase):
     def test_interpolate_curve_pre(self):
         interpolated = interpolate_curve(Curve([0, 0.5, 1]), interpolation='steps-pre')
         curve = Curve([(0, 0), (0, 0.5), (1, 0.5), (1, 1), (2, 1)])
-        self.assertEqual(interpolated, curve)
+        assert_element_equal(interpolated, curve)
 
     def test_interpolate_curve_pre_with_values(self):
         interpolated = interpolate_curve(Curve([(0, 0, 'A'), (1, 0.5, 'B'), (2, 1, 'C')], vdims=['y', 'z']),
                                          interpolation='steps-pre')
         curve = Curve([(0, 0, 'A'), (0, 0.5, 'B'), (1, 0.5, 'B'), (1, 1, 'C'), (2, 1, 'C')], vdims=['y', 'z'])
-        self.assertEqual(interpolated, curve)
+        assert_element_equal(interpolated, curve)
 
     def test_interpolate_datetime_curve_pre(self):
         dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype('M')
@@ -728,12 +729,12 @@ class OperationTests(ComparisonTestCase):
             '2017-01-04T00:00:00'
         ], dtype='datetime64[ns]')
         curve = Curve((dates_interp, [0, 1, 1, 2, 2, 3, 3]))
-        self.assertEqual(interpolated, curve)
+        assert_element_equal(interpolated, curve)
 
     def test_interpolate_curve_mid(self):
         interpolated = interpolate_curve(Curve([0, 0.5, 1]), interpolation='steps-mid')
         curve = Curve([(0, 0), (0.5, 0), (0.5, 0.5), (1.5, 0.5), (1.5, 1), (2, 1)])
-        self.assertEqual(interpolated, curve)
+        assert_element_equal(interpolated, curve)
 
     def test_interpolate_curve_mid_with_values(self):
         interpolated = interpolate_curve(Curve([(0, 0, 'A'), (1, 0.5, 'B'), (2, 1, 'C')], vdims=['y', 'z']),
@@ -741,7 +742,7 @@ class OperationTests(ComparisonTestCase):
         curve = Curve([(0, 0, 'A'), (0.5, 0, 'A'), (0.5, 0.5, 'B'),
                        (1.5, 0.5, 'B'), (1.5, 1, 'C'), (2, 1, 'C')],
                       vdims=['y', 'z'])
-        self.assertEqual(interpolated, curve)
+        assert_element_equal(interpolated, curve)
 
     def test_interpolate_datetime_curve_mid(self):
         dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype('M')
@@ -754,12 +755,12 @@ class OperationTests(ComparisonTestCase):
             '2017-01-03T12:00:00', '2017-01-04T00:00:00'
         ], dtype='datetime64[ns]')
         curve = Curve((dates_interp, [0, 0, 1, 1, 2, 2, 3, 3]))
-        self.assertEqual(interpolated, curve)
+        assert_element_equal(interpolated, curve)
 
     def test_interpolate_curve_post(self):
         interpolated = interpolate_curve(Curve([0, 0.5, 1]), interpolation='steps-post')
         curve = Curve([(0, 0), (1, 0), (1, 0.5), (2, 0.5), (2, 1)])
-        self.assertEqual(interpolated, curve)
+        assert_element_equal(interpolated, curve)
 
     def test_interpolate_curve_post_with_values(self):
         interpolated = interpolate_curve(Curve([(0, 0, 'A'), (1, 0.5, 'B'), (2, 1, 'C')], vdims=['y', 'z']),
@@ -767,7 +768,7 @@ class OperationTests(ComparisonTestCase):
         curve = Curve([(0, 0, 'A'), (1, 0, 'A'), (1, 0.5, 'B'),
                        (2, 0.5, 'B'), (2, 1, 'C')],
                       vdims=['y', 'z'])
-        self.assertEqual(interpolated, curve)
+        assert_element_equal(interpolated, curve)
 
     def test_interpolate_datetime_curve_post(self):
         dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype('M')
@@ -780,21 +781,21 @@ class OperationTests(ComparisonTestCase):
             '2017-01-04T00:00:00'
         ], dtype='datetime64[ns]')
         curve = Curve((dates_interp, [0, 0, 1, 1, 2, 2, 3]))
-        self.assertEqual(interpolated, curve)
+        assert_element_equal(interpolated, curve)
 
     def test_stack_area_overlay(self):
         areas = Area([1, 2, 3]) * Area([1, 2, 3])
         stacked = Area.stack(areas)
         area1 = Area(([0, 1, 2], [1, 2, 3], [0, 0, 0]), vdims=['y', 'Baseline'])
         area2 = Area(([0, 1, 2], [2, 4, 6], [1, 2, 3]), vdims=['y', 'Baseline'])
-        self.assertEqual(stacked, area1 * area2)
+        assert_element_equal(stacked, area1 * area2)
 
     def test_stack_area_ndoverlay(self):
         areas = NdOverlay([(0, Area([1, 2, 3])), (1, Area([1, 2, 3]))])
         stacked = Area.stack(areas)
         area1 = Area(([0, 1, 2], [1, 2, 3], [0, 0, 0]), vdims=['y', 'Baseline'])
         area2 = Area(([0, 1, 2], [2, 4, 6], [1, 2, 3]), vdims=['y', 'Baseline'])
-        self.assertEqual(stacked, NdOverlay([(0, area1), (1, area2)]))
+        assert_element_equal(stacked, NdOverlay([(0, area1), (1, area2)]))
 
     def test_pre_and_postprocess_hooks(self):
         pre_backup = operation._preprocess_hooks
@@ -802,7 +803,7 @@ class OperationTests(ComparisonTestCase):
         operation._preprocess_hooks = [lambda op, x: {'label': str(x.id)}]
         operation._postprocess_hooks = [lambda op, x, **kwargs: x.clone(**kwargs)]
         curve = Curve([1, 2, 3])
-        self.assertEqual(operation(curve).label, str(curve.id))
+        assert operation(curve).label == str(curve.id)
         operation._preprocess_hooks = pre_backup
         operation._postprocess_hooks = post_backup
 

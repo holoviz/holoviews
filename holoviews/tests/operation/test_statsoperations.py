@@ -9,6 +9,7 @@ except ImportError:
 from holoviews import Area, Bivariate, Contours, Distribution, Image, Polygons
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.stats import bivariate_kde, univariate_kde
+from holoviews.testing import assert_element_equal
 
 
 class KDEOperationTests(ComparisonTestCase):
@@ -32,27 +33,27 @@ class KDEOperationTests(ComparisonTestCase):
         xs = np.arange(5)
         ys = [0.17594505, 0.23548218, 0.23548218, 0.17594505, 0.0740306]
         area = Area((xs, ys), 'Value', ('Value_density', 'Density'))
-        self.assertEqual(kde, area)
+        assert_element_equal(kde, area)
 
     def test_univariate_kde_flat_distribution(self):
         dist = Distribution([1, 1, 1])
         kde = univariate_kde(dist, n_samples=5, bin_range=(0, 4))
         area = Area([], 'Value', ('Value_density', 'Density'))
-        self.assertEqual(kde, area)
+        assert_element_equal(kde, area)
 
     def test_univariate_kde_nans(self):
         kde = univariate_kde(self.dist_nans, n_samples=5, bin_range=(0, 4))
         xs = np.arange(5)
         ys = [0, 0, 0, 0, 0]
         area = Area((xs, ys), 'Value', ('Value_density', 'Density'))
-        self.assertEqual(kde, area)
+        assert_element_equal(kde, area)
 
     def test_bivariate_kde(self):
         kde = bivariate_kde(self.bivariate, n_samples=2, x_range=(0, 4),
                             y_range=(0, 4), contours=False)
         img = Image(np.array([[0.021315, 0.021315], [0.021315, 0.021315]]),
                     bounds=(-2, -2, 6, 6), vdims=['Density'])
-        self.assertEqual(kde, img)
+        assert_element_equal(kde, img)
 
     def test_bivariate_kde_contours(self):
         np.random.seed(1)
@@ -60,7 +61,7 @@ class KDEOperationTests(ComparisonTestCase):
         kde = bivariate_kde(bivariate, n_samples=100, x_range=(0, 1),
                             y_range=(0, 1), contours=True, levels=10)
         assert isinstance(kde, Contours)
-        self.assertEqual(len(kde.data), 9)
+        assert len(kde.data) == 9
 
     def test_bivariate_kde_contours_filled(self):
         np.random.seed(1)
@@ -68,10 +69,10 @@ class KDEOperationTests(ComparisonTestCase):
         kde = bivariate_kde(bivariate, n_samples=100, x_range=(0, 1),
                             y_range=(0, 1), contours=True, filled=True, levels=10)
         assert isinstance(kde, Polygons)
-        self.assertEqual(len(kde.data), 10)
+        assert len(kde.data) == 10
 
     def test_bivariate_kde_nans(self):
         kde = bivariate_kde(self.bivariate_nans, n_samples=2, x_range=(0, 4),
                             y_range=(0, 4), contours=False)
         img = Image(np.zeros((2, 2)), bounds=(-2, -2, 6, 6), vdims=['Density'])
-        self.assertEqual(kde, img)
+        assert_element_equal(kde, img)
