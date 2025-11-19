@@ -7,16 +7,15 @@ import pytest
 
 from holoviews.core.data import Dataset
 from holoviews.element.chart import Points
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element.graphs import Chord, Graph, Nodes, TriMesh
 from holoviews.element.sankey import Sankey
 from holoviews.element.util import circular_layout, connect_edges, connect_edges_pd
 from holoviews.testing import assert_data_equal, assert_element_equal
 
 
-class GraphTests(ComparisonTestCase):
+class GraphTests:
 
-    def setUp(self):
+    def setup_method(self):
         N = 8
         self.nodes = circular_layout(np.arange(N))
         self.source = np.arange(N, dtype=np.int32)
@@ -50,7 +49,7 @@ class GraphTests(ComparisonTestCase):
 
     def test_graph_node_info_no_index_mismatch(self):
         node_info = Dataset(np.arange(6), vdims=['Label'])
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             Graph(((self.source, self.target), node_info))
 
     def test_graph_node_info_merge_on_index(self):
@@ -81,7 +80,7 @@ class GraphTests(ComparisonTestCase):
     def test_constructor_with_nodes_and_paths_dimension_mismatch(self):
         paths = Graph(((self.source, self.target), self.nodes)).edgepaths
         exception = 'Ensure that the first two key dimensions on Nodes and EdgePaths match: x != x2'
-        with self.assertRaisesRegex(ValueError, exception):
+        with pytest.raises(ValueError, match=exception):
             Graph(((self.source, self.target), self.nodes, paths.redim(x='x2')))
 
     def test_graph_clone_static_plot_id(self):
@@ -170,9 +169,9 @@ class TestFromSparse:
             Graph.from_sparse(regular_array, nodes_data)
 
 
-class FromNetworkXTests(ComparisonTestCase):
+class FromNetworkXTests:
 
-    def setUp(self):
+    def setup_method(self):
         try:
             import networkx as nx # noqa
         except ImportError:
@@ -241,9 +240,9 @@ class FromNetworkXTests(ComparisonTestCase):
 
 
 
-class ChordTests(ComparisonTestCase):
+class ChordTests:
 
-    def setUp(self):
+    def setup_method(self):
         self.simplices = [(0, 1, 2), (1, 2, 3), (2, 3, 4)]
 
     def test_chord_constructor_no_vdims(self):
@@ -276,9 +275,9 @@ class ChordTests(ComparisonTestCase):
 
 
 
-class TriMeshTests(ComparisonTestCase):
+class TriMeshTests:
 
-    def setUp(self):
+    def setup_method(self):
         self.nodes = [(0, 0, 0), (0.5, 1, 1), (1., 0, 2), (1.5, 1, 4)]
         self.simplices = [(0, 1, 2), (1, 2, 3)]
 
@@ -333,7 +332,7 @@ class TriMeshTests(ComparisonTestCase):
         assert_data_equal(trimesh.array(), np.array(self.simplices[1:]))
 
 
-class TestSankey(ComparisonTestCase):
+class TestSankey:
 
     def test_single_edge_sankey(self):
         sankey = Sankey([('A', 'B', 1)])

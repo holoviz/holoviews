@@ -6,13 +6,12 @@ import numpy as np
 import pytest
 
 from holoviews.element import HSV, RGB, Curve, Image, QuadMesh, Raster
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_data_equal, assert_element_equal
 
 
-class TestRaster(ComparisonTestCase):
+class TestRaster:
 
-    def setUp(self):
+    def setup_method(self):
         self.array1 = np.array([(0, 1, 2), (3, 4, 5)])
 
     def test_raster_init(self):
@@ -35,9 +34,9 @@ class TestRaster(ComparisonTestCase):
         assert rrange == (np.min(arr), np.max(arr))
 
 
-class TestRGB(ComparisonTestCase):
+class TestRGB:
 
-    def setUp(self):
+    def setup_method(self):
         self.rgb_array = np.random.randint(0, 255, (3, 3, 4))
 
     def test_construct_from_array_with_alpha(self):
@@ -82,9 +81,9 @@ class TestRGB(ComparisonTestCase):
         assert sum(np.isnan(rgb_n["G"])) == 0
         assert sum(np.isnan(rgb_n["B"])) == 0
 
-class TestHSV(ComparisonTestCase):
+class TestHSV:
 
-    def setUp(self):
+    def setup_method(self):
         self.hsv_array = np.random.randint(0, 255, (3, 3, 4))
 
     def test_not_using_class_variables_vdims(self):
@@ -94,9 +93,9 @@ class TestHSV(ComparisonTestCase):
                 assert i is not c
                 assert i == c
 
-class TestQuadMesh(ComparisonTestCase):
+class TestQuadMesh:
 
-    def setUp(self):
+    def setup_method(self):
         self.array1 = np.array([(0, 1, 2), (3, 4, 5)])
 
     def test_cast_image_to_quadmesh(self):

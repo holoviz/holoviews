@@ -2,14 +2,14 @@
 Unit tests of Path types.
 """
 import numpy as np
+import pytest
 
 from holoviews import Box, Dataset, Ellipse, Path, Polygons
 from holoviews.core.data.interface import DataError
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_data_equal, assert_element_equal
 
 
-class PathTests(ComparisonTestCase):
+class PathTests:
 
     def test_multi_path_list_constructor(self):
         path = Path([[(0, 1), (1, 2)], [(2, 3), (3, 4)]])
@@ -86,9 +86,9 @@ class PathTests(ComparisonTestCase):
         assert_element_equal(subpaths[1], Path([(2, 3), (3, 4)]))
 
 
-class PolygonsTests(ComparisonTestCase):
+class PolygonsTests:
 
-    def setUp(self):
+    def setup_method(self):
         xs = [1, 2, 3]
         ys = [2, 0, 7]
         holes = [[[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]]]
@@ -156,19 +156,19 @@ class PolygonsTests(ComparisonTestCase):
     def test_single_poly_hole_validation(self):
         xs = [1, 2, 3]
         ys = [2, 0, 7]
-        with self.assertRaises(DataError):
+        with pytest.raises(DataError):
             Polygons([{'x': xs, 'y': ys, 'holes': [[], []]}])
 
     def test_multi_poly_hole_validation(self):
         xs = [1, 2, 3, np.nan, 6, 7, 3]
         ys = [2, 0, 7, np.nan, 7, 5, 2]
-        with self.assertRaises(DataError):
+        with pytest.raises(DataError):
             Polygons([{'x': xs, 'y': ys, 'holes': [[]]}])
 
 
-class EllipseTests(ComparisonTestCase):
+class EllipseTests:
 
-    def setUp(self):
+    def setup_method(self):
         self.pentagon = np.array([[  0.00000000e+00,   5.00000000e-01],
                                   [  4.75528258e-01,   1.54508497e-01],
                                   [  2.93892626e-01,  -4.04508497e-01],
@@ -201,9 +201,9 @@ class EllipseTests(ComparisonTestCase):
         assert np.allclose(ellipse.data[0], self.squashed)
 
 
-class BoxTests(ComparisonTestCase):
+class BoxTests:
 
-    def setUp(self):
+    def setup_method(self):
         self.rotated_square = np.array([[-0.27059805, -0.65328148],
                                         [-0.65328148,  0.27059805],
                                         [ 0.27059805,  0.65328148],

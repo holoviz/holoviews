@@ -30,18 +30,17 @@ from holoviews import (
     TriMesh,
     VectorField,
 )
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element.path import BaseShape
 from holoviews.testing import assert_data_equal, assert_element_equal
 
 
-class ElementConstructorTest(ComparisonTestCase):
+class ElementConstructorTest:
     """
     Tests allowable data formats when constructing
     the basic Element types.
     """
 
-    def setUp(self):
+    def setup_method(self):
         self.xs = np.linspace(0, 2*np.pi, 11)
         self.hxs = np.arange(len(self.xs))
         self.sin = np.sin(self.xs)
@@ -51,7 +50,6 @@ class ElementConstructorTest(ComparisonTestCase):
         self.curve = Curve(sine_data)
         self.path = Path([sine_data, cos_data])
         self.histogram = Histogram((self.hxs, self.sin))
-        super().setUp()
 
     def test_empty_element_constructor(self):
         failed_elements = []
@@ -135,7 +133,7 @@ class ElementConstructorTest(ComparisonTestCase):
 
 
 
-class ElementSignatureTest(ComparisonTestCase):
+class ElementSignatureTest:
     """
     Test that Element signatures are consistent.
     """
@@ -266,7 +264,7 @@ class ElementSignatureTest(ComparisonTestCase):
         assert qmesh.vdims == [Dimension('c')]
 
 
-class ElementCastingTests(ComparisonTestCase):
+class ElementCastingTests:
     """
     Tests whether casting an element will faithfully copy data and
     parameters. Important to check for elements where data is not all

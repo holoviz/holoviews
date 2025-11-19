@@ -6,13 +6,12 @@ import numpy as np
 import pytest
 
 from holoviews import Bars, Curve, Dimension, Histogram, Points, Scatter, VectorField
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_element_equal
 
 
-class CurveComparisonTest(ComparisonTestCase):
+class CurveComparisonTest:
 
-    def setUp(self):
+    def setup_method(self):
         "Variations on the constructors in the Elements notebook"
 
         self.curve1 = Curve([(0.1*i, np.sin(0.1*i)) for i in range(100)])
@@ -27,9 +26,9 @@ class CurveComparisonTest(ComparisonTestCase):
             assert_element_equal(self.curve1, self.curve2)
 
 
-class BarsComparisonTest(ComparisonTestCase):
+class BarsComparisonTest:
 
-    def setUp(self):
+    def setup_method(self):
         "Variations on the constructors in the Elements notebook"
 
         key_dims1=[Dimension('Car occupants')]
@@ -64,9 +63,9 @@ class BarsComparisonTest(ComparisonTestCase):
             assert_element_equal(self.bars1, self.bars3)
 
 
-class HistogramComparisonTest(ComparisonTestCase):
+class HistogramComparisonTest:
 
-    def setUp(self):
+    def setup_method(self):
         "Variations on the constructors in the Elements notebook"
 
         np.random.seed(1)
@@ -85,22 +84,22 @@ class HistogramComparisonTest(ComparisonTestCase):
         assert_element_equal(self.hist2, self.hist2)
 
     def test_histograms_unequal_1(self):
-        with self.assertRaises(AssertionError):
+        with pytest.raises(AssertionError):
             assert_element_equal(self.hist1, self.hist2)
 
     def test_histograms_unequal_2(self):
-        with self.assertRaises(AssertionError):
+        with pytest.raises(AssertionError):
             assert_element_equal(self.hist1, self.hist3)
 
     def test_histograms_unequal_3(self):
-        with self.assertRaises(AssertionError):
+        with pytest.raises(AssertionError):
             assert_element_equal(self.hist1, self.hist4)
 
 
 
-class ScatterComparisonTest(ComparisonTestCase):
+class ScatterComparisonTest:
 
-    def setUp(self):
+    def setup_method(self):
         "Variations on the constructors in the Elements notebook"
 
         self.scatter1 = Scatter([(1, i) for i in range(20)])
@@ -128,9 +127,9 @@ class ScatterComparisonTest(ComparisonTestCase):
             assert_element_equal(self.scatter1, self.scatter3)
 
 
-class PointsComparisonTest(ComparisonTestCase):
+class PointsComparisonTest:
 
-    def setUp(self):
+    def setup_method(self):
         "Variations on the constructors in the Elements notebook"
 
         self.points1 = Points([(1, i) for i in range(20)])
@@ -158,9 +157,9 @@ class PointsComparisonTest(ComparisonTestCase):
             assert_element_equal(self.points1, self.points3)
 
 
-class VectorFieldComparisonTest(ComparisonTestCase):
+class VectorFieldComparisonTest:
 
-    def setUp(self):
+    def setup_method(self):
         "Variations on the constructors in the Elements notebook"
 
         x,y  = np.mgrid[-10:10,-10:10] * 0.25

@@ -7,14 +7,12 @@ import pytest
 
 from holoviews.core import Dimension, Dimensioned
 from holoviews.core.util import NUMPY_GE_2_0_0
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_element_equal
 
 
-class DimensionsComparisonTestCase(ComparisonTestCase):
+class DimensionsComparisonTestCase:
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
         self.dimension1 = Dimension('dim1', range=(0,1))
         self.dimension2 = Dimension('dim2', range=(0,1))
         self.dimension3 = Dimension('dim1', range=(0,2))
@@ -89,10 +87,9 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
         assert str(self.dimension12.value_format) != str(self.dimension13.value_format)
 
 
-class DimensionedComparisonTestCase(ComparisonTestCase):
+class DimensionedComparisonTestCase:
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
         # Value dimension lists
         self.value_list1 = [Dimension('val1')]
         self.value_list2 = [Dimension('val2')]

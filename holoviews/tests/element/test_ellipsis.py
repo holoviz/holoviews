@@ -2,13 +2,13 @@
 Unit tests of Ellipsis (...) in __getitem__
 """
 import numpy as np
+import pytest
 
 import holoviews as hv
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_data_equal
 
 
-class TestEllipsisCharts(ComparisonTestCase):
+class TestEllipsisCharts:
 
     def test_curve_ellipsis_slice_x(self):
         sliced = hv.Curve([(i,2*i) for i in range(10)])[2:7,...]
@@ -49,19 +49,18 @@ class TestEllipsisCharts(ComparisonTestCase):
 
     def test_histogram_ellipsis_slice_value_missing(self):
         frequencies, edges = np.histogram(range(20), 20)
-        with self.assertRaises(IndexError):
+        with pytest.raises(IndexError):
             hv.Histogram((frequencies, edges))[..., 'Non-existent']
 
 
-class TestEllipsisTable(ComparisonTestCase):
+class TestEllipsisTable:
 
-    def setUp(self):
+    def setup_method(self):
         keys =   [('M',10), ('M',16), ('F',12)]
         values = [(15, 0.8), (18, 0.6), (10, 0.8)]
         self.table =hv.Table(zip(keys,values, strict=None),
                              kdims = ['Gender', 'Age'],
                              vdims=['Weight', 'Height'])
-        super().setUp()
 
     def test_table_ellipsis_slice_value_weight(self):
         sliced = self.table[..., 'Weight']
@@ -78,7 +77,7 @@ class TestEllipsisTable(ComparisonTestCase):
 
 
 
-class TestEllipsisRaster(ComparisonTestCase):
+class TestEllipsisRaster:
 
     def test_raster_ellipsis_slice_value(self):
         data = np.random.rand(10,10)
@@ -109,8 +108,7 @@ class TestEllipsisRaster(ComparisonTestCase):
     def test_rgb_ellipsis_slice_value(self):
         data = np.random.rand(10,10,3)
         sliced = hv.RGB(data)[:,:,'R']
-        self. assertEqual(sliced.data, data[:,:,0])
-
+        assert_data_equal(sliced.data, data[:,:,0])
 
     def test_rgb_ellipsis_slice_value_missing(self):
         rgb = hv.RGB(np.random.rand(10,10,3))
@@ -122,7 +120,7 @@ class TestEllipsisRaster(ComparisonTestCase):
 
 
 
-class TestEllipsisDeepIndexing(ComparisonTestCase):
+class TestEllipsisDeepIndexing:
 
     def test_deep_ellipsis_curve_slicing_1(self):
         hmap = hv.HoloMap({i:hv.Curve([(j,j) for j in range(10)])

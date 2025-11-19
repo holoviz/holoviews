@@ -3,11 +3,10 @@ import pytest
 
 from holoviews import Annotation, Arrow, HLine, Spline, Text, VLine
 from holoviews.element import Points
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_data_equal, assert_element_equal
 
 
-class AnnotationTests(ComparisonTestCase):
+class AnnotationTests:
     """
     Tests allowable data formats when constructing
     the basic Element types.

@@ -26,7 +26,6 @@ from holoviews.element import (
     Violin,
     VSpan,
 )
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element.selection import spatial_select_columnar
 from holoviews.testing import assert_data_equal, assert_element_equal
 from holoviews.util.transform import dim
@@ -64,15 +63,14 @@ def assert_dict_with_numpy(dct1, dct2):
     for k in dct1:
         np.testing.assert_equal(dct1[k], dct2[k])
 
-class TestIndexExpr(ComparisonTestCase):
+class TestIndexExpr:
 
-    def setUp(self):
+    def setup_method(self):
         import holoviews.plotting.bokeh # noqa
-        super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.current_backend = self._backend
 
     def test_index_selection_on_id_column(self):
@@ -87,15 +85,14 @@ class TestIndexExpr(ComparisonTestCase):
         assert sel == dim('id').isin([3, 7])
 
 
-class TestSelection1DExpr(ComparisonTestCase):
+class TestSelection1DExpr:
 
-    def setUp(self):
+    def setup_method(self):
         import holoviews.plotting.bokeh # noqa
-        super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.current_backend = self._backend
 
     def test_area_selection_numeric(self):
@@ -266,15 +263,14 @@ class TestSelection1DExpr(ComparisonTestCase):
         assert_element_equal(region, NdOverlay({0: HSpan(3, 7)}))
 
 
-class TestSelection2DExpr(ComparisonTestCase):
+class TestSelection2DExpr:
 
-    def setUp(self):
+    def setup_method(self):
         import holoviews.plotting.bokeh # noqa
-        super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.current_backend = self._backend
 
     def test_points_selection_numeric(self):
@@ -478,15 +474,14 @@ class TestSelection2DExpr(ComparisonTestCase):
 
 
 
-class TestSelectionGeomExpr(ComparisonTestCase):
+class TestSelectionGeomExpr:
 
-    def setUp(self):
+    def setup_method(self):
         import holoviews.plotting.bokeh # noqa
-        super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.current_backend = self._backend
 
     def test_rect_selection_numeric(self):
@@ -582,15 +577,14 @@ class TestSelectionGeomExpr(ComparisonTestCase):
         assert_element_equal(region, Rectangles([]) * Path([[*geom, (-0.4, -0.1)]]))
 
 
-class TestSelectionPolyExpr(ComparisonTestCase):
+class TestSelectionPolyExpr:
 
-    def setUp(self):
+    def setup_method(self):
         import holoviews.plotting.bokeh # noqa
-        super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.current_backend = self._backend
 
     def test_poly_selection_numeric(self):

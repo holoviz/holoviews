@@ -9,11 +9,10 @@ import numpy as np
 import pytest
 
 from holoviews.core import BoundingBox
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_data_equal, assert_element_equal
 
 
-class SimpleComparisonTest(ComparisonTestCase):
+class SimpleComparisonTest:
     def test_arrays_equal_int(self):
         assert_data_equal(np.array([[1,2],[3,4]]),
                          np.array([[1,2],[3,4]]))

@@ -10,13 +10,12 @@ HoloMaps are not tested in this file.
 import pytest
 
 from holoviews import Element
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_element_equal
 
 
-class CompositeComparisonTestCase(ComparisonTestCase):
+class CompositeComparisonTestCase:
 
-    def setUp(self):
+    def setup_method(self):
         self.el1 = Element('data1')
         self.el2 = Element('data2')
         self.el3 = Element('data3')

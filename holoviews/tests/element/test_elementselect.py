@@ -3,16 +3,16 @@ from itertools import product
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from holoviews.core import HoloMap
 from holoviews.element import Contours, Curve, Image
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_element_equal
 
 
-class DimensionedSelectionTest(ComparisonTestCase):
+class DimensionedSelectionTest:
 
-    def setUp(self):
+    def setup_method(self):
         self.img_fn = lambda: Image(np.random.rand(10, 10))
         self.contour_fn = lambda: Contours([np.random.rand(10, 2)
                                             for i in range(2)])
@@ -115,7 +115,6 @@ class DimensionedSelectionTest(ComparisonTestCase):
     def test_selection_spec_positional_error_message(self):
         s, e = '1999-12-31', '2000-1-2'
         curve = self.datetime_fn()
-        with self.assertRaisesRegex(
-                ValueError, "Use the selection_specs keyword"
+        with pytest.raises(ValueError, match="Use the selection_specs keyword"
         ):
             curve.select((Curve,), time=(s, e))

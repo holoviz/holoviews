@@ -9,13 +9,12 @@ import pytest
 from holoviews import Image
 from holoviews.core import BoundingBox, Dimension
 from holoviews.core.element import HoloMap
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_element_equal
 
 
-class RasterTestCase(ComparisonTestCase):
+class RasterTestCase:
 
-    def setUp(self):
+    def setup_method(self):
         self.arr1 = np.array([[1,2], [3,4]])
         self.arr2 = np.array([[10,2], [3,4]])
         self.arr3 = np.array([[10,2], [3,40]])
@@ -30,8 +29,8 @@ class RasterTestCase(ComparisonTestCase):
 
 class RasterOverlayTestCase(RasterTestCase):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         # Two overlays of depth two with different layers
         self.overlay1_depth2 = (self.mat1 * self.mat2)
         self.overlay2_depth2 = (self.mat1 * self.mat3)
@@ -43,8 +42,8 @@ class RasterOverlayTestCase(RasterTestCase):
 
 class RasterMapTestCase(RasterOverlayTestCase):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         # Example 1D map
         self.map1_1D = HoloMap(kdims=['int'])
         self.map1_1D[0] = self.mat1

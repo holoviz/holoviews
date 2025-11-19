@@ -5,13 +5,12 @@ Test cases for the Comparisons class over the Path elements
 import pytest
 
 from holoviews import Bounds, Box, Contours, Ellipse, Path
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_element_equal
 
 
-class PathComparisonTest(ComparisonTestCase):
+class PathComparisonTest:
 
-    def setUp(self):
+    def setup_method(self):
         self.path1 = Path([(-0.3, 0.4), (-0.3, 0.3), (-0.2, 0.3),
                            (-0.2, 0.4),(-0.3, 0.4)])
 

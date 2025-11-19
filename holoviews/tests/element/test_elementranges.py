@@ -3,10 +3,9 @@ Test cases for computing ranges on elements which are not simply
 the (min, max) of the dimension values array.
 """
 from holoviews import Dimension, ErrorBars, Histogram
-from holoviews.element.comparison import ComparisonTestCase
 
 
-class HistogramRangeTests(ComparisonTestCase):
+class HistogramRangeTests:
 
     def test_histogram_range_x(self):
         r = Histogram(([0, 1, 2, 3], [1, 2, 3])).range(0)
@@ -48,7 +47,7 @@ class HistogramRangeTests(ComparisonTestCase):
 
 
 
-class ErrorBarsRangeTests(ComparisonTestCase):
+class ErrorBarsRangeTests:
 
     def test_errorbars_range_x(self):
         r = ErrorBars(([1, 2, 3], [2, 3, 4], [0.5, 0.5, 0.5])).range(0)

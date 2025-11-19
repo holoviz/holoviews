@@ -3,18 +3,18 @@ Unit tests of Image elements
 """
 
 import numpy as np
+import pytest
 
 import holoviews as hv
 from holoviews.element import Curve, Image
 from holoviews.testing import assert_element_equal
 
-from ..utils import LoggingComparisonTestCase
+from ..utils import LoggingComparison
 
 
-class TestImage(LoggingComparisonTestCase):
+class TestImage(LoggingComparison):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
         self.array1 = np.array([(0, 1, 2), (3, 4, 5)])
 
     def test_image_init(self):
@@ -85,5 +85,5 @@ class TestImage(LoggingComparisonTestCase):
         y = np.arange(-1, 1, 0.1)
         X, Y = np.meshgrid(x, y)
         Z = np.sqrt(X**2 + Y**2) * np.cos(X)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             Image((X, Y, Z))
