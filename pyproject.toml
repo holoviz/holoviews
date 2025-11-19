@@ -88,7 +88,7 @@ asyncio_default_fixture_loop_scope = "function"
 minversion = "7"
 xfail_strict = "true"
 log_cli_level = "INFO"
-python_classes = ["Test*", "*Test"]
+python_classes = "*Test*"
 filterwarnings = [
     "error",
     # Numpy warning triggered in Bokeh, when timedelta or datetime numpy scalar are compared to a numerical scalar

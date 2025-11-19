@@ -133,7 +133,7 @@ class TestStreamsDefine(ComparisonTestCase):
         self.assertEqual(self.ExplicitTest.param['test'].doc, 'Test docstring')
 
 
-class _TestSubscriber:
+class _Subscriber:
 
     def __init__(self, cb=None):
         self.call_count = 0
@@ -690,22 +690,22 @@ def test_dynamicmap_partial_bind_and_streams():
 class TestSubscribers(ComparisonTestCase):
 
     def test_exception_subscriber(self):
-        subscriber = _TestSubscriber()
+        subscriber = _Subscriber()
         position = PointerXY(subscribers=[subscriber])
         kwargs = dict(x=3, y=4)
         position.event(**kwargs)
         self.assertEqual(subscriber.kwargs, kwargs)
 
     def test_subscriber_disabled(self):
-        subscriber = _TestSubscriber()
+        subscriber = _Subscriber()
         position = PointerXY(subscribers=[subscriber])
         kwargs = dict(x=3, y=4)
         position.update(**kwargs)
         self.assertEqual(subscriber.kwargs, None)
 
     def test_subscribers(self):
-        subscriber1 = _TestSubscriber()
-        subscriber2 = _TestSubscriber()
+        subscriber1 = _Subscriber()
+        subscriber2 = _Subscriber()
         position = PointerXY(subscribers=[subscriber1, subscriber2])
         kwargs = dict(x=3, y=4)
         position.event(**kwargs)
@@ -713,7 +713,7 @@ class TestSubscribers(ComparisonTestCase):
         self.assertEqual(subscriber2.kwargs, kwargs)
 
     def test_batch_subscriber(self):
-        subscriber = _TestSubscriber()
+        subscriber = _Subscriber()
 
         positionX = PointerX(subscribers=[subscriber])
         positionY = PointerY(subscribers=[subscriber])
@@ -726,8 +726,8 @@ class TestSubscribers(ComparisonTestCase):
         self.assertEqual(subscriber.call_count, 1)
 
     def test_batch_subscribers(self):
-        subscriber1 = _TestSubscriber()
-        subscriber2 = _TestSubscriber()
+        subscriber1 = _Subscriber()
+        subscriber2 = _Subscriber()
 
         positionX = PointerX(subscribers=[subscriber1, subscriber2])
         positionY = PointerY(subscribers=[subscriber1, subscriber2])
@@ -752,7 +752,7 @@ class TestSubscribers(ComparisonTestCase):
         dmap = DynamicMap(points, streams=[stream])
         def cb():
             dmap[()]
-        subscriber = _TestSubscriber(cb)
+        subscriber = _Subscriber(cb)
         stream.add_subscriber(subscriber)
         dmap[()]
         stream.send(1)
