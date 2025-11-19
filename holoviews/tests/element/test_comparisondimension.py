@@ -1,9 +1,14 @@
 """
 Test cases for Dimension and Dimensioned object comparison.
 """
+import re
+
+import pytest
+
 from holoviews.core import Dimension, Dimensioned
 from holoviews.core.util import NUMPY_GE_2_0_0
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.testing import assert_element_equal
 
 
 class DimensionsComparisonTestCase(ComparisonTestCase):
@@ -25,73 +30,63 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
         self.dimension13 = Dimension('dim1', value_format=lambda x: x)
 
     def test_dimension_comparison_equal1(self):
-        self.assertEqual(self.dimension1, self.dimension1)
+        assert_element_equal(self.dimension1, self.dimension1)
 
     def test_dimension_comparison_equal2(self):
-        self.assertEqual(self.dimension1,
+        assert_element_equal(self.dimension1,
                          Dimension('dim1', range=(0,1)))
 
     def test_dimension_comparison_equal3(self):
-        self.assertEqual(self.dimension7,
+        assert_element_equal(self.dimension7,
                          Dimension('dim1', cyclic=True, range=(0,1), unit='ms'))
 
     def test_dimension_comparison_names_unequal(self):
-        try:
-            self.assertEqual(self.dimension1, self.dimension2)
-        except AssertionError as e:
-            self.assertEqual(str(e),  'Dimension names mismatched: dim1 != dim2')
+        msg = "'dim1' == 'dim2'"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.dimension1, self.dimension2)
 
     def test_dimension_comparison_labels_unequal(self):
-        try:
-            self.assertEqual(self.dimension1, self.dimension11)
-        except AssertionError as e:
-            self.assertEqual(str(e),  'Dimension labels mismatched: dim1 != Test Dimension')
+        msg = "'dim1' == 'Test Dimension'"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.dimension1, self.dimension11)
 
     def test_dimension_comparison_range_unequal1(self):
-        try:
-            self.assertEqual(self.dimension1, self.dimension3)
-        except AssertionError as e:
-            self.assertEqual(str(e), "Dimension parameter 'range' mismatched: (0, 1) != (0, 2)")
+        msg = r"\(0, 1\) == \(0, 2\)"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.dimension1, self.dimension3)
 
     def test_dimension_comparison_cyclic_unequal(self):
-        try:
-            self.assertEqual(self.dimension4, self.dimension5)
-        except AssertionError as e:
-            self.assertEqual(str(e), "Dimension parameter 'cyclic' mismatched: False != True")
+        msg = "False == True"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.dimension4, self.dimension5)
 
     def test_dimension_comparison_range_unequal2(self):
-        try:
-            self.assertEqual(self.dimension5, self.dimension6)
-        except AssertionError as e:
-            self.assertEqual(str(e), "Dimension parameter 'range' mismatched: (None, None) != (0, 1)")
+        msg = r"\(None, None\) == \(0, 1\)"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.dimension5, self.dimension6)
 
     def test_dimension_comparison_units_unequal(self):
-        try:
-            self.assertEqual(self.dimension6, self.dimension7)
-        except AssertionError as e:
-            self.assertEqual(str(e), "Dimension parameter 'unit' mismatched: None != 'ms'")
+        msg = "None == 'ms'"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.dimension6, self.dimension7)
 
     def test_dimension_comparison_values_unequal(self):
-        try:
-            self.assertEqual(self.dimension4, self.dimension8)
-        except AssertionError as e:
-            if NUMPY_GE_2_0_0:
-                msg = "Dimension parameter 'values' mismatched: [] != [np.str_('a'), np.str_('b')]"
-            else:
-                msg = "Dimension parameter 'values' mismatched: [] != ['a', 'b']"
-            self.assertEqual(str(e), msg)
+        if NUMPY_GE_2_0_0:
+            msg = "[] == [np.str_('a'), np.str_('b')]"
+        else:
+            msg = "[] != ['a', 'b']"
+        with pytest.raises(AssertionError, match=re.escape(msg)):
+            assert_element_equal(self.dimension4, self.dimension8)
 
     def test_dimension_comparison_types_unequal(self):
-        try:
-            self.assertEqual(self.dimension9, self.dimension10)
-        except AssertionError as e:
-            self.assertEqual(str(e), "Dimension parameter 'type' mismatched: <class 'int'> != <class 'float'>")
+        msg = "<class 'int'> == <class 'float'>"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.dimension9, self.dimension10)
 
     def test_dimension_comparison_value_format_unequal(self):
         # Comparing callables is skipped
-        self.assertEqual(self.dimension12, self.dimension13)
-        self.assertNotEqual(str(self.dimension12.value_format),
-                            str(self.dimension13.value_format))
+        assert_element_equal(self.dimension12, self.dimension13)
+        assert str(self.dimension12.value_format) != str(self.dimension13.value_format)
 
 
 class DimensionedComparisonTestCase(ComparisonTestCase):
@@ -130,44 +125,37 @@ class DimensionedComparisonTestCase(ComparisonTestCase):
 
     def test_dimensioned_comparison_equal(self):
         "Note that the data is not compared at the Dimensioned level"
-        self.assertEqual(self.dimensioned1,
+        assert_element_equal(self.dimensioned1,
                          Dimensioned('other_data',
                                      vdims=self.value_list1,
                                      kdims=self.key_list1))
 
     def test_dimensioned_comparison_unequal_value_dims(self):
-        try:
-            self.assertEqual(self.dimensioned1, self.dimensioned2)
-        except AssertionError as e:
-            self.assertEqual(str(e), "Dimension names mismatched: val1 != val2")
-
+        msg = "'val1' == 'val2'"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.dimensioned1, self.dimensioned2)
 
     def test_dimensioned_comparison_unequal_key_dims(self):
-        try:
-            self.assertEqual(self.dimensioned1, self.dimensioned3)
-        except AssertionError as e:
-            self.assertEqual(str(e), 'Dimension names mismatched: key1 != key2')
+        msg = "'key1' == 'key2'"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.dimensioned1, self.dimensioned3)
 
     def test_dimensioned_comparison_unequal_value_dim_lists(self):
-        try:
-            self.assertEqual(self.dimensioned1, self.dimensioned4)
-        except AssertionError as e:
-            self.assertEqual(str(e), "Value dimension list mismatched")
+        msg = "1 == 0"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.dimensioned1, self.dimensioned4)
 
     def test_dimensioned_comparison_unequal_key_dim_lists(self):
-        try:
-            self.assertEqual(self.dimensioned1, self.dimensioned5)
-        except AssertionError as e:
-            self.assertEqual(str(e), 'Key dimension list mismatched')
+        msg = "1 == 0"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.dimensioned1, self.dimensioned5)
 
     def test_dimensioned_comparison_unequal_group(self):
-        try:
-            self.assertEqual(self.dimensioned1, self.dimensioned6)
-        except AssertionError as e:
-            self.assertEqual(str(e), 'Group labels mismatched.')
+        msg = "'Dimensioned' == 'foo'"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.dimensioned1, self.dimensioned6)
 
     def test_dimensioned_comparison_unequal_label(self):
-        try:
-            self.assertEqual(self.dimensioned6, self.dimensioned7)
-        except AssertionError as e:
-            self.assertEqual(str(e), 'Labels mismatched.')
+        msg = "'' == 'bar'"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.dimensioned6, self.dimensioned7)

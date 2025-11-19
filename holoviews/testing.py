@@ -24,6 +24,7 @@ from numpy.testing import assert_array_almost_equal, assert_array_equal
 from holoviews import element
 from holoviews.core import (
     AdjointLayout,
+    BoundingBox,
     Dimension,
     Dimensioned,
     DynamicMap,
@@ -269,6 +270,7 @@ class _ElementComparison(_DataComparison):
         # Option objects
         cls.equality_funcs[Options] =     cls.compare_options
         cls.equality_funcs[Cycle] =       cls.compare_cycles
+        cls.equality_funcs[BoundingBox] = cls._simple_equality
 
         return cls.equality_funcs
 
@@ -293,7 +295,6 @@ class _ElementComparison(_DataComparison):
 
     @classmethod
     def compare_dimensions(cls, dim1, dim2, msg=None):
-
         # 'Weak' equality semantics
         assert dim1.name == dim2.name
         assert dim1.label == dim2.label
@@ -301,19 +302,16 @@ class _ElementComparison(_DataComparison):
         # 'Deep' equality of dimension metadata (all parameters)
         dim1_params = dim1.param.values()
         dim2_params = dim2.param.values()
-
-        if set(dim1_params.keys()) != set(dim2_params.keys()):
-            raise cls.failureException(f"Dimension parameter sets mismatched: {set(dim1_params.keys())} != {set(dim2_params.keys())}")
+        assert dim1_params.keys() == dim2_params.keys()
 
         for k in dim1_params.keys():
-            if (dim1.param.objects('existing')[k].__class__.__name__ == 'Callable'
-                and dim2.param.objects('existing')[k].__class__.__name__ == 'Callable'):
+            dim1_callable = dim1.param.objects('existing')[k].__class__.__name__ == 'Callable'
+            dim2_callable = dim2.param.objects('existing')[k].__class__.__name__ == 'Callable'
+            if (dim1_callable and dim2_callable):
                 continue
-            try:  # This is needed as two lists are not compared by contents using ==
-                cls.assert_equal(dim1_params[k], dim2_params[k], msg=None)
-            except AssertionError as e:
-                msg = f'Dimension parameter {k!r} mismatched: '
-                raise cls.failureException(f"{msg}{e!s}") from e
+
+            # This is needed as two lists are not compared by contents using ==
+            cls.assert_equal(dim1_params[k], dim2_params[k])
 
     @classmethod
     def compare_labelled_data(cls, obj1, obj2, msg=None):
@@ -322,8 +320,7 @@ class _ElementComparison(_DataComparison):
 
     @classmethod
     def compare_dimension_lists(cls, dlist1, dlist2, msg='Dimension lists'):
-        if len(dlist1) != len(dlist2):
-            raise cls.failureException(f'{msg} mismatched')
+        assert len(dlist1) == len(dlist2)
         for d1, d2 in zip(dlist1, dlist2, strict=None):
             cls.assert_equal(d1, d2)
 
@@ -373,16 +370,7 @@ class _ElementComparison(_DataComparison):
     @classmethod
     def compare_ndmappings(cls, el1, el2, msg='NdMappings'):
         cls.compare_dimensioned(el1, el2)
-        if len(el1.keys()) != len(el2.keys()):
-            raise cls.failureException(f"{msg} have different numbers of keys.")
-
-        if set(el1.keys()) != set(el2.keys()):
-            diff1 = [el for el in el1.keys() if el not in el2.keys()]
-            diff2 = [el for el in el2.keys() if el not in el1.keys()]
-            raise cls.failureException(f"{msg} have different sets of keys. "
-                                       + f"In first, not second {diff1}. "
-                                       + f"In second, not first: {diff2}.")
-
+        assert el1.keys() == el2.keys()
         for element1, element2 in zip(el1, el2, strict=None):
             cls.assert_equal(element1, element2)
 
@@ -410,8 +398,7 @@ class _ElementComparison(_DataComparison):
     @classmethod
     def compare_ndoverlays(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
-        if len(el1) != len(el2):
-            raise cls.failureException("NdOverlays have different lengths.")
+        assert len(el1) == len(el2)
 
         for (layer1, layer2) in zip(el1, el2, strict=None):
             cls.assert_equal(layer1, layer2)
@@ -674,15 +661,9 @@ class _ElementComparison(_DataComparison):
     @classmethod
     def compare_itemtables(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
-        if el1.rows != el2.rows:
-            raise cls.failureException("ItemTables have different numbers of rows.")
-
-        if el1.cols != el2.cols:
-            raise cls.failureException("ItemTables have different numbers of columns.")
-
-        if [d.name for d in el1.vdims] != [d.name for d in el2.vdims]:
-            raise cls.failureException("ItemTables have different Dimensions.")
-
+        assert el1.rows == el2.rows
+        assert el1.cols == el2.cols
+        assert [d.name for d in el1.vdims] == [d.name for d in el2.vdims]
 
     @classmethod
     def compare_tables(cls, el1, el2, msg='Table'):
@@ -710,15 +691,8 @@ class _ElementComparison(_DataComparison):
 
     @classmethod
     def _compare_grids(cls, el1, el2, name):
-
-        if len(el1.keys()) != len(el2.keys()):
-            raise cls.failureException(f"{name}s have different numbers of items.")
-
-        if set(el1.keys()) != set(el2.keys()):
-            raise cls.failureException(f"{name}s have different keys.")
-
-        if len(el1) != len(el2):
-            raise cls.failureException(f"{name}s have different depths.")
+        assert el1.keys() == len(el2.keys())
+        assert len(el1) == len(el2)
 
         for element1, element2 in zip(el1, el2, strict=True):
             cls.assert_equal(element1, element2)

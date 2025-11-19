@@ -1,12 +1,16 @@
 """
 Test cases for the Comparisons class over the Raster types.
 """
+import re
+
 import numpy as np
+import pytest
 
 from holoviews import Image
 from holoviews.core import BoundingBox, Dimension
 from holoviews.core.element import HoloMap
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.testing import assert_element_equal
 
 
 class RasterTestCase(ComparisonTestCase):
@@ -93,78 +97,57 @@ class BasicRasterComparisonTest(RasterTestCase):
     """
 
     def test_matrices_equal(self):
-        self.assertEqual(self.mat1, self.mat1)
+        assert_element_equal(self.mat1, self.mat1)
 
     def test_unequal_arrays(self):
-        try:
-            self.assertEqual(self.mat1, self.mat2)
-            raise AssertionError("Array mismatch not raised")
-        except AssertionError as e:
-            if not str(e).startswith('Image not almost equal to 6 decimals\n'):
-                raise self.failureException("Image data mismatch error not raised.")
+        msg = "Arrays are not almost equal to 6 decimals"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.mat1, self.mat2)
 
     def test_bounds_mismatch(self):
-        try:
-            self.assertEqual(self.mat1, self.mat4)
-        except AssertionError as e:
-            self.assertEqual(str(e), 'BoundingBoxes are mismatched: (-0.5, -0.5, 0.5, 0.5) != (-0.3, -0.3, 0.3, 0.3).')
+        msg = r"(-0.5, -0.3)"  # output from np.isclose
+        with pytest.raises(AssertionError, match=re.escape(msg)):
+            assert_element_equal(self.mat1, self.mat4)
 
 
 
 class RasterOverlayComparisonTest(RasterOverlayTestCase):
 
     def test_depth_mismatch(self):
-        try:
-            self.assertEqual(self.overlay1_depth2, self.overlay4_depth3)
-        except AssertionError as e:
-            self.assertEqual(str(e), 'Overlays have mismatched path counts.')
+        msg = "Right contains one more item"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.overlay1_depth2, self.overlay4_depth3)
 
     def test_element_mismatch(self):
-        try:
-            self.assertEqual(self.overlay1_depth2, self.overlay2_depth2)
-        except AssertionError as e:
-            if not str(e).startswith('Image not almost equal to 6 decimals\n'):
-                raise self.failureException("Image mismatch error not raised.")
+        msg = "Arrays are not almost equal to 6 decimals"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.overlay1_depth2, self.overlay2_depth2)
 
 
 
 class RasterMapComparisonTest(RasterMapTestCase):
 
     def test_dimension_mismatch(self):
-         try:
-             self.assertEqual(self.map1_1D, self.map1_2D)
-             raise AssertionError("Mismatch in dimension number not raised.")
-         except AssertionError as e:
-             self.assertEqual(str(e), 'Key dimension list mismatched')
+        msg = "1 == 2"
+        with pytest.raises(AssertionError, match=msg):
+             assert_element_equal(self.map1_1D, self.map1_2D)
 
     def test_dimension_label_mismatch(self):
-         try:
-             self.assertEqual(self.map1_1D, self.map6_1D)
-             raise AssertionError("Mismatch in dimension labels not raised.")
-         except AssertionError as e:
-             self.assertEqual(str(e), 'Dimension names mismatched: int != int_v2')
-
+        msg = "'int' == 'int_v2'"
+        with pytest.raises(AssertionError, match=msg):
+             assert_element_equal(self.map1_1D, self.map6_1D)
 
     def test_key_len_mismatch(self):
-        try:
-            self.assertEqual(self.map1_1D, self.map3_1D)
-            raise AssertionError("Mismatch in map key number not raised.")
-        except AssertionError as e:
-            self.assertEqual(str(e), 'HoloMaps have different numbers of keys.')
+        msg = "[0, 1] == [1, 2, 3]"
+        with pytest.raises(AssertionError, match=re.escape(msg)):
+            assert_element_equal(self.map1_1D, self.map3_1D)
 
     def test_key_mismatch(self):
-        try:
-            self.assertEqual(self.map1_1D, self.map2_1D)
-            raise AssertionError("Mismatch in map keys not raised.")
-        except AssertionError as e:
-            self.assertEqual(str(e),
-                             'HoloMaps have different sets of keys.'
-                             ' In first, not second [0]. In second, not first: [2].')
+        msg = "[0, 1] == [1, 2]"
+        with pytest.raises(AssertionError, match=re.escape(msg)):
+            assert_element_equal(self.map1_1D, self.map2_1D)
 
     def test_element_mismatch(self):
-        try:
-            self.assertEqual(self.map1_1D, self.map4_1D)
-            raise AssertionError("Pane mismatch in array data not raised.")
-        except AssertionError as e:
-            if not str(e).startswith('Image not almost equal to 6 decimals\n'):
-                raise self.failureException("Image mismatch error not raised.")
+        msg = "Arrays are not almost equal to 6 decimals"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.map1_1D, self.map4_1D)

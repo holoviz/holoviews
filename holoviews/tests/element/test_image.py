@@ -6,6 +6,7 @@ import numpy as np
 
 import holoviews as hv
 from holoviews.element import Curve, Image
+from holoviews.testing import assert_element_equal
 
 from ..utils import LoggingComparisonTestCase
 
@@ -18,17 +19,17 @@ class TestImage(LoggingComparisonTestCase):
 
     def test_image_init(self):
         image = Image(self.array1)
-        self.assertEqual(image.xdensity, 3)
-        self.assertEqual(image.ydensity, 2)
+        assert image.xdensity == 3
+        assert image.ydensity == 2
 
     def test_image_index(self):
         image = Image(self.array1)
-        self.assertEqual(image[-.33, -0.25], 3)
+        assert image[-.33, -0.25] == 3
 
 
     def test_image_sample(self):
         image = Image(self.array1)
-        self.assertEqual(image.sample(y=0.25),
+        assert_element_equal(image.sample(y=0.25),
                          Curve(np.array([(-0.333333, 0), (0, 1), (0.333333, 2)]),
                                kdims=['x'], vdims=['z']))
 
@@ -36,7 +37,7 @@ class TestImage(LoggingComparisonTestCase):
         arr = np.random.rand(10,10)-0.5
         arr = np.ma.masked_where(arr<=0, arr)
         rrange = Image(arr).range(2)
-        self.assertEqual(rrange, (np.min(arr), np.max(arr)))
+        assert rrange == (np.min(arr), np.max(arr))
 
     def test_empty_image(self):
         Image([])
@@ -77,7 +78,7 @@ class TestImage(LoggingComparisonTestCase):
         ys = np.linspace(0,10,20)
         ys[-1] += 0.001
         img = Image({'vals':vals, 'xs':xs, 'ys':ys}, ['xs','ys'], 'vals', rtol=10e-3)
-        self.assertEqual(img.clone().rtol, 10e-3)
+        assert img.clone().rtol == 10e-3
 
     def test_image_curvilinear_coords_error(self):
         x = np.arange(-1, 1, 0.1)

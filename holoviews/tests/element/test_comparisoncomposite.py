@@ -7,8 +7,11 @@ Overlay    (the * operator)
 HoloMaps are not tested in this file.
 """
 
+import pytest
+
 from holoviews import Element
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.testing import assert_element_equal
 
 
 class CompositeComparisonTestCase(ComparisonTestCase):
@@ -27,37 +30,34 @@ class CompositeComparisonTestCase(ComparisonTestCase):
     def test_layouttree_comparison_equal(self):
         t1 = self.el1 + self.el2
         t2 = self.el1 + self.el2
-        self.assertEqual(t1, t2)
+        assert_element_equal(t1, t2)
 
     def test_layouttree_comparison_equal_large(self):
         t1 = self.el1 + self.el2 + self.el4 + self.el5
         t2 = self.el1 + self.el2 + self.el4 + self.el5
-        self.assertEqual(t1, t2)
+        assert_element_equal(t1, t2)
 
 
     def test_layouttree_comparison_unequal_data(self):
         t1 = self.el1 + self.el2
         t2 = self.el1 + self.el3
-        try:
-            self.assertEqual(t1, t2)
-        except AssertionError as e:
-            self.assertEqual(str(e),"'data2' != 'data3'")
+        msg = "'data2' == 'data3'"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(t1, t2)
 
     def test_layouttree_comparison_unequal_paths(self):
         t1 = self.el1 + self.el2
         t2 = self.el1 + self.el2.relabel(group='ValA')
-        try:
-            self.assertEqual(t1, t2)
-        except AssertionError as e:
-            self.assertEqual(str(e), 'Layouts have mismatched paths.')
+        msg = "At index 1 diff"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(t1, t2)
 
     def test_layouttree_comparison_unequal_sizes(self):
         t1 = self.el1 + self.el2
         t2 = self.el1 + self.el2 + self.el3
-        try:
-            self.assertEqual(t1, t2)
-        except AssertionError as e:
-            self.assertEqual(str(e), 'Layouts have mismatched path counts.')
+        msg = "Right contains one more item"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(t1, t2)
 
     #=============================#
     # Matching tests for Overlays #
@@ -66,37 +66,34 @@ class CompositeComparisonTestCase(ComparisonTestCase):
     def test_overlay_comparison_equal(self):
         t1 = self.el1 * self.el2
         t2 = self.el1 * self.el2
-        self.assertEqual(t1, t2)
+        assert_element_equal(t1, t2)
 
     def test_overlay_comparison_equal_large(self):
         t1 = self.el1 * self.el2 * self.el3 * self.el4
         t2 = self.el1 * self.el2 * self.el3 * self.el4
-        self.assertEqual(t1, t2)
+        assert_element_equal(t1, t2)
 
 
     def test_overlay_comparison_unequal_data(self):
         t1 = self.el1 * self.el2
         t2 = self.el1 * self.el3
-        try:
-            self.assertEqual(t1, t2)
-        except AssertionError as e:
-            self.assertEqual(str(e),"'data2' != 'data3'")
+        msg = "'data2' == 'data3'"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(t1, t2)
 
     def test_overlay_comparison_unequal_paths(self):
         t1 = self.el1 * self.el2
         t2 = self.el1 * self.el2.relabel(group='ValA')
-        try:
-            self.assertEqual(t1, t2)
-        except AssertionError as e:
-            self.assertEqual(str(e), 'Overlays have mismatched paths.')
+        msg = "At index 1 diff"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(t1, t2)
 
     def test_overlay_comparison_unequal_sizes(self):
         t1 = self.el1 * self.el2
         t2 = self.el1 * self.el2 * self.el3
-        try:
-            self.assertEqual(t1, t2)
-        except AssertionError as e:
-            self.assertEqual(str(e), 'Overlays have mismatched path counts.')
+        msg = "Right contains one more item"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(t1, t2)
 
 
     #==================================#
@@ -106,37 +103,32 @@ class CompositeComparisonTestCase(ComparisonTestCase):
     def test_composite_comparison_equal(self):
         t1 = (self.el1 * self.el2) + (self.el1 * self.el2)
         t2 = (self.el1 * self.el2) + (self.el1 * self.el2)
-        self.assertEqual(t1, t2)
+        assert_element_equal(t1, t2)
 
     def test_composite_unequal_data(self):
         t1 = (self.el1 * self.el2) + (self.el1 * self.el2)
         t2 = (self.el1 * self.el2) + (self.el1 * self.el3)
-        try:
-            self.assertEqual(t1, t2)
-        except AssertionError as e:
-            self.assertEqual(str(e), "'data2' != 'data3'")
+        msg = "'data2' == 'data3'"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(t1, t2)
 
     def test_composite_unequal_paths_outer(self):
         t1 = (self.el1 * self.el2) + (self.el1 * self.el2).relabel(group='ValA')
         t2 = (self.el1 * self.el2) + (self.el1 * self.el3)
-        try:
-            self.assertEqual(t1, t2)
-        except AssertionError as e:
-            self.assertEqual(str(e), 'Layouts have mismatched paths.')
+        msg = "At index 1 diff"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(t1, t2)
 
     def test_composite_unequal_paths_inner(self):
         t1 = (self.el1 * self.el2) + (self.el1 * self.el2.relabel(group='ValA'))
         t2 = (self.el1 * self.el2) + (self.el1 * self.el3)
-        try:
-            self.assertEqual(t1, t2)
-        except AssertionError as e:
-            self.assertEqual(str(e), 'Overlays have mismatched paths.')
-
+        msg = "At index 1 diff"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(t1, t2)
 
     def test_composite_unequal_sizes(self):
         t1 = (self.el1 * self.el2) + (self.el1 * self.el2) + self.el3
         t2 = (self.el1 * self.el2) + (self.el1 * self.el2)
-        try:
-            self.assertEqual(t1, t2)
-        except AssertionError as e:
-            self.assertEqual(str(e), 'Layouts have mismatched path counts.')
+        msg = "Left contains one more item"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(t1, t2)

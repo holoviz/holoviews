@@ -3,9 +3,11 @@ Test cases for the Comparisons class over the Chart elements
 """
 
 import numpy as np
+import pytest
 
 from holoviews import Bars, Curve, Dimension, Histogram, Points, Scatter, VectorField
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.testing import assert_element_equal
 
 
 class CurveComparisonTest(ComparisonTestCase):
@@ -17,15 +19,12 @@ class CurveComparisonTest(ComparisonTestCase):
         self.curve2 = Curve([(0.1*i, np.sin(0.1*i)) for i in range(101)])
 
     def test_curves_equal(self):
-        self.assertEqual(self.curve1, self.curve1)
+        assert_element_equal(self.curve1, self.curve1)
 
     def test_curves_unequal(self):
-        try:
-            self.assertEqual(self.curve1, self.curve2)
-        except AssertionError as e:
-            if not str(e).startswith("Curve not of matching length, 100 vs. 101"):
-                raise self.failureException("Curve mismatch error not raised.")
-
+        msg = "assert 100 == 101"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.curve1, self.curve2)
 
 
 class BarsComparisonTest(ComparisonTestCase):
@@ -44,28 +43,25 @@ class BarsComparisonTest(ComparisonTestCase):
                           kdims=key_dims2, vdims=value_dims1)
 
     def test_bars_equal_1(self):
-        self.assertEqual(self.bars1, self.bars1)
+        assert_element_equal(self.bars1, self.bars1)
 
     def test_bars_equal_2(self):
-        self.assertEqual(self.bars2, self.bars2)
+        assert_element_equal(self.bars2, self.bars2)
 
     def test_bars_equal_3(self):
-        self.assertEqual(self.bars3, self.bars3)
+        assert_element_equal(self.bars3, self.bars3)
 
     def test_bars_unequal_1(self):
         try:
-            self.assertEqual(self.bars1, self.bars2)
+            assert_element_equal(self.bars1, self.bars2)
         except AssertionError as e:
             if "not almost equal" not in str(e):
                 raise Exception(f'Bars mismatched data error not raised. {e}')
 
     def test_bars_unequal_keydims(self):
-        try:
-            self.assertEqual(self.bars1, self.bars3)
-        except AssertionError as e:
-            if not str(e) == 'Dimension names mismatched: Car occupants != Cyclists':
-                raise Exception('Bars key dimension mismatch error not raised.')
-
+        msg = "assert 'Car occupants' == 'Cyclists'"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.bars1, self.bars3)
 
 
 class HistogramComparisonTest(ComparisonTestCase):
@@ -83,22 +79,22 @@ class HistogramComparisonTest(ComparisonTestCase):
         self.hist4 = Histogram((edges1, frequencies2))
 
     def test_histograms_equal_1(self):
-        self.assertEqual(self.hist1, self.hist1)
+        assert_element_equal(self.hist1, self.hist1)
 
     def test_histograms_equal_2(self):
-        self.assertEqual(self.hist2, self.hist2)
+        assert_element_equal(self.hist2, self.hist2)
 
     def test_histograms_unequal_1(self):
         with self.assertRaises(AssertionError):
-            self.assertEqual(self.hist1, self.hist2)
+            assert_element_equal(self.hist1, self.hist2)
 
     def test_histograms_unequal_2(self):
         with self.assertRaises(AssertionError):
-            self.assertEqual(self.hist1, self.hist3)
+            assert_element_equal(self.hist1, self.hist3)
 
     def test_histograms_unequal_3(self):
         with self.assertRaises(AssertionError):
-            self.assertEqual(self.hist1, self.hist4)
+            assert_element_equal(self.hist1, self.hist4)
 
 
 
@@ -113,28 +109,23 @@ class ScatterComparisonTest(ComparisonTestCase):
 
 
     def test_scatter_equal_1(self):
-        self.assertEqual(self.scatter1, self.scatter1)
+        assert_element_equal(self.scatter1, self.scatter1)
 
     def test_scatter_equal_2(self):
-        self.assertEqual(self.scatter2, self.scatter2)
+        assert_element_equal(self.scatter2, self.scatter2)
 
     def test_scatter_equal_3(self):
-        self.assertEqual(self.scatter3, self.scatter3)
+        assert_element_equal(self.scatter3, self.scatter3)
 
     def test_scatter_unequal_data_shape(self):
-        try:
-            self.assertEqual(self.scatter1, self.scatter2)
-        except  AssertionError as e:
-            if not str(e).startswith("Scatter not of matching length, 20 vs. 21."):
-                raise self.failureException("Scatter data mismatch error not raised.")
+        msg = "assert 20 == 21"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.scatter1, self.scatter2)
 
     def test_scatter_unequal_data_values(self):
-        try:
-            self.assertEqual(self.scatter1, self.scatter3)
-        except  AssertionError as e:
-            if not str(e).startswith("Scatter not almost equal to 6 decimals"):
-                raise self.failureException("Scatter data mismatch error not raised.")
-
+        msg = "Arrays are not almost equal to 6 decimals"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.scatter1, self.scatter3)
 
 
 class PointsComparisonTest(ComparisonTestCase):
@@ -148,28 +139,23 @@ class PointsComparisonTest(ComparisonTestCase):
 
 
     def test_points_equal_1(self):
-        self.assertEqual(self.points1, self.points1)
+        assert_element_equal(self.points1, self.points1)
 
     def test_points_equal_2(self):
-        self.assertEqual(self.points2, self.points2)
+        assert_element_equal(self.points2, self.points2)
 
     def test_points_equal_3(self):
-        self.assertEqual(self.points3, self.points3)
+        assert_element_equal(self.points3, self.points3)
 
     def test_points_unequal_data_shape(self):
-        try:
-            self.assertEqual(self.points1, self.points2)
-        except  AssertionError as e:
-            if not str(e).startswith("Points not of matching length, 20 vs. 21."):
-                raise self.failureException("Points count mismatch error not raised.")
+        msg = "assert 20 == 21"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.points1, self.points2)
 
     def test_points_unequal_data_values(self):
-        try:
-            self.assertEqual(self.points1, self.points3)
-        except  AssertionError as e:
-            if not str(e).startswith("Points not almost equal to 6 decimals"):
-                raise self.failureException("Points data mismatch error not raised.")
-
+        msg = "Arrays are not almost equal to 6 decimals"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.points1, self.points3)
 
 
 class VectorFieldComparisonTest(ComparisonTestCase):
@@ -187,14 +173,12 @@ class VectorFieldComparisonTest(ComparisonTestCase):
 
 
     def test_vfield_equal_1(self):
-        self.assertEqual(self.vfield1, self.vfield1)
+        assert_element_equal(self.vfield1, self.vfield1)
 
     def test_vfield_equal_2(self):
-        self.assertEqual(self.vfield2, self.vfield2)
+        assert_element_equal(self.vfield2, self.vfield2)
 
     def test_vfield_unequal_1(self):
-        try:
-            self.assertEqual(self.vfield1, self.vfield2)
-        except  AssertionError as e:
-            if not str(e).startswith("VectorField not almost equal to 6 decimals"):
-                raise self.failureException("VectorField  data mismatch error not raised.")
+        msg = "Arrays are not almost equal to 6 decimals"
+        with pytest.raises(AssertionError, match=msg):
+            assert_element_equal(self.vfield1, self.vfield2)

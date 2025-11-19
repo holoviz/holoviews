@@ -32,6 +32,7 @@ from holoviews import (
 )
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element.path import BaseShape
+from holoviews.testing import assert_data_equal, assert_element_equal
 
 
 class ElementConstructorTest(ComparisonTestCase):
@@ -62,57 +63,57 @@ class ElementConstructorTest(ComparisonTestCase):
                 el([])
             except Exception:
                 failed_elements.append(name)
-        self.assertEqual(failed_elements, [])
+        assert failed_elements == []
 
     def test_chart_zipconstruct(self):
-        self.assertEqual(Curve(zip(self.xs, self.sin, strict=None)), self.curve)
+        assert_element_equal(Curve(zip(self.xs, self.sin, strict=None)), self.curve)
 
     def test_chart_tuple_construct(self):
-        self.assertEqual(Curve((self.xs, self.sin)), self.curve)
+        assert_element_equal(Curve((self.xs, self.sin)), self.curve)
 
     def test_path_tuple_construct(self):
-        self.assertEqual(Path((self.xs, np.column_stack((self.sin, self.cos)))), self.path)
+        assert_element_equal(Path((self.xs, np.column_stack((self.sin, self.cos)))), self.path)
 
     def test_path_tuplelist_construct(self):
-        self.assertEqual(Path([(self.xs, self.sin), (self.xs, self.cos)]), self.path)
+        assert_element_equal(Path([(self.xs, self.sin), (self.xs, self.cos)]), self.path)
 
     def test_path_ziplist_construct(self):
-        self.assertEqual(Path([list(zip(self.xs, self.sin, strict=None)), list(zip(self.xs, self.cos, strict=None))]), self.path)
+        assert_element_equal(Path([list(zip(self.xs, self.sin, strict=None)), list(zip(self.xs, self.cos, strict=None))]), self.path)
 
     def test_hist_zip_construct(self):
-        self.assertEqual(Histogram(list(zip(self.hxs, self.sin, strict=None))), self.histogram)
+        assert_element_equal(Histogram(list(zip(self.hxs, self.sin, strict=None))), self.histogram)
 
     def test_hist_array_construct(self):
-        self.assertEqual(Histogram(np.column_stack((self.hxs, self.sin))), self.histogram)
+        assert_element_equal(Histogram(np.column_stack((self.hxs, self.sin))), self.histogram)
 
     def test_hist_yvalues_construct(self):
-        self.assertEqual(Histogram(self.sin), self.histogram)
+        assert_element_equal(Histogram(self.sin), self.histogram)
 
     def test_hist_curve_construct(self):
         hist = Histogram(Curve(([0.1, 0.3, 0.5], [2.1, 2.2, 3.3])))
         values = hist.dimension_values(1)
         edges = hist.edges
-        self.assertEqual(values, np.array([2.1, 2.2, 3.3]))
-        self.assertEqual(edges, np.array([0, 0.2, 0.4, 0.6]))
+        assert_data_equal(values, np.array([2.1, 2.2, 3.3]))
+        assert_data_equal(edges, np.array([0, 0.2, 0.4, 0.6]))
 
     def test_hist_curve_int_edges_construct(self):
         hist = Histogram(Curve(range(3)))
         values = hist.dimension_values(1)
         edges = hist.edges
-        self.assertEqual(values, np.arange(3))
-        self.assertEqual(edges, np.array([-.5, .5, 1.5, 2.5]))
+        assert_data_equal(values, np.arange(3))
+        assert_data_equal(edges, np.array([-.5, .5, 1.5, 2.5]))
 
     def test_heatmap_construct(self):
         hmap = HeatMap([('A', 'a', 1), ('B', 'b', 2)])
         dataset = Dataset({'x': ['A', 'B'], 'y': ['a', 'b'], 'z': [[1, np.nan], [np.nan, 2]]},
                           kdims=['x', 'y'], vdims=['z'], label='unique')
-        self.assertEqual(hmap.gridded, dataset)
+        assert_element_equal(hmap.gridded, dataset)
 
     def test_heatmap_construct_unsorted(self):
         hmap = HeatMap([('B', 'b', 2), ('A', 'a', 1)])
         dataset = Dataset({'x': ['B', 'A'], 'y': ['b', 'a'], 'z': [[2, np.nan], [np.nan, 1]]},
                           kdims=['x', 'y'], vdims=['z'], label='unique')
-        self.assertEqual(hmap.gridded, dataset)
+        assert_element_equal(hmap.gridded, dataset)
 
     def test_heatmap_construct_partial_sorted(self):
         data = [(chr(65+i),chr(97+j), i*j) for i in range(3) for j in [2, 0, 1] if i!=j]
@@ -122,7 +123,7 @@ class ElementConstructorTest(ComparisonTestCase):
             'y': ['b', 'a', 'c'],
             'z': [[0, np.nan, 2], [np.nan, 0, 0], [0, 2, np.nan]]
         }, kdims=['x', 'y'], vdims=['z'], label='unique')
-        self.assertEqual(hmap.gridded, dataset)
+        assert_element_equal(hmap.gridded, dataset)
 
     def test_heatmap_construct_and_sort(self):
         data = [(chr(65+i),chr(97+j), i*j) for i in range(3) for j in [2, 0, 1] if i!=j]
@@ -130,7 +131,7 @@ class ElementConstructorTest(ComparisonTestCase):
         dataset = Dataset({'x': ['A', 'B', 'C'], 'y': ['a', 'b', 'c'],
                            'z': [[np.nan, 0, 0], [0, np.nan, 2], [0, 2, np.nan]]},
                           kdims=['x', 'y'], vdims=['z'], label='unique')
-        self.assertEqual(hmap.gridded, dataset)
+        assert_element_equal(hmap.gridded, dataset)
 
 
 
@@ -141,43 +142,43 @@ class ElementSignatureTest(ComparisonTestCase):
 
     def test_curve_string_signature(self):
         curve = Curve([], 'a', 'b')
-        self.assertEqual(curve.kdims, [Dimension('a')])
-        self.assertEqual(curve.vdims, [Dimension('b')])
+        assert curve.kdims == [Dimension('a')]
+        assert curve.vdims == [Dimension('b')]
 
     def test_area_string_signature(self):
         area = Area([], 'a', 'b')
-        self.assertEqual(area.kdims, [Dimension('a')])
-        self.assertEqual(area.vdims, [Dimension('b')])
+        assert area.kdims == [Dimension('a')]
+        assert area.vdims == [Dimension('b')]
 
     def test_errorbars_string_signature(self):
         errorbars = ErrorBars([], 'a', ['b', 'c'])
-        self.assertEqual(errorbars.kdims, [Dimension('a')])
-        self.assertEqual(errorbars.vdims, [Dimension('b'), Dimension('c')])
+        assert errorbars.kdims == [Dimension('a')]
+        assert errorbars.vdims == [Dimension('b'), Dimension('c')]
 
     def test_bars_string_signature(self):
         bars = Bars([], 'a', 'b')
-        self.assertEqual(bars.kdims, [Dimension('a')])
-        self.assertEqual(bars.vdims, [Dimension('b')])
+        assert bars.kdims == [Dimension('a')]
+        assert bars.vdims == [Dimension('b')]
 
     def test_boxwhisker_string_signature(self):
         boxwhisker = BoxWhisker([], 'a', 'b')
-        self.assertEqual(boxwhisker.kdims, [Dimension('a')])
-        self.assertEqual(boxwhisker.vdims, [Dimension('b')])
+        assert boxwhisker.kdims == [Dimension('a')]
+        assert boxwhisker.vdims == [Dimension('b')]
 
     def test_scatter_string_signature(self):
         scatter = Scatter([], 'a', 'b')
-        self.assertEqual(scatter.kdims, [Dimension('a')])
-        self.assertEqual(scatter.vdims, [Dimension('b')])
+        assert scatter.kdims == [Dimension('a')]
+        assert scatter.vdims == [Dimension('b')]
 
     def test_points_string_signature(self):
         points = Points([], ['a', 'b'], 'c')
-        self.assertEqual(points.kdims, [Dimension('a'), Dimension('b')])
-        self.assertEqual(points.vdims, [Dimension('c')])
+        assert points.kdims == [Dimension('a'), Dimension('b')]
+        assert points.vdims == [Dimension('c')]
 
     def test_vectorfield_string_signature(self):
         vectorfield = VectorField([], ['a', 'b'], ['c', 'd'])
-        self.assertEqual(vectorfield.kdims, [Dimension('a'), Dimension('b')])
-        self.assertEqual(vectorfield.vdims, [Dimension('c'), Dimension('d')])
+        assert vectorfield.kdims == [Dimension('a'), Dimension('b')]
+        assert vectorfield.vdims == [Dimension('c'), Dimension('d')]
 
     def test_vectorfield_from_uv(self):
         x = np.linspace(-1, 1, 4)
@@ -192,12 +193,12 @@ class ElementSignatureTest(ComparisonTestCase):
             Dimension('Angle', cyclic=True, range=(0,2*np.pi)),
             Dimension('Magnitude')
         ]
-        self.assertEqual(vectorfield.kdims, kdims)
-        self.assertEqual(vectorfield.vdims, vdims)
-        self.assertEqual(vectorfield.dimension_values(0), X.T.flatten())
-        self.assertEqual(vectorfield.dimension_values(1), Y.T.flatten())
-        self.assertEqual(vectorfield.dimension_values(2), angle.T.flatten())
-        self.assertEqual(vectorfield.dimension_values(3), mag.T.flatten())
+        assert vectorfield.kdims == kdims
+        assert vectorfield.vdims == vdims
+        assert_data_equal(vectorfield.dimension_values(0), X.T.flatten())
+        assert_data_equal(vectorfield.dimension_values(1), Y.T.flatten())
+        assert_data_equal(vectorfield.dimension_values(2), angle.T.flatten())
+        assert_data_equal(vectorfield.dimension_values(3), mag.T.flatten())
 
     def test_vectorfield_from_uv_dataframe(self):
         x = np.linspace(-1, 1, 4)
@@ -218,51 +219,51 @@ class ElementSignatureTest(ComparisonTestCase):
             Dimension('Angle', cyclic=True, range=(0,2*np.pi)),
             Dimension('Magnitude')
         ]
-        self.assertEqual(vectorfield.kdims, kdims)
-        self.assertEqual(vectorfield.vdims, vdims)
-        self.assertEqual(vectorfield.dimension_values(2, flat=False), angle.flat)
-        self.assertEqual(vectorfield.dimension_values(3, flat=False), mag.flat)
+        assert vectorfield.kdims == kdims
+        assert vectorfield.vdims == vdims
+        np.testing.assert_equal(vectorfield.dimension_values(2, flat=False), angle.flat)
+        np.testing.assert_equal(vectorfield.dimension_values(3, flat=False), mag.flat)
 
     def test_path_string_signature(self):
         path = Path([], ['a', 'b'])
-        self.assertEqual(path.kdims, [Dimension('a'), Dimension('b')])
+        assert path.kdims == [Dimension('a'), Dimension('b')]
 
     def test_spikes_string_signature(self):
         spikes = Spikes([], 'a')
-        self.assertEqual(spikes.kdims, [Dimension('a')])
+        assert spikes.kdims == [Dimension('a')]
 
     def test_contours_string_signature(self):
         contours = Contours([], ['a', 'b'])
-        self.assertEqual(contours.kdims, [Dimension('a'), Dimension('b')])
+        assert contours.kdims == [Dimension('a'), Dimension('b')]
 
     def test_polygons_string_signature(self):
         polygons = Polygons([], ['a', 'b'])
-        self.assertEqual(polygons.kdims, [Dimension('a'), Dimension('b')])
+        assert polygons.kdims == [Dimension('a'), Dimension('b')]
 
     def test_heatmap_string_signature(self):
         heatmap = HeatMap([], ['a', 'b'], 'c')
-        self.assertEqual(heatmap.kdims, [Dimension('a'), Dimension('b')])
-        self.assertEqual(heatmap.vdims, [Dimension('c')])
+        assert heatmap.kdims == [Dimension('a'), Dimension('b')]
+        assert heatmap.vdims == [Dimension('c')]
 
     def test_raster_string_signature(self):
         raster = Raster(np.array([[0]]), ['a', 'b'], 'c')
-        self.assertEqual(raster.kdims, [Dimension('a'), Dimension('b')])
-        self.assertEqual(raster.vdims, [Dimension('c')])
+        assert raster.kdims == [Dimension('a'), Dimension('b')]
+        assert raster.vdims == [Dimension('c')]
 
     def test_image_string_signature(self):
         img = Image(np.array([[0, 1], [0, 1]]), ['a', 'b'], 'c')
-        self.assertEqual(img.kdims, [Dimension('a'), Dimension('b')])
-        self.assertEqual(img.vdims, [Dimension('c')])
+        assert img.kdims == [Dimension('a'), Dimension('b')]
+        assert img.vdims == [Dimension('c')]
 
     def test_rgb_string_signature(self):
         img = RGB(np.zeros((2, 2, 3)), ['a', 'b'], ['R', 'G', 'B'])
-        self.assertEqual(img.kdims, [Dimension('a'), Dimension('b')])
-        self.assertEqual(img.vdims, [Dimension('R'), Dimension('G'), Dimension('B')])
+        assert img.kdims == [Dimension('a'), Dimension('b')]
+        assert img.vdims == [Dimension('R'), Dimension('G'), Dimension('B')]
 
     def test_quadmesh_string_signature(self):
         qmesh = QuadMesh(([0, 1], [0, 1], np.array([[0, 1], [0, 1]])), ['a', 'b'], 'c')
-        self.assertEqual(qmesh.kdims, [Dimension('a'), Dimension('b')])
-        self.assertEqual(qmesh.vdims, [Dimension('c')])
+        assert qmesh.kdims == [Dimension('a'), Dimension('b')]
+        assert qmesh.vdims == [Dimension('c')]
 
 
 class ElementCastingTests(ComparisonTestCase):
@@ -275,16 +276,16 @@ class ElementCastingTests(ComparisonTestCase):
 
     def test_image_casting(self):
         img = Image([], bounds=2)
-        self.assertEqual(img, Image(img))
+        assert_element_equal(img, Image(img))
 
     def test_rgb_casting(self):
         rgb = RGB([], bounds=2)
-        self.assertEqual(rgb, RGB(rgb))
+        assert_element_equal(rgb, RGB(rgb))
 
     def test_graph_casting(self):
         graph = Graph(([(0, 1)], [(0, 0, 0), (0, 1, 1)]))
-        self.assertEqual(graph, Graph(graph))
+        assert_element_equal(graph, Graph(graph))
 
     def test_trimesh_casting(self):
         trimesh = TriMesh(([(0, 1, 2)], [(0, 0, 0), (0, 1, 1), (1, 1, 2)]))
-        self.assertEqual(trimesh, TriMesh(trimesh))
+        assert_element_equal(trimesh, TriMesh(trimesh))
