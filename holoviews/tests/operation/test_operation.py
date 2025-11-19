@@ -48,7 +48,6 @@ from holoviews import (
 from holoviews.core.data.grid import GridInterface
 from holoviews.core.operation import Operation
 from holoviews.core.options import SkipRendering
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.element import (
     chain,
     contours,
@@ -68,7 +67,7 @@ da_skip = pytest.mark.skipif(da is None, reason="dask.array is not available")
 ibis_skip = pytest.mark.skipif(ibis is None, reason="ibis is not available")
 
 
-class OperationTests(ComparisonTestCase):
+class OperationTests:
     """
     Tests allowable data formats when constructing
     the basic Element types.

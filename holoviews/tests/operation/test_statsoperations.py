@@ -7,18 +7,17 @@ except ImportError:
     pytest.skip('SciPy not available', allow_module_level=True)
 
 from holoviews import Area, Bivariate, Contours, Distribution, Image, Polygons
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.stats import bivariate_kde, univariate_kde
 from holoviews.testing import assert_element_equal
 
 
-class KDEOperationTests(ComparisonTestCase):
+class KDEOperationTests:
     """
     Tests for the various timeseries operations including rolling,
     resample and rolling_outliers_std.
     """
 
-    def setUp(self):
+    def setup_method(self):
         self.values = np.arange(4)
         self.dist = Distribution(self.values)
         self.nans = np.full(5, np.nan)

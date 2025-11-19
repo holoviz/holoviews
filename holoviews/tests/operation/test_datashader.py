@@ -32,7 +32,6 @@ from holoviews import (
     TriMesh,
     renderer,
 )
-from holoviews.element.comparison import Comparison, ComparisonTestCase
 from holoviews.operation import apply_when
 from holoviews.streams import Tap
 from holoviews.util import render
@@ -110,7 +109,7 @@ def point_plot(point_data):
     return Points(point_data)
 
 
-class DatashaderAggregateTests(ComparisonTestCase):
+class DatashaderAggregateTests:
     """
     Tests for datashader aggregation
     """
@@ -816,9 +815,9 @@ class DatashaderAggregateTests(ComparisonTestCase):
 
 
 
-class DatashaderCatAggregateTests(ComparisonTestCase):
+class DatashaderCatAggregateTests:
 
-    def setUp(self):
+    def setup_method(self):
         if DATASHADER_VERSION < (0, 11, 0):
             pytest.skip('Regridding operations require datashader>=0.11.0')
 
@@ -873,7 +872,7 @@ class DatashaderCatAggregateTests(ComparisonTestCase):
         np.testing.assert_equal(expected.data.to_array("z").values, actual.T.values)
 
 
-class DatashaderShadeTests(ComparisonTestCase):
+class DatashaderShadeTests:
 
     def test_shade_categorical_images_xarray(self):
         xs, ys = [0.25, 0.75], [0.25, 0.75]
@@ -925,7 +924,7 @@ class DatashaderShadeTests(ComparisonTestCase):
 
 
 
-class DatashaderRegridTests(ComparisonTestCase):
+class DatashaderRegridTests:
     """
     Tests for datashader aggregation
     """
@@ -1008,7 +1007,7 @@ def test_regrid_interpolation_nearest(interpolation):
                        [0, 0, 1, 1],
                        [2, 2, 3, 3],
                        [2, 2, 3, 3]]))
-    Comparison.assertEqual(regridded, expected)
+    assert_element_equal(regridded, expected)
 
 
 # 'bilinear' and 'linear' expected to return the same Image values
@@ -1021,7 +1020,7 @@ def test_regrid_interpolation_linear(interpolation):
                        [0, 1, 1, 1],
                        [1, 1, 2, 2],
                        [2, 2, 2, 3]]))
-    Comparison.assertEqual(regridded, expected)
+    assert_element_equal(regridded, expected)
 
 
 @pytest.mark.parametrize("interpolation", [False, None])
@@ -1031,12 +1030,12 @@ def test_datashade_interpolation(interpolation):
     assert isinstance(shaded, RGB)
 
 
-class DatashaderRasterizeTests(ComparisonTestCase):
+class DatashaderRasterizeTests:
     """
     Tests for datashader aggregation
     """
 
-    def setUp(self):
+    def setup_method(self):
         if DATASHADER_VERSION <= (0, 6, 4):
             pytest.skip('Regridding operations require datashader>=0.7.0')
 
@@ -1533,7 +1532,7 @@ def test_selector_single_categorical():
     renderer("bokeh").get_plot(plot)
 
 
-class DatashaderSpreadTests(ComparisonTestCase):
+class DatashaderSpreadTests:
 
     def test_spread_rgb_1px(self):
         arr = np.array([[[0, 0, 0], [0, 1, 1], [0, 1, 1]],
@@ -1555,9 +1554,9 @@ class DatashaderSpreadTests(ComparisonTestCase):
         assert_element_equal(spreaded, Image(arr))
 
 
-class DatashaderStackTests(ComparisonTestCase):
+class DatashaderStackTests:
 
-    def setUp(self):
+    def setup_method(self):
         self.rgb1_arr = np.array([[[0, 1], [1, 0]],
                                   [[1, 0], [0, 1]],
                                   [[0, 0], [0, 0]]], dtype=np.uint8).T*255
@@ -1591,9 +1590,9 @@ class DatashaderStackTests(ComparisonTestCase):
         assert_element_equal(combined, self.rgb2)
 
 
-class GraphBundlingTests(ComparisonTestCase):
+class GraphBundlingTests:
 
-    def setUp(self):
+    def setup_method(self):
         if DATASHADER_VERSION <= (0, 7, 0):
             pytest.skip('Regridding operations require datashader>=0.7.0')
         self.source = np.arange(8)
@@ -1605,11 +1604,11 @@ class GraphBundlingTests(ComparisonTestCase):
         assert_element_equal(direct, self.graph.edgepaths)
 
 
-class InspectorTests(ComparisonTestCase):
+class InspectorTests:
     """
     Tests for inspector operations
     """
-    def setUp(self):
+    def setup_method(self):
         points = Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)])
         self.pntsimg = rasterize(
             points, dynamic=False, height=4, width=4,
@@ -1634,7 +1633,7 @@ class InspectorTests(ComparisonTestCase):
                                            datatype=['spatialpandas']),
                                   x_range=(0, 7), y_range=(0, 7), dynamic=False)
 
-    def tearDown(self):
+    def teardown_method(self):
         Tap.x, Tap.y = None, None
 
     def test_inspect_points_or_polygons(self):

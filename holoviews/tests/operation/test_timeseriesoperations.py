@@ -10,18 +10,17 @@ scipy_skip = pytest.mark.skipif(scipy is None, reason="SciPy is not available.")
 import numpy as np
 
 from holoviews import Curve, Scatter
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.timeseries import resample, rolling, rolling_outlier_std
 from holoviews.testing import assert_element_equal
 
 
-class TimeseriesOperationTests(ComparisonTestCase):
+class TimeseriesOperationTests:
     """
     Tests for the various timeseries operations including rolling,
     resample and rolling_outliers_std.
     """
 
-    def setUp(self):
+    def setup_method(self):
         self.dates = pd.date_range("2016-01-01", "2016-01-07", freq='D')
         self.values = [1, 2, 3, 4, 5, 6, 7]
         self.outliers = [1, 2, 1, 2, 10., 2, 1]
