@@ -104,7 +104,7 @@ class BasicRasterComparisonTest(RasterTestCase):
             assert_element_equal(self.mat1, self.mat2)
 
     def test_bounds_mismatch(self):
-        msg = r"(-0.5, -0.3)"  # output from np.isclose
+        msg = r"(-0.5, -0.3" # output from np.isclose(..., atol=)
         with pytest.raises(AssertionError, match=re.escape(msg)):
             assert_element_equal(self.mat1, self.mat4)
 
