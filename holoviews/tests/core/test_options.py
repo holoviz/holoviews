@@ -24,7 +24,6 @@ from holoviews.core.options import (
     StoreOptions,
     options_policy,
 )
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting import bokeh  # noqa: F401
 from holoviews.testing import assert_element_equal
 
@@ -39,16 +38,14 @@ with contextlib.suppress(ImportError):
     from holoviews.plotting import plotly  # noqa: F401
 
 
-class TestOptions(ComparisonTestCase):
+class TestOptions:
 
-    def setUp(self):
+    def setup_method(self):
         self.original_option_groups = Options._option_groups
         Options._option_groups = ['test']
-        super().setUp()
 
-    def tearDown(self):
+    def teardown_method(self):
         Options._option_groups = self.original_option_groups
-        super().tearDown()
 
     def test_options_init(self):
         Options('test')
@@ -134,16 +131,14 @@ class TestOptions(ComparisonTestCase):
             opts(**new_kws)
 
 
-class TestCycle(ComparisonTestCase):
+class TestCycle:
 
-    def setUp(self):
+    def setup_method(self):
         self.original_option_groups = Options._option_groups
         Options._option_groups = ['test']
-        super().setUp()
 
-    def tearDown(self):
+    def teardown_method(self):
         Options._option_groups = self.original_option_groups
-        super().tearDown()
 
     def test_cycle_init(self):
         Cycle(values=['a', 'b', 'c'])
@@ -206,16 +201,14 @@ class TestCycle(ComparisonTestCase):
 
 
 
-class TestOptionTree(ComparisonTestCase):
+class TestOptionTree:
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
         self.original_option_groups = Options._option_groups[:]
         Options._option_groups = ['group1', 'group2']
 
-    def tearDown(self):
+    def teardown_method(self):
         Options._option_groups = self.original_option_groups
-        super().tearDown()
 
     def test_optiontree_init_1(self):
         OptionTree(groups=['group1', 'group2'])
@@ -277,12 +270,12 @@ class TestOptionTree(ComparisonTestCase):
         assert options.MyType.Child.options('group2').kwargs == {'kw2':'value2', 'kw4':'value4'}
 
 
-class TestStoreInheritanceDynamic(ComparisonTestCase):
+class TestStoreInheritanceDynamic:
     """
     Tests to prevent regression after fix in PR #646
     """
 
-    def setUp(self):
+    def setup_method(self):
         if mpl is None:
             pytest.skip("Matplotlib required to test Store inheritance")
         self.backend = 'matplotlib'
@@ -291,11 +284,9 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         self.store_copy = OptionTree(sorted(options.items()),
                                      groups=Options._option_groups,
                                      backend=options.backend)
-        super().setUp()
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.options(val=self.store_copy)
-        super().tearDown()
 
     def initialize_option_tree(self):
         Store.options(val=OptionTree(groups=['plot', 'style']))
@@ -465,13 +456,13 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         assert custom_obj_lookup.kwargs == expected_custom_obj
 
 
-class TestStoreInheritance(ComparisonTestCase):
+class TestStoreInheritance:
     """
     Tests to prevent regression after fix in 71c1f3a that resolves
     issue #43
     """
 
-    def setUp(self):
+    def setup_method(self):
         if mpl is None:
             pytest.skip("Matplotlib required to test Store inheritance")
         self.backend = 'matplotlib'
@@ -493,11 +484,9 @@ class TestStoreInheritance(ComparisonTestCase):
         data = [np.random.normal() for i in range(10000)]
         frequencies, edges = np.histogram(data, 20)
         self.hist = Histogram((edges, frequencies))
-        super().setUp()
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.options(val=self.store_copy)
-        super().tearDown()
 
     def lookup_options(self, obj, group):
         return Store.lookup_options(self.backend, obj, group)
@@ -547,20 +536,18 @@ class TestStoreInheritance(ComparisonTestCase):
 
 
 
-class TestOptionsMethod(ComparisonTestCase):
+class TestOptionsMethod:
 
-    def setUp(self):
+    def setup_method(self):
         if mpl is None:
             pytest.skip("Matplotlib required to test Store inheritance")
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         self.store_copy = OptionTree(sorted(Store.options().items()),
                                      groups=Options._option_groups)
-        super().setUp()
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.options(val=self.store_copy)
-        super().tearDown()
 
     def lookup_options(self, obj, group):
         return Store.lookup_options(self.backend, obj, group)
@@ -595,20 +582,18 @@ class TestOptionsMethod(ComparisonTestCase):
         assert self.lookup_options(styled_im, 'style').options == dict(cmap='summer', interpolation='nearest')
 
 
-class TestOptsMethod(ComparisonTestCase):
+class TestOptsMethod:
 
-    def setUp(self):
+    def setup_method(self):
         if mpl is None:
             pytest.skip("Matplotlib required to test Store inheritance")
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         self.store_copy = OptionTree(sorted(Store.options().items()),
                                      groups=Options._option_groups)
-        super().setUp()
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.options(val=self.store_copy)
-        super().tearDown()
 
     def lookup_options(self, obj, group):
         return Store.lookup_options(self.backend, obj, group)
@@ -677,9 +662,9 @@ class TestOptsMethod(ComparisonTestCase):
         assert not any(k in ['option1', 'option2'] for k in cleared_options.keys())
 
 
-class TestOptionTreeFind(ComparisonTestCase):
+class TestOptionTreeFind:
 
-    def setUp(self):
+    def setup_method(self):
         self.original_option_groups = Options._option_groups[:]
         Options._option_groups = ['group']
         options = OptionTree(groups=['group'])
@@ -701,7 +686,7 @@ class TestOptionTreeFind(ComparisonTestCase):
         self.original_options=Store.options()
         Store.options(val=OptionTree(groups=['group']))
 
-    def tearDown(self):
+    def teardown_method(self):
         Options._option_groups = self.original_option_groups
         Store.options(val=self.original_options)
 
@@ -737,12 +722,12 @@ class TestOptionTreeFind(ComparisonTestCase):
 
 
 
-class TestCrossBackendOptions(ComparisonTestCase):
+class TestCrossBackendOptions:
     """
     Test the style system can style a single object across backends.
     """
 
-    def setUp(self):
+    def setup_method(self):
         if mpl is None:
             pytest.skip("Matplotlib required to test Store inheritance")
         # Some tests require that plotly isn't loaded
@@ -758,8 +743,6 @@ class TestCrossBackendOptions(ComparisonTestCase):
             backend='bokeh'
         )
         self.clear_options()
-        super().setUp()
-
 
     def clear_options(self):
         # Clear global options..
@@ -771,17 +754,13 @@ class TestCrossBackendOptions(ComparisonTestCase):
         Store.custom_options({}, backend='matplotlib')
         Store.custom_options({}, backend='bokeh')
 
-
-    def tearDown(self):
+    def teardown_method(self):
         Store.options(val=self.store_mpl, backend='matplotlib')
         Store.options(val=self.store_bokeh, backend='bokeh')
         Store.current_backend = 'matplotlib'
 
         if self.plotly_options is not None:
             Store._options['plotly'] = self.plotly_options
-
-        super().tearDown()
-
 
     def test_mpl_bokeh_mpl(self):
         img = Image(np.random.rand(10,10))
@@ -891,7 +870,7 @@ class TestCrossBackendOptions(ComparisonTestCase):
         assert Curve([]).opts.get().kwargs["linewidth"] == 5
 
 
-class TestLookupOptions(ComparisonTestCase):
+class TestLookupOptions:
 
     def test_lookup_options_honors_backend(self):
         points = Points([[1, 2], [3, 4]])
@@ -940,12 +919,12 @@ class TestLookupOptions(ComparisonTestCase):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-class TestCrossBackendOptionSpecification(ComparisonTestCase):
+class TestCrossBackendOptionSpecification:
     """
     Test the style system can style a single object across backends.
     """
 
-    def setUp(self):
+    def setup_method(self):
         if mpl is None:
             pytest.skip("Matplotlib required to test Store inheritance")
         # Some tests require that plotly isn't loaded
@@ -958,17 +937,14 @@ class TestCrossBackendOptionSpecification(ComparisonTestCase):
             sorted(Store.options(backend='bokeh').items()),
             groups=Options._option_groups, backend='bokeh'
         )
-        super().setUp()
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.options(val=self.store_mpl, backend='matplotlib')
         Store.options(val=self.store_bokeh, backend='bokeh')
         Store.current_backend = 'matplotlib'
 
         if self.plotly_options is not None:
             Store._options['plotly'] = self.plotly_options
-
-        super().tearDown()
 
     def assert_output_options_group_empty(self, obj):
         mpl_output_lookup = Store.lookup_options('matplotlib', obj, 'output').options
@@ -1041,10 +1017,10 @@ class TestCrossBackendOptionSpecification(ComparisonTestCase):
         assert mpl_curve_lookup.kwargs['color'] == 'orange'
 
         mpl_img_lookup = Store.lookup_options('matplotlib', styled.Image.I, 'style')
-        self.assertNotEqual(mpl_img_lookup.kwargs['cmap'], 'jet')
+        assert mpl_img_lookup.kwargs['cmap'] != 'jet'
 
         bokeh_curve_lookup = Store.lookup_options('bokeh', styled.Curve.I, 'style')
-        self.assertNotEqual(bokeh_curve_lookup.kwargs['color'], 'orange')
+        assert bokeh_curve_lookup.kwargs['color'] != 'orange'
 
         bokeh_img_lookup = Store.lookup_options('bokeh', styled.Image.I, 'style')
         assert bokeh_img_lookup.kwargs['cmap'] == 'jet'
@@ -1064,10 +1040,10 @@ class TestCrossBackendOptionSpecification(ComparisonTestCase):
         assert mpl_curve_lookup.kwargs['color'] == 'orange'
 
         mpl_img_lookup = Store.lookup_options('matplotlib', styled.Image.I, 'style')
-        self.assertNotEqual(mpl_img_lookup.kwargs['cmap'], 'jet')
+        assert mpl_img_lookup.kwargs['cmap'] != 'jet'
 
         bokeh_curve_lookup = Store.lookup_options('bokeh', styled.Curve.I, 'style')
-        self.assertNotEqual(bokeh_curve_lookup.kwargs['color'], 'orange')
+        assert bokeh_curve_lookup.kwargs['color'] != 'orange'
 
         bokeh_img_lookup = Store.lookup_options('bokeh', styled.Image.I, 'style')
         assert bokeh_img_lookup.kwargs['cmap'] == 'jet'
@@ -1093,8 +1069,8 @@ class TestCrossBackendOptionSpecification(ComparisonTestCase):
 
 class TestCrossBackendOptionPickling(TestCrossBackendOptions):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         self.raw = Image(np.random.rand(10,10))
         Store.current_backend = 'matplotlib'
         StoreOptions.set_options(self.raw, style={'Image':{'cmap':'Blues'}})

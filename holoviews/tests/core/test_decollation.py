@@ -3,7 +3,6 @@ import pytest
 
 from holoviews.core import DynamicMap, GridSpace, HoloMap, NdOverlay, Overlay
 from holoviews.element import Points
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PlotSize, RangeXY, Stream
 from holoviews.testing import assert_element_equal
 
@@ -25,8 +24,8 @@ Z = Stream.define("Z", z=0.0)
 PX = Stream.define("PX", px=1)
 
 
-class TestDecollation(ComparisonTestCase):
-    def setUp(self):
+class TestDecollation:
+    def setup_method(self):
         from holoviews.tests.test_streams import Sum, Val
 
         # kdims: a and b

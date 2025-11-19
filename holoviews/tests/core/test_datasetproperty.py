@@ -9,7 +9,6 @@ except ImportError:
 
 from holoviews import Curve, Dataset, Dimension, Distribution, Scatter
 from holoviews.core import Apply, Redim
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation import function, histogram
 from holoviews.testing import assert_element_equal
 
@@ -20,9 +19,9 @@ except ImportError:
 
 
 
-class DatasetPropertyTestCase(ComparisonTestCase):
+class DatasetPropertyTestCase:
 
-    def setUp(self):
+    def setup_method(self):
         self.df = pd.DataFrame({
             'a': [1, 1, 3, 3, 2, 2, 0, 0],
             'b': [10, 20, 30, 40, 10, 20, 30, 40],
@@ -83,7 +82,8 @@ class ToTestCase(DatasetPropertyTestCase):
     def test_to_element(self):
         curve = self.ds.to(Curve, 'a', 'b', groupby=[])
         curve2 = self.ds2.to(Curve, 'a', 'b', groupby=[])
-        self.assertNotEqual(curve, curve2)
+        with pytest.raises(AssertionError):
+            assert_element_equal(curve, curve2)
 
         assert_element_equal(curve.dataset, self.ds)
 
@@ -179,7 +179,8 @@ class ReindexTestCase(DatasetPropertyTestCase):
     def test_reindex_dataset(self):
         ds_ab = self.ds.reindex(kdims=['a'], vdims=['b'])
         ds2_ab = self.ds2.reindex(kdims=['a'], vdims=['b'])
-        self.assertNotEqual(ds_ab, ds2_ab)
+        with pytest.raises(AssertionError):
+            assert_element_equal(ds_ab, ds2_ab)
 
         assert_element_equal(ds_ab.dataset, self.ds)
 
@@ -284,7 +285,8 @@ class IlocTestCase(DatasetPropertyTestCase):
     def test_iloc_dataset(self):
         ds_iloc = self.ds.iloc[[0, 2]]
         ds2_iloc = self.ds2.iloc[[0, 2]]
-        self.assertNotEqual(ds_iloc, ds2_iloc)
+        with pytest.raises(AssertionError):
+            assert_element_equal(ds_iloc, ds2_iloc)
 
         # Dataset
         assert_element_equal(ds_iloc.dataset, self.ds)
@@ -327,8 +329,8 @@ class IlocTestCase(DatasetPropertyTestCase):
 
 class NdlocTestCase(DatasetPropertyTestCase):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         self.ds_grid = Dataset(
             (np.arange(4),
              np.arange(3),
@@ -569,7 +571,7 @@ class GroupbyTestCase(DatasetPropertyTestCase):
 
             # Check pipeline
             ops = ds_group.pipeline.operations
-            self.assertNotEqual(len(ops), 3)
+            assert len(ops) == 4
             assert ops[0].output_type is Dataset
             assert ops[1].method_name == 'reindex'
             assert ops[2].method_name == 'groupby'
@@ -615,8 +617,8 @@ class AddDimensionTestCase(DatasetPropertyTestCase):
 #
 class HistogramTestCase(DatasetPropertyTestCase):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         self.hist = self.ds.hist('a', adjoin=False, normed=False)
 
     def test_construction(self):
@@ -690,8 +692,8 @@ class HistogramTestCase(DatasetPropertyTestCase):
 
 class DistributionTestCase(DatasetPropertyTestCase):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         self.distribution = self.ds.to(Distribution, kdims='a', groupby=[])
 
     def test_distribution_dataset(self):
@@ -706,10 +708,10 @@ class DistributionTestCase(DatasetPropertyTestCase):
 
 class DatashaderTestCase(DatasetPropertyTestCase):
 
-    def setUp(self):
+    def setup_method(self):
         if None in (rasterize, datashade, dynspread):
             pytest.skip('Datashader could not be imported and cannot be tested.')
-        super().setUp()
+        super().setup_method()
 
     def test_rasterize_curve(self):
         img = rasterize(

@@ -5,14 +5,13 @@ Test cases for the pretty printing system.
 
 from holoviews import Curve, Element, Layout, Overlay, Store
 from holoviews.core.pprint import PrettyPrinter
-from holoviews.element.comparison import ComparisonTestCase
 
 from .test_dimensioned import CustomBackendTestCase, ExampleElement
 
 
-class PrettyPrintTest(ComparisonTestCase):
+class PrettyPrintTest:
 
-    def setUp(self):
+    def setup_method(self):
         self.element1 = Element(None, group='Value', label='Label')
         self.element2 = Element(None, group='Value', label='')
 
@@ -35,8 +34,8 @@ class PrettyPrintTest(ComparisonTestCase):
 
 class PrettyPrintOptionsTest(CustomBackendTestCase):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         self.current_backend = Store.current_backend
         self.pprinter = PrettyPrinter(show_options=True)
         self.register_custom(ExampleElement, 'backend_1', ['plot_custom1'], ['style_custom1'])

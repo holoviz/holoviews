@@ -3,10 +3,10 @@ Test cases for Dimension and Dimensioned object behaviour.
 """
 import numpy as np
 import pandas as pd
+import pytest
 
 from holoviews.core import Dimension, Dimensioned
 from holoviews.core.util import NUMPY_GE_2_0_0
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_element_equal
 
 from ..utils import LoggingComparisonTestCase
@@ -14,8 +14,8 @@ from ..utils import LoggingComparisonTestCase
 
 class DimensionNameLabelTest(LoggingComparisonTestCase):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
 
     def test_dimension_name(self):
         dim = Dimension('test')
@@ -39,11 +39,11 @@ class DimensionNameLabelTest(LoggingComparisonTestCase):
         assert dim.label == 'A test'
 
     def test_dimension_dict_empty(self):
-        with self.assertRaisesRegex(ValueError, 'must contain a "name" key'):
+        with pytest.raises(ValueError, match='must contain a "name" key'):
             Dimension({})
 
     def test_dimension_dict_label(self):
-        with self.assertRaisesRegex(ValueError, 'must contain a "name" key'):
+        with pytest.raises(ValueError, match='must contain a "name" key'):
             Dimension(dict(label='A test'))
 
     def test_dimension_dict_name(self):
@@ -64,16 +64,16 @@ class DimensionNameLabelTest(LoggingComparisonTestCase):
 
     def test_dimension_invalid_name(self):
         regexp = 'Dimension name must only be passed as the positional argument'
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             Dimension('test', name='something else')
 
     def test_dimension_invalid_name_tuple(self):
         regexp = 'Dimension name must only be passed as the positional argument'
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             Dimension(('test', 'test dimension'), name='something else')
 
 
-class DimensionReprTest(ComparisonTestCase):
+class DimensionReprTest:
 
     def test_name_dimension_repr(self):
         dim = Dimension('test')
@@ -106,8 +106,7 @@ class DimensionReprTest(ComparisonTestCase):
         assert dim.pprint_value(False) == 'False'
 
 
-class DimensionEqualityTest(ComparisonTestCase):
-
+class DimensionEqualityTest:
     def test_simple_dim_equality(self):
         dim1 = Dimension('test')
         dim2 = Dimension('test')
@@ -149,9 +148,9 @@ class DimensionEqualityTest(ComparisonTestCase):
         assert dim1==str(dim2)
 
 
-class DimensionValuesTest(ComparisonTestCase):
+class DimensionValuesTest:
 
-    def setUp(self):
+    def setup_method(self):
         self.values1 = [0,1,2,3,4,5,6]
         self.values2 = ['a','b','c','d']
 
@@ -212,7 +211,7 @@ class DimensionValuesTest(ComparisonTestCase):
         assert dim.values == self.values2
 
 
-class DimensionCloneTest(ComparisonTestCase):
+class DimensionCloneTest:
 
     def test_simple_clone(self):
         dim = Dimension('test')
@@ -241,23 +240,23 @@ class DimensionCloneTest(ComparisonTestCase):
         assert clone.label == 'A test'
 
 
-class DimensionDefaultTest(ComparisonTestCase):
+class DimensionDefaultTest:
 
     def test_validate_default_against_values(self):
         if NUMPY_GE_2_0_0:
             msg = r"Dimension\('A'\) default 1\.1 not found in declared values: \[np\.int64\(0\), np\.int64\(1\)\]"
         else:
             msg = r"Dimension\('A'\) default 1\.1 not found in declared values: \[0, 1\]"
-        with self.assertRaisesRegex(ValueError, msg):
+        with pytest.raises(ValueError, match=msg):
             Dimension('A', values=[0, 1], default=1.1)
 
     def test_validate_default_against_range(self):
         msg = r"Dimension\('A'\) default 1\.1 not in declared range: \(0, 1\)"
-        with self.assertRaisesRegex(ValueError, msg):
+        with pytest.raises(ValueError, match=msg):
             Dimension('A', range=(0, 1), default=1.1)
 
 
-class DimensionedTest(ComparisonTestCase):
+class DimensionedTest:
 
     def test_dimensioned_init(self):
         Dimensioned('An example of arbitrary data')
@@ -283,7 +282,7 @@ class DimensionedTest(ComparisonTestCase):
 
     def test_dimensioned_redim_dict_label_existing_error(self):
         dimensioned = Dimensioned('Arbitrary Data', kdims=[('x', 'Test1')])
-        with self.assertRaisesRegex(ValueError, 'Cannot override an existing Dimension label'):
+        with pytest.raises(ValueError, match='Cannot override an existing Dimension label'):
             dimensioned.redim.label(x='Test2')
 
     def test_dimensioned_redim_dimension(self):

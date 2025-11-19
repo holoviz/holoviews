@@ -2,10 +2,9 @@ import pytest
 
 from holoviews import Curve, DynamicMap, HoloMap
 from holoviews.core.traversal import unique_dimkeys
-from holoviews.element.comparison import ComparisonTestCase
 
 
-class TestUniqueDimKeys(ComparisonTestCase):
+class TestUniqueDimKeys:
 
     def test_unique_keys_complete_overlap(self):
         hmap1 = HoloMap({i: Curve(range(10)) for i in range(5)})

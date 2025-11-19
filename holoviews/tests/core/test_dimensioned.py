@@ -1,6 +1,8 @@
 import gc
 import pickle
 
+import pytest
+
 from holoviews.core.element import Element
 from holoviews.core.options import Keywords, Options, OptionTree, Store
 from holoviews.core.spaces import HoloMap
@@ -24,8 +26,8 @@ class CustomBackendTestCase(LoggingComparisonTestCase):
     Registers fake backends with the Store to test options on.
     """
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         self.current_backend = Store.current_backend
         self.register_custom(ExampleElement, 'backend_1', ['plot_custom1'])
         self.register_custom(ExampleElement, 'backend_2', ['plot_custom2'])
@@ -63,26 +65,26 @@ class TestDimensioned_options(CustomBackendTestCase):
         err = ("Unexpected option 'style_opt3' for ExampleElement type "
                "across all extensions. Similar options for current "
                r"extension \('backend_1'\) are: \['style_opt1', 'style_opt2'\]\.")
-        with self.assertRaisesRegex(ValueError, err):
+        with pytest.raises(ValueError, match=err):
             ExampleElement([]).options(style_opt3='A')
 
     def test_apply_options_current_backend_style_invalid_no_match(self):
         err = (r"Unexpected option 'zxy' for ExampleElement type across all extensions\. "
                r"No similar options found\.")
-        with self.assertRaisesRegex(ValueError, err):
+        with pytest.raises(ValueError, match=err):
             ExampleElement([]).options(zxy='A')
 
     def test_apply_options_explicit_backend_style_invalid_cross_backend(self):
         err = ("Unexpected option 'style_opt3' for ExampleElement type when "
                "using the 'backend_2' extension. Similar options are: "
                r"\['style_opt1', 'style_opt2'\]\.")
-        with self.assertRaisesRegex(ValueError, err):
+        with pytest.raises(ValueError, match=err):
             ExampleElement([]).options(style_opt3='A', backend='backend_2')
 
     def test_apply_options_explicit_backend_style_invalid_no_match(self):
         err = ("Unexpected option 'zxy' for ExampleElement type when using the "
                r"'backend_2' extension. No similar options found\.")
-        with self.assertRaisesRegex(ValueError, err):
+        with pytest.raises(ValueError, match=err):
             ExampleElement([]).options(zxy='A', backend='backend_2')
 
     def test_apply_options_current_backend_style_invalid_cross_backend_match(self):
@@ -96,7 +98,7 @@ class TestDimensioned_options(CustomBackendTestCase):
         err = ("Unexpected option 'style_opt3' for ExampleElement type when "
                "using the 'backend_2' extension. Similar options are: "
                r"\['style_opt1', 'style_opt2'\]\.")
-        with self.assertRaisesRegex(ValueError, err):
+        with pytest.raises(ValueError, match=err):
             ExampleElement([]).options(style_opt3='A', backend='backend_2')
 
     def test_apply_options_current_backend_style_multiple(self):

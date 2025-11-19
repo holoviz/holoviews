@@ -1,15 +1,13 @@
-import unittest
-
 import numpy as np
+import pytest
 
 from holoviews import Curve, Element, NdOverlay, Overlay
 from holoviews.testing import assert_element_equal
 
 
-class CompositeTest(unittest.TestCase):
-    "For testing of basic composite element types"
+class OverlayTest:
 
-    def setUp(self):
+    def setup_method(self):
         self.data1 = np.zeros((10, 2))
         self.data2 = np.ones((10, 2))
         self.data3 = np.ones((10, 2)) * 2
@@ -17,9 +15,6 @@ class CompositeTest(unittest.TestCase):
         self.view1 = Element(self.data1, label='view1')
         self.view2 = Element(self.data2, label='view2')
         self.view3 = Element(self.data3, label='view3')
-
-
-class OverlayTest(CompositeTest):
 
     def test_overlay(self):
         NdOverlay(list(enumerate([self.view1, self.view2, self.view3])))
@@ -41,7 +36,5 @@ class OverlayTest(CompositeTest):
         assert_element_equal(overlay[0], self.view1)
         assert_element_equal(overlay[1], self.view2)
         assert_element_equal(overlay[2], self.view3)
-        try:
+        with pytest.raises(KeyError):
             overlay[3]
-            raise AssertionError("Index should be out of range.")
-        except KeyError: pass

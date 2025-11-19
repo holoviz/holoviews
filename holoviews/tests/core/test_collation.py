@@ -7,12 +7,11 @@ import numpy as np
 
 from holoviews.core import Collator, GridSpace, HoloMap, NdOverlay, Overlay
 from holoviews.element import Curve
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_element_equal
 
 
-class TestCollation(ComparisonTestCase):
-    def setUp(self):
+class TestCollation:
+    def setup_method(self):
         alphas, betas, deltas = 2, 2, 2
         Bs = list(range(100))
         coords = itertools.product(*(range(n) for n in [alphas, betas, deltas]))

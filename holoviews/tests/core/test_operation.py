@@ -2,7 +2,6 @@ import param
 
 from holoviews.core.operation import Operation
 from holoviews.element import Curve
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import Params, Stream
 from holoviews.testing import assert_element_equal
 
@@ -24,7 +23,7 @@ class ParamClass(param.Parameterized):
         return self.label + '!'
 
 
-class TestOperationBroadcast(ComparisonTestCase):
+class TestOperationBroadcast:
 
     def test_element_dynamic_with_streams(self):
         curve = Curve([1, 2, 3])

@@ -1,13 +1,12 @@
 import pytest
 
 from holoviews.core.element import AttrTree
-from holoviews.element.comparison import ComparisonTestCase
 
 
-class AttrTreeTest(ComparisonTestCase):
+class AttrTreeTest:
     "For testing of AttrTree"
 
-    def setUp(self):
+    def setup_method(self):
         self.tree = AttrTree([(('A', 'I'), 1), (('B', 'II'), 2)])
 
     def test_access_nodes(self):
@@ -31,11 +30,11 @@ class AttrTreeTest(ComparisonTestCase):
             self.tree.c  # noqa: B018
 
     def test_number_getitem_key_error(self):
-        with self.assertRaises(KeyError):
+        with pytest.raises(KeyError):
             self.tree['2']
 
     def test_lowercase_getitem_key_error(self):
-        with self.assertRaises(KeyError):
+        with pytest.raises(KeyError):
             self.tree['c']
 
     def test_uppercase_getitem(self):
@@ -70,12 +69,12 @@ class AttrTreeTest(ComparisonTestCase):
 
     def test_delitem_on_node(self):
         del self.tree.B['II']
-        self.assertNotEqual(self.tree.B.II, 2)
+        assert self.tree.B.II != 2
         assert ('B', 'II') not in self.tree.data
         assert ('II',) not in self.tree.B
 
     def test_delitem_keyerror(self):
-        with self.assertRaises(KeyError):
+        with pytest.raises(KeyError):
             del self.tree['C']
 
     def test_deep_delitem(self):

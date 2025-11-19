@@ -9,11 +9,10 @@ from holoviews.core.ndmapping import (
 )
 from holoviews.core.overlay import Overlay
 from holoviews.element import Curve
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_data_equal, assert_element_equal
 
 
-class DimensionTest(ComparisonTestCase):
+class DimensionTest:
 
     def test_dimension_init(self):
         Dimension('Test dimension')
@@ -38,9 +37,9 @@ class DimensionTest(ComparisonTestCase):
         assert dim.pprint_value(4.23441, print_unit=True) == '4.2344 Twilight zones'
 
 
-class NdIndexableMappingTest(ComparisonTestCase):
+class NdIndexableMappingTest:
 
-    def setUp(self):
+    def setup_method(self):
         self.init_items_1D_list = [(1, 'a'), (5, 'b')]
         self.init_item_list = [((1, 2.0), 'a'), ((5, 3.0), 'b')]
         self.init_item_odict = dict([((1, 2.0), 'a'), ((5, 3.0), 'b')])
@@ -210,7 +209,7 @@ class NdIndexableMappingTest(ComparisonTestCase):
         assert ndmap['A'].data == nested_clone.data
 
 
-class UniformNdMappingTest(ComparisonTestCase):
+class UniformNdMappingTest:
 
     def test_collapse_nested(self):
         inner1 = UniformNdMapping({1: Dataset([(1, 2)], ['x', 'y'])}, 'Y')
@@ -221,9 +220,9 @@ class UniformNdMappingTest(ComparisonTestCase):
         assert_element_equal(collapsed, expected)
 
 
-class HoloMapTest(ComparisonTestCase):
+class HoloMapTest:
 
-    def setUp(self):
+    def setup_method(self):
         self.xs = range(11)
         self.y_ints = [i*2 for i in range(11)]
         self.ys = np.linspace(0, 1, 11)
@@ -249,7 +248,7 @@ class HoloMapTest(ComparisonTestCase):
                                         kdims=['x'], vdims=['y'])
                              for i in range(10)}, kdims=['z']).collapse('z', np.mean)
         expected = Dataset({'x':self.xs, 'y': self.ys * 4.5}, kdims=['x'], vdims=['y'])
-        self.compare_dataset(collapsed, expected)
+        assert_element_equal(collapsed, expected)
 
     def test_columns_sample_homogeneous(self):
         samples = self.columns.sample([0, 5, 10]).dimension_values('y')

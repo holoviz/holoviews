@@ -4,8 +4,6 @@ import sys
 
 import param
 
-from holoviews.element.comparison import ComparisonTestCase
-
 cwd = os.path.abspath(os.path.split(__file__)[0])
 sys.path.insert(0, os.path.join(cwd, '..'))
 
@@ -85,7 +83,7 @@ class MockLoggingHandler(logging.Handler):
             self.messages[level].pop(-1)
 
 
-class LoggingComparisonTestCase(ComparisonTestCase):
+class LoggingComparisonTestCase:
     """
     ComparisonTestCase with support for capturing param logging output.
 
@@ -94,16 +92,14 @@ class LoggingComparisonTestCase(ComparisonTestCase):
     self.log_handler.tail and self.log_handler.assertEndsWith methods.
     """
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
         log = param.parameterized.get_logger()
         self.handlers = log.handlers
         log.handlers = []
         self.log_handler = MockLoggingHandler(level='DEBUG')
         log.addHandler(self.log_handler)
 
-    def tearDown(self):
-        super().tearDown()
+    def teardown_method(self):
         log = param.parameterized.get_logger()
         log.handlers = self.handlers
         messages = self.log_handler.messages

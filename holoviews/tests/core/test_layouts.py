@@ -14,14 +14,13 @@ from holoviews import (
     Overlay,
 )
 from holoviews.element import Curve, HLine, Image
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_element_equal
 
 
-class CompositeTest(ComparisonTestCase):
+class CompositeTest:
     "For testing of basic composite element types"
 
-    def setUp(self):
+    def setup_method(self):
         self.data1 ='An example of arbitrary data'
         self.data2 = 'Another example...'
         self.data3 = 'A third example.'
@@ -130,7 +129,7 @@ class AdjointLayoutTest(CompositeTest):
 
     def test_adjointlayout_overlay_adjoined_holomap_nomatch_too_many(self):
         dim_view = self.view3.clone(kdims=['x', 'y'])
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             (self.view1 << self.view2 << self.view3) * (self.hmap << dim_view)
 
     @pytest.mark.usefixtures("mpl_backend")

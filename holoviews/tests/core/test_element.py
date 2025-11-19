@@ -1,10 +1,9 @@
 from holoviews.core import Dimension, Element
-from holoviews.element.comparison import ComparisonTestCase
 
 
-class ElementTests(ComparisonTestCase):
+class ElementTests:
 
-    def setUp(self):
+    def setup_method(self):
         self.element = Element([], kdims=['A', 'B'], vdims=['C'])
 
     def test_key_dimension_in_element(self):

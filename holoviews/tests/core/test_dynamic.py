@@ -10,7 +10,6 @@ from holoviews import Dimension, GridSpace, Layout, NdLayout, NdOverlay
 from holoviews.core.options import Store
 from holoviews.core.spaces import Callable, DynamicMap, HoloMap
 from holoviews.element import Curve, Image, Points, Scatter, Text
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation import histogram
 from holoviews.plotting.util import initialize_dynamic
 from holoviews.streams import (
@@ -44,7 +43,7 @@ def sine_array(phase, freq):
 class ExampleParameterized(param.Parameterized):
     example = param.Number(default=1)
 
-class DynamicMapConstructor(ComparisonTestCase):
+class DynamicMapConstructor:
 
     def test_simple_constructor_kdims(self):
         DynamicMap(lambda x: x, kdims=['test'])
@@ -52,13 +51,13 @@ class DynamicMapConstructor(ComparisonTestCase):
     def test_simple_constructor_invalid_no_kdims(self):
         regexp = ("Callable '<lambda>' accepts more positional arguments than there are "
                   "kdims and stream parameters")
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             DynamicMap(lambda x: x)
 
     def test_simple_constructor_invalid(self):
         regexp = (r"Callback '<lambda>' signature over \['x'\] does not accommodate "
                   r"required kdims \['x', 'y'\]")
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             DynamicMap(lambda x: x, kdims=['x','y'])
 
     def test_simple_constructor_streams(self):
@@ -81,24 +80,24 @@ class DynamicMapConstructor(ComparisonTestCase):
 
     def test_simple_constructor_streams_dict_invalid(self):
         regexp = "Cannot handle 'x' value 3 in streams dictionary"
-        with self.assertRaisesRegex(TypeError, regexp):
+        with pytest.raises(TypeError, match=regexp):
             DynamicMap(lambda x: x, streams=dict(x=3))
 
     def test_simple_constructor_streams_invalid_uninstantiated(self):
         regexp = ("The supplied streams list contains objects "
                   "that are not Stream instances:(.+?)")
-        with self.assertRaisesRegex(TypeError, regexp):
+        with pytest.raises(TypeError, match=regexp):
             DynamicMap(lambda x: x, streams=[PointerX])
 
     def test_simple_constructor_streams_invalid_type(self):
         regexp = ("The supplied streams list contains objects "
                   "that are not Stream instances:(.+?)")
-        with self.assertRaisesRegex(TypeError, regexp):
+        with pytest.raises(TypeError, match=regexp):
             DynamicMap(lambda x: x, streams=[3])
 
     def test_simple_constructor_streams_invalid_mismatch(self):
         regexp = "Callable '<lambda>' missing keywords to accept stream parameters: y"
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             DynamicMap(lambda x: x, streams=[PointerXY()])
 
     def test_simple_constructor_positional_stream_args(self):
@@ -108,11 +107,11 @@ class DynamicMapConstructor(ComparisonTestCase):
 
         def foo(x): return x
         regexp = "Callable 'foo' missing keywords to accept stream parameters: y"
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             DynamicMap(foo, streams=[PointerXY()])
 
 
-class DynamicMapPositionalStreamArgs(ComparisonTestCase):
+class DynamicMapPositionalStreamArgs:
     def test_positional_stream_args_without_streams(self):
         fn = lambda i: Curve([i, i])
         dmap = DynamicMap(fn, kdims=['i'], positional_stream_args=True)
@@ -169,7 +168,7 @@ class DynamicMapPositionalStreamArgs(ComparisonTestCase):
         assert_element_equal(dmap[()], Points([1, 2]) + Curve([3, 4]))
 
 
-class DynamicMapMethods(ComparisonTestCase):
+class DynamicMapMethods:
 
     def test_deep_relabel_label(self):
         fn = lambda i: Image(sine_array(0,i))
@@ -418,7 +417,7 @@ class DynamicMapMethods(ComparisonTestCase):
         dmap = DynamicMap(history_callback, kdims=['x', 'y'])
         exception = ("DynamicMap does not allow dropping dimensions, "
                      "reindex may only be used to reorder dimensions.")
-        with self.assertRaisesRegex(ValueError, exception):
+        with pytest.raises(ValueError, match=exception):
             dmap.reindex(['x'])
 
     def test_dynamic_groupby_kdims_and_streams(self):
@@ -521,7 +520,7 @@ class DynamicMapOptionsTests(CustomBackendTestCase):
         assert stream is original_dmap.streams[0]
 
 
-class DynamicMapUnboundedProperty(ComparisonTestCase):
+class DynamicMapUnboundedProperty:
 
     def test_callable_bounded_init(self):
         fn = lambda i: Image(sine_array(0,i))
@@ -554,7 +553,7 @@ class DynamicMapUnboundedProperty(ComparisonTestCase):
         assert dmap.redim.range(z=(-0.5,0.5)).unbounded == []
 
 
-class DynamicMapCurrentKeyProperty(ComparisonTestCase):
+class DynamicMapCurrentKeyProperty:
 
     def test_current_key_None_on_init(self):
         fn = lambda i: Image(sine_array(0,i))
@@ -584,9 +583,9 @@ class DynamicMapCurrentKeyProperty(ComparisonTestCase):
         assert dmap.current_key != dmap.last_key
 
 
-class DynamicTransferStreams(ComparisonTestCase):
+class DynamicTransferStreams:
 
-    def setUp(self):
+    def setup_method(self):
         self.dimstream = PointerX(x=0)
         self.stream = PointerY(y=0)
         self.dmap = DynamicMap(lambda x, y, z: Curve([x, y, z]),
@@ -636,18 +635,18 @@ class DynamicTransferStreams(ComparisonTestCase):
     def test_dynamic_util_inherits_dim_streams_clash(self):
         exception = (r"The supplied stream objects PointerX\(x=None\) and "
                      r"PointerX\(x=0\) clash on the following parameters: \['x'\]")
-        with self.assertRaisesRegex(Exception, exception):
+        with pytest.raises(Exception, match=exception):
             Dynamic(self.dmap, streams=[PointerX])
 
     def test_dynamic_util_inherits_dim_streams_clash_dict(self):
         exception = (r"The supplied stream objects PointerX\(x=None\) and "
                      r"PointerX\(x=0\) clash on the following parameters: \['x'\]")
-        with self.assertRaisesRegex(Exception, exception):
+        with pytest.raises(Exception, match=exception):
             Dynamic(self.dmap, streams=dict(x=PointerX.param.x))
 
 
 
-class DynamicTestOperation(ComparisonTestCase):
+class DynamicTestOperation:
 
     def test_dynamic_operation(self):
         fn = lambda i: Image(sine_array(0,i))
@@ -705,7 +704,7 @@ class DynamicTestOperation(ComparisonTestCase):
         assert stream.bin_range == (0, 1)
 
 
-class DynamicTestOverlay(ComparisonTestCase):
+class DynamicTestOverlay:
 
     def test_dynamic_element_overlay(self):
         fn = lambda i: Image(sine_array(0,i))
@@ -778,11 +777,11 @@ class DynamicTestOverlay(ComparisonTestCase):
         dmap = DynamicMap(fn, kdims=[], streams=[xy])
 
         regexp = '(.+?)do not correspond to stream parameters'
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             dmap.event(x=1, y=2)
 
 
-class DynamicCallableMemoize(ComparisonTestCase):
+class DynamicCallableMemoize:
 
     def test_dynamic_keydim_not_memoize(self):
         dmap = DynamicMap(lambda x: Curve([(0, x)]), kdims=['x'])
@@ -846,7 +845,7 @@ class DynamicCallableMemoize(ComparisonTestCase):
         assert_element_equal(dmap[()], Curve([1, 1, 1, 2, 2, 2]))
 
 
-class DynamicMapRX(ComparisonTestCase):
+class DynamicMapRX:
 
     def test_dynamic_rx(self):
         freq = param.rx(1)
@@ -864,9 +863,9 @@ class DynamicMapRX(ComparisonTestCase):
         assert_element_equal(dmap[()], Curve(sine_array(0, 2)))
 
 
-class StreamSubscribersAddandClear(ComparisonTestCase):
+class StreamSubscribersAddandClear:
 
-    def setUp(self):
+    def setup_method(self):
         self.fn1 = lambda x: x
         self.fn2 = lambda x: x**2
         self.fn3 = lambda x: x**3
@@ -904,7 +903,7 @@ class StreamSubscribersAddandClear(ComparisonTestCase):
         assert pointerx.subscribers == [self.fn1,self.fn2]
 
 
-class DynamicStreamReset(ComparisonTestCase):
+class DynamicStreamReset:
 
     def test_dynamic_callable_stream_transient(self):
         # Enable transient stream meaning memoization only happens when
@@ -994,7 +993,7 @@ class DynamicStreamReset(ComparisonTestCase):
 
 
 
-class TestPeriodicStreamUpdate(ComparisonTestCase):
+class TestPeriodicStreamUpdate:
 
     def test_periodic_counter_blocking(self):
         class Counter:
@@ -1029,7 +1028,7 @@ class TestPeriodicStreamUpdate(ComparisonTestCase):
         # Add stream subscriber mocking plot
         xval.add_subscriber(lambda **kwargs: dmap[()])
 
-        self.assertNotEqual(xval.x, 100)
+        assert xval.x != 100
         dmap.periodic(0.0001, 100, param_fn=lambda i: {'x': i}, block=False)
         time.sleep(2)
         if not dmap.periodic.instance.completed:
@@ -1079,7 +1078,7 @@ class DynamicCollate(LoggingComparisonTestCase):
         stream = PointerXY()
         cb_callable = Callable(callback)
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
-        with self.assertRaisesRegex(ValueError, 'The following streams are set to be automatically linked'):
+        with pytest.raises(ValueError, match='The following streams are set to be automatically linked'):
             dmap.collate()
 
     def test_dynamic_collate_layout_raise_ambiguous_remapping_error(self):
@@ -1088,7 +1087,7 @@ class DynamicCollate(LoggingComparisonTestCase):
         stream = PointerXY()
         cb_callable = Callable(callback, stream_mapping={'Image': [stream]})
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
-        with self.assertRaisesRegex(ValueError, 'The stream_mapping supplied on the Callable is ambiguous'):
+        with pytest.raises(ValueError, match='The stream_mapping supplied on the Callable is ambiguous'):
             dmap.collate()
 
     def test_dynamic_collate_layout_with_integer_stream_mapping(self):
@@ -1207,7 +1206,7 @@ class DynamicCollate(LoggingComparisonTestCase):
         layout = dmap.collate()
         dmap1, _dmap2 = layout.values()
         err = 'Collated DynamicMaps must return GridSpace with consistent number of items.'
-        with self.assertRaisesRegex(ValueError, err):
+        with pytest.raises(ValueError, match=err):
             dmap1[4]
         self.log_handler.assertContains('WARNING', err)
 
@@ -1220,6 +1219,6 @@ class DynamicCollate(LoggingComparisonTestCase):
         dmap1, _dmap2 = layout.values()
         err = ('The objects in a GridSpace returned by a DynamicMap must '
                'consistently return the same number of items of the same type.')
-        with self.assertRaisesRegex(ValueError, err):
+        with pytest.raises(ValueError, match=err):
             dmap1[3]
         self.log_handler.assertContains('WARNING', err)

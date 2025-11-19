@@ -2,15 +2,17 @@
 Test cases for the composite types built with + and *, i.e. Layout
 and Overlay (does *not* test HoloMaps).
 """
+import re
+
+import pytest
 
 from holoviews import Element, HoloMap, Layout, Overlay
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_element_equal
 
 
-class ElementTestCase(ComparisonTestCase):
+class ElementTestCase:
 
-    def setUp(self):
+    def setup_method(self):
         self.el1 = Element('data1')
         self.el2 = Element('data2')
         self.el3 = Element('data3')
@@ -25,9 +27,6 @@ class ElementTestCase(ComparisonTestCase):
 
 
 class LayoutTestCase(ElementTestCase):
-
-    def setUp(self):
-        super().setUp()
 
     def test_layouttree_keys_1(self):
         t = self.el1 + self.el2
@@ -433,7 +432,6 @@ class CompositeTestCase(ElementTestCase):
         assert_element_equal(t['ValA']['I'].get('ValA').get('LabelB'), self.el8)
 
     def test_invalid_tree_structure(self):
-        try:
+        msg = re.escape("unsupported operand type(s) for *: 'Layout' and 'Layout'")
+        with pytest.raises(TypeError, match=msg):
             (self.el1 + self.el2) * (self.el1 + self.el2)
-        except TypeError as e:
-            assert str(e) == "unsupported operand type(s) for *: 'Layout' and 'Layout'"

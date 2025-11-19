@@ -5,12 +5,12 @@ how DynamicMap validates and invokes Callable based on its signature.
 from functools import partial
 
 import param
+import pytest
 
 from holoviews import streams
 from holoviews.core.operation import OperationCallable
 from holoviews.core.spaces import Callable, DynamicMap, Generator
 from holoviews.element import Scatter
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation import contours
 from holoviews.testing import assert_element_equal
 
@@ -42,7 +42,7 @@ class ParamFunc(param.ParameterizedFunction):
         return a * p.b
 
 
-class TestCallableName(ComparisonTestCase):
+class TestCallableName:
 
     def test_simple_function_name(self):
         def foo(x,y): pass
@@ -53,7 +53,7 @@ class TestCallableName(ComparisonTestCase):
 
     def test_partial_name(self):
         cb = Callable(partial(lambda x,y: x, y=4))
-        self.assertEqual(cb.name.startswith('functools.partial('), True)
+        assert cb.name.startswith('functools.partial(')
 
     def test_generator_expression_name(self):
         cb = Generator(i for i in range(10))
@@ -134,7 +134,7 @@ class TestSimpleCallableInvocation(LoggingComparisonTestCase):
         assert Callable(ParamFunc.instance())(3,b=5) == 15
 
 
-class TestCallableArgspec(ComparisonTestCase):
+class TestCallableArgspec:
 
     def test_callable_fn_argspec(self):
         def callback(x): return x
@@ -173,7 +173,7 @@ class TestCallableArgspec(ComparisonTestCase):
         assert Callable(ParamFunc.instance()).argspec.varargs is None
 
 
-class TestKwargCallableInvocation(ComparisonTestCase):
+class TestKwargCallableInvocation:
     """
     Test invocation of Callable with kwargs, even for callbacks with
     positional arguments.
@@ -199,7 +199,7 @@ class TestKwargCallableInvocation(ComparisonTestCase):
         assert Callable(ParamFunc)(a=3,b=5) == 15
 
 
-class TestMixedCallableInvocation(ComparisonTestCase):
+class TestMixedCallableInvocation:
     """
     Test mixed invocation of Callable with kwargs.
     """
@@ -215,7 +215,7 @@ class TestMixedCallableInvocation(ComparisonTestCase):
         assert Callable(mixed_example)(3,5,5) == 33
 
 
-class TestLastArgsKwargs(ComparisonTestCase):
+class TestLastArgsKwargs:
 
     def test_args_none_before_invocation(self):
         c = Callable(lambda x,y: x+y)
@@ -236,7 +236,7 @@ class TestLastArgsKwargs(ComparisonTestCase):
         assert c.kwargs == dict(x=1,y=4)
 
 
-class TestDynamicMapInvocation(ComparisonTestCase):
+class TestDynamicMapInvocation:
     """
     Test that DynamicMap passes kdims and stream parameters correctly to
     Callables.
@@ -269,7 +269,7 @@ class TestDynamicMapInvocation(ComparisonTestCase):
             return Scatter([(B,2)], label=A)
 
         regexp="Callable 'fn' accepts more positional arguments than there are kdims and stream parameters"
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             DynamicMap(fn, kdims=['A'])
 
 
@@ -318,7 +318,7 @@ class TestDynamicMapInvocation(ComparisonTestCase):
 
         xy = streams.PointerXY(x=1, y=2)
         regexp = "Callback 'fn' signature over (.+?) does not accommodate required kdims"
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             DynamicMap(fn, kdims=['A'], streams=[xy])
 
     def test_dynamic_split_mismatched_kdims(self):
@@ -342,7 +342,7 @@ class TestDynamicMapInvocation(ComparisonTestCase):
         xy = streams.PointerXY(x=1, y=2)
         regexp = ("Unmatched positional kdim arguments only allowed "
                   "at the start of the signature")
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             DynamicMap(fn, kdims=['A'], streams=[xy])
 
     def test_dynamic_split_args_and_kwargs(self):

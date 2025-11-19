@@ -4,7 +4,6 @@ Unit tests of the helper functions in core.utils
 import datetime
 import math
 import os
-import unittest
 from itertools import product
 from pathlib import Path
 
@@ -40,7 +39,6 @@ from holoviews.core.util import (
     wrap_tuple_streams,
 )
 from holoviews.core.util.types import masked_types
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PointerXY
 from holoviews.testing import assert_data_equal
 
@@ -61,7 +59,7 @@ def with_and_without_pandas(func):
   return pytest.mark.parametrize("with_pandas", [True, False], indirect=True, ids=["with_pandas", "without_pandas"])(func)
 
 
-class TestDeepHash(ComparisonTestCase):
+class TestDeepHash:
     """
     Tests of deephash function used for memoization.
     """
@@ -72,19 +70,19 @@ class TestDeepHash(ComparisonTestCase):
     def test_deephash_list_inequality(self):
         obj1 = [1,2,3]
         obj2 = [1,2,3,4]
-        self.assertNotEqual(deephash(obj1), deephash(obj2))
+        assert deephash(obj1) != deephash(obj2)
 
     def test_deephash_set_equality(self):
         assert deephash({1,2,3}) == deephash({1,3,2})
 
     def test_deephash_set_inequality(self):
-        self.assertNotEqual(deephash({1,2,3}), deephash({1,3,4}))
+        assert deephash({1,2,3}) != deephash({1,3,4})
 
     def test_deephash_dict_equality_v1(self):
         assert deephash({1:'a',2:'b'}) == deephash({2:'b', 1:'a'})
 
     def test_deephash_dict_equality_v2(self):
-        self.assertNotEqual(deephash({1:'a',2:'b'}), deephash({2:'b', 1:'c'}))
+        assert deephash({1:'a',2:'b'}) != deephash({2:'b', 1:'c'})
 
     def test_deephash_odict_equality_v1(self):
         odict1 = dict([(1,'a'), (2,'b')])
@@ -94,7 +92,7 @@ class TestDeepHash(ComparisonTestCase):
     def test_deephash_odict_equality_v2(self):
         odict1 = dict([(1,'a'), (2,'b')])
         odict2 = dict([(1,'a'), (2,'c')])
-        self.assertNotEqual(deephash(odict1), deephash(odict2))
+        assert deephash(odict1) != deephash(odict2)
 
     def test_deephash_numpy_equality(self):
         assert deephash(np.array([1,2,3])) == deephash(np.array([1,2,3]))
@@ -102,43 +100,50 @@ class TestDeepHash(ComparisonTestCase):
     def test_deephash_numpy_inequality(self):
         arr1 = np.array([1,2,3])
         arr2 = np.array([1,2,4])
-        self.assertNotEqual(deephash(arr1), deephash(arr2))
+        assert deephash(arr1) != deephash(arr2)
 
     def test_deephash_dataframe_equality(self):
-        assert deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]})) == deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]}))
+        obj1 = deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]}))
+        obj2 = deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]}))
+        assert obj1 == obj2
 
     def test_deephash_dataframe_column_inequality(self):
-        self.assertNotEqual(deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]})),
-                            deephash(pd.DataFrame({'a':[1,2,3],'c':[4,5,6]})))
+        obj1 = deephash(pd.DataFrame({'a':[1, 2, 3], 'b':[4, 5, 6]}))
+        obj2 = deephash(pd.DataFrame({'a':[1, 2, 3], 'c':[4, 5, 6]}))
+        assert obj1 != obj2
 
     def test_deephash_dataframe_index_inequality(self):
-        self.assertNotEqual(deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]})),
-                            deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]},
-                                                  index=pd.Series([0, 1, 2], name='Index'))))
+        obj1 = deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]}))
+        obj2 = deephash(
+            pd.DataFrame({'a':[1, 2, 3], 'b':[4, 5, 6]}, index=pd.Series([0, 1, 2], name='Index'))
+        )
+        assert obj1 != obj2
 
     def test_deephash_dataframe_inequality(self):
-        self.assertNotEqual(deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]})),
-                            deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,8]})))
+        obj1 = deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]}))
+        obj2 = deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,8]}))
+        assert obj1 != obj2
 
     def test_deephash_series_equality(self):
         assert deephash(pd.Series([1,2,3])) == deephash(pd.Series([1,2,3]))
 
     def test_deephash_series_name_inequality(self):
-        self.assertNotEqual(deephash(pd.Series([1,2,3], name='Foo')),
-                            deephash(pd.Series([1,2,3], name='Bar')))
+        obj1 = deephash(pd.Series([1,2,3], name='Foo'))
+        obj2 = deephash(pd.Series([1,2,3], name='Bar'))
+        assert obj1 != obj2
 
     def test_deephash_series_index_inequality(self):
-        self.assertNotEqual(deephash(pd.Series([1,2,3], index=pd.Series([0, 1, 2], name='Index'))),
-                            deephash(pd.Series([1,2,3], index=pd.Series([2, 1, 0], name='Index'))))
-
+        obj1 = deephash(pd.Series([1,2,3], index=pd.Series([0, 1, 2], name='Index')))
+        obj2 = deephash(pd.Series([1,2,3], index=pd.Series([2, 1, 0], name='Index')))
+        assert obj1 != obj2
 
     def test_deephash_series_index_name_inequality(self):
-        self.assertNotEqual(deephash(pd.Series([1,2,3], index=pd.Series([0, 1, 2], name='Foo'))),
-                            deephash(pd.Series([1,2,3], index=pd.Series([0, 1, 2], name='Bar'))))
+        obj1 = deephash(pd.Series([1,2,3], index=pd.Series([0, 1, 2], name='Foo')))
+        obj2 = deephash(pd.Series([1,2,3], index=pd.Series([0, 1, 2], name='Bar')))
+        assert obj1 != obj2
 
     def test_deephash_series_inequality(self):
-        self.assertNotEqual(deephash(pd.Series([1,2,3])),
-                            deephash(pd.Series([1,2,7])))
+        assert deephash(pd.Series([1, 2, 3])) != deephash(pd.Series([1, 2, 7]))
 
     def test_deephash_datetime_equality(self):
         dt1 = datetime.datetime(1,2,3)
@@ -148,7 +153,7 @@ class TestDeepHash(ComparisonTestCase):
     def test_deephash_datetime_inequality(self):
         dt1 = datetime.datetime(1,2,3)
         dt2 = datetime.datetime(1,2,5)
-        self.assertNotEqual(deephash(dt1), deephash(dt2))
+        assert deephash(dt1) != deephash(dt2)
 
     def test_deephash_nested_native_equality(self):
         obj1 = [[1,2], (3,6,7, [True]), 'a', 9.2, 42, {1:3,2:'c'}]
@@ -158,7 +163,7 @@ class TestDeepHash(ComparisonTestCase):
     def test_deephash_nested_native_inequality(self):
         obj1 = [[1,2], (3,6,7, [False]), 'a', 9.2, 42, {1:3,2:'c'}]
         obj2 = [[1,2], (3,6,7, [True]), 'a', 9.2, 42, {1:3,2:'c'}]
-        self.assertNotEqual(deephash(obj1), deephash(obj2))
+        assert deephash(obj1) != deephash(obj2)
 
     def test_deephash_nested_mixed_equality(self):
         obj1 = [datetime.datetime(1,2,3), {1,2,3},
@@ -180,10 +185,10 @@ class TestDeepHash(ComparisonTestCase):
                 pd.DataFrame({'a':[1,2],'b':[3,4]}),
                 np.array([1,2,3]), {'a':'b', '1':True},
                 dict([(1,'a'),(2,'b')]), np.int64(34)]
-        self.assertNotEqual(deephash(obj1), deephash(obj2))
+        assert deephash(obj1) != deephash(obj2)
 
 
-class TestAllowablePrefix(ComparisonTestCase):
+class TestAllowablePrefix:
     """
     Tests of allowable and hasprefix method.
     """
@@ -216,7 +221,7 @@ class TestAllowablePrefix(ComparisonTestCase):
         assert prefixed
 
 
-class TestTreeAttribute(ComparisonTestCase):
+class TestTreeAttribute:
 
     def test_simple_lowercase_string(self):
         assert not tree_attribute('lowercase')
@@ -229,7 +234,7 @@ class TestTreeAttribute(ComparisonTestCase):
 
 
 
-class TestSanitization(ComparisonTestCase):
+class TestSanitization:
     """
     Tests of sanitize_identifier
     """
@@ -320,12 +325,12 @@ class TestSanitization(ComparisonTestCase):
         sanitize_identifier.eliminations.remove('dollar')
 
 
-class TestFindRange(unittest.TestCase):
+class TestFindRange:
     """
     Tests for find_range function.
     """
 
-    def setUp(self):
+    def setup_method(self):
         self.int_vals = [1, 5, 3, 9, 7, 121, 14]
         self.float_vals = [0.38, 0.121, -0.1424, 5.12]
         self.nan_floats = [np.nan, 0.32, 1.42, -0.32]
@@ -347,12 +352,12 @@ class TestFindRange(unittest.TestCase):
         assert find_range(self.float_vals, soft_range=(np.nan, 100)) == (-0.1424, 100)
 
 
-class TestDimensionRange(unittest.TestCase):
+class TestDimensionRange:
     """
     Tests for dimension_range function.
     """
 
-    def setUp(self):
+    def setup_method(self):
         self.date_range = (np.datetime64(datetime.datetime(2017, 1, 1)),
                            np.datetime64(datetime.datetime(2017, 1, 2)))
         self.date_range2 = (np.datetime64(datetime.datetime(2016, 12, 31)),
@@ -369,12 +374,12 @@ class TestDimensionRange(unittest.TestCase):
         assert drange == self.date_range2
 
 
-class TestMaxRange(unittest.TestCase):
+class TestMaxRange:
     """
     Tests for max_range function.
     """
 
-    def setUp(self):
+    def setup_method(self):
         self.ranges1 = [(-0.2, 0.5), (0, 1), (-0.37, 1.02), (np.nan, 0.3)]
         self.ranges2 = [(np.nan, np.nan), (np.nan, np.nan)]
 
@@ -392,7 +397,7 @@ class TestMaxRange(unittest.TestCase):
         assert max_range(periods) == expected
 
 
-class TestWrapTupleStreams(unittest.TestCase):
+class TestWrapTupleStreams:
 
 
     def test_no_streams(self):
@@ -424,7 +429,7 @@ class TestWrapTupleStreams(unittest.TestCase):
         assert result == (0,5)
 
 
-class TestMergeDimensions(unittest.TestCase):
+class TestMergeDimensions:
 
     def test_merge_dimensions(self):
         dimensions = merge_dimensions([[Dimension('A')], [Dimension('A'), Dimension('B')]])
@@ -437,7 +442,7 @@ class TestMergeDimensions(unittest.TestCase):
         assert dimensions[0].values == [0, 1, 2]
 
 
-class TestTreePathUtils(unittest.TestCase):
+class TestTreePathUtils:
 
     def test_get_path_with_label(self):
         path = get_path(Element('Test', label='A'))
@@ -498,7 +503,7 @@ class TestTreePathUtils(unittest.TestCase):
         assert new_path == (*path[:-1], 'I')
 
 
-class TestDatetimeUtils(unittest.TestCase):
+class TestDatetimeUtils:
 
     def test_compute_density_float(self):
         assert compute_density(0, 1, 10) == 10
@@ -602,7 +607,7 @@ class TestDatetimeUtils(unittest.TestCase):
             x2 = dt_to_int(pd.to_datetime(value))
             assert x1 == x2
 
-class TestNumericUtilities(ComparisonTestCase):
+class TestNumericUtilities:
 
     def test_isfinite_none(self):
         assert not isfinite(None)
@@ -704,12 +709,12 @@ class TestNumericUtilities(ComparisonTestCase):
         assert list(isfinite(masked)) == [True, False, True]
 
 
-class TestComputeEdges(ComparisonTestCase):
+class TestComputeEdges:
     """
     Tests for compute_edges function.
     """
 
-    def setUp(self):
+    def setup_method(self):
         self.array1 = [.5, 1.5, 2.5]
         self.array2 = [.5, 1.0000001, 1.5]
         self.array3 = [1, 2, 4]
@@ -727,9 +732,9 @@ class TestComputeEdges(ComparisonTestCase):
                          np.array([0.5, 1.5, 3.0, 5.0]))
 
 
-class TestCrossIndex(ComparisonTestCase):
+class TestCrossIndex:
 
-    def setUp(self):
+    def setup_method(self):
         self.values1 = ['A', 'B', 'C']
         self.values2 = [1, 2, 3, 4]
         self.values3 = ['?', '!']
@@ -766,7 +771,7 @@ class TestCrossIndex(ComparisonTestCase):
         assert cross_index(values, 500001) == ('D', 423, 'c', '1')
 
 
-class TestClosestMatch(ComparisonTestCase):
+class TestClosestMatch:
 
     def test_complete_match_overlay(self):
         specs = [(0, ('Curve', 'Curve', 'I')), (1, ('Points', 'Points', 'I'))]

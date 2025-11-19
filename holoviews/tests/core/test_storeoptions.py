@@ -7,7 +7,6 @@ import pytest
 
 from holoviews import Curve, HoloMap, Image, Overlay
 from holoviews.core.options import Store, StoreOptions
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting import bokeh  # noqa: F401
 
 try:
@@ -15,9 +14,9 @@ try:
 except ImportError:
     mpl = None
 
-class TestStoreOptionsMerge(ComparisonTestCase):
+class TestStoreOptionsMerge:
 
-    def setUp(self):
+    def setup_method(self):
         Store.current_backend = 'matplotlib'
         self.expected = {'Image': {'plot': {'fig_size': 150},
                                    'style': {'cmap': 'Blues'}}}
@@ -41,13 +40,13 @@ class TestStoreOptionsMerge(ComparisonTestCase):
         assert out == self.expected
 
 
-class TestStoreOptsMethod(ComparisonTestCase):
+class TestStoreOptsMethod:
     """
     The .opts method makes use of most of the functionality in
     StoreOptions.
     """
 
-    def setUp(self):
+    def setup_method(self):
         if mpl is None:
             pytest.skip("Matplotlib required to test Store inheritance")
 
