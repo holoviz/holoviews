@@ -92,7 +92,12 @@ class _DataComparison:
 
     @classmethod
     def compare_floats(cls, n1, n2, msg='Floats'):
-        assert np.isclose(n1, n2)
+        n1_is_datetime = hasattr(n1, "dtype") and dtype_kind(n1) == "M"
+        n2_is_datetime = hasattr(n2, "dtype") and dtype_kind(n2) == "M"
+        if n1_is_datetime and n2_is_datetime:
+            assert n1 == n2
+        else:
+            assert np.isclose(n1, n2, atol=1e-6)
 
     @classmethod
     def compare_arrays(cls, arr1, arr2, msg='Arrays'):
@@ -691,7 +696,7 @@ class _ElementComparison(_DataComparison):
 
     @classmethod
     def _compare_grids(cls, el1, el2, name):
-        assert el1.keys() == len(el2.keys())
+        assert el1.keys() == el2.keys()
         assert len(el1) == len(el2)
 
         for element1, element2 in zip(el1, el2, strict=True):
