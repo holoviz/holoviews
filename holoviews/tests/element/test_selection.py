@@ -27,7 +27,7 @@ from holoviews.element import (
     VSpan,
 )
 from holoviews.element.selection import spatial_select_columnar
-from holoviews.testing import assert_data_equal, assert_element_equal
+from holoviews.testing import _DataComparison, assert_data_equal, assert_element_equal
 from holoviews.util.transform import dim
 
 try:
@@ -59,9 +59,8 @@ dd_available = pytest.mark.skipif(dd is None, reason='dask.dataframe not availab
 
 
 def assert_dict_with_numpy(dct1, dct2):
-    assert dct1.keys() == dct2.keys()
-    for k in dct1:
-        np.testing.assert_equal(dct1[k], dct2[k])
+    _DataComparison.compare_mappings(dct1, dct2)
+
 
 class TestIndexExpr:
 

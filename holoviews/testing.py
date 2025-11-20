@@ -17,6 +17,8 @@ thus would not supply any information regarding *why* two elements are
 considered different.
 
 """
+from collections.abc import Collection, Mapping
+
 import narwhals.stable.v2 as nw
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_array_equal
@@ -91,11 +93,29 @@ class _DataComparison:
         return cls.equality_funcs
 
     @classmethod
+    def compare_simple(cls, first, second, msg=None):
+        assert first == second
+
+    @classmethod
+    def compare_collections(cls, c1, c2, msg=None):
+        if isinstance(c1, str):
+            assert c1 == c2
+            return
+        assert len(c1) == len(c2)
+        for item1, item2 in zip(c1, c2, strict=True):
+            cls.assert_equal(item1, item2)
+
+    @classmethod
+    def compare_mappings(cls, m1, m2, msg=None):
+        assert m1.keys() == m2.keys()
+        for item1, item2 in zip(m1.values(), m2.values(), strict=True):
+            cls.assert_equal(item1, item2)
+
+    @classmethod
     def compare_floats(cls, n1, n2, msg='Floats'):
-        n1_is_datetime = hasattr(n1, "dtype") and dtype_kind(n1) == "M"
-        n2_is_datetime = hasattr(n2, "dtype") and dtype_kind(n2) == "M"
-        if n1_is_datetime and n2_is_datetime:
-            assert n1 == n2
+        is_numpy = hasattr(n1, "dtype") and hasattr(n2, "dtype")
+        if is_numpy:
+            cls.compare_arrays(n1, n2)
         else:
             assert np.isclose(n1, n2, atol=1e-6)
 
@@ -139,15 +159,6 @@ class _DataComparison:
             assert_series_equal(df1[col], df2[col])
 
     @classmethod
-    def _simple_equality(cls, first, second, msg=None):
-        # Doing comparison twice for better error output
-        check = first == second
-        if isinstance(check, bool):
-            assert first == second
-        else:
-            assert (first == second).all()
-
-    @classmethod
     def assert_equal(cls, first, second, msg=None):
         """Classmethod equivalent to unittest.TestCase method
 
@@ -156,15 +167,15 @@ class _DataComparison:
         if type(first) is type(second):
             asserter = cls.equality_funcs.get(type(first))
 
-            if asserter is not None:
-                if isinstance(asserter, str):
-                    asserter = getattr(cls, asserter)
-
-        if is_float(first) and is_float(second):
-            asserter = cls.compare_floats
-
         if asserter is None:
-            asserter = cls._simple_equality
+            if is_float(first) and is_float(second):
+                asserter = cls.compare_floats
+            elif isinstance(first, Collection) and isinstance(second, Collection):
+                asserter = cls.compare_collections
+            elif isinstance(first, Mapping) and isinstance(second, Mapping):
+                asserter = cls.compare_mappings
+            else:
+                asserter = cls.compare_simple
 
         asserter(first, second, msg=msg)
 
@@ -275,7 +286,7 @@ class _ElementComparison(_DataComparison):
         # Option objects
         cls.equality_funcs[Options] =     cls.compare_options
         cls.equality_funcs[Cycle] =       cls.compare_cycles
-        cls.equality_funcs[BoundingBox] = cls._simple_equality
+        cls.equality_funcs[BoundingBox] = cls.compare_simple
 
         return cls.equality_funcs
 

@@ -1,12 +1,9 @@
 """
 Test cases for Dimension and Dimensioned object comparison.
 """
-import re
-
 import pytest
 
 from holoviews.core import Dimension, Dimensioned
-from holoviews.core.util import NUMPY_GE_2_0_0
 from holoviews.testing import assert_element_equal
 
 
@@ -49,7 +46,7 @@ class DimensionsComparisonTestCase:
             assert_element_equal(self.dimension1, self.dimension11)
 
     def test_dimension_comparison_range_unequal1(self):
-        msg = r"\(0, 1\) == \(0, 2\)"
+        msg = "1 == 2"
         with pytest.raises(AssertionError, match=msg):
             assert_element_equal(self.dimension1, self.dimension3)
 
@@ -59,7 +56,7 @@ class DimensionsComparisonTestCase:
             assert_element_equal(self.dimension4, self.dimension5)
 
     def test_dimension_comparison_range_unequal2(self):
-        msg = r"\(None, None\) == \(0, 1\)"
+        msg = "None == 0"
         with pytest.raises(AssertionError, match=msg):
             assert_element_equal(self.dimension5, self.dimension6)
 
@@ -69,11 +66,8 @@ class DimensionsComparisonTestCase:
             assert_element_equal(self.dimension6, self.dimension7)
 
     def test_dimension_comparison_values_unequal(self):
-        if NUMPY_GE_2_0_0:
-            msg = "[] == [np.str_('a'), np.str_('b')]"
-        else:
-            msg = "[] != ['a', 'b']"
-        with pytest.raises(AssertionError, match=re.escape(msg)):
+        msg = "0 == 2"
+        with pytest.raises(AssertionError, match=msg):
             assert_element_equal(self.dimension4, self.dimension8)
 
     def test_dimension_comparison_types_unequal(self):

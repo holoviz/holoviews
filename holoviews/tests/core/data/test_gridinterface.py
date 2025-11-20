@@ -358,10 +358,9 @@ class GridInterfaceTests(BaseGridInterfaceTests):
 
 class DaskGridInterfaceTests(GridInterfaceTests):
 
-    def setup_method(self):
+    def setup_class(self):
         if da is None:
             pytest.skip('DaskGridInterfaceTests requires dask.')
-        super().setup_method()
 
     def init_column_data(self):
         self.xs = np.arange(11)
@@ -375,7 +374,6 @@ class DaskGridInterfaceTests(GridInterfaceTests):
         )
 
     def init_grid_data(self):
-        import dask.array as da
         self.grid_xs = np.array([0, 1])
         self.grid_ys = np.array([0.1, 0.2, 0.3])
         self.grid_zs = da.from_array(np.array([[0, 1], [2, 3], [4, 5]]), 3)
@@ -389,6 +387,12 @@ class DaskGridInterfaceTests(GridInterfaceTests):
             (self.grid_xs[::-1], self.grid_ys[::-1], self.grid_zs), ['x', 'y'], ['z']
         )
 
+    def test_select_lazy(self):
+        arr = da.from_array(np.arange(1, 12), 3)
+        ds = Dataset({'x': range(11), 'y': arr}, 'x', 'y')
+        assert isinstance(ds.select(x=(0, 5)).data['y'], da.Array)
+
+    # TODO: Some of the test below are copy/pasted
     def test_dataset_array_hm(self):
         assert_data_equal(self.dataset_hm.array(),
                          np.column_stack([self.xs, self.y_ints.compute()]))
@@ -397,13 +401,6 @@ class DaskGridInterfaceTests(GridInterfaceTests):
         assert_data_equal(self.dataset_hm_alias.array(),
                          np.column_stack([self.xs, self.y_ints.compute()]))
 
-    def test_select_lazy(self):
-        import dask.array as da
-        arr = da.from_array(np.arange(1, 12), 3)
-        ds = Dataset({'x': range(11), 'y': arr}, 'x', 'y')
-        assert isinstance(ds.select(x=(0, 5)).data['y'], da.Array)
-
-    # TODO: Some of the test below are copy/pasted
     def test_dataset_add_dimensions_values_hm(self):
         arr = da.from_array(np.arange(1, 12), 3)
         table =  self.dataset_hm.add_dimension('z', 1, arr, vdim=True)
@@ -467,7 +464,7 @@ class DaskGridInterfaceTests(GridInterfaceTests):
                           kdims=['x', 'y'], vdims=['z'])
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], dataset):
             grouped = dataset.groupby('x', dynamic=True)
-        first = Dataset({'y': self.y_ints, 'z': array[:, 0]},
+        first = Dataset({'y': self.y_ints.compute(), 'z': array[:, 0]},
                         kdims=['y'], vdims=['z'])
         assert_element_equal(grouped[0], first)
 
@@ -477,7 +474,7 @@ class DaskGridInterfaceTests(GridInterfaceTests):
                           kdims=[('x', 'X'), ('y', 'Y')], vdims=[('z', 'Z')])
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], dataset):
             grouped = dataset.groupby('X', dynamic=True)
-        first = Dataset({'y': self.y_ints, 'z': array[:, 0].compute()},
+        first = Dataset({'y': self.y_ints.compute(), 'z': array[:, 0].compute()},
                         kdims=[('y', 'Y')], vdims=[('z', 'Z')])
         assert_element_equal(grouped[0], first)
 
@@ -528,7 +525,8 @@ class DaskGridInterfaceTests(GridInterfaceTests):
         assert_data_equal(df.x.values, self.xs)
         assert_data_equal(df.y.values, self.y_ints.compute())
 
-
+    def test_dataset_index_column_ht(self):
+        assert_data_equal(self.dataset_hm['y'], self.y_ints.compute())
 
 
 class ImageElement_GridInterfaceTests(BaseImageElementInterfaceTests):
