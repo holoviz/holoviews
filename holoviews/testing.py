@@ -108,8 +108,8 @@ class _DataComparison:
     @classmethod
     def compare_mappings(cls, m1, m2, msg=None):
         assert m1.keys() == m2.keys()
-        for item1, item2 in zip(m1.values(), m2.values(), strict=True):
-            cls.assert_equal(item1, item2)
+        for key in m1:
+            cls.assert_equal(m1[key], m2[key])
 
     @classmethod
     def compare_floats(cls, n1, n2, msg='Floats'):
@@ -170,10 +170,10 @@ class _DataComparison:
         if asserter is None:
             if is_float(first) and is_float(second):
                 asserter = cls.compare_floats
-            elif isinstance(first, Collection) and isinstance(second, Collection):
-                asserter = cls.compare_collections
             elif isinstance(first, Mapping) and isinstance(second, Mapping):
                 asserter = cls.compare_mappings
+            elif isinstance(first, Collection) and isinstance(second, Collection):
+                asserter = cls.compare_collections
             else:
                 asserter = cls.compare_simple
 
@@ -741,7 +741,8 @@ def _ptype(obj):
 def assert_dict_equal(element1, element2):
     assert isinstance(element1, Mapping)
     assert isinstance(element2, Mapping)
-    _DataComparison.compare_mappings(element1, element2)
+    _ElementComparison.register()
+    _ElementComparison.compare_mappings(element1, element2)
 
 def assert_data_equal(element1, element2):
     # For convenience we convert one array and one list into numpy arrays
