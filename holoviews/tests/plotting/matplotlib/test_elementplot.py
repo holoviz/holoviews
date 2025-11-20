@@ -13,11 +13,11 @@ from holoviews.element import Curve, HeatMap, Image, QuadMesh, Scatter, Scatter3
 from holoviews.streams import Stream
 from holoviews.testing import assert_data_equal
 
-from ...utils import LoggingComparisonTestCase
+from ...utils import LoggingComparison
 from .test_plot import TestMPLPlot, mpl_renderer
 
 
-class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
+class TestElementPlot(LoggingComparison, TestMPLPlot):
 
     def test_stream_cleanup(self):
         stream = Stream.define('Test', test=1)()
@@ -364,10 +364,10 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
             assert line.get_linewidth() == 2
         ygridlines = ax.get_ygridlines()
         for line in ygridlines:
-            self.assertNotEqual(line.get_color(), 'blue')
-            self.assertNotEqual(line.get_linestyle(), '--')
-            self.assertNotEqual(line.get_alpha(), 0.5)
-            self.assertNotEqual(line.get_linewidth(), 2)
+            assert line.get_color() != 'blue'
+            assert line.get_linestyle() != '--'
+            assert line.get_alpha() != 0.5
+            assert line.get_linewidth() != 2
 
     def test_grid_x_no_grid_prefix(self):
         curve = Curve(range(10)).opts(gridstyle={'color': 'blue', 'linestyle': '--', 'alpha': 0.5, 'linewidth': 2}, show_grid=True)
@@ -398,10 +398,10 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
             assert line.get_linewidth() == 2
         xgridlines = ax.get_xgridlines()
         for line in xgridlines:
-            self.assertNotEqual(line.get_color(), 'green')
-            self.assertNotEqual(line.get_linestyle(), '--')
-            self.assertNotEqual(line.get_alpha(), 0.5)
-            self.assertNotEqual(line.get_linewidth(), 2)
+            assert line.get_color() != 'green'
+            assert line.get_linestyle() != '--'
+            assert line.get_alpha() != 0.5
+            assert line.get_linewidth() != 2
 
     def test_grid_y_no_grid_prefix(self):
         curve = Curve(range(10)).opts(gridstyle={'color': 'green', 'linestyle': '--', 'alpha': 0.5, 'linewidth': 2}, show_grid=True)
@@ -427,9 +427,9 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
         xgridlines = ax.get_xgridlines()
         for line in xgridlines:
             assert line.get_color() == 'red'
-            self.assertNotEqual(line.get_linestyle(), '--')
-            self.assertNotEqual(line.get_alpha(), 0.5)
-            self.assertNotEqual(line.get_linewidth(), 2)
+            assert line.get_linestyle() != '--'
+            assert line.get_alpha() != 0.5
+            assert line.get_linewidth() != 2
         ygridlines = ax.get_ygridlines()
         for line in ygridlines:
             assert line.get_color() == 'red'
@@ -444,9 +444,9 @@ class TestElementPlot(LoggingComparisonTestCase, TestMPLPlot):
         xgridlines = ax.get_xgridlines()
         for line in xgridlines:
             assert line.get_color() == 'red'
-            self.assertNotEqual(line.get_linestyle(), '--')
-            self.assertNotEqual(line.get_alpha(), 0.5)
-            self.assertNotEqual(line.get_linewidth(), 2)
+            assert line.get_linestyle() != '--'
+            assert line.get_alpha() != 0.5
+            assert line.get_linewidth() != 2
         ygridlines = ax.get_ygridlines()
         for line in ygridlines:
             assert line.get_color() == 'red'

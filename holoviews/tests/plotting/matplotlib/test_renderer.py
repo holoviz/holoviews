@@ -14,19 +14,18 @@ from panel.widgets import DiscreteSlider, FloatSlider, Player
 from pyviz_comms import CommManager
 
 from holoviews import Curve, DynamicMap, GridSpace, HoloMap, Image, ItemTable, Table
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.mpl import CurvePlot, MPLRenderer
 from holoviews.plotting.renderer import Renderer
 from holoviews.streams import Stream
 
 
-class MPLRendererTest(ComparisonTestCase):
+class MPLRendererTest:
     """
     Note if not possible to compare the hashes of SVG and WebM formats
     as the hashes are not stable across exports.
     """
 
-    def setUp(self):
+    def setup_method(self):
         self.basename = 'no-file'
         self.image1 = Image(np.array([[0,1],[2,3]]), label='Image1')
         self.image2 = Image(np.array([[1,0],[4,-2]]), label='Image2')
@@ -42,7 +41,7 @@ class MPLRendererTest(ComparisonTestCase):
             Renderer.notebook_context = False
             Renderer.comm_manager = CommManager
 
-    def tearDown(self):
+    def teardown_method(self):
         with param.logging_level('ERROR'):
             Renderer.notebook_context = self.nbcontext
             Renderer.comm_manager = self.comm_manager

@@ -4,11 +4,11 @@ import pandas as pd
 from holoviews.element import Area, Overlay
 from holoviews.testing import assert_data_equal
 
-from ...utils import LoggingComparisonTestCase
+from ...utils import LoggingComparison
 from .test_plot import TestMPLPlot, mpl_renderer
 
 
-class TestAreaPlot(LoggingComparisonTestCase, TestMPLPlot):
+class TestAreaPlot(LoggingComparison, TestMPLPlot):
 
     def test_area_padding_square(self):
         area = Area([(1, 1), (2, 2), (3, 3)]).opts(padding=0.1)

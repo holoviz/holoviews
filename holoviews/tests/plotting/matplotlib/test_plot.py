@@ -3,7 +3,6 @@ import pyviz_comms as comms
 from param import concrete_descendents
 
 from holoviews.core.options import Store
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.mpl import MPL_VERSION
 from holoviews.plotting.mpl.element import ElementPlot
 
@@ -14,7 +13,7 @@ MPL_GE_3_4_0 = MPL_VERSION >= (3, 4, 0)
 MPL_GE_3_8_0 = MPL_VERSION >= (3, 8, 0)
 
 
-class TestPlotDefinitions(ComparisonTestCase):
+class TestPlotDefinitions:
 
     known_clashes = [(('Arrow',), {'fontsize'})]
 
@@ -22,9 +21,9 @@ class TestPlotDefinitions(ComparisonTestCase):
         assert option_intersections('matplotlib') == self.known_clashes
 
 
-class TestMPLPlot(ComparisonTestCase):
+class TestMPLPlot:
 
-    def setUp(self):
+    def setup_method(self):
         self.previous_backend = Store.current_backend
         self.comm_manager = mpl_renderer.comm_manager
         mpl_renderer.comm_manager = comms.CommManager
@@ -34,7 +33,7 @@ class TestMPLPlot(ComparisonTestCase):
             self._padding[plot] = plot.padding
             plot.padding = 0
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.current_backend = self.previous_backend
         mpl_renderer.comm_manager = self.comm_manager
         plt.close(plt.gcf())

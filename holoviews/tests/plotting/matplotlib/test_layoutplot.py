@@ -4,11 +4,11 @@ from holoviews.core import DynamicMap, HoloMap, NdOverlay
 from holoviews.element import Curve, Image
 from holoviews.streams import Stream
 
-from ...utils import LoggingComparisonTestCase
+from ...utils import LoggingComparison
 from .test_plot import TestMPLPlot, mpl_renderer
 
 
-class TestLayoutPlot(LoggingComparisonTestCase, TestMPLPlot):
+class TestLayoutPlot(LoggingComparison, TestMPLPlot):
 
     def test_layout_instantiate_subplots(self):
         layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +

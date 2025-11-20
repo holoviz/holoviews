@@ -14,8 +14,8 @@ from .test_plot import MPL_GE_3_4_0, TestMPLPlot, mpl_renderer
 
 class TestMplGraphPlot(TestMPLPlot):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
 
         N = 8
         self.nodes = circular_layout(np.arange(N, dtype=np.int32))
@@ -302,8 +302,8 @@ class TestMplGraphPlot(TestMPLPlot):
 
 class TestMplTriMeshPlot(TestMPLPlot):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
 
         self.nodes = [(0, 0, 0), (0.5, 1, 1), (1., 0, 2), (1.5, 1, 3)]
         self.simplices = [(0, 1, 2, 0), (1, 2, 3, 1)]
@@ -472,8 +472,8 @@ class TestMplTriMeshPlot(TestMPLPlot):
 
 class TestMplChordPlot(TestMPLPlot):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         self.edges = [(0, 1, 1), (0, 2, 2), (1, 2, 3)]
         self.nodes = Dataset([(0, 'A'), (1, 'B'), (2, 'C')], 'index', 'Label')
         self.chord = Chord((self.edges, self.nodes))

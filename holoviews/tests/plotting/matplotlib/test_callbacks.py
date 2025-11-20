@@ -21,7 +21,7 @@ class TestCallbackPlot(TestMPLPlot):
         plot.state.set_dpi(72)
         stream.event(x=1, y=1)
         post = mpl_renderer(plot, fmt='png')
-        self.assertNotEqual(pre, post)
+        assert pre != post
 
     def test_stream_callback_single_call(self):
         history = deque(maxlen=10)

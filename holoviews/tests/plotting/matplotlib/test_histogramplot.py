@@ -9,11 +9,11 @@ from holoviews.element import Dataset, Histogram
 from holoviews.operation import histogram
 from holoviews.plotting.util import hex2rgb
 
-from ...utils import LoggingComparisonTestCase
+from ...utils import LoggingComparison
 from .test_plot import TestMPLPlot, mpl_renderer
 
 
-class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
+class TestHistogramPlot(LoggingComparison, TestMPLPlot):
 
     def test_histogram_datetime64_plot(self):
         dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)])

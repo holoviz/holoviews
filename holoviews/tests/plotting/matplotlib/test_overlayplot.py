@@ -3,7 +3,7 @@ import numpy as np
 from holoviews.core import DynamicMap, HoloMap, NdOverlay, Overlay
 from holoviews.element import Curve, Scatter
 
-from ...utils import LoggingComparisonTestCase
+from ...utils import LoggingComparison
 from .test_plot import TestMPLPlot, mpl_renderer
 
 try:
@@ -12,7 +12,7 @@ except ImportError:
     pass
 
 
-class TestOverlayPlot(LoggingComparisonTestCase, TestMPLPlot):
+class TestOverlayPlot(LoggingComparison, TestMPLPlot):
 
     def test_interleaved_overlay(self):
         """
