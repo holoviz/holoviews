@@ -133,12 +133,12 @@ class TestFromSparse:
     def setup_method(self):
         pytest.importorskip('scipy')
 
-    @pytest.mark.parametrize("sparse_func", ("coo_array", "coo_matrix"))
-    @pytest.mark.parametrize("graph_kwargs", (
+    @pytest.mark.parametrize("sparse_func", ["coo_array", "coo_matrix"])
+    @pytest.mark.parametrize("graph_kwargs", [
         {},
         {"kdims": ["source", "target"]},
         {"vdims": ["weight"]},
-    ))
+    ])
     def test_from_sparse(self, sparse_func, graph_kwargs):
         import scipy.sparse as sp
 

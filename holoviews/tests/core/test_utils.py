@@ -947,7 +947,7 @@ def test_dtype_kind_usage_count():
 
 @with_and_without_pandas
 @pytest.mark.parametrize(
-    ["test_input","expected_output"],
+    ("test_input", "expected_output"),
     [
         (np.array([3, 1, 2, 1, 3, 4, 2]), np.array([3, 1, 2, 4])),
         (np.array([1, 2, 3, 4, 5]), np.array([1, 2, 3, 4, 5])),
@@ -973,7 +973,7 @@ def test_unique(test_input, expected_output, with_pandas, monkeypatch):
 
 
 @with_and_without_pandas
-@pytest.mark.parametrize(["test_input" ,"expected_output"], [
+@pytest.mark.parametrize(("test_input", "expected_output"), [
     (np.datetime64('2023-01-15T12:30:45'), np.datetime64('2023-01-15T12:30:45')),
     (datetime.datetime(2023, 1, 15, 12, 30, 45), np.datetime64('2023-01-15T12:30:45', 'ns')),
     (datetime.date(2023, 1, 15), np.datetime64('2023-01-15T00:00:00', 'ns')),

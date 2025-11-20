@@ -798,7 +798,6 @@ class TestParameterRenaming:
         regexp = '(.+?)is not a stream parameter'
         with pytest.raises(KeyError, match=regexp):
             PointerXY(rename={'x':'xtest', 'z':'ytest'}, x=0, y=4)
-            assert str(cm).endswith() is True
 
     def test_clashing_rename_constructor(self):
         regexp = '(.+?)parameter of the same name'

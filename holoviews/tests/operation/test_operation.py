@@ -963,7 +963,7 @@ class TestDendrogramOperation:
 
     @pytest.mark.parametrize(
         "adjoint_dims",
-        (["cluster"], ["gene"], ["gene", "cluster"]),
+        [["cluster"], ["gene"], ["gene", "cluster"]],
         ids=["right", "top", "both"],
     )
     def test_invert_dendrogram(self, adjoint_dims):
@@ -985,7 +985,7 @@ class TestDendrogramOperation:
                 assert main1.y_range.factors == main2.y_range.factors[::-1]
                 assert main1.x_range.factors == main2.x_range.factors[::-1]
 
-    @pytest.mark.parametrize("adjoint_dims", (["cluster"], ["gene"],), ids=["right", "top"])
+    @pytest.mark.parametrize("adjoint_dims", [["cluster"], ["gene"],], ids=["right", "top"])
     def test_assure_non_adjoined_axis_is_unchanged_points(self, adjoint_dims):
         # See: https://github.com/holoviz/holoviews/pull/6625#issuecomment-2981268665
         plot = Points(self.df2, kdims=["gene", "cluster"])
@@ -1013,7 +1013,7 @@ class TestDendrogramOperation:
 
     @pytest.mark.parametrize(
         "adjoint_dims",
-        (["cluster"], ["gene"], ["gene", "cluster"]),
+        [["cluster"], ["gene"], ["gene", "cluster"]],
         ids=["right", "top", "both"],
     )
     def test_gridded_dataset(self, adjoint_dims, rng):

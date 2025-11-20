@@ -85,7 +85,7 @@ class TestBokehUtilsInstantiation:
 
 @pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize(
-    "figure_index,expected",
+    ('figure_index', 'expected'),
     [
         (0, [True, False]),
         (1, [False, True]),

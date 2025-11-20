@@ -676,15 +676,15 @@ class TestSpatialSelectColumnar:
         }, dtype=float)
 
 
-    @pytest.fixture(scope="function")
+    @pytest.fixture
     def dask_df(self, pandas_df):
         return dd.from_pandas(pandas_df, npartitions=2)
 
-    @pytest.fixture(scope="function")
+    @pytest.fixture
     def _method(self):
         return self.method
 
-    @pytest.mark.parametrize("geometry,pt_mask", [(geometry_encl, pt_mask_encl),(geometry_noencl, pt_mask_noencl)])
+    @pytest.mark.parametrize(("geometry", "pt_mask"), [(geometry_encl, pt_mask_encl),(geometry_noencl, pt_mask_noencl)])
     class TestSpatialSelectColumnarPtMask:
 
         def test_pandas(self, geometry, pt_mask, pandas_df, _method):

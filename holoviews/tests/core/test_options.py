@@ -67,16 +67,14 @@ class TestOptions:
         assert opts.kwargs == {'kw1':'value1', 'kw2':'value3'}
 
     def test_options_invalid_keywords1(self):
-        try:
+        msg = "Invalid option 'kw', valid options are: ['kw1']."
+        with pytest.raises(OptionError, match=re.escape(msg)):
             Options('test', allowed_keywords=['kw1'], kw='value')
-        except OptionError as e:
-            assert str(e) == "Invalid option 'kw', valid options are: ['kw1']."
 
     def test_options_invalid_keywords2(self):
-        try:
+        msg = "Invalid option 'kw3', valid options are: ['kw2']."
+        with pytest.raises(OptionError, match=re.escape(msg)):
             Options('test', allowed_keywords=['kw2'], kw2='value', kw3='value')
-        except OptionError as e:
-            assert str(e) == "Invalid option 'kw3', valid options are: ['kw2']."
 
     def test_options_invalid_keywords_skip1(self):
         with options_policy(skip_invalid=True, warn_on_skip=False):

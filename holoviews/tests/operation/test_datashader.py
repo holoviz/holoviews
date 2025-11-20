@@ -77,7 +77,7 @@ numba_logger.setLevel(logging.WARNING)
 
 AggregationOperation.vdim_prefix = ''
 
-@pytest.fixture()
+@pytest.fixture
 def point_data():
     num = 100
     np.random.seed(1)
@@ -104,7 +104,7 @@ def point_data():
     return df
 
 
-@pytest.fixture()
+@pytest.fixture
 def point_plot(point_data):
     return Points(point_data)
 
@@ -1363,13 +1363,13 @@ class DatashaderRasterizeTests:
         xr.testing.assert_equal(rasterized.data, expected)
 
 
-@pytest.mark.parametrize("agg_input_fn,index_col",
-    (
-        [ds.first, [311, 433, 309, 482]],
-        [ds.last, [491, 483, 417, 482]],
-        [ds.min, [311, 433, 309, 482]],
-        [ds.max, [404, 433, 417, 482]],
-    )
+@pytest.mark.parametrize(('agg_input_fn', 'index_col'),
+    [
+        (ds.first, [311, 433, 309, 482]),
+        (ds.last, [491, 483, 417, 482]),
+        (ds.min, [311, 433, 309, 482]),
+        (ds.max, [404, 433, 417, 482]),
+    ]
 )
 def test_rasterize_where_agg_no_column(point_plot, agg_input_fn, index_col):
     agg_fn = ds.where(agg_input_fn("val"))
@@ -1387,7 +1387,7 @@ def test_rasterize_where_agg_no_column(point_plot, agg_input_fn, index_col):
     np.testing.assert_array_equal(img_simple["val"], img["val"])
 
 
-@pytest.mark.parametrize("agg_input_fn", (ds.first, ds.last, ds.min, ds.max))
+@pytest.mark.parametrize("agg_input_fn", [ds.first, ds.last, ds.min, ds.max])
 def test_rasterize_where_agg_with_column(point_plot, agg_input_fn):
     agg_fn = ds.where(agg_input_fn("val"), "s")
     rast_input = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=2, height=2)
@@ -1413,7 +1413,7 @@ def test_rasterize_summarize(point_plot):
     np.testing.assert_array_equal(img_sum["count"], np.nan_to_num(img_count["Count"]))
 
 
-@pytest.mark.parametrize("sel_fn", (ds.first, ds.last, ds.min, ds.max))
+@pytest.mark.parametrize("sel_fn", [ds.first, ds.last, ds.min, ds.max])
 def test_selector_rasterize(point_plot, sel_fn):
     inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
     img = rasterize(point_plot, selector=sel_fn("val"), **inputs)
@@ -1433,7 +1433,7 @@ def test_selector_rasterize(point_plot, sel_fn):
     np.testing.assert_array_equal(img["Count"], img_count["Count"])
 
 
-@pytest.mark.parametrize("sel_fn", (ds.first, ds.last, ds.min, ds.max))
+@pytest.mark.parametrize("sel_fn", [ds.first, ds.last, ds.min, ds.max])
 def test_selector_rasterize_empty_selector(point_plot, sel_fn):
     point_plot.data["index_col"] = point_plot.data.index
     inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
@@ -1451,7 +1451,7 @@ def test_selector_hover_in_overlay(point_plot):
     overlay = rasterize(point_plot, selector=ds.first("val"), **inputs).opts(tools=["hover"]) * Points([])
     renderer("bokeh").get_plot(overlay)
 
-@pytest.mark.parametrize("sel_fn", (ds.first, ds.last, ds.min, ds.max))
+@pytest.mark.parametrize("sel_fn", [ds.first, ds.last, ds.min, ds.max])
 def test_selector_datashade(point_plot, sel_fn):
     inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
     img = datashade(point_plot, selector=sel_fn("val"), **inputs)
@@ -1472,9 +1472,9 @@ def test_selector_datashade(point_plot, sel_fn):
         np.testing.assert_array_equal(img[n], img_count[n], err_msg=n)
 
 
-@pytest.mark.parametrize("op_fn", (rasterize, datashade))
+@pytest.mark.parametrize("op_fn", [rasterize, datashade])
 @pytest.mark.parametrize(
-    "agg_fn", (ds.count(), ds.by("cat")), ids=["count", "by"]
+    "agg_fn", [ds.count(), ds.by("cat")], ids=["count", "by"]
 )
 def test_selector_spread(point_plot, op_fn, agg_fn):
     inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)

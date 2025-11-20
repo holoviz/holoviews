@@ -171,6 +171,7 @@ select = [
     "PLE",
     "PLR",
     "PLW",
+    "PT",
     "RUF",
     "UP",
     "W",
@@ -222,6 +223,7 @@ extend-unsafe-fixes = [
     "RUF002", # Ambiguous unicode character
     "RUF003", # Ambiguous unicode character
 ]
+"holoviews/element/comparison.py" = ["PT009"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["holoviews"]
