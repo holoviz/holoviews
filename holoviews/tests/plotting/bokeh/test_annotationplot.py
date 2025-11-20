@@ -40,29 +40,29 @@ class TestHVLinePlot(TestBokehPlot):
         hline = HLine(1.1).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(hline)
         span = plot.handles['glyph']
-        self.assertEqual(span.dimension, 'height')
-        self.assertEqual(span.location, 1.1)
+        assert span.dimension == 'height'
+        assert span.location == 1.1
 
     def test_hline_plot(self):
         hline = HLine(1.1)
         plot = bokeh_renderer.get_plot(hline)
         span = plot.handles['glyph']
-        self.assertEqual(span.dimension, 'width')
-        self.assertEqual(span.location, 1.1)
+        assert span.dimension == 'width'
+        assert span.location == 1.1
 
     def test_vline_invert_axes(self):
         vline = VLine(1.1).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(vline)
         span = plot.handles['glyph']
-        self.assertEqual(span.dimension, 'width')
-        self.assertEqual(span.location, 1.1)
+        assert span.dimension == 'width'
+        assert span.location == 1.1
 
     def test_vline_plot(self):
         vline = VLine(1.1)
         plot = bokeh_renderer.get_plot(vline)
         span = plot.handles['glyph']
-        self.assertEqual(span.dimension, 'height')
-        self.assertEqual(span.location, 1.1)
+        assert span.dimension == 'height'
+        assert span.location == 1.1
 
 
 class TestHVSpanPlot(TestBokehPlot):
@@ -100,7 +100,7 @@ class TestHVSpanPlot(TestBokehPlot):
         vline = HSpan(None)
         plot = bokeh_renderer.get_plot(vline)
         span = plot.handles['glyph']
-        self.assertEqual(span.visible, False)
+        assert span.visible is False
 
     def test_vspan_invert_axes(self):
         vspan = VSpan(1.1, 1.5).opts(invert_axes=True)
@@ -134,7 +134,7 @@ class TestHVSpanPlot(TestBokehPlot):
         vline = VSpan(None)
         plot = bokeh_renderer.get_plot(vline)
         span = plot.handles['glyph']
-        self.assertEqual(span.visible, False)
+        assert span.visible is False
 
 
 class TestSlopePlot(TestBokehPlot):
@@ -143,15 +143,15 @@ class TestSlopePlot(TestBokehPlot):
         hspan = Slope(2, 10)
         plot = bokeh_renderer.get_plot(hspan)
         slope = plot.handles['glyph']
-        self.assertEqual(slope.gradient, 2)
-        self.assertEqual(slope.y_intercept, 10)
+        assert slope.gradient == 2
+        assert slope.y_intercept == 10
 
     def test_slope_invert_axes(self):
         hspan = Slope(2, 10).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(hspan)
         slope = plot.handles['glyph']
-        self.assertEqual(slope.gradient, 0.5)
-        self.assertEqual(slope.y_intercept, -5)
+        assert slope.gradient == 0.5
+        assert slope.y_intercept == -5
 
 
 
@@ -161,25 +161,25 @@ class TestTextPlot(TestBokehPlot):
         text = Text(0, 0, 'Test')
         plot = bokeh_renderer.get_plot(text)
         source = plot.handles['source']
-        self.assertEqual(source.data, {'x': [0], 'y': [0], 'text': ['Test']})
+        assert source.data == {'x': [0], 'y': [0], 'text': ['Test']}
 
     def test_text_plot_fontsize(self):
         text = Text(0, 0, 'Test', fontsize=18)
         plot = bokeh_renderer.get_plot(text)
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.text_font_size, '18Pt')
+        assert glyph.text_font_size == '18Pt'
 
     def test_text_plot_rotation(self):
         text = Text(0, 0, 'Test', rotation=90)
         plot = bokeh_renderer.get_plot(text)
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.angle, np.pi/2.)
+        assert glyph.angle == np.pi/2.
 
     def test_text_plot_rotation_style(self):
         text = Text(0, 0, 'Test').opts(angle=90)
         plot = bokeh_renderer.get_plot(text)
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.angle, np.pi/2.)
+        assert glyph.angle == np.pi/2.
 
 
 class TestArrowPlot(TestBokehPlot):
@@ -193,15 +193,15 @@ class TestArrowPlot(TestBokehPlot):
         label_cds = plot.handles['text_1_source']
         x0, y0 = start
         x1, y1 = end
-        self.assertEqual(label_glyph.x, 'x')
-        self.assertEqual(label_glyph.y, 'y')
-        self.assertEqual(label_cds.data, {'x': [x0], 'y': [y0], 'text': ['Test']})
-        self.assertEqual(arrow_glyph.x_start, 'x_start')
-        self.assertEqual(arrow_glyph.y_start, 'y_start')
-        self.assertEqual(arrow_glyph.x_end, 'x_end')
-        self.assertEqual(arrow_glyph.y_end, 'y_end')
-        self.assertEqual(arrow_cds.data, {'x_start': [x0], 'x_end': [x1],
-                                          'y_start': [y0], 'y_end': [y1]})
+        assert label_glyph.x == 'x'
+        assert label_glyph.y == 'y'
+        assert label_cds.data == {'x': [x0], 'y': [y0], 'text': ['Test']}
+        assert arrow_glyph.x_start == 'x_start'
+        assert arrow_glyph.y_start == 'y_start'
+        assert arrow_glyph.x_end == 'x_end'
+        assert arrow_glyph.y_end == 'y_end'
+        assert arrow_cds.data == {'x_start': [x0], 'x_end': [x1],
+                                          'y_start': [y0], 'y_end': [y1]}
 
     def test_arrow_plot_left(self):
         arrow = Arrow(0, 0, 'Test')
@@ -232,13 +232,13 @@ class TestLabelsPlot(TestBokehPlot):
         source = plot.handles['source']
         data = {'x': np.array([0]), 'y': np.array([0]), 'Label': ['Test']}
         for c, col in source.data.items():
-            self.assertEqual(col, data[c])
+            assert col == data[c]
 
     def test_labels_plot_rotation_style(self):
         text = Labels([(0, 0, 'Test')]).opts(angle=90)
         plot = bokeh_renderer.get_plot(text)
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.angle, np.pi/2.)
+        assert glyph.angle == np.pi/2.
 
 
 class TestHVLinesPlot(TestBokehPlot):

@@ -40,9 +40,9 @@ class TestCurvePlot(TestBokehPlot):
                                                   for i in range(2)}).opts(opts), kdims=[],
                              streams=[posx])
         plot = bokeh_renderer.get_plot(overlay)
-        self.assertEqual(len(Callback._callbacks), 1)
+        assert len(Callback._callbacks) == 1
         key = next(iter(Callback._callbacks.keys()))
-        self.assertEqual(key, (id(plot.handles['plot']), id(PointerXCallback)))
+        assert key == (id(plot.handles['plot']), id(PointerXCallback))
 
     def test_cyclic_palette_curves(self):
         palette = Palette('Set1')
@@ -53,7 +53,7 @@ class TestCurvePlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(hmap)
         for subp, color in zip(plot.subplots.values(), colors, strict=None):
             color = color if isinstance(color, str) else rgb2hex(color)
-            self.assertEqual(subp.handles['glyph'].line_color, color)
+            assert subp.handles['glyph'].line_color == color
 
     def test_batched_curve_line_color_and_color(self):
         opts = {'NdOverlay': dict(legend_limit=0),
@@ -62,7 +62,7 @@ class TestCurvePlot(TestBokehPlot):
                              for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         line_color = ['red', 'blue']
-        self.assertEqual(plot.handles['source'].data['line_color'], line_color)
+        assert plot.handles['source'].data['line_color'] == line_color
 
     def test_batched_curve_alpha_and_color(self):
         opts = {'NdOverlay': dict(legend_limit=0),
@@ -72,8 +72,8 @@ class TestCurvePlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         alpha = [0.5, 1.]
         color = ['#30a2da', '#fc4f30']
-        self.assertEqual(plot.handles['source'].data['alpha'], alpha)
-        self.assertEqual(plot.handles['source'].data['color'], color)
+        assert plot.handles['source'].data['alpha'] == alpha
+        assert plot.handles['source'].data['color'] == color
 
     def test_batched_curve_line_width_and_color(self):
         opts = {'NdOverlay': dict(legend_limit=0),
@@ -83,8 +83,8 @@ class TestCurvePlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         line_width = [0.5, 1.]
         color = ['#30a2da', '#fc4f30']
-        self.assertEqual(plot.handles['source'].data['line_width'], line_width)
-        self.assertEqual(plot.handles['source'].data['color'], color)
+        assert plot.handles['source'].data['line_width'] == line_width
+        assert plot.handles['source'].data['color'] == color
 
     def test_curve_overlay_datetime_hover(self):
         obj = NdOverlay({i: Curve([(dt.datetime(2016, 1, j+1), j) for j in range(31)]) for i in range(5)},
@@ -126,35 +126,35 @@ class TestCurvePlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(curve)
         x_range = plot.handles['x_range']
         assert isinstance(x_range, FactorRange)
-        self.assertEqual(x_range.factors, ['A', 'B', 'C'])
+        assert x_range.factors == ['A', 'B', 'C']
 
     def test_curve_categorical_xaxis_invert_axes(self):
         curve = Curve((['A', 'B', 'C'], (1,2,3))).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(curve)
         y_range = plot.handles['y_range']
         assert isinstance(y_range, FactorRange)
-        self.assertEqual(y_range.factors, ['A', 'B', 'C'])
+        assert y_range.factors == ['A', 'B', 'C']
 
     def test_curve_datetime64(self):
         dates = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]
         curve = Curve((dates, np.random.rand(10)))
         plot = bokeh_renderer.get_plot(curve)
-        self.assertEqual(plot.handles['x_range'].start, np.datetime64(dt.datetime(2016, 1, 1)))
-        self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 10)))
+        assert plot.handles['x_range'].start == np.datetime64(dt.datetime(2016, 1, 1))
+        assert plot.handles['x_range'].end == np.datetime64(dt.datetime(2016, 1, 10))
 
     def test_curve_pandas_timestamps(self):
         dates = pd.date_range('2016-01-01', '2016-01-10', freq='D')
         curve = Curve((dates, np.random.rand(10)))
         plot = bokeh_renderer.get_plot(curve)
-        self.assertEqual(plot.handles['x_range'].start, np.datetime64(dt.datetime(2016, 1, 1)))
-        self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 10)))
+        assert plot.handles['x_range'].start == np.datetime64(dt.datetime(2016, 1, 1))
+        assert plot.handles['x_range'].end == np.datetime64(dt.datetime(2016, 1, 10))
 
     def test_curve_dt_datetime(self):
         dates = [dt.datetime(2016,1,i) for i in range(1, 11)]
         curve = Curve((dates, np.random.rand(10)))
         plot = bokeh_renderer.get_plot(curve)
-        self.assertEqual(plot.handles['x_range'].start, np.datetime64(dt.datetime(2016, 1, 1)))
-        self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 10)))
+        assert plot.handles['x_range'].start == np.datetime64(dt.datetime(2016, 1, 1))
+        assert plot.handles['x_range'].end == np.datetime64(dt.datetime(2016, 1, 10))
 
     def test_curve_heterogeneous_datetime_types_overlay(self):
         dates64 = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]
@@ -162,8 +162,8 @@ class TestCurvePlot(TestBokehPlot):
         curve_dt64 = Curve((dates64, np.random.rand(10)))
         curve_dt = Curve((dates, np.random.rand(10)))
         plot = bokeh_renderer.get_plot(curve_dt*curve_dt64)
-        self.assertEqual(plot.handles['x_range'].start, np.datetime64(dt.datetime(2016, 1, 1)))
-        self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 11)))
+        assert plot.handles['x_range'].start == np.datetime64(dt.datetime(2016, 1, 1))
+        assert plot.handles['x_range'].end == np.datetime64(dt.datetime(2016, 1, 11))
 
     def test_curve_heterogeneous_datetime_types_with_pd_overlay(self):
         dates_pd = pd.date_range('2016-01-04', '2016-01-13', freq='D')
@@ -173,154 +173,144 @@ class TestCurvePlot(TestBokehPlot):
         curve_dt = Curve((dates, np.random.rand(10)))
         curve_pd = Curve((dates_pd, np.random.rand(10)))
         plot = bokeh_renderer.get_plot(curve_dt*curve_dt64*curve_pd)
-        self.assertEqual(plot.handles['x_range'].start, np.datetime64(dt.datetime(2016, 1, 1)))
-        self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 13)))
+        assert plot.handles['x_range'].start == np.datetime64(dt.datetime(2016, 1, 1))
+        assert plot.handles['x_range'].end == np.datetime64(dt.datetime(2016, 1, 13))
 
     def test_curve_fontsize_xlabel(self):
         curve = Curve(range(10)).opts(fontsize={'xlabel': '14pt'})
         plot = bokeh_renderer.get_plot(curve)
-        self.assertEqual(plot.handles['xaxis'].axis_label_text_font_size,
-                         '14pt')
+        assert plot.handles['xaxis'].axis_label_text_font_size == '14pt'
 
     def test_curve_fontsize_ylabel(self):
         curve = Curve(range(10)).opts(fontsize={'ylabel': '14pt'})
         plot = bokeh_renderer.get_plot(curve)
-        self.assertEqual(plot.handles['yaxis'].axis_label_text_font_size,
-                         '14pt')
+        assert plot.handles['yaxis'].axis_label_text_font_size == '14pt'
 
     def test_curve_fontsize_both_labels(self):
         curve = Curve(range(10)).opts(fontsize={'labels': '14pt'})
         plot = bokeh_renderer.get_plot(curve)
-        self.assertEqual(plot.handles['xaxis'].axis_label_text_font_size,
-                         '14pt')
-        self.assertEqual(plot.handles['yaxis'].axis_label_text_font_size,
-                         '14pt')
+        assert plot.handles['xaxis'].axis_label_text_font_size == '14pt'
+        assert plot.handles['yaxis'].axis_label_text_font_size == '14pt'
 
     def test_curve_fontsize_xticks(self):
         curve = Curve(range(10)).opts(fontsize={'xticks': '14pt'})
         plot = bokeh_renderer.get_plot(curve)
-        self.assertEqual(plot.handles['xaxis'].major_label_text_font_size,
-                         '14pt')
+        assert plot.handles['xaxis'].major_label_text_font_size == '14pt'
 
     def test_curve_fontsize_yticks(self):
         curve = Curve(range(10)).opts(fontsize={'yticks': '14pt'})
         plot = bokeh_renderer.get_plot(curve)
-        self.assertEqual(plot.handles['yaxis'].major_label_text_font_size,
-                         '14pt')
+        assert plot.handles['yaxis'].major_label_text_font_size == '14pt'
 
     def test_curve_fontsize_both_ticks(self):
         curve = Curve(range(10)).opts(fontsize={'ticks': '14pt'})
         plot = bokeh_renderer.get_plot(curve)
-        self.assertEqual(plot.handles['xaxis'].major_label_text_font_size,
-                         '14pt')
-        self.assertEqual(plot.handles['yaxis'].major_label_text_font_size,
-                         '14pt')
+        assert plot.handles['xaxis'].major_label_text_font_size == '14pt'
+        assert plot.handles['yaxis'].major_label_text_font_size == '14pt'
 
     def test_curve_fontsize_xticks_and_both_ticks(self):
         curve = Curve(range(10)).opts(fontsize={'xticks': '18pt', 'ticks': '14pt'})
         plot = bokeh_renderer.get_plot(curve)
-        self.assertEqual(plot.handles['xaxis'].major_label_text_font_size,
-                         '18pt')
-        self.assertEqual(plot.handles['yaxis'].major_label_text_font_size,
-                         '14pt')
+        assert plot.handles['xaxis'].major_label_text_font_size == '18pt'
+        assert plot.handles['yaxis'].major_label_text_font_size == '14pt'
 
     def test_curve_xticks_list(self):
         curve = Curve(range(10)).opts(xticks=[0, 5, 10])
         plot = bokeh_renderer.get_plot(curve).state
         assert isinstance(plot.xaxis[0].ticker, FixedTicker)
-        self.assertEqual(plot.xaxis[0].ticker.ticks, [0, 5, 10])
+        assert plot.xaxis[0].ticker.ticks == [0, 5, 10]
 
     def test_curve_xticks_list_of_tuples_xaxis(self):
         ticks = [(0, 'zero'), (5, 'five'), (10, 'ten')]
         curve = Curve(range(10)).opts(xticks=ticks)
         plot = bokeh_renderer.get_plot(curve).state
         assert isinstance(plot.xaxis[0].ticker, FixedTicker)
-        self.assertEqual(plot.xaxis[0].major_label_overrides, dict(ticks))
+        assert plot.xaxis[0].major_label_overrides == dict(ticks)
 
     def test_curve_yticks_list(self):
         curve = Curve(range(10)).opts(yticks=[0, 5, 10])
         plot = bokeh_renderer.get_plot(curve).state
         assert isinstance(plot.yaxis[0].ticker, FixedTicker)
-        self.assertEqual(plot.yaxis[0].ticker.ticks, [0, 5, 10])
+        assert plot.yaxis[0].ticker.ticks == [0, 5, 10]
 
     def test_curve_xticks_list_of_tuples_yaxis(self):
         ticks = [(0, 'zero'), (5, 'five'), (10, 'ten')]
         curve = Curve(range(10)).opts(yticks=ticks)
         plot = bokeh_renderer.get_plot(curve).state
         assert isinstance(plot.yaxis[0].ticker, FixedTicker)
-        self.assertEqual(plot.yaxis[0].major_label_overrides, dict(ticks))
+        assert plot.yaxis[0].major_label_overrides == dict(ticks)
 
     def test_curve_padding_square(self):
         curve = Curve([1, 2, 3]).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
-        self.assertEqual(x_range.start, -0.2)
-        self.assertEqual(x_range.end, 2.2)
-        self.assertEqual(y_range.start, 0.8)
-        self.assertEqual(y_range.end, 3.2)
+        assert x_range.start == -0.2
+        assert x_range.end == 2.2
+        assert y_range.start == 0.8
+        assert y_range.end == 3.2
 
     def test_curve_padding_square_per_axis(self):
         curve = Curve([1, 2, 3]).opts(padding=((0, 0.1), (0.1, 0.2)))
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
-        self.assertEqual(x_range.start, 0)
-        self.assertEqual(x_range.end, 2.2)
-        self.assertEqual(y_range.start, 0.8)
-        self.assertEqual(y_range.end, 3.4)
+        assert x_range.start == 0
+        assert x_range.end == 2.2
+        assert y_range.start == 0.8
+        assert y_range.end == 3.4
 
     def test_curve_padding_hard_xrange(self):
         curve = Curve([1, 2, 3]).redim.range(x=(0, 3)).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
-        self.assertEqual(x_range.start, 0)
-        self.assertEqual(x_range.end, 3)
-        self.assertEqual(y_range.start, 0.8)
-        self.assertEqual(y_range.end, 3.2)
+        assert x_range.start == 0
+        assert x_range.end == 3
+        assert y_range.start == 0.8
+        assert y_range.end == 3.2
 
     def test_curve_padding_soft_xrange(self):
         curve = Curve([1, 2, 3]).redim.soft_range(x=(0, 3)).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
-        self.assertEqual(x_range.start, 0)
-        self.assertEqual(x_range.end, 3)
-        self.assertEqual(y_range.start, 0.8)
-        self.assertEqual(y_range.end, 3.2)
+        assert x_range.start == 0
+        assert x_range.end == 3
+        assert y_range.start == 0.8
+        assert y_range.end == 3.2
 
     def test_curve_padding_unequal(self):
         curve = Curve([1, 2, 3]).opts(padding=(0.05, 0.1))
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
-        self.assertEqual(x_range.start, -0.1)
-        self.assertEqual(x_range.end, 2.1)
-        self.assertEqual(y_range.start, 0.8)
-        self.assertEqual(y_range.end, 3.2)
+        assert x_range.start == -0.1
+        assert x_range.end == 2.1
+        assert y_range.start == 0.8
+        assert y_range.end == 3.2
 
     def test_curve_padding_nonsquare(self):
         curve = Curve([1, 2, 3]).opts(padding=0.1, width=600)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
-        self.assertEqual(x_range.start, -0.1)
-        self.assertEqual(x_range.end, 2.1)
-        self.assertEqual(y_range.start, 0.8)
-        self.assertEqual(y_range.end, 3.2)
+        assert x_range.start == -0.1
+        assert x_range.end == 2.1
+        assert y_range.start == 0.8
+        assert y_range.end == 3.2
 
     def test_curve_padding_logx(self):
         curve = Curve([(1, 1), (2, 2), (3,3)]).opts(padding=0.1, logx=True)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
-        self.assertEqual(x_range.start, 0.89595845984076228)
-        self.assertEqual(x_range.end, 3.3483695221017129)
-        self.assertEqual(y_range.start, 0.8)
-        self.assertEqual(y_range.end, 3.2)
+        assert x_range.start == 0.89595845984076228
+        assert x_range.end == 3.3483695221017129
+        assert y_range.start == 0.8
+        assert y_range.end == 3.2
 
     def test_curve_padding_logy(self):
         curve = Curve([1, 2, 3]).opts(padding=0.1, logy=True)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
-        self.assertEqual(x_range.start, -0.2)
-        self.assertEqual(x_range.end, 2.2)
-        self.assertEqual(y_range.start, 0.89595845984076228)
-        self.assertEqual(y_range.end, 3.3483695221017129)
+        assert x_range.start == -0.2
+        assert x_range.end == 2.2
+        assert y_range.start == 0.89595845984076228
+        assert y_range.end == 3.3483695221017129
 
     def test_curve_padding_datetime_square(self):
         curve = Curve([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)]).opts(
@@ -328,10 +318,10 @@ class TestCurvePlot(TestBokehPlot):
         )
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
-        self.assertEqual(x_range.start, np.datetime64('2016-03-31T19:12:00.000000000'))
-        self.assertEqual(x_range.end, np.datetime64('2016-04-03T04:48:00.000000000'))
-        self.assertEqual(y_range.start, 0.8)
-        self.assertEqual(y_range.end, 3.2)
+        assert x_range.start == np.datetime64('2016-03-31T19:12:00.000000000')
+        assert x_range.end == np.datetime64('2016-04-03T04:48:00.000000000')
+        assert y_range.start == 0.8
+        assert y_range.end == 3.2
 
     def test_curve_padding_datetime_nonsquare(self):
         curve = Curve([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)]).opts(
@@ -339,10 +329,10 @@ class TestCurvePlot(TestBokehPlot):
         )
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
-        self.assertEqual(x_range.start, np.datetime64('2016-03-31T21:36:00.000000000'))
-        self.assertEqual(x_range.end, np.datetime64('2016-04-03T02:24:00.000000000'))
-        self.assertEqual(y_range.start, 0.8)
-        self.assertEqual(y_range.end, 3.2)
+        assert x_range.start == np.datetime64('2016-03-31T21:36:00.000000000')
+        assert x_range.end == np.datetime64('2016-04-03T02:24:00.000000000')
+        assert y_range.start == 0.8
+        assert y_range.end == 3.2
 
     ###########################
     #    Styling mapping      #
@@ -353,7 +343,7 @@ class TestCurvePlot(TestBokehPlot):
                        vdims=['y', 'color']).opts(color='color')
         plot = bokeh_renderer.get_plot(curve)
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.line_color, 'red')
+        assert glyph.line_color == 'red'
 
     def test_op_ndoverlay_color_value(self):
         colors = ['blue', 'red']
@@ -364,7 +354,7 @@ class TestCurvePlot(TestBokehPlot):
         for subplot, color in zip(plot.subplots.values(), colors, strict=None):
             style = dict(subplot.style[subplot.cyclic_index])
             style = subplot._apply_transforms(subplot.current_frame, {}, {}, style)
-            self.assertEqual(style['color'], color)
+            assert style['color'] == color
 
     def test_curve_color_op(self):
         curve = Curve([(0, 0, 'red'), (0, 1, 'blue'), (0, 2, 'red')],
@@ -403,14 +393,14 @@ class TestCurvePlot(TestBokehPlot):
             glyph = sp.handles['glyph']
             color = glyph.line_color
             if num == 0:
-                self.assertEqual(color, 'red')
+                assert color == 'red'
             else:
-                self.assertEqual(color, 'blue')
+                assert color == 'blue'
             linestyle = glyph.line_dash
             if cat == 'A':
-                self.assertEqual(linestyle, [])
+                assert linestyle == []
             else:
-                self.assertEqual(linestyle, [6])
+                assert linestyle == [6]
 
     def test_curve_style_mapping_constant_value_dimensions(self):
         vdims = ['y', 'num', 'cat']
@@ -430,11 +420,11 @@ class TestCurvePlot(TestBokehPlot):
             glyph = sp.handles['glyph']
             color = glyph.line_color
             if ndoverlay[k].iloc[0, 2] == 0:
-                self.assertEqual(color, 'red')
+                assert color == 'red'
             else:
-                self.assertEqual(color, 'blue')
+                assert color == 'blue'
             linestyle = glyph.line_dash
             if ndoverlay[k].iloc[0, 3] == 'A':
-                self.assertEqual(linestyle, [])
+                assert linestyle == []
             else:
-                self.assertEqual(linestyle, [6])
+                assert linestyle == [6]

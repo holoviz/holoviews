@@ -11,25 +11,25 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
     def test_multi_y_disabled(self):
         overlay = (Curve(range(10)) * Curve(range(10)))
         plot = bokeh_renderer.get_plot(overlay).state
-        self.assertEqual(len(plot.yaxis), 1)
+        assert len(plot.yaxis) == 1
 
     def test_multi_y_enabled_two_curves_one_vdim(self):
         overlay = (Curve(range(10)) * Curve(range(10))).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay).state
-        self.assertEqual(len(plot.yaxis), 1)
+        assert len(plot.yaxis) == 1
 
     def test_multi_y_enabled_two_curves_two_vdim(self):
         overlay = (Curve(range(10), vdims=['A'])
                    * Curve(range(10), vdims=['B'])).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
-        self.assertEqual(len(plot.state.yaxis), 2)
+        assert len(plot.state.yaxis) == 2
         y_range = plot.handles['y_range']
-        self.assertEqual(y_range.start, 0)
-        self.assertEqual(y_range.end, 9)
+        assert y_range.start == 0
+        assert y_range.end == 9
         extra_y_ranges = plot.handles['extra_y_ranges']
-        self.assertEqual(list(extra_y_ranges.keys()), ['B'])
-        self.assertEqual(extra_y_ranges['B'].start, 0)
-        self.assertEqual(extra_y_ranges['B'].end, 9)
+        assert list(extra_y_ranges.keys()) == ['B']
+        assert extra_y_ranges['B'].start == 0
+        assert extra_y_ranges['B'].end == 9
 
     def test_multi_y_enabled_three_curves_two_vdim(self):
         curve_1A = Curve(range(10), vdims=['A'])
@@ -37,7 +37,7 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
         curve_3A = Curve(range(12), vdims=['A'])
         overlay = (curve_1A * curve_2B * curve_3A ).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay).state
-        self.assertEqual(len(plot.yaxis), 2)
+        assert len(plot.yaxis) == 2
 
     # Testing independent y-lims
 
@@ -46,36 +46,36 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
                    * Curve(range(10), vdims=['B'])).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         y_range = plot.handles['y_range']
-        self.assertEqual(y_range.start, -10)
-        self.assertEqual(y_range.end, 20)
+        assert y_range.start == -10
+        assert y_range.end == 20
         extra_y_ranges = plot.handles['extra_y_ranges']
-        self.assertEqual(list(extra_y_ranges.keys()), ['B'])
-        self.assertEqual(extra_y_ranges['B'].start, 0)
-        self.assertEqual(extra_y_ranges['B'].end, 9)
+        assert list(extra_y_ranges.keys()) == ['B']
+        assert extra_y_ranges['B'].start == 0
+        assert extra_y_ranges['B'].end == 9
 
     def test_multi_y_lims_right_axis(self):
         overlay = (Curve(range(10), vdims=['A'])
                    * Curve(range(10), vdims=['B']).opts(ylim=(-10,20))).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         y_range = plot.handles['y_range']
-        self.assertEqual(y_range.start, 0)
-        self.assertEqual(y_range.end, 9)
+        assert y_range.start == 0
+        assert y_range.end == 9
         extra_y_ranges = plot.handles['extra_y_ranges']
-        self.assertEqual(list(extra_y_ranges.keys()), ['B'])
-        self.assertEqual(extra_y_ranges['B'].start, -10)
-        self.assertEqual(extra_y_ranges['B'].end, 20)
+        assert list(extra_y_ranges.keys()) == ['B']
+        assert extra_y_ranges['B'].start == -10
+        assert extra_y_ranges['B'].end == 20
 
     def test_multi_y_lims_both_axes(self):
         overlay = (Curve(range(10), vdims=['A']).opts(ylim=(-15,25))
                    * Curve(range(10), vdims=['B']).opts(ylim=(-10,20))).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         y_range = plot.handles['y_range']
-        self.assertEqual(y_range.start, -15)
-        self.assertEqual(y_range.end, 25)
+        assert y_range.start == -15
+        assert y_range.end == 25
         extra_y_ranges = plot.handles['extra_y_ranges']
-        self.assertEqual(list(extra_y_ranges.keys()), ['B'])
-        self.assertEqual(extra_y_ranges['B'].start, -10)
-        self.assertEqual(extra_y_ranges['B'].end, 20)
+        assert list(extra_y_ranges.keys()) == ['B']
+        assert extra_y_ranges['B'].start == -10
+        assert extra_y_ranges['B'].end == 20
 
     # Testing independent logy
 
@@ -83,7 +83,7 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
         overlay = (Curve(range(1,9), vdims=['A']).opts(logy=True)
                    * Curve(range(10), vdims=['B'])).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
-        self.assertEqual(len(plot.state.yaxis), 2)
+        assert len(plot.state.yaxis) == 2
         assert isinstance(plot.state.yaxis[0], LogAxis)
         assert isinstance(plot.state.yaxis[1], LinearAxis)
         extra_y_ranges = plot.handles['extra_y_scales']
@@ -93,7 +93,7 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
         overlay = (Curve(range(1,9), vdims=['A'])
                    * Curve(range(1, 9), vdims=['B']).opts(logy=True)).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
-        self.assertEqual(len(plot.state.yaxis), 2)
+        assert len(plot.state.yaxis) == 2
         assert isinstance(plot.state.yaxis[0], LinearAxis)
         assert isinstance(plot.state.yaxis[1], LogAxis)
         extra_y_ranges = plot.handles['extra_y_scales']
@@ -104,7 +104,7 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
         overlay = (Curve(range(1,9), vdims=['A']).opts(logy=True)
                    * Curve(range(1, 9), vdims=['B']).opts(logy=True)).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
-        self.assertEqual(len(plot.state.yaxis), 2)
+        assert len(plot.state.yaxis) == 2
         assert isinstance(plot.state.yaxis[0], LogAxis)
         assert isinstance(plot.state.yaxis[1], LogAxis)
         extra_y_ranges = plot.handles['extra_y_scales']
@@ -116,7 +116,7 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
         overlay = (Curve(range(10), vdims=['A'])
                    * Curve(range(10), vdims=['B']).opts(logy=True)).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
-        self.assertEqual(len(plot.state.yaxis), 2)
+        assert len(plot.state.yaxis) == 2
         assert isinstance(plot.state.yaxis[0], LinearAxis)
         assert isinstance(plot.state.yaxis[1], LogAxis)
         extra_y_ranges = plot.handles['extra_y_scales']
@@ -132,24 +132,24 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
                    * Curve(range(10), vdims=['B'])).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         y_range = plot.handles['y_range']
-        self.assertEqual(y_range.start, 9)
-        self.assertEqual(y_range.end, 0)
+        assert y_range.start == 9
+        assert y_range.end == 0
         extra_y_ranges = plot.handles['extra_y_ranges']
-        self.assertEqual(list(extra_y_ranges.keys()), ['B'])
-        self.assertEqual(extra_y_ranges['B'].start, 0)
-        self.assertEqual(extra_y_ranges['B'].end, 9)
+        assert list(extra_y_ranges.keys()) == ['B']
+        assert extra_y_ranges['B'].start == 0
+        assert extra_y_ranges['B'].end == 9
 
     def test_multi_invert_right_axis(self):
         overlay = (Curve(range(10), vdims=['A'])
                    * Curve(range(10), vdims=['B']).opts(invert_yaxis=True)).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         y_range = plot.handles['y_range']
-        self.assertEqual(y_range.start, 0)
-        self.assertEqual(y_range.end, 9)
+        assert y_range.start == 0
+        assert y_range.end == 9
         extra_y_ranges = plot.handles['extra_y_ranges']
-        self.assertEqual(list(extra_y_ranges.keys()), ['B'])
-        self.assertEqual(extra_y_ranges['B'].start, 9)
-        self.assertEqual(extra_y_ranges['B'].end, 0)
+        assert list(extra_y_ranges.keys()) == ['B']
+        assert extra_y_ranges['B'].start == 9
+        assert extra_y_ranges['B'].end == 0
 
 
     def test_multi_invert_both_axes(self):
@@ -157,12 +157,12 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
                    * Curve(range(10), vdims=['B']).opts(invert_yaxis=True)).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         y_range = plot.handles['y_range']
-        self.assertEqual(y_range.start, 9)
-        self.assertEqual(y_range.end, 0)
+        assert y_range.start == 9
+        assert y_range.end == 0
         extra_y_ranges = plot.handles['extra_y_ranges']
-        self.assertEqual(list(extra_y_ranges.keys()), ['B'])
-        self.assertEqual(extra_y_ranges['B'].start, 9)
-        self.assertEqual(extra_y_ranges['B'].end, 0)
+        assert list(extra_y_ranges.keys()) == ['B']
+        assert extra_y_ranges['B'].start == 9
+        assert extra_y_ranges['B'].end == 0
 
 
     # Combination test
@@ -173,13 +173,13 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
                            ).opts(invert_yaxis=True, logy=True, ylim=(2,20))).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         y_range = plot.handles['y_range']
-        self.assertEqual(y_range.start, 0)
-        self.assertEqual(y_range.end, 9)
+        assert y_range.start == 0
+        assert y_range.end == 9
         extra_y_ranges = plot.handles['extra_y_ranges']
-        self.assertEqual(list(extra_y_ranges.keys()), ['B'])
+        assert list(extra_y_ranges.keys()) == ['B']
         print(extra_y_ranges['B'].start, extra_y_ranges['B'].end)
-        self.assertEqual(extra_y_ranges['B'].start, 20)
-        self.assertEqual(extra_y_ranges['B'].end, 2)
+        assert extra_y_ranges['B'].start == 20
+        assert extra_y_ranges['B'].end == 2
         assert isinstance(plot.handles['extra_y_scales']['B'], LogScale)
 
 
@@ -199,8 +199,8 @@ class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
         y_range = plot.handles['y_range']
         extra_y_ranges = plot.handles['extra_y_ranges']
 
-        self.assertEqual((y_range.start, y_range.end), (5, 19))
-        self.assertEqual((extra_y_ranges['B'].start, extra_y_ranges['B'].end), (1, 13))
+        assert (y_range.start, y_range.end) == (5, 19)
+        assert (extra_y_ranges['B'].start, extra_y_ranges['B'].end) == (1, 13)
 
     def test_invisible_main_axis(self):
         overlay = (

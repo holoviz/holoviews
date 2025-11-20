@@ -68,10 +68,10 @@ class TestBokehServerSetup(ComparisonTestCase):
         stream = RangeXY(source=obj)
         server_doc = bokeh_renderer.server_doc(obj)
         assert isinstance(server_doc, Document)
-        self.assertEqual(len(bokeh_renderer.last_plot.callbacks), 1)
+        assert len(bokeh_renderer.last_plot.callbacks) == 1
         cb = bokeh_renderer.last_plot.callbacks[0]
         assert isinstance(cb, RangeXYCallback)
-        self.assertEqual(cb.streams, [stream])
+        assert cb.streams == [stream]
         assert 'rangesupdate' in bokeh_renderer.last_plot.state._event_callbacks
 
     def test_set_up_linked_event_stream_on_server_doc(self):
@@ -81,7 +81,7 @@ class TestBokehServerSetup(ComparisonTestCase):
         assert isinstance(server_doc, Document)
         cb = bokeh_renderer.last_plot.callbacks[0]
         assert isinstance(cb, ResetCallback)
-        self.assertEqual(cb.streams, [stream])
+        assert cb.streams == [stream]
 
 
 
@@ -131,7 +131,7 @@ class TestBokehServer(ComparisonTestCase):
 
         cb = plot.callbacks[0]
         assert isinstance(cb, RangeXYCallback)
-        self.assertEqual(cb.streams, [stream])
+        assert cb.streams == [stream]
         assert 'rangesupdate' in plot.state._event_callbacks
 
     def test_launch_server_with_complex_plot(self):
@@ -150,14 +150,14 @@ class TestBokehServer(ComparisonTestCase):
         [(doc, _)] = obj._documents.items()
 
         cds = session.document.roots[0].select_one({'type': ColumnDataSource})
-        self.assertEqual(cds.data['y'][2], 0.1)
+        assert cds.data['y'][2] == 0.1
         slider = obj.layout.select(FloatSlider)[0]
         def run():
             slider.value = 3.1
         doc.add_next_tick_callback(run)
         time.sleep(1)
         cds = self.session.document.roots[0].select_one({'type': ColumnDataSource})
-        self.assertEqual(cds.data['y'][2], 3.1)
+        assert cds.data['y'][2] == 3.1
 
     def test_server_dynamicmap_with_stream(self):
         stream = Stream.define('Custom', y=2)()
@@ -167,7 +167,7 @@ class TestBokehServer(ComparisonTestCase):
         [(doc, _)] = obj._documents.items()
 
         cds = session.document.roots[0].select_one({'type': ColumnDataSource})
-        self.assertEqual(cds.data['y'][2], 2)
+        assert cds.data['y'][2] == 2
         def loaded():
             state._schedule_on_load(doc, None)
         doc.add_next_tick_callback(loaded)
@@ -176,7 +176,7 @@ class TestBokehServer(ComparisonTestCase):
         doc.add_next_tick_callback(run)
         time.sleep(1)
         cds = self.session.document.roots[0].select_one({'type': ColumnDataSource})
-        self.assertEqual(cds.data['y'][2], 3)
+        assert cds.data['y'][2] == 3
 
     def test_server_dynamicmap_with_stream_dims(self):
         stream = Stream.define('Custom', y=2)()
@@ -187,7 +187,7 @@ class TestBokehServer(ComparisonTestCase):
         [(doc, _)] = obj._documents.items()
 
         orig_cds = session.document.roots[0].select_one({'type': ColumnDataSource})
-        self.assertEqual(orig_cds.data['y'][2], 2)
+        assert orig_cds.data['y'][2] == 2
         def loaded():
             state._schedule_on_load(doc, None)
         doc.add_next_tick_callback(loaded)
@@ -196,13 +196,13 @@ class TestBokehServer(ComparisonTestCase):
         doc.add_next_tick_callback(run)
         time.sleep(1)
         cds = self.session.document.roots[0].select_one({'type': ColumnDataSource})
-        self.assertEqual(cds.data['y'][2], 3)
+        assert cds.data['y'][2] == 3
 
-        self.assertEqual(orig_cds.data['y'][0], 1)
+        assert orig_cds.data['y'][0] == 1
         slider = obj.layout.select(DiscreteSlider)[0]
         def run():
             slider.value = 3
         doc.add_next_tick_callback(run)
         time.sleep(1)
         cds = self.session.document.roots[0].select_one({'type': ColumnDataSource})
-        self.assertEqual(cds.data['y'][0], 3)
+        assert cds.data['y'][0] == 3

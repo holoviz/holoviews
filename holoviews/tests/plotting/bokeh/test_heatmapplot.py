@@ -11,6 +11,7 @@ from bokeh.models import (
 
 from holoviews.element import HeatMap, Image, Points
 from holoviews.plotting.bokeh.heatmap import HeatMapPlot
+from holoviews.testing import assert_data_equal
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -31,8 +32,8 @@ class TestHeatMapPlot(TestBokehPlot):
         hm = hm.opts(tools=[custom_hover])
         plot = bokeh_renderer.get_plot(hm)
         hover = plot.handles['hover']
-        self.assertEqual(hover.tooltips, tooltips)
-        self.assertEqual(hover.renderers, [plot.handles['glyph_renderer']])
+        assert hover.tooltips == tooltips
+        assert hover.renderers == [plot.handles['glyph_renderer']]
 
     def test_heatmap_hover_ensure_vdims_sanitized(self):
         hm = HeatMap([(1,1,1), (2,2,0)], vdims=['z with $pace']).opts(tools=['hover'])
@@ -49,10 +50,10 @@ class TestHeatMapPlot(TestBokehPlot):
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
         assert isinstance(x_range, FactorRange)
-        self.assertEqual(x_range.factors, ['A', 'B'])
+        assert x_range.factors == ['A', 'B']
         assert isinstance(y_range, Range1d)
-        self.assertEqual(y_range.start, 0.5)
-        self.assertEqual(y_range.end, 2.5)
+        assert y_range.start == 0.5
+        assert y_range.end == 2.5
 
     def test_heatmap_categorical_axes_string_int_invert_xyaxis(self):
         opts = dict(invert_xaxis=True, invert_yaxis=True)
@@ -61,10 +62,10 @@ class TestHeatMapPlot(TestBokehPlot):
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
         assert isinstance(x_range, FactorRange)
-        self.assertEqual(x_range.factors, ['A', 'B'][::-1])
+        assert x_range.factors == ['A', 'B'][::-1]
         assert isinstance(y_range, Range1d)
-        self.assertEqual(y_range.start, 2.5)
-        self.assertEqual(y_range.end, 0.5)
+        assert y_range.start == 2.5
+        assert y_range.end == 0.5
 
     def test_heatmap_categorical_axes_string_int_inverted(self):
         hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).opts(invert_axes=True)
@@ -72,10 +73,10 @@ class TestHeatMapPlot(TestBokehPlot):
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
         assert isinstance(x_range, Range1d)
-        self.assertEqual(x_range.start, 0.5)
-        self.assertEqual(x_range.end, 2.5)
+        assert x_range.start == 0.5
+        assert x_range.end == 2.5
         assert isinstance(y_range, FactorRange)
-        self.assertEqual(y_range.factors, ['A', 'B'])
+        assert y_range.factors == ['A', 'B']
 
     def test_heatmap_points_categorical_axes_string_int(self):
         hmap = HeatMap([('A', 1, 1), ('B', 2, 2)])
@@ -84,10 +85,10 @@ class TestHeatMapPlot(TestBokehPlot):
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
         assert isinstance(x_range, FactorRange)
-        self.assertEqual(x_range.factors, ['A', 'B', 'C'])
+        assert x_range.factors == ['A', 'B', 'C']
         assert isinstance(y_range, Range1d)
-        self.assertEqual(y_range.start, 0.5)
-        self.assertEqual(y_range.end, 3)
+        assert y_range.start == 0.5
+        assert y_range.end == 3
 
     def test_heatmap_points_categorical_axes_string_int_inverted(self):
         hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).opts(invert_axes=True)
@@ -96,10 +97,10 @@ class TestHeatMapPlot(TestBokehPlot):
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
         assert isinstance(x_range, Range1d)
-        self.assertEqual(x_range.start, 0.5)
-        self.assertEqual(x_range.end, 3)
+        assert x_range.start == 0.5
+        assert x_range.end == 3
         assert isinstance(y_range, FactorRange)
-        self.assertEqual(y_range.factors, ['A', 'B', 'C'])
+        assert y_range.factors == ['A', 'B', 'C']
 
     def test_heatmap_invert_axes(self):
         arr = np.array([[0, 1, 2], [3, 4,  5]])
@@ -155,10 +156,10 @@ class TestHeatMapPlot(TestBokehPlot):
         hm = HeatMap(data, kdims=["col", "row"], vdims=["val", "alpha"]).opts(alpha="alpha")
         plot = bokeh_renderer.get_plot(hm)
         cds = plot.handles['cds']
-        self.assertEqual(cds.data['row'], np.array([1, 2, 1, 2]))
-        self.assertEqual(cds.data['col'], np.array([1, 1, 2, 2]))
-        self.assertEqual(cds.data['alpha'], np.array([0, 1, 0, 0]))
-        self.assertEqual(cds.data['zvalues'], np.array([0.5, 0.1, 0.2, 0.6]))
+        assert_data_equal(cds.data['row'], np.array([1, 2, 1, 2]))
+        assert_data_equal(cds.data['col'], np.array([1, 1, 2, 2]))
+        assert_data_equal(cds.data['alpha'], np.array([0, 1, 0, 0]))
+        assert_data_equal(cds.data['zvalues'], np.array([0.5, 0.1, 0.2, 0.6]))
 
     def test_heatmap_pandas_categorial(self):
         # Test for https://github.com/holoviz/holoviews/issues/6313

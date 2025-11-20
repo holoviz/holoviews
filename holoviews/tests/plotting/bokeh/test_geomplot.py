@@ -15,9 +15,9 @@ class TestSegmentPlot(TestBokehPlot):
                             vdims=['a', 'b']).opts(**opts)
         plot = bokeh_renderer.get_plot(segments)
         glyph_renderer = plot.handles['glyph_renderer']
-        self.assertEqual(glyph_renderer.glyph.line_color, 'green')
-        self.assertEqual(glyph_renderer.selection_glyph.line_color, 'red')
-        self.assertEqual(glyph_renderer.nonselection_glyph.line_color, 'blue')
+        assert glyph_renderer.glyph.line_color == 'green'
+        assert glyph_renderer.selection_glyph.line_color == 'red'
+        assert glyph_renderer.nonselection_glyph.line_color == 'blue'
 
     def test_segments_alpha_selection_nonselection(self):
         opts = dict(alpha=0.8, selection_alpha=1.0, nonselection_alpha=0.2)
@@ -25,9 +25,9 @@ class TestSegmentPlot(TestBokehPlot):
                             vdims=['a', 'b']).opts(**opts)
         plot = bokeh_renderer.get_plot(segments)
         glyph_renderer = plot.handles['glyph_renderer']
-        self.assertEqual(glyph_renderer.glyph.line_alpha, 0.8)
-        self.assertEqual(glyph_renderer.selection_glyph.line_alpha, 1)
-        self.assertEqual(glyph_renderer.nonselection_glyph.line_alpha, 0.2)
+        assert glyph_renderer.glyph.line_alpha == 0.8
+        assert glyph_renderer.selection_glyph.line_alpha == 1
+        assert glyph_renderer.nonselection_glyph.line_alpha == 0.2
 
     def test_segments_overlay_hover(self):
         obj = NdOverlay({
@@ -68,21 +68,21 @@ class TestSegmentPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(segments)
         x_range = plot.handles['x_range']
         assert isinstance(x_range, FactorRange)
-        self.assertEqual(x_range.factors, ['A', 'B', 'C'])
+        assert x_range.factors == ['A', 'B', 'C']
 
     def test_segments_categorical_yaxis(self):
         segments = Segments(([1, 2, 3], ['A', 'B', 'C'], [4, 5, 6], ['A', 'B', 'C']))
         plot = bokeh_renderer.get_plot(segments)
         y_range = plot.handles['y_range']
         assert isinstance(y_range, FactorRange)
-        self.assertEqual(y_range.factors, ['A', 'B', 'C'])
+        assert y_range.factors == ['A', 'B', 'C']
 
     def test_segments_categorical_yaxis_invert_axes(self):
         segments = Segments(([1, 2, 3], ['A', 'B', 'C'], [4, 5, 6], ['A', 'B', 'C']))
         plot = bokeh_renderer.get_plot(segments)
         y_range = plot.handles['y_range']
         assert isinstance(y_range, FactorRange)
-        self.assertEqual(y_range.factors, ['A', 'B', 'C'])
+        assert y_range.factors == ['A', 'B', 'C']
 
     def test_segments_overlay_categorical_yaxis(self):
         segments = Segments(([1, 2, 3], ['A', 'B', 'C'], [4, 5, 6], ['A', 'B', 'C']))
@@ -90,7 +90,7 @@ class TestSegmentPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(segments*segments2)
         y_range = plot.handles['y_range']
         assert isinstance(y_range, FactorRange)
-        self.assertEqual(y_range.factors, ['A', 'B', 'C', 'D'])
+        assert y_range.factors == ['A', 'B', 'C', 'D']
 
     def test_segments_overlay_categorical_yaxis_invert_yaxis(self):
         segments = Segments(([1, 2, 3], ['A', 'B', 'C'], [4, 5, 6], ['A', 'B', 'C'])).opts(invert_yaxis=True)
@@ -98,7 +98,7 @@ class TestSegmentPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(segments*segments2)
         y_range = plot.handles['y_range']
         assert isinstance(y_range, FactorRange)
-        self.assertEqual(y_range.factors, ['A', 'B', 'C', 'D'][::-1])
+        assert y_range.factors == ['A', 'B', 'C', 'D'][::-1]
 
     def test_segments_overlay_categorical_xaxis_invert_axes(self):
         segments = Segments(([1, 2, 3], ['A', 'B', 'C'], [4, 5, 6], ['A', 'B', 'C'])).opts(invert_axes=True)
@@ -106,4 +106,4 @@ class TestSegmentPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(segments*segments2)
         x_range = plot.handles['x_range']
         assert isinstance(x_range, FactorRange)
-        self.assertEqual(x_range.factors, ['A', 'B', 'C', 'D'])
+        assert x_range.factors == ['A', 'B', 'C', 'D']

@@ -31,7 +31,7 @@ class TestPlotDefinitions(ComparisonTestCase):
 
     def test_bokeh_option_definitions(self):
         # Check option definitions do not introduce new clashes
-        self.assertEqual(option_intersections('bokeh'), self.known_clashes)
+        assert option_intersections('bokeh') == self.known_clashes
 
 
 class TestBokehPlot(ComparisonTestCase):
@@ -58,8 +58,8 @@ class TestBokehPlot(ComparisonTestCase):
         plot.initialize_plot()
         cmapper = plot.handles[f'{prefix}color_mapper']
         low, high = element.range(dim)
-        self.assertEqual(cmapper.low, low)
-        self.assertEqual(cmapper.high, high)
+        assert cmapper.low == low
+        assert cmapper.high == high
         mapper_type = LogColorMapper if log else LinearColorMapper
         assert isinstance(cmapper, mapper_type)
 
@@ -73,9 +73,9 @@ class TestBokehPlot(ComparisonTestCase):
                      if r is not None]
         hover = fig.select(dict(type=HoverTool))
         assert len(hover)
-        self.assertEqual(hover[0].tooltips, tooltips)
-        self.assertEqual(hover[0].formatters, formatters)
-        self.assertEqual(hover[0].line_policy, line_policy)
+        assert hover[0].tooltips == tooltips
+        assert hover[0].formatters == formatters
+        assert hover[0].line_policy == line_policy
 
         if isinstance(element, Element):
             cds = fig.select_one(dict(type=ColumnDataSource))
