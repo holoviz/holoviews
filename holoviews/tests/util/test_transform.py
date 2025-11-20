@@ -39,6 +39,7 @@ shapelib_available = pytest.mark.skipif(shapely is None and spd is None,
 
 from holoviews.core.data import Dataset
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.testing import assert_element_equal
 from holoviews.util.transform import dim
 
 
@@ -93,23 +94,15 @@ class TestDimTransforms(ComparisonTestCase):
     def assert_apply(self, expr, expected, skip_dask=False, skip_no_index=False):
         if np.isscalar(expected):
             # Pandas input
-            self.assertEqual(
-                expr.apply(self.dataset, keep_index=False), expected
-            )
-            self.assertEqual(
-                expr.apply(self.dataset, keep_index=True), expected
-            )
+            assert expr.apply(self.dataset, keep_index=False) == expected
+            assert expr.apply(self.dataset, keep_index=True) == expected
 
             if dd is None:
                 return
 
             # Dask input
-            self.assertEqual(
-                expr.apply(self.dataset_dask, keep_index=False), expected
-            )
-            self.assertEqual(
-                expr.apply(self.dataset_dask, keep_index=True), expected
-            )
+            assert expr.apply(self.dataset_dask, keep_index=False) == expected
+            assert expr.apply(self.dataset_dask, keep_index=True) == expected
             return
 
         # Make sure expected is a pandas Series
@@ -165,10 +158,10 @@ class TestDimTransforms(ComparisonTestCase):
         import xarray as xr
         if np.isscalar(expected):
             # Pandas input
-            self.assertEqual(
+            assert_element_equal(
                 expr.apply(self.dataset_xarray, keep_index=False), expected
             )
-            self.assertEqual(
+            assert_element_equal(
                 expr.apply(self.dataset_xarray, keep_index=True), expected
             )
             return
@@ -428,46 +421,41 @@ class TestDimTransforms(ComparisonTestCase):
     # Repr method
 
     def test_dim_repr(self):
-        self.assertEqual(repr(dim('float')), "dim('float')")
+        assert repr(dim('float')) == "dim('float')"
 
     def test_unary_op_repr(self):
-        self.assertEqual(repr(-dim('float')), "-dim('float')")
+        assert repr(-dim('float')) == "-dim('float')"
 
     def test_binary_op_repr(self):
-        self.assertEqual(repr(dim('float')*2), "dim('float')*2")
+        assert repr(dim('float')*2) == "dim('float')*2"
 
     def test_reverse_binary_op_repr(self):
-        self.assertEqual(repr(1+dim('float')), "1+dim('float')")
+        assert repr(1+dim('float')) == "1+dim('float')"
 
     def test_ufunc_expression_repr(self):
-        self.assertEqual(repr(np.log(dim('float'))), "dim('float').log()")
+        assert repr(np.log(dim('float'))) == "dim('float').log()"
 
     def test_custom_func_repr(self):
-        self.assertEqual(repr(dim('float').norm()), "dim('float').norm()")
+        assert repr(dim('float').norm()) == "dim('float').norm()"
 
     def test_multi_operator_expression_repr(self):
-        self.assertEqual(repr(((dim('float')-2)*3)**2),
-                         "((dim('float')-2)*3)**2")
+        assert repr(((dim('float')-2)*3)**2) == "((dim('float')-2)*3)**2"
 
     # Applies method
 
     def test_multi_dim_expression_applies(self):
-        self.assertEqual((dim('int')-dim('float')).applies(self.dataset),
-                         True)
+        assert (dim('int')-dim('float')).applies(self.dataset) is True
 
     def test_multi_dim_expression_not_applies(self):
-        self.assertEqual((dim('foo')-dim('bar')).applies(self.dataset),
-                         False)
+        assert (dim('foo')-dim('bar')).applies(self.dataset) is False
 
     def test_multi_dim_expression_partial_applies(self):
-        self.assertEqual((dim('int')-dim('bar')).applies(self.dataset),
-                         False)
+        assert (dim('int')-dim('bar')).applies(self.dataset) is False
 
     # Check namespaced expressions
 
     def test_pandas_namespace_accessor_repr(self):
-        self.assertEqual(repr(dim('date').df.dt.year),
-                         "dim('date').pd.dt.year")
+        assert repr(dim('date').df.dt.year) == "dim('date').pd.dt.year"
 
     def test_pandas_str_accessor(self):
         expr = dim('categories').df.str.lower()
@@ -485,8 +473,7 @@ class TestDimTransforms(ComparisonTestCase):
 
     @xr_skip
     def test_xarray_namespace_method_repr(self):
-        self.assertEqual(repr(dim('date').xr.quantile(0.95)),
-                         "dim('date').xr.quantile(0.95)")
+        assert repr(dim('date').xr.quantile(0.95)) == "dim('date').xr.quantile(0.95)"
 
     @xr_skip
     def test_xarray_quantile_method(self):
@@ -508,7 +495,7 @@ class TestDimTransforms(ComparisonTestCase):
     def test_dynamic_mul(self):
         p = Params(a=1)
         expr = dim('float') * p.param.a
-        self.assertEqual(list(expr.params.values()), [p.param.a])
+        assert list(expr.params.values()) == [p.param.a]
         self.assert_apply(expr, self.linear_floats)
         p.a = 2
         self.assert_apply(expr, self.linear_floats*2)
@@ -516,7 +503,7 @@ class TestDimTransforms(ComparisonTestCase):
     def test_dynamic_arg(self):
         p = Params(a=1)
         expr = dim('float').round(p.param.a)
-        self.assertEqual(list(expr.params.values()), [p.param.a])
+        assert list(expr.params.values()) == [p.param.a]
         self.assert_apply(expr, np.round(self.linear_floats, 1))
         p.a = 2
         self.assert_apply(expr, np.round(self.linear_floats, 2))
@@ -524,7 +511,7 @@ class TestDimTransforms(ComparisonTestCase):
     def test_dynamic_kwarg(self):
         p = Params(a=1)
         expr = dim('float').round(decimals=p.param.a)
-        self.assertEqual(list(expr.params.values()), [p.param.a])
+        assert list(expr.params.values()) == [p.param.a]
         self.assert_apply(expr, np.round(self.linear_floats, 1))
         p.a = 2
         self.assert_apply(expr, np.round(self.linear_floats, 2))
@@ -532,7 +519,7 @@ class TestDimTransforms(ComparisonTestCase):
     def test_pickle(self):
         expr = (((dim('float')-2)*3)**2)
         expr2 = pickle.loads(pickle.dumps(expr))
-        self.assertEqual(expr, expr2)
+        assert repr(expr) == repr(expr2)
 
 
 @shapelib_available

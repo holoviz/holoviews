@@ -52,27 +52,27 @@ class TestOutputUtil(ComparisonTestCase):
         super().tearDown()
 
     def test_output_util_svg_string(self):
-        self.assertEqual(OutputSettings.options.get('fig', None), None)
+        assert OutputSettings.options.get('fig', None) is None
         output("fig='svg'")
-        self.assertEqual(OutputSettings.options.get('fig', None), 'svg')
+        assert OutputSettings.options.get('fig', None) == 'svg'
 
     def test_output_util_png_kwargs(self):
-        self.assertEqual(OutputSettings.options.get('fig', None), None)
+        assert OutputSettings.options.get('fig', None) is None
         output(fig='png')
-        self.assertEqual(OutputSettings.options.get('fig', None), 'png')
+        assert OutputSettings.options.get('fig', None) == 'png'
 
     def test_output_util_backend_string(self):
-        self.assertEqual(OutputSettings.options.get('backend', None), None)
+        assert OutputSettings.options.get('backend', None) is None
         output("backend='bokeh'")
-        self.assertEqual(OutputSettings.options.get('backend', None), 'bokeh')
+        assert OutputSettings.options.get('backend', None) == 'bokeh'
 
     def test_output_util_backend_kwargs(self):
-        self.assertEqual(OutputSettings.options.get('backend', None), None)
+        assert OutputSettings.options.get('backend', None) is None
         output(backend='bokeh')
-        self.assertEqual(OutputSettings.options.get('backend', None), 'bokeh')
+        assert OutputSettings.options.get('backend', None) == 'bokeh'
 
     def test_output_util_object_noop(self):
-        self.assertEqual(output("fig='svg'",3), 3)
+        assert output("fig='svg'",3) == 3
 
 
 class TestOptsUtil(LoggingComparisonTestCase):
@@ -99,21 +99,21 @@ class TestOptsUtil(LoggingComparisonTestCase):
         expected= ["opts.Bivariate(bandwidth=0.5, cmap='jet')",
                    "opts.Points(logx=True, size=2)"]
         reprs = opts._builder_reprs(magic)
-        self.assertEqual(reprs, expected)
+        assert reprs == expected
 
     def test_opts_builder_repr_line_magic(self):
         magic= "%opts Bivariate [bandwidth=0.5] (cmap='jet') Points [logx=True] (size=2)"
         expected= ["opts.Bivariate(bandwidth=0.5, cmap='jet')",
                    "opts.Points(logx=True, size=2)"]
         reprs = opts._builder_reprs(magic)
-        self.assertEqual(reprs, expected)
+        assert reprs == expected
 
     def test_opts_builder_repr_cell_magic(self):
         magic= "%%opts Bivariate [bandwidth=0.5] (cmap='jet') Points [logx=True] (size=2)"
         expected= ["opts.Bivariate(bandwidth=0.5, cmap='jet')",
                    "opts.Points(logx=True, size=2)"]
         reprs = opts._builder_reprs(magic)
-        self.assertEqual(reprs, expected)
+        assert reprs == expected
 
     def test_opts_builder_repr_options_dotted(self):
         options = [Options('Bivariate.Test.Example', bandwidth=0.5, cmap='Blues'),
@@ -121,4 +121,4 @@ class TestOptsUtil(LoggingComparisonTestCase):
         expected= ["opts.Bivariate('Test.Example', bandwidth=0.5, cmap='Blues')",
                    "opts.Points(logx=True, size=2)"]
         reprs = opts._builder_reprs(options)
-        self.assertEqual(reprs, expected)
+        assert reprs == expected
