@@ -615,7 +615,7 @@ class TestPlotUtils:
                   np.arange(0, 2., .2, dtype='float32'))
         X, Y = np.meshgrid(xs, ys)
         dist = get_min_distance(Points((X.flatten(), Y.flatten())))
-        assert float(round(dist, 5)) == 0.2
+        assert np.isclose(dist, 0.2)
 
     def test_get_min_distance_int32_type(self):
         xs, ys = (np.arange(0, 10, dtype='int32'),
