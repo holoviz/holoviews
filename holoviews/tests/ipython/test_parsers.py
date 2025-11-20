@@ -3,20 +3,21 @@ Tests of the parsers implemented in ipython.parsers
 """
 import pytest
 
-from holoviews.element.comparison import ComparisonTestCase
+from holoviews.core.options import Cycle, Options
+from holoviews.testing import assert_data_equal, assert_dict_equal
 
 try:
-    import pyparsing     # noqa (import test)
+    import pyparsing  # noqa: F401
+
     from holoviews.util.parser import OptsSpec
 except ImportError:
     pytest.skip("Required dependencies not satisfied for testing parsers", allow_module_level=True)
 
 
-from holoviews.core.options import Cycle, Options
-from holoviews.testing import assert_data_equal, assert_dict_equal
+from .utils import IPythonCase
 
 
-class OptsSpecPlotOptionsTests(ComparisonTestCase):
+class OptsSpecPlotOptionsTests(IPythonCase):
     """
     Test the OptsSpec parser works correctly for plot options.
     """
@@ -92,7 +93,7 @@ class OptsSpecPlotOptionsTests(ComparisonTestCase):
         assert_dict_equal(OptsSpec.parse(line), expected)
 
 
-class OptsSpecStyleOptionsTests(ComparisonTestCase):
+class OptsSpecStyleOptionsTests:
 
     def test_style_opts_simple(self):
         line = "Layout (string='foo')"
@@ -175,7 +176,7 @@ class OptsSpecStyleOptionsTests(ComparisonTestCase):
 
 
 
-class OptsNormPlotOptionsTests(ComparisonTestCase):
+class OptsNormPlotOptionsTests:
     """
     Test the OptsSpec parser works correctly for plot options.
     """
@@ -215,7 +216,7 @@ class OptsNormPlotOptionsTests(ComparisonTestCase):
         assert_dict_equal(OptsSpec.parse(line), expected)
 
 
-class OptsSpecCombinedOptionsTests(ComparisonTestCase):
+class OptsSpecCombinedOptionsTests:
 
     def test_combined_1(self):
         line = "Layout plot[fig_inches=(3,3) foo='bar baz'] Layout (string='foo')"

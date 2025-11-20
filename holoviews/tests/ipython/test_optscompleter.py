@@ -4,16 +4,17 @@ Tests the OptsCompleter class for tab-completion in the opts magic.
 """
 import pytest
 
+from .utils import IPythonCase
+
 try:
-    from holoviews.element.comparison import IPTestCase
     from holoviews.ipython.magics import OptsCompleter
 except ImportError:
     pytest.skip("Required dependencies not satisfied for testing OptsCompleter", allow_module_level=True)
 
 
-class TestOptsCompleter(IPTestCase):
+class TestOptsCompleter(IPythonCase):
 
-    def setUp(self):
+    def setup_method(self):
         self.completions = {
             'AnElement':(
                 ['plotoptA1', 'plotoptA2'],
@@ -28,7 +29,7 @@ class TestOptsCompleter(IPTestCase):
         self.compositor_defs = {}
         self.all_keys = [*sorted(self.completions.keys()), "style(", "plot[", "norm{"]
 
-        super().setUp()
+        super().setup_method()
 
     def test_completer_setup(self):
         "Test setup_completions for the real completion set"

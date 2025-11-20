@@ -5,17 +5,10 @@ import os
 
 import pytest
 
-pytest.importorskip("nbconvert")
-pytest.importorskip("IPython")
-
-import nbconvert
-import nbformat
-
-from holoviews.element.comparison import ComparisonTestCase
-from holoviews.ipython.preprocessors import OptsMagicProcessor, OutputMagicProcessor
-
 
 def apply_preprocessors(preprocessors, nbname):
+    import nbconvert
+    import nbformat
     notebooks_path = os.path.join(os.path.split(__file__)[0], 'notebooks')
     with open(os.path.join(notebooks_path, nbname)) as f:
         nb = nbformat.read(f, nbformat.NO_CONVERT)
@@ -25,15 +18,21 @@ def apply_preprocessors(preprocessors, nbname):
         source, _meta = exporter.from_notebook_node(nb)
     return source
 
-class TestOptsPreprocessor(ComparisonTestCase):
+class TestOptsPreprocessor:
+
+    def setup_class(self):
+        pytest.importorskip("nbconvert")
+        pytest.importorskip("IPython")
 
     def test_opts_image_line_magic(self):
+        from holoviews.ipython.preprocessors import OptsMagicProcessor
         nbname = 'test_opts_image_line_magic.ipynb'
         expected = """hv.util.opts(" Image [xaxis=None] (cmap='viridis')")"""
         source = apply_preprocessors([OptsMagicProcessor()], nbname)
         assert source.strip().endswith(expected) is True
 
     def test_opts_image_cell_magic(self):
+        from holoviews.ipython.preprocessors import OptsMagicProcessor
         nbname = 'test_opts_image_cell_magic.ipynb'
         expected = ("""hv.util.opts(" Image [xaxis=None] (cmap='viridis')", """
                     + """hv.Image(np.random.rand(20,20)))""")
@@ -41,6 +40,7 @@ class TestOptsPreprocessor(ComparisonTestCase):
         assert source.strip().endswith(expected) is True
 
     def test_opts_image_cell_magic_offset(self):
+        from holoviews.ipython.preprocessors import OptsMagicProcessor
         nbname = 'test_opts_image_cell_magic_offset.ipynb'
         # FIXME: Not quite right yet, shouldn't have a leading space or a newline
         expected = (" 'An expression (literal) on the same line';\n"
@@ -50,6 +50,7 @@ class TestOptsPreprocessor(ComparisonTestCase):
         assert source.strip().endswith(expected) is False
 
     def test_opts_image_line_magic_svg(self):
+        from holoviews.ipython.preprocessors import OutputMagicProcessor
         nbname = 'test_output_svg_line_magic.ipynb'
         expected = """hv.util.output(" fig='svg'")"""
         source = apply_preprocessors([OutputMagicProcessor()], nbname)

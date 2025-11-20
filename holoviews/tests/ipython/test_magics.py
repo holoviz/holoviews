@@ -7,24 +7,22 @@ import holoviews as hv
 from holoviews.core.options import Store
 from holoviews.operation import Compositor
 
-try:
-    import holoviews.ipython
-    from holoviews.element.comparison import IPTestCase
-except ImportError:
-    pytest.skip("IPython required to test IPython magics", allow_module_level=True)
+from .utils import IPythonCase
 
 
-class ExtensionTestCase(IPTestCase):
+class ExtensionTestCase(IPythonCase):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
+        # import holoviews.ipython
+
         self.ip.run_line_magic("load_ext", "holoviews.ipython")
         for renderer in Store.renderers.values():
             renderer.comm_manager = CommManager  # TODO: Should set it back
 
-    def tearDown(self):
+    def teardown_method(self):
         self.ip.run_line_magic("unload_ext", "holoviews.ipython")
-        super().tearDown()
+        super().teardown_method()
 
     def cell_magic(self, *args, **kwargs):
         with warnings.catch_warnings(record=True) as w:
@@ -43,14 +41,14 @@ class ExtensionTestCase(IPTestCase):
 
 class TestOptsMagic(ExtensionTestCase):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         self.cell("import numpy as np")
         self.cell("from holoviews import DynamicMap, Curve, Image")
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.custom_options(val = {})
-        super().tearDown()
+        super().teardown_method()
 
     def test_cell_opts_style(self):
 
@@ -136,8 +134,8 @@ class TestOptsMagic(ExtensionTestCase):
 
 class TestOutputMagic(ExtensionTestCase):
 
-    def tearDown(self):
-        super().tearDown()
+    def teardown_method(self):
+        super().teardown_method()
 
     def test_output_svg(self):
         self.line_magic('output', "fig='svg'")
@@ -171,16 +169,16 @@ class TestOutputMagic(ExtensionTestCase):
 
 class TestCompositorMagic(ExtensionTestCase):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         self.cell("import numpy as np")
         self.cell("from holoviews.element import Image")
         self.definitions = list(Compositor.definitions)
         Compositor.definitions[:] = []
 
-    def tearDown(self):
+    def teardown_method(self):
         Compositor.definitions[:] = self.definitions
-        super().tearDown()
+        super().teardown_method()
 
     def test_display_compositor_definition(self):
         definition = " display factory(Image * Image * Image) RGBTEST"
