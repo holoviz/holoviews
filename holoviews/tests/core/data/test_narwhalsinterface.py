@@ -7,6 +7,7 @@ import pytest
 
 from holoviews import Dataset, Dimension
 from holoviews.core.data import NarwhalsInterface
+from holoviews.testing import assert_data_equal
 
 from .base import HeterogeneousColumnTests, InterfaceTests
 
@@ -317,3 +318,32 @@ class CudfNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
         msg = "cudf does not support mixed types, please type-cast the column of dataframe/series and other to same dtypes."
         with pytest.raises(TypeError, match=re.escape(msg)):
             return super().test_dataset_nodata_range()
+
+    def test_dataset_sample_hm(self):
+        samples = self.dataset_hm.sample([0, 5, 10]).dimension_values('y')
+        assert samples.implementation == nw.Implementation.CUDF
+        assert_data_equal(np.array([0, 10, 20]), samples.to_numpy())
+
+    def test_dataset_sample_hm_alias(self):
+        samples = self.dataset_hm_alias.sample([0, 5, 10]).dimension_values('y')
+        assert samples.implementation == nw.Implementation.CUDF
+        assert_data_equal(np.array([0, 10, 20]), samples.to_numpy())
+
+    def test_dataset_add_dimensions_value_hm(self):
+        table = self.dataset_hm.add_dimension('z', 1, 0)
+        assert table.kdims[1] == 'z'
+        data = table.dimension_values('z')
+        assert data.implementation == nw.Implementation.CUDF
+        assert_data_equal(np.zeros(table.shape[0]), data.to_numpy())
+
+    def test_dataset_add_dimensions_values_hm(self):
+        table =  self.dataset_hm.add_dimension('z', 1, range(1,12))
+        assert table.kdims[1] == 'z'
+        data = table.dimension_values('z')
+        assert data.implementation == nw.Implementation.CUDF
+        assert_data_equal(np.array(list(range(1,12))), data.to_numpy())
+
+    def test_dataset_sample_ht(self):
+        samples = self.dataset_ht.sample([0, 5, 10]).dimension_values('y')
+        assert samples.implementation == nw.Implementation.CUDF
+        assert_data_equal(np.array([0, 0.5, 1]), samples.to_numpy())
