@@ -8,15 +8,14 @@ from panel.widgets import DiscreteSlider, FloatSlider, Player
 from pyviz_comms import CommManager
 
 from holoviews import Curve, DynamicMap, HoloMap, Store
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.plotly import PlotlyRenderer
 from holoviews.plotting.renderer import Renderer
 from holoviews.streams import Stream
 
 
-class PlotlyRendererTest(ComparisonTestCase):
+class PlotlyRendererTest:
 
-    def setUp(self):
+    def setup_method(self):
         self.previous_backend = Store.current_backend
         Store.current_backend = 'plotly'
         self.renderer = PlotlyRenderer.instance()
@@ -26,7 +25,7 @@ class PlotlyRendererTest(ComparisonTestCase):
             Renderer.notebook_context = False
             Renderer.comm_manager = CommManager
 
-    def tearDown(self):
+    def teardown_method(self):
         with param.logging_level('ERROR'):
             Renderer.notebook_context = self.nbcontext
             Renderer.comm_manager = self.comm_manager

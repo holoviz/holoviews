@@ -43,7 +43,7 @@ class TestCurvePlot(TestPlotlyPlot):
 
     def test_curve_color_mapping_error(self):
         curve = Curve([1, 2, 3]).opts(color='x')
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             self._get_plot_state(curve)
 
     def test_curve_dash(self):
@@ -64,8 +64,8 @@ class TestCurvePlot(TestPlotlyPlot):
 
 class TestMapboxCurvePlot(TestPlotlyPlot):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
 
         # Precompute coordinates
         self.xs = [3000000, 2000000, 1000000]
@@ -116,7 +116,7 @@ class TestMapboxCurvePlot(TestPlotlyPlot):
 
     def test_curve_color_mapping_error(self):
         curve = Tiles("") * Curve([1, 2, 3]).opts(color='x')
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             self._get_plot_state(curve)
 
     def test_curve_dash(self):

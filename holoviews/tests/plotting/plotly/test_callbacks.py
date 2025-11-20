@@ -1,5 +1,4 @@
 import uuid
-from unittest import TestCase
 from unittest.mock import Mock
 
 import plotly.graph_objs as go
@@ -66,9 +65,9 @@ def build_callback_set(callback_cls, trace_uids, stream_type, num_streams=2):
     return plots, streamss, callbacks, eventss
 
 
-class TestCallbacks(TestCase):
+class TestCallbacks:
 
-    def setUp(self):
+    def setup_method(self):
         self.fig_dict = go.Figure({
             'data': [
                 {'type': 'scatter',

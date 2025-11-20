@@ -7,8 +7,8 @@ from .test_plot import TestPlotlyPlot
 
 class TestHistogramPlot(TestPlotlyPlot):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         self.frequencies = [1, 3, 5, 4, 2, 0]
         self.edges = [-3, -2, -1, 0, 1, 2]
 

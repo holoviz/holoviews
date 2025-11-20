@@ -7,8 +7,8 @@ from .test_plot import TestPlotlyPlot
 
 class TestDistributionPlot(TestPlotlyPlot):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         try:
             import scipy  # noqa
         except ImportError:

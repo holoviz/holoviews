@@ -4,7 +4,6 @@ from param import concrete_descendents
 
 from holoviews.core import DynamicMap, Store
 from holoviews.element import Curve
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.plotly.element import ElementPlot
 from holoviews.plotting.plotly.util import figure_grid
 from holoviews.streams import Pipe
@@ -64,9 +63,9 @@ def test_layout_plot_stream_cleanup():
     assert not stream2._subscribers
 
 
-class TestPlotlyPlot(ComparisonTestCase):
+class TestPlotlyPlot:
 
-    def setUp(self):
+    def setup_method(self):
         self.previous_backend = Store.current_backend
         Store.set_current_backend('plotly')
         self.comm_manager = plotly_renderer.comm_manager
@@ -76,7 +75,7 @@ class TestPlotlyPlot(ComparisonTestCase):
             self._padding[plot] = plot.padding
             plot.padding = 0
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.current_backend = self.previous_backend
         plotly_renderer.comm_manager = self.comm_manager
         for plot, padding in self._padding.items():

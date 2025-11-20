@@ -32,8 +32,8 @@ pio.templates.default = None
 
 class TestHoloViewsDash(TestPlotlyPlot):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
 
         # Build Dash app mock
         self.app = MagicMock()
