@@ -14,7 +14,6 @@ from holoviews.element import (
     Scatter,
     VectorField,
 )
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation import operation
 from holoviews.plotting.util import (
     _get_min_distance_numpy,
@@ -32,7 +31,7 @@ from holoviews.plotting.util import (
 from holoviews.streams import PointerX
 
 
-class TestOverlayableZorders(ComparisonTestCase):
+class TestOverlayableZorders:
 
     def test_compute_overlayable_zorders_holomap(self):
         hmap = HoloMap({0: Points([])})
@@ -337,7 +336,7 @@ class TestOverlayableZorders(ComparisonTestCase):
         assert curve not in sources[2]
 
 
-class TestInitializeDynamic(ComparisonTestCase):
+class TestInitializeDynamic:
 
     def test_dynamicmap_default_initializes(self):
         dims = [Dimension('N', default=5, range=(0, 10))]
@@ -353,12 +352,12 @@ class TestInitializeDynamic(ComparisonTestCase):
 
 
 
-class TestSplitDynamicMapOverlay(ComparisonTestCase):
+class TestSplitDynamicMapOverlay:
     """
     Tests the split_dmap_overlay utility
     """
 
-    def setUp(self):
+    def setup_method(self):
         self.dmap_element = DynamicMap(lambda: Image([]))
         self.dmap_overlay = DynamicMap(lambda: Overlay([Curve([]), Points([])]))
         self.dmap_ndoverlay = DynamicMap(lambda: NdOverlay({0: Curve([]), 1: Curve([])}))
@@ -458,7 +457,7 @@ class TestSplitDynamicMapOverlay(ComparisonTestCase):
         assert split_dmap_overlay(test)[0] == layers
 
 
-class TestPlotColorUtils(ComparisonTestCase):
+class TestPlotColorUtils:
 
     def test_process_cmap_list_cycle(self):
         colors = process_cmap(['#ffffff', '#959595', '#000000'], 4)
@@ -469,16 +468,16 @@ class TestPlotColorUtils(ComparisonTestCase):
         assert colors == ['#ffffff', '#959595', '#000000', '#ffffff']
 
     def test_process_cmap_invalid_str(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             process_cmap('NonexistentColorMap', 3)
 
     def test_process_cmap_invalid_type(self):
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             process_cmap({'A', 'B', 'C'}, 3)
 
 
 @pytest.mark.usefixtures("mpl_backend")
-class TestMPLColormapUtils(ComparisonTestCase):
+class TestMPLColormapUtils:
 
     def test_mpl_colormap_fire(self):
         colors = process_cmap('fire', 3, provider='matplotlib')
@@ -539,7 +538,7 @@ class TestMPLColormapUtils(ComparisonTestCase):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-class TestBokehPaletteUtils(ComparisonTestCase):
+class TestBokehPaletteUtils:
 
     def test_bokeh_palette_categorical_palettes_not_interpolated(self):
         # Ensure categorical palettes are not expanded
@@ -609,7 +608,7 @@ class TestBokehPaletteUtils(ComparisonTestCase):
         assert lims == (10, 90)
 
 
-class TestPlotUtils(ComparisonTestCase):
+class TestPlotUtils:
 
     def test_get_min_distance_float32_type(self):
         xs, ys = (np.arange(0, 2., .2, dtype='float32'),
@@ -640,7 +639,7 @@ class TestPlotUtils(ComparisonTestCase):
         assert dist == 1.0
 
 
-class TestRangeUtilities(ComparisonTestCase):
+class TestRangeUtilities:
 
     def test_get_axis_padding_scalar(self):
         padding = get_axis_padding(0.1)

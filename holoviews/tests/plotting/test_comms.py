@@ -1,9 +1,7 @@
 from pyviz_comms import Comm, JupyterComm
 
-from holoviews.element.comparison import ComparisonTestCase
 
-
-class TestComm(ComparisonTestCase):
+class TestComm:
 
     def test_init_comm(self):
         Comm()
@@ -42,7 +40,7 @@ class TestComm(ComparisonTestCase):
         comm._handle_msg({'comm_id': 'Testing id'})
 
 
-class TestJupyterComm(ComparisonTestCase):
+class TestJupyterComm:
 
     def test_init_comm(self):
         JupyterComm()
