@@ -3,6 +3,7 @@ import pytest
 
 from holoviews.element import Curve, Tiles
 from holoviews.plotting.plotly.util import PLOTLY_MAP
+from holoviews.testing import assert_data_equal
 
 from .test_plot import TestPlotlyPlot
 
@@ -12,33 +13,33 @@ class TestCurvePlot(TestPlotlyPlot):
     def test_curve_state(self):
         curve = Curve([1, 2, 3])
         state = self._get_plot_state(curve)
-        self.assertEqual(state['data'][0]['x'], np.array([0, 1, 2]))
-        self.assertEqual(state['data'][0]['y'], np.array([1, 2, 3]))
-        self.assertEqual(state['data'][0]['mode'], 'lines')
-        self.assertEqual(state['layout']['xaxis']['range'], [0, 2])
-        self.assertEqual(state['layout']['yaxis']['range'], [1, 3])
+        assert_data_equal(state['data'][0]['x'], np.array([0, 1, 2]))
+        assert_data_equal(state['data'][0]['y'], np.array([1, 2, 3]))
+        assert state['data'][0]['mode'] == 'lines'
+        assert state['layout']['xaxis']['range'] == [0, 2]
+        assert state['layout']['yaxis']['range'] == [1, 3]
 
     def test_curve_inverted(self):
         curve = Curve([1, 2, 3]).opts(invert_axes=True)
         state = self._get_plot_state(curve)
-        self.assertEqual(state['data'][0]['x'], np.array([1, 2, 3]))
-        self.assertEqual(state['data'][0]['y'], np.array([0, 1, 2]))
-        self.assertEqual(state['data'][0]['mode'], 'lines')
-        self.assertEqual(state['layout']['xaxis']['range'], [1, 3])
-        self.assertEqual(state['layout']['yaxis']['range'], [0, 2])
-        self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')
-        self.assertEqual(state['layout']['yaxis']['title']['text'], 'x')
+        assert_data_equal(state['data'][0]['x'], np.array([1, 2, 3]))
+        assert_data_equal(state['data'][0]['y'], np.array([0, 1, 2]))
+        assert state['data'][0]['mode'] == 'lines'
+        assert state['layout']['xaxis']['range'] == [1, 3]
+        assert state['layout']['yaxis']['range'] == [0, 2]
+        assert state['layout']['xaxis']['title']['text'] == 'y'
+        assert state['layout']['yaxis']['title']['text'] == 'x'
 
     def test_curve_interpolation(self):
         curve = Curve([1, 2, 3]).opts(interpolation='steps-mid')
         state = self._get_plot_state(curve)
-        self.assertEqual(state['data'][0]['x'], np.array([0., 0.5, 0.5, 1.5, 1.5, 2.]))
-        self.assertEqual(state['data'][0]['y'], np.array([1, 1, 2, 2, 3, 3]))
+        assert_data_equal(state['data'][0]['x'], np.array([0., 0.5, 0.5, 1.5, 1.5, 2.]))
+        assert_data_equal(state['data'][0]['y'], np.array([1, 1, 2, 2, 3, 3]))
 
     def test_curve_color(self):
         curve = Curve([1, 2, 3]).opts(color='red')
         state = self._get_plot_state(curve)
-        self.assertEqual(state['data'][0]['line']['color'], 'red')
+        assert state['data'][0]['line']['color'] == 'red'
 
     def test_curve_color_mapping_error(self):
         curve = Curve([1, 2, 3]).opts(color='x')
@@ -48,17 +49,17 @@ class TestCurvePlot(TestPlotlyPlot):
     def test_curve_dash(self):
         curve = Curve([1, 2, 3]).opts(dash='dash')
         state = self._get_plot_state(curve)
-        self.assertEqual(state['data'][0]['line']['dash'], 'dash')
+        assert state['data'][0]['line']['dash'] == 'dash'
 
     def test_curve_line_width(self):
         curve = Curve([1, 2, 3]).opts(line_width=5)
         state = self._get_plot_state(curve)
-        self.assertEqual(state['data'][0]['line']['width'], 5)
+        assert state['data'][0]['line']['width'] == 5
 
     def test_visible(self):
         element = Curve([1, 2, 3]).opts(visible=False)
         state = self._get_plot_state(element)
-        self.assertEqual(state['data'][0]['visible'], False)
+        assert state['data'][0]['visible'] is False
 
 
 class TestMapboxCurvePlot(TestPlotlyPlot):
@@ -84,14 +85,12 @@ class TestMapboxCurvePlot(TestPlotlyPlot):
             x=self.x_range, y=self.y_range
         )
         state = self._get_plot_state(curve)
-        self.assertEqual(state['data'][1]['lon'], self.lons)
-        self.assertEqual(state['data'][1]['lat'], self.lats)
-        self.assertEqual(state['data'][1]['mode'], 'lines')
-        self.assertEqual(
-            state['layout'][PLOTLY_MAP]['center'], {
+        assert_data_equal(state['data'][1]['lon'], self.lons)
+        assert_data_equal(state['data'][1]['lat'], self.lats)
+        assert state['data'][1]['mode'] == 'lines'
+        assert state['layout'][PLOTLY_MAP]['center'] == {
                 'lat': self.lat_center, 'lon': self.lon_center
             }
-        )
 
     def test_curve_inverted(self):
         curve = Tiles("") * Curve([1, 2, 3]).opts(invert_axes=True)
@@ -107,13 +106,13 @@ class TestMapboxCurvePlot(TestPlotlyPlot):
 
         curve = Tiles("") * Curve(self.ys).opts(interpolation='steps-mid')
         state = self._get_plot_state(curve)
-        self.assertEqual(state['data'][1]['lat'], interp_lats)
-        self.assertEqual(state['data'][1]['lon'], interp_lons)
+        assert_data_equal(state['data'][1]['lat'], interp_lats)
+        assert_data_equal(state['data'][1]['lon'], interp_lons)
 
     def test_curve_color(self):
         curve = Tiles("") * Curve([1, 2, 3]).opts(color='red')
         state = self._get_plot_state(curve)
-        self.assertEqual(state['data'][1]['line']['color'], 'red')
+        assert state['data'][1]['line']['color'] == 'red'
 
     def test_curve_color_mapping_error(self):
         curve = Tiles("") * Curve([1, 2, 3]).opts(color='x')
@@ -128,9 +127,9 @@ class TestMapboxCurvePlot(TestPlotlyPlot):
     def test_curve_line_width(self):
         curve = Tiles("") * Curve([1, 2, 3]).opts(line_width=5)
         state = self._get_plot_state(curve)
-        self.assertEqual(state['data'][1]['line']['width'], 5)
+        assert state['data'][1]['line']['width'] == 5
 
     def test_visible(self):
         element = Tiles("") * Curve([1, 2, 3]).opts(visible=False)
         state = self._get_plot_state(element)
-        self.assertEqual(state['data'][1]['visible'], False)
+        assert state['data'][1]['visible'] is False

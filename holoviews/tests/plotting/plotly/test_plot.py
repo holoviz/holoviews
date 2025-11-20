@@ -107,7 +107,7 @@ class TestPlotlyPlot(ComparisonTestCase):
             for prop_part in prop_parts[:-1]:
                 prop_parent = prop_parent.get(prop_part, {})
 
-            self.assertEqual(val, prop_parent[prop_parts[-1]])
+                assert val == prop_parent[prop_parts[-1]]
 
 
 class TestPlotDefinitions(TestPlotlyPlot):
@@ -116,7 +116,7 @@ class TestPlotDefinitions(TestPlotlyPlot):
 
     def test_plotly_option_definitions(self):
         # Check option definitions do not introduce new clashes
-        self.assertEqual(option_intersections('plotly'), self.known_clashes)
+        assert option_intersections('plotly') == self.known_clashes
 
 
 class TestPlotlyFigureGrid(TestPlotlyPlot):
@@ -142,17 +142,15 @@ class TestPlotlyFigureGrid(TestPlotlyPlot):
         go.Figure(fig)
 
         # Check domains
-        self.assertEqual(fig['data'][0]['type'], 'table')
-        self.assertEqual(fig['data'][0]['domain'],
-                         {'x': [0, 0.4], 'y': [0.0, 1.0]})
+        assert fig['data'][0]['type'] == 'table'
+        assert fig['data'][0]['domain'] == {'x': [0, 0.4], 'y': [0.0, 1.0]}
 
-        self.assertEqual(fig['data'][1]['type'], 'parcoords')
-        self.assertEqual(fig['data'][1]['domain'],
-                         {'x': [0.4, 1.0], 'y': [0, 1.0]})
+        assert fig['data'][1]['type'] == 'parcoords'
+        assert fig['data'][1]['domain'] == {'x': [0.4, 1.0], 'y': [0, 1.0]}
 
         # Check width and height
-        self.assertEqual(fig['layout']['width'], 1000)
-        self.assertEqual(fig['layout']['height'], 1000)
+        assert fig['layout']['width'] == 1000
+        assert fig['layout']['height'] == 1000
 
     def test_figure_grid_solo_traces_fig_width_height(self):
 
@@ -170,17 +168,15 @@ class TestPlotlyFigureGrid(TestPlotlyPlot):
         go.Figure(fig)
 
         # Check domains
-        self.assertEqual(fig['data'][0]['type'], 'table')
-        self.assertEqual(fig['data'][0]['domain'],
-                         {'x': [0, 0.4], 'y': [0, 1.0]})
+        assert fig['data'][0]['type'] == 'table'
+        assert fig['data'][0]['domain'] == {'x': [0, 0.4], 'y': [0, 1.0]}
 
-        self.assertEqual(fig['data'][1]['type'], 'parcoords')
-        self.assertEqual(fig['data'][1]['domain'],
-                         {'x': [0.4, 1.0], 'y': [0, 1.0]})
+        assert fig['data'][1]['type'] == 'parcoords'
+        assert fig['data'][1]['domain'] == {'x': [0.4, 1.0], 'y': [0, 1.0]}
 
         # Check width and height
-        self.assertEqual(fig['layout']['width'], 1000)
-        self.assertEqual(fig['layout']['height'], 1000)
+        assert fig['layout']['width'] == 1000
+        assert fig['layout']['height'] == 1000
 
     def test_figure_grid_polar_subplots(self):
         fig = figure_grid([[
@@ -204,24 +200,21 @@ class TestPlotlyFigureGrid(TestPlotlyPlot):
         go.Figure(fig)
 
         # Check domains
-        self.assertEqual(fig['data'][0]['type'], 'scatterpolar')
-        self.assertEqual(fig['data'][0]['subplot'], 'polar')
-        self.assertEqual(fig['layout']['polar']['domain'],
-                         {'y': [0, 0.45], 'x': [0, 1.0]})
+        assert fig['data'][0]['type'] == 'scatterpolar'
+        assert fig['data'][0]['subplot'] == 'polar'
+        assert fig['layout']['polar']['domain'] == {'y': [0, 0.45], 'x': [0, 1.0]}
 
-        self.assertEqual(fig['data'][1]['type'], 'barpolar')
-        self.assertEqual(fig['data'][1]['subplot'], 'polar2')
-        self.assertEqual(fig['layout']['polar2']['domain'],
-                         {'y': [0.55, 1.0], 'x': [0, 1.0]})
+        assert fig['data'][1]['type'] == 'barpolar'
+        assert fig['data'][1]['subplot'] == 'polar2'
+        assert fig['layout']['polar2']['domain'] == {'y': [0.55, 1.0], 'x': [0, 1.0]}
 
         # Check width and height
-        self.assertEqual(fig['layout']['width'], 450)
-        self.assertEqual(fig['layout']['height'], 1000)
+        assert fig['layout']['width'] == 450
+        assert fig['layout']['height'] == 1000
 
         # Check that radial axis title stayed with the barpolar trace's polar
         # subplot
-        self.assertEqual(fig['layout']['polar2']['radialaxis'],
-                         {'title': 'radial'})
+        assert fig['layout']['polar2']['radialaxis'] == {'title': 'radial'}
 
     def test_titles_converted_to_annotations(self):
         fig = figure_grid([[
@@ -246,13 +239,13 @@ class TestPlotlyFigureGrid(TestPlotlyPlot):
         go.Figure(fig)
 
         assert 'title' not in fig['layout']
-        self.assertEqual(len(fig['layout']['annotations']), 2)
-        self.assertEqual(fig['layout']['annotations'][0]['text'], 'Scatter!')
-        self.assertEqual(fig['layout']['annotations'][1]['text'], 'Bar!')
+        assert len(fig['layout']['annotations']) == 2
+        assert fig['layout']['annotations'][0]['text'] == 'Scatter!'
+        assert fig['layout']['annotations'][1]['text'] == 'Bar!'
 
         # Check width and height
-        self.assertEqual(fig['layout']['width'], 400)
-        self.assertEqual(fig['layout']['height'], 900)
+        assert fig['layout']['width'] == 400
+        assert fig['layout']['height'] == 900
 
     def test_annotations_stick_with_axis(self):
         fig = figure_grid([[
@@ -289,22 +282,22 @@ class TestPlotlyFigureGrid(TestPlotlyPlot):
         go.Figure(fig)
 
         annotations = fig['layout']['annotations']
-        self.assertEqual(len(annotations), 4)
-        self.assertEqual(annotations[0]['text'], 'One')
-        self.assertEqual(annotations[0]['xref'], 'x')
-        self.assertEqual(annotations[0]['yref'], 'y')
+        assert len(annotations) == 4
+        assert annotations[0]['text'] == 'One'
+        assert annotations[0]['xref'] == 'x'
+        assert annotations[0]['yref'] == 'y'
 
-        self.assertEqual(annotations[1]['text'], 'Two')
-        self.assertEqual(annotations[1]['xref'], 'x')
-        self.assertEqual(annotations[1]['yref'], 'y')
+        assert annotations[1]['text'] == 'Two'
+        assert annotations[1]['xref'] == 'x'
+        assert annotations[1]['yref'] == 'y'
 
-        self.assertEqual(annotations[2]['text'], 'Three')
-        self.assertEqual(annotations[2]['xref'], 'x2')
-        self.assertEqual(annotations[2]['yref'], 'y2')
+        assert annotations[2]['text'] == 'Three'
+        assert annotations[2]['xref'] == 'x2'
+        assert annotations[2]['yref'] == 'y2'
 
-        self.assertEqual(annotations[3]['text'], 'Four')
-        self.assertEqual(annotations[3]['xref'], 'x2')
-        self.assertEqual(annotations[3]['yref'], 'y2')
+        assert annotations[3]['text'] == 'Four'
+        assert annotations[3]['xref'] == 'x2'
+        assert annotations[3]['yref'] == 'y2'
 
     def test_shapes_stick_with_axis(self):
         fig = figure_grid([[
@@ -341,22 +334,22 @@ class TestPlotlyFigureGrid(TestPlotlyPlot):
         go.Figure(fig)
 
         shapes = fig['layout']['shapes']
-        self.assertEqual(len(shapes), 4)
-        self.assertEqual(shapes[0]['type'], 'rect')
-        self.assertEqual(shapes[0]['xref'], 'x')
-        self.assertEqual(shapes[0]['yref'], 'y')
+        assert len(shapes) == 4
+        assert shapes[0]['type'] == 'rect'
+        assert shapes[0]['xref'] == 'x'
+        assert shapes[0]['yref'] == 'y'
 
-        self.assertEqual(shapes[1]['type'], 'circle')
-        self.assertEqual(shapes[1]['xref'], 'x')
-        self.assertEqual(shapes[1]['yref'], 'y')
+        assert shapes[1]['type'] == 'circle'
+        assert shapes[1]['xref'] == 'x'
+        assert shapes[1]['yref'] == 'y'
 
-        self.assertEqual(shapes[2]['type'], 'line')
-        self.assertEqual(shapes[2]['xref'], 'x2')
-        self.assertEqual(shapes[2]['yref'], 'y2')
+        assert shapes[2]['type'] == 'line'
+        assert shapes[2]['xref'] == 'x2'
+        assert shapes[2]['yref'] == 'y2'
 
-        self.assertEqual(shapes[3]['type'], 'path')
-        self.assertEqual(shapes[3]['xref'], 'x2')
-        self.assertEqual(shapes[3]['yref'], 'y2')
+        assert shapes[3]['type'] == 'path'
+        assert shapes[3]['xref'] == 'x2'
+        assert shapes[3]['yref'] == 'y2'
 
     def test_images_stick_with_axis(self):
         fig = figure_grid([[
@@ -394,22 +387,22 @@ class TestPlotlyFigureGrid(TestPlotlyPlot):
         go.Figure(fig)
 
         images = fig['layout']['images']
-        self.assertEqual(len(images), 4)
-        self.assertEqual(images[0]['source'], 'One.png')
-        self.assertEqual(images[0]['xref'], 'x')
-        self.assertEqual(images[0]['yref'], 'y')
+        assert len(images) == 4
+        assert images[0]['source'] == 'One.png'
+        assert images[0]['xref'] == 'x'
+        assert images[0]['yref'] == 'y'
 
-        self.assertEqual(images[1]['source'], 'Two.png')
-        self.assertEqual(images[1]['xref'], 'x')
-        self.assertEqual(images[1]['yref'], 'y')
+        assert images[1]['source'] == 'Two.png'
+        assert images[1]['xref'] == 'x'
+        assert images[1]['yref'] == 'y'
 
-        self.assertEqual(images[2]['source'], 'Three.png')
-        self.assertEqual(images[2]['xref'], 'x2')
-        self.assertEqual(images[2]['yref'], 'y2')
+        assert images[2]['source'] == 'Three.png'
+        assert images[2]['xref'] == 'x2'
+        assert images[2]['yref'] == 'y2'
 
-        self.assertEqual(images[3]['source'], 'Four.png')
-        self.assertEqual(images[3]['xref'], 'x2')
-        self.assertEqual(images[3]['yref'], 'y2')
+        assert images[3]['source'] == 'Four.png'
+        assert images[3]['xref'] == 'x2'
+        assert images[3]['yref'] == 'y2'
 
     def test_width_height_with_spacing(self):
         fig = figure_grid([[
@@ -445,24 +438,24 @@ class TestPlotlyFigureGrid(TestPlotlyPlot):
         expected_y_domains = [[0, 0.225], [0.325, 1]]
 
         # scatter
-        self.assertEqual(fig['layout']['xaxis']['domain'], expected_x_domains[0])
-        self.assertEqual(fig['layout']['yaxis']['domain'], expected_y_domains[0])
+        assert fig['layout']['xaxis']['domain'] == expected_x_domains[0]
+        assert fig['layout']['yaxis']['domain'] == expected_y_domains[0]
 
         # bar
-        self.assertEqual(fig['layout']['xaxis2']['domain'], expected_x_domains[1])
-        self.assertEqual(fig['layout']['yaxis2']['domain'], expected_y_domains[0])
+        assert fig['layout']['xaxis2']['domain'] == expected_x_domains[1]
+        assert fig['layout']['yaxis2']['domain'] == expected_y_domains[0]
 
         # scatterpolar
-        self.assertEqual(fig['layout']['polar']['domain']['x'], expected_x_domains[0])
-        self.assertEqual(fig['layout']['polar']['domain']['y'], expected_y_domains[1])
+        assert fig['layout']['polar']['domain']['x'] == expected_x_domains[0]
+        assert fig['layout']['polar']['domain']['y'] == expected_y_domains[1]
 
         # table
-        self.assertEqual(fig['data'][3]['domain']['x'], expected_x_domains[1])
-        self.assertEqual(fig['data'][3]['domain']['y'], expected_y_domains[1])
+        assert fig['data'][3]['domain']['x'] == expected_x_domains[1]
+        assert fig['data'][3]['domain']['y'] == expected_y_domains[1]
 
         # Check width and height
-        self.assertEqual(fig['layout']['width'], 400)
-        self.assertEqual(fig['layout']['height'], 800)
+        assert fig['layout']['width'] == 400
+        assert fig['layout']['height'] == 800
 
     def test_axis_matching_offset(self):
         fig = figure_grid([[
@@ -501,24 +494,24 @@ class TestPlotlyFigureGrid(TestPlotlyPlot):
         ]], column_spacing=0, row_spacing=0)
 
         # Check axes that traces are associated with
-        self.assertEqual(fig['data'][0]['xaxis'], 'x')
-        self.assertEqual(fig['data'][0]['yaxis'], 'y')
+        assert fig['data'][0]['xaxis'] == 'x'
+        assert fig['data'][0]['yaxis'] == 'y'
 
-        self.assertEqual(fig['data'][1]['xaxis'], 'x2')
-        self.assertEqual(fig['data'][1]['yaxis'], 'y2')
+        assert fig['data'][1]['xaxis'] == 'x2'
+        assert fig['data'][1]['yaxis'] == 'y2'
 
-        self.assertEqual(fig['data'][2]['xaxis'], 'x3')
-        self.assertEqual(fig['data'][2]['yaxis'], 'y3')
+        assert fig['data'][2]['xaxis'] == 'x3'
+        assert fig['data'][2]['yaxis'] == 'y3'
 
-        self.assertEqual(fig['data'][3]['xaxis'], 'x4')
-        self.assertEqual(fig['data'][3]['yaxis'], 'y4')
+        assert fig['data'][3]['xaxis'] == 'x4'
+        assert fig['data'][3]['yaxis'] == 'y4'
 
         # Check matches references
-        self.assertEqual(fig['layout']['xaxis'].get('matches', None), None)
-        self.assertEqual(fig['layout']['yaxis'].get('matches', None), None)
-        self.assertEqual(fig['layout']['xaxis2'].get('matches', None), 'x')
-        self.assertEqual(fig['layout']['yaxis2'].get('matches', None), 'y')
-        self.assertEqual(fig['layout']['xaxis3'].get('matches', None), None)
-        self.assertEqual(fig['layout']['yaxis3'].get('matches', None), None)
-        self.assertEqual(fig['layout']['xaxis4'].get('matches', None), 'y3')
-        self.assertEqual(fig['layout']['yaxis4'].get('matches', None), 'x3')
+        assert fig['layout']['xaxis'].get('matches', None) is None
+        assert fig['layout']['yaxis'].get('matches', None) is None
+        assert fig['layout']['xaxis2'].get('matches', None) == 'x'
+        assert fig['layout']['yaxis2'].get('matches', None) == 'y'
+        assert fig['layout']['xaxis3'].get('matches', None) is None
+        assert fig['layout']['yaxis3'].get('matches', None) is None
+        assert fig['layout']['xaxis4'].get('matches', None) == 'y3'
+        assert fig['layout']['yaxis4'].get('matches', None) == 'x3'

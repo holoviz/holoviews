@@ -175,10 +175,10 @@ class TestCallbacks(TestCase):
                 "viewport", viewport, self.fig_dict
             )
 
-            self.assertEqual(event_data, {
+            assert event_data == {
                 'first': {'x_range': (1, 4), 'y_range': (-1, 5)},
                 'second': {'x_range': (1, 4), 'y_range': (-1, 5)},
-            })
+            }
 
     def testRangeXCallbackEventData(self):
         for viewport in [
@@ -190,10 +190,10 @@ class TestCallbacks(TestCase):
                 "viewport", viewport, self.fig_dict
             )
 
-            self.assertEqual(event_data, {
+            assert event_data == {
                 'first': {'x_range': (1, 4)},
                 'second': {'x_range': (1, 4)},
-            })
+            }
 
     def testRangeYCallbackEventData(self):
         for viewport in [
@@ -205,10 +205,10 @@ class TestCallbacks(TestCase):
                 "viewport", viewport, self.fig_dict
             )
 
-            self.assertEqual(event_data, {
+            assert event_data == {
                 'first': {'y_range': (-1, 5)},
                 'second': {'y_range': (-1, 5)},
-            })
+            }
 
     def testMapboxRangeXYCallbackEventData(self):
         relayout_data = {
@@ -220,10 +220,10 @@ class TestCallbacks(TestCase):
             "relayout_data", relayout_data, self.mapbox_fig_dict
         )
 
-        self.assertEqual(event_data, {
+        assert event_data == {
             'first': {'x_range': self.easting_range1, 'y_range': self.northing_range1},
             'third': {'x_range': self.easting_range2, 'y_range': self.northing_range2},
-        })
+        }
 
     def testMapboxRangeXCallbackEventData(self):
         relayout_data = {
@@ -235,10 +235,10 @@ class TestCallbacks(TestCase):
             "relayout_data", relayout_data, self.mapbox_fig_dict
         )
 
-        self.assertEqual(event_data, {
+        assert event_data == {
             'first': {'x_range': self.easting_range1},
             'third': {'x_range': self.easting_range2},
-        })
+        }
 
     def testMapboxRangeYCallbackEventData(self):
         relayout_data = {
@@ -250,10 +250,10 @@ class TestCallbacks(TestCase):
             "relayout_data", relayout_data, self.mapbox_fig_dict
         )
 
-        self.assertEqual(event_data, {
+        assert event_data == {
             'first': {'y_range': self.northing_range1},
             'third': {'y_range': self.northing_range2},
-        })
+        }
 
     def testRangeCallbacks(self):
 
@@ -277,7 +277,7 @@ class TestCallbacks(TestCase):
 
         # Sanity check the length of the streams lists
         for xystreams in xystreamss:
-            self.assertEqual(len(xystreams), 2)
+            assert len(xystreams) == 2
 
         # Change viewport on first set of axes
         viewport1 = {'xaxis.range': [1, 4], 'yaxis.range': [-1, 5]}
@@ -354,12 +354,12 @@ class TestCallbacks(TestCase):
             "selected_data", selected_data1, self.fig_dict
         )
 
-        self.assertEqual(event_data, {
+        assert event_data == {
             'first': {'bounds': (1, -1, 4, 5)},
             'second': {'bounds': (1, -1, 4, 5)},
             'third': {'bounds': None},
             'forth': {'bounds': None}
-        })
+        }
 
     def testBoundsXCallbackEventData(self):
         selected_data1 = {'range': {'x': [1, 4], 'y': [-1, 5]}}
@@ -367,12 +367,12 @@ class TestCallbacks(TestCase):
             "selected_data", selected_data1, self.fig_dict
         )
 
-        self.assertEqual(event_data, {
+        assert event_data == {
             'first': {'boundsx': (1, 4)},
             'second': {'boundsx': (1, 4)},
             'third': {'boundsx': None},
             'forth': {'boundsx': None}
-        })
+        }
 
     def testBoundsYCallbackEventData(self):
         selected_data1 = {'range': {'x': [1, 4], 'y': [-1, 5]}}
@@ -380,12 +380,12 @@ class TestCallbacks(TestCase):
             "selected_data", selected_data1, self.fig_dict
         )
 
-        self.assertEqual(event_data, {
+        assert event_data == {
             'first': {'boundsy': (-1, 5)},
             'second': {'boundsy': (-1, 5)},
             'third': {'boundsy': None},
             'forth': {'boundsy': None}
-        })
+        }
 
     def testMapboxBoundsXYCallbackEventData(self):
         selected_data = {"range": {f'{PLOTLY_MAP}2': [
@@ -397,14 +397,14 @@ class TestCallbacks(TestCase):
             "selected_data", selected_data, self.mapbox_fig_dict
         )
 
-        self.assertEqual(event_data, {
+        assert event_data == {
             'first': {'bounds': None},
             'second': {'bounds': (
                 self.easting_range1[0], self.northing_range1[0],
                 self.easting_range1[1], self.northing_range1[1]
             )},
             'third': {'bounds': None}
-        })
+        }
 
     def testMapboxBoundsXCallbackEventData(self):
         selected_data = {"range": {f'{PLOTLY_MAP}': [
@@ -416,13 +416,13 @@ class TestCallbacks(TestCase):
             "selected_data", selected_data, self.mapbox_fig_dict
         )
 
-        self.assertEqual(event_data, {
+        assert event_data == {
             'first': {'boundsx': (
                 self.easting_range1[0], self.easting_range1[1],
             )},
             'second': {'boundsx': None},
             'third': {'boundsx': None}
-        })
+        }
 
     def testMapboxBoundsYCallbackEventData(self):
         selected_data = {"range": {f'{PLOTLY_MAP}3': [
@@ -434,13 +434,13 @@ class TestCallbacks(TestCase):
             "selected_data", selected_data, self.mapbox_fig_dict
         )
 
-        self.assertEqual(event_data, {
+        assert event_data == {
             'first': {'boundsy': None},
             'second': {'boundsy': None},
             'third': {'boundsy': (
                self.northing_range1[0], self.northing_range1[1]
             )},
-        })
+        }
 
     def testBoundsCallbacks(self):
 
@@ -556,12 +556,12 @@ class TestCallbacks(TestCase):
             "selected_data", selected_data1, self.fig_dict
         )
 
-        self.assertEqual(event_data, {
+        assert event_data == {
             'first': {'index': [0, 2]},
             'second': {'index': []},
             'third': {'index': []},
             'forth': {'index': []}
-        })
+        }
 
     def testMapboxSelection1DCallbackEventData(self):
         selected_data1 = {'points': [
@@ -573,11 +573,11 @@ class TestCallbacks(TestCase):
             "selected_data", selected_data1, self.mapbox_fig_dict
         )
 
-        self.assertEqual(event_data, {
+        assert event_data == {
             'first': {'index': []},
             'second': {'index': [0, 2]},
             'third': {'index': []},
-        })
+        }
 
     def testSelection1DCallback(self):
         _plots, streamss, _callbacks, sel_events = build_callback_set(
