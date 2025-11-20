@@ -37,7 +37,7 @@ class TestOverlayableZorders(ComparisonTestCase):
     def test_compute_overlayable_zorders_holomap(self):
         hmap = HoloMap({0: Points([])})
         sources = compute_overlayable_zorders(hmap)
-        self.assertEqual(sources[0], [hmap, hmap.last])
+        assert sources[0] == [hmap, hmap.last]
 
     def test_compute_overlayable_zorders_with_overlaid_holomap(self):
         points = Points([])
@@ -45,7 +45,7 @@ class TestOverlayableZorders(ComparisonTestCase):
         curve = Curve([])
         combined = hmap*curve
         sources = compute_overlayable_zorders(combined)
-        self.assertEqual(sources[0], [points, combined.last, combined])
+        assert sources[0] == [points, combined.last, combined]
 
     def test_dynamic_compute_overlayable_zorders_two_mixed_layers(self):
         area = Area(range(10))
@@ -53,8 +53,8 @@ class TestOverlayableZorders(ComparisonTestCase):
         combined = area*dmap
         combined[()]
         sources = compute_overlayable_zorders(combined)
-        self.assertEqual(sources[0], [area])
-        self.assertEqual(sources[1], [dmap])
+        assert sources[0] == [area]
+        assert sources[1] == [dmap]
 
     def test_dynamic_compute_overlayable_zorders_two_mixed_layers_reverse(self):
         area = Area(range(10))
@@ -62,8 +62,8 @@ class TestOverlayableZorders(ComparisonTestCase):
         combined = dmap*area
         combined[()]
         sources = compute_overlayable_zorders(combined)
-        self.assertEqual(sources[0], [dmap])
-        self.assertEqual(sources[1], [area])
+        assert sources[0] == [dmap]
+        assert sources[1] == [area]
 
     def test_dynamic_compute_overlayable_zorders_two_dynamic_layers(self):
         area = DynamicMap(lambda: Area(range(10)), kdims=[])
@@ -71,8 +71,8 @@ class TestOverlayableZorders(ComparisonTestCase):
         combined = area*dmap
         combined[()]
         sources = compute_overlayable_zorders(combined)
-        self.assertEqual(sources[0], [area])
-        self.assertEqual(sources[1], [dmap])
+        assert sources[0] == [area]
+        assert sources[1] == [dmap]
 
     def test_dynamic_compute_overlayable_zorders_two_deep_dynamic_layers(self):
         area = DynamicMap(lambda: Area(range(10)), kdims=[])
@@ -343,13 +343,13 @@ class TestInitializeDynamic(ComparisonTestCase):
         dims = [Dimension('N', default=5, range=(0, 10))]
         dmap = DynamicMap(lambda N: Curve([1, N, 5]), kdims=dims)
         initialize_dynamic(dmap)
-        self.assertEqual(dmap.keys(), [5])
+        assert dmap.keys() == [5]
 
     def test_dynamicmap_numeric_values_initializes(self):
         dims = [Dimension('N', values=[10, 5, 0])]
         dmap = DynamicMap(lambda N: Curve([1, N, 5]), kdims=dims)
         initialize_dynamic(dmap)
-        self.assertEqual(dmap.keys(), [0])
+        assert dmap.keys() == [0]
 
 
 
@@ -371,61 +371,61 @@ class TestSplitDynamicMapOverlay(ComparisonTestCase):
         test = self.dmap_ndoverlay
         initialize_dynamic(test)
         layers = [self.dmap_ndoverlay, self.dmap_ndoverlay]
-        self.assertEqual(split_dmap_overlay(test)[0], layers)
+        assert split_dmap_overlay(test)[0] == layers
 
     def test_dmap_overlay(self):
         test = self.dmap_overlay
         initialize_dynamic(test)
         layers = [self.dmap_overlay, self.dmap_overlay]
-        self.assertEqual(split_dmap_overlay(test)[0], layers)
+        assert split_dmap_overlay(test)[0] == layers
 
     def test_dmap_element_mul_dmap_overlay(self):
         test = self.dmap_element * self.dmap_overlay
         initialize_dynamic(test)
         layers = [self.dmap_element, self.dmap_overlay, self.dmap_overlay]
-        self.assertEqual(split_dmap_overlay(test)[0], layers)
+        assert split_dmap_overlay(test)[0] == layers
 
     def test_dmap_element_mul_dmap_ndoverlay(self):
         test = self.dmap_element * self.dmap_ndoverlay
         initialize_dynamic(test)
         layers = [self.dmap_element, self.dmap_ndoverlay]
-        self.assertEqual(split_dmap_overlay(test)[0], layers)
+        assert split_dmap_overlay(test)[0] == layers
 
     def test_dmap_element_mul_element(self):
         test = self.dmap_element * self.element
         initialize_dynamic(test)
         layers = [self.dmap_element, self.element]
-        self.assertEqual(split_dmap_overlay(test)[0], layers)
+        assert split_dmap_overlay(test)[0] == layers
 
     def test_dmap_element_mul_overlay(self):
         test = self.dmap_element * self.overlay
         initialize_dynamic(test)
         layers = [self.dmap_element, self.el1, self.el2]
-        self.assertEqual(split_dmap_overlay(test)[0], layers)
+        assert split_dmap_overlay(test)[0] == layers
 
     def test_dmap_element_mul_ndoverlay(self):
         test = self.dmap_element * self.ndoverlay
         initialize_dynamic(test)
         layers = [self.dmap_element, self.ndoverlay]
-        self.assertEqual(split_dmap_overlay(test)[0], layers)
+        assert split_dmap_overlay(test)[0] == layers
 
     def test_dmap_overlay_mul_dmap_ndoverlay(self):
         test = self.dmap_overlay * self.dmap_ndoverlay
         initialize_dynamic(test)
         layers = [self.dmap_overlay, self.dmap_overlay, self.dmap_ndoverlay]
-        self.assertEqual(split_dmap_overlay(test)[0], layers)
+        assert split_dmap_overlay(test)[0] == layers
 
     def test_dmap_overlay_mul_element(self):
         test = self.dmap_overlay * self.element
         initialize_dynamic(test)
         layers = [self.dmap_overlay, self.dmap_overlay, self.element]
-        self.assertEqual(split_dmap_overlay(test)[0], layers)
+        assert split_dmap_overlay(test)[0] == layers
 
     def test_dmap_overlay_mul_overlay(self):
         test = self.dmap_overlay * self.overlay
         initialize_dynamic(test)
         layers = [self.dmap_overlay, self.dmap_overlay, self.el1, self.el2]
-        self.assertEqual(split_dmap_overlay(test)[0], layers)
+        assert split_dmap_overlay(test)[0] == layers
 
     def test_dmap_all_combinations(self):
         test = (self.dmap_overlay * self.element * self.dmap_ndoverlay *
@@ -434,39 +434,39 @@ class TestSplitDynamicMapOverlay(ComparisonTestCase):
         layers = [self.dmap_overlay, self.dmap_overlay, self.element,
                   self.dmap_ndoverlay, self.el1, self.el2, self.dmap_element,
                   self.ndoverlay]
-        self.assertEqual(split_dmap_overlay(test)[0], layers)
+        assert split_dmap_overlay(test)[0] == layers
 
     def test_dmap_overlay_operation_mul_dmap_ndoverlay(self):
         mapped = operation(self.dmap_overlay)
         test = mapped * self.dmap_ndoverlay
         initialize_dynamic(test)
         layers = [mapped, mapped, self.dmap_ndoverlay]
-        self.assertEqual(split_dmap_overlay(test)[0], layers)
+        assert split_dmap_overlay(test)[0] == layers
 
     def test_dmap_overlay_linked_operation_mul_dmap_ndoverlay(self):
         mapped = operation(self.dmap_overlay, link_inputs=True)
         test = mapped * self.dmap_ndoverlay
         initialize_dynamic(test)
         layers = [mapped, mapped, self.dmap_ndoverlay]
-        self.assertEqual(split_dmap_overlay(test)[0], layers)
+        assert split_dmap_overlay(test)[0] == layers
 
     def test_dmap_overlay_linked_operation_mul_dmap_element_ndoverlay(self):
         mapped = self.dmap_overlay.map(lambda x: x.get(0), Overlay)
         test = mapped * self.element * self.dmap_ndoverlay
         initialize_dynamic(test)
         layers = [mapped, self.element, self.dmap_ndoverlay]
-        self.assertEqual(split_dmap_overlay(test)[0], layers)
+        assert split_dmap_overlay(test)[0] == layers
 
 
 class TestPlotColorUtils(ComparisonTestCase):
 
     def test_process_cmap_list_cycle(self):
         colors = process_cmap(['#ffffff', '#959595', '#000000'], 4)
-        self.assertEqual(colors, ['#ffffff', '#959595', '#000000', '#ffffff'])
+        assert colors == ['#ffffff', '#959595', '#000000', '#ffffff']
 
     def test_process_cmap_cycle(self):
         colors = process_cmap(Cycle(values=['#ffffff', '#959595', '#000000']), 4)
-        self.assertEqual(colors, ['#ffffff', '#959595', '#000000', '#ffffff'])
+        assert colors == ['#ffffff', '#959595', '#000000', '#ffffff']
 
     def test_process_cmap_invalid_str(self):
         with self.assertRaises(ValueError):
@@ -482,15 +482,15 @@ class TestMPLColormapUtils(ComparisonTestCase):
 
     def test_mpl_colormap_fire(self):
         colors = process_cmap('fire', 3, provider='matplotlib')
-        self.assertEqual(colors, ['#000000', '#ed1400', '#ffffff'])
+        assert colors == ['#000000', '#ed1400', '#ffffff']
 
     def test_mpl_colormap_fire_r(self):
         colors = process_cmap('fire_r', 3, provider='matplotlib')
-        self.assertEqual(colors, ['#ffffff', '#eb1300', '#000000'])
+        assert colors == ['#ffffff', '#eb1300', '#000000']
 
     def test_mpl_colormap_name_palette(self):
         colors = process_cmap('Greys', 3, provider='matplotlib')
-        self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
+        assert colors == ['#ffffff', '#959595', '#000000']
 
     def test_mpl_colormap_instance(self):
         try:
@@ -503,39 +503,39 @@ class TestMPLColormapUtils(ComparisonTestCase):
             cmap = get_cmap('Greys')
 
         colors = process_cmap(cmap, 3, provider='matplotlib')
-        self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
+        assert colors == ['#ffffff', '#959595', '#000000']
 
     def test_mpl_colormap_categorical(self):
         colors = mplcmap_to_palette('Category20', 3)
-        self.assertEqual(colors, ['#1f77b4', '#c5b0d5', '#9edae5'])
+        assert colors == ['#1f77b4', '#c5b0d5', '#9edae5']
 
     def test_mpl_colormap_categorical_reverse(self):
         colors = mplcmap_to_palette('Category20_r', 3)
-        self.assertEqual(colors, ['#1f77b4', '#8c564b', '#9edae5'][::-1])
+        assert colors == ['#1f77b4', '#8c564b', '#9edae5'][::-1]
 
     def test_mpl_colormap_sequential(self):
         colors = mplcmap_to_palette('YlGn', 3)
-        self.assertEqual(colors, ['#ffffe5', '#77c578', '#004529'])
+        assert colors == ['#ffffe5', '#77c578', '#004529']
 
     def test_mpl_colormap_sequential_reverse(self):
         colors = mplcmap_to_palette('YlGn_r', 3)
-        self.assertEqual(colors, ['#ffffe5', '#78c679', '#004529'][::-1])
+        assert colors == ['#ffffe5', '#78c679', '#004529'][::-1]
 
     def test_mpl_colormap_diverging(self):
         colors = mplcmap_to_palette('RdBu', 3)
-        self.assertEqual(colors, ['#67001f', '#f6f6f6', '#053061'])
+        assert colors == ['#67001f', '#f6f6f6', '#053061']
 
     def test_mpl_colormap_diverging_reverse(self):
         colors = mplcmap_to_palette('RdBu_r', 3)
-        self.assertEqual(colors, ['#67001f', '#f7f6f6', '#053061'][::-1])
+        assert colors == ['#67001f', '#f7f6f6', '#053061'][::-1]
 
     def test_mpl_colormap_perceptually_uniform(self):
         colors = mplcmap_to_palette('viridis', 4)
-        self.assertEqual(colors, ['#440154', '#30678d', '#35b778', '#fde724'])
+        assert colors == ['#440154', '#30678d', '#35b778', '#fde724']
 
     def test_mpl_colormap_perceptually_uniform_reverse(self):
         colors = mplcmap_to_palette('viridis_r', 4)
-        self.assertEqual(colors, ['#440154', '#30678d', '#35b778', '#fde724'][::-1])
+        assert colors == ['#440154', '#30678d', '#35b778', '#fde724'][::-1]
 
 
 @pytest.mark.usefixtures("bokeh_backend")
@@ -550,63 +550,63 @@ class TestBokehPaletteUtils(ComparisonTestCase):
 
     def test_bokeh_colormap_fire(self):
         colors = process_cmap('fire', 3, provider='bokeh')
-        self.assertEqual(colors, ['#000000', '#eb1300', '#ffffff'])
+        assert colors == ['#000000', '#eb1300', '#ffffff']
 
     def test_bokeh_colormap_fire_r(self):
         colors = process_cmap('fire_r', 3, provider='bokeh')
-        self.assertEqual(colors, ['#ffffff', '#ed1400', '#000000'])
+        assert colors == ['#ffffff', '#ed1400', '#000000']
 
     def test_bokeh_palette_categorical(self):
         colors = bokeh_palette_to_palette('Category20', 3)
-        self.assertEqual(colors, ['#1f77b4', '#c5b0d5', '#9edae5'])
+        assert colors == ['#1f77b4', '#c5b0d5', '#9edae5']
 
     def test_bokeh_palette_categorical_reverse(self):
         colors = bokeh_palette_to_palette('Category20_r', 3)
-        self.assertEqual(colors, ['#1f77b4', '#8c564b', '#9edae5'][::-1])
+        assert colors == ['#1f77b4', '#8c564b', '#9edae5'][::-1]
 
     def test_bokeh_palette_sequential(self):
         colors = bokeh_palette_to_palette('YlGn', 3)
-        self.assertEqual(colors, ['#ffffe5', '#78c679', '#004529'])
+        assert colors == ['#ffffe5', '#78c679', '#004529']
 
     def test_bokeh_palette_sequential_reverse(self):
         colors = bokeh_palette_to_palette('YlGn_r', 3)
-        self.assertEqual(colors, ['#ffffe5', '#78c679', '#004529'][::-1])
+        assert colors == ['#ffffe5', '#78c679', '#004529'][::-1]
 
     def test_bokeh_palette_diverging(self):
         colors = bokeh_palette_to_palette('RdBu', 3)
-        self.assertEqual(colors, ['#67001f', '#f7f7f7', '#053061'])
+        assert colors == ['#67001f', '#f7f7f7', '#053061']
 
     def test_bokeh_palette_diverging_reverse(self):
         colors = bokeh_palette_to_palette('RdBu_r', 3)
-        self.assertEqual(colors, ['#67001f', '#f7f7f7', '#053061'][::-1])
+        assert colors == ['#67001f', '#f7f7f7', '#053061'][::-1]
 
     def test_bokeh_palette_uniform_interpolated(self):
         colors = bokeh_palette_to_palette('Viridis', 4)
-        self.assertEqual(colors, ['#440154', '#30678D', '#35B778', '#FDE724'])
+        assert colors == ['#440154', '#30678D', '#35B778', '#FDE724']
 
     def test_bokeh_palette_perceptually_uniform(self):
         colors = bokeh_palette_to_palette('viridis', 4)
-        self.assertEqual(colors, ['#440154', '#30678D', '#35B778', '#FDE724'])
+        assert colors == ['#440154', '#30678D', '#35B778', '#FDE724']
 
     def test_bokeh_palette_perceptually_uniform_reverse(self):
         colors = bokeh_palette_to_palette('viridis_r', 4)
-        self.assertEqual(colors, ['#440154', '#30678D', '#35B778', '#FDE724'][::-1])
+        assert colors == ['#440154', '#30678D', '#35B778', '#FDE724'][::-1]
 
     def test_color_intervals(self):
         levels = [0, 38, 73, 95, 110, 130, 156]
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20']
         cmap, _lims = color_intervals(colors, levels, N=10)
-        self.assertEqual(cmap, ['#5ebaff', '#5ebaff', '#00faf4',
+        assert cmap == ['#5ebaff', '#5ebaff', '#00faf4',
                                 '#00faf4', '#ffffcc', '#ffe775',
-                                '#ffc140', '#ff8f20', '#ff8f20'])
+                                '#ffc140', '#ff8f20', '#ff8f20']
 
     def test_color_intervals_clipped(self):
         levels = [0, 38, 73, 95, 110, 130, 156, 999]
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
         cmap, lims = color_intervals(colors, levels, clip=(10, 90), N=100)
-        self.assertEqual(cmap, ['#5ebaff', '#5ebaff', '#5ebaff', '#00faf4', '#00faf4',
-                                '#00faf4', '#00faf4', '#ffffcc', '#ffffcc'])
-        self.assertEqual(lims, (10, 90))
+        assert cmap == ['#5ebaff', '#5ebaff', '#5ebaff', '#00faf4', '#00faf4',
+                                '#00faf4', '#00faf4', '#ffffcc', '#ffffcc']
+        assert lims == (10, 90)
 
 
 class TestPlotUtils(ComparisonTestCase):
@@ -616,57 +616,57 @@ class TestPlotUtils(ComparisonTestCase):
                   np.arange(0, 2., .2, dtype='float32'))
         X, Y = np.meshgrid(xs, ys)
         dist = get_min_distance(Points((X.flatten(), Y.flatten())))
-        self.assertEqual(float(round(dist, 5)), 0.2)
+        assert float(round(dist, 5)) == 0.2
 
     def test_get_min_distance_int32_type(self):
         xs, ys = (np.arange(0, 10, dtype='int32'),
                   np.arange(0, 10, dtype='int32'))
         X, Y = np.meshgrid(xs, ys)
         dist = get_min_distance(Points((X.flatten(), Y.flatten())))
-        self.assertEqual(dist, 1.0)
+        assert dist == 1.0
 
     def test_get_min_distance_float32_type_no_scipy(self):
         xs, ys = (np.arange(0, 2., .2, dtype='float32'),
                   np.arange(0, 2., .2, dtype='float32'))
         X, Y = np.meshgrid(xs, ys)
         dist = _get_min_distance_numpy(Points((X.flatten(), Y.flatten())))
-        self.assertEqual(dist, np.float32(0.2))
+        assert np.isclose(dist,np.float32(0.2))
 
     def test_get_min_distance_int32_type_no_scipy(self):
         xs, ys = (np.arange(0, 10, dtype='int32'),
                   np.arange(0, 10, dtype='int32'))
         X, Y = np.meshgrid(xs, ys)
         dist = _get_min_distance_numpy(Points((X.flatten(), Y.flatten())))
-        self.assertEqual(dist, 1.0)
+        assert dist == 1.0
 
 
 class TestRangeUtilities(ComparisonTestCase):
 
     def test_get_axis_padding_scalar(self):
         padding = get_axis_padding(0.1)
-        self.assertEqual(padding, (0.1, 0.1, 0.1))
+        assert padding == (0.1, 0.1, 0.1)
 
     def test_get_axis_padding_tuple(self):
         padding = get_axis_padding((0.1, 0.2))
-        self.assertEqual(padding, (0.1, 0.2, 0))
+        assert padding == (0.1, 0.2, 0)
 
     def test_get_axis_padding_tuple_3d(self):
         padding = get_axis_padding((0.1, 0.2, 0.3))
-        self.assertEqual(padding, (0.1, 0.2, 0.3))
+        assert padding == (0.1, 0.2, 0.3)
 
     def test_get_range_from_element(self):
         dim = Dimension('y', soft_range=(0, 3), range=(0, 2))
         element = Scatter([1, 2, 3], vdims=dim)
         drange, srange, hrange = get_range(element, {}, dim)
-        self.assertEqual(drange, (1, 3))
-        self.assertEqual(srange, (0, 3))
-        self.assertEqual(hrange, (0, 2))
+        assert drange == (1, 3)
+        assert srange == (0, 3)
+        assert hrange == (0, 2)
 
     def test_get_range_from_ranges(self):
         dim = Dimension('y', soft_range=(0, 3), range=(0, 2))
         element = Scatter([1, 2, 3], vdims=dim)
         ranges = {'y': {'soft': (-1, 4), 'hard': (-1, 3), 'data': (-0.5, 2.5)}}
         drange, srange, hrange = get_range(element, ranges, dim)
-        self.assertEqual(drange, (-0.5, 2.5))
-        self.assertEqual(srange, (-1, 4))
-        self.assertEqual(hrange, (-1, 3))
+        assert drange == (-0.5, 2.5)
+        assert srange == (-1, 4)
+        assert hrange == (-1, 3)
