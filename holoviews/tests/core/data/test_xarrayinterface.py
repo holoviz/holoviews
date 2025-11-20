@@ -465,10 +465,10 @@ class ImageElement_XArrayInterfaceTests(BaseImageElementInterfaceTests):
         zs = np.arange(6).reshape(2, 3)
         xrarr = xr.DataArray(zs, dims=('x','y'), coords={'x': xs})
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             Image(xrarr)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             Image(xrarr, kdims=['x', 'y'])
 
 

@@ -129,7 +129,7 @@ class AdjointLayoutTest(CompositeTest):
 
     def test_adjointlayout_overlay_adjoined_holomap_nomatch_too_many(self):
         dim_view = self.view3.clone(kdims=['x', 'y'])
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             (self.view1 << self.view2 << self.view3) * (self.hmap << dim_view)
 
     @pytest.mark.usefixtures("mpl_backend")

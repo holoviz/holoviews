@@ -630,7 +630,7 @@ class OperationTests:
     def test_histogram_categorical(self):
         series = Dataset(pd.Series(['A', 'B', 'C']))
         kwargs = {'bin_range': ('A', 'C'), 'normed': False, 'cumulative': False, 'num_bins': 3}
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             histogram(series, **kwargs)
 
     def test_points_histogram_weighted(self):

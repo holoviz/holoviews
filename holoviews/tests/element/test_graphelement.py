@@ -49,7 +49,7 @@ class GraphTests:
 
     def test_graph_node_info_no_index_mismatch(self):
         node_info = Dataset(np.arange(6), vdims=['Label'])
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             Graph(((self.source, self.target), node_info))
 
     def test_graph_node_info_merge_on_index(self):

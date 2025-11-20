@@ -192,7 +192,7 @@ class TestApplyDynamicMap:
         self.dmap = self.dmap_unsampled.redim.values(Y=[0, 1, 2])
 
     def test_dmap_apply_not_dynamic_unsampled(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             self.dmap_unsampled.apply(lambda x: x.relabel('Test'), dynamic=False)
 
     def test_dmap_apply_not_dynamic(self):

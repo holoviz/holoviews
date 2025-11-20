@@ -67,7 +67,9 @@ class TestLinkSelections:
 
         assert_data_equal(overlay_points.data, data)
 
-    def test_points_selection(self, dynamic=False, show_regions=True):
+    @pytest.mark.parametrize("dynamic", [True, False])
+    @pytest.mark.parametrize("show_regions", [True, False])
+    def test_points_selection(self, dynamic, show_regions):
         points = Points(self.data)
         if dynamic:
             # Convert points to DynamicMap that returns the element
@@ -107,12 +109,6 @@ class TestLinkSelections:
             assert_element_equal(region, Rectangles([(0, 1, 5, 5)]))
         else:
             assert_element_equal(region, Rectangles([]))
-
-    def test_points_selection_hide_region(self):
-        self.test_points_selection(show_regions=False)
-
-    def test_points_selection_dynamic(self):
-        self.test_points_selection(dynamic=True)
 
     def test_layout_selection_points_table(self):
         points = Points(self.data)
@@ -176,7 +172,8 @@ class TestLinkSelections:
         lnk_sel._cross_filter_stream.selection_expr = se
         assert lnk_sel.show_regions
 
-    def test_overlay_points_errorbars(self, dynamic=False):
+    @pytest.mark.parametrize("dynamic", [True, False])
+    def test_overlay_points_errorbars(self, dynamic):
         points = Points(self.data)
         error = ErrorBars(self.data, kdims='x', vdims=['y', 'e'])
         lnk_sel = link_selections.instance(unselected_color='#ff0000')
@@ -556,7 +553,8 @@ class TestLinkSelections:
         assert_dict_equal(selection_hist.data, hist_orig.pipeline(hist_orig.dataset.iloc[selected4]).data)
 
     #  cross_filter_mode="overwrite"
-    def test_points_histogram_overwrite_overwrite(self, dynamic=False):
+    @pytest.mark.parametrize("dynamic", [True, False])
+    def test_points_histogram_overwrite_overwrite(self, dynamic):
         self.do_crossfilter_points_histogram(
             selection_mode="overwrite", cross_filter_mode="overwrite",
             selected1=[1, 2], selected2=[0, 1], selected3=[0, 2], selected4=[1, 2],
@@ -568,10 +566,8 @@ class TestLinkSelections:
             dynamic=dynamic
         )
 
-    def test_points_histogram_overwrite_overwrite_dynamic(self):
-        self.test_points_histogram_overwrite_overwrite(dynamic=True)
-
-    def test_points_histogram_intersect_overwrite(self, dynamic=False):
+    @pytest.mark.parametrize("dynamic", [True, False])
+    def test_points_histogram_intersect_overwrite(self, dynamic):
         self.do_crossfilter_points_histogram(
             selection_mode="intersect", cross_filter_mode="overwrite",
             selected1=[1, 2], selected2=[0, 1], selected3=[0, 2], selected4=[1, 2],
@@ -583,10 +579,8 @@ class TestLinkSelections:
             dynamic=dynamic
         )
 
-    def test_points_histogram_intersect_overwrite_dynamic(self):
-        self.test_points_histogram_intersect_overwrite(dynamic=True)
-
-    def test_points_histogram_union_overwrite(self, dynamic=False):
+    @pytest.mark.parametrize("dynamic", [True, False])
+    def test_points_histogram_union_overwrite(self, dynamic):
         self.do_crossfilter_points_histogram(
             selection_mode="union", cross_filter_mode="overwrite",
             selected1=[1, 2], selected2=[0, 1], selected3=[0, 2], selected4=[1, 2],
@@ -598,11 +592,9 @@ class TestLinkSelections:
             dynamic=dynamic
         )
 
-    def test_points_histogram_union_overwrite_dynamic(self):
-        self.test_points_histogram_union_overwrite(dynamic=True)
-
     #  cross_filter_mode="intersect"
-    def test_points_histogram_overwrite_intersect(self, dynamic=False):
+    @pytest.mark.parametrize("dynamic", [True, False])
+    def test_points_histogram_overwrite_intersect(self, dynamic):
         self.do_crossfilter_points_histogram(
             selection_mode="overwrite", cross_filter_mode="intersect",
             selected1=[1, 2], selected2=[1], selected3=[0], selected4=[2],
@@ -614,10 +606,8 @@ class TestLinkSelections:
             dynamic=dynamic
         )
 
-    def test_points_histogram_overwrite_intersect_dynamic(self):
-        self.test_points_histogram_overwrite_intersect(dynamic=True)
-
-    def test_points_histogram_overwrite_intersect_hide_region(self, dynamic=False):
+    @pytest.mark.parametrize("dynamic", [True, False])
+    def test_points_histogram_overwrite_intersect_hide_region(self, dynamic):
         self.do_crossfilter_points_histogram(
             selection_mode="overwrite", cross_filter_mode="intersect",
             selected1=[1, 2], selected2=[1], selected3=[0], selected4=[2],
@@ -629,10 +619,8 @@ class TestLinkSelections:
             show_regions=False, dynamic=dynamic
         )
 
-    def test_points_histogram_overwrite_intersect_hide_region_dynamic(self):
-        self.test_points_histogram_overwrite_intersect_hide_region(dynamic=True)
-
-    def test_points_histogram_intersect_intersect(self, dynamic=False):
+    @pytest.mark.parametrize("dynamic", [True, False])
+    def test_points_histogram_intersect_intersect(self, dynamic):
         self.do_crossfilter_points_histogram(
             selection_mode="intersect", cross_filter_mode="intersect",
             selected1=[1, 2], selected2=[1], selected3=[], selected4=[],
@@ -644,10 +632,8 @@ class TestLinkSelections:
             dynamic=dynamic
         )
 
-    def test_points_histogram_intersect_intersect_dynamic(self):
-        self.test_points_histogram_intersect_intersect(dynamic=True)
-
-    def test_points_histogram_union_intersect(self, dynamic=False):
+    @pytest.mark.parametrize("dynamic", [True, False])
+    def test_points_histogram_union_intersect(self, dynamic):
         self.do_crossfilter_points_histogram(
             selection_mode="union", cross_filter_mode="intersect",
             selected1=[1, 2], selected2=[1], selected3=[0, 1], selected4=[0, 1, 2],
@@ -659,10 +645,8 @@ class TestLinkSelections:
             dynamic=dynamic
         )
 
-    def test_points_histogram_union_intersect_dynamic(self):
-        self.test_points_histogram_union_intersect(dynamic=True)
-
-    def test_points_histogram_inverse_intersect(self, dynamic=False):
+    @pytest.mark.parametrize("dynamic", [True, False])
+    def test_points_histogram_inverse_intersect(self, dynamic):
         self.do_crossfilter_points_histogram(
             selection_mode="inverse", cross_filter_mode="intersect",
             selected1=[0], selected2=[], selected3=[], selected4=[],
@@ -673,9 +657,6 @@ class TestLinkSelections:
             hist_region2=[], hist_region3=[], hist_region4=[],
             dynamic=dynamic
         )
-
-    def test_points_histogram_inverse_intersect_dynamic(self):
-        self.test_points_histogram_inverse_intersect(dynamic=True)
 
     def test_unlink_points(self):
         points = Points(self.data)

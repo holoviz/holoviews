@@ -43,7 +43,7 @@ class TestCurvePlot(TestPlotlyPlot):
 
     def test_curve_color_mapping_error(self):
         curve = Curve([1, 2, 3]).opts(color='x')
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             self._get_plot_state(curve)
 
     def test_curve_dash(self):
@@ -116,7 +116,7 @@ class TestMapboxCurvePlot(TestPlotlyPlot):
 
     def test_curve_color_mapping_error(self):
         curve = Tiles("") * Curve([1, 2, 3]).opts(color='x')
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             self._get_plot_state(curve)
 
     def test_curve_dash(self):

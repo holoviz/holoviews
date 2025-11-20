@@ -246,7 +246,7 @@ class GeomTests:
     def test_mixed_dims_raises(self):
         arrays = [{'x': range(10), 'y' if j else 'z': range(10)}
                   for i in range(2) for j in range(2)]
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             Path(arrays, kdims=['x', 'y'], datatype=[self.datatype])
 
     def test_split_into_arrays(self):
@@ -270,14 +270,14 @@ class GeomTests:
         arrays = [{'x': np.arange(i, i+2), 'y': i} for i in range(2)]
         mds = Dataset(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         assert mds.interface is self.interface
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             mds.groupby('x')
 
     def test_array_groupby_non_scalar(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
         mds = Dataset(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         assert mds.interface is self.interface
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             mds.groupby('x')
 
     def test_array_points_iloc_index_row(self):

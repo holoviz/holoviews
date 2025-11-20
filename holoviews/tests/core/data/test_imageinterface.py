@@ -86,7 +86,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
             Image((ys, xs, array))
 
     def test_bounds_mismatch(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             Image((range(10), range(10), np.random.rand(10, 10)), bounds=0.5)
 
     def test_init_data_datetime_xaxis(self):

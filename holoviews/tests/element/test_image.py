@@ -85,5 +85,5 @@ class TestImage(LoggingComparison):
         y = np.arange(-1, 1, 0.1)
         X, Y = np.meshgrid(x, y)
         Z = np.sqrt(X**2 + Y**2) * np.cos(X)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             Image((X, Y, Z))

@@ -286,22 +286,6 @@ class TestSanitization:
         sanitized = sanitize_identifier('α*2')
         assert sanitized == 'α_times_2'
 
-    def test_arabic_five_sanitized(self):
-        """
-        Note: There would be a clash if you mixed the languages of
-        your digits! E.g. arabic ٥ five and urdu ۵ five
-        """
-        try:
-            sanitize_identifier('٥')
-        except SyntaxError as e:
-            assert str(e).startswith("String '٥' cannot be sanitized")
-
-    def test_urdu_five_sanitized(self):
-        try:
-            sanitize_identifier('۵')
-        except SyntaxError as e:
-            assert str(e).startswith("String '۵' cannot be sanitized")
-
     def test_urdu_a_five_sanitized(self):
         """
         Note: There would be a clash if you mixed the languages of
@@ -879,7 +863,7 @@ def test_is_null_or_na_scalar_polars():
     assert not is_null_or_na_scalar(pl.LazyFrame([1, 2]))
 
 
-@pytest.mark.parametrize(["data", "dtype", "expected_kind"], [
+@pytest.mark.parametrize(("data", "dtype", "expected_kind"), [
     # Boolean
     ([True, False, True], 'bool', 'b'),
 

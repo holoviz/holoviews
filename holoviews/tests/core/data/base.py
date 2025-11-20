@@ -131,11 +131,11 @@ class HomogeneousColumnTests:
             assert_data_equal(dataset.dimension_values(d), np.array([]))
 
     def test_dataset_dict_dim_not_found_raises_on_array(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             Dataset({'x': np.zeros(5)}, kdims=['Test'], vdims=[])
 
     def test_dataset_dict_dim_not_found_raises_on_scalar(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             Dataset({'x': 1}, kdims=['Test'], vdims=[])
 
     # Properties and information

@@ -468,7 +468,7 @@ class TestPlotColorUtils:
         assert colors == ['#ffffff', '#959595', '#000000', '#ffffff']
 
     def test_process_cmap_invalid_str(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             process_cmap('NonexistentColorMap', 3)
 
     def test_process_cmap_invalid_type(self):

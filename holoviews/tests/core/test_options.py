@@ -833,26 +833,23 @@ class TestCrossBackendOptions:
             "Keyword(s) 'linewidth' are invalid for bokeh, "
             "'line_dash' are invalid for matplotlib"
         )
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError, match=re.escape(err)):
             opts.Curve(linewidth=10, line_dash='dotted') # Bokeh and MPL
-        assert err in str(excinfo.value)
 
         # Non-existent keyword across backends (bokeh active)
         err = ("In opts.Curve(...), unexpected option 'foobar' for Curve type "
                "across all extensions. Similar options for current "
                "extension ('bokeh') are: ['toolbar'].")
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError, match=re.escape(err)):
             opts.Curve(foobar=3)
-        assert err in str(excinfo.value)
 
         # Non-existent keyword across backends (matplotlib active)
         Store.set_current_backend('matplotlib')
 
         err = ("In opts.Curve(...), unexpected option 'foobar' for Curve "
                "type across all extensions. No similar options found.")
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError, match=re.escape(err)):
             opts.Curve(foobar=3)
-        assert err in str(excinfo.value)
 
     def test_apply_opts_with_non_active_backend(self):
         Store.options(val=self.store_mpl, backend='matplotlib')
