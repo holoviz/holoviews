@@ -36,7 +36,7 @@ class TestBokehTablePlot:
         dims = table.dimensions()
         formatters = (NumberFormatter, NumberFormatter, StringFormatter)
         editors = (IntEditor, NumberEditor, StringEditor)
-        for dim, fmt, edit, column in zip(dims, formatters, editors, plot.state.columns, strict=None):
+        for dim, fmt, edit, column in zip(dims, formatters, editors, plot.state.columns, strict=True):
             assert column.title == dim.pprint_label
             assert isinstance(column.formatter, fmt)
             assert isinstance(column.editor, edit)

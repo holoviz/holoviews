@@ -283,7 +283,7 @@ class TestBarPlot(TestBokehPlot):
         colors = ['blue', 'red']
         overlay = NdOverlay({color: Bars(np.arange(i+2)) for i, color in enumerate(colors)}, 'Color').opts('Bars', fill_color='Color')
         plot = bokeh_renderer.get_plot(overlay)
-        for subplot, color in zip(plot.subplots.values(),  colors, strict=None):
+        for subplot, color in zip(plot.subplots.values(),  colors, strict=True):
             assert subplot.handles['glyph'].fill_color == color
 
     def test_bars_color_index_color_clash(self):

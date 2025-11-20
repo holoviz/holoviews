@@ -112,7 +112,7 @@ class TestHistogramPlot(LoggingComparison, TestMPLPlot):
         plot = mpl_renderer.get_plot(histogram)
         artist = plot.handles['artist']
         children = artist.get_children()
-        for c, w in zip(children, ['#000000', '#FF0000', '#00FF00'], strict=None):
+        for c, w in zip(children, ['#000000', '#FF0000', '#00FF00'], strict=True):
             assert c.get_facecolor() == (*(c / 255.0 for c in hex2rgb(w)), 1)
 
     def test_histogram_linear_color_op(self):

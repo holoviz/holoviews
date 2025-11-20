@@ -337,7 +337,7 @@ class _ElementComparison(_DataComparison):
     @classmethod
     def compare_dimension_lists(cls, dlist1, dlist2, msg='Dimension lists'):
         assert len(dlist1) == len(dlist2)
-        for d1, d2 in zip(dlist1, dlist2, strict=None):
+        for d1, d2 in zip(dlist1, dlist2, strict=True):
             cls.assert_equal(d1, d2)
 
     @classmethod
@@ -361,7 +361,7 @@ class _ElementComparison(_DataComparison):
     @classmethod
     def compare_trees(cls, el1, el2, msg='Trees'):
         assert el1.keys() == el2.keys()
-        for element1, element2 in zip(el1.values(),  el2.values(), strict=None):
+        for element1, element2 in zip(el1.values(),  el2.values(), strict=True):
             cls.assert_equal(element1, element2)
 
     @classmethod
@@ -387,7 +387,7 @@ class _ElementComparison(_DataComparison):
     def compare_ndmappings(cls, el1, el2, msg='NdMappings'):
         cls.compare_dimensioned(el1, el2)
         assert el1.keys() == el2.keys()
-        for element1, element2 in zip(el1, el2, strict=None):
+        for element1, element2 in zip(el1, el2, strict=True):
             cls.assert_equal(element1, element2)
 
     @classmethod
@@ -407,7 +407,7 @@ class _ElementComparison(_DataComparison):
         cls.compare_dimensioned(el1, el2)
         assert el1.keys() == el2.keys()
 
-        for element1, element2 in zip(el1, el2, strict=None):
+        for element1, element2 in zip(el1, el2, strict=True):
             cls.assert_equal(element1,element2)
 
 
@@ -416,13 +416,13 @@ class _ElementComparison(_DataComparison):
         cls.compare_dimensioned(el1, el2)
         assert len(el1) == len(el2)
 
-        for (layer1, layer2) in zip(el1, el2, strict=None):
+        for (layer1, layer2) in zip(el1, el2, strict=True):
             cls.assert_equal(layer1, layer2)
 
     @classmethod
     def compare_adjointlayouts(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
-        for element1, element2 in zip(el1, el1, strict=None):
+        for element1, element2 in zip(el1, el1, strict=True):
             cls.assert_equal(element1, element2)
 
 
@@ -477,9 +477,8 @@ class _ElementComparison(_DataComparison):
 
         paths1 = el1.split()
         paths2 = el2.split()
-        if len(paths1) != len(paths2):
-            raise cls.failureException(f"{msg} objects do not have a matching number of paths.")
-        for p1, p2 in zip(paths1, paths2, strict=None):
+        assert len(paths1) == len(paths2)
+        for p1, p2 in zip(paths1, paths2, strict=True):
             cls.compare_dataset(p1, p2, f'{msg} data')
 
     @classmethod

@@ -173,9 +173,9 @@ class TestPathPlot(TestBokehPlot):
         }
 
         colors = ["#FF0000", "#00FF00", "#0000FF"]
-        levels=[0,1,2,3]
+        levels=[0,1,2]
 
-        path = Path(data, vdims="cat").opts(color="cat", cmap=dict(zip(levels, colors, strict=None)), line_width=4, show_legend=True)
+        path = Path(data, vdims="cat").opts(color="cat", cmap=dict(zip(levels, colors, strict=True)), line_width=4, show_legend=True)
         plot = bokeh_renderer.get_plot(path)
         item = plot.state.legend[0].items[0]
         legend = {'field': 'color_str__'}
@@ -190,9 +190,9 @@ class TestPathPlot(TestBokehPlot):
         }
 
         colors = ["#FF0000", "#00FF00", "#0000FF"]
-        levels=[0,1,2,3]
+        levels=[0,1,2]
 
-        path = Path(data, vdims="cat").opts(color="cat", cmap=dict(zip(levels, colors, strict=None)), line_width=4, show_legend=True, legend_labels={0: 'A', 1: 'B', 2: 'C'})
+        path = Path(data, vdims="cat").opts(color="cat", cmap=dict(zip(levels, colors, strict=True)), line_width=4, show_legend=True, legend_labels={0: 'A', 1: 'B', 2: 'C'})
         plot = bokeh_renderer.get_plot(path)
         cds = plot.handles['cds']
         item = plot.state.legend[0].items[0]
@@ -631,7 +631,7 @@ class TestDendrogramPlot(TestBokehPlot):
         assert len(source.data['ys']) == 0
 
     def test_plot(self):
-        dendrogram = Dendrogram(zip(self.x, self.y, strict=None))
+        dendrogram = Dendrogram(zip(self.x, self.y, strict=True))
         plot = bokeh_renderer.get_plot(dendrogram)
         source = plot.handles['source']
         assert len(source.data['xs']) == 4
@@ -646,7 +646,7 @@ class TestDendrogramPlot(TestBokehPlot):
 
     def test_plot_equals_path_zip(self):
         dendrogram = Dendrogram(self.x, self.y)
-        path = Path(zip(self.x, self.y, strict=None))
+        path = Path(zip(self.x, self.y, strict=True))
         dendro_plot = bokeh_renderer.get_plot(dendrogram)
         dendro_source = dendro_plot.handles['source']
         path_plot = bokeh_renderer.get_plot(path)
@@ -687,7 +687,7 @@ class TestDendrogramPlot(TestBokehPlot):
 
     def test_1_adjoint_plot_2_kdims(self):
         dendrogram = Dendrogram(self.x, self.y)
-        main = Path(zip(self.x, self.y, strict=None))
+        main = Path(zip(self.x, self.y, strict=True))
         adjoint = main << dendrogram
         top, main, right = self.get_childrens(adjoint)
         assert top is None

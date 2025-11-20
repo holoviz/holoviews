@@ -16,7 +16,7 @@ class TestCollation:
         Bs = list(range(100))
         coords = itertools.product(*(range(n) for n in [alphas, betas, deltas]))
         mus=np.random.rand(alphas, betas, 100, 10)
-        self.phase_boundaries = {(a, b, d): Curve(zip(Bs, mus[a, b, :, i]*a+b, strict=None))
+        self.phase_boundaries = {(a, b, d): Curve(zip(Bs, mus[a, b, :, i]*a+b, strict=True))
                                  for i in range(10) for a, b, d in coords}
         self.dimensions = ['alpha', 'beta', 'delta']
         self.nesting_hmap = HoloMap(self.phase_boundaries, kdims=self.dimensions)

@@ -313,7 +313,7 @@ class TestPointPlot(TestMPLPlot):
                              for i, marker in enumerate(markers)},
                             'Marker').opts('Points', marker='Marker')
         plot = mpl_renderer.get_plot(overlay)
-        for subplot, marker in zip(plot.subplots.values(), markers, strict=None):
+        for subplot, marker in zip(plot.subplots.values(), markers, strict=True):
             style = dict(subplot.style[subplot.cyclic_index])
             style = subplot._apply_transforms(subplot.current_frame, {}, style)
             assert style['marker'] == marker

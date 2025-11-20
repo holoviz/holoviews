@@ -64,7 +64,7 @@ class ElementConstructorTest:
         assert failed_elements == []
 
     def test_chart_zipconstruct(self):
-        assert_element_equal(Curve(zip(self.xs, self.sin, strict=None)), self.curve)
+        assert_element_equal(Curve(zip(self.xs, self.sin, strict=True)), self.curve)
 
     def test_chart_tuple_construct(self):
         assert_element_equal(Curve((self.xs, self.sin)), self.curve)
@@ -76,10 +76,10 @@ class ElementConstructorTest:
         assert_element_equal(Path([(self.xs, self.sin), (self.xs, self.cos)]), self.path)
 
     def test_path_ziplist_construct(self):
-        assert_element_equal(Path([list(zip(self.xs, self.sin, strict=None)), list(zip(self.xs, self.cos, strict=None))]), self.path)
+        assert_element_equal(Path([list(zip(self.xs, self.sin, strict=True)), list(zip(self.xs, self.cos, strict=True))]), self.path)
 
     def test_hist_zip_construct(self):
-        assert_element_equal(Histogram(list(zip(self.hxs, self.sin, strict=None))), self.histogram)
+        assert_element_equal(Histogram(list(zip(self.hxs, self.sin, strict=True))), self.histogram)
 
     def test_hist_array_construct(self):
         assert_element_equal(Histogram(np.column_stack((self.hxs, self.sin))), self.histogram)

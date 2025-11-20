@@ -64,7 +64,9 @@ class TestRGB:
     def test_not_using_class_variables_vdims(self):
         init_vdims = RGB(self.rgb_array).vdims
         cls_vdims = RGB.vdims
-        for i, c in zip(init_vdims, cls_vdims, strict=None):
+        assert len(init_vdims) == 4
+        assert len(cls_vdims) == 3
+        for i, c in zip(init_vdims, cls_vdims, strict=False):
             assert i is not c
             assert i == c
 
@@ -89,7 +91,9 @@ class TestHSV:
     def test_not_using_class_variables_vdims(self):
             init_vdims = HSV(self.hsv_array).vdims
             cls_vdims = HSV.vdims
-            for i, c in zip(init_vdims, cls_vdims, strict=None):
+            assert len(init_vdims) == 4
+            assert len(cls_vdims) == 3
+            for i, c in zip(init_vdims, cls_vdims, strict=False):
                 assert i is not c
                 assert i == c
 

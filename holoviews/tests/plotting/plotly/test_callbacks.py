@@ -594,7 +594,7 @@ class TestCallbacks:
         )
 
         # Check that all streams attached to the 'first' plots were triggered
-        for stream, events in zip(streamss[0], sel_events[0], strict=None):
+        for stream, events in zip(streamss[0], sel_events[0], strict=True):
             assert stream.index == [0, 2]
             assert len(events) == 1
 
@@ -637,9 +637,9 @@ class TestCallbacks:
         )
 
         # Check that all streams attached to the 'forth' plot were triggered
-        for stream, _events in zip(streamss[3], sel_events[3], strict=None):
+        for stream, _events in zip(streamss[3], sel_events[3], strict=True):
             assert stream.index == [0, 2]
 
         # Check that streams attached to plots not in this figure are not called
-        for _stream, events in zip(streamss[4], sel_events[4], strict=None):
+        for _stream, events in zip(streamss[4], sel_events[4], strict=True):
             assert len(events) == 0

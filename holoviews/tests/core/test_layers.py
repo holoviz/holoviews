@@ -22,7 +22,7 @@ class OverlayTest:
     def test_overlay_iter(self):
         views = [self.view1, self.view2, self.view3]
         overlay = NdOverlay(list(enumerate(views)))
-        for el, v in zip(overlay, views, strict=None):
+        for el, v in zip(overlay, views, strict=True):
             assert_element_equal(el, v)
 
     def test_overlay_iterable(self):

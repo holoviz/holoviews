@@ -58,7 +58,7 @@ class TestEllipsisTable:
     def setup_method(self):
         keys =   [('M',10), ('M',16), ('F',12)]
         values = [(15, 0.8), (18, 0.6), (10, 0.8)]
-        self.table =hv.Table(zip(keys,values, strict=None),
+        self.table =hv.Table(zip(keys,values, strict=True),
                              kdims = ['Gender', 'Age'],
                              vdims=['Weight', 'Height'])
 

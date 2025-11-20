@@ -56,7 +56,7 @@ class TestStoreOptsMethod:
         """
         The new style introduced in #73
         """
-        data = [zip(range(10),range(10), strict=None), zip(range(5),range(5), strict=None)]
+        data = [zip(range(10),range(10), strict=True), zip(range(5),range(5), strict=True)]
         o = Overlay([Curve(c) for c in data]).opts(
             {'Curve.Curve': {'show_grid': False, 'color':'k'}}
         )
@@ -70,7 +70,7 @@ class TestStoreOptsMethod:
         """
         Complete specification style.
         """
-        data = [zip(range(10),range(10), strict=None), zip(range(5),range(5), strict=None)]
+        data = [zip(range(10),range(10), strict=True), zip(range(5),range(5), strict=True)]
         o = Overlay([Curve(c) for c in data]).opts(
             {'Curve.Curve': {'show_grid':True, 'color':'b'}})
 

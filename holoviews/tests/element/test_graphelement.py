@@ -37,7 +37,7 @@ class GraphTests:
         segments = connect_edges(self.graph)
         paths = []
         nodes = np.column_stack(self.nodes)
-        for start, end in zip(nodes[self.source], nodes[self.target], strict=None):
+        for start, end in zip(nodes[self.source], nodes[self.target], strict=True):
             paths.append(np.array([start[:2], end[:2]]))
         np.testing.assert_equal(segments, paths)
 
@@ -68,7 +68,7 @@ class GraphTests:
         segments = connect_edges_pd(self.graph)
         paths = []
         nodes = np.column_stack(self.nodes)
-        for start, end in zip(nodes[self.source], nodes[self.target], strict=None):
+        for start, end in zip(nodes[self.source], nodes[self.target], strict=True):
             paths.append(np.array([start[:2], end[:2]]))
         np.testing.assert_equal(segments, paths)
 
@@ -88,32 +88,32 @@ class GraphTests:
 
     def test_select_by_node_in_edges_selection_mode(self):
         graph = Graph(((self.source, self.target),))
-        selection = Graph(([(1, 0), (2, 0)], list(zip(*self.nodes, strict=None))[0:3]))
+        selection = Graph(([(1, 0), (2, 0)], list(zip(*self.nodes, strict=True))[0:3]))
         assert_element_equal(graph.select(index=(1, 3)), selection)
 
     def test_select_by_node_in_nodes_selection_mode(self):
         graph = Graph(((self.source, self.source+1), self.nodes))
-        selection = Graph(([(1, 2)], list(zip(*self.nodes, strict=None))[1:3]))
+        selection = Graph(([(1, 2)], list(zip(*self.nodes, strict=True))[1:3]))
         assert_element_equal(graph.select(index=(1, 3), selection_mode='nodes'), selection)
 
     def test_select_by_source(self):
         graph = Graph(((self.source, self.target),))
-        selection = Graph(([(0,0), (1, 0)], list(zip(*self.nodes, strict=None))[:2]))
+        selection = Graph(([(0,0), (1, 0)], list(zip(*self.nodes, strict=True))[:2]))
         assert_element_equal(graph.select(start=(0, 2)), selection)
 
     def test_select_by_target(self):
         graph = Graph(((self.source, self.target),))
-        selection = Graph(([(0,0), (1, 0)], list(zip(*self.nodes, strict=None))[:2]))
+        selection = Graph(([(0,0), (1, 0)], list(zip(*self.nodes, strict=True))[:2]))
         assert_element_equal(graph.select(start=(0, 2)), selection)
 
     def test_select_by_source_and_target(self):
         graph = Graph(((self.source, self.source+1), self.nodes))
-        selection = Graph(([(0,1)], list(zip(*self.nodes, strict=None))[:2]))
+        selection = Graph(([(0,1)], list(zip(*self.nodes, strict=True))[:2]))
         assert_element_equal(graph.select(start=(0, 3), end=1), selection)
 
     def test_select_by_edge_data(self):
         graph = Graph(((self.target, self.source, self.edge_info),), vdims=['info'])
-        selection = Graph(([(0, 0, 0), (0, 1, 1)], list(zip(*self.nodes, strict=None))[:2]), vdims=['info'])
+        selection = Graph(([(0, 0, 0), (0, 1, 1)], list(zip(*self.nodes, strict=True))[:2]), vdims=['info'])
         assert_element_equal(graph.select(info=(0, 2)), selection)
 
     def test_graph_node_range(self):
@@ -299,7 +299,7 @@ class TriMeshTests:
         assert_data_equal(trimesh.nodes.array(), np.empty((0, 3)))
 
     def test_trimesh_constructor_tuple_nodes(self):
-        nodes = tuple(zip(*self.nodes, strict=None))[:2]
+        nodes = tuple(zip(*self.nodes, strict=True))[:2]
         trimesh = TriMesh((self.simplices, nodes))
         assert_data_equal(trimesh.array(), np.array(self.simplices))
         assert_data_equal(trimesh.nodes.array([0, 1]), np.array(nodes).T)
@@ -324,7 +324,7 @@ class TriMeshTests:
         trimesh = TriMesh((self.simplices, self.nodes))
         paths = [np.array([(0, 0), (0.5, 1), (1, 0), (0, 0), (np.nan, np.nan),
                  (0.5, 1), (1, 0), (1.5, 1), (0.5, 1)])]
-        for p1, p2 in zip(trimesh.edgepaths.split(datatype='array'), paths, strict=None):
+        for p1, p2 in zip(trimesh.edgepaths.split(datatype='array'), paths, strict=True):
             assert_data_equal(p1, p2)
 
     def test_trimesh_select(self):
