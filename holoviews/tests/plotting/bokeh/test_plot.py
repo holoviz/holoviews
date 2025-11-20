@@ -15,7 +15,6 @@ from holoviews import Curve
 from holoviews.core.element import Element
 from holoviews.core.options import Store
 from holoviews.core.spaces import DynamicMap
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.bokeh.callbacks import Callback
 from holoviews.plotting.bokeh.element import ElementPlot
 from holoviews.streams import Pipe
@@ -25,7 +24,7 @@ bokeh_renderer = Store.renderers['bokeh']
 from .. import option_intersections
 
 
-class TestPlotDefinitions(ComparisonTestCase):
+class TestPlotDefinitions:
 
     known_clashes = []
 
@@ -34,9 +33,9 @@ class TestPlotDefinitions(ComparisonTestCase):
         assert option_intersections('bokeh') == self.known_clashes
 
 
-class TestBokehPlot(ComparisonTestCase):
+class TestBokehPlot:
 
-    def setUp(self):
+    def setup_method(self):
         self.previous_backend = Store.current_backend
         self.comm_manager = bokeh_renderer.comm_manager
         bokeh_renderer.comm_manager = comms.CommManager
@@ -46,7 +45,7 @@ class TestBokehPlot(ComparisonTestCase):
             self._padding[plot] = plot.padding
             plot.padding = 0
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.current_backend = self.previous_backend
         bokeh_renderer.comm_manager = self.comm_manager
         Callback._callbacks = {}

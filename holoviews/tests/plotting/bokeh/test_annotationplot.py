@@ -243,10 +243,9 @@ class TestLabelsPlot(TestBokehPlot):
 
 class TestHVLinesPlot(TestBokehPlot):
 
-    def setUp(self):
+    def setup_class(self):
         if not BOKEH_GE_3_2_0:
             pytest.skip("Bokeh 3.2 added H/VLines")
-        super().setUp()
 
     def test_hlines_plot(self):
         hlines = HLines(
@@ -442,10 +441,9 @@ class TestHVLinesPlot(TestBokehPlot):
 
 class TestHVSpansPlot(TestBokehPlot):
 
-    def setUp(self):
+    def setup_class(self):
         if not BOKEH_GE_3_2_0:
             pytest.skip("Bokeh 3.2 added H/VSpans")
-        super().setUp()
 
     def test_hspans_plot(self):
         hspans = HSpans(

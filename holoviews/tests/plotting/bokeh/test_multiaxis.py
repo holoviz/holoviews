@@ -2,11 +2,11 @@ from bokeh.models import LinearAxis, LinearScale, LogAxis, LogScale
 
 from holoviews.element import Curve
 
-from ...utils import LoggingComparisonTestCase
+from ...utils import LoggingComparison
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
-class TestCurveTwinAxes(LoggingComparisonTestCase, TestBokehPlot):
+class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
 
     def test_multi_y_disabled(self):
         overlay = (Curve(range(10)) * Curve(range(10)))

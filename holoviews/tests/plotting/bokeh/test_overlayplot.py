@@ -21,11 +21,11 @@ from holoviews.streams import Pipe, Stream, Tap
 from holoviews.testing import assert_data_equal
 from holoviews.util import Dynamic
 
-from ...utils import LoggingComparisonTestCase
+from ...utils import LoggingComparison
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
-class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
+class TestOverlayPlot(LoggingComparison, TestBokehPlot):
 
     def test_overlay_apply_ranges_disabled(self):
         overlay = (Curve(range(10)) * Curve(range(10))).opts('Curve', apply_ranges=False)

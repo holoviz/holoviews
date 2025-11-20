@@ -14,7 +14,6 @@ from panel.widgets import DiscreteSlider, FloatSlider
 from holoviews.core.options import Store
 from holoviews.core.spaces import DynamicMap
 from holoviews.element import Curve, HLine, Path, Polygons
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting import Renderer
 from holoviews.plotting.bokeh.callbacks import Callback, RangeXYCallback, ResetCallback
 from holoviews.plotting.bokeh.renderer import BokehRenderer
@@ -24,9 +23,9 @@ from holoviews.streams import PlotReset, RangeXY, Stream
 bokeh_renderer = BokehRenderer.instance(mode='server')
 
 
-class TestBokehServerSetup(ComparisonTestCase):
+class TestBokehServerSetup:
 
-    def setUp(self):
+    def setup_method(self):
         self.previous_backend = Store.current_backend
         Store.current_backend = 'bokeh'
         self.doc = curdoc()
@@ -35,7 +34,7 @@ class TestBokehServerSetup(ComparisonTestCase):
         with param.logging_level('ERROR'):
             Renderer.notebook_context = False
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.current_backend = self.previous_backend
         bokeh_renderer.last_plot = None
         Callback._callbacks = {}
@@ -86,14 +85,14 @@ class TestBokehServerSetup(ComparisonTestCase):
 
 
 @pytest.mark.flaky(reruns=3)
-class TestBokehServer(ComparisonTestCase):
+class TestBokehServer:
 
-    def setUp(self):
+    def setup_method(self):
         self.previous_backend = Store.current_backend
         Store.current_backend = 'bokeh'
         self._port = None
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.current_backend = self.previous_backend
         Callback._callbacks = {}
         state.kill_all_servers()

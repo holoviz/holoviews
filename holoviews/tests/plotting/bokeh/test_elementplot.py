@@ -27,11 +27,11 @@ from holoviews.streams import Pipe, PointDraw, Stream
 from holoviews.testing import assert_data_equal
 from holoviews.util import render
 
-from ...utils import LoggingComparisonTestCase
+from ...utils import LoggingComparison
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
-class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
+class TestElementPlot(LoggingComparison, TestBokehPlot):
 
     def test_element_show_frame_disabled(self):
         curve = Curve(range(10)).opts(show_frame=False)
@@ -996,7 +996,7 @@ class TestScalebarPlot:
             assert coordinate.y_source is scalebar.range
 
 
-class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
+class TestColorbarPlot(LoggingComparison, TestBokehPlot):
 
     def test_colormapper_symmetric(self):
         img = Image(np.array([[0, 1], [2, 3]])).opts(symmetric=True)

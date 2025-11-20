@@ -13,12 +13,12 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 class TestBokehViolinPlot(TestBokehPlot):
 
-    def setUp(self):
+    def setup_method(self):
         try:
             import scipy # noqa
         except ImportError:
             pytest.skip('Violin plot requires SciPy to compute kde')
-        super().setUp()
+        super().setup_method()
 
     def test_violin_simple(self):
         values = np.random.rand(100)

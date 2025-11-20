@@ -164,16 +164,13 @@ class TestPointPlot(TestBokehPlot):
         fig = plot.state
         assert len(fig.legend) == 0
 
-    def test_native_marker_legend(self):
-        """When one plots with a native bokeh marker, the legend uses that marker."""
-        for marker in MarkerType:
-            with self.subTest(marker=marker):
-                # Plot with a categorical color mapper solely to obtain a legend.
-                points = Points([(0, 0, "A"), (0, 1, "B")], vdims="color").opts(
-                    color="color", marker=marker
-                )
-                plot = bokeh_renderer.get_plot(points)
-                assert plot.state.legend[0].items[0].renderers[0].glyph.marker == marker
+    @pytest.mark.parametrize("marker", MarkerType)
+    def test_native_marker_legend(self, marker):
+        points = Points([(0, 0, "A"), (0, 1, "B")], vdims="color").opts(
+            color="color", marker=marker
+        )
+        plot = bokeh_renderer.get_plot(points)
+        assert plot.state.legend[0].items[0].renderers[0].glyph.marker == marker
 
     def test_points_non_numeric_size_warning(self):
         data = (np.arange(10), np.arange(10), list(map(chr, range(94,104))))
@@ -436,7 +433,7 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         assert cds.data['line_color'] == ['#000', '#F00', '#0F0']
-        self.assertNotEqual(property_to_dict(glyph.fill_color), {'field': 'line_color'})
+        assert property_to_dict(glyph.fill_color) != {'field': 'line_color'}
         assert property_to_dict(glyph.line_color) == {'field': 'line_color'}
 
     def test_point_fill_color_op(self):
@@ -447,7 +444,7 @@ class TestPointPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
         assert cds.data['fill_color'] == ['#000', '#F00', '#0F0']
         assert property_to_dict(glyph.fill_color) == {'field': 'fill_color'}
-        self.assertNotEqual(property_to_dict(glyph.line_color), {'field': 'fill_color'})
+        assert property_to_dict(glyph.line_color) != {'field': 'fill_color'}
 
     def test_point_angle_op(self):
         points = Points([(0, 0, 0), (0, 1, 45), (0, 2, 90)],
@@ -475,7 +472,7 @@ class TestPointPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
         assert_data_equal(cds.data['line_alpha'], np.array([0, 0.2, 0.7]))
         assert property_to_dict(glyph.line_alpha) == {'field': 'line_alpha'}
-        self.assertNotEqual(property_to_dict(glyph.fill_alpha), {'field': 'line_alpha'})
+        assert property_to_dict(glyph.fill_alpha) != {'field': 'line_alpha'}
 
     def test_point_fill_alpha_op(self):
         points = Points([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -484,7 +481,7 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         assert_data_equal(cds.data['fill_alpha'], np.array([0, 0.2, 0.7]))
-        self.assertNotEqual(property_to_dict(glyph.line_alpha), {'field': 'fill_alpha'})
+        assert property_to_dict(glyph.line_alpha) != {'field': 'fill_alpha'}
         assert property_to_dict(glyph.fill_alpha) == {'field': 'fill_alpha'}
 
     def test_point_size_op(self):

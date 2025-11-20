@@ -13,8 +13,8 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 class BokehRadialHeatMapPlotTests(TestBokehPlot):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         # set up dummy data for convenient tests
         x = [f"Seg {idx}" for idx in range(2)]
         y = [f"Ann {idx}" for idx in range(2)]

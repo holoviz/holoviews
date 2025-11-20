@@ -11,16 +11,15 @@ from panel.widgets import DiscreteSlider, FloatSlider, Player
 from pyviz_comms import CommManager
 
 from holoviews import Curve, DynamicMap, GridSpace, HoloMap, Image, Table
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting import Renderer
 from holoviews.plotting.bokeh import BokehRenderer
 from holoviews.streams import Stream
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-class BokehRendererTest(ComparisonTestCase):
+class BokehRendererTest:
 
-    def setUp(self):
+    def setup_method(self):
         self.image1 = Image(np.array([[0,1],[2,3]]), label='Image1')
         self.image2 = Image(np.array([[1,0],[4,-2]]), label='Image2')
         self.map1 = HoloMap({1:self.image1, 2:self.image2}, label='TestMap')
@@ -31,7 +30,7 @@ class BokehRendererTest(ComparisonTestCase):
             Renderer.notebook_context = False
             Renderer.comm_manager = CommManager
 
-    def tearDown(self):
+    def teardown_method(self):
         with param.logging_level('ERROR'):
             Renderer.notebook_context = self.nbcontext
             Renderer.comm_manager = self.comm_manager

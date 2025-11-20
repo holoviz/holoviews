@@ -9,11 +9,11 @@ from holoviews.operation import histogram
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from ...utils import LoggingComparisonTestCase
+from ...utils import LoggingComparison
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
-class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
+class TestSideHistogramPlot(LoggingComparison, TestBokehPlot):
 
     def test_side_histogram_no_cmapper(self):
         points = Points(np.random.rand(100, 2))
@@ -234,7 +234,7 @@ class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
         glyph = plot.handles['glyph']
         assert_data_equal(cds.data['line_alpha'], np.array([0, 0.2, 0.7]))
         assert property_to_dict(glyph.line_alpha) == {'field': 'line_alpha'}
-        self.assertNotEqual(property_to_dict(glyph.fill_alpha), {'field': 'line_alpha'})
+        assert property_to_dict(glyph.fill_alpha) != {'field': 'line_alpha'}
 
     def test_histogram_fill_alpha_op(self):
         histogram = Histogram([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -243,7 +243,7 @@ class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         assert_data_equal(cds.data['fill_alpha'], np.array([0, 0.2, 0.7]))
-        self.assertNotEqual(property_to_dict(glyph.line_alpha), {'field': 'fill_alpha'})
+        assert property_to_dict(glyph.line_alpha) != {'field': 'fill_alpha'}
         assert property_to_dict(glyph.fill_alpha) == {'field': 'fill_alpha'}
 
     def test_histogram_line_width_op(self):

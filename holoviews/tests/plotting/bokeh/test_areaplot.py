@@ -6,11 +6,11 @@ import pandas as pd
 from holoviews.element import Area, Overlay
 from holoviews.testing import assert_data_equal
 
-from ...utils import LoggingComparisonTestCase
+from ...utils import LoggingComparison
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
-class TestAreaPlot(LoggingComparisonTestCase, TestBokehPlot):
+class TestAreaPlot(LoggingComparison, TestBokehPlot):
 
     def test_area_with_nans(self):
         area = Area([1, 2, 3, np.nan, 5, 6, 7])

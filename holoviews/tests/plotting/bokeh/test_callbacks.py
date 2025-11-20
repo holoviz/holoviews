@@ -1,6 +1,5 @@
 import datetime as dt
 from collections import deque, namedtuple
-from unittest import IsolatedAsyncioTestCase
 
 import numpy as np
 import pandas as pd
@@ -13,7 +12,6 @@ from bokeh.models import ColumnDataSource, Plot, PolyEditTool, Range1d, Selectio
 from holoviews.core import DynamicMap
 from holoviews.core.options import Store
 from holoviews.element import Box, Curve, Points, Polygons, Rectangles, Table
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.bokeh.callbacks import (
     BoxEditCallback,
     Callback,
@@ -45,15 +43,15 @@ bokeh_server_renderer = BokehRenderer.instance(mode='server')
 bokeh_renderer = BokehRenderer.instance()
 
 
-class CallbackTestCase(IsolatedAsyncioTestCase, ComparisonTestCase):
+class CallbackTestCase:
 
-    def setUp(self):
+    def setup_method(self):
         self.previous_backend = Store.current_backend
         Store.current_backend = 'bokeh'
         self.comm_manager = bokeh_renderer.comm_manager
         bokeh_renderer.comm_manager = comms.CommManager
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.current_backend = self.previous_backend
         bokeh_server_renderer.last_plot = None
         bokeh_renderer.last_plot = None

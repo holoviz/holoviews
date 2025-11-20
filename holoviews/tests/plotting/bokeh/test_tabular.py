@@ -13,7 +13,6 @@ from bokeh.models.widgets import (
 from holoviews.core.options import Store
 from holoviews.core.spaces import DynamicMap
 from holoviews.element import Table
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.bokeh.callbacks import CDSCallback
 from holoviews.plotting.bokeh.renderer import BokehRenderer
 from holoviews.streams import CDSStream, Stream
@@ -21,13 +20,13 @@ from holoviews.streams import CDSStream, Stream
 bokeh_renderer = BokehRenderer.instance(mode='server')
 
 
-class TestBokehTablePlot(ComparisonTestCase):
+class TestBokehTablePlot:
 
-    def setUp(self):
+    def setup_method(self):
         self.previous_backend = Store.current_backend
         Store.current_backend = 'bokeh'
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.current_backend = self.previous_backend
         bokeh_renderer.last_plot = None
 

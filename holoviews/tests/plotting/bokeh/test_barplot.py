@@ -258,7 +258,7 @@ class TestBarPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
         assert_data_equal(cds.data['line_alpha'], np.array([0, 0.2, 0.7]))
         assert property_to_dict(glyph.line_alpha) == {'field': 'line_alpha'}
-        self.assertNotEqual(property_to_dict(glyph.fill_alpha), {'field': 'line_alpha'})
+        assert property_to_dict(glyph.fill_alpha) != {'field': 'line_alpha'}
 
     def test_bars_fill_alpha_op(self):
         bars = Bars([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -267,7 +267,7 @@ class TestBarPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         assert_data_equal(cds.data['fill_alpha'], np.array([0, 0.2, 0.7]))
-        self.assertNotEqual(property_to_dict(glyph.line_alpha), {'field': 'fill_alpha'})
+        assert property_to_dict(glyph.line_alpha) != {'field': 'fill_alpha'}
         assert property_to_dict(glyph.fill_alpha) == {'field': 'fill_alpha'}
 
     def test_bars_line_width_op(self):

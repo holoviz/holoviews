@@ -3,7 +3,6 @@ from bokeh.models import Tool
 
 import holoviews as hv
 from holoviews.core import Store
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.bokeh.styles import expand_batched_style
 from holoviews.plotting.bokeh.util import (
     TOOL_TYPES,
@@ -15,7 +14,7 @@ from holoviews.plotting.bokeh.util import (
 bokeh_renderer = Store.renderers['bokeh']
 
 
-class TestBokehUtilsInstantiation(ComparisonTestCase):
+class TestBokehUtilsInstantiation:
 
     def test_expand_style_opts_simple(self):
         style = {'line_width': 3}

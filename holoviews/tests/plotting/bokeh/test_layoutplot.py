@@ -23,11 +23,11 @@ from holoviews.testing import assert_data_equal
 from holoviews.util import opts, render
 from holoviews.util.transform import dim
 
-from ...utils import LoggingComparisonTestCase
+from ...utils import LoggingComparison
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
-class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
+class TestLayoutPlot(LoggingComparison, TestBokehPlot):
 
     def test_layout_update_visible(self):
         hmap = HoloMap({i: Curve(np.arange(i), label='A') for i in range(1, 3)})
