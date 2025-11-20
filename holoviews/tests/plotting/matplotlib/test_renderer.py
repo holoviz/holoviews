@@ -50,7 +50,7 @@ class MPLRendererTest(ComparisonTestCase):
     def test_get_size_single_plot(self):
         plot = self.renderer.get_plot(self.image1)
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (288, 288))
+        assert (w, h) == (288, 288)
 
     def test_get_size_row_plot(self):
         with style.context("default"):
@@ -70,13 +70,13 @@ class MPLRendererTest(ComparisonTestCase):
         grid = GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
         plot = self.renderer.get_plot(grid)
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (345, 345))
+        assert (w, h) == (345, 345)
 
     def test_get_size_table(self):
         table = Table(range(10), kdims=['x'])
         plot = self.renderer.get_plot(table)
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (288, 288))
+        assert (w, h) == (288, 288)
 
     def test_render_gif(self):
         data, _metadata = self.renderer.components(self.map1, 'gif')
@@ -101,13 +101,13 @@ class MPLRendererTest(ComparisonTestCase):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer._validate(hmap, None)
         assert isinstance(obj, pn.pane.HoloViews)
-        self.assertEqual(obj.center, True)
-        self.assertEqual(obj.widget_location, 'right')
-        self.assertEqual(obj.widget_type, 'individual')
+        assert obj.center is True
+        assert obj.widget_location == 'right'
+        assert obj.widget_type == 'individual'
         widgets = obj.layout.select(DiscreteSlider)
-        self.assertEqual(len(widgets), 1)
+        assert len(widgets) == 1
         slider = widgets[0]
-        self.assertEqual(slider.options, dict([(str(i), i) for i in range(5)]))
+        assert slider.options == dict([(str(i), i) for i in range(5)])
 
     def test_render_holomap_embedded(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
@@ -123,31 +123,31 @@ class MPLRendererTest(ComparisonTestCase):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer._validate(hmap, 'scrubber')
         assert isinstance(obj, pn.pane.HoloViews)
-        self.assertEqual(obj.center, True)
-        self.assertEqual(obj.widget_location, 'bottom')
-        self.assertEqual(obj.widget_type, 'scrubber')
+        assert obj.center is True
+        assert obj.widget_location == 'bottom'
+        assert obj.widget_type == 'scrubber'
         widgets = obj.layout.select(Player)
-        self.assertEqual(len(widgets), 1)
+        assert len(widgets) == 1
         player = widgets[0]
-        self.assertEqual(player.start, 0)
-        self.assertEqual(player.end, 4)
+        assert player.start == 0
+        assert player.end == 4
 
     def test_render_holomap_scrubber_fps(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer.instance(fps=2)._validate(hmap, 'scrubber')
         assert isinstance(obj, pn.pane.HoloViews)
         widgets = obj.layout.select(Player)
-        self.assertEqual(len(widgets), 1)
+        assert len(widgets) == 1
         player = widgets[0]
-        self.assertEqual(player.interval, 500)
+        assert player.interval == 500
 
     def test_render_holomap_individual_widget_position(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer.instance(widget_location='top')._validate(hmap, None)
         assert isinstance(obj, pn.pane.HoloViews)
-        self.assertEqual(obj.center, True)
-        self.assertEqual(obj.widget_location, 'top')
-        self.assertEqual(obj.widget_type, 'individual')
+        assert obj.center is True
+        assert obj.widget_location == 'top'
+        assert obj.widget_type == 'individual'
 
     @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm:UserWarning')
     def test_render_dynamicmap_with_dims(self):
@@ -158,11 +158,11 @@ class MPLRendererTest(ComparisonTestCase):
         artist = plot.handles['artist']
 
         (_, y) = artist.get_data()
-        self.assertEqual(y[2], 0.1)
+        assert y[2] == 0.1
         slider = obj.layout.select(FloatSlider)[0]
         slider.value = 3.1
         (_, y) = artist.get_data()
-        self.assertEqual(y[2], 3.1)
+        assert y[2] == 3.1
 
     @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm:UserWarning')
     def test_render_dynamicmap_with_stream(self):
@@ -174,10 +174,10 @@ class MPLRendererTest(ComparisonTestCase):
         artist = plot.handles['artist']
 
         (_, y) = artist.get_data()
-        self.assertEqual(y[2], 2)
+        assert y[2] == 2
         stream.event(y=3)
         (_, y) = artist.get_data()
-        self.assertEqual(y[2], 3)
+        assert y[2] == 3
 
     @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm:UserWarning')
     def test_render_dynamicmap_with_stream_dims(self):
@@ -190,14 +190,14 @@ class MPLRendererTest(ComparisonTestCase):
         artist = plot.handles['artist']
 
         (_, y) = artist.get_data()
-        self.assertEqual(y[2], 2)
+        assert y[2] == 2
         stream.event(y=3)
         (_, y) = artist.get_data()
-        self.assertEqual(y[2], 3)
+        assert y[2] == 3
 
         (_, y) = artist.get_data()
-        self.assertEqual(y[0], 1)
+        assert y[0] == 1
         slider = obj.layout.select(DiscreteSlider)[0]
         slider.value = 3
         (_, y) = artist.get_data()
-        self.assertEqual(y[0], 3)
+        assert y[0] == 3

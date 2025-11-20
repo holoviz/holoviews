@@ -4,6 +4,7 @@ import numpy as np
 
 from holoviews.core.spaces import HoloMap
 from holoviews.element.raster import HeatMap
+from holoviews.testing import assert_data_equal
 
 try:
     from holoviews.plotting.mpl import RadialHeatMapPlot
@@ -49,10 +50,10 @@ class RadialHeatMapPlotTests(TestMPLPlot):
         data, _style, ticks = plot.get_data(self.element, {'z': {'combined': (0, 3)}}, {})
         wedges = data['annular']
         for wedge, wdata in zip(wedges, self.wedge_data, strict=None):
-            self.assertEqual((wedge.center, wedge.width, wedge.r,
-                              wedge.theta1, wedge.theta2), wdata)
-        self.assertEqual(ticks['xticks'], self.xticks)
-        self.assertEqual(ticks['yticks'], self.yticks)
+            assert (wedge.center, wedge.width, wedge.r,
+                              wedge.theta1, wedge.theta2) == wdata
+        assert ticks['xticks'] == self.xticks
+        assert ticks['yticks'] == self.yticks
 
     def test_get_data_xseparators(self):
         plot = mpl_renderer.get_plot(self.element.opts(xmarks=4))
@@ -62,14 +63,14 @@ class RadialHeatMapPlotTests(TestMPLPlot):
                             [0., 0.5 ]]),
                   np.array([[3.14159265, 0.25],
                             [3.14159265, 0.5]])]
-        self.assertEqual(xseparators, arrays)
+        assert_data_equal(xseparators, np.asarray(arrays))
 
     def test_get_data_yseparators(self):
         plot = mpl_renderer.get_plot(self.element.opts(ymarks=4))
         data, _style, _ticks = plot.get_data(self.element, {'z': {'combined': (0, 3)}}, {})
         yseparators = data['yseparator']
-        for circle, r in zip(yseparators, [0.25, 0.375], strict=None):
-            self.assertEqual(circle.radius, r)
+        for circle, r in zip(yseparators, [0.25, 0.375], strict=True):
+            assert circle.radius == r
 
     def test_heatmap_holomap(self):
         hm = HoloMap({'A': HeatMap(np.random.randint(0, 10, (100, 3))),

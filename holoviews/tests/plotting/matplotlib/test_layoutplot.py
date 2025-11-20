@@ -15,16 +15,16 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestMPLPlot):
                   Curve(range(10)) + Curve(range(10)))
         plot = mpl_renderer.get_plot(layout)
         positions = [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0)]
-        self.assertEqual(sorted(plot.subplots.keys()), positions)
+        assert sorted(plot.subplots.keys()) == positions
         for i, pos in enumerate(positions):
             adjoint = plot.subplots[pos]
             if 'main' in adjoint.subplots:
-                self.assertEqual(adjoint.subplots['main'].layout_num, i+1)
+                assert adjoint.subplots['main'].layout_num == i+1
 
     def test_layout_empty_subplots(self):
         layout = Curve(range(10)) + NdOverlay() + HoloMap() + HoloMap({1: Image(np.random.rand(10,10))})
         plot = mpl_renderer.get_plot(layout)
-        self.assertEqual(len(plot.subplots.values()), 2)
+        assert len(plot.subplots.values()) == 2
         self.log_handler.assertContains('WARNING', 'skipping subplot')
         self.log_handler.assertContains('WARNING', 'skipping subplot')
 
@@ -33,12 +33,12 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestMPLPlot):
                   Curve(range(10)) + Curve(range(10)))
         plot = mpl_renderer.get_plot(layout.opts(transpose=True))
         positions = [(0, 0), (0, 1), (1, 0), (2, 0), (3, 0)]
-        self.assertEqual(sorted(plot.subplots.keys()), positions)
+        assert sorted(plot.subplots.keys()) == positions
         nums = [1, 5, 2, 3, 4]
         for pos, num in zip(positions, nums, strict=None):
             adjoint = plot.subplots[pos]
             if 'main' in adjoint.subplots:
-                self.assertEqual(adjoint.subplots['main'].layout_num, num)
+                assert adjoint.subplots['main'].layout_num == num
 
     def test_layout_dimensioned_stream_title_update(self):
         stream = Stream.define('Test', test=0)()
@@ -49,7 +49,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestMPLPlot):
         stream.event(test=1)
         assert 'test: 1' in plot.handles['title'].get_text()
         plot.cleanup()
-        self.assertEqual(stream._subscribers, [])
+        assert stream._subscribers == []
 
     def test_layout_shared_axes_disabled(self):
         from holoviews.plotting.mpl import CurvePlot

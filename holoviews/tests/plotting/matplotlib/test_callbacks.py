@@ -5,6 +5,7 @@ import numpy as np
 from holoviews.core import DynamicMap
 from holoviews.element import Curve, Points
 from holoviews.streams import PointerX, PointerXY
+from holoviews.testing import assert_data_equal
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -35,5 +36,5 @@ class TestCallbackPlot(TestMPLPlot):
             plot.state.set_dpi(72)
             stream.event(x=i)
         x, y = plot.handles['artist'].get_data()
-        self.assertEqual(x, np.arange(10))
-        self.assertEqual(y, np.arange(10, 20))
+        assert_data_equal(x, np.arange(10))
+        assert_data_equal(y, np.arange(10, 20))

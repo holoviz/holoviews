@@ -19,7 +19,7 @@ class TestPlotDefinitions(ComparisonTestCase):
     known_clashes = [(('Arrow',), {'fontsize'})]
 
     def test_matplotlib_plot_definitions(self):
-        self.assertEqual(option_intersections('matplotlib'), self.known_clashes)
+        assert option_intersections('matplotlib') == self.known_clashes
 
 
 class TestMPLPlot(ComparisonTestCase):
