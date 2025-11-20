@@ -13,6 +13,7 @@ except ImportError:
 
 
 from holoviews.core.options import Cycle, Options
+from holoviews.testing import assert_data_equal, assert_dict_equal
 
 
 class OptsSpecPlotOptionsTests(ComparisonTestCase):
@@ -25,7 +26,7 @@ class OptsSpecPlotOptionsTests(ComparisonTestCase):
         expected= {'Layout':
                    {'plot':
                     Options(title='foo bar', fig_inches=(3, 3))}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_plot_opts_with_space(self):
         "Space in the tuple, see issue #77"
@@ -33,36 +34,36 @@ class OptsSpecPlotOptionsTests(ComparisonTestCase):
         expected= {'Layout':
                    {'plot':
                     Options(title='foo bar', fig_inches=(3, 3))}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_plot_opts_simple_explicit(self):
         line = "Layout plot[fig_inches=(3,3) title='foo bar']"
         expected= {'Layout':
                    {'plot':
                     Options(title='foo bar', fig_inches=(3, 3))}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_plot_opts_with_space_explicit(self):
         line = "Layout plot[fig_inches=(3, 3) title='foo bar']"
         expected= {'Layout':
                    {'plot':
                     Options(title='foo bar', fig_inches=(3, 3))}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_plot_opts_dict_with_space(self):
         line = "Curve [fontsize={'xlabel': 10, 'title': 20}]"
         expected = {'Curve': {'plot': Options(fontsize={'xlabel': 10, 'title': 20})}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_plot_opts_dict_without_space(self):
         line = "Curve [fontsize=dict(xlabel=10,title=20)]"
         expected = {'Curve': {'plot': Options(fontsize={'xlabel': 10, 'title': 20})}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_plot_opts_nested_brackets(self):
         line = "Curve [title=', '.join(('A', 'B'))]"
         expected = {'Curve': {'plot': Options(title='A, B')}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_plot_opts_multiple_paths(self):
         line = "Image Curve [fig_inches=(3, 3) title='foo bar']"
@@ -72,7 +73,7 @@ class OptsSpecPlotOptionsTests(ComparisonTestCase):
                     'Curve':
                     {'plot':
                      Options(title='foo bar', fig_inches=(3, 3))}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_plot_opts_multiple_paths_2(self):
         line = "Image Curve Layout Overlay[fig_inches=(3, 3) title='foo bar']"
@@ -88,7 +89,7 @@ class OptsSpecPlotOptionsTests(ComparisonTestCase):
                     'Overlay':
                     {'plot':
                      Options(title='foo bar', fig_inches=(3, 3))}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
 
 class OptsSpecStyleOptionsTests(ComparisonTestCase):
@@ -97,13 +98,13 @@ class OptsSpecStyleOptionsTests(ComparisonTestCase):
         line = "Layout (string='foo')"
         expected= {'Layout':{
                     'style': Options(string='foo')}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_style_opts_simple_explicit(self):
         line = "Layout style(string='foo')"
         expected= {'Layout':{
                     'style': Options(string='foo')}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_style_opts_intermediate(self):
         line = "Layout (string='foo' test=3, b=True)"
@@ -111,7 +112,7 @@ class OptsSpecStyleOptionsTests(ComparisonTestCase):
                     'style': Options(string='foo',
                                      test=3,
                                      b=True)}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_style_opts_intermediate_explicit(self):
         line = "Layout style(string='foo' test=3, b=True )"
@@ -119,7 +120,7 @@ class OptsSpecStyleOptionsTests(ComparisonTestCase):
                     'style': Options(string='foo',
                                      test=3,
                                      b=True)}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
 
     def test_style_opts_advanced(self):
@@ -129,17 +130,17 @@ class OptsSpecStyleOptionsTests(ComparisonTestCase):
                                      test=3,
                                      b=True,
                                      color=Cycle(values=[1,2]))}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_style_opts_dict_with_space(self):
         line = "Curve (fontsize={'xlabel': 10, 'title': 20})"
         expected = {'Curve': {'style': Options(fontsize={'xlabel': 10, 'title': 20})}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_style_opts_dict_without_space(self):
         line = "Curve (fontsize={'xlabel': 10,'title': 20})"
         expected = {'Curve': {'style': Options(fontsize={'xlabel': 10, 'title': 20})}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_style_opts_cycle_function(self):
         # Explicitly compare because list of arrays do not compare correctly
@@ -154,13 +155,13 @@ class OptsSpecStyleOptionsTests(ComparisonTestCase):
         values = np.array([[ 0.37454012,  0.95071431,  0.73199394],
                            [ 0.59865848,  0.15601864,  0.15599452],
                            [ 0.05808361,  0.86617615,  0.60111501]])
-        self.assertEqual(np.array(options['Curve']['style'].kwargs['color'].values),
+        assert_data_equal(np.array(options['Curve']['style'].kwargs['color'].values),
                          values)
 
     def test_style_opts_cycle_list(self):
         line = "Curve (color=Cycle(values=['r', 'g', 'b']))"
         expected = {'Curve': {'style': Options(color=Cycle(values=['r', 'g', 'b']))}}
-        self.assertEqual(OptsSpec.parse(line, {'Cycle': Cycle}), expected)
+        assert_dict_equal(OptsSpec.parse(line, {'Cycle': Cycle}), expected)
 
     def test_style_opts_multiple_paths(self):
         line = "Image Curve (color='beautiful')"
@@ -170,7 +171,7 @@ class OptsSpecStyleOptionsTests(ComparisonTestCase):
                     'Curve':
                     {'style':
                      Options(color='beautiful')}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
 
 
@@ -183,25 +184,25 @@ class OptsNormPlotOptionsTests(ComparisonTestCase):
         line = "Layout {+axiswise}"
         expected= {'Layout':
                    {'norm': Options(axiswise=True, framewise=False)}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_norm_opts_simple_explicit_1(self):
         line = "Layout norm{+axiswise}"
         expected= {'Layout':
                    {'norm': Options(axiswise=True, framewise=False)}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_norm_opts_simple_2(self):
         line = "Layout {+axiswise +framewise}"
         expected= {'Layout':
                    {'norm': Options(axiswise=True, framewise=True)}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_norm_opts_simple_explicit_2(self):
         line = "Layout norm{+axiswise +framewise}"
         expected= {'Layout':
                    {'norm': Options(axiswise=True, framewise=True)}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_norm_opts_multiple_paths(self):
         line = "Image Curve {+axiswise +framewise}"
@@ -211,7 +212,7 @@ class OptsNormPlotOptionsTests(ComparisonTestCase):
                     'Curve':
                     {'norm':
                      Options(axiswise=True, framewise=True)}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
 
 class OptsSpecCombinedOptionsTests(ComparisonTestCase):
@@ -222,7 +223,7 @@ class OptsSpecCombinedOptionsTests(ComparisonTestCase):
                    {'plot':
                     Options(foo='bar baz', fig_inches=(3, 3)),
                     'style': Options(string='foo')}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_combined_two_types_1(self):
         line = "Layout plot[fig_inches=(3,3) foo='bar baz'] Image (string='foo')"
@@ -231,18 +232,18 @@ class OptsSpecCombinedOptionsTests(ComparisonTestCase):
                     Options(foo='bar baz', fig_inches=(3, 3))},
                    'Image': {
                     'style': Options(string='foo')}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
 
     def test_combined_two_types_2(self):
         line = "Layout plot[fig_inches=(3, 3)] Image (string='foo') [foo='bar baz']"
         expected= {'Layout':
-                   {'plot':
-                    Options(fig_inches=(3, 3))},
+                   {'plot': Options(fig_inches=(3, 3,))},
                    'Image': {
                        'style': Options(string='foo'),
-                       'plot': Options(foo='bar baz')}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+                       'plot': Options(foo='bar baz'),
+                   }}
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_combined_multiple_paths(self):
         line = "Image Curve {+framewise} [fig_inches=(3, 3) title='foo bar'] (c='b') Layout [string='foo'] Overlay"
@@ -265,7 +266,7 @@ class OptsSpecCombinedOptionsTests(ComparisonTestCase):
                      Options(string='foo')},
                     'Overlay':
                     {}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_combined_multiple_paths_merge(self):
         line = "Image Curve [fig_inches=(3, 3)] (c='b') Image (s=3)"
@@ -279,11 +280,11 @@ class OptsSpecCombinedOptionsTests(ComparisonTestCase):
                      Options(fig_inches=(3, 3)),
                     'style':
                     Options(c='b')}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)
 
     def test_combined_multiple_paths_merge_precedence(self):
         line = "Image (s=0, c='b') Image (s=3)"
         expected = {'Image':
                     {'style':
                      Options(c='b', s=3)}}
-        self.assertEqual(OptsSpec.parse(line), expected)
+        assert_dict_equal(OptsSpec.parse(line), expected)

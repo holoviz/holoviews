@@ -31,14 +31,14 @@ class TestOptsPreprocessor(ComparisonTestCase):
         nbname = 'test_opts_image_line_magic.ipynb'
         expected = """hv.util.opts(" Image [xaxis=None] (cmap='viridis')")"""
         source = apply_preprocessors([OptsMagicProcessor()], nbname)
-        self.assertEqual(source.strip().endswith(expected), True)
+        assert source.strip().endswith(expected) is True
 
     def test_opts_image_cell_magic(self):
         nbname = 'test_opts_image_cell_magic.ipynb'
         expected = ("""hv.util.opts(" Image [xaxis=None] (cmap='viridis')", """
                     + """hv.Image(np.random.rand(20,20)))""")
         source = apply_preprocessors([OptsMagicProcessor()], nbname)
-        self.assertEqual(source.strip().endswith(expected), True)
+        assert source.strip().endswith(expected) is True
 
     def test_opts_image_cell_magic_offset(self):
         nbname = 'test_opts_image_cell_magic_offset.ipynb'
@@ -47,10 +47,10 @@ class TestOptsPreprocessor(ComparisonTestCase):
                     + """hv.util.opts(" Image [xaxis=None] (cmap='viridis')", """
                     + """hv.Image(np.random.rand(20,20)))""")
         source = apply_preprocessors([OptsMagicProcessor()], nbname)
-        self.assertEqual(source.strip().endswith(expected), False)
+        assert source.strip().endswith(expected) is False
 
     def test_opts_image_line_magic_svg(self):
         nbname = 'test_output_svg_line_magic.ipynb'
         expected = """hv.util.output(" fig='svg'")"""
         source = apply_preprocessors([OutputMagicProcessor()], nbname)
-        self.assertEqual(source.strip().endswith(expected), True)
+        assert source.strip().endswith(expected) is True
