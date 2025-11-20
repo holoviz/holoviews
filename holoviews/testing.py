@@ -738,8 +738,18 @@ def _ptype(obj):
         return str(name)
     return f"{mod}.{name}"
 
+def assert_dict_equal(element1, element2):
+    assert isinstance(element1, Mapping)
+    assert isinstance(element2, Mapping)
+    _DataComparison.compare_mappings(element1, element2)
 
 def assert_data_equal(element1, element2):
+    # For convenience we convert one array and one list into numpy arrays
+    if isinstance(element2, np.ndarray) and isinstance(element1, list):
+        element1 = np.array(element1)
+    if isinstance(element1, np.ndarray) and isinstance(element2, list):
+        element2 = np.array(element2)
+
     types = tuple(_DataComparison.register())
     assert isinstance(element1, types), f"not valid type {_ptype(element1)!r}"
     assert isinstance(element2, types), f"not valid type {_ptype(element2)!r}"

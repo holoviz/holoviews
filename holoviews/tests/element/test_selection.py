@@ -27,7 +27,7 @@ from holoviews.element import (
     VSpan,
 )
 from holoviews.element.selection import spatial_select_columnar
-from holoviews.testing import _DataComparison, assert_data_equal, assert_element_equal
+from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 from holoviews.util.transform import dim
 
 try:
@@ -57,9 +57,6 @@ shapely_available = pytest.mark.skipif(shapely is None, reason='shapely is not a
 ds_available = pytest.mark.skipif(ds is None, reason='datashader not available')
 dd_available = pytest.mark.skipif(dd is None, reason='dask.dataframe not available')
 
-
-def assert_dict_with_numpy(dct1, dct2):
-    _DataComparison.compare_mappings(dct1, dct2)
 
 
 class TestIndexExpr:
@@ -291,7 +288,7 @@ class TestSelection2DExpr:
         points = Points([3, 2, 1, 3, 4])
         geom = np.array([(-0.1, -0.1), (1.4, 0), (1.4, 2.2), (-0.1, 2.2)])
         expr, bbox, region = points._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_with_numpy(bbox, {'x': np.array([-0.1, 1.4, 1.4, -0.1]),
+        assert_dict_equal(bbox, {'x': np.array([-0.1, 1.4, 1.4, -0.1]),
                                 'y': np.array([-0.1, 0, 2.2, 2.2])})
         assert_data_equal(expr.apply(points), np.array([False, True, False, False, False]))
         assert_element_equal(region, Rectangles([]) * Path([[*geom, (-0.1, -0.1)]]))
@@ -301,7 +298,7 @@ class TestSelection2DExpr:
         points = Points([3, 2, 1, 3, 4]).opts(invert_axes=True)
         geom = np.array([(-0.1, -0.1), (1.4, 0), (1.4, 2.2), (-0.1, 2.2)])
         expr, bbox, region = points._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_with_numpy(bbox, {'y': np.array([-0.1, 1.4, 1.4, -0.1]),
+        assert_dict_equal(bbox, {'y': np.array([-0.1, 1.4, 1.4, -0.1]),
                                 'x': np.array([-0.1, 0, 2.2, 2.2])})
         assert_data_equal(expr.apply(points), np.array([False, False, True, False, False]))
         assert_element_equal(region, Rectangles([]) * Path([[*geom, (-0.1, -0.1)]]))
@@ -386,7 +383,7 @@ class TestSelection2DExpr:
         img = Image(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3)))
         geom = np.array([(-0.4, -0.1), (0.6, -0.1), (0.4, 1.7), (-0.1, 1.7)])
         expr, bbox, region = img._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_with_numpy(bbox, {'x': np.array([-0.4, 0.6, 0.4, -0.1]),
+        assert_dict_equal(bbox, {'x': np.array([-0.4, 0.6, 0.4, -0.1]),
                                 'y': np.array([-0.1, -0.1, 1.7, 1.7])})
         assert_data_equal(expr.apply(img, expanded=True, flat=False), np.array([
             [    1., np.nan, np.nan],
@@ -401,7 +398,7 @@ class TestSelection2DExpr:
         img = Image(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3))).opts(invert_axes=True)
         geom = np.array([(-0.4, -0.1), (0.6, -0.1), (0.4, 1.7), (-0.1, 1.7)])
         expr, bbox, region = img._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_with_numpy(bbox, {'y': np.array([-0.4, 0.6, 0.4, -0.1]),
+        assert_dict_equal(bbox, {'y': np.array([-0.4, 0.6, 0.4, -0.1]),
                                 'x': np.array([-0.1, -0.1, 1.7, 1.7])})
         assert_data_equal(expr.apply(img, expanded=True, flat=False), np.array([
             [ True,  True, False],
@@ -510,7 +507,7 @@ class TestSelectionGeomExpr:
         rect = Rectangles([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)])
         geom = np.array([(-0.4, -0.1), (2.2, -0.1), (2.2, 4.1), (-0.1, 4.2)])
         expr, bbox, region = rect._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_with_numpy(bbox, {'x0': np.array([-0.4, 2.2, 2.2, -0.1]),
+        assert_dict_equal(bbox, {'x0': np.array([-0.4, 2.2, 2.2, -0.1]),
                                 'y0': np.array([-0.1, -0.1, 4.1, 4.2]),
                                 'x1': np.array([-0.4, 2.2, 2.2, -0.1]),
                                 'y1': np.array([-0.1, -0.1, 4.1, 4.2])})
@@ -522,7 +519,7 @@ class TestSelectionGeomExpr:
         rect = Rectangles([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)]).opts(invert_axes=True)
         geom = np.array([(-0.4, -0.1), (3.2, -0.1), (3.2, 4.1), (-0.1, 4.2)])
         expr, bbox, region = rect._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_with_numpy(bbox, {'y0': np.array([-0.4, 3.2, 3.2, -0.1]),
+        assert_dict_equal(bbox, {'y0': np.array([-0.4, 3.2, 3.2, -0.1]),
                                 'x0': np.array([-0.1, -0.1, 4.1, 4.2]),
                                 'y1': np.array([-0.4, 3.2, 3.2, -0.1]),
                                 'x1': np.array([-0.1, -0.1, 4.1, 4.2])})
@@ -556,7 +553,7 @@ class TestSelectionGeomExpr:
         rect = Segments([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)])
         geom = np.array([(-0.4, -0.1), (2.2, -0.1), (2.2, 4.1), (-0.1, 4.2)])
         expr, bbox, region = rect._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_with_numpy(bbox, {'x0': np.array([-0.4, 2.2, 2.2, -0.1]),
+        assert_dict_equal(bbox, {'x0': np.array([-0.4, 2.2, 2.2, -0.1]),
                                 'y0': np.array([-0.1, -0.1, 4.1, 4.2]),
                                 'x1': np.array([-0.4, 2.2, 2.2, -0.1]),
                                 'y1': np.array([-0.1, -0.1, 4.1, 4.2])})
@@ -568,7 +565,7 @@ class TestSelectionGeomExpr:
         rect = Segments([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)]).opts(invert_axes=True)
         geom = np.array([(-0.4, -0.1), (3.2, -0.1), (3.2, 4.1), (-0.1, 4.2)])
         expr, bbox, region = rect._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_with_numpy(bbox, {'y0': np.array([-0.4, 3.2, 3.2, -0.1]),
+        assert_dict_equal(bbox, {'y0': np.array([-0.4, 3.2, 3.2, -0.1]),
                                 'x0': np.array([-0.1, -0.1, 4.1, 4.2]),
                                 'y1': np.array([-0.4, 3.2, 3.2, -0.1]),
                                 'x1': np.array([-0.1, -0.1, 4.1, 4.2])})
@@ -617,7 +614,7 @@ class TestSelectionPolyExpr:
         ])
         geom = np.array([(0.2, -0.15), (0.5, 0), (0.75, 0.6), (0.1, 0.45)])
         expr, bbox, region = poly._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_with_numpy(bbox, {'x': np.array([0.2, 0.5, 0.75, 0.1]),
+        assert_dict_equal(bbox, {'x': np.array([0.2, 0.5, 0.75, 0.1]),
                                 'y': np.array([-0.15, 0, 0.6, 0.45])})
         assert_data_equal(expr.apply(poly, expanded=False), np.array([False, True, True]))
         assert_element_equal(region, Rectangles([]) * Path([[*geom, (0.2, -0.15)]]))
@@ -631,7 +628,7 @@ class TestSelectionPolyExpr:
         ]).opts(invert_axes=True)
         geom = np.array([(0.2, -0.15), (0.5, 0), (0.75, 0.6), (0.1, 0.6)])
         expr, bbox, region = poly._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_with_numpy(bbox, {'y': np.array([0.2, 0.5, 0.75, 0.1]),
+        assert_dict_equal(bbox, {'y': np.array([0.2, 0.5, 0.75, 0.1]),
                                 'x': np.array([-0.15, 0, 0.6, 0.6])})
         assert_data_equal(expr.apply(poly, expanded=False), np.array([False, False, True]))
         assert_element_equal(region, Rectangles([]) * Path([[*geom, (0.2, -0.15)]]))
