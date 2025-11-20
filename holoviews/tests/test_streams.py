@@ -12,9 +12,8 @@ import holoviews as hv
 from holoviews.core.spaces import DynamicMap
 from holoviews.core.util import NUMPY_GE_2_0_0, PARAM_VERSION
 from holoviews.element import Curve, Histogram, Points, Polygons, Scatter
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import *  # noqa (Test all available streams)
-from holoviews.testing import assert_data_equal, assert_element_equal
+from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 from holoviews.util import Dynamic, extension
 from holoviews.util.transform import dim
 
@@ -43,9 +42,9 @@ def test_all_linked_stream_parameters_owners():
                        "in the class definition of this linked stream.")
                 raise Exception(msg % (stream_class, name, p.owner))
 
-class TestStreamsDefine(ComparisonTestCase):
+class TestStreamsDefine:
 
-    def setUp(self):
+    def setup_method(self):
         self.XY = Stream.define('XY', x=0.0, y=5.0)
         self.TypesTest = Stream.define('TypesTest',
                                        t=True,
@@ -78,7 +77,7 @@ class TestStreamsDefine(ComparisonTestCase):
             regexp = "Number parameter 'XY.x' only takes numeric values"
         else:
             regexp = "Parameter 'x' only takes numeric values"
-        with self.assertRaisesRegex(ValueError, regexp):
+        with pytest.raises(ValueError, match=regexp):
             self.XY.x = 'string'
 
     def test_XY_set_invalid_class_y(self):
@@ -86,7 +85,7 @@ class TestStreamsDefine(ComparisonTestCase):
             regexp = "Number parameter 'XY.y' only takes numeric values"
         else:
             regexp = "Parameter 'y' only takes numeric values"
-        with self.assertRaisesRegex(ValueError, regexp):
+        with pytest.raises(ValueError, match=regexp):
             self.XY.y = 'string'
 
     def test_XY_set_invalid_instance_x(self):
@@ -95,7 +94,7 @@ class TestStreamsDefine(ComparisonTestCase):
             regexp = "Number parameter 'XY.x' only takes numeric values"
         else:
             regexp = "Parameter 'x' only takes numeric values"
-        with self.assertRaisesRegex(ValueError, regexp):
+        with pytest.raises(ValueError, match=regexp):
             xy.x = 'string'
 
     def test_XY_set_invalid_instance_y(self):
@@ -104,7 +103,7 @@ class TestStreamsDefine(ComparisonTestCase):
             regexp = "Number parameter 'XY.y' only takes numeric values"
         else:
             regexp = "Parameter 'y' only takes numeric values"
-        with self.assertRaisesRegex(ValueError, regexp):
+        with pytest.raises(ValueError, match=regexp):
             xy.y = 'string'
 
     def test_XY_subscriber_triggered(self):
@@ -148,34 +147,31 @@ class _Subscriber:
             self.cb()
 
 
-class TestPointerStreams(ComparisonTestCase):
+class TestPointerStreams:
 
     def test_positionX_init(self):
         PointerX()
 
     def test_positionXY_init_contents(self):
         position = PointerXY(x=1, y=3)
-        assert_element_equal(position.contents, dict(x=1, y=3))
+        assert position.contents == dict(x=1, y=3)
 
     def test_positionXY_update_contents(self):
         position = PointerXY()
         position.event(x=5, y=10)
-        assert_element_equal(position.contents, dict(x=5, y=10))
+        assert position.contents == dict(x=5, y=10)
 
     def test_positionY_const_parameter(self):
         position = PointerY()
-        try:
+        msg = "Constant parameter 'y' cannot be modified"
+        with pytest.raises(TypeError, match=msg):
             position.y = 5
-            raise Exception('No constant parameter exception')
-        except TypeError as e:
-            assert str(e) == "Constant parameter 'y' cannot be modified"
-
 
 
 class TestParamsStream(LoggingComparisonTestCase):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         class Inner(param.Parameterized):
 
             x = param.Number(default = 0)
@@ -341,8 +337,8 @@ class TestParamsStream(LoggingComparisonTestCase):
 
 class TestParamRefsStream(LoggingComparisonTestCase):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         class Inner(param.Parameterized):
 
             x = param.Number(default = 0)
@@ -407,9 +403,9 @@ class TestParamRefsStream(LoggingComparisonTestCase):
         assert values == [{'action': inner.action, 'x': 0}]
 
 
-class TestParamMethodStream(ComparisonTestCase):
+class TestParamMethodStream:
 
-    def setUp(self):
+    def setup_method(self):
         if PARAM_VERSION < (1, 8, 0):
             pytest.skip('Params stream requires param >= 1.8.0')
 
@@ -680,14 +676,14 @@ def test_dynamicmap_partial_bind_and_streams():
     assert range_xy.y_range == (-0.4, 4.4)
 
 
-class TestSubscribers(ComparisonTestCase):
+class TestSubscribers:
 
     def test_exception_subscriber(self):
         subscriber = _Subscriber()
         position = PointerXY(subscribers=[subscriber])
         kwargs = dict(x=3, y=4)
         position.event(**kwargs)
-        assert_element_equal(subscriber.kwargs, kwargs)
+        assert subscriber.kwargs == kwargs
 
     def test_subscriber_disabled(self):
         subscriber = _Subscriber()
@@ -702,8 +698,8 @@ class TestSubscribers(ComparisonTestCase):
         position = PointerXY(subscribers=[subscriber1, subscriber2])
         kwargs = dict(x=3, y=4)
         position.event(**kwargs)
-        assert_element_equal(subscriber1.kwargs, kwargs)
-        assert_element_equal(subscriber2.kwargs, kwargs)
+        assert subscriber1.kwargs == kwargs
+        assert subscriber2.kwargs == kwargs
 
     def test_batch_subscriber(self):
         subscriber = _Subscriber()
@@ -715,7 +711,7 @@ class TestSubscribers(ComparisonTestCase):
         positionY.update(y=10)
 
         Stream.trigger([positionX, positionY])
-        assert_element_equal(subscriber.kwargs, dict(x=5, y=10))
+        assert subscriber.kwargs == dict(x=5, y=10)
         assert subscriber.call_count == 1
 
     def test_batch_subscribers(self):
@@ -730,10 +726,10 @@ class TestSubscribers(ComparisonTestCase):
 
         Stream.trigger([positionX, positionY])
 
-        assert_element_equal(subscriber1.kwargs, dict(x=50, y=100))
+        assert subscriber1.kwargs == dict(x=50, y=100)
         assert subscriber1.call_count == 1
 
-        assert_element_equal(subscriber2.kwargs, dict(x=50, y=100))
+        assert subscriber2.kwargs == dict(x=50, y=100)
         assert subscriber2.call_count == 1
 
     def test_pipe_memoization(self):
@@ -756,9 +752,9 @@ class TestSubscribers(ComparisonTestCase):
 
 
 
-class TestStreamSource(ComparisonTestCase):
+class TestStreamSource:
 
-    def tearDown(self):
+    def teardown_method(self):
         with param.logging_level('ERROR'):
             Stream.registry = defaultdict(list)
 
@@ -792,7 +788,7 @@ class TestStreamSource(ComparisonTestCase):
         assert points in Stream.registry
 
 
-class TestParameterRenaming(ComparisonTestCase):
+class TestParameterRenaming:
 
     def test_simple_rename_constructor(self):
         xy = PointerXY(rename={'x':'xtest', 'y':'ytest'}, x=0, y=4)
@@ -800,13 +796,13 @@ class TestParameterRenaming(ComparisonTestCase):
 
     def test_invalid_rename_constructor(self):
         regexp = '(.+?)is not a stream parameter'
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             PointerXY(rename={'x':'xtest', 'z':'ytest'}, x=0, y=4)
             assert str(cm).endswith() is True
 
     def test_clashing_rename_constructor(self):
         regexp = '(.+?)parameter of the same name'
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             PointerXY(rename={'x':'xtest', 'y':'x'}, x=0, y=4)
 
     def test_simple_rename_method(self):
@@ -817,14 +813,14 @@ class TestParameterRenaming(ComparisonTestCase):
     def test_invalid_rename_method(self):
         xy = PointerXY(x=0, y=4)
         regexp = '(.+?)is not a stream parameter'
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             xy.rename(x='xtest', z='ytest')
 
 
     def test_clashing_rename_method(self):
         xy = PointerXY(x=0, y=4)
         regexp = '(.+?)parameter of the same name'
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             xy.rename(x='xtest', y='x')
 
     def test_update_rename_valid(self):
@@ -837,7 +833,7 @@ class TestParameterRenaming(ComparisonTestCase):
         xy = PointerXY(x=0, y=4)
         renamed = xy.rename(y='ytest')
         regexp = "ytest' is not a parameter of(.+?)"
-        with self.assertRaisesRegex(ValueError, regexp):
+        with pytest.raises(ValueError, match=regexp):
             renamed.event(ytest=8)
 
     def test_rename_suppression(self):
@@ -852,7 +848,7 @@ class TestParameterRenaming(ComparisonTestCase):
 
 
 
-class TestPlotSizeTransform(ComparisonTestCase):
+class TestPlotSizeTransform:
 
     def test_plotsize_initial_contents_1(self):
         plotsize = PlotSize(width=300, height=400, scale=0.5)
@@ -873,7 +869,7 @@ class TestPlotSizeTransform(ComparisonTestCase):
         assert plotsize.contents == {'width':1200, 'height':200, 'scale':2}
 
 
-class TestPipeStream(ComparisonTestCase):
+class TestPipeStream:
 
     def test_pipe_send(self):
         def subscriber(data):
@@ -904,16 +900,16 @@ class TestPipeStream(ComparisonTestCase):
 
 
 
-class TestBufferArrayStream(ComparisonTestCase):
+class TestBufferArrayStream:
 
     def test_init_buffer_array(self):
         arr = np.array([[0, 1]])
         buff = Buffer(arr)
-        assert_element_equal(buff.data, arr)
+        assert_data_equal(buff.data, arr)
 
     def test_buffer_array_ndim_exception(self):
         error = "Only 2D array data may be streamed by Buffer."
-        with self.assertRaisesRegex(ValueError, error):
+        with pytest.raises(ValueError, match=error):
             Buffer(np.array([0, 1]))
 
     def test_buffer_array_send(self):
@@ -934,41 +930,41 @@ class TestBufferArrayStream(ComparisonTestCase):
     def test_buffer_array_send_verify_ndim_fail(self):
         buff = Buffer(np.array([[0, 1]]))
         error = 'Streamed array data must be two-dimensional'
-        with self.assertRaisesRegex(ValueError, error):
+        with pytest.raises(ValueError, match=error):
             buff.send(np.array([1]))
 
     def test_buffer_array_send_verify_shape_fail(self):
         buff = Buffer(np.array([[0, 1]]))
         error = "Streamed array data expected to have 2 columns, got 3."
-        with self.assertRaisesRegex(ValueError, error):
+        with pytest.raises(ValueError, match=error):
             buff.send(np.array([[1, 2, 3]]))
 
     def test_buffer_array_send_verify_type_fail(self):
         buff = Buffer(np.array([[0, 1]]))
         error = "Input expected to be of type ndarray, got list."
-        with self.assertRaisesRegex(TypeError, error):
+        with pytest.raises(TypeError, match=error):
             buff.send([1])
 
 
-class TestBufferDictionaryStream(ComparisonTestCase):
+class TestBufferDictionaryStream:
 
     def test_init_buffer_dict(self):
         data = {'x': np.array([1]), 'y': np.array([2])}
         buff = Buffer(data)
-        assert_element_equal(buff.data, data)
+        assert_dict_equal(buff.data, data)
 
     def test_buffer_dict_send(self):
         data = {'x': np.array([0]), 'y': np.array([1])}
         buff = Buffer(data)
         buff.send({'x': np.array([1]), 'y': np.array([2])})
-        assert buff.data == {'x': np.array([0, 1]), 'y': np.array([1, 2])}
+        assert_dict_equal(buff.data, {'x': np.array([0, 1]), 'y': np.array([1, 2])})
 
     def test_buffer_dict_larger_than_length(self):
         data = {'x': np.array([0]), 'y': np.array([1])}
         buff = Buffer(data, length=1)
         chunk = {'x': np.array([1]), 'y': np.array([2])}
         buff.send(chunk)
-        assert_element_equal(buff.data, chunk)
+        assert_dict_equal(buff.data, chunk)
 
     def test_buffer_dict_patch_larger_than_length(self):
         data = {'x': np.array([0]), 'y': np.array([1])}
@@ -981,35 +977,35 @@ class TestBufferDictionaryStream(ComparisonTestCase):
         data = {'x': np.array([0]), 'y': np.array([1])}
         buff = Buffer(data)
         error = r"Input expected to have columns \['x', 'y'\], got \['x'\]"
-        with self.assertRaisesRegex(IndexError, error):
+        with pytest.raises(IndexError, match=error):
             buff.send({'x': np.array([2])})
 
     def test_buffer_dict_send_verify_shape_fail(self):
         data = {'x': np.array([0]), 'y': np.array([1])}
         buff = Buffer(data)
         error = "Input columns expected to have the same number of rows."
-        with self.assertRaisesRegex(ValueError, error):
+        with pytest.raises(ValueError, match=error):
             buff.send({'x': np.array([2]), 'y': np.array([3, 4])})
 
 
-class TestBufferDataFrameStream(ComparisonTestCase):
+class TestBufferDataFrameStream:
 
     def test_init_buffer_dframe(self):
         data = pd.DataFrame({'x': np.array([1]), 'y': np.array([2])})
         buff = Buffer(data, index=False)
-        assert_element_equal(buff.data, data)
+        assert_data_equal(buff.data, data)
 
     def test_init_buffer_dframe_with_index(self):
         data = pd.DataFrame({'x': np.array([1]), 'y': np.array([2])})
         buff = Buffer(data)
-        assert_element_equal(buff.data, data)
+        assert_data_equal(buff.data, data)
 
     def test_buffer_dframe_send(self):
         data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
         buff = Buffer(data, index=False)
         buff.send(pd.DataFrame({'x': np.array([1]), 'y': np.array([2])}))
         dframe = pd.DataFrame({'x': np.array([0, 1]), 'y': np.array([1, 2])})
-        assert_element_equal(buff.data.values, dframe.values)
+        assert_data_equal(buff.data.values, dframe.values)
 
     def test_buffer_dframe_send_with_index(self):
         data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
@@ -1023,7 +1019,7 @@ class TestBufferDataFrameStream(ComparisonTestCase):
         buff = Buffer(data, length=1, index=False)
         chunk = pd.DataFrame({'x': np.array([1]), 'y': np.array([2])})
         buff.send(chunk)
-        assert_element_equal(buff.data.values, chunk.values)
+        assert_data_equal(buff.data.values, chunk.values)
 
     def test_buffer_dframe_patch_larger_than_length(self):
         data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
@@ -1031,13 +1027,13 @@ class TestBufferDataFrameStream(ComparisonTestCase):
         chunk = pd.DataFrame({'x': np.array([1, 2]), 'y': np.array([2, 3])})
         buff.send(chunk)
         dframe = pd.DataFrame({'x': np.array([2]), 'y': np.array([3])})
-        assert_element_equal(buff.data.values, dframe.values)
+        assert_data_equal(buff.data.values, dframe.values)
 
     def test_buffer_dframe_send_verify_column_fail(self):
         data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
         buff = Buffer(data, index=False)
         error = r"Input expected to have columns \['x', 'y'\], got \['x'\]"
-        with self.assertRaisesRegex(IndexError, error):
+        with pytest.raises(IndexError, match=error):
             buff.send(pd.DataFrame({'x': np.array([2])}))
 
     def test_clear_buffer_dframe_with_index(self):
@@ -1067,7 +1063,7 @@ class Sum(Derived):
 Val = Stream.define("Val", v=0.0)
 
 
-class TestDerivedStream(ComparisonTestCase):
+class TestDerivedStream:
 
     def test_simple_derived_stream(self):
         # Define input streams
@@ -1145,7 +1141,7 @@ class TestDerivedStream(ComparisonTestCase):
         assert s0.v == -8.0
 
 
-class TestHistoryStream(ComparisonTestCase):
+class TestHistoryStream:
     def test_initial_history_stream_values(self):
         # Check values list is initialized with initial contents of input stream
         val = Val(v=1.0)
@@ -1197,9 +1193,9 @@ class TestHistoryStream(ComparisonTestCase):
         assert callback_input[0] == {"values": [{"v": 4.0}]}
 
 
-class TestExprSelectionStream(ComparisonTestCase):
+class TestExprSelectionStream:
 
-    def setUp(self):
+    def setup_method(self):
         extension("bokeh")
 
     def test_selection_expr_stream_2D_elements(self):
@@ -1221,10 +1217,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
 
             # Check SelectionExpr values
-            assert_element_equal(
-                repr(expr_stream.selection_expr),
-                repr(((dim('x')>=1)&(dim('x')<=3))&((dim('y')>=1)&(dim('y')<=4)))
-            )
+            assert repr(expr_stream.selection_expr) == repr(((dim('x')>=1)&(dim('x')<=3))&((dim('y')>=1)&(dim('y')<=4)))
             assert expr_stream.bbox == {'x': (1, 3), 'y': (1, 4)}
 
     def test_selection_expr_stream_1D_elements(self):
@@ -1244,10 +1237,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
 
             # Check SelectionExpr values
-            assert_element_equal(
-                repr(expr_stream.selection_expr),
-                repr((dim('x')>=1)&(dim('x')<=3))
-            )
+            assert repr(expr_stream.selection_expr) == repr((dim('x')>=1)&(dim('x')<=3))
             assert expr_stream.bbox == {'x': (1, 3)}
 
 
@@ -1270,10 +1260,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
 
             # Check SelectionExpr values
-            assert_element_equal(
-                repr(expr_stream.selection_expr),
-                repr(((dim('y')>=1)&(dim('y')<=3))&((dim('x')>=1)&(dim('x')<=4)))
-            )
+            assert repr(expr_stream.selection_expr) == repr(((dim('y')>=1)&(dim('y')<=3))&((dim('x')>=1)&(dim('x')<=4)))
             assert expr_stream.bbox == {'y': (1, 3), 'x': (1, 4)}
 
     def test_selection_expr_stream_invert_axes_1D_elements(self):
@@ -1293,10 +1280,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
 
             # Check SelectionExpr values
-            assert_element_equal(
-                repr(expr_stream.selection_expr),
-                repr((dim('x')>=1)&(dim('x')<=4))
-            )
+            assert repr(expr_stream.selection_expr) == repr((dim('x')>=1)&(dim('x')<=4))
             assert expr_stream.bbox == {'x': (1, 4)}
 
     def test_selection_expr_stream_invert_xaxis_yaxis_2D_elements(self):
@@ -1322,10 +1306,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             expr_stream.input_streams[0].event(bounds=(3, 4, 1, 1))
 
             # Check SelectionExpr values
-            assert_element_equal(
-                repr(expr_stream.selection_expr),
-                repr(((dim('x')>=1)&(dim('x')<=3))&((dim('y')>=1)&(dim('y')<=4)))
-            )
+            assert repr(expr_stream.selection_expr) == repr(((dim('x')>=1)&(dim('x')<=3))&((dim('y')>=1)&(dim('y')<=4)))
             assert expr_stream.bbox == {'x': (1, 3), 'y': (1, 4)}
 
     def test_selection_expr_stream_invert_xaxis_yaxis_1D_elements(self):
@@ -1349,10 +1330,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             expr_stream.input_streams[0].event(bounds=(3, 4, 1, 1))
 
             # Check SelectionExpr values
-            assert_element_equal(
-                repr(expr_stream.selection_expr),
-                repr((dim('x')>=1)&(dim('x')<=3))
-            )
+            assert repr(expr_stream.selection_expr) == repr((dim('x')>=1)&(dim('x')<=3))
             assert expr_stream.bbox == {'x': (1, 3)}
 
     def test_selection_expr_stream_hist(self):
@@ -1369,20 +1347,14 @@ class TestExprSelectionStream(ComparisonTestCase):
         # Simulate interactive update by triggering source stream.
         # Select second and forth bar.
         expr_stream.input_streams[0].event(bounds=(1.5, 2.5, 4.6, 6))
-        assert_element_equal(
-            repr(expr_stream.selection_expr),
-            repr((dim('x')>=1.5)&(dim('x')<=4.6))
-        )
+        assert repr(expr_stream.selection_expr) == repr((dim('x')>=1.5)&(dim('x')<=4.6))
         assert expr_stream.bbox == {'x': (1.5, 4.6)}
 
         # Select third, forth, and fifth bar.  Make sure there is special
         # handling when last bar is selected to include values exactly on the
         # upper edge in the selection
         expr_stream.input_streams[0].event(bounds=(2.5, -10, 8, 10))
-        assert_element_equal(
-            repr(expr_stream.selection_expr),
-            repr((dim('x')>=2.5)&(dim('x')<=8))
-        )
+        assert repr(expr_stream.selection_expr) == repr((dim('x')>=2.5)&(dim('x')<=8))
         assert expr_stream.bbox == {'x': (2.5, 8)}
 
     def test_selection_expr_stream_hist_invert_axes(self):
@@ -1401,20 +1373,14 @@ class TestExprSelectionStream(ComparisonTestCase):
         # Simulate interactive update by triggering source stream.
         # Select second and forth bar.
         expr_stream.input_streams[0].event(bounds=(2.5, 1.5, 6, 4.6))
-        assert_element_equal(
-            repr(expr_stream.selection_expr),
-            repr((dim('x')>=1.5)&(dim('x')<=4.6))
-        )
+        assert repr(expr_stream.selection_expr) == repr((dim('x')>=1.5)&(dim('x')<=4.6))
         assert expr_stream.bbox == {'x': (1.5, 4.6)}
 
         # Select third, forth, and fifth bar.  Make sure there is special
         # handling when last bar is selected to include values exactly on the
         # upper edge in the selection
         expr_stream.input_streams[0].event(bounds=(-10, 2.5, 10, 8))
-        assert_element_equal(
-            repr(expr_stream.selection_expr),
-            repr((dim('x')>=2.5)&(dim('x')<=8))
-        )
+        assert repr(expr_stream.selection_expr) == repr((dim('x')>=2.5)&(dim('x')<=8))
         assert expr_stream.bbox == {'x': (2.5, 8)}
 
     def test_selection_expr_stream_hist_invert_xaxis_yaxis(self):
@@ -1434,20 +1400,14 @@ class TestExprSelectionStream(ComparisonTestCase):
         # Simulate interactive update by triggering source stream.
         # Select second and forth bar.
         expr_stream.input_streams[0].event(bounds=(4.6, 6, 1.5, 2.5))
-        assert_element_equal(
-            repr(expr_stream.selection_expr),
-            repr((dim('x')>=1.5)&(dim('x')<=4.6))
-        )
+        assert repr(expr_stream.selection_expr) == repr((dim('x')>=1.5)&(dim('x')<=4.6))
         assert expr_stream.bbox == {'x': (1.5, 4.6)}
 
         # Select third, forth, and fifth bar.  Make sure there is special
         # handling when last bar is selected to include values exactly on the
         # upper edge in the selection
         expr_stream.input_streams[0].event(bounds=(8, 10, 2.5, -10))
-        assert_element_equal(
-            repr(expr_stream.selection_expr),
-            repr((dim('x')>=2.5)&(dim('x')<=8))
-        )
+        assert repr(expr_stream.selection_expr) == repr((dim('x')>=2.5)&(dim('x')<=8))
         assert expr_stream.bbox == {'x': (2.5, 8)}
 
 
@@ -1479,35 +1439,23 @@ class TestExprSelectionStream(ComparisonTestCase):
         fmt = lambda x: list(map(np.str_, x)) if NUMPY_GE_2_0_0 else x
 
         expr_stream.input_streams[2].event(index=[0, 1])
-        assert_element_equal(
-            repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(fmt(['a', 'b'])))
-        )
+        assert repr(expr_stream.selection_expr) == repr(dim('cat').isin(fmt(['a', 'b'])))
         assert expr_stream.bbox is None
         assert len(events) == 1
 
         # Ensure bounds event does not trigger another update
         expr_stream.input_streams[0].event(bounds=(0, 0, 4, 1))
-        assert_element_equal(
-            repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(fmt(['a', 'b'])))
-        )
+        assert repr(expr_stream.selection_expr) == repr(dim('cat').isin(fmt(['a', 'b'])))
         assert len(events) == 1
 
         # Ensure geometry event does trigger another update
         expr_stream.input_streams[1].event(geometry=np.array([(0, 0), (4, 0), (4, 2), (0, 2)]))
-        assert_element_equal(
-            repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(fmt(['a', 'b', 'c'])))
-        )
+        assert repr(expr_stream.selection_expr) == repr(dim('cat').isin(fmt(['a', 'b', 'c'])))
         assert len(events) == 2
 
         # Ensure index event does trigger another update
         expr_stream.input_streams[2].event(index=[1, 2])
-        assert_element_equal(
-            repr(expr_stream.selection_expr),
-            repr(dim('cat').isin(fmt(['b', 'c'])))
-        )
+        assert repr(expr_stream.selection_expr) == repr(dim('cat').isin(fmt(['b', 'c'])))
         assert expr_stream.bbox is None
         assert len(events) == 3
 
@@ -1528,10 +1476,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
 
             # Check SelectionExpr values
-            assert_element_equal(
-                repr(expr_stream.selection_expr),
-                repr(((dim('x')>=1)&(dim('x')<=3))&((dim('y')>=1)&(dim('y')<=4)))
-            )
+            assert repr(expr_stream.selection_expr) == repr(((dim('x')>=1)&(dim('x')<=3))&((dim('y')>=1)&(dim('y')<=4)))
             assert expr_stream.bbox == {'x': (1, 3), 'y': (1, 4)}
 
     def test_selection_expr_stream_dynamic_map_1D_elements(self):
@@ -1551,8 +1496,5 @@ class TestExprSelectionStream(ComparisonTestCase):
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
 
             # Check SelectionExpr values
-            assert_element_equal(
-                repr(expr_stream.selection_expr),
-                repr((dim('x')>=1)&(dim('x')<=3))
-            )
+            assert repr(expr_stream.selection_expr) == repr((dim('x')>=1)&(dim('x')<=3))
             assert expr_stream.bbox == {'x': (1, 3)}

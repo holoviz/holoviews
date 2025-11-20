@@ -6,7 +6,6 @@ from pyviz_comms import CommManager
 
 from holoviews import Store
 from holoviews.core.options import OptionTree
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting import bokeh
 from holoviews.util import Options, OutputSettings, opts, output
 
@@ -26,9 +25,9 @@ except ImportError:
 
 
 
-class TestOutputUtil(ComparisonTestCase):
+class TestOutputUtil:
 
-    def setUp(self):
+    def setup_method(self):
         if notebook is None:
             pytest.skip("Jupyter Notebook not available")
         if mpl is None:
@@ -41,15 +40,13 @@ class TestOutputUtil(ComparisonTestCase):
         Store.renderers['bokeh'] = bokeh.BokehRenderer.instance()
         OutputSettings.options =  dict(OutputSettings.defaults.items())
 
-        super().setUp()
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.renderers['matplotlib'] = mpl.MPLRenderer.instance()
         Store.renderers['bokeh'] = bokeh.BokehRenderer.instance()
         OutputSettings.options =  dict(OutputSettings.defaults.items())
         for renderer in Store.renderers.values():
             renderer.comm_manager = CommManager
-        super().tearDown()
 
     def test_output_util_svg_string(self):
         assert OutputSettings.options.get('fig', None) is None
@@ -80,19 +77,19 @@ class TestOptsUtil(LoggingComparisonTestCase):
     Mirrors the magic tests in TestOptsMagic
     """
 
-    def setUp(self):
+    def setup_method(self):
         if mpl is None:
             pytest.skip("Matplotlib not available")
         self.backend = Store.current_backend
         Store.current_backend = 'matplotlib'
         self.store_copy = OptionTree(sorted(Store.options().items()),
                                      groups=Options._option_groups)
-        super().setUp()
+        super().setup_method()
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.current_backend = self.backend
         Store.options(val=self.store_copy)
-        super().tearDown()
+        super().teardown_method()
 
     def test_opts_builder_repr(self):
         magic= "Bivariate [bandwidth=0.5] (cmap='jet') Points [logx=True] (size=2)"

@@ -5,7 +5,6 @@ import pytest
 import holoviews as hv
 from holoviews.core.options import Cycle, Store
 from holoviews.element import ErrorBars, Points, Rectangles, Table, VSpan
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.util import linear_gradient
 from holoviews.selection import link_selections
 from holoviews.streams import SelectionXY
@@ -23,11 +22,11 @@ unselected_color = "#ff0000"
 box_region_color = linear_gradient(unselected_color, "#000000", 9)[3]
 hist_region_color = linear_gradient(unselected_color, "#000000", 9)[1]
 
-class TestLinkSelections(ComparisonTestCase):
+class TestLinkSelections:
 
     __test__ = False
 
-    def setUp(self):
+    def setup_method(self):
         self.data = pd.DataFrame(
             {'x': [1, 2, 3],
              'y': [0, 3, 2],
@@ -804,16 +803,16 @@ class TestLinkSelectionsPlotly(TestLinkSelections):
 
     __test__ = True
 
-    def setUp(self):
+    def setup_method(self):
         try:
             import holoviews.plotting.plotly  # noqa: F401
         except ImportError:
             pytest.skip("Plotly required to test plotly backend")
-        super().setUp()
+        super().setup_method()
         self._backend = Store.current_backend
         Store.set_current_backend('plotly')
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.current_backend = self._backend
 
     def element_color(self, element, color_prop=None):
@@ -835,13 +834,13 @@ class TestLinkSelectionsBokeh(TestLinkSelections):
 
     __test__ = True
 
-    def setUp(self):
+    def setup_method(self):
         import holoviews.plotting.bokeh # noqa
-        super().setUp()
+        super().setup_method()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.current_backend = self._backend
 
     def element_color(self, element):

@@ -38,7 +38,6 @@ shapelib_available = pytest.mark.skipif(shapely is None and spd is None,
                             reason='Neither shapely nor spatialpandas are available')
 
 from holoviews.core.data import Dataset
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.testing import assert_element_equal
 from holoviews.util.transform import dim
 
@@ -48,9 +47,9 @@ class Params(param.Parameterized):
     a = param.Number(default=0)
 
 
-class TestDimTransforms(ComparisonTestCase):
+class TestDimTransforms:
 
-    def setUp(self):
+    def setup_method(self):
         self.linear_ints = pd.Series(np.arange(1, 11))
         self.linear_floats = pd.Series(np.arange(1, 11)/10.)
         self.negative = pd.Series(-self.linear_floats)
