@@ -402,7 +402,7 @@ class TestLayoutPlot(LoggingComparison, TestBokehPlot):
         p = bokeh_renderer.get_plot(m)
         T = 'XYZT'
         stream.event(aname=T)
-        assert 'aname: ' + T in p.handles['title'].text, p.handles['title'].text
+        assert 'aname: ' + T in p.handles['title'].text == p.handles['title'].text
         p.cleanup()
         assert stream._subscribers == []
 

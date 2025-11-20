@@ -49,8 +49,8 @@ class TestBarPlot(TestBokehPlot):
         bars = Bars(df)
         plot = bokeh_renderer.get_plot(bars)
         source = plot.handles['source']
-        assert source.data['time'], np.array([1])
-        assert source.data['value'], np.array([-1])
+        assert source.data['time'] == np.array([1])
+        assert source.data['value'] == np.array([-1])
 
     def test_bars_grouped_categories(self):
         bars = Bars([('A', 0, 1), ('A', 1, -1), ('B', 0, 2)],

@@ -56,8 +56,8 @@ class TestLayoutPlot(LoggingComparison, TestMPLPlot):
         layout = (Curve([1, 2, 3]) + Curve([10, 20, 30])).opts(shared_axes=False)
         plot = mpl_renderer.get_plot(layout)
         cp1, cp2 = plot.traverse(lambda x: x, [CurvePlot])
-        assert cp1.handles['axis'].get_ylim(), (1, 3)
-        assert cp2.handles['axis'].get_ylim(), (10, 30)
+        assert cp1.handles['axis'].get_ylim() == (1, 3)
+        assert cp2.handles['axis'].get_ylim() == (10, 30)
 
     def test_layout_sublabel_offset(self):
         from holoviews.plotting.mpl import CurvePlot

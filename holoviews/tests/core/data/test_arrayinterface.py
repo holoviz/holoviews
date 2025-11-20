@@ -25,7 +25,7 @@ class ArrayDatasetTest(HomogeneousColumnTests, InterfaceTests):
     def test_dataset_empty_list_dtypes(self):
         dataset = Dataset([], kdims=['x'], vdims=['y'])
         for d in 'xy':
-            assert dataset.interface.dtype(dataset, d), np.float64
+            assert dataset.interface.dtype(dataset, d) == np.float64
 
     def test_dataset_simple_dict_sorted(self):
         dataset = Dataset({2: 2, 1: 1, 3: 3}, kdims=['x'], vdims=['y'])

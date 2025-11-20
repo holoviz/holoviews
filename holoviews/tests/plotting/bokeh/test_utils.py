@@ -115,4 +115,4 @@ def test_bokeh_tools_types():
     assert sorted(bk_tools) == sorted(TOOL_TYPES)
 
     for key in bk_tools:
-        assert isinstance(bk_tools[key](), TOOL_TYPES[key]), key
+        assert isinstance(bk_tools[key](), TOOL_TYPES[key])

@@ -119,7 +119,7 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         ds = Dataset(
             self.frame({"Date": dt64}), [Dimension("Date", range=(dt64[0], dt64[-1]))]
         )
-        assert ds.range("Date"), (dt64[0], dt64[-1])
+        assert ds.range("Date") == (dt64[0], dt64[-1])
 
     @pytest.mark.filterwarnings(
         "ignore:Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated:FutureWarning"

@@ -170,7 +170,7 @@ class TestSubcoordinateY(TestBokehPlot):
         overlay.opts(ylim=ylim)
         plot = bokeh_renderer.get_plot(overlay)
         y_range = plot.handles['y_range']
-        assert y_range.start, y_range.end == ylim
+        assert (y_range.start, y_range.end) == ylim
 
     def test_axis_labels(self):
         overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
