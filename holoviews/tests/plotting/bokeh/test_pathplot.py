@@ -16,11 +16,18 @@ from holoviews.core.options import Cycle
 from holoviews.element import Contours, Dendrogram, Path, Polygons, Scatter
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.streams import PolyDraw
-from holoviews.testing import _DataComparison, assert_data_equal
+from holoviews.testing import assert_data_equal
 from holoviews.util.transform import dim
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
+
+def assert_inhomogeneous_array_equal(a, b):
+    if isinstance(a, np.ndarray):
+        np.testing.assert_array_equal(a, b)
+    else:
+        for x, y in zip(a, b, strict=True):
+            assert_inhomogeneous_array_equal(x, y)
 
 class TestPathPlot(TestBokehPlot):
 
@@ -361,10 +368,20 @@ class TestPolygonPlot(TestBokehPlot):
         poly = Polygons([{'x': xs, 'y': ys, 'holes': holes}])
         plot = bokeh_renderer.get_plot(poly)
         source = plot.handles['source']
-        _DataComparison.compare_collections(source.data['xs'], [[[np.array([1, 2, 3, 1]), np.array([1.5, 2, 1.6, 1.5]),
-                                               np.array([2.1, 2.5, 2.3, 2.1])], [np.array([3, 7, 6, 3])]]])
-        _DataComparison.compare_collections(source.data['ys'], [[[np.array([2, 0, 7, 2]), np.array([2, 3, 1.6, 2]),
-                                               np.array([4.5, 5, 3.5, 4.5])], [np.array([2, 5, 7, 2])]]])
+        expected_x = [
+            [
+                [np.array([1, 2, 3, 1]), np.array([1.5, 2, 1.6, 1.5]), np.array([2.1, 2.5, 2.3, 2.1])],
+                [np.array([3, 7, 6, 3])],
+            ],
+        ]
+        expected_y = [
+            [
+                [np.array([2, 0, 7, 2]), np.array([2, 3, 1.6, 2]), np.array([4.5, 5, 3.5, 4.5])],
+                [np.array([2, 5, 7, 2])],
+            ],
+        ]
+        assert_inhomogeneous_array_equal(source.data['xs'], expected_x)
+        assert_inhomogeneous_array_equal(source.data['ys'], expected_y)
 
     def test_polygons_hover_color_op(self):
         polygons = Polygons([

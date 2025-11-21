@@ -1,22 +1,3 @@
-"""Helper classes for comparing the equality of two HoloViews objects.
-
-These classes are designed to integrate with unittest.TestCase (see
-the tests directory) while making equality testing easily accessible
-to the user.
-
-For instance, to test if two Matrix objects are equal you can use:
-
-Comparison.assertEqual(matrix1, matrix2)
-
-This will raise an AssertionError if the two matrix objects are not
-equal, including information regarding what exactly failed to match.
-
-Note that this functionality could not be provided using comparison
-methods on all objects as comparison operators only return Booleans and
-thus would not supply any information regarding *why* two elements are
-considered different.
-
-"""
 from collections.abc import Collection, Mapping
 
 import narwhals.stable.v2 as nw
@@ -46,26 +27,16 @@ from holoviews.core.util.dependencies import _is_installed
 
 
 class _DataComparison:
-    """Class used for comparing two HoloViews objects, including complex
-    composite objects. Comparisons are available as classmethods, the
-    most general being the assertEqual method that is intended to work
-    with any input.
-
-    For instance, to test if two Image objects are equal you can use:
-
-    Comparison.assertEqual(matrix1, matrix2)
-
-    """
-
     equality_funcs = {}
 
     @classmethod
     def register(cls):
         if cls.equality_funcs:
             return cls.equality_funcs
+
         # Numpy array comparison
-        cls.equality_funcs[np.ndarray]          = cls.compare_arrays
-        cls.equality_funcs[np.ma.masked_array]  = cls.compare_arrays
+        cls.equality_funcs[np.ndarray] = cls.compare_arrays
+        cls.equality_funcs[np.ma.masked_array] = cls.compare_arrays
 
         # Narwhals comparisons
         cls.equality_funcs[nw.Series] = cls.compare_narwhals_series
@@ -75,15 +46,14 @@ class _DataComparison:
         # Pandas comparison
         if _is_installed("pandas"):
             import pandas as pd
+
             cls.equality_funcs[pd.Series] = cls.compare_pandas_series
             cls.equality_funcs[pd.DataFrame] = cls.compare_pandas_dataframe
 
-        # if _is_installed("xarray"):
-
         if _is_installed("dask"):
             import dask.array as da
-            cls.equality_funcs[da.Array] = cls.compare_arrays
 
+            cls.equality_funcs[da.Array] = cls.compare_arrays
 
         return cls.equality_funcs
 
@@ -124,16 +94,19 @@ class _DataComparison:
     @classmethod
     def compare_pandas_series(cls, ser1, ser2):
         from pandas.testing import assert_series_equal
+
         assert_series_equal(ser1, ser2)
 
     @classmethod
     def compare_pandas_dataframe(cls, df1, df2):
         from pandas.testing import assert_frame_equal
+
         assert_frame_equal(df1, df2)
 
     @classmethod
     def compare_narwhals_series(cls, ser1, ser2):
         from narwhals.testing import assert_series_equal
+
         assert_series_equal(ser1, ser2, check_names=False, check_dtypes=False)
 
     @classmethod
@@ -155,9 +128,6 @@ class _DataComparison:
 
     @classmethod
     def assert_equal(cls, first, second):
-        """Classmethod equivalent to unittest.TestCase method
-
-        """
         asserter = None
         if type(first) is type(second):
             asserter = cls.equality_funcs.get(type(first))
@@ -176,17 +146,6 @@ class _DataComparison:
 
 
 class _ElementComparison(_DataComparison):
-    """Class used for comparing two HoloViews objects, including complex
-    composite objects. Comparisons are available as classmethods, the
-    most general being the assertEqual method that is intended to work
-    with any input.
-
-    For instance, to test if two Image objects are equal you can use:
-
-    Comparison.assertEqual(matrix1, matrix2)
-
-    """
-
     equality_funcs = {}
 
     @classmethod
@@ -197,97 +156,97 @@ class _ElementComparison(_DataComparison):
         super().register()
 
         # Dimension objects
-        cls.equality_funcs[Dimension] =    cls.compare_dimensions
-        cls.equality_funcs[Dimensioned] =  cls.compare_dimensioned
-        cls.equality_funcs[Element]     =  cls.compare_elements
+        cls.equality_funcs[Dimension] = cls.compare_dimensions
+        cls.equality_funcs[Dimensioned] = cls.compare_dimensioned
+        cls.equality_funcs[Element] = cls.compare_elements
 
         # Composition (+ and *)
-        cls.equality_funcs[Overlay] =     cls.compare_overlays
-        cls.equality_funcs[Layout] =      cls.compare_layouttrees
-        cls.equality_funcs[Empty] =       cls.compare_empties
+        cls.equality_funcs[Overlay] = cls.compare_overlays
+        cls.equality_funcs[Layout] = cls.compare_layouttrees
+        cls.equality_funcs[Empty] = cls.compare_empties
 
         # Annotations
-        cls.equality_funcs[element.VLine] =       cls.compare_vline
-        cls.equality_funcs[element.HLine] =       cls.compare_hline
-        cls.equality_funcs[element.VSpan] =       cls.compare_vspan
-        cls.equality_funcs[element.HSpan] =       cls.compare_hspan
-        cls.equality_funcs[element.Spline] =      cls.compare_spline
-        cls.equality_funcs[element.Arrow] =       cls.compare_arrow
-        cls.equality_funcs[element.Text] =        cls.compare_text
-        cls.equality_funcs[element.Div] =         cls.compare_div
+        cls.equality_funcs[element.VLine] = cls.compare_vline
+        cls.equality_funcs[element.HLine] = cls.compare_hline
+        cls.equality_funcs[element.VSpan] = cls.compare_vspan
+        cls.equality_funcs[element.HSpan] = cls.compare_hspan
+        cls.equality_funcs[element.Spline] = cls.compare_spline
+        cls.equality_funcs[element.Arrow] = cls.compare_arrow
+        cls.equality_funcs[element.Text] = cls.compare_text
+        cls.equality_funcs[element.Div] = cls.compare_div
 
         # Path comparisons
-        cls.equality_funcs[element.Path] =        cls.compare_paths
-        cls.equality_funcs[element.Contours] =    cls.compare_contours
-        cls.equality_funcs[element.Polygons] =    cls.compare_polygons
-        cls.equality_funcs[element.Box] =         cls.compare_box
-        cls.equality_funcs[element.Ellipse] =     cls.compare_ellipse
-        cls.equality_funcs[element.Bounds] =      cls.compare_bounds
+        cls.equality_funcs[element.Path] = cls.compare_paths
+        cls.equality_funcs[element.Contours] = cls.compare_contours
+        cls.equality_funcs[element.Polygons] = cls.compare_polygons
+        cls.equality_funcs[element.Box] = cls.compare_box
+        cls.equality_funcs[element.Ellipse] = cls.compare_ellipse
+        cls.equality_funcs[element.Bounds] = cls.compare_bounds
 
         # Rasters
-        cls.equality_funcs[element.Image] =       cls.compare_image
-        cls.equality_funcs[element.ImageStack] =  cls.compare_imagestack
-        cls.equality_funcs[element.RGB] =         cls.compare_rgb
-        cls.equality_funcs[element.HSV] =         cls.compare_hsv
-        cls.equality_funcs[element.Raster] =      cls.compare_raster
-        cls.equality_funcs[element.QuadMesh] =    cls.compare_quadmesh
-        cls.equality_funcs[element.Surface] =     cls.compare_surface
-        cls.equality_funcs[element.HeatMap] =     cls.compare_dataset
+        cls.equality_funcs[element.Image] = cls.compare_image
+        cls.equality_funcs[element.ImageStack] = cls.compare_imagestack
+        cls.equality_funcs[element.RGB] = cls.compare_rgb
+        cls.equality_funcs[element.HSV] = cls.compare_hsv
+        cls.equality_funcs[element.Raster] = cls.compare_raster
+        cls.equality_funcs[element.QuadMesh] = cls.compare_quadmesh
+        cls.equality_funcs[element.Surface] = cls.compare_surface
+        cls.equality_funcs[element.HeatMap] = cls.compare_dataset
 
         # Geometries
-        cls.equality_funcs[element.Segments] =    cls.compare_segments
-        cls.equality_funcs[element.Rectangles] =       cls.compare_boxes
+        cls.equality_funcs[element.Segments] = cls.compare_segments
+        cls.equality_funcs[element.Rectangles] = cls.compare_boxes
 
         # Charts
-        cls.equality_funcs[element.Dataset] =      cls.compare_dataset
-        cls.equality_funcs[element.Curve] =        cls.compare_curve
-        cls.equality_funcs[element.ErrorBars] =    cls.compare_errorbars
-        cls.equality_funcs[element.Spread] =       cls.compare_spread
-        cls.equality_funcs[element.Area] =         cls.compare_area
-        cls.equality_funcs[element.Scatter] =      cls.compare_scatter
-        cls.equality_funcs[element.Scatter3D] =    cls.compare_scatter3d
-        cls.equality_funcs[element.TriSurface] =   cls.compare_trisurface
-        cls.equality_funcs[element.Histogram] =    cls.compare_histogram
-        cls.equality_funcs[element.Bars] =         cls.compare_bars
-        cls.equality_funcs[element.Spikes] =       cls.compare_spikes
-        cls.equality_funcs[element.BoxWhisker] =   cls.compare_boxwhisker
-        cls.equality_funcs[element.VectorField] =  cls.compare_vectorfield
+        cls.equality_funcs[element.Dataset] = cls.compare_dataset
+        cls.equality_funcs[element.Curve] = cls.compare_curve
+        cls.equality_funcs[element.ErrorBars] = cls.compare_errorbars
+        cls.equality_funcs[element.Spread] = cls.compare_spread
+        cls.equality_funcs[element.Area] = cls.compare_area
+        cls.equality_funcs[element.Scatter] = cls.compare_scatter
+        cls.equality_funcs[element.Scatter3D] = cls.compare_scatter3d
+        cls.equality_funcs[element.TriSurface] = cls.compare_trisurface
+        cls.equality_funcs[element.Histogram] = cls.compare_histogram
+        cls.equality_funcs[element.Bars] = cls.compare_bars
+        cls.equality_funcs[element.Spikes] = cls.compare_spikes
+        cls.equality_funcs[element.BoxWhisker] = cls.compare_boxwhisker
+        cls.equality_funcs[element.VectorField] = cls.compare_vectorfield
 
         # Graphs
-        cls.equality_funcs[element.Graph] =        cls.compare_graph
-        cls.equality_funcs[element.Nodes] =        cls.compare_nodes
-        cls.equality_funcs[element.EdgePaths] =    cls.compare_edgepaths
-        cls.equality_funcs[element.TriMesh] =      cls.compare_trimesh
+        cls.equality_funcs[element.Graph] = cls.compare_graph
+        cls.equality_funcs[element.Nodes] = cls.compare_nodes
+        cls.equality_funcs[element.EdgePaths] = cls.compare_edgepaths
+        cls.equality_funcs[element.TriMesh] = cls.compare_trimesh
 
         # Tables
-        cls.equality_funcs[element.ItemTable] =    cls.compare_itemtables
-        cls.equality_funcs[element.Table] =        cls.compare_tables
-        cls.equality_funcs[element.Points] =       cls.compare_points
+        cls.equality_funcs[element.ItemTable] = cls.compare_itemtables
+        cls.equality_funcs[element.Table] = cls.compare_tables
+        cls.equality_funcs[element.Points] = cls.compare_points
 
         # Statistical
-        cls.equality_funcs[element.Bivariate] =    cls.compare_bivariate
+        cls.equality_funcs[element.Bivariate] = cls.compare_bivariate
         cls.equality_funcs[element.Distribution] = cls.compare_distribution
-        cls.equality_funcs[element.HexTiles] =     cls.compare_hextiles
+        cls.equality_funcs[element.HexTiles] = cls.compare_hextiles
 
         # NdMappings
-        cls.equality_funcs[NdLayout] =      cls.compare_gridlayout
+        cls.equality_funcs[NdLayout] = cls.compare_gridlayout
         cls.equality_funcs[AdjointLayout] = cls.compare_adjointlayouts
-        cls.equality_funcs[NdOverlay] =     cls.compare_ndoverlays
-        cls.equality_funcs[GridSpace] =     cls.compare_grids
-        cls.equality_funcs[GridMatrix] =     cls.compare_grids
-        cls.equality_funcs[HoloMap] =       cls.compare_holomap
-        cls.equality_funcs[DynamicMap] =    cls.compare_dynamicmap
+        cls.equality_funcs[NdOverlay] = cls.compare_ndoverlays
+        cls.equality_funcs[GridSpace] = cls.compare_grids
+        cls.equality_funcs[GridMatrix] = cls.compare_grids
+        cls.equality_funcs[HoloMap] = cls.compare_holomap
+        cls.equality_funcs[DynamicMap] = cls.compare_dynamicmap
 
         # Option objects
-        cls.equality_funcs[Options] =     cls.compare_options
-        cls.equality_funcs[Cycle] =       cls.compare_cycles
+        cls.equality_funcs[Options] = cls.compare_options
+        cls.equality_funcs[Cycle] = cls.compare_cycles
         cls.equality_funcs[BoundingBox] = cls.compare_simple
 
         return cls.equality_funcs
 
-    #=====================#
-    # Literal comparisons #
-    #=====================#
+    # ===================
+    # Literal comparisons
+    # ===================
 
     @classmethod
     def bounds_check(cls, el1, el2):
@@ -296,9 +255,9 @@ class _ElementComparison(_DataComparison):
         for v1, v2 in zip(lbrt1, lbrt2, strict=True):
             cls.compare_floats(v1, v2)
 
-    #=======================================#
-    # Dimension and Dimensioned comparisons #
-    #=======================================#
+    # =====================================
+    # Dimension and Dimensioned comparisons
+    # =====================================
 
     @classmethod
     def compare_dimensions(cls, dim1, dim2):
@@ -312,9 +271,13 @@ class _ElementComparison(_DataComparison):
         assert dim1_params.keys() == dim2_params.keys()
 
         for k in dim1_params.keys():
-            dim1_callable = dim1.param.objects('existing')[k].__class__.__name__ == 'Callable'
-            dim2_callable = dim2.param.objects('existing')[k].__class__.__name__ == 'Callable'
-            if (dim1_callable and dim2_callable):
+            dim1_callable = (
+                dim1.param.objects("existing")[k].__class__.__name__ == "Callable"
+            )
+            dim2_callable = (
+                dim2.param.objects("existing")[k].__class__.__name__ == "Callable"
+            )
+            if dim1_callable and dim2_callable:
                 continue
 
             # This is needed as two lists are not compared by contents using ==
@@ -342,15 +305,14 @@ class _ElementComparison(_DataComparison):
         cls.compare_labelled_data(obj1, obj2)
         cls.assert_equal(obj1.data, obj2.data)
 
-
-    #===============================#
-    # Compositional trees (+ and *) #
-    #===============================#
+    # =============================
+    # Compositional trees (+ and *)
+    # =============================
 
     @classmethod
     def compare_trees(cls, el1, el2):
         assert el1.keys() == el2.keys()
-        for element1, element2 in zip(el1.values(),  el2.values(), strict=True):
+        for element1, element2 in zip(el1.values(), el2.values(), strict=True):
             cls.assert_equal(element1, element2)
 
     @classmethod
@@ -367,10 +329,9 @@ class _ElementComparison(_DataComparison):
         cls.compare_dimensioned(el1, el2)
         cls.compare_trees(el1, el2)
 
-
-    #================================#
-    # AttrTree and Map based classes #
-    #================================#
+    # ==============================
+    # AttrTree and Map based classes
+    # ==============================
 
     @classmethod
     def compare_ndmappings(cls, el1, el2):
@@ -384,12 +345,10 @@ class _ElementComparison(_DataComparison):
         cls.compare_dimensioned(el1, el2)
         cls.compare_ndmappings(el1, el2)
 
-
     @classmethod
     def compare_dynamicmap(cls, el1, el2):
         cls.compare_dimensioned(el1, el2)
         cls.compare_ndmappings(el1, el2)
-
 
     @classmethod
     def compare_gridlayout(cls, el1, el2):
@@ -397,15 +356,14 @@ class _ElementComparison(_DataComparison):
         assert el1.keys() == el2.keys()
 
         for element1, element2 in zip(el1, el2, strict=True):
-            cls.assert_equal(element1,element2)
-
+            cls.assert_equal(element1, element2)
 
     @classmethod
     def compare_ndoverlays(cls, el1, el2):
         cls.compare_dimensioned(el1, el2)
         assert len(el1) == len(el2)
 
-        for (layer1, layer2) in zip(el1, el2, strict=True):
+        for layer1, layer2 in zip(el1, el2, strict=True):
             cls.assert_equal(layer1, layer2)
 
     @classmethod
@@ -414,10 +372,9 @@ class _ElementComparison(_DataComparison):
         for element1, element2 in zip(el1, el1, strict=True):
             cls.assert_equal(element1, element2)
 
-
-    #=============#
-    # Annotations #
-    #=============#
+    # ===========
+    # Annotations
+    # ===========
 
     @classmethod
     def compare_annotation(cls, el1, el2):
@@ -456,9 +413,9 @@ class _ElementComparison(_DataComparison):
     def compare_div(cls, el1, el2):
         cls.compare_annotation(el1, el2)
 
-    #=======#
-    # Paths #
-    #=======#
+    # =====
+    # Paths
+    # =====
 
     @classmethod
     def compare_paths(cls, el1, el2):
@@ -490,21 +447,28 @@ class _ElementComparison(_DataComparison):
     def compare_bounds(cls, el1, el2):
         cls.compare_paths(el1, el2)
 
-
-    #========#
-    # Charts #
-    #========#
+    # ======
+    # Charts
+    # ======
 
     @classmethod
     def compare_dataset(cls, el1, el2):
         cls.compare_dimensioned(el1, el2)
         tabular = not (el1.interface.gridded and el2.interface.gridded)
-        dimension_data = [(el1.dimension_values(d, expanded=tabular),
-                           el2.dimension_values(d, expanded=tabular))
-                          for d in el1.kdims]
-        dimension_data += [(el1.dimension_values(d, flat=tabular),
-                            el2.dimension_values(d, flat=tabular))
-                            for d in el1.vdims]
+        dimension_data = [
+            (
+                el1.dimension_values(d, expanded=tabular),
+                el2.dimension_values(d, expanded=tabular),
+            )
+            for d in el1.kdims
+        ]
+        dimension_data += [
+            (
+                el1.dimension_values(d, flat=tabular),
+                el2.dimension_values(d, flat=tabular),
+            )
+            for d in el1.vdims
+        ]
         assert el1.shape[0] == el2.shape[0]
         for d1, d2 in dimension_data:
             cls.assert_equal(d1, d2)
@@ -561,10 +525,9 @@ class _ElementComparison(_DataComparison):
     def compare_boxwhisker(cls, el1, el2):
         cls.compare_dataset(el1, el2)
 
-
-    #============#
-    # Geometries #
-    #============#
+    # ==========
+    # Geometries
+    # ==========
 
     @classmethod
     def compare_segments(cls, el1, el2):
@@ -574,9 +537,9 @@ class _ElementComparison(_DataComparison):
     def compare_boxes(cls, el1, el2):
         cls.compare_dataset(el1, el2)
 
-    #=========#
-    # Graphs  #
-    #=========#
+    # =======
+    # Graphs
+    # =======
 
     @classmethod
     def compare_graph(cls, el1, el2):
@@ -597,10 +560,9 @@ class _ElementComparison(_DataComparison):
     def compare_edgepaths(cls, el1, el2):
         cls.compare_paths(el1, el2)
 
-
-    #=========#
-    # Rasters #
-    #=========#
+    # =======
+    # Rasters
+    # =======
 
     @classmethod
     def compare_raster(cls, el1, el2):
@@ -617,33 +579,32 @@ class _ElementComparison(_DataComparison):
 
     @classmethod
     def compare_image(cls, el1, el2):
-        cls.bounds_check(el1,el2)
+        cls.bounds_check(el1, el2)
         cls.compare_dataset(el1, el2)
 
     @classmethod
     def compare_imagestack(cls, el1, el2):
-        cls.bounds_check(el1,el2)
+        cls.bounds_check(el1, el2)
         cls.compare_dataset(el1, el2)
 
     @classmethod
     def compare_rgb(cls, el1, el2):
-        cls.bounds_check(el1,el2)
+        cls.bounds_check(el1, el2)
         cls.compare_dataset(el1, el2)
 
     @classmethod
     def compare_hsv(cls, el1, el2):
-        cls.bounds_check(el1,el2)
+        cls.bounds_check(el1, el2)
         cls.compare_dataset(el1, el2)
 
     @classmethod
     def compare_surface(cls, el1, el2):
-        cls.bounds_check(el1,el2)
+        cls.bounds_check(el1, el2)
         cls.compare_dataset(el1, el2)
 
-
-    #========#
-    # Tables #
-    #========#
+    # ======
+    # Tables
+    # ======
 
     @classmethod
     def compare_itemtables(cls, el1, el2):
@@ -656,9 +617,9 @@ class _ElementComparison(_DataComparison):
     def compare_tables(cls, el1, el2):
         cls.compare_dataset(el1, el2)
 
-    #============#
-    # Statistics #
-    #============#
+    # ==========
+    # Statistics
+    # ==========
 
     @classmethod
     def compare_distribution(cls, el1, el2):
@@ -672,9 +633,9 @@ class _ElementComparison(_DataComparison):
     def compare_hextiles(cls, el1, el2):
         cls.compare_dataset(el1, el2)
 
-    #=======#
-    # Grids #
-    #=======#
+    # =====
+    # Grids
+    # =====
 
     @classmethod
     def _compare_grids(cls, el1, el2):
@@ -688,9 +649,9 @@ class _ElementComparison(_DataComparison):
         cls.compare_dimensioned(el1, el2)
         cls._compare_grids(el1, el2)
 
-    #=========#
-    # Options #
-    #=========#
+    # =======
+    # Options
+    # =======
 
     @classmethod
     def compare_options(cls, options1, options2):
@@ -700,6 +661,7 @@ class _ElementComparison(_DataComparison):
     def compare_cycles(cls, cycle1, cycle2):
         cls.assert_equal(cycle1.values, cycle2.values)
 
+
 def _ptype(obj):
     type_obj = type(obj)
     mod = type_obj.__module__
@@ -708,13 +670,17 @@ def _ptype(obj):
         return str(name)
     return f"{mod}.{name}"
 
+
 def assert_dict_equal(element1, element2):
+    """Asserts that two dictionaries are equal."""
     assert isinstance(element1, Mapping)
     assert isinstance(element2, Mapping)
     _ElementComparison.register()
     _ElementComparison.compare_mappings(element1, element2)
 
+
 def assert_data_equal(element1, element2):
+    """Asserts that two data sources are equal."""
     # For convenience we convert one array and one list into numpy arrays
     if isinstance(element2, np.ndarray) and isinstance(element1, list):
         element1 = np.array(element1)
@@ -727,7 +693,9 @@ def assert_data_equal(element1, element2):
 
     _DataComparison.assert_equal(element1, element2)
 
+
 def assert_element_equal(element1, element2):
+    """Asserts that two HoloViews Elements are equal."""
     types = tuple(_ElementComparison.register())
     assert isinstance(element1, types), f"not valid type {_ptype(element1)!r}"
     assert isinstance(element2, types), f"not valid type {_ptype(element2)!r}"
