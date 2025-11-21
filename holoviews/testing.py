@@ -117,7 +117,7 @@ class _DataComparison:
         if is_numpy:
             cls.compare_arrays(n1, n2)
         else:
-            assert np.isclose(n1, n2, atol=1e-6)
+            assert np.isclose(n1, n2)
 
     @classmethod
     def compare_arrays(cls, arr1, arr2, msg='Arrays'):
