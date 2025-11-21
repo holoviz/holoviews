@@ -123,6 +123,8 @@ from .util.warnings import (  # noqa: F401
     HoloviewsUserWarning,
 )
 
+TYPE_CHECKING = False
+
 if hasattr(builtins, "__IPYTHON__"):
     from .ipython import notebook_extension
     extension = notebook_extension
@@ -141,8 +143,6 @@ if '_pyodide' in sys.modules:
         extension = pyodide_extension
     del pyodide_extension, in_jupyterlite
 
-
-TYPE_CHECKING = False
 if TYPE_CHECKING:
     # Adding this here to have better docstring in LSP
     from .util import extension
