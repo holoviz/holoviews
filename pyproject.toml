@@ -224,6 +224,7 @@ extend-unsafe-fixes = [
     "RUF003", # Ambiguous unicode character
 ]
 "holoviews/element/comparison.py" = ["PT009"]
+"holoviews/tests/element/test_comparison*.py" = ["PT009", "PT027"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["holoviews"]
