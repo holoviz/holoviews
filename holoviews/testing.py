@@ -44,9 +44,6 @@ from holoviews.core.options import Cycle, Options
 from holoviews.core.util import dtype_kind, is_float
 from holoviews.core.util.dependencies import _is_installed
 
-# from holoviews.core.util import datetime_types, dt_to_int, dtype_kind, is_float
-# TODO: Remove message + cls.failureException
-
 
 class _DataComparison:
     """Class used for comparing two HoloViews objects, including complex
@@ -59,8 +56,6 @@ class _DataComparison:
     Comparison.assertEqual(matrix1, matrix2)
 
     """
-
-    # __tracebackhide__ = True
 
     equality_funcs = {}
 
@@ -93,11 +88,11 @@ class _DataComparison:
         return cls.equality_funcs
 
     @classmethod
-    def compare_simple(cls, first, second, msg=None):
+    def compare_simple(cls, first, second):
         assert first == second
 
     @classmethod
-    def compare_collections(cls, c1, c2, msg=None):
+    def compare_collections(cls, c1, c2):
         if isinstance(c1, str):
             assert c1 == c2
             return
@@ -106,13 +101,13 @@ class _DataComparison:
             cls.assert_equal(item1, item2)
 
     @classmethod
-    def compare_mappings(cls, m1, m2, msg=None):
+    def compare_mappings(cls, m1, m2):
         assert m1.keys() == m2.keys()
         for key in m1:
             cls.assert_equal(m1[key], m2[key])
 
     @classmethod
-    def compare_floats(cls, n1, n2, msg='Floats'):
+    def compare_floats(cls, n1, n2):
         is_numpy = hasattr(n1, "dtype") and hasattr(n2, "dtype")
         if is_numpy:
             cls.compare_arrays(n1, n2)
@@ -120,29 +115,29 @@ class _DataComparison:
             assert np.isclose(n1, n2)
 
     @classmethod
-    def compare_arrays(cls, arr1, arr2, msg='Arrays'):
+    def compare_arrays(cls, arr1, arr2):
         if dtype_kind(arr1) in "UOM":
             assert_array_equal(arr1, arr2)
         else:
             assert_array_almost_equal(arr1, arr2)
 
     @classmethod
-    def compare_pandas_series(cls, ser1, ser2, msg='Pandas Series'):
+    def compare_pandas_series(cls, ser1, ser2):
         from pandas.testing import assert_series_equal
         assert_series_equal(ser1, ser2)
 
     @classmethod
-    def compare_pandas_dataframe(cls, df1, df2, msg='Pandas DataFrame'):
+    def compare_pandas_dataframe(cls, df1, df2):
         from pandas.testing import assert_frame_equal
         assert_frame_equal(df1, df2)
 
     @classmethod
-    def compare_narwhals_series(cls, ser1, ser2, msg='pandas Series'):
+    def compare_narwhals_series(cls, ser1, ser2):
         from narwhals.testing import assert_series_equal
         assert_series_equal(ser1, ser2, check_names=False, check_dtypes=False)
 
     @classmethod
-    def compare_narwhals_dataframe(cls, df1, df2, msg='Narwhals DataFrame'):
+    def compare_narwhals_dataframe(cls, df1, df2):
         from narwhals.testing import assert_series_equal
 
         assert df1.implementation == df2.implementation
@@ -159,7 +154,7 @@ class _DataComparison:
             assert_series_equal(df1[col], df2[col])
 
     @classmethod
-    def assert_equal(cls, first, second, msg=None):
+    def assert_equal(cls, first, second):
         """Classmethod equivalent to unittest.TestCase method
 
         """
@@ -177,7 +172,7 @@ class _DataComparison:
             else:
                 asserter = cls.compare_simple
 
-        asserter(first, second, msg=msg)
+        asserter(first, second)
 
 
 class _ElementComparison(_DataComparison):
@@ -295,14 +290,10 @@ class _ElementComparison(_DataComparison):
     #=====================#
 
     @classmethod
-    def bounds_check(cls, el1, el2, msg=None):
+    def bounds_check(cls, el1, el2):
         lbrt1 = el1.bounds.lbrt()
         lbrt2 = el2.bounds.lbrt()
         for v1, v2 in zip(lbrt1, lbrt2, strict=True):
-            # if isinstance(v1, datetime_types):
-            #     v1 = dt_to_int(v1)
-            # if isinstance(v2, datetime_types):
-            #     v2 = dt_to_int(v2)
             cls.compare_floats(v1, v2)
 
     #=======================================#
@@ -310,7 +301,7 @@ class _ElementComparison(_DataComparison):
     #=======================================#
 
     @classmethod
-    def compare_dimensions(cls, dim1, dim2, msg=None):
+    def compare_dimensions(cls, dim1, dim2):
         # 'Weak' equality semantics
         assert dim1.name == dim2.name
         assert dim1.label == dim2.label
@@ -330,26 +321,24 @@ class _ElementComparison(_DataComparison):
             cls.assert_equal(dim1_params[k], dim2_params[k])
 
     @classmethod
-    def compare_labelled_data(cls, obj1, obj2, msg=None):
-        cls.assert_equal(obj1.group, obj2.group, "Group labels mismatched.")
-        cls.assert_equal(obj1.label, obj2.label, "Labels mismatched.")
+    def compare_labelled_data(cls, obj1, obj2):
+        cls.assert_equal(obj1.group, obj2.group)
+        cls.assert_equal(obj1.label, obj2.label)
 
     @classmethod
-    def compare_dimension_lists(cls, dlist1, dlist2, msg='Dimension lists'):
+    def compare_dimension_lists(cls, dlist1, dlist2):
         assert len(dlist1) == len(dlist2)
         for d1, d2 in zip(dlist1, dlist2, strict=True):
             cls.assert_equal(d1, d2)
 
     @classmethod
-    def compare_dimensioned(cls, obj1, obj2, msg=None):
+    def compare_dimensioned(cls, obj1, obj2):
         cls.compare_labelled_data(obj1, obj2)
-        cls.compare_dimension_lists(obj1.vdims, obj2.vdims,
-                                    'Value dimension list')
-        cls.compare_dimension_lists(obj1.kdims, obj2.kdims,
-                                    'Key dimension list')
+        cls.compare_dimension_lists(obj1.vdims, obj2.vdims)
+        cls.compare_dimension_lists(obj1.kdims, obj2.kdims)
 
     @classmethod
-    def compare_elements(cls, obj1, obj2, msg=None):
+    def compare_elements(cls, obj1, obj2):
         cls.compare_labelled_data(obj1, obj2)
         cls.assert_equal(obj1.data, obj2.data)
 
@@ -359,24 +348,24 @@ class _ElementComparison(_DataComparison):
     #===============================#
 
     @classmethod
-    def compare_trees(cls, el1, el2, msg='Trees'):
+    def compare_trees(cls, el1, el2):
         assert el1.keys() == el2.keys()
         for element1, element2 in zip(el1.values(),  el2.values(), strict=True):
             cls.assert_equal(element1, element2)
 
     @classmethod
-    def compare_layouttrees(cls, el1, el2, msg=None):
+    def compare_layouttrees(cls, el1, el2):
         cls.compare_dimensioned(el1, el2)
-        cls.compare_trees(el1, el2, msg='Layouts')
+        cls.compare_trees(el1, el2)
 
     @classmethod
-    def compare_empties(cls, el1, el2, msg=None):
+    def compare_empties(cls, el1, el2):
         assert all(isinstance(el, Empty) for el in [el1, el2])
 
     @classmethod
-    def compare_overlays(cls, el1, el2, msg=None):
+    def compare_overlays(cls, el1, el2):
         cls.compare_dimensioned(el1, el2)
-        cls.compare_trees(el1, el2, msg='Overlays')
+        cls.compare_trees(el1, el2)
 
 
     #================================#
@@ -384,26 +373,26 @@ class _ElementComparison(_DataComparison):
     #================================#
 
     @classmethod
-    def compare_ndmappings(cls, el1, el2, msg='NdMappings'):
+    def compare_ndmappings(cls, el1, el2):
         cls.compare_dimensioned(el1, el2)
         assert el1.keys() == el2.keys()
         for element1, element2 in zip(el1, el2, strict=True):
             cls.assert_equal(element1, element2)
 
     @classmethod
-    def compare_holomap(cls, el1, el2, msg='HoloMaps'):
+    def compare_holomap(cls, el1, el2):
         cls.compare_dimensioned(el1, el2)
-        cls.compare_ndmappings(el1, el2, msg)
+        cls.compare_ndmappings(el1, el2)
 
 
     @classmethod
-    def compare_dynamicmap(cls, el1, el2, msg='DynamicMap'):
+    def compare_dynamicmap(cls, el1, el2):
         cls.compare_dimensioned(el1, el2)
-        cls.compare_ndmappings(el1, el2, msg)
+        cls.compare_ndmappings(el1, el2)
 
 
     @classmethod
-    def compare_gridlayout(cls, el1, el2, msg=None):
+    def compare_gridlayout(cls, el1, el2):
         cls.compare_dimensioned(el1, el2)
         assert el1.keys() == el2.keys()
 
@@ -412,7 +401,7 @@ class _ElementComparison(_DataComparison):
 
 
     @classmethod
-    def compare_ndoverlays(cls, el1, el2, msg=None):
+    def compare_ndoverlays(cls, el1, el2):
         cls.compare_dimensioned(el1, el2)
         assert len(el1) == len(el2)
 
@@ -420,7 +409,7 @@ class _ElementComparison(_DataComparison):
             cls.assert_equal(layer1, layer2)
 
     @classmethod
-    def compare_adjointlayouts(cls, el1, el2, msg=None):
+    def compare_adjointlayouts(cls, el1, el2):
         cls.compare_dimensioned(el1, el2)
         for element1, element2 in zip(el1, el1, strict=True):
             cls.assert_equal(element1, element2)
@@ -431,75 +420,75 @@ class _ElementComparison(_DataComparison):
     #=============#
 
     @classmethod
-    def compare_annotation(cls, el1, el2, msg='Annotation'):
+    def compare_annotation(cls, el1, el2):
         cls.compare_dimensioned(el1, el2)
         cls.assert_equal(el1.data, el2.data)
 
     @classmethod
-    def compare_hline(cls, el1, el2, msg='HLine'):
-        cls.compare_annotation(el1, el2, msg=msg)
+    def compare_hline(cls, el1, el2):
+        cls.compare_annotation(el1, el2)
 
     @classmethod
-    def compare_vline(cls, el1, el2, msg='VLine'):
-        cls.compare_annotation(el1, el2, msg=msg)
+    def compare_vline(cls, el1, el2):
+        cls.compare_annotation(el1, el2)
 
     @classmethod
-    def compare_vspan(cls, el1, el2, msg='VSpan'):
-        cls.compare_annotation(el1, el2, msg=msg)
+    def compare_vspan(cls, el1, el2):
+        cls.compare_annotation(el1, el2)
 
     @classmethod
-    def compare_hspan(cls, el1, el2, msg='HSpan'):
-        cls.compare_annotation(el1, el2, msg=msg)
+    def compare_hspan(cls, el1, el2):
+        cls.compare_annotation(el1, el2)
 
     @classmethod
-    def compare_spline(cls, el1, el2, msg='Spline'):
-        cls.compare_annotation(el1, el2, msg=msg)
+    def compare_spline(cls, el1, el2):
+        cls.compare_annotation(el1, el2)
 
     @classmethod
-    def compare_arrow(cls, el1, el2, msg='Arrow'):
-        cls.compare_annotation(el1, el2, msg=msg)
+    def compare_arrow(cls, el1, el2):
+        cls.compare_annotation(el1, el2)
 
     @classmethod
-    def compare_text(cls, el1, el2, msg='Text'):
-        cls.compare_annotation(el1, el2, msg=msg)
+    def compare_text(cls, el1, el2):
+        cls.compare_annotation(el1, el2)
 
     @classmethod
-    def compare_div(cls, el1, el2, msg='Div'):
-        cls.compare_annotation(el1, el2, msg=msg)
+    def compare_div(cls, el1, el2):
+        cls.compare_annotation(el1, el2)
 
     #=======#
     # Paths #
     #=======#
 
     @classmethod
-    def compare_paths(cls, el1, el2, msg='Path'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_paths(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
         paths1 = el1.split()
         paths2 = el2.split()
         assert len(paths1) == len(paths2)
         for p1, p2 in zip(paths1, paths2, strict=True):
-            cls.compare_dataset(p1, p2, f'{msg} data')
+            cls.compare_dataset(p1, p2)
 
     @classmethod
-    def compare_contours(cls, el1, el2, msg='Contours'):
-        cls.compare_paths(el1, el2, msg=msg)
+    def compare_contours(cls, el1, el2):
+        cls.compare_paths(el1, el2)
 
     @classmethod
-    def compare_polygons(cls, el1, el2, msg='Polygons'):
-        cls.compare_paths(el1, el2, msg=msg)
+    def compare_polygons(cls, el1, el2):
+        cls.compare_paths(el1, el2)
 
     @classmethod
-    def compare_box(cls, el1, el2, msg='Box'):
-        cls.compare_paths(el1, el2, msg=msg)
+    def compare_box(cls, el1, el2):
+        cls.compare_paths(el1, el2)
 
     @classmethod
-    def compare_ellipse(cls, el1, el2, msg='Ellipse'):
-        cls.compare_paths(el1, el2, msg=msg)
+    def compare_ellipse(cls, el1, el2):
+        cls.compare_paths(el1, el2)
 
     @classmethod
-    def compare_bounds(cls, el1, el2, msg='Bounds'):
-        cls.compare_paths(el1, el2, msg=msg)
+    def compare_bounds(cls, el1, el2):
+        cls.compare_paths(el1, el2)
 
 
     #========#
@@ -507,87 +496,70 @@ class _ElementComparison(_DataComparison):
     #========#
 
     @classmethod
-    def compare_dataset(cls, el1, el2, msg='Dataset'):
+    def compare_dataset(cls, el1, el2):
         cls.compare_dimensioned(el1, el2)
         tabular = not (el1.interface.gridded and el2.interface.gridded)
-        dimension_data = [(d, el1.dimension_values(d, expanded=tabular),
+        dimension_data = [(el1.dimension_values(d, expanded=tabular),
                            el2.dimension_values(d, expanded=tabular))
                           for d in el1.kdims]
-        dimension_data += [(d, el1.dimension_values(d, flat=tabular),
+        dimension_data += [(el1.dimension_values(d, flat=tabular),
                             el2.dimension_values(d, flat=tabular))
                             for d in el1.vdims]
         assert el1.shape[0] == el2.shape[0]
-        for _, d1, d2 in dimension_data:
+        for d1, d2 in dimension_data:
             cls.assert_equal(d1, d2)
-            # with contextlib.suppress(Exception):
-            #     np.testing.assert_equal(np.asarray(d1), np.asarray(d2))
-            #     continue  # if equal, no need to check further
-
-            # if d1.dtype != d2.dtype:
-            #     failure_msg = (
-            #         f"{msg} {dim.pprint_label} columns have different type. "
-            #         f"First has type {d1}, and second has type {d2}."
-            #     )
-            #     raise cls.failureException(failure_msg)
-            # if dtype_kind(d1) in 'SUOV':
-            #     if list(d1) != list(d2):
-            #         failure_msg = f"{msg} along dimension {dim.pprint_label} not equal."
-            #         raise cls.failureException(failure_msg)
-            # else:
-            #     cls.compare_arrays(np.asarray(d1), np.asarray(d2), msg)
 
     @classmethod
-    def compare_curve(cls, el1, el2, msg='Curve'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_curve(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_errorbars(cls, el1, el2, msg='ErrorBars'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_errorbars(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_spread(cls, el1, el2, msg='Spread'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_spread(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_area(cls, el1, el2, msg='Area'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_area(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_scatter(cls, el1, el2, msg='Scatter'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_scatter(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_scatter3d(cls, el1, el2, msg='Scatter3D'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_scatter3d(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_trisurface(cls, el1, el2, msg='TriSurface'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_trisurface(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_histogram(cls, el1, el2, msg='Histogram'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_histogram(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_points(cls, el1, el2, msg='Points'):
-        cls.compare_dataset(el1, el2, msg)
-
-
-    @classmethod
-    def compare_vectorfield(cls, el1, el2, msg='VectorField'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_points(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_bars(cls, el1, el2, msg='Bars'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_vectorfield(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_spikes(cls, el1, el2, msg='Spikes'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_bars(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_boxwhisker(cls, el1, el2, msg='BoxWhisker'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_spikes(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
+
+    @classmethod
+    def compare_boxwhisker(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
 
     #============#
@@ -595,35 +567,35 @@ class _ElementComparison(_DataComparison):
     #============#
 
     @classmethod
-    def compare_segments(cls, el1, el2, msg='Segments'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_segments(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_boxes(cls, el1, el2, msg='Rectangles'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_boxes(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     #=========#
     # Graphs  #
     #=========#
 
     @classmethod
-    def compare_graph(cls, el1, el2, msg='Graph'):
-        cls.compare_dataset(el1, el2, msg)
-        cls.compare_nodes(el1.nodes, el2.nodes, msg)
+    def compare_graph(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
+        cls.compare_nodes(el1.nodes, el2.nodes)
         if el1._edgepaths or el2._edgepaths:
-            cls.compare_edgepaths(el1.edgepaths, el2.edgepaths, msg)
+            cls.compare_edgepaths(el1.edgepaths, el2.edgepaths)
 
     @classmethod
-    def compare_trimesh(cls, el1, el2, msg='TriMesh'):
-        cls.compare_graph(el1, el2, msg)
+    def compare_trimesh(cls, el1, el2):
+        cls.compare_graph(el1, el2)
 
     @classmethod
-    def compare_nodes(cls, el1, el2, msg='Nodes'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_nodes(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_edgepaths(cls, el1, el2, msg='Nodes'):
-        cls.compare_paths(el1, el2, msg)
+    def compare_edgepaths(cls, el1, el2):
+        cls.compare_paths(el1, el2)
 
 
     #=========#
@@ -631,42 +603,42 @@ class _ElementComparison(_DataComparison):
     #=========#
 
     @classmethod
-    def compare_raster(cls, el1, el2, msg='Raster'):
+    def compare_raster(cls, el1, el2):
         cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, msg)
+        cls.compare_arrays(el1.data, el2.data)
 
     @classmethod
-    def compare_quadmesh(cls, el1, el2, msg='QuadMesh'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_quadmesh(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_heatmap(cls, el1, el2, msg='HeatMap'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_heatmap(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_image(cls, el1, el2, msg='Image'):
+    def compare_image(cls, el1, el2):
         cls.bounds_check(el1,el2)
-        cls.compare_dataset(el1, el2, msg)
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_imagestack(cls, el1, el2, msg='ImageStack'):
+    def compare_imagestack(cls, el1, el2):
         cls.bounds_check(el1,el2)
-        cls.compare_dataset(el1, el2, msg)
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_rgb(cls, el1, el2, msg='RGB'):
+    def compare_rgb(cls, el1, el2):
         cls.bounds_check(el1,el2)
-        cls.compare_dataset(el1, el2, msg)
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_hsv(cls, el1, el2, msg='HSV'):
+    def compare_hsv(cls, el1, el2):
         cls.bounds_check(el1,el2)
-        cls.compare_dataset(el1, el2, msg)
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_surface(cls, el1, el2, msg='Surface'):
+    def compare_surface(cls, el1, el2):
         cls.bounds_check(el1,el2)
-        cls.compare_dataset(el1, el2, msg)
+        cls.compare_dataset(el1, el2)
 
 
     #========#
@@ -674,59 +646,58 @@ class _ElementComparison(_DataComparison):
     #========#
 
     @classmethod
-    def compare_itemtables(cls, el1, el2, msg=None):
+    def compare_itemtables(cls, el1, el2):
         cls.compare_dimensioned(el1, el2)
         assert el1.rows == el2.rows
         assert el1.cols == el2.cols
         assert [d.name for d in el1.vdims] == [d.name for d in el2.vdims]
 
     @classmethod
-    def compare_tables(cls, el1, el2, msg='Table'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_tables(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     #============#
     # Statistics #
     #============#
 
     @classmethod
-    def compare_distribution(cls, el1, el2, msg='Distribution'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_distribution(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_bivariate(cls, el1, el2, msg='Bivariate'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_bivariate(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     @classmethod
-    def compare_hextiles(cls, el1, el2, msg='HexTiles'):
-        cls.compare_dataset(el1, el2, msg)
+    def compare_hextiles(cls, el1, el2):
+        cls.compare_dataset(el1, el2)
 
     #=======#
     # Grids #
     #=======#
 
     @classmethod
-    def _compare_grids(cls, el1, el2, name):
+    def _compare_grids(cls, el1, el2):
         assert el1.keys() == el2.keys()
         assert len(el1) == len(el2)
-
         for element1, element2 in zip(el1, el2, strict=True):
             cls.assert_equal(element1, element2)
 
     @classmethod
-    def compare_grids(cls, el1, el2, msg=None):
+    def compare_grids(cls, el1, el2):
         cls.compare_dimensioned(el1, el2)
-        cls._compare_grids(el1, el2, 'GridSpace')
+        cls._compare_grids(el1, el2)
 
     #=========#
     # Options #
     #=========#
 
     @classmethod
-    def compare_options(cls, options1, options2, msg=None):
+    def compare_options(cls, options1, options2):
         cls.assert_equal(options1.kwargs, options2.kwargs)
 
     @classmethod
-    def compare_cycles(cls, cycle1, cycle2, msg=None):
+    def compare_cycles(cls, cycle1, cycle2):
         cls.assert_equal(cycle1.values, cycle2.values)
 
 def _ptype(obj):
