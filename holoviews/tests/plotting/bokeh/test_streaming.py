@@ -18,23 +18,23 @@ class TestBufferStreamPlot(TestBokehPlot):
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
 
-        self.assertEqual(x_range.start, 0)
-        self.assertEqual(x_range.end, 2)
-        self.assertEqual(y_range.start, 0)
-        self.assertEqual(y_range.end, 2)
+        assert x_range.start == 0
+        assert x_range.end == 2
+        assert y_range.start == 0
+        assert y_range.end == 2
 
         stream.send({'x': np.array([2]), 'y': np.array([-1])})
 
-        self.assertEqual(x_range.start, 1)
-        self.assertEqual(x_range.end, 2)
-        self.assertEqual(y_range.start, -1)
-        self.assertEqual(y_range.end, 1)
+        assert x_range.start == 1
+        assert x_range.end == 2
+        assert y_range.start == -1
+        assert y_range.end == 1
 
         stream.following = False
 
         stream.send({'x': np.array([3]), 'y': np.array([3])})
 
-        self.assertEqual(x_range.start, 1)
-        self.assertEqual(x_range.end, 2)
-        self.assertEqual(y_range.start, -1)
-        self.assertEqual(y_range.end, 1)
+        assert x_range.start == 1
+        assert x_range.end == 2
+        assert y_range.start == -1
+        assert y_range.end == 1

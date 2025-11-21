@@ -1,6 +1,7 @@
 import numpy as np
 
 from holoviews.element import HexTiles
+from holoviews.testing import assert_data_equal
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -16,12 +17,12 @@ class TestHexTilesPlot(TestMPLPlot):
         tiles = HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)])
         plot = mpl_renderer.get_plot(tiles)
         args, style, _ = plot.get_data(tiles, {}, {})
-        self.assertEqual(args[0], tiles['x'])
-        self.assertEqual(args[1], tiles['y'])
-        self.assertEqual(args[2], np.ones(4))
+        assert_data_equal(args[0], tiles['x'])
+        assert_data_equal(args[1], tiles['y'])
+        assert_data_equal(args[2], np.ones(4))
         cmap = style.pop('cmap')
-        self.assertEqual(style, {'reduce_C_function': np.sum,
+        assert style == {'reduce_C_function': np.sum,
                                  'vmin': None, 'vmax': None,
                                  'xscale': 'linear', 'yscale': 'linear',
-                                 'gridsize': 50, 'mincnt': None})
-        self.assertEqual(cmap.colors, process_cmap('viridis'))
+                                 'gridsize': 50, 'mincnt': None}
+        assert cmap.colors == process_cmap('viridis')

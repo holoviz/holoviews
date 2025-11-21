@@ -13,7 +13,6 @@ from bokeh.models.widgets import (
 from holoviews.core.options import Store
 from holoviews.core.spaces import DynamicMap
 from holoviews.element import Table
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.bokeh.callbacks import CDSCallback
 from holoviews.plotting.bokeh.renderer import BokehRenderer
 from holoviews.streams import CDSStream, Stream
@@ -21,13 +20,13 @@ from holoviews.streams import CDSStream, Stream
 bokeh_renderer = BokehRenderer.instance(mode='server')
 
 
-class TestBokehTablePlot(ComparisonTestCase):
+class TestBokehTablePlot:
 
-    def setUp(self):
+    def setup_method(self):
         self.previous_backend = Store.current_backend
         Store.current_backend = 'bokeh'
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.current_backend = self.previous_backend
         bokeh_renderer.last_plot = None
 
@@ -37,54 +36,54 @@ class TestBokehTablePlot(ComparisonTestCase):
         dims = table.dimensions()
         formatters = (NumberFormatter, NumberFormatter, StringFormatter)
         editors = (IntEditor, NumberEditor, StringEditor)
-        for dim, fmt, edit, column in zip(dims, formatters, editors, plot.state.columns, strict=None):
-            self.assertEqual(column.title, dim.pprint_label)
-            self.assertIsInstance(column.formatter, fmt)
-            self.assertIsInstance(column.editor, edit)
+        for dim, fmt, edit, column in zip(dims, formatters, editors, plot.state.columns, strict=True):
+            assert column.title == dim.pprint_label
+            assert isinstance(column.formatter, fmt)
+            assert isinstance(column.editor, edit)
 
     def test_table_plot_escaped_dimension(self):
         table = Table([1, 2, 3], ['A Dimension'])
         plot = bokeh_renderer.get_plot(table)
         source = plot.handles['source']
         renderer = plot.handles['glyph_renderer']
-        self.assertEqual(next(iter(source.data.keys())), renderer.columns[0].field)
+        assert next(iter(source.data.keys())) == renderer.columns[0].field
 
     def test_table_plot_datetimes(self):
         table = Table([dt.now(), dt.now()], 'Date')
         plot = bokeh_renderer.get_plot(table)
         column = plot.state.columns[0]
-        self.assertEqual(column.title, 'Date')
-        self.assertIsInstance(column.formatter, DateFormatter)
-        self.assertIsInstance(column.editor, DateEditor)
+        assert column.title == 'Date'
+        assert isinstance(column.formatter, DateFormatter)
+        assert isinstance(column.editor, DateEditor)
 
     def test_table_plot_callback(self):
         table = Table(([1, 2, 3], [1., 2., 3.], ['A', 'B', 'C']), ['x', 'y'], 'z')
         CDSStream(source=table)
         plot = bokeh_renderer.get_plot(table)
-        self.assertEqual(len(plot.callbacks), 1)
-        self.assertIsInstance(plot.callbacks[0], CDSCallback)
+        assert len(plot.callbacks) == 1
+        assert isinstance(plot.callbacks[0], CDSCallback)
 
     def test_table_change_columns(self):
         lengths = {'a': 1, 'b': 2, 'c': 3}
         table = DynamicMap(lambda a: Table(range(lengths[a]), a), kdims=['a']).redim.values(a=['a', 'b', 'c'])
         plot = bokeh_renderer.get_plot(table)
-        self.assertEqual(sorted(plot.handles['source'].data.keys()), ['a'])
-        self.assertEqual(plot.handles['table'].columns[0].title, 'a')
+        assert sorted(plot.handles['source'].data.keys()) == ['a']
+        assert plot.handles['table'].columns[0].title == 'a'
         plot.update(('b',))
-        self.assertEqual(sorted(plot.handles['source'].data.keys()), ['b'])
-        self.assertEqual(plot.handles['table'].columns[0].title, 'b')
+        assert sorted(plot.handles['source'].data.keys()) == ['b']
+        assert plot.handles['table'].columns[0].title == 'b'
 
     def test_table_selected(self):
         table = Table([(0, 0), (1, 1), (2, 2)], ['x', 'y']).opts(selected=[0, 2])
         plot = bokeh_renderer.get_plot(table)
         cds = plot.handles['cds']
-        self.assertEqual(cds.selected.indices, [0, 2])
+        assert cds.selected.indices == [0, 2]
 
     def test_table_update_selected(self):
         stream = Stream.define('Selected', selected=[])()
         table = Table([(0, 0), (1, 1), (2, 2)], ['x', 'y']).apply.opts(selected=stream.param.selected)
         plot = bokeh_renderer.get_plot(table)
         cds = plot.handles['cds']
-        self.assertEqual(cds.selected.indices, [])
+        assert cds.selected.indices == []
         stream.event(selected=[0, 2])
-        self.assertEqual(cds.selected.indices, [0, 2])
+        assert cds.selected.indices == [0, 2]

@@ -1,18 +1,19 @@
 import datetime as dt
-from unittest import SkipTest
 
 import numpy as np
 import pandas as pd
+import pytest
 
 try:
     import xarray as xr
 except ImportError:
-    raise SkipTest("Could not import xarray, skipping XArrayInterface tests.")
+    pytest.skip("Could not import xarray, skipping XArrayInterface tests.", allow_module_level=True)
 
 from holoviews.core.data import Dataset, XArrayInterface, concat
 from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
 from holoviews.element import HSV, RGB, Image, ImageStack, QuadMesh
+from holoviews.testing import assert_data_equal, assert_element_equal
 
 from .test_gridinterface import BaseGridInterfaceTests
 from .test_imageinterface import (
@@ -72,12 +73,12 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
     def test_xarray_dataset_irregular_shape(self):
         ds = Dataset(self.get_multi_dim_irregular_dataset())
         shape = ds.interface.shape(ds, gridded=True)
-        self.assertEqual(shape, (np.nan, np.nan, 3, 4))
+        assert shape == (np.nan, np.nan, 3, 4)
 
     def test_xarray_irregular_dataset_values(self):
         ds = Dataset(self.get_multi_dim_irregular_dataset())
         values = ds.dimension_values('z', expanded=False)
-        self.assertEqual(values, np.array([0, 1, 2, 3]))
+        assert_data_equal(values, np.array([0, 1, 2, 3]))
 
     def test_xarray_dataset_with_scalar_dim_canonicalize(self):
         xs = [0, 1]
@@ -87,9 +88,9 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         xrds = xr.Dataset({'v': xrarr})
         ds = Dataset(xrds, kdims=['x', 'y'], vdims=['v'], datatype=['xarray'])
         canonical = ds.dimension_values(2, flat=False)
-        self.assertEqual(canonical.ndim, 2)
+        assert canonical.ndim == 2
         expected = np.array([[0, 1], [2, 3], [4, 5]])
-        self.assertEqual(canonical, expected)
+        assert_data_equal(canonical, expected)
 
     def test_xarray_dataset_names_and_units(self):
         xs = [0.1, 0.2, 0.3]
@@ -101,9 +102,9 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         da.x_dim.attrs['units'] = "x_unit"
         da.y_dim.attrs['long_name'] = "y axis long name"
         dataset = Dataset(da)
-        self.assertEqual(dataset.get_dimension("x_dim"), Dimension("x_dim", unit="x_unit"))
-        self.assertEqual(dataset.get_dimension("y_dim"), Dimension("y_dim", label="y axis long name"))
-        self.assertEqual(dataset.get_dimension("data_name"),
+        assert_element_equal(dataset.get_dimension("x_dim"), Dimension("x_dim", unit="x_unit"))
+        assert_element_equal(dataset.get_dimension("y_dim"), Dimension("y_dim", label="y axis long name"))
+        assert_element_equal(dataset.get_dimension("data_name"),
                          Dimension("data_name", label="data long name", unit="array_unit"))
 
     def test_xarray_dataset_dataarray_vs_dataset(self):
@@ -118,7 +119,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         ds = da.to_dataset()
         dataset_from_da = Dataset(da)
         dataset_from_ds = Dataset(ds)
-        self.assertEqual(dataset_from_da, dataset_from_ds)
+        assert_element_equal(dataset_from_da, dataset_from_ds)
         # same with reversed names:
         da_rev = xr.DataArray(zs, coords=[('x_dim', xs), ('y_dim', ys)], name="data_name", dims=['x_dim', 'y_dim'])
         da_rev.attrs['long_name'] = "data long name"
@@ -128,7 +129,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         ds_rev = da_rev.to_dataset()
         dataset_from_da_rev = Dataset(da_rev)
         dataset_from_ds_rev = Dataset(ds_rev)
-        self.assertEqual(dataset_from_da_rev, dataset_from_ds_rev)
+        assert_element_equal(dataset_from_da_rev, dataset_from_ds_rev)
 
     def test_xarray_override_dims(self):
         xs = [0.1, 0.2, 0.3]
@@ -143,14 +144,14 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         x_dim = Dimension("x_dim")
         y_dim = Dimension("y_dim")
         z_dim = Dimension("z_dim")
-        self.assertEqual(ds.kdims[0], x_dim)
-        self.assertEqual(ds.kdims[1], y_dim)
-        self.assertEqual(ds.vdims[0], z_dim)
+        assert_element_equal(ds.kdims[0], x_dim)
+        assert_element_equal(ds.kdims[1], y_dim)
+        assert_element_equal(ds.vdims[0], z_dim)
         ds_from_ds = Dataset(da.to_dataset(), kdims=["x_dim", "y_dim"], vdims=["data_name"])
-        self.assertEqual(ds_from_ds.kdims[0], x_dim)
-        self.assertEqual(ds_from_ds.kdims[1], y_dim)
+        assert_element_equal(ds_from_ds.kdims[0], x_dim)
+        assert_element_equal(ds_from_ds.kdims[1], y_dim)
         data_dim = Dimension("data_name")
-        self.assertEqual(ds_from_ds.vdims[0], data_dim)
+        assert_element_equal(ds_from_ds.vdims[0], data_dim)
 
     def test_xarray_coord_ordering(self):
         data = np.zeros((3,4,5))
@@ -158,42 +159,42 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         darray = xr.DataArray(data, coords=coords, dims=['b', 'c', 'a'])
         dataset = xr.Dataset({'value': darray}, coords=coords)
         ds = Dataset(dataset)
-        self.assertEqual(ds.kdims, ['b', 'c', 'a'])
+        assert ds.kdims == ['b', 'c', 'a']
 
     def test_irregular_and_regular_coordinate_inference(self):
         data = self.get_irregular_dataarray()
         ds = Dataset(data, vdims='Value')
-        self.assertEqual(ds.kdims, [Dimension('band'), Dimension('x'), Dimension('y')])
-        self.assertEqual(ds.dimension_values(3, flat=False), data.values[:, ::-1].transpose([1, 2, 0]))
+        assert ds.kdims == [Dimension('band'), Dimension('x'), Dimension('y')]
+        assert_data_equal(ds.dimension_values(3, flat=False), data.values[:, ::-1].transpose([1, 2, 0]))
 
     def test_irregular_and_regular_coordinate_inference_inverted(self):
         data = self.get_irregular_dataarray(False)
         ds = Dataset(data, vdims='Value')
-        self.assertEqual(ds.kdims, [Dimension('band'), Dimension('x'), Dimension('y')])
-        self.assertEqual(ds.dimension_values(3, flat=False), data.values.transpose([1, 2, 0]))
+        assert ds.kdims == [Dimension('band'), Dimension('x'), Dimension('y')]
+        assert_data_equal(ds.dimension_values(3, flat=False), data.values.transpose([1, 2, 0]))
     def test_irregular_and_regular_coordinate_explicit_regular_coords(self):
         data = self.get_irregular_dataarray()
         ds = Dataset(data, ['x', 'y'], vdims='Value')
-        self.assertEqual(ds.kdims, [Dimension('x'), Dimension('y')])
-        self.assertEqual(ds.dimension_values(2, flat=False), data.values[0, ::-1])
+        assert ds.kdims == [Dimension('x'), Dimension('y')]
+        assert_data_equal(ds.dimension_values(2, flat=False), data.values[0, ::-1])
 
     def test_irregular_and_regular_coordinate_explicit_regular_coords_inverted(self):
         data = self.get_irregular_dataarray(False)
         ds = Dataset(data, ['x', 'y'], vdims='Value')
-        self.assertEqual(ds.kdims, [Dimension('x'), Dimension('y')])
-        self.assertEqual(ds.dimension_values(2, flat=False), data.values[0])
+        assert ds.kdims == [Dimension('x'), Dimension('y')]
+        assert_data_equal(ds.dimension_values(2, flat=False), data.values[0])
 
     def test_irregular_and_regular_coordinate_explicit_irregular_coords(self):
         data = self.get_irregular_dataarray()
         ds = Dataset(data, ['xc', 'yc'], vdims='Value')
-        self.assertEqual(ds.kdims, [Dimension('xc'), Dimension('yc')])
-        self.assertEqual(ds.dimension_values(2, flat=False), data.values[0])
+        assert ds.kdims == [Dimension('xc'), Dimension('yc')]
+        assert_data_equal(ds.dimension_values(2, flat=False), data.values[0])
 
     def test_irregular_and_regular_coordinate_explicit_irregular_coords_inverted(self):
         data = self.get_irregular_dataarray(False)
         ds = Dataset(data, ['xc', 'yc'], vdims='Value')
-        self.assertEqual(ds.kdims, [Dimension('xc'), Dimension('yc')])
-        self.assertEqual(ds.dimension_values(2, flat=False), data.values[0])
+        assert ds.kdims == [Dimension('xc'), Dimension('yc')]
+        assert_data_equal(ds.dimension_values(2, flat=False), data.values[0])
 
     def test_concat_grid_3d_shape_mismatch(self):
         arr1 = np.random.rand(3, 2)
@@ -205,27 +206,27 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         arr[:, :2, 0] = arr1
         arr[:2, :, 1] = arr2
         ds = Dataset(([1, 2], [0, 1, 2], [1, 2, 3], arr), ['Default', 'x', 'y'], 'z')
-        self.assertEqual(concat(hmap), ds)
+        assert_element_equal(concat(hmap), ds)
 
     def test_zero_sized_coordinates_range(self):
         da = xr.DataArray(np.empty((2, 0)), dims=('y', 'x'), coords={'x': [], 'y': [0 ,1]}, name='A')
         ds = Dataset(da)
         x0, x1 = ds.range('x')
-        self.assertTrue(np.isnan(x0))
-        self.assertTrue(np.isnan(x1))
+        assert np.isnan(x0)
+        assert np.isnan(x1)
         z0, z1 = ds.range('A')
-        self.assertTrue(np.isnan(z0))
-        self.assertTrue(np.isnan(z1))
+        assert np.isnan(z0)
+        assert np.isnan(z1)
 
     def test_datetime_bins_range(self):
         xs = [dt.datetime(2018, 1, i) for i in range(1, 11)]
         ys = np.arange(10)
         array = np.random.rand(10, 10)
         ds = QuadMesh((xs, ys, array))
-        self.assertEqual(ds.interface.datatype, 'xarray')
+        assert ds.interface.datatype == 'xarray'
         expected = (np.datetime64(dt.datetime(2017, 12, 31, 12, 0)),
                     np.datetime64(dt.datetime(2018, 1, 10, 12, 0)))
-        self.assertEqual(ds.range('x'), expected)
+        assert ds.range('x') == expected
 
     def test_datetime64_bins_range(self):
         xs = list(
@@ -238,10 +239,10 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         ys = np.arange(10)
         array = np.random.rand(10, 10)
         ds = QuadMesh((xs, ys, array))
-        self.assertEqual(ds.interface.datatype, 'xarray')
+        assert ds.interface.datatype == 'xarray'
         expected = (np.datetime64(dt.datetime(2017, 12, 31, 12, 0)),
                     np.datetime64(dt.datetime(2018, 1, 10, 12, 0)))
-        self.assertEqual(ds.range('x'), expected)
+        assert ds.range('x') == expected
 
     def test_select_dropped_dimensions_restoration(self):
         d = np.random.randn(3, 8)
@@ -269,7 +270,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         masked_array = masked.dimension_values(2, flat=False)
         expected = array.copy()
         expected[mask] = np.nan
-        self.assertEqual(masked_array, expected)
+        assert_data_equal(masked_array, expected)
 
     def test_from_empty_numpy(self):
         """
@@ -318,31 +319,31 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
     # Disabled tests for NotImplemented methods
     def test_dataset_array_init_hm(self):
         "Tests support for arrays (homogeneous)"
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_add_dimensions_values_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_reverse_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_vdim_hm_alias(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_vdim_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_reverse_vdim_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sample_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sample_hm_alias(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
 
 
@@ -351,13 +352,13 @@ class DaskXArrayInterfaceTest(XArrayInterfaceTests):
     Tests for XArray interface wrapping dask arrays
     """
 
-    def setUp(self):
+    def setup_method(self):
         try:
             import dask.array # noqa
         except ImportError:
-            raise SkipTest('Dask could not be imported, cannot test '
+            pytest.skip('Dask could not be imported, cannot test '
                            'dask arrays with XArrayInterface')
-        super().setUp()
+        super().setup_method()
 
     def init_column_data(self):
         import dask.array
@@ -396,9 +397,9 @@ class DaskXArrayInterfaceTest(XArrayInterfaceTests):
         xrds = xr.Dataset({'v': xrarr})
         ds = Dataset(xrds, kdims=['x', 'y'], vdims=['v'], datatype=['xarray'])
         canonical = ds.dimension_values(2, flat=False)
-        self.assertEqual(canonical.ndim, 2)
+        assert canonical.ndim == 2
         expected = np.array([[0, 1], [2, 3], [4, 5]])
-        self.assertEqual(canonical, expected)
+        assert_data_equal(canonical, expected)
 
 
 
@@ -419,7 +420,7 @@ class ImageElement_XArrayInterfaceTests(BaseImageElementInterfaceTests):
         z = np.exp(-1*(x**2 + y[:, np.newaxis]**2))
         array = xr.DataArray(z, coords=[y, x], dims=['x', 'y'])
         img = Image(array)
-        self.assertEqual(img.kdims, [Dimension('x'), Dimension('y')])
+        assert img.kdims == [Dimension('x'), Dimension('y')]
 
     def test_dataarray_shape(self):
         x = np.linspace(-3, 7, 53)
@@ -427,7 +428,7 @@ class ImageElement_XArrayInterfaceTests(BaseImageElementInterfaceTests):
         z = np.exp(-1*(x**2 + y[:, np.newaxis]**2))
         array = xr.DataArray(z, coords=[y, x], dims=['x', 'y'])
         img = Image(array, ['x', 'y'])
-        self.assertEqual(img.interface.shape(img, gridded=True), (53, 89))
+        assert img.interface.shape(img, gridded=True) == (53, 89)
 
     def test_dataarray_shape_transposed(self):
         x = np.linspace(-3, 7, 53)
@@ -435,7 +436,7 @@ class ImageElement_XArrayInterfaceTests(BaseImageElementInterfaceTests):
         z = np.exp(-1*(x**2 + y[:, np.newaxis]**2))
         array = xr.DataArray(z, coords=[y, x], dims=['x', 'y'])
         img = Image(array, ['y', 'x'])
-        self.assertEqual(img.interface.shape(img, gridded=True), (89, 53))
+        assert img.interface.shape(img, gridded=True) == (89, 53)
 
     def test_select_on_transposed_dataarray(self):
         x = np.linspace(-3, 7, 53)
@@ -443,7 +444,7 @@ class ImageElement_XArrayInterfaceTests(BaseImageElementInterfaceTests):
         z = np.exp(-1*(x**2 + y[:, np.newaxis]**2))
         array = xr.DataArray(z, coords=[y, x], dims=['x', 'y'])
         img = Image(array)[1:3]
-        self.assertEqual(img['z'], Image(array.sel(x=slice(1, 3)))['z'])
+        assert_data_equal(img['z'], Image(array.sel(x=slice(1, 3)))['z'])
 
     def test_dataarray_with_no_coords(self):
         expected_xs = list(range(2))
@@ -452,22 +453,22 @@ class ImageElement_XArrayInterfaceTests(BaseImageElementInterfaceTests):
         xrarr = xr.DataArray(zs, dims=('x','y'))
 
         img = Image(xrarr)
-        self.assertTrue(all(img.data.x == expected_xs))
-        self.assertTrue(all(img.data.y == expected_ys))
+        assert all(img.data.x == expected_xs)
+        assert all(img.data.y == expected_ys)
 
         img = Image(xrarr, kdims=['x', 'y'])
-        self.assertTrue(all(img.data.x == expected_xs))
-        self.assertTrue(all(img.data.y == expected_ys))
+        assert all(img.data.x == expected_xs)
+        assert all(img.data.y == expected_ys)
 
     def test_dataarray_with_some_coords(self):
         xs = [4.2, 1]
         zs = np.arange(6).reshape(2, 3)
         xrarr = xr.DataArray(zs, dims=('x','y'), coords={'x': xs})
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             Image(xrarr)
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             Image(xrarr, kdims=['x', 'y'])
 
 

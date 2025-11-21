@@ -6,19 +6,20 @@ from bokeh.models import ColorBar
 from holoviews.core.spaces import HoloMap
 from holoviews.element.raster import HeatMap
 from holoviews.plotting.bokeh import RadialHeatMapPlot
+from holoviews.testing import assert_data_equal, assert_dict_equal
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class BokehRadialHeatMapPlotTests(TestBokehPlot):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         # set up dummy data for convenient tests
         x = [f"Seg {idx}" for idx in range(2)]
         y = [f"Ann {idx}" for idx in range(2)]
         self.z = list(range(4))
-        self.x, self.y = zip(*product(x, y), strict=None)
+        self.x, self.y = zip(*product(x, y), strict=True)
 
         self.ann_bins = {"o1": np.array([0.5, 0.75]),
                          "o2": np.array([0.75, 1])}
@@ -47,14 +48,14 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
 
         order = sorted(self.ann_bins.keys())
         values = self.plot._get_bins("radius", order)
-        self.assertEqual(values.keys(), self.ann_bins.keys())
-        self.assertEqual(values["o1"], self.ann_bins["o1"])
-        self.assertEqual(values["o2"], self.ann_bins["o2"])
+        assert values.keys() == self.ann_bins.keys()
+        assert_data_equal(values["o1"], self.ann_bins["o1"])
+        assert_data_equal(values["o2"], self.ann_bins["o2"])
 
         values = self.plot._get_bins("radius", order, reverse=True)
-        self.assertEqual(values.keys(), self.ann_bins.keys())
-        self.assertEqual(values["o1"], self.ann_bins["o2"])
-        self.assertEqual(values["o2"], self.ann_bins["o1"])
+        assert values.keys() == self.ann_bins.keys()
+        assert_data_equal(values["o1"], self.ann_bins["o2"])
+        assert_data_equal(values["o2"], self.ann_bins["o1"])
 
     def test_angle_bin_computation(self):
         """Test computation of bins for radiants/segments.
@@ -62,14 +63,14 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         """
         order = sorted(self.seg_bins.keys())
         values = self.plot._get_bins("angle", order)
-        self.assertEqual(values.keys(), self.seg_bins.keys())
-        self.assertEqual(values["o1"], self.seg_bins["o1"])
-        self.assertEqual(values["o2"], self.seg_bins["o2"])
+        assert values.keys() == self.seg_bins.keys()
+        assert_data_equal(values["o1"], self.seg_bins["o1"])
+        assert_data_equal(values["o2"], self.seg_bins["o2"])
 
         values = self.plot._get_bins("angle", order, True)
-        self.assertEqual(values.keys(), self.seg_bins.keys())
-        self.assertEqual(values["o1"], self.seg_bins["o2"])
-        self.assertEqual(values["o2"], self.seg_bins["o1"])
+        assert values.keys() == self.seg_bins.keys()
+        assert_data_equal(values["o1"], self.seg_bins["o2"])
+        assert_data_equal(values["o2"], self.seg_bins["o1"])
 
     def test_plot_extents(self):
         """Test correct computation of extents.
@@ -77,7 +78,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         """
 
         extents = self.plot.get_extents("", "")
-        self.assertEqual(extents, (-0.2, -0.2, 2.2, 2.2))
+        assert extents == (-0.2, -0.2, 2.2, 2.2)
 
     def test_get_bounds(self):
         """Test boundary computation function.
@@ -87,8 +88,8 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         order = ["o2", "o1", "o1"]
         start, end = self.plot._get_bounds(self.ann_bins, order)
 
-        self.assertEqual(start, np.array([0.75, 0.5, 0.5]))
-        self.assertEqual(end, np.array([1, 0.75, 0.75]))
+        assert_data_equal(start, np.array([0.75, 0.5, 0.5]))
+        assert_data_equal(end, np.array([1, 0.75, 0.75]))
 
     def test_compute_seg_tick_mappings(self):
         """Test computation of segment tick mappings. Check integers, list and
@@ -100,23 +101,23 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         # test number ticks
         self.plot.xticks = 1
         ticks = self.plot._compute_tick_mapping("angle", order, self.seg_bins)
-        self.assertEqual(ticks, {"o1": self.seg_bins["o1"]})
+        assert ticks == {"o1": self.seg_bins["o1"]}
 
         self.plot.xticks = 2
         ticks = self.plot._compute_tick_mapping("angle", order, self.seg_bins)
-        self.assertEqual(ticks, self.seg_bins)
+        assert ticks == self.seg_bins
 
         # test completely new ticks
         self.plot.xticks = ["New Tick1", "New Tick2"]
         ticks = self.plot._compute_tick_mapping("angle", order, self.seg_bins)
         bins = self.plot._get_bins("angle", self.plot.xticks, True)
         ticks_cmp = {x: bins[x] for x in self.plot.xticks}
-        self.assertEqual(ticks, ticks_cmp)
+        assert_dict_equal(ticks, ticks_cmp)
 
         # test function ticks
         self.plot.xticks = lambda x: x == "o1"
         ticks = self.plot._compute_tick_mapping("angle", order, self.seg_bins)
-        self.assertEqual(ticks, {"o1": self.seg_bins["o1"]})
+        assert ticks == {"o1": self.seg_bins["o1"]}
 
     def test_compute_ann_tick_mappings(self):
         """Test computation of annular tick mappings. Check integers, list and
@@ -129,23 +130,23 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         # test number ticks
         self.plot.yticks = 1
         ticks = self.plot._compute_tick_mapping("radius", order, self.ann_bins)
-        self.assertEqual(ticks, {"o1": self.ann_bins["o1"]})
+        assert ticks == {"o1": self.ann_bins["o1"]}
 
         self.plot.yticks = 2
         ticks = self.plot._compute_tick_mapping("radius", order, self.ann_bins)
-        self.assertEqual(ticks, self.ann_bins)
+        assert ticks == self.ann_bins
 
         # test completely new ticks
         self.plot.yticks = ["New Tick1", "New Tick2"]
         ticks = self.plot._compute_tick_mapping("radius", order, self.ann_bins)
         bins = self.plot._get_bins("radius", self.plot.yticks)
         ticks_cmp = {x: bins[x] for x in self.plot.yticks}
-        self.assertEqual(ticks, ticks_cmp)
+        assert_dict_equal(ticks, ticks_cmp)
 
         # test function ticks
         self.plot.yticks = lambda x: x == "o1"
         ticks = self.plot._compute_tick_mapping("radius", order, self.ann_bins)
-        self.assertEqual(ticks, {"o1": self.ann_bins["o1"]})
+        assert ticks == {"o1": self.ann_bins["o1"]}
 
     def test_get_default_mapping(self):
         # check for presence of glyphs in mapping
@@ -156,7 +157,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         glyphs_mapped = self.plot.get_default_mapping(None, None).keys()
         glyphs_plain = {x[:-2] for x in glyphs_mapped}
 
-        self.assertTrue(all([x in glyphs_plain for x in glyphs]))
+        assert all([x in glyphs_plain for x in glyphs])
 
     def test_get_seg_labels_data(self):
         """Test correct computation of a single segment label data point.
@@ -175,7 +176,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
 
         cmp_seg_data = self.plot._get_seg_labels_data(["o1"], self.seg_bins)
 
-        self.assertEqual(test_seg_data, cmp_seg_data)
+        assert test_seg_data == cmp_seg_data
 
     def test_get_ann_labels_data(self):
         """Test correct computation of a single annular label data point.
@@ -189,7 +190,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
 
         cmp_ann_data = self.plot._get_ann_labels_data(["o1"], self.ann_bins)
 
-        self.assertEqual(test_ann_data, cmp_ann_data)
+        assert test_ann_data == cmp_ann_data
 
     def test_get_markers(self):
         """Test computation of marker positions for function, list, tuple and
@@ -202,22 +203,22 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         # function type
         test_val = np.array(self.ann_bins["o1"][1])
         test_input = lambda x: x=="o1"
-        self.assertEqual(self.plot._get_markers(test_input, *args), test_val)
+        assert_data_equal(self.plot._get_markers(test_input, *args), test_val)
 
         # list type
         test_val = np.array(self.ann_bins["o2"][1])
         test_input = [1]
-        self.assertEqual(self.plot._get_markers(test_input, *args), test_val)
+        assert_data_equal(self.plot._get_markers(test_input, *args), test_val)
 
         # tuple type
         test_val = np.array(self.ann_bins["o2"][1])
         test_input = ("o2", )
-        self.assertEqual(self.plot._get_markers(test_input, *args), test_val)
+        assert_data_equal(self.plot._get_markers(test_input, *args), test_val)
 
         # integer type
         test_val = np.array(self.ann_bins["o1"][1])
         test_input = 1
-        self.assertEqual(self.plot._get_markers(test_input, *args), test_val)
+        assert_data_equal(self.plot._get_markers(test_input, *args), test_val)
 
     def test_get_xmarks_data(self):
         """Test computation of xmarks data for single xmark.
@@ -229,9 +230,9 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         cmp_mark_data = self.plot._get_xmarks_data(["o1"], self.seg_bins)
 
         for sub_list in ["xs", "ys"]:
-            test_pairs = zip(test_mark_data[sub_list], cmp_mark_data[sub_list], strict=None)
+            test_pairs = zip(test_mark_data[sub_list], cmp_mark_data[sub_list], strict=True)
             for test_value, cmp_value in test_pairs:
-                self.assertEqual(np.array(test_value), np.array(cmp_value))
+                assert_data_equal(np.array(test_value), np.array(cmp_value))
 
 
     def test_get_ymarks_data(self):
@@ -243,7 +244,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         test_mark_data = dict(radius=self.ann_bins["o1"][1])
         cmp_mark_data = self.plot._get_ymarks_data(["o1"], self.ann_bins)
 
-        self.assertEqual(test_mark_data, cmp_mark_data)
+        assert test_mark_data == cmp_mark_data
 
     def test_get_data(self):
         """Test for presence of glyphs in data and mapping. Testing for correct
@@ -259,7 +260,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         for check in [data, mapping]:
             glyphs_mapped = check.keys()
             glyphs_plain = {x[:-2] for x in glyphs_mapped}
-            self.assertTrue(all([x in glyphs_plain for x in glyphs]))
+            assert all([x in glyphs_plain for x in glyphs])
 
     def test_plot_data_source(self):
         """Test initialization of ColumnDataSources.
@@ -268,25 +269,25 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
 
         source_ann = self.plot.handles['annular_wedge_1_source'].data
 
-        self.assertEqual(list(source_ann["x"]), list(self.x))
-        self.assertEqual(list(source_ann["y"]), list(self.y))
-        self.assertEqual(list(source_ann["z"]), self.z)
+        assert list(source_ann["x"]) == list(self.x)
+        assert list(source_ann["y"]) == list(self.y)
+        assert list(source_ann["z"]) == self.z
 
     def test_heatmap_holomap(self):
         hm = HoloMap({'A': HeatMap(np.random.randint(0, 10, (100, 3))),
                       'B': HeatMap(np.random.randint(0, 10, (100, 3)))})
         plot = bokeh_renderer.get_plot(hm.opts(radial=True))
-        self.assertIsInstance(plot, RadialHeatMapPlot)
+        assert isinstance(plot, RadialHeatMapPlot)
 
     def test_radial_heatmap_colorbar(self):
         hm = HeatMap([(0, 0, 1), (0, 1, 2), (1, 0, 3)]).opts(radial=True, colorbar=True)
         plot = bokeh_renderer.get_plot(hm)
-        self.assertIsInstance(plot.handles.get('colorbar'), ColorBar)
+        assert isinstance(plot.handles.get('colorbar'), ColorBar)
 
     def test_radial_heatmap_ranges(self):
         hm = HeatMap([(0, 0, 1), (0, 1, 2), (1, 0, 3)]).opts(radial=True, colorbar=True)
         plot = bokeh_renderer.get_plot(hm)
-        self.assertEqual(plot.handles['x_range'].start, -0.05)
-        self.assertEqual(plot.handles['x_range'].end, 1.05)
-        self.assertEqual(plot.handles['y_range'].start, -0.05)
-        self.assertEqual(plot.handles['y_range'].end, 1.05)
+        assert plot.handles['x_range'].start == -0.05
+        assert plot.handles['x_range'].end == 1.05
+        assert plot.handles['y_range'].start == -0.05
+        assert plot.handles['y_range'].end == 1.05
