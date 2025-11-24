@@ -98,6 +98,8 @@ class ServerHoverMixin(param.Parameterized):
             for vdim in map(str, element.vdims):
                 if vdim in vars:
                     vars.remove(vdim)
+        if "__index__" not in vars:
+            vars.append("__index__")
 
         hover_model = HoverModel(data={})
         dims = (*coords, *vars)

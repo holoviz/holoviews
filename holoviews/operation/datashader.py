@@ -90,6 +90,25 @@ def __getattr__(attr):
     raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
 
 
+class AggState(enum.Enum):
+    AGG_ONLY = 0  # Only aggregator
+    AGG_BY = 1  # Aggregator where the aggregator is ds.by
+    AGG_SEL = 2  # Selector and aggregator
+    AGG_SEL_BY = 3  # Selector and aggregator, where the aggregator is ds.by
+
+    def get_state(agg_fn, sel_fn):
+        if isinstance(agg_fn, ds.by):
+            return AggState.AGG_SEL_BY if sel_fn else AggState.AGG_BY
+        else:
+            return AggState.AGG_SEL if sel_fn else AggState.AGG_ONLY
+
+    def has_sel(state):
+        return state in (AggState.AGG_SEL, AggState.AGG_SEL_BY)
+
+    def has_by(state):
+        return state in (AggState.AGG_BY, AggState.AGG_SEL_BY)
+
+
 class AggregationOperation(ResampleOperation2D):
     """AggregationOperation extends the ResampleOperation2D defining an
     aggregator parameter used to define a datashader Reduction.
@@ -228,6 +247,77 @@ class AggregationOperation(ResampleOperation2D):
         params['vdims'] = vdims
         return params
 
+    def _get_agg_state(self, element):
+        agg_fn = self._get_aggregator(element, self.p.aggregator)
+        sel_fn = getattr(self.p, "selector", None)
+        agg_state = AggState.get_state(agg_fn, sel_fn)
+
+        if DATASHADER_GE_0_15_1 and sel_fn and sel_fn.column is None:
+            sel_fn = type(sel_fn)(column=rd.SpecialColumn.RowIndex)
+        if AggState.has_by(agg_state) and self.p.element_type is Image:
+            self.p.element_type = ImageStack
+
+        return agg_fn, sel_fn, agg_state
+
+    def _apply_aggregate_with_agg_state(self, dfdata, cvs_fn, agg_fn, x, y, agg_state, sel_fn, params):
+        if AggState.has_sel(agg_state):
+            if isinstance(params["vdims"], (Dimension, str)):
+                params["vdims"] = [params["vdims"]]
+            sum_agg = ds.summary(**{str(params["vdims"][0]): agg_fn, "__index__": ds.where(sel_fn)})
+            agg = self._apply_datashader(dfdata, cvs_fn, sum_agg, x, y, agg_state)
+            agg.attrs["selector"] = (
+                str(sel_fn)
+                if DATASHADER_GE_0_18_1
+                else f"{type(sel_fn).__name__}({getattr(sel_fn, 'column', '...')!r})"
+            ).replace(repr(rd.SpecialColumn.RowIndex), "")
+        else:
+            agg = self._apply_datashader(dfdata, cvs_fn, agg_fn, x, y, agg_state)
+
+        return agg
+
+    def _apply_where_summary(self, dfdata, x_name, y_name, agg_fn, agg, agg_state):
+        is_where_index = DATASHADER_GE_0_15_1 and isinstance(agg_fn, ds.where) and isinstance(agg_fn.column, rd.SpecialColumn)
+        is_summary_index = AggState.has_sel(agg_state)
+        if is_where_index or is_summary_index:
+            if is_where_index:
+                index = agg.data
+                agg = agg.to_dataset(name="__index__")
+            else:  # summary index
+                index = agg["__index__"].data
+                if agg_state == AggState.AGG_SEL_BY:
+                    main_dim = next(k for k in agg if k != "__index__")
+                    # Taking values from the main dimension expanding it to
+                    # a new dataset
+                    agg = agg[main_dim].to_dataset(dim=list(agg.sizes)[2])
+                    agg["__index__"] = ((y_name, x_name), index)
+
+            neg1 = index == -1
+            agg.attrs["selector_columns"] = sel_cols = ["__index__"]
+            for col in dfdata.columns:
+                if col in agg.coords:
+                    continue
+                val = dfdata[col].values[index]
+                if dtype_kind(val) == 'f':
+                    val[neg1] = np.nan
+                elif isinstance(val.dtype, pd.CategoricalDtype):
+                    val = val.to_numpy()
+                    val[neg1] = "-"
+                elif dtype_kind(val) == "O":
+                    val[neg1] = "-"
+                elif dtype_kind(val) == "M":
+                    val[neg1] = np.datetime64("NaT")
+                else:
+                    val = val.astype(np.float64)
+                    val[neg1] = np.nan
+                agg[col] = ((y_name, x_name), val)
+                sel_cols.append(col)
+
+        if agg_state == AggState.AGG_BY:
+            col = agg_fn.column
+            if '' in agg.coords[col]:
+                agg = agg.drop_sel(**{col: ''})
+
+        return agg
 
 
 class LineAggregationOperation(AggregationOperation):
@@ -244,26 +334,6 @@ class LineAggregationOperation(AggregationOperation):
         line_width of 1 pixel but with a proportionate reduction in
         the strength of each pixel, approximating the visual
         appearance of a subpixel line width.""")
-
-
-
-class AggState(enum.Enum):
-    AGG_ONLY = 0  # Only aggregator
-    AGG_BY = 1  # Aggregator where the aggregator is ds.by
-    AGG_SEL = 2  # Selector and aggregator
-    AGG_SEL_BY = 3  # Selector and aggregator, where the aggregator is ds.by
-
-    def get_state(agg_fn, sel_fn):
-        if isinstance(agg_fn, ds.by):
-            return AggState.AGG_SEL_BY if sel_fn else AggState.AGG_BY
-        else:
-            return AggState.AGG_SEL if sel_fn else AggState.AGG_ONLY
-
-    def has_sel(state):
-        return state in (AggState.AGG_SEL, AggState.AGG_SEL_BY)
-
-    def has_by(state):
-        return state in (AggState.AGG_BY, AggState.AGG_SEL_BY)
 
 
 class aggregate(LineAggregationOperation):
@@ -381,20 +451,12 @@ class aggregate(LineAggregationOperation):
             df[d.name] = cast_array_to_int64(vals)
         return x, y, Dataset(df, kdims=kdims, vdims=vdims), glyph
 
-
     def _process(self, element, key=None):
-        agg_fn = self._get_aggregator(element, self.p.aggregator)
-        sel_fn = getattr(self.p, "selector", None)
+        agg_fn, sel_fn, agg_state = self._get_agg_state(element)
         if hasattr(agg_fn, 'cat_column'):
             category = agg_fn.cat_column
         else:
             category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
-        if DATASHADER_GE_0_15_1 and sel_fn and sel_fn.column is None:
-            sel_fn = type(sel_fn)(column=rd.SpecialColumn.RowIndex)
-        agg_state = AggState.get_state(agg_fn, sel_fn)
-
-        if AggState.has_by(agg_state) and self.p.element_type is Image:
-            self.p.element_type = ImageStack
 
         if overlay_aggregate.applies(element, agg_fn, line_width=self.p.line_width, sel_fn=sel_fn):
             params = dict(
@@ -426,25 +488,9 @@ class aggregate(LineAggregationOperation):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
-        agg_kwargs = {}
-        if self.p.line_width and glyph == 'line' and DATASHADER_GE_0_14_0:
-            agg_kwargs['line_width'] = self.p.line_width
-
         dfdata = PandasInterface.as_dframe(data)
         cvs_fn = getattr(cvs, glyph)
-
-        if AggState.has_sel(agg_state):
-            if isinstance(params["vdims"], (Dimension, str)):
-                params["vdims"] = [params["vdims"]]
-            sum_agg = ds.summary(**{str(params["vdims"][0]): agg_fn, "__index__": ds.where(sel_fn)})
-            agg = self._apply_datashader(dfdata, cvs_fn, sum_agg, agg_kwargs, x, y, agg_state)
-            agg.attrs["selector"] = (
-                str(sel_fn)
-                if DATASHADER_GE_0_18_1
-                else f"{type(sel_fn).__name__}({getattr(sel_fn, 'column', '...')!r})"
-            ).replace(repr(rd.SpecialColumn.RowIndex), "")
-        else:
-            agg = self._apply_datashader(dfdata, cvs_fn, agg_fn, agg_kwargs, x, y, agg_state)
+        agg = self._apply_aggregate_with_agg_state(dfdata, cvs_fn, agg_fn, x, y, agg_state, sel_fn, params)
 
         if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
@@ -459,7 +505,11 @@ class aggregate(LineAggregationOperation):
             params['vdims'] = [d for d in agg.data_vars if d not in agg.attrs["selector_columns"]]
         return self.p.element_type(agg, **params)
 
-    def _apply_datashader(self, dfdata, cvs_fn, agg_fn, agg_kwargs, x, y, agg_state: AggState):
+    def _apply_datashader(self, dfdata, cvs_fn, agg_fn, x, y, agg_state: AggState):
+        agg_kwargs = {}
+        if cvs_fn.__name__ == "line" and DATASHADER_GE_0_14_0:
+            agg_kwargs['line_width'] = self.p.line_width
+
         # Suppress numpy warning emitted by dask:
         # https://github.com/dask/dask/issues/8439
         with warnings.catch_warnings():
@@ -468,49 +518,8 @@ class aggregate(LineAggregationOperation):
                 category=FutureWarning
             )
             agg = cvs_fn(dfdata, x.name, y.name, agg_fn, **agg_kwargs)
+        return self._apply_where_summary(dfdata, x.name, y.name, agg_fn, agg, agg_state)
 
-        is_where_index = DATASHADER_GE_0_15_1 and isinstance(agg_fn, ds.where) and isinstance(agg_fn.column, rd.SpecialColumn)
-        is_summary_index = AggState.has_sel(agg_state)
-        if is_where_index or is_summary_index:
-            if is_where_index:
-                index = agg.data
-                agg = agg.to_dataset(name="__index__")
-            else:  # summary index
-                index = agg["__index__"].data
-                if agg_state == AggState.AGG_SEL_BY:
-                    main_dim = next(k for k in agg if k != "__index__")
-                    # Taking values from the main dimension expanding it to
-                    # a new dataset
-                    agg = agg[main_dim].to_dataset(dim=list(agg.sizes)[2])
-                    agg["__index__"] = ((y.name, x.name), index)
-
-            neg1 = index == -1
-            agg.attrs["selector_columns"] = sel_cols = ["__index__"]
-            for col in dfdata.columns:
-                if col in agg.coords:
-                    continue
-                val = dfdata[col].values[index]
-                if dtype_kind(val) == 'f':
-                    val[neg1] = np.nan
-                elif isinstance(val.dtype, pd.CategoricalDtype):
-                    val = val.to_numpy()
-                    val[neg1] = "-"
-                elif dtype_kind(val) == "O":
-                    val[neg1] = "-"
-                elif dtype_kind(val) == "M":
-                    val[neg1] = np.datetime64("NaT")
-                else:
-                    val = val.astype(np.float64)
-                    val[neg1] = np.nan
-                agg[col] = ((y.name, x.name), val)
-                sel_cols.append(col)
-
-        if agg_state == AggState.AGG_BY:
-            col = agg_fn.column
-            if '' in agg.coords[col]:
-                agg = agg.drop_sel(**{col: ''})
-
-        return agg
 
 class curve_aggregate(aggregate):
     """Optimized aggregation for Curve objects by setting the default
@@ -778,8 +787,16 @@ class geom_aggregate(AggregationOperation):
     def _aggregate(self, cvs, df, x0, y0, x1, y1, agg):
         raise NotImplementedError
 
+    def _apply_datashader(self, df, cvs, agg_fn, x, y, agg_state: AggState):
+        (x0, x1), (y0, y1) = x, y
+        agg = self._aggregate(cvs, df, x0, y0, x1, y1, agg_fn)
+        if isinstance(agg, xr.DataArray):
+            agg = agg.transpose('x', 'y', ...)
+        x_name, y_name = list(agg.dims)[:2]
+        return self._apply_where_summary(df, x_name, y_name, agg_fn, agg, agg_state)
+
     def _process(self, element, key=None):
-        agg_fn = self._get_aggregator(element, self.p.aggregator)
+        agg_fn, sel_fn, agg_state = self._get_agg_state(element)
         x0d, y0d, x1d, y1d = element.kdims
         info = self._get_sampling(element, [x0d, x1d], [y0d, y1d], ndim=1)
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
@@ -806,9 +823,18 @@ class geom_aggregate(AggregationOperation):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
-        agg = self._aggregate(cvs, df, x0d.name, y0d.name, x1d.name, y1d.name, agg_fn)
+        agg = self._apply_aggregate_with_agg_state(
+            df,
+            cvs,
+            agg_fn,
+            (x0d.name, x1d.name),
+            (y0d.name, y1d.name),
+            agg_state,
+            sel_fn,
+            params
+        )
 
-        xdim, ydim = list(agg.dims)[:2][::-1]
+        xdim, ydim = list(agg.dims)[:2]
         if xtype == "datetime":
             agg[xdim] = agg[xdim].astype('datetime64[ns]')
         if ytype == "datetime":
@@ -816,15 +842,11 @@ class geom_aggregate(AggregationOperation):
 
         params['kdims'] = [xdim, ydim]
 
-        if agg.ndim == 2:
-            # Replacing x and y coordinates to avoid numerical precision issues
-            return self.p.element_type(agg, **params)
-        else:
-            layers = {}
-            for c in agg.coords[agg_fn.column].data:
-                cagg = agg.sel(**{agg_fn.column: c})
-                layers[c] = self.p.element_type(cagg, **params)
-            return NdOverlay(layers, kdims=[element.get_dimension(agg_fn.column)])
+        if agg_state == AggState.AGG_BY:
+            params['vdims'] = list(map(str, agg.coords[agg_fn.column].data))
+        elif agg_state == AggState.AGG_SEL_BY:
+            params['vdims'] = [d for d in agg.data_vars if d not in agg.attrs["selector_columns"]]
+        return self.p.element_type(agg, **params)
 
 
 class segments_aggregate(geom_aggregate, LineAggregationOperation):
