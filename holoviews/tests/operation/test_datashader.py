@@ -512,9 +512,13 @@ class DatashaderAggregateTests(ComparisonTestCase):
             [0, 1, 1, 1],
             [0, 0, 0, 0]
         ])
-        expected1 = Image((xs, ys, arr1), vdims=Dimension('cat Count', nodata=0))
-        expected2 = Image((xs, ys, arr2), vdims=Dimension('cat Count', nodata=0))
-        expected = NdOverlay({'A': expected1, 'B': expected2}, kdims=['cat'])
+        combined = np.stack([arr1.T, arr2.T], axis=2).astype(np.uint32)
+        xrda = xr.DataArray(
+            combined,
+            coords={'x': xs, 'y': ys, 'cat': ['A', 'B']},
+            dims=['x', 'y', 'cat']
+        )
+        expected = ImageStack(xrda, kdims=['x', 'y'], vdims=['A', 'B'])
         self.assertEqual(agg, expected)
 
     def test_rectangles_aggregate_sum(self):
