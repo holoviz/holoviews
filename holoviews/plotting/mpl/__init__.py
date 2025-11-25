@@ -1,4 +1,5 @@
 import os
+import warnings
 from contextlib import suppress
 
 from colorcet import kbc, register_cmap
@@ -28,6 +29,9 @@ from .sankey import *
 from .stats import *
 from .tabular import *
 from .util import MPL_VERSION
+
+# Suppress RuntimeWarning from matplotlib when using negative values for scatter sizes
+warnings.filterwarnings('ignore', 'invalid value encountered in sqrt', RuntimeWarning, 'matplotlib.collections')
 
 with suppress(ImportError):
     from pandas.plotting import register_matplotlib_converters
