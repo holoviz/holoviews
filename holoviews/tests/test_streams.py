@@ -17,7 +17,7 @@ from holoviews.testing import assert_data_equal, assert_dict_equal, assert_eleme
 from holoviews.util import Dynamic, extension
 from holoviews.util.transform import dim
 
-from .utils import LoggingComparisonTestCase
+from .utils import LoggingComparison
 
 PARAM_GE_2_0_0 = PARAM_VERSION >= (2, 0, 0)
 
@@ -168,10 +168,9 @@ class TestPointerStreams:
             position.y = 5
 
 
-class TestParamsStream(LoggingComparisonTestCase):
+class TestParamsStream(LoggingComparison):
 
     def setup_method(self):
-        super().setup_method()
         class Inner(param.Parameterized):
 
             x = param.Number(default = 0)
@@ -335,10 +334,9 @@ class TestParamsStream(LoggingComparisonTestCase):
 
 
 
-class TestParamRefsStream(LoggingComparisonTestCase):
+class TestParamRefsStream(LoggingComparison):
 
     def setup_method(self):
-        super().setup_method()
         class Inner(param.Parameterized):
 
             x = param.Number(default = 0)

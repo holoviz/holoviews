@@ -11,7 +11,7 @@ from holoviews.util import Options, OutputSettings, opts, output
 
 BACKENDS = ['matplotlib', 'bokeh']
 
-from ..utils import LoggingComparisonTestCase
+from ..utils import LoggingComparison
 
 try:
     import notebook
@@ -72,7 +72,7 @@ class TestOutputUtil:
         assert output("fig='svg'",3) == 3
 
 
-class TestOptsUtil(LoggingComparisonTestCase):
+class TestOptsUtil(LoggingComparison):
     """
     Mirrors the magic tests in TestOptsMagic
     """
@@ -84,12 +84,10 @@ class TestOptsUtil(LoggingComparisonTestCase):
         Store.current_backend = 'matplotlib'
         self.store_copy = OptionTree(sorted(Store.options().items()),
                                      groups=Options._option_groups)
-        super().setup_method()
 
     def teardown_method(self):
         Store.current_backend = self.backend
         Store.options(val=self.store_copy)
-        super().teardown_method()
 
     def test_opts_builder_repr(self):
         magic= "Bivariate [bandwidth=0.5] (cmap='jet') Points [logx=True] (size=2)"
