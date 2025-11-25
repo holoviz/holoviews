@@ -893,10 +893,8 @@ def isfinite(val):
     """
     is_dask = is_dask_array(val)
     if not np.isscalar(val) and not is_dask:
-        if isinstance(val, np.ma.core.MaskedArray):
-            return ~val.mask & isfinite(val.data)
-        elif isinstance(val, masked_types):
-            return ~val.isna() & isfinite(val._data)
+        if isinstance(val, masked_types):
+            return ~val._mask & isfinite(val._data)
         val = asarray(val, strict=False)
 
     isnan = pd.isna if pd else np.isnan
@@ -1131,8 +1129,8 @@ def find_contiguous_subarray(sub_array, full_array):
     is a contiguous subarray of `full_array`. This expect that there is no
     duplicates in any of the arrays.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     sub_array: array_like
        The array that may or may not be a contiguous subset of `full_array`.
     full_array: array_like

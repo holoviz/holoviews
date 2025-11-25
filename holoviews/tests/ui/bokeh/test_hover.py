@@ -420,7 +420,7 @@ def test_hover_tooltips_selector_update_plot(serve_panel):
 
     # Change the selector to 'option2'
     scb.value = "option2"
-    page.wait_for_timeout(1000)
+    page.wait_for_timeout(2000)
 
     # Move the mouse again to trigger updated tooltip
     page.mouse.move(bbox["x"] + bbox["width"] / 4, bbox["y"] + bbox["height"] / 4)

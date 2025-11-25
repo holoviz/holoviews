@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from holoviews.element import Bars
+from holoviews.plotting.plotly.util import PLOTLY_VERSION
 
 from .test_plot import TestPlotlyPlot
 
@@ -109,7 +110,8 @@ class TestBarsPlot(TestPlotlyPlot):
         y = np.random.rand(10)
         bars = Bars((pd.date_range("1/1/2000", periods=10), y))
         plot = self._get_plot_state(bars)
-        np.testing.assert_equal(plot['data'][0]['x'], pd.date_range("1/1/2000", periods=10).values.astype(float))
+        dtype = "datetime64[us]" if PLOTLY_VERSION >= (6, 5, 0) else float
+        np.testing.assert_equal(plot['data'][0]['x'], pd.date_range("1/1/2000", periods=10).values.astype(dtype))
         np.testing.assert_equal(plot['data'][0]['y'], y)
 
     def test_bars_not_continuous_data_list(self):
