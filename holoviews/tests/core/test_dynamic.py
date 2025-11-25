@@ -1208,7 +1208,7 @@ class TestDynamicCollate(LoggingComparison):
         err = 'Collated DynamicMaps must return GridSpace with consistent number of items.'
         with pytest.raises(ValueError, match=err):
             dmap1[4]
-        self.log_handler.assertContains('WARNING', err)
+        self.log_handler.assert_contains('WARNING', err)
 
     def test_dynamic_collate_gridspace_with_changing_item_types_raises(self):
         def callback(i):
@@ -1221,4 +1221,4 @@ class TestDynamicCollate(LoggingComparison):
                'consistently return the same number of items of the same type.')
         with pytest.raises(ValueError, match=err):
             dmap1[3]
-        self.log_handler.assertContains('WARNING', err)
+        self.log_handler.assert_contains('WARNING', err)

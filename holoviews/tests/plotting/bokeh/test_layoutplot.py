@@ -331,8 +331,8 @@ class TestLayoutPlot(LoggingComparison, TestBokehPlot):
         layout = Curve(range(10)) + NdOverlay() + HoloMap() + HoloMap({1: Image(np.random.rand(10,10))})
         plot = bokeh_renderer.get_plot(layout)
         assert len(plot.subplots.values()) == 2
-        self.log_handler.assertContains('WARNING', 'skipping subplot')
-        self.log_handler.assertContains('WARNING', 'skipping subplot')
+        self.log_handler.assert_contains('WARNING', 'skipping subplot')
+        self.log_handler.assert_contains('WARNING', 'skipping subplot')
 
     def test_layout_set_toolbar_location(self):
         layout = (Curve([]) + Points([])).opts(toolbar='left')

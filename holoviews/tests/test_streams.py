@@ -229,7 +229,7 @@ class TestParamsStream(LoggingComparisonTestCase):
         params2 = Params(inner)
 
         Stream._process_streams([params1, params2])
-        self.log_handler.assertContains('WARNING', "['x', 'y']")
+        self.log_handler.assert_contains('WARNING', "['x', 'y']")
 
     def test_param_parameter_instance_separate_parameters(self):
         inner = self.inner()
@@ -245,7 +245,7 @@ class TestParamsStream(LoggingComparisonTestCase):
     def test_param_parameter_instance_overlapping_parameters(self):
         inner = self.inner()
         Stream._process_streams([inner.param.x, inner.param.x])
-        self.log_handler.assertContains('WARNING', "['x']")
+        self.log_handler.assert_contains('WARNING', "['x']")
 
     def test_param_stream_parameter_override(self):
         inner = self.inner(x=2)

@@ -25,8 +25,8 @@ class TestLayoutPlot(LoggingComparison, TestMPLPlot):
         layout = Curve(range(10)) + NdOverlay() + HoloMap() + HoloMap({1: Image(np.random.rand(10,10))})
         plot = mpl_renderer.get_plot(layout)
         assert len(plot.subplots.values()) == 2
-        self.log_handler.assertContains('WARNING', 'skipping subplot')
-        self.log_handler.assertContains('WARNING', 'skipping subplot')
+        self.log_handler.assert_contains('WARNING', 'skipping subplot')
+        self.log_handler.assert_contains('WARNING', 'skipping subplot')
 
     def test_layout_instantiate_subplots_transposed(self):
         layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +

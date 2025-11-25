@@ -123,7 +123,7 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
         assert isinstance(extra_y_ranges['B'], LogScale)
         #print(self.log_handler)
         substr = "Logarithmic axis range encountered value less than or equal to zero, please supply explicit lower bound to override default of 0.010."
-        self.log_handler.assertEndsWith('WARNING', substr)
+        self.log_handler.assert_endswith('WARNING', substr)
 
     # Testing invert_yaxis
 

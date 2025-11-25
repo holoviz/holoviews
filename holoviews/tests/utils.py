@@ -5,6 +5,8 @@ import sys
 import param
 import pytest
 
+from holoviews.util.warnings import deprecated
+
 cwd = os.path.abspath(os.path.split(__file__)[0])
 sys.path.insert(0, os.path.join(cwd, '..'))
 
@@ -51,6 +53,10 @@ class MockLoggingHandler(logging.Handler):
         return [str(el) for el in self.messages[level][-n:]]
 
     def assertEndsWith(self, level, substring):
+        deprecated("1.25.0", "assertEndsWith", "assert_endswith")
+        self.assert_endswith(level, substring)
+
+    def assert_endswith(self, level, substring):
         """
         Assert that the last line captured at the given level ends with
         a particular substring.
@@ -66,8 +72,11 @@ class MockLoggingHandler(logging.Handler):
         else:
             self.messages[level].pop(-1)
 
-
     def assertContains(self, level, substring):
+        deprecated("1.25.0", "assertEndsWith", "assert_endswith")
+        self.assert_contains(level, substring)
+
+    def assert_contains(self, level, substring):
         """
         Assert that the last line captured at the given level contains a
         particular substring.
@@ -92,6 +101,15 @@ class LoggingComparisonTestCase:
     tests independent. Testing can then be done via the
     self.log_handler.tail and self.log_handler.assertEndsWith methods.
     """
+
+    def __init_subclass__(self, *args, **kwargs):
+        deprecated(
+            "1.25.0",
+            "Inheariting from 'holoviews.tests.utils.LoggingComparisonTestCase'",
+            "holoviews.tests.utils.LoggingComparison",
+            repr_old=False,
+        )
+        super().__init_subclass__(*args, **kwargs)
 
     def setup_method(self):
         log = param.parameterized.get_logger()

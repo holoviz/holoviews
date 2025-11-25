@@ -103,7 +103,7 @@ class TestOverlayPlot(LoggingComparison, TestBokehPlot):
         overlay = Curve(range(10)) * NdOverlay()
         plot = bokeh_renderer.get_plot(overlay)
         assert len(plot.subplots) == 1
-        self.log_handler.assertContains('WARNING', 'is empty and will be skipped during plotting')
+        self.log_handler.assert_contains('WARNING', 'is empty and will be skipped during plotting')
 
     def test_overlay_show_frame_disabled(self):
         overlay = (Curve(range(10)) * Curve(range(10))).opts(show_frame=False)

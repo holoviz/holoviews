@@ -53,7 +53,7 @@ class TestImage(LoggingComparison):
         Image({'vals':vals, 'xs':xs, 'ys':ys}, ['xs','ys'], 'vals')
         substr = ('set a higher tolerance on hv.config.image_rtol or '
                   'the rtol parameter in the Image constructor.')
-        self.log_handler.assertEndsWith('WARNING', substr)
+        self.log_handler.assert_endswith('WARNING', substr)
 
     def test_image_rtol_constructor(self):
         vals = np.random.rand(20,20)

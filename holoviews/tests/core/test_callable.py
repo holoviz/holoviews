@@ -108,12 +108,12 @@ class TestSimpleCallableInvocation(LoggingComparison):
     def test_callable_lambda_extras(self):
         substr = "Ignoring extra positional argument"
         assert Callable(lambda x,y: x+y)(3,5,10) == 8
-        self.log_handler.assertContains('WARNING', substr)
+        self.log_handler.assert_contains('WARNING', substr)
 
     def test_callable_lambda_extras_kwargs(self):
         substr = "['x'] overridden by keywords"
         assert Callable(lambda x,y: x+y)(3,5,x=10) == 15
-        self.log_handler.assertEndsWith('WARNING', substr)
+        self.log_handler.assert_endswith('WARNING', substr)
 
     def test_callable_partial(self):
         assert Callable(partial(lambda x,y: x+y,x=4))(5) == 9

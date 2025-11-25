@@ -281,7 +281,7 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
             colorbar=True, backend_opts={"colorbar": "Testing"},
         )
         mpl_renderer.get_plot(heat_map)
-        self.log_handler.assertContains(
+        self.log_handler.assert_contains(
             "WARNING", "Custom option 'colorbar' expects at least two"
         )
 
@@ -290,7 +290,7 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
             colorbar=True, backend_opts={"cb.title": "Testing"},
         )
         mpl_renderer.get_plot(heat_map)
-        self.log_handler.assertContains(
+        self.log_handler.assert_contains(
             "WARNING", "cb model could not be"
         )
 
@@ -304,7 +304,7 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
             }
         )
         mpl_renderer.get_plot(curve)
-        self.log_handler.assertContains(
+        self.log_handler.assert_contains(
             "WARNING", "valid method on the specified model"
         )
 

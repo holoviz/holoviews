@@ -99,7 +99,7 @@ class TestAreaPlot(LoggingComparison, TestMPLPlot):
         assert x_range[1] == 3.2
         assert y_range[0] == 0.01
         assert y_range[1] == 3.3483695221017129
-        self.log_handler.assertContains('WARNING', 'Logarithmic axis range encountered value less than')
+        self.log_handler.assert_contains('WARNING', 'Logarithmic axis range encountered value less than')
 
     def test_area_stack_vdims(self):
         df = pd.DataFrame({'x': [1, 2, 3], 'y_1': [1, 2, 3], 'y_2': [6, 4, 2], 'y_3': [8, 1, 2]})

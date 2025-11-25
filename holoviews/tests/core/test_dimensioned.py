@@ -91,7 +91,7 @@ class TestDimensioned_options(CustomBackendTestCase):
         substr = ("Option 'plot_custom2' for ExampleElement type not valid for "
                   "selected backend ('backend_1'). Option only applies to "
                   "following backends: ['backend_2']")
-        self.log_handler.assertEndsWith('WARNING', substr)
+        self.log_handler.assert_endswith('WARNING', substr)
 
     def test_apply_options_explicit_backend_style_invalid(self):
         err = ("Unexpected option 'style_opt3' for ExampleElement type when "

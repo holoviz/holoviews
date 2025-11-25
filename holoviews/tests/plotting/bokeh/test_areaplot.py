@@ -139,7 +139,7 @@ class TestAreaPlot(LoggingComparison, TestBokehPlot):
         assert x_range.end == 3.2
         assert y_range.start == 0.01
         assert y_range.end == 3.3483695221017129
-        self.log_handler.assertContains('WARNING', 'Logarithmic axis range encountered value less than')
+        self.log_handler.assert_contains('WARNING', 'Logarithmic axis range encountered value less than')
 
     def test_area_legend(self):
         python = np.array([2, 3, 7, 5, 26, 221, 44, 233, 254, 265, 266, 267, 120, 111])

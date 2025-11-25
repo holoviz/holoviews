@@ -408,7 +408,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
             "(noleap) to a standard calendar for plotting. This may "
             "lead to subtle errors in formatting dates, for accurate "
             "tick formatting switch to the matplotlib backend.")
-        self.log_handler.assertEndsWith('WARNING', substr)
+        self.log_handler.assert_endswith('WARNING', substr)
 
     def test_active_tools_drag(self):
         curve = Curve([1, 2, 3]).opts(active_tools=['box_zoom'])
@@ -483,7 +483,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.frame_height == 200
         assert plot.state.frame_width == 400
         assert plot.state.aspect_ratio is None
-        self.log_handler.assertContains('WARNING', "uses those values as frame_width/frame_height instead")
+        self.log_handler.assert_contains('WARNING', "uses those values as frame_width/frame_height instead")
 
     def test_element_aspect_height(self):
         curve = Curve([1, 2, 3]).opts(aspect=2, height=400)
@@ -493,7 +493,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 800
         assert plot.state.aspect_ratio is None
-        self.log_handler.assertContains('WARNING', "uses those values as frame_width/frame_height instead")
+        self.log_handler.assert_contains('WARNING', "uses those values as frame_width/frame_height instead")
 
     def test_element_aspect_width_height(self):
         curve = Curve([1, 2, 3]).opts(aspect=2, height=400, width=400)
@@ -503,7 +503,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.frame_height is None
         assert plot.state.frame_width is None
         assert plot.state.aspect_ratio is None
-        self.log_handler.assertContains('WARNING', "aspect value was ignored")
+        self.log_handler.assert_contains('WARNING', "aspect value was ignored")
 
     def test_element_aspect_frame_width(self):
         curve = Curve([1, 2, 3]).opts(aspect=2, frame_width=400)
@@ -531,7 +531,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 400
         assert plot.state.aspect_ratio is None
-        self.log_handler.assertContains('WARNING', "aspect value was ignored")
+        self.log_handler.assert_contains('WARNING', "aspect value was ignored")
 
     def test_element_data_aspect(self):
         curve = Curve([0, 0.5, 1, 1.5]).opts(data_aspect=1.5)
@@ -550,7 +550,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 400
         assert plot.state.aspect_scale == 2
-        self.log_handler.assertContains('WARNING', "uses those values as frame_width/frame_height instead")
+        self.log_handler.assert_contains('WARNING', "uses those values as frame_width/frame_height instead")
 
     def test_element_data_aspect_height(self):
         curve = Curve([0, 0.5, 1, 1.5]).opts(data_aspect=2, height=400)
@@ -560,7 +560,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 400
         assert plot.state.aspect_scale == 2
-        self.log_handler.assertContains('WARNING', "uses those values as frame_width/frame_height instead")
+        self.log_handler.assert_contains('WARNING', "uses those values as frame_width/frame_height instead")
 
     def test_element_data_aspect_width_height(self):
         curve = Curve([0, 2, 3]).opts(data_aspect=2, height=400, width=400)
@@ -662,31 +662,31 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
     def test_element_aspect_width_responsive(self):
         curve = Curve([1, 2, 3]).opts(aspect=2, width=400, responsive=True)
         plot = bokeh_renderer.get_plot(curve)
-        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
         assert plot.state.height is None
         assert plot.state.width is None
         assert plot.state.frame_height == 200
         assert plot.state.frame_width == 400
         assert plot.state.sizing_mode == 'fixed'
-        self.log_handler.assertContains('WARNING', "uses those values as frame_width/frame_height instead")
+        self.log_handler.assert_contains('WARNING', "uses those values as frame_width/frame_height instead")
 
     def test_element_aspect_height_responsive(self):
         curve = Curve([1, 2, 3]).opts(aspect=2, height=400, responsive=True)
         plot = bokeh_renderer.get_plot(curve)
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 800
-        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
         assert plot.state.height is None
         assert plot.state.width is None
         assert plot.state.sizing_mode == 'fixed'
-        self.log_handler.assertContains('WARNING', "uses those values as frame_width/frame_height instead")
+        self.log_handler.assert_contains('WARNING', "uses those values as frame_width/frame_height instead")
 
     def test_element_width_height_responsive(self):
         curve = Curve([1, 2, 3]).opts(height=400, width=400, responsive=True)
         plot = bokeh_renderer.get_plot(curve)
         assert plot.state.height == 400
         assert plot.state.width == 400
-        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
         assert plot.state.frame_height is None
         assert plot.state.frame_width is None
         assert plot.state.sizing_mode == 'fixed'
@@ -694,7 +694,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
     def test_element_aspect_frame_width_responsive(self):
         curve = Curve([1, 2, 3]).opts(aspect=2, frame_width=400, responsive=True)
         plot = bokeh_renderer.get_plot(curve)
-        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
         assert plot.state.height is None
         assert plot.state.width is None
         assert plot.state.frame_height == 200
@@ -707,7 +707,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 800
         assert plot.state.sizing_mode == 'fixed'
-        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
 
     def test_element_frame_width_frame_height_responsive(self):
         curve = Curve([1, 2, 3]).opts(frame_height=400, frame_width=400, responsive=True)
@@ -715,7 +715,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 400
         assert plot.state.sizing_mode == 'fixed'
-        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
 
     def test_element_data_aspect_responsive(self):
         curve = Curve([0, 2]).opts(data_aspect=1, responsive=True)
@@ -743,8 +743,8 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 400
         assert plot.state.sizing_mode == 'fixed'
-        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
-        self.log_handler.assertContains('WARNING', "uses those values as frame_width/frame_height instead")
+        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
+        self.log_handler.assert_contains('WARNING', "uses those values as frame_width/frame_height instead")
 
     def test_element_data_aspect_height_responsive(self):
         curve = Curve([0, 0.5, 1, 1.5]).opts(data_aspect=2, height=400, responsive=True)
@@ -752,8 +752,8 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 400
         assert plot.state.sizing_mode == 'fixed'
-        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
-        self.log_handler.assertContains('WARNING', "uses those values as frame_width/frame_height instead")
+        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
+        self.log_handler.assert_contains('WARNING', "uses those values as frame_width/frame_height instead")
 
     def test_element_data_aspect_frame_width_responsive(self):
         curve = Curve([1, 2, 3]).opts(data_aspect=2, frame_width=400, responsive=True)
@@ -761,7 +761,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.frame_height == 800
         assert plot.state.frame_width == 400
         assert plot.state.sizing_mode == 'fixed'
-        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
 
     def test_element_data_aspect_frame_height_responsive(self):
         curve = Curve([1, 2, 3]).opts(data_aspect=2, frame_height=400, responsive=True)
@@ -769,7 +769,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 200
         assert plot.state.sizing_mode == 'fixed'
-        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
 
     #################################################################
     # Custom opts tests
@@ -810,7 +810,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
             colorbar=True, backend_opts={"colorbar": "Testing"},
         )
         bokeh_renderer.get_plot(heat_map)
-        self.log_handler.assertContains(
+        self.log_handler.assert_contains(
             "WARNING", "Custom option 'colorbar' expects at least two"
         )
 
@@ -819,7 +819,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
             colorbar=True, backend_opts={"cb.title": "Testing"},
         )
         bokeh_renderer.get_plot(heat_map)
-        self.log_handler.assertContains(
+        self.log_handler.assert_contains(
             "WARNING", "cb model could not be"
         )
 
@@ -1018,7 +1018,7 @@ class TestColorbarPlot(LoggingComparison, TestBokehPlot):
         cmapper = plot.handles['color_mapper']
         assert cmapper.low == 0
         assert cmapper.high == 3
-        self.log_handler.assertContains('WARNING', "Log color mapper lower bound <= 0")
+        self.log_handler.assert_contains('WARNING', "Log color mapper lower bound <= 0")
 
     def test_colormapper_color_levels(self):
         cmap = process_cmap('viridis', provider='bokeh')
