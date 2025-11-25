@@ -1,11 +1,12 @@
 import base64
 import os
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from io import BytesIO
 from itertools import chain
 from tempfile import NamedTemporaryFile
 
 import matplotlib as mpl
+import numpy as np
 import param
 from matplotlib import pyplot as plt
 from param.parameterized import bothmethod
@@ -164,12 +165,11 @@ class MPLRenderer(Renderer):
             kw.update(kwargs)
 
             # Attempts to precompute the tight bounding box
-            try:
-                kw = self._compute_bbox(fig, kw)
-            except Exception:
-                pass
-            bytes_io = BytesIO()
-            fig.canvas.print_figure(bytes_io, **kw)
+            with np.errstate(invalid="ignore"):
+                with suppress(Exception):
+                    kw = self._compute_bbox(fig, kw)
+                bytes_io = BytesIO()
+                fig.canvas.print_figure(bytes_io, **kw)
             data = bytes_io.getvalue()
 
         if as_script:
