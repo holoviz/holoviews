@@ -2,21 +2,16 @@ import numpy as np
 import pandas as pd
 import pytest
 
-try:
-    import dask.dataframe as dd
-except ImportError:
-    dd = None
-
 from holoviews import Curve, Dataset, Dimension, Distribution, Scatter
 from holoviews.core import Apply, Redim
 from holoviews.operation import function, histogram
 from holoviews.testing import assert_element_equal
 
-try:
-    from holoviews.operation.datashader import datashade, dynspread, rasterize
-except ImportError:
-    dynspread = datashade = rasterize = None
+from ..utils import optional_dependencies
 
+ds, ds_skip = optional_dependencies("datashader")
+if ds:
+    from holoviews.operation.datashader import datashade, dynspread, rasterize
 
 
 class DatasetPropertyTestCase:
@@ -118,8 +113,7 @@ class ToTestCase(DatasetPropertyTestCase):
             assert_element_equal(curve.pipeline(curve.dataset), curve)
 
     def test_to_holomap_dask(self):
-        if dd is None:
-            pytest.skip("Dask required to test .to with dask dataframe.")
+        dd = pytest.importorskip("dask.dataframe")
         ddf = dd.from_pandas(self.df, npartitions=2)
         dds = Dataset(
             ddf,
@@ -706,12 +700,8 @@ class DistributionTestCase(DatasetPropertyTestCase):
         )
 
 
+@ds_skip
 class DatashaderTestCase(DatasetPropertyTestCase):
-
-    def setup_method(self):
-        if None in (rasterize, datashade, dynspread):
-            pytest.skip('Datashader could not be imported and cannot be tested.')
-        super().setup_method()
 
     def test_rasterize_curve(self):
         img = rasterize(
