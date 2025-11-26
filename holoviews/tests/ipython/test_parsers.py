@@ -6,15 +6,15 @@ import pytest
 from holoviews.core.options import Cycle, Options
 from holoviews.testing import assert_data_equal, assert_dict_equal
 
-try:
-    import pyparsing  # noqa: F401
-
-    from holoviews.util.parser import OptsSpec
-except ImportError:
-    pytest.skip("Required dependencies not satisfied for testing parsers", allow_module_level=True)
-
-
+from ..utils import optional_dependencies
 from .utils import IPythonCase
+
+pyparsing, _ = optional_dependencies("pyparsing")
+
+if pyparsing:
+    from holoviews.util.parser import OptsSpec
+else:
+    pytest.skip("Required dependencies not satisfied for testing parsers", allow_module_level=True)
 
 
 class OptsSpecPlotOptionsTests(IPythonCase):

@@ -10,13 +10,12 @@ from holoviews.selection import link_selections
 from holoviews.streams import SelectionXY
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 
-try:
+from .utils import optional_dependencies
+
+plotly, plotly_skip = optional_dependencies("plotly")
+ds, ds_skip = optional_dependencies("datashader")
+if ds:
     from holoviews.operation.datashader import datashade, dynspread
-except ImportError:
-    datashade = None
-
-ds_skip = pytest.mark.skipif(datashade is None, reason="Datashader not available")
-
 
 unselected_color = "#ff0000"
 box_region_color = linear_gradient(unselected_color, "#000000", 9)[3]
@@ -780,15 +779,12 @@ class TestLinkSelections:
 
 
 # Backend implementations
+@plotly_skip
 class TestLinkSelectionsPlotly(TestLinkSelections):
 
     __test__ = True
 
     def setup_method(self):
-        try:
-            import holoviews.plotting.plotly  # noqa: F401
-        except ImportError:
-            pytest.skip("Plotly required to test plotly backend")
         super().setup_method()
         self._backend = Store.current_backend
         Store.set_current_backend('plotly')
