@@ -121,7 +121,7 @@ class ServerHoverMixin(param.Parameterized):
 
         # Add a horizontal ruler and show the selector if available
         selector_columns = data.attrs["selector_columns"]
-        first_selector = next((i for i, dim in enumerate(dims) if dim in selector_columns), None)
+        first_selector = next((i for i, dim in enumerate(dims) if dim in selector_columns and dim != "__index__"), None)
         if first_selector:  # Don't show if first
             divider = [Div(style={
                 "border": "none",
