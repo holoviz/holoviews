@@ -319,6 +319,9 @@ class AggregationOperation(ResampleOperation2D):
 
         return agg
 
+    def _apply_datashader(self, dfdata, cvs_fn, agg_fn, x, y, agg_state: AggState):
+        raise NotImplementedError
+
 
 class LineAggregationOperation(AggregationOperation):
 
