@@ -105,7 +105,7 @@ class LoggingComparisonTestCase:
     def __init_subclass__(self, *args, **kwargs):
         deprecated(
             "1.25.0",
-            "Inheariting from 'holoviews.tests.utils.LoggingComparisonTestCase'",
+            "Inheriting from 'holoviews.tests.utils.LoggingComparisonTestCase'",
             "holoviews.tests.utils.LoggingComparison",
             repr_old=False,
         )

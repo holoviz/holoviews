@@ -80,7 +80,7 @@ class ComparisonInterface:
     def __init_subclass__(self, *args, **kwargs):
         deprecated(
             "1.25.0",
-            "Inheariting from 'holoviews.element.comparison.ComparisonInterface'",
+            "Inheriting from 'holoviews.element.comparison.ComparisonInterface'",
             "'holoviews.testing.assert_element_equal' to check HoloViews elements",
             repr_old=False,
             repr_new=False
