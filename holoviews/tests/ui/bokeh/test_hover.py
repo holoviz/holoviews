@@ -435,7 +435,12 @@ def test_hover_tooltips_selector_update_plot(serve_panel):
 
 @bokeh_3_8_0
 @pytest.mark.usefixtures("bokeh_backend")
-def test_hover_tooltips_rasterize_server_hover_filter(serve_hv, rng):
+@pytest.mark.parametrize(
+    "hover_tooltips",
+    [None, ["s"]],
+    ids=["default", "only_vars"]
+)
+def test_hover_tooltips_rasterize_server_hover_filter(serve_hv, rng, hover_tooltips):
     import datashader as ds
 
     from holoviews.operation.datashader import rasterize
@@ -458,7 +463,7 @@ def test_hover_tooltips_rasterize_server_hover_filter(serve_hv, rng):
         width=10,
         height=10,
         dynamic=False
-    ).opts(tools=["hover"], hooks=[watch_hook])
+    ).opts(tools=["hover"], hover_tooltips=hover_tooltips, hooks=[watch_hook])
 
     page = serve_hv(img)
     hv_plot = page.locator(".bk-events")
