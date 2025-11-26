@@ -164,9 +164,9 @@ class MPLRenderer(Renderer):
             )
             kw.update(kwargs)
 
-            # Attempts to precompute the tight bounding box
             with np.errstate(invalid="ignore"):
                 with suppress(Exception):
+                    # Attempts to precompute the tight bounding box
                     kw = self._compute_bbox(fig, kw)
                 bytes_io = BytesIO()
                 fig.canvas.print_figure(bytes_io, **kw)
