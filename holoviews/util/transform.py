@@ -267,7 +267,7 @@ class dim:
         self.ops = []
         self._ns = np.ndarray
         self.coerce = kwargs.get('coerce', True)
-        if isinstance(obj, str):
+        if isinstance(obj, (str, tuple)):
             self.dimension = Dimension(obj)
         elif isinstance(obj, Dimension):
             self.dimension = obj
@@ -786,9 +786,16 @@ class dim:
         elif isinstance(dimension, param.Parameter):
             data = getattr(dimension.owner, dimension.name)
             eldim = None
-        elif isinstance(dataset.data, (nw.LazyFrame, nw.DataFrame)):
-            data = nw.col(dimension.name)
-            eldim = None
+        elif dataset.interface.name == "NarwhalsInterface":
+            lookup = dimension if strict else dimension.name
+            eldim = dataset.get_dimension(lookup).name
+            if compute:
+                data = dataset.interface.values(
+                    dataset, lookup, expanded=expanded, flat=flat,
+                    compute=compute, keep_index=keep_index,
+                )
+            else:
+                data = nw.col(eldim)
         else:
             lookup = dimension if strict else dimension.name
             eldim = dataset.get_dimension(lookup).name

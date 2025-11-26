@@ -39,6 +39,7 @@ from holoviews.core.util import (
     unique_array,
     wrap_tuple_streams,
 )
+from holoviews.core.util.types import masked_types
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PointerXY
 
@@ -695,6 +696,15 @@ class TestNumericUtilities(ComparisonTestCase):
         dt64 = np.array([*dts, np.datetime64('NaT')])
         self.assertEqual(isfinite(dt64), np.array([True, True, True, False]))
 
+    def test_isfinite_masked_numpy(self):
+        masked = np.ma.core.MaskedArray([1, 2, 3], mask=[False, True, False])
+        assert isinstance(masked, masked_types)
+        assert list(isfinite(masked)) == [True, False, True]
+
+    def test_isfinite_masked_pandas(self):
+        masked = pd.array([1, None, 3], dtype="Int64")
+        assert isinstance(masked, masked_types)
+        assert list(isfinite(masked)) == [True, False, True]
 
 
 class TestComputeEdges(ComparisonTestCase):
@@ -818,7 +828,7 @@ class TestClosestMatch(ComparisonTestCase):
         self.assertEqual(closest_match(spec, specs), None)
 
 
-def test_seach_indices_dtype_object():
+def test_search_indices_dtype_object():
     values = np.array(["c0", "c0", np.nan], dtype=object)
     source = np.array(["c0", np.nan], dtype=object)
     search_indices(values, source)

@@ -71,10 +71,10 @@ class PathComparisonTest(ComparisonTestCase):
             if not str(e).startswith("Bounds not almost equal to 6 decimals"):
                 raise self.failureException("Bounds mismatch error not raised.")
 
-    def test_boxs_equal(self):
+    def test_boxes_equal(self):
         self.assertEqual(self.box1, self.box1)
 
-    def test_boxs_unequal(self):
+    def test_boxes_unequal(self):
         try:
             self.assertEqual(self.box1, self.box2)
         except AssertionError as e:

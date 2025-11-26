@@ -1376,7 +1376,7 @@ class categorical_legend(Operation):
         if not isinstance(agg, (ds.count_cat, ds.by)):
             return
         column = agg.column
-        if hasattr(hvds.data, 'dtypes'):
+        if hasattr(hvds.data, 'dtypes') and hasattr(hvds.data.dtypes[column], 'categories'):
             try:
                 cats = list(hvds.data.dtypes[column].categories)
             except TypeError:

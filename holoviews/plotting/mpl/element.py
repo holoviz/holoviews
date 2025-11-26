@@ -660,7 +660,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if 'norm' in plot_kwargs: # vmin/vmax should now be exclusively in norm
             plot_kwargs.pop('vmin', None)
             plot_kwargs.pop('vmax', None)
-        with warnings.catch_warnings():
+        with (warnings.catch_warnings(), np.errstate(invalid="ignore")):
             # scatter have a default cmap and with an empty array will emit this warning
             warnings.filterwarnings('ignore', "No data for colormapping provided via 'c'")
             artist = plot_fn(*plot_args, **plot_kwargs)
@@ -679,18 +679,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
 
     def _apply_transforms(self, element, ranges, style):
-        # Temporary workaround: raise NotImplementedError for hv.dim() and hv.Dimension()
-        # color options in Path plots
-        # See https://github.com/holoviz/holoviews/pull/6665 for more context
-        if isinstance(element, Path):
-            color_style = style.get('color')
-            if isinstance(color_style, (dim, Dimension)):
-                raise NotImplementedError(
-                    "Using hv.dim() or hv.Dimension() objects for color mapping in Path plots "
-                    "is currently not supported in the matplotlib backend. "
-                    "Please use a string column name instead (e.g., color='color_column')."
-                )
-
         new_style = dict(style)
         for k, v in style.items():
             if isinstance(v, (Dimension, str)):

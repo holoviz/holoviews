@@ -823,8 +823,13 @@ class histogram(Operation):
                 raise ValueError('Cannot use histogram groupby on non-Dataset Element')
             grouped = element.groupby(self.p.groupby, group_type=Dataset, container_type=NdOverlay)
             if self.p.groupby_range == 'shared' and not self.p.bin_range:
-                _, data = self._get_dim_and_data(element)
-                self.p.bin_range = (data.min(), data.max())
+                dim, data = self._get_dim_and_data(element)
+                if isinstance(data, nw.LazyFrame):
+                    col = nw.col(str(dim))
+                    summary = data.select(min=col.min(), max=col.max()).collect()
+                    self.p.bin_range = (summary["min"].item(), summary["max"].item())
+                else:
+                    self.p.bin_range = (data.min(), data.max())
             self.p.groupby = None
             return grouped.map(partial(self._process, groupby=True), Dataset)
 
@@ -865,7 +870,7 @@ class histogram(Operation):
         elif isinstance(data, (nw.DataFrame, nw.LazyFrame, nw.Series)):
             if isinstance(data, nw.Series):
                 data = data.to_frame()
-            data = data.filter(nw.all().is_finite())
+            data = data.filter(nw.all().is_finite()).filter(~nw.all().is_null())
             if self.p.nonzero:
                 data = data.filter(nw.all() != 0)
             no_data = False if isinstance(data, nw.LazyFrame) else not len(data)

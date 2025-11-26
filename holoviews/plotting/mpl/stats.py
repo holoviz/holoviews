@@ -52,7 +52,7 @@ class BoxPlot(MultiDistributionMixin, ChartPlot):
 
     """
 
-    style_opts = ['notch', 'sym', 'whis', 'bootstrap',
+    style_opts = ['notch', 'sym', 'whis', 'bootstrap',  # typos: ignore
                   'conf_intervals', 'widths', 'showmeans',
                   'show_caps', 'showfliers', 'boxprops',
                   'whiskerprops', 'capprops', 'flierprops',

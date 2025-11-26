@@ -1,7 +1,7 @@
 import inspect
 import os
+import sys
 import warnings
-from contextlib import suppress
 
 import param
 from packaging.version import Version
@@ -40,9 +40,8 @@ def find_stack_level():
         os.path.dirname(pyviz_comms.__file__),
     )
 
-    with suppress(ImportError):
-        import IPython.core
-        ignore_paths = (*ignore_paths, os.path.dirname(IPython.core.__file__))
+    if ipc := sys.modules.get("IPython.core"):
+        ignore_paths = (*ignore_paths, os.path.dirname(ipc.__file__))
 
     frame = inspect.currentframe()
     try:
