@@ -322,6 +322,12 @@ class AggregationOperation(ResampleOperation2D):
     def _apply_datashader(self, dfdata, cvs_fn, agg_fn, x, y, agg_state: AggState):
         raise NotImplementedError
 
+    def _get_category_column_name(self, agg_fn) -> str | None:
+        if hasattr(agg_fn, 'cat_column'):
+            return agg_fn.cat_column
+        else:
+            return agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
+
 
 class LineAggregationOperation(AggregationOperation):
 
@@ -456,10 +462,7 @@ class aggregate(LineAggregationOperation):
 
     def _process(self, element, key=None):
         agg_fn, sel_fn, agg_state = self._get_agg_state(element)
-        if hasattr(agg_fn, 'cat_column'):
-            category = agg_fn.cat_column
-        else:
-            category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
+        category_name = self._get_category_column_name(agg_fn)
 
         if overlay_aggregate.applies(element, agg_fn, line_width=self.p.line_width, sel_fn=sel_fn):
             params = dict(
@@ -471,7 +474,7 @@ class aggregate(LineAggregationOperation):
         if element._plot_id in self._precomputed:
             x, y, data, glyph = self._precomputed[element._plot_id]
         else:
-            x, y, data, glyph = self.get_agg_data(element, category)
+            x, y, data, glyph = self.get_agg_data(element, category_name)
 
         if self.p.precompute:
             self._precomputed[element._plot_id] = x, y, data, glyph
@@ -815,8 +818,9 @@ class geom_aggregate(AggregationOperation):
             df[y0d.name] = cast_array_to_int64(df[y0d.name].astype('datetime64[ns]'))
             df[y1d.name] = cast_array_to_int64(df[y1d.name].astype('datetime64[ns]'))
 
-        if isinstance(agg_fn, ds.count_cat) and df[agg_fn.column].dtype.name != 'category':
-            df[agg_fn.column] = df[agg_fn.column].astype('category')
+        category_name = self._get_category_column_name(agg_fn)
+        if category_name and df[category_name].dtype.name != 'category':
+            df[category_name] = df[category_name].astype('category')
 
         params = self._get_agg_params(element, x0d, y0d, agg_fn, (x0, y0, x1, y1))
 
@@ -1519,8 +1523,9 @@ class geometry_rasterize(LineAggregationOperation):
         if self.p.precompute:
             self._precomputed[element._plot_id] = (data, col)
 
-        if isinstance(agg_fn, ds.count_cat) and data[agg_fn.column].dtype.name != 'category':
-            data[agg_fn.column] = data[agg_fn.column].astype('category')
+        category_name = self._get_category_column_name(agg_fn)
+        if category_name and data[category_name].dtype.name != 'category':
+            data[category_name] = data[category_name].astype('category')
 
         agg_kwargs = dict(geometry=col, agg=agg_fn)
         if isinstance(element, Polygons):

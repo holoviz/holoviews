@@ -1598,7 +1598,8 @@ def test_geom_aggregate_with_selector():
     )
 
 
-def test_geom_aggregate_with_by_and_selector():
+@pytest.mark.parametrize("aggregator", (ds.count_cat("cat"), ds.by("cat", ds.count())), ids=["count_cat", "by"])
+def test_geom_aggregate_with_by_and_selector(aggregator):
     rects = Rectangles([
         (0, 0, 1, 2, 'A', 20, 0),
         (1, 1, 3, 2, 'B', 300, 1),
@@ -1608,7 +1609,7 @@ def test_geom_aggregate_with_by_and_selector():
         width=4,
         height=4,
         dynamic=False,
-        aggregator=ds.count_cat('cat'),
+        aggregator=aggregator,
         selector=ds.first("value")
     )
 
