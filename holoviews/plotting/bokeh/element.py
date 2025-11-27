@@ -3254,10 +3254,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 directional_tools = ('wheel_zoom', 'pan', 'zoom_in', 'zoom_out', 'box_zoom')
                 if tool in directional_tools:
                     return (tool_type, 'both')
-                elif tool.startswith(('x', 'y')):
-                    if tool[1:] in directional_tools:
-                        dimension = 'width' if tool.startswith('x') else 'height'
-                        return (tool_type, dimension)
+                elif tool.startswith(('x', 'y')) and tool[1:] in directional_tools:
+                    dimension = 'width' if tool.startswith('x') else 'height'
+                    return (tool_type, dimension)
                 elif tool == 'auto_box_zoom':
                     return (tool_type, 'auto')
                 return tool
@@ -3265,63 +3264,63 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 return (tool_type, tool.dimensions)
             elif hasattr(tool, 'description') and tool.description:
                 return (tool_type, tool.description)
-            else:
-                return tool_type
+            return tool_type
 
-        for key, subplot in self.subplots.items():
-            el = element.get(key)
-            if el is not None:
-                el_tools = subplot._init_tools(el, self.callbacks)
-                for tool in el_tools:
-                    if isinstance(tool, str):
-                        tool_type = TOOL_TYPES.get(tool)
-                    else:
-                        tool_type = type(tool)
+        def is_subcoordy_zoom(tool, tool_type):
+            """Check if tool is a subcoordinate_y zoom tool."""
+            return (self.subcoordinate_y and isinstance(tool, _zoom_types) and
+                    'hv_created' in tool.tags and len(tool.tags) == 2)
 
-                    tool_id = get_tool_id(tool, tool_type)
-                    if isinstance(tool, tools.HoverTool):
-                        if isinstance(tool.tooltips, bokeh.models.dom.Div):
-                            tooltips = tool.tooltips
-                        else:
-                            tooltips = tuple(tool.tooltips) if tool.tooltips else ()
-                        if tooltips in hover_tools:
-                            continue
-                        else:
-                            hover_tools[tooltips] = tool
-                    elif (
-                        self.subcoordinate_y and isinstance(tool, _zoom_types)
-                        and 'hv_created' in tool.tags and len(tool.tags) == 2
-                    ):
-                        if tool.tags[1] in zooms_subcoordy:
-                            continue
-                        else:
-                            zooms_subcoordy[tool.tags[1]] = tool
-                            self.handles['zooms_subcoordy'] = zooms_subcoordy
-                    elif tool_id in tool_ids:
-                        continue
-
-                    tool_ids.add(tool_id)
-                    init_tools.append(tool)
-
-        # Add tools specified directly on the overlay
-        overlay_tools = self.default_tools + self.tools
-        for tool in overlay_tools:
+        def process_tool(tool, skip_subcoordy_overlay_check=False):
+            """Process a single tool and return whether to add it."""
             if isinstance(tool, str):
                 tool_type = TOOL_TYPES.get(tool)
             else:
                 tool_type = type(tool)
 
+            # Skip subcoordinate_y zoom tools already handled by subplots (overlay tools only)
+            if (skip_subcoordy_overlay_check and self.subcoordinate_y and
+                tool_type in _zoom_types and isinstance(tool, str) and
+                not tool.startswith('x') and tool.replace('_tool', '') in zooms_subcoordy):
+                return False
+
             tool_id = get_tool_id(tool, tool_type)
 
-            # Skip subcoordinate_y zoom tools that were already handled
-            if (self.subcoordinate_y and tool_type in _zoom_types and
-                isinstance(tool, str) and not tool.startswith('x')):
-                tool_name = tool.replace('_tool', '')
-                if tool_name in zooms_subcoordy:
-                    continue
+            # Handle HoverTool deduplication by tooltips
+            if isinstance(tool, tools.HoverTool):
+                if isinstance(tool.tooltips, bokeh.models.dom.Div):
+                    tooltips = tool.tooltips
+                else:
+                    tooltips = tuple(tool.tooltips) if tool.tooltips else ()
+                if tooltips in hover_tools:
+                    return False
+                hover_tools[tooltips] = tool
+            # Handle subcoordinate_y zoom tools
+            elif is_subcoordy_zoom(tool, tool_type):
+                if tool.tags[1] in zooms_subcoordy:
+                    return False
+                zooms_subcoordy[tool.tags[1]] = tool
+                self.handles['zooms_subcoordy'] = zooms_subcoordy
+            # Skip duplicate tools
+            elif tool_id in tool_ids:
+                return False
 
-            if tool_id not in tool_ids:
-                tool_ids.add(tool_id)
+            tool_ids.add(tool_id)
+            return True
+
+        # Collect tools from subplots
+        for key, subplot in self.subplots.items():
+            el = element.get(key)
+            if el is not None:
+                el_tools = subplot._init_tools(el, self.callbacks)
+                for tool in el_tools:
+                    if process_tool(tool):
+                        init_tools.append(tool)
+
+        # Add tools specified directly on the overlay
+        overlay_tools = self.default_tools + self.tools
+        for tool in overlay_tools:
+            if process_tool(tool, skip_subcoordy_overlay_check=True):
                 init_tools.append(tool)
 
         self.handles['hover_tools'] = hover_tools
