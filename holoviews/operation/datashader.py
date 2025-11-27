@@ -793,9 +793,9 @@ class geom_aggregate(AggregationOperation):
     def _apply_datashader(self, df, cvs, agg_fn, x, y, agg_state: AggState):
         (x0, x1), (y0, y1) = x, y
         agg = self._aggregate(cvs, df, x0, y0, x1, y1, agg_fn)
-        if isinstance(agg, xr.DataArray):
-            agg = agg.transpose('x', 'y', ...)
-        x_name, y_name = list(agg.dims)[:2]
+        if agg.coords == ["y", "x"]:
+            agg = agg.transpose("x", "y", ...)
+        x_name, y_name = list(agg.coords)[:2]
         return self._apply_where_summary(df, x_name, y_name, agg_fn, agg, agg_state)
 
     def _process(self, element, key=None):
@@ -837,7 +837,7 @@ class geom_aggregate(AggregationOperation):
             params
         )
 
-        xdim, ydim = list(agg.dims)[:2]
+        xdim, ydim = list(agg.coords)[:2]
         if xtype == "datetime":
             agg[xdim] = agg[xdim].astype('datetime64[ns]')
         if ytype == "datetime":
