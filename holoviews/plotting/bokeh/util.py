@@ -1262,3 +1262,27 @@ def get_ticker_axis_props(ticker):
         if labels is not None:
             axis_props['major_label_overrides'] = dict(zip(ticks, labels, strict=None))
     return axis_props
+
+
+def get_tool_id(tool: str | tools.Tool) -> tuple[type[tools.Tool], str | None]:
+    """Returns the tool type and an identifier for a given tool."""
+    is_str = isinstance(tool, str)
+    tool_type = TOOL_TYPES.get(tool) if is_str else type(tool)
+
+    if is_str:
+        directional_tools = ('wheel_zoom', 'pan', 'zoom_in', 'zoom_out', 'box_zoom')
+        if tool in directional_tools:
+            return tool_type, 'both'
+        elif tool.startswith(('x', 'y')) and tool[1:] in directional_tools:
+            dimension = 'width' if tool.startswith('x') else 'height'
+            return tool_type, dimension
+        elif tool == 'auto_box_zoom':
+            return tool_type, 'auto'
+    else:
+        for name in ("dimensions", "tags", "name", "description", "icon"):
+            if identifier := getattr(tool, name, None):
+                # Convert lists to tuples (hashable)
+                if isinstance(identifier, list):
+                    identifier = tuple(identifier)
+                return tool_type, identifier
+    return tool_type, None
