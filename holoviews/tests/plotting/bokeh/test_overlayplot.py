@@ -447,7 +447,6 @@ def test_overlay_opts_tools_with_element_tools():
 
     tool_types = [type(tool).__name__ for tool in plot.state.tools]
     defaults = ['WheelZoomTool', 'SaveTool', 'PanTool', 'BoxZoomTool', 'ResetTool']
-    # INFO(Azaya): Can this really be right?
     assert tool_types == [defaults[0], "ZoomOutTool", "ZoomInTool", *defaults[1:]]
 
 def test_overlay_default_tools_not_duplicated():
@@ -466,83 +465,65 @@ def test_overlay_default_tools_not_duplicated():
     assert tool_type_counts['BoxZoomTool'] == 1
     assert tool_type_counts['ResetTool'] == 1
 
-#TODO(Azaya): Make these test more parameterize
-def test_overlay_opts_directional_pan_tools():
-    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=['xpan', 'ypan'])
+
+@pytest.mark.parametrize(
+    ("tool_strings", "expected_dimensions", "expected_count"),
+    [
+        (["xpan", "ypan"], ["both", "width", "height"], 3),
+        (["pan", "xpan", "ypan"], ["both", "width", "height"], 3),
+    ],
+    ids=["directional_only", "generic_and_directional"],
+)
+def test_overlay_opts_directional_pan_tools(tool_strings, expected_dimensions, expected_count):
+    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=tool_strings)
     plot = bokeh_renderer.get_plot(overlay)
 
-    pan_tools = [tool for tool in plot.state.tools if type(tool).__name__ == 'PanTool']
-    # Should have 3 PanTools: default 'pan' (both) + xpan (width) + ypan (height)
-    assert len(pan_tools) == 3
+    tools = [tool for tool in plot.state.tools if type(tool).__name__ == "PanTool"]
+    assert len(tools) == expected_count
 
-    dimensions = [tool.dimensions for tool in pan_tools]
-    assert 'both' in dimensions
-    assert 'width' in dimensions
-    assert 'height' in dimensions
+    dimensions = [tool.dimensions for tool in tools]
+    for dimension in expected_dimensions:
+        assert dimension in dimensions
 
-def test_overlay_opts_generic_and_directional_pan_tools():
-    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=['pan', 'xpan', 'ypan'])
+
+@pytest.mark.parametrize(
+    ("tool_strings", "expected_dimensions", "expected_count"),
+    [
+        (["xzoom_in", "yzoom_in"], ["width", "height"], 2),
+        (["zoom_in", "xzoom_in", "yzoom_in"], ["both", "width", "height"], 3),
+    ],
+    ids=["directional_only", "generic_and_directional"],
+)
+def test_overlay_opts_directional_zoom_in_tools(tool_strings, expected_dimensions, expected_count):
+    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=tool_strings)
     plot = bokeh_renderer.get_plot(overlay)
 
-    # Default 'pan' tool should not be duplicated
-    pan_tools = [tool for tool in plot.state.tools if type(tool).__name__ == 'PanTool']
-    assert len(pan_tools) == 3
+    tools = [tool for tool in plot.state.tools if type(tool).__name__ == "ZoomInTool"]
+    assert len(tools) == expected_count
 
-    dimensions = [tool.dimensions for tool in pan_tools]
-    assert 'both' in dimensions
-    assert 'width' in dimensions
-    assert 'height' in dimensions
+    dimensions = [tool.dimensions for tool in tools]
+    for dimension in expected_dimensions:
+        assert dimension in dimensions
 
-def test_overlay_opts_directional_zoom_tools():
-    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=['xzoom_in', 'yzoom_in'])
+
+@pytest.mark.parametrize(
+    ("tool_strings", "expected_dimensions", "expected_count"),
+    [
+        (["xbox_zoom", "ybox_zoom"], ["auto", "width", "height"], 3),
+        (["box_zoom", "xbox_zoom", "ybox_zoom"], ["auto", "both", "width", "height"], 4),
+    ],
+    ids=["directional_only", "generic_and_directional"],
+)
+def test_overlay_opts_directional_box_zoom_tools(tool_strings, expected_dimensions, expected_count):
+    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=tool_strings)
     plot = bokeh_renderer.get_plot(overlay)
 
-    zoom_tools = [tool for tool in plot.state.tools if type(tool).__name__ == 'ZoomInTool']
-    assert len(zoom_tools) == 2
+    tools = [tool for tool in plot.state.tools if type(tool).__name__ == "BoxZoomTool"]
+    assert len(tools) == expected_count
 
-    dimensions = [tool.dimensions for tool in zoom_tools]
-    assert 'width' in dimensions
-    assert 'height' in dimensions
-
-def test_overlay_opts_generic_and_directional_zoom_tools():
-    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=['zoom_in', 'xzoom_in', 'yzoom_in'])
-    plot = bokeh_renderer.get_plot(overlay)
-
-    zoom_tools = [tool for tool in plot.state.tools if type(tool).__name__ == 'ZoomInTool']
-    assert len(zoom_tools) == 3
-
-    dimensions = [tool.dimensions for tool in zoom_tools]
-    assert 'both' in dimensions
-    assert 'width' in dimensions
-    assert 'height' in dimensions
-
-def test_overlay_opts_directional_box_zoom_tools():
-    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=['xbox_zoom', 'ybox_zoom'])
-    plot = bokeh_renderer.get_plot(overlay)
-
-    box_zoom_tools = [tool for tool in plot.state.tools if type(tool).__name__ == 'BoxZoomTool']
-    # Should have 3 BoxZoomTools: default 'auto_box_zoom' (auto) + xbox_zoom (width) + ybox_zoom (height)
-    assert len(box_zoom_tools) == 3
-
-    # Check that we have auto_box_zoom (auto), xbox_zoom (width), and ybox_zoom (height)
-    dimensions = [tool.dimensions for tool in box_zoom_tools]
-    assert 'auto' in dimensions
-    assert 'width' in dimensions
-    assert 'height' in dimensions
-
-def test_overlay_opts_generic_and_directional_box_zoom_tools():
-    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=['box_zoom', 'xbox_zoom', 'ybox_zoom'])
-    plot = bokeh_renderer.get_plot(overlay)
-
-    box_zoom_tools = [tool for tool in plot.state.tools if type(tool).__name__ == 'BoxZoomTool']
-    # Should have 4 BoxZoomTools: default 'auto_box_zoom' + 3 added
-    assert len(box_zoom_tools) == 4
-
-    dimensions = [tool.dimensions for tool in box_zoom_tools]
-    assert 'auto' in dimensions
-    assert 'both' in dimensions
-    assert 'width' in dimensions
-    assert 'height' in dimensions
+    dimensions = [tool.dimensions for tool in tools]
+    for dimension in expected_dimensions:
+        assert dimension in dimensions
 
 def test_overlay_opts_mixed_tools_no_duplicates():
     overlay = (
