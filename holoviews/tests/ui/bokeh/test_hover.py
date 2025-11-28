@@ -515,3 +515,98 @@ def test_hover_heatmap_image(serve_hv, x_axis_type, y_axis_type):
     expect(tooltip).to_contain_text("x: 10.100" if is_lambda(x_axis_type) else "x: 10")
     expect(tooltip).to_contain_text("y: 4.100" if is_lambda(y_axis_type) else "y: 4")
     expect(tooltip).to_contain_text("z: 53")
+
+
+# UI regression tests for https://github.com/holoviz/holoviews/pull/6438
+@pytest.mark.usefixtures("bokeh_backend")
+def test_hover_heatmap_categorical_outside_plot_area(serve_hv):
+    heatmap = hv.HeatMap([('A', 'X', 1), ('B', 'Y', 2), ('C', 'Z', 3)]).opts(tools=["hover"], colorbar=True)
+
+    page = serve_hv(heatmap)
+    hv_plot = page.locator(".bk-events")
+    expect(hv_plot).to_have_count(1)
+    bbox = hv_plot.bounding_box()
+
+    # Hover over valid points - should show tooltips
+    page.mouse.move(bbox["x"] + bbox["width"] * 0.25, bbox["y"] + bbox["height"] * 0.25)
+    page.mouse.up()
+    expect(page.locator(".bk-Tooltip")).to_have_count(1)
+    expect(page.locator(".bk-Tooltip")).to_contain_text("x: A")
+    expect(page.locator(".bk-Tooltip")).to_contain_text("y: Z")
+
+    # Hover far outside the plot area - should not crash
+    page.mouse.move(bbox["x"] + bbox["width"] * 1.5, bbox["y"] + bbox["height"] / 2)
+    page.mouse.up()
+    expect(page.locator(".bk-Tooltip")).to_have_count(0)
+    page.wait_for_timeout(100)
+
+    # Hover far below the plot - should not crash
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] * 1.5)
+    page.mouse.up()
+    expect(page.locator(".bk-Tooltip")).to_have_count(0)
+    page.wait_for_timeout(100)
+
+    # Hover far to the left - should not crash
+    page.mouse.move(bbox["x"] - 50, bbox["y"] + bbox["height"] / 2)
+    page.mouse.up()
+    expect(page.locator(".bk-Tooltip")).to_have_count(0)
+    page.wait_for_timeout(100)
+
+    # Hover far above - should not crash
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] - 50)
+    page.mouse.up()
+    expect(page.locator(".bk-Tooltip")).to_have_count(0)
+    page.wait_for_timeout(100)
+
+    # Verify we can still hover over valid points after hovering outside
+    page.mouse.move(bbox["x"] + bbox["width"] * 0.25, bbox["y"] + bbox["height"] * 0.25)
+    page.mouse.up()
+    expect(page.locator(".bk-Tooltip")).to_have_count(1)
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_tap_heatmap_categorical_outside_plot_area(serve_hv):
+    from holoviews import streams
+
+    heatmap = hv.HeatMap([('A', 'X', 1), ('B', 'Y', 2), ('C', 'Z', 3)]).opts(colorbar=True)
+
+    # Create a stream to track tap events
+    tap_stream = streams.SingleTap(source=heatmap)
+
+    # Create a DynamicMap that displays tap coordinates
+    def show_tap(x, y):
+        if x is not None and y is not None:
+            return hv.Text(0.5, 0.5, f'Tapped: ({x}, {y})', halign='center', valign='center')
+        return hv.Text(0.5, 0.5, 'No tap yet', halign='center', valign='center')
+
+    tap_display = hv.DynamicMap(show_tap, streams=[tap_stream])
+    layout = heatmap + tap_display
+
+    page = serve_hv(layout)
+    hv_plot = page.locator(".bk-events").first
+    expect(hv_plot).to_be_visible()
+    bbox = hv_plot.bounding_box()
+
+    # Click inside the plot - should work normally
+    page.mouse.click(bbox["x"] + bbox["width"] * 0.25, bbox["y"] + bbox["height"] * 0.25)
+    page.wait_for_timeout(100)
+
+    # Click far outside the plot area - should not crash
+    page.mouse.click(bbox["x"] + bbox["width"] * 1.5, bbox["y"] + bbox["height"] / 2)
+    page.wait_for_timeout(100)
+
+    # Click far below the plot - should not crash
+    page.mouse.click(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] * 1.5)
+    page.wait_for_timeout(100)
+
+    # Click far to the left - should not crash
+    page.mouse.click(bbox["x"] - 50, bbox["y"] + bbox["height"] / 2)
+    page.wait_for_timeout(100)
+
+    # Click far above - should not crash
+    page.mouse.click(bbox["x"] + bbox["width"] / 2, bbox["y"] - 50)
+    page.wait_for_timeout(100)
+
+    # Verify we can still click inside the plot after clicking outside
+    page.mouse.click(bbox["x"] + bbox["width"] * 0.75, bbox["y"] + bbox["height"] * 0.75)
+    page.wait_for_timeout(100)
