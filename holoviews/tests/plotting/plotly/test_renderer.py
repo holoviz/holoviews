@@ -8,15 +8,14 @@ from panel.widgets import DiscreteSlider, FloatSlider, Player
 from pyviz_comms import CommManager
 
 from holoviews import Curve, DynamicMap, HoloMap, Store
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.plotly import PlotlyRenderer
 from holoviews.plotting.renderer import Renderer
 from holoviews.streams import Stream
 
 
-class PlotlyRendererTest(ComparisonTestCase):
+class PlotlyRendererTest:
 
-    def setUp(self):
+    def setup_method(self):
         self.previous_backend = Store.current_backend
         Store.current_backend = 'plotly'
         self.renderer = PlotlyRenderer.instance()
@@ -26,7 +25,7 @@ class PlotlyRendererTest(ComparisonTestCase):
             Renderer.notebook_context = False
             Renderer.comm_manager = CommManager
 
-    def tearDown(self):
+    def teardown_method(self):
         with param.logging_level('ERROR'):
             Renderer.notebook_context = self.nbcontext
             Renderer.comm_manager = self.comm_manager
@@ -35,27 +34,27 @@ class PlotlyRendererTest(ComparisonTestCase):
     def test_render_static(self):
         curve = Curve([])
         obj, _ = self.renderer._validate(curve, None)
-        self.assertIsInstance(obj, pn.pane.HoloViews)
-        self.assertEqual(obj.center, True)
-        self.assertIs(obj.renderer, self.renderer)
-        self.assertEqual(obj.backend, 'plotly')
+        assert isinstance(obj, pn.pane.HoloViews)
+        assert obj.center is True
+        assert obj.renderer is self.renderer
+        assert obj.backend == 'plotly'
 
     def test_render_holomap_individual(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer._validate(hmap, None)
-        self.assertIsInstance(obj, pn.pane.HoloViews)
-        self.assertEqual(obj.center, True)
-        self.assertEqual(obj.widget_location, 'right')
-        self.assertEqual(obj.widget_type, 'individual')
+        assert isinstance(obj, pn.pane.HoloViews)
+        assert obj.center is True
+        assert obj.widget_location == 'right'
+        assert obj.widget_type == 'individual'
         widgets = obj.layout.select(DiscreteSlider)
-        self.assertEqual(len(widgets), 1)
+        assert len(widgets) == 1
         slider = widgets[0]
-        self.assertEqual(slider.options, dict([(str(i), i) for i in range(5)]))
+        assert slider.options == dict([(str(i), i) for i in range(5)])
 
     def test_render_holomap_embedded(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         data, _ = self.renderer.components(hmap)
-        self.assertIn('State"', data['text/html'])
+        assert 'State"' in data['text/html']
 
     # def test_render_holomap_not_embedded(self):
     #     hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
@@ -65,32 +64,32 @@ class PlotlyRendererTest(ComparisonTestCase):
     def test_render_holomap_scrubber(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer._validate(hmap, 'scrubber')
-        self.assertIsInstance(obj, pn.pane.HoloViews)
-        self.assertEqual(obj.center, True)
-        self.assertEqual(obj.widget_location, 'bottom')
-        self.assertEqual(obj.widget_type, 'scrubber')
+        assert isinstance(obj, pn.pane.HoloViews)
+        assert obj.center is True
+        assert obj.widget_location == 'bottom'
+        assert obj.widget_type == 'scrubber'
         widgets = obj.layout.select(Player)
-        self.assertEqual(len(widgets), 1)
+        assert len(widgets) == 1
         player = widgets[0]
-        self.assertEqual(player.start, 0)
-        self.assertEqual(player.end, 4)
+        assert player.start == 0
+        assert player.end == 4
 
     def test_render_holomap_scrubber_fps(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer.instance(fps=2)._validate(hmap, 'scrubber')
-        self.assertIsInstance(obj, pn.pane.HoloViews)
+        assert isinstance(obj, pn.pane.HoloViews)
         widgets = obj.layout.select(Player)
-        self.assertEqual(len(widgets), 1)
+        assert len(widgets) == 1
         player = widgets[0]
-        self.assertEqual(player.interval, 500)
+        assert player.interval == 500
 
     def test_render_holomap_individual_widget_position(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer.instance(widget_location='top')._validate(hmap, None)
-        self.assertIsInstance(obj, pn.pane.HoloViews)
-        self.assertEqual(obj.center, True)
-        self.assertEqual(obj.widget_location, 'top')
-        self.assertEqual(obj.widget_type, 'individual')
+        assert isinstance(obj, pn.pane.HoloViews)
+        assert obj.center is True
+        assert obj.widget_location == 'top'
+        assert obj.widget_type == 'individual'
 
     @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm:UserWarning')
     def test_render_dynamicmap_with_dims(self):
@@ -100,11 +99,11 @@ class PlotlyRendererTest(ComparisonTestCase):
         [(plot, _pane)] = obj._plots.values()
 
         y = plot.handles['fig']['data'][0]['y']
-        self.assertEqual(y[2], 0.1)
+        assert y[2] == 0.1
         slider = obj.layout.select(FloatSlider)[0]
         slider.value = 3.1
         y = plot.handles['fig']['data'][0]['y']
-        self.assertEqual(y[2], 3.1)
+        assert y[2] == 3.1
 
     @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm:UserWarning')
     def test_render_dynamicmap_with_stream(self):
@@ -115,10 +114,10 @@ class PlotlyRendererTest(ComparisonTestCase):
         [(plot, _pane)] = obj._plots.values()
 
         y = plot.handles['fig']['data'][0]['y']
-        self.assertEqual(y[2], 2)
+        assert y[2] == 2
         stream.event(y=3)
         y = plot.handles['fig']['data'][0]['y']
-        self.assertEqual(y[2], 3)
+        assert y[2] == 3
 
     @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm:UserWarning')
     def test_render_dynamicmap_with_stream_dims(self):
@@ -130,14 +129,14 @@ class PlotlyRendererTest(ComparisonTestCase):
         [(plot, _pane)] = obj._plots.values()
 
         y = plot.handles['fig']['data'][0]['y']
-        self.assertEqual(y[2], 2)
+        assert y[2] == 2
         stream.event(y=3)
         y = plot.handles['fig']['data'][0]['y']
-        self.assertEqual(y[2], 3)
+        assert y[2] == 3
 
         y = plot.handles['fig']['data'][0]['y']
-        self.assertEqual(y[0], 1)
+        assert y[0] == 1
         slider = obj.layout.select(DiscreteSlider)[0]
         slider.value = 3
         y = plot.handles['fig']['data'][0]['y']
-        self.assertEqual(y[0], 3)
+        assert y[0] == 3

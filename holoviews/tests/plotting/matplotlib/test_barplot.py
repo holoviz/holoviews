@@ -5,11 +5,11 @@ from matplotlib.text import Text
 
 from holoviews.element import Bars
 
-from ...utils import LoggingComparisonTestCase
+from ...utils import LoggingComparison
 from .test_plot import TestMPLPlot, mpl_renderer
 
 
-class TestBarPlot(LoggingComparisonTestCase, TestMPLPlot):
+class TestBarPlot(LoggingComparison, TestMPLPlot):
 
     def test_bars_continuous_data_list_same_interval(self):
         bars = Bars(([0, 1, 2], [10, 20, 30]))

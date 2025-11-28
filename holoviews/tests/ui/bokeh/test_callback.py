@@ -29,7 +29,7 @@ def points():
 
 @pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize(
-    ["BoundsTool", "bound_slice", "bound_attr"],
+    ("BoundsTool", "bound_slice", "bound_attr"),
     [
         (BoundsXY, slice(None), "bounds"),
         (BoundsX, slice(0, None, 2), "boundsx"),
@@ -490,7 +490,7 @@ class TestPopup:
         assert distances['right'] >= distances['left']
 
 
-    @pytest.mark.parametrize("tool, tool_type", [
+    @pytest.mark.parametrize(("tool", "tool_type"), [
         ("box_select", BoundsXY),
         ("lasso_select", Lasso),
         ("tap", Tap)
@@ -514,7 +514,7 @@ class TestPopup:
         assert distances['bottom'] >= distances['top']
 
 
-    @pytest.mark.parametrize("tool, tool_type", [("box_select", BoundsXY), ("lasso_select", Lasso)])
+    @pytest.mark.parametrize(("tool", "tool_type"), [("box_select", BoundsXY), ("lasso_select", Lasso)])
     @pytest.mark.parametrize("popup_position", [
         "top_right", "top_left", "bottom_left", "bottom_right",
         "right", "left", "top", "bottom"

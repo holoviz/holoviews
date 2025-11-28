@@ -1,5 +1,3 @@
-from unittest import SkipTest
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -275,7 +273,7 @@ class _ImageStackBase(TestRasterPlot):
         try:
             import xarray as xr
         except ImportError:
-            raise SkipTest("xarray not available for core tests")
+            pytest.skip("xarray not available for core tests")
 
         x = np.arange(self.xsize)
         y = np.arange(self.ysize) + 5
@@ -301,7 +299,7 @@ class _ImageStackBase(TestRasterPlot):
         try:
             import xarray as xr
         except ImportError:
-            raise SkipTest("xarray not available for core tests")
+            pytest.skip("xarray not available for core tests")
 
         x = np.arange(self.xsize)
         y = np.arange(self.ysize) + 5
@@ -432,27 +430,27 @@ class _ImageStackBase(TestRasterPlot):
         c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
 
         img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["b", "a", "c"])
+        img_stack.opts(cmap={"c": "yellow", "a": "red"})
         with pytest.raises(ValueError, match="must have the same value dimensions"):
-            img_stack.opts(cmap={"c": "yellow", "a": "red"})
             bokeh_renderer.get_plot(img_stack)
 
 
 class TestImageStackEven(_ImageStackBase):
     __test__ = True
 
-    def setUp(self):
+    def setup_method(self):
         self.a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
         self.b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
         self.c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
         self.ysize = 3
         self.xsize = 3
-        super().setUp()
+        super().setup_method()
 
 
 class TestImageStackUneven1(_ImageStackBase):
     __test__ = True
 
-    def setUp(self):
+    def setup_method(self):
         self.a = np.array(
             [[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3, [np.nan] * 3]
         )
@@ -460,27 +458,27 @@ class TestImageStackUneven1(_ImageStackBase):
         self.c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1], [np.nan] * 3])
         self.ysize = 4
         self.xsize = 3
-        super().setUp()
+        super().setup_method()
 
 
 class TestImageStackUneven2(_ImageStackBase):
     __test__ = True
 
-    def setUp(self):
+    def setup_method(self):
         self.a = np.array([[np.nan, np.nan, 1, np.nan], [np.nan] * 4, [np.nan] * 4])
         self.b = np.array([[np.nan] * 4, [1, 1, np.nan, np.nan], [np.nan] * 4])
         self.c = np.array([[np.nan] * 4, [np.nan] * 4, [1, 1, 1, 1]])
         self.ysize = 3
         self.xsize = 4
-        super().setUp()
+        super().setup_method()
 
 
 class TestSyntheticLegendPlot(TestBokehPlot):
     __test__ = True
 
-    def setUp(self):
+    def setup_method(self):
         ds = pytest.importorskip("datashader")
-        super().setUp()
+        super().setup_method()
 
         from holoviews.operation.datashader import datashade, rasterize
         points = Points([(0, 0, 'A'), (1, 1, 'B'), (2, 2, 'C')], vdims=['Label'])

@@ -1,12 +1,14 @@
 import gc
 import pickle
 
+import pytest
+
 from holoviews.core.element import Element
 from holoviews.core.options import Keywords, Options, OptionTree, Store
 from holoviews.core.spaces import HoloMap
 from holoviews.element.chart import Curve
 
-from ..utils import LoggingComparisonTestCase
+from ..utils import LoggingComparison
 
 
 class ExampleElement(Element):
@@ -19,13 +21,12 @@ class MockRenderer:
         self.backend = backend
 
 
-class CustomBackendTestCase(LoggingComparisonTestCase):
+class CustomBackendTestCase(LoggingComparison):
     """
     Registers fake backends with the Store to test options on.
     """
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
         self.current_backend = Store.current_backend
         self.register_custom(ExampleElement, 'backend_1', ['plot_custom1'])
         self.register_custom(ExampleElement, 'backend_2', ['plot_custom2'])
@@ -63,26 +64,26 @@ class TestDimensioned_options(CustomBackendTestCase):
         err = ("Unexpected option 'style_opt3' for ExampleElement type "
                "across all extensions. Similar options for current "
                r"extension \('backend_1'\) are: \['style_opt1', 'style_opt2'\]\.")
-        with self.assertRaisesRegex(ValueError, err):
+        with pytest.raises(ValueError, match=err):
             ExampleElement([]).options(style_opt3='A')
 
     def test_apply_options_current_backend_style_invalid_no_match(self):
         err = (r"Unexpected option 'zxy' for ExampleElement type across all extensions\. "
                r"No similar options found\.")
-        with self.assertRaisesRegex(ValueError, err):
+        with pytest.raises(ValueError, match=err):
             ExampleElement([]).options(zxy='A')
 
     def test_apply_options_explicit_backend_style_invalid_cross_backend(self):
         err = ("Unexpected option 'style_opt3' for ExampleElement type when "
                "using the 'backend_2' extension. Similar options are: "
                r"\['style_opt1', 'style_opt2'\]\.")
-        with self.assertRaisesRegex(ValueError, err):
+        with pytest.raises(ValueError, match=err):
             ExampleElement([]).options(style_opt3='A', backend='backend_2')
 
     def test_apply_options_explicit_backend_style_invalid_no_match(self):
         err = ("Unexpected option 'zxy' for ExampleElement type when using the "
                r"'backend_2' extension. No similar options found\.")
-        with self.assertRaisesRegex(ValueError, err):
+        with pytest.raises(ValueError, match=err):
             ExampleElement([]).options(zxy='A', backend='backend_2')
 
     def test_apply_options_current_backend_style_invalid_cross_backend_match(self):
@@ -90,13 +91,13 @@ class TestDimensioned_options(CustomBackendTestCase):
         substr = ("Option 'plot_custom2' for ExampleElement type not valid for "
                   "selected backend ('backend_1'). Option only applies to "
                   "following backends: ['backend_2']")
-        self.log_handler.assertEndsWith('WARNING', substr)
+        self.log_handler.assert_endswith('WARNING', substr)
 
     def test_apply_options_explicit_backend_style_invalid(self):
         err = ("Unexpected option 'style_opt3' for ExampleElement type when "
                "using the 'backend_2' extension. Similar options are: "
                r"\['style_opt1', 'style_opt2'\]\.")
-        with self.assertRaisesRegex(ValueError, err):
+        with pytest.raises(ValueError, match=err):
             ExampleElement([]).options(style_opt3='A', backend='backend_2')
 
     def test_apply_options_current_backend_style_multiple(self):
@@ -206,49 +207,49 @@ class TestOptionsCleanup(CustomBackendTestCase):
     def test_opts_resassignment_cleans_unused_tree(self):
         obj = ExampleElement([]).opts(style_opt1='A').opts(plot_opt1='B')
         custom_options = Store._custom_options['backend_1']
-        self.assertIn(obj.id, custom_options)
-        self.assertEqual(len(custom_options), 1)
+        assert obj.id in custom_options
+        assert len(custom_options) == 1
 
     def test_opts_multiple_resassignment_cleans_unused_tree(self):
         obj = HoloMap({0: ExampleElement([]), 1: ExampleElement([])}).opts(style_opt1='A').opts(plot_opt1='B')
         custom_options = Store._custom_options['backend_1']
-        self.assertIn(obj.last.id, custom_options)
-        self.assertEqual(len(custom_options), 2)
+        assert obj.last.id in custom_options
+        assert len(custom_options) == 2
         for o in obj:
             o.id = None
-        self.assertEqual(len(custom_options), 0)
+        assert len(custom_options) == 0
 
     def test_opts_resassignment_cleans_unused_tree_cross_backend(self):
         obj = ExampleElement([]).opts(style_opt1='A').opts(plot_opt1='B', backend='backend_2')
         custom_options = Store._custom_options['backend_1']
-        self.assertIn(obj.id, custom_options)
-        self.assertEqual(len(custom_options), 1)
+        assert obj.id in custom_options
+        assert len(custom_options) == 1
         custom_options = Store._custom_options['backend_2']
-        self.assertIn(obj.id, custom_options)
-        self.assertEqual(len(custom_options), 1)
+        assert obj.id in custom_options
+        assert len(custom_options) == 1
 
     def test_garbage_collect_cleans_unused_tree(self):
         obj = ExampleElement([]).opts(style_opt1='A')
         del obj
         gc.collect()
         custom_options = Store._custom_options['backend_1']
-        self.assertEqual(len(custom_options), 0)
+        assert len(custom_options) == 0
 
     def test_partial_garbage_collect_does_not_clear_tree(self):
         obj = HoloMap({0: ExampleElement([]), 1: ExampleElement([])}).opts(style_opt1='A')
         obj.pop(0)
         gc.collect()
         custom_options = Store._custom_options['backend_1']
-        self.assertIn(obj.last.id, custom_options)
-        self.assertEqual(len(custom_options), 1)
+        assert obj.last.id in custom_options
+        assert len(custom_options) == 1
         obj.pop(1)
         gc.collect()
-        self.assertEqual(len(custom_options), 0)
+        assert len(custom_options) == 0
 
     def test_opts_clear_cleans_unused_tree(self):
         ExampleElement([]).opts(style_opt1='A').opts.clear()
         custom_options = Store._custom_options['backend_1']
-        self.assertEqual(len(custom_options), 0)
+        assert len(custom_options) == 0
 
 class TestGetSetState:
 
