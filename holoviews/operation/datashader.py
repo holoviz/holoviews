@@ -513,7 +513,7 @@ class aggregate(LineAggregationOperation):
 
     def _apply_datashader(self, dfdata, cvs_fn, agg_fn, x, y, agg_state: AggState):
         agg_kwargs = {}
-        if cvs_fn.__name__ == "line" and DATASHADER_GE_0_14_0:
+        if getattr(cvs_fn, "__name__", None) == "line" and DATASHADER_GE_0_14_0:
             agg_kwargs['line_width'] = self.p.line_width
 
         # Suppress numpy warning emitted by dask:
