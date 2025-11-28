@@ -1279,8 +1279,10 @@ def get_tool_id(tool: str | tools.Tool) -> tuple[type[tools.Tool], str | None]:
         elif tool == 'auto_box_zoom':
             return tool_type, 'auto'
     else:
-        # TODO(Azaya): More way to identify? Take a look at merge_tools
-        for name in ("dimensions", "description"):
+        for name in ("dimensions", "tags", "name", "description", "icon"):
             if identifier := getattr(tool, name, None):
+                # Convert lists/tuples to tuples (hashable)
+                if isinstance(identifier, list | tuple):
+                    identifier = tuple(identifier)
                 return tool_type, identifier
     return tool_type, None
