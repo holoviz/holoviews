@@ -88,6 +88,7 @@ from .util import (
     get_scale,
     get_tab_title,
     get_ticker_axis_props,
+    get_tool_id,
     glyph_order,
     hold_policy,
     hold_render,
@@ -3244,47 +3245,16 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             callbacks = []
         hover_tools = {}
         zooms_subcoordy = {}
-        _zoom_types = (tools.WheelZoomTool, tools.ZoomInTool, tools.ZoomOutTool)
-        init_tools = []
-        tool_ids = set()
-
-        def get_tool_id(tool, tool_type):
-            """Generate a unique identifier for a tool."""
-            if isinstance(tool, str):
-                directional_tools = ('wheel_zoom', 'pan', 'zoom_in', 'zoom_out', 'box_zoom')
-                if tool in directional_tools:
-                    return (tool_type, 'both')
-                elif tool.startswith(('x', 'y')) and tool[1:] in directional_tools:
-                    dimension = 'width' if tool.startswith('x') else 'height'
-                    return (tool_type, dimension)
-                elif tool == 'auto_box_zoom':
-                    return (tool_type, 'auto')
-                return tool
-            elif hasattr(tool, 'dimensions') and tool.dimensions:
-                return (tool_type, tool.dimensions)
-            elif hasattr(tool, 'description') and tool.description:
-                return (tool_type, tool.description)
-            return tool_type
-
-        def is_subcoordy_zoom(tool, tool_type):
-            """Check if tool is a subcoordinate_y zoom tool."""
-            return (self.subcoordinate_y and isinstance(tool, _zoom_types) and
-                    'hv_created' in tool.tags and len(tool.tags) == 2)
+        zoom_types = (tools.WheelZoomTool, tools.ZoomInTool, tools.ZoomOutTool)
+        init_tools, tool_ids = [], set()
 
         def process_tool(tool, skip_subcoordy_overlay_check=False):
-            """Process a single tool and return whether to add it."""
-            if isinstance(tool, str):
-                tool_type = TOOL_TYPES.get(tool)
-            else:
-                tool_type = type(tool)
+            tool_id = get_tool_id(tool)
 
-            # Skip subcoordinate_y zoom tools already handled by subplots (overlay tools only)
             if (skip_subcoordy_overlay_check and self.subcoordinate_y and
-                tool_type in _zoom_types and isinstance(tool, str) and
+                tool_id[0] in zoom_types and isinstance(tool, str) and
                 not tool.startswith('x') and tool.replace('_tool', '') in zooms_subcoordy):
                 return False
-
-            tool_id = get_tool_id(tool, tool_type)
 
             # Handle HoverTool deduplication by tooltips
             if isinstance(tool, tools.HoverTool):
@@ -3295,13 +3265,14 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 if tooltips in hover_tools:
                     return False
                 hover_tools[tooltips] = tool
-            # Handle subcoordinate_y zoom tools
-            elif is_subcoordy_zoom(tool, tool_type):
+            elif (
+                self.subcoordinate_y and isinstance(tool, zoom_types)
+                and 'hv_created' in tool.tags and len(tool.tags) == 2
+            ):
                 if tool.tags[1] in zooms_subcoordy:
                     return False
                 zooms_subcoordy[tool.tags[1]] = tool
                 self.handles['zooms_subcoordy'] = zooms_subcoordy
-            # Skip duplicate tools
             elif tool_id in tool_ids:
                 return False
 

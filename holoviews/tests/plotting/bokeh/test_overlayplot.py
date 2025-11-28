@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import numpy as np
 import pandas as pd
 import panel as pn
@@ -422,56 +424,49 @@ def test_ndoverlay_categorical_y_ranges(order):
     expected = sorted(map(str, df.values.ravel()))
     assert output == expected
 
-def test_overlay_opts_tools():
-    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=['zoom_in'])
+@pytest.mark.parametrize(("tools", "new_tools"),
+    (
+        [None, []],
+        [["zoom_in"], ["ZoomInTool"]],
+        [["zoom_in", "zoom_out"], ["ZoomInTool", "ZoomOutTool"]]
+    ), ids=["0", "1", "2"])
+def test_overlay_opts_tools(tools, new_tools):
+    overlay = Curve([1, 2, 3]) * Curve([2, 3, 4])
+    if tools:
+        overlay.opts(tools=tools)
     plot = bokeh_renderer.get_plot(overlay)
 
     tool_types = [type(tool).__name__ for tool in plot.state.tools]
-    assert 'ZoomInTool' in tool_types
+    defaults = ['WheelZoomTool', 'SaveTool', 'PanTool', 'BoxZoomTool', 'ResetTool']
+    assert tool_types == [*defaults, *new_tools]
 
-def test_overlay_opts_tools_multiple():
-    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=['zoom_in', 'zoom_out'])
-    plot = bokeh_renderer.get_plot(overlay)
-
-    tool_types = [type(tool).__name__ for tool in plot.state.tools]
-    assert 'ZoomInTool' in tool_types
-    assert 'ZoomOutTool' in tool_types
 
 def test_overlay_opts_tools_with_element_tools():
-    overlay = (Curve([1, 2, 3]).opts(tools=['zoom_out']) * Curve([2, 3, 4])).opts(tools=['zoom_in'])
+    overlay = Curve([1, 2, 3]).opts(tools=['zoom_out']) * Curve([2, 3, 4]).opts(tools=['zoom_in'])
     plot = bokeh_renderer.get_plot(overlay)
 
     tool_types = [type(tool).__name__ for tool in plot.state.tools]
-    assert 'ZoomInTool' in tool_types
-    assert 'ZoomOutTool' in tool_types
-
-def test_overlay_default_tools_preserved():
-    overlay = Curve([1, 2, 3]) * Curve([2, 3, 4])
-    plot = bokeh_renderer.get_plot(overlay)
-
-    tool_types = [type(tool).__name__ for tool in plot.state.tools]
-    expected_defaults = ['PanTool', 'WheelZoomTool', 'SaveTool', 'BoxZoomTool', 'ResetTool']
-
-    for expected in expected_defaults:
-        assert expected in tool_types
+    defaults = ['WheelZoomTool', 'SaveTool', 'PanTool', 'BoxZoomTool', 'ResetTool']
+    # INFO(Azaya): Can this really be right?
+    assert tool_types == [defaults[0], "ZoomOutTool", "ZoomInTool", *defaults[1:]]
 
 def test_overlay_default_tools_not_duplicated():
     overlay = Curve([1, 2, 3]) * Curve([2, 3, 4])
     plot = bokeh_renderer.get_plot(overlay)
 
     # Count each tool type
-    tool_type_counts = {}
+    tool_type_counts = defaultdict(int)
     for tool in plot.state.tools:
-        tool_type = type(tool).__name__
-        tool_type_counts[tool_type] = tool_type_counts.get(tool_type, 0) + 1
+        tool_type_counts[type(tool).__name__] += 1
 
     # Each default tool should appear exactly once
-    assert tool_type_counts.get('PanTool', 0) == 1
-    assert tool_type_counts.get('WheelZoomTool', 0) == 1
-    assert tool_type_counts.get('SaveTool', 0) == 1
-    assert tool_type_counts.get('BoxZoomTool', 0) == 1
-    assert tool_type_counts.get('ResetTool', 0) == 1
+    assert tool_type_counts['PanTool'] == 1
+    assert tool_type_counts['WheelZoomTool'] == 1
+    assert tool_type_counts['SaveTool'] == 1
+    assert tool_type_counts['BoxZoomTool'] == 1
+    assert tool_type_counts['ResetTool'] == 1
 
+#TODO(Azaya): Make these test more parameterize
 def test_overlay_opts_directional_pan_tools():
     overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=['xpan', 'ypan'])
     plot = bokeh_renderer.get_plot(overlay)
