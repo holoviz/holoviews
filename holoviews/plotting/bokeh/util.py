@@ -1281,8 +1281,8 @@ def get_tool_id(tool: str | tools.Tool) -> tuple[type[tools.Tool], str | None]:
     else:
         for name in ("dimensions", "tags", "name", "description", "icon"):
             if identifier := getattr(tool, name, None):
-                # Convert lists/tuples to tuples (hashable)
-                if isinstance(identifier, list | tuple):
+                # Convert lists to tuples (hashable)
+                if isinstance(identifier, list):
                     identifier = tuple(identifier)
                 return tool_type, identifier
     return tool_type, None
