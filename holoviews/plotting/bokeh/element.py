@@ -648,14 +648,20 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         If empty initializes with no data.
 
         """
-        if 'hover' not in self.handles or self.static_source:
+        if 'hover' not in self.handles and not self.overlay_dims:
             return
 
-        for d in (dimensions or element.dimensions()):
-            dim = util.dimension_sanitizer(d.name)
-            if dim not in data:
-                data[dim] = element.dimension_values(d)
+        if 'hover' in self.handles and not self.static_source:
+            for d in (dimensions or element.dimensions()):
+                dim = util.dimension_sanitizer(d.name)
+                if dim not in data:
+                    data[dim] = element.dimension_values(d)
 
+        if not data:
+            return
+
+        # Always add overlay_dims to data, as these identify the element in the overlay
+        # and are needed for hover tooltips even when the subplot doesn't have its own hover tool
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)
             if dim not in data:
@@ -3596,6 +3602,14 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if not self.tabs:
                 init_kwargs['plot'] = self.handles['plot']
             self._create_dynamic_subplots(key, items, ranges, **init_kwargs)
+            if overlay_hover := self.handles.get('hover'):
+                if overlay_hover.renderers == 'auto':
+                    overlay_hover.renderers = []
+                for k, _ in items:
+                    if k in self.subplots and 'glyph_renderer' in self.subplots[k].handles:
+                        renderer = self.subplots[k].handles['glyph_renderer']
+                        if renderer not in overlay_hover.renderers:
+                            overlay_hover.renderers.append(renderer)
             if not self.overlaid and not self.tabs:
                 self._process_legend(element)
 
