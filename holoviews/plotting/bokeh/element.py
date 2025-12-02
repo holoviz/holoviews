@@ -648,10 +648,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         If empty initializes with no data.
 
         """
-        if 'hover' not in self.handles and not self.overlay_dims:
+        has_hover = 'hover' in self.handles
+        if not has_hover and not self.overlay_dims:
             return
 
-        if 'hover' in self.handles and not self.static_source:
+        if has_hover and not self.static_source:
             for d in (dimensions or element.dimensions()):
                 dim = util.dimension_sanitizer(d.name)
                 if dim not in data:
@@ -660,8 +661,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not data:
             return
 
-        # Always add overlay_dims to data, as these identify the element in the overlay
-        # and are needed for hover tooltips even when the subplot doesn't have its own hover tool
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)
             if dim not in data:
