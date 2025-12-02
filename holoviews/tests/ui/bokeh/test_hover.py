@@ -548,3 +548,11 @@ def test_hover_across_dynamicmaps(serve_panel):
         tooltip = page.locator(".bk-Tooltip")
         expect(tooltip).to_have_count(1)
         expect(tooltip.first).to_contain_text(f"category: {cat} x: {i} y: {i}")
+
+    widget.value = ["A", "B"]
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    page.mouse.up()
+    tooltip = page.locator(".bk-Tooltip")
+    expect(tooltip).to_have_count(2)
+    expect(tooltip.first).to_contain_text("category: A x: 0 y: 0")
+    expect(tooltip.last).to_contain_text("category: B x: 1 y: 1")
