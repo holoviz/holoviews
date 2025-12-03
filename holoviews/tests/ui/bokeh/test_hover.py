@@ -520,21 +520,17 @@ def test_hover_heatmap_image(serve_hv, x_axis_type, y_axis_type):
 @pytest.mark.usefixtures("bokeh_backend")
 def test_hover_across_dynamicmaps(serve_panel):
     data = pd.DataFrame({"x": range(2), "y": range(2), "category": ["A", "B"]})
-
-
-    def inner(value):
-        el = (
-            hv.Dataset(data)
-            .to(hv.Points, kdims=["x", "y"], groupby="category")
-            .opts(tools=["hover"], size=10)
-        )
-        el = el.get(value)
-        el.opts(show_legend=False, xlim=(-1, 3), ylim=(-1, 3), hit_dilation=100)
-        return el.overlay()
-
-
+    el = (
+        hv.Dataset(data)
+        .to(hv.Points, kdims=["x", "y"], groupby="category")
+        .opts(tools=["hover"], size=10, show_legend=False, xlim=(-1, 3), ylim=(-1, 3), hit_dilation=100)
+    )
     widget = pn.widgets.MultiSelect(value=["A"], options=["A", "B"])
-    col = pn.Column(widget, hv.DynamicMap(inner, streams=[widget.param.value]))
+    dmap = hv.DynamicMap(
+        lambda value: el.get(value).overlay(),
+        streams=[widget.param.value]
+    )
+    col = pn.Column(widget, dmap)
     page = serve_panel(col)
 
     hv_plot = page.locator(".bk-events")
