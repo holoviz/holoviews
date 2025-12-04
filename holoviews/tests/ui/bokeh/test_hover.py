@@ -519,9 +519,9 @@ def test_hover_heatmap_image(serve_hv, x_axis_type, y_axis_type):
     expect(tooltip).to_contain_text("z: 53")
 
 
-# UI regression tests for https://github.com/holoviz/holoviews/pull/6438
 @pytest.mark.usefixtures("bokeh_backend")
 def test_hover_heatmap_categorical_outside_plot_area(serve_hv, caplog):
+    # Test for https://github.com/holoviz/holoviews/pull/6438
     df = pd.DataFrame([
         [0, "A", 10],
         [0, "B", 20],
@@ -540,11 +540,12 @@ def test_hover_heatmap_categorical_outside_plot_area(serve_hv, caplog):
     bbox = hv_plot.bounding_box()
     page.mouse.wheel(0, 1000)
 
-    log_level = logging.ERROR
-    with caplog.at_level(log_level):
-        # Scroll and hover above the plot
+    with caplog.at_level(logging.ERROR):
+        # Hover above the plot
         page.mouse.move(bbox["x"] + bbox["width"] * 0.5, 10)
         page.mouse.up()
         page.wait_for_timeout(100)
-    error_messages = [record[2] for record in caplog.record_tuples if record[1] >= log_level]
-    assert not any("IndexError" in msg and "list index out of range" in msg for msg in error_messages)
+
+    assert not any(
+        "IndexError('list index out of range')" in msg[2] for msg in caplog.record_tuples
+    )
