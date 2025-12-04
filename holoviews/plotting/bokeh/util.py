@@ -1279,10 +1279,22 @@ def get_tool_id(tool: str | tools.Tool) -> tuple[type[tools.Tool], str | None]:
         elif tool == 'auto_box_zoom':
             return tool_type, 'auto'
     else:
+        identifiers = []
         for name in ("dimensions", "tags", "name", "description", "icon"):
             if identifier := getattr(tool, name, None):
+                # Skip tags that are only for internal bookkeeping
+                if name == "tags" and identifier == ['hv_created']:
+                    continue
                 # Convert lists to tuples (hashable)
                 if isinstance(identifier, list):
                     identifier = tuple(identifier)
-                return tool_type, identifier
+                identifiers.append((name, identifier))
+
+        # Return composite identifier if multiple properties exist
+        if len(identifiers) == 0:
+            return tool_type, None
+        elif len(identifiers) == 1:
+            return tool_type, identifiers[0][1]
+        else:
+            return tool_type, tuple(identifiers)
     return tool_type, None
