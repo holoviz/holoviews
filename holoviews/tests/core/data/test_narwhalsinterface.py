@@ -7,6 +7,7 @@ import pytest
 
 from holoviews import Dataset, Dimension
 from holoviews.core.data import NarwhalsInterface
+from holoviews.core.util.dependencies import PANDAS_GE_3_0_0
 
 from .base import HeterogeneousColumnTests, InterfaceTests
 
@@ -220,6 +221,9 @@ class DaskNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
 
         return dd.from_pandas(pd.DataFrame(*args, **kwargs), npartitions=2)
 
+    @pytest.mark.xfail(PANDAS_GE_3_0_0, reason="pandas 3.0")
+    def test_dataset_nodata_range(self):
+        return super().test_dataset_nodata_range()
 
 class IbisNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     __test__ = True
