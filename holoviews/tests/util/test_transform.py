@@ -10,6 +10,7 @@ import param
 import pytest
 
 import holoviews as hv
+from holoviews.core.util.dependencies import PANDAS_GE_3_0_0
 
 try:
     import dask.array as da
@@ -40,6 +41,13 @@ shapelib_available = pytest.mark.skipif(shapely is None and spd is None,
 from holoviews.core.data import Dataset
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.util.transform import dim
+
+if PANDAS_GE_3_0_0:
+    pandas_3_0_0_dask_warning = pytest.mark.filterwarnings(
+        "ignore:Dask currently has limited support for converting pandas extension dtypes to arrays:UserWarning"
+    )
+else:
+    pandas_3_0_0_dask_warning = lambda x: x
 
 
 class Params(param.Parameterized):
@@ -366,6 +374,7 @@ class TestDimTransforms(ComparisonTestCase):
         )
         self.assert_apply(expr, expected)
 
+    @pandas_3_0_0_dask_warning
     def test_bin_transform_with_labels(self):
         expr = dim('int').bin([0, 5, 10], ['A', 'B'])
         expected = pd.Series(
@@ -381,6 +390,7 @@ class TestDimTransforms(ComparisonTestCase):
         # We skip dask because results will depend on partition structure
         self.assert_apply(expr, expected, skip_dask=True)
 
+    @pandas_3_0_0_dask_warning
     def test_categorize_transform_dict(self):
         expr = dim('categories').categorize(
             {'A': 'circle', 'B': 'square', 'C': 'triangle'}
@@ -391,6 +401,7 @@ class TestDimTransforms(ComparisonTestCase):
         # We don't skip dask because results are now stable across partitions
         self.assert_apply(expr, expected)
 
+    @pandas_3_0_0_dask_warning
     def test_categorize_transform_dict_with_default(self):
         expr = dim('categories').categorize(
             {'A': 'circle', 'B': 'square'}, default='triangle'
@@ -469,6 +480,7 @@ class TestDimTransforms(ComparisonTestCase):
         self.assertEqual(repr(dim('date').df.dt.year),
                          "dim('date').pd.dt.year")
 
+    @pandas_3_0_0_dask_warning
     def test_pandas_str_accessor(self):
         expr = dim('categories').df.str.lower()
         self.assert_apply(expr, self.repeating.str.lower())
