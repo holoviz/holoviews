@@ -103,7 +103,7 @@ python = "3.13.*"
 COVERAGE_CORE = "sysmon"
 
 [feature.py314.dependencies]
-python = "3.14.*"
+python = "3.14.*,!=3.14.1" # https://github.com/python/cpython/issues/142214
 
 [feature.py314.activation.env]
 COVERAGE_CORE = "sysmon"
