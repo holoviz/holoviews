@@ -1264,8 +1264,28 @@ def get_ticker_axis_props(ticker):
     return axis_props
 
 
-def get_tool_id(tool: str | tools.Tool) -> tuple[type[tools.Tool], str | None]:
-    """Returns the tool type and an identifier for a given tool."""
+def get_tool_id(tool: str | tools.Tool) -> tuple[type[tools.Tool], str | tuple | None]:
+    """
+    Returns the tool type and an identifier for a given tool.
+
+    The identifier allows distinguishing tools of the same type but with
+    different properties. This function checks all disambiguation properties
+    (dimensions, tags, name, description, icon) and returns a composite
+    identifier if multiple properties are present.
+
+    Parameters
+    ----------
+    tool : str or Bokeh Tool class
+        Tool specification as string name or Tool class instance
+
+    Returns
+    -------
+    tuple[type[tools.Tool], str | tuple | None]
+        Tuple of (tool_type, identifier). The identifier can be:
+        - str: Single property value (e.g., 'both', 'width')
+        - tuple: Multiple property values as tuple of tuples
+        - None: No distinguishing properties
+    """
     is_str = isinstance(tool, str)
     tool_type = TOOL_TYPES.get(tool) if is_str else type(tool)
 
