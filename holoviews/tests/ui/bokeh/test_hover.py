@@ -544,6 +544,5 @@ def test_hover_heatmap_categorical_outside_plot_area(serve_hv, caplog):
         page.mouse.move(bbox["x"] + bbox["width"] * 0.5, 10)
         page.mouse.up()
         page.wait_for_timeout(100)
-
-    error_message = caplog.record_tuples[-1][-1]
+    error_message = caplog.record_tuples
     assert "IndexError" not in error_message
