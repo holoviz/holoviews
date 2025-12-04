@@ -540,10 +540,11 @@ def test_hover_heatmap_categorical_outside_plot_area(serve_hv, caplog):
     bbox = hv_plot.bounding_box()
     page.mouse.wheel(0, 1000)
 
-    with caplog.at_level(logging.ERROR):
+    log_level = logging.ERROR
+    with caplog.at_level(log_level):
         # Scroll and hover above the plot
         page.mouse.move(bbox["x"] + bbox["width"] * 0.5, 10)
         page.mouse.up()
         page.wait_for_timeout(100)
-    error_message = caplog.record_tuples
-    assert "IndexError" not in error_message
+    error_messages = [record[2] for record in caplog.record_tuples if record[1] >= log_level]
+    assert not any("IndexError" in msg and "list index out of range" in msg for msg in error_messages)
