@@ -33,15 +33,23 @@ features = ["required", "py313", "optional", "test-core", "test-example", "test-
 no-default-feature = true
 
 [environments.test-314]
-features = ["required", "py314", "optional-314", "test-core", "test-example", "test-unit-task"]
+features = [
+    "required",
+    "py314",
+    "optional-314",
+    "test-core",
+    "test-example",
+    "test-unit-task",
+    "pandas3",
+]
 no-default-feature = true
 
 [environments.test-ui]
-features = ["required", "py313", "optional", "test-core", "test-ui"]
+features = ["required", "py313", "optional", "test-core", "test-ui", "pandas3"]
 no-default-feature = true
 
 [environments.test-core]
-features = ["required", "py314", "test-core", "test-unit-task"]
+features = ["required", "py314", "test-core", "test-unit-task", "pandas3"]
 no-default-feature = true
 
 [environments.test-gpu]
@@ -104,6 +112,12 @@ COVERAGE_CORE = "sysmon"
 
 [feature.py314.dependencies]
 python = "3.14.*,!=3.14.1" # https://github.com/python/cpython/issues/142214
+
+[feature.pandas3]
+channels = ["conda-forge/label/pandas_rc"]
+
+[feature.pandas3.dependencies]
+pandas = { version = "==3.0.0rc0", channel = "conda-forge/label/pandas_rc" }
 
 [feature.py314.activation.env]
 COVERAGE_CORE = "sysmon"
