@@ -50,7 +50,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
             data = super()._element_transform(transform, element, ranges)
             new_data = []
             for d in data:
-                if isinstance(d, (np.ndarray, arraylike_types)) and len(d) == 1:
+                if isinstance(d, arraylike_types) and len(d) == 1:
                     new_data.append(d[0])
                 else:
                     new_data.append(d)
