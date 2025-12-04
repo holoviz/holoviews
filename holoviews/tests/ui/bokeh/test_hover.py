@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import pandas as pd
 import panel as pn
@@ -538,7 +540,6 @@ def test_hover_heatmap_categorical_outside_plot_area(serve_hv, caplog):
     bbox = hv_plot.bounding_box()
     page.mouse.wheel(0, 1000)
 
-    import logging
     with caplog.at_level(logging.ERROR):
         # Scroll and hover above the plot
         page.mouse.move(bbox["x"] + bbox["width"] * 0.5, 10)
