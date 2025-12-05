@@ -2,6 +2,32 @@
 
 ## Version 1.22
 
+### Version 1.22.1
+
+**December 5, 2025**
+
+This patch release includes a number of bug fixes and enhancements, and adds compatibility with Pandas 3.
+Many thanks to [@chrisbotica](https://github.com/chrisbotica) (first contribution), [@JelmerBot](https://github.com/JelmerBot) (first contribution), [@Azaya89](https://github.com/Azaya89), and [@hoxbro](https://github.com/hoxbro) for their contributions.
+
+Enhancements:
+
+- Add `text_outline_color` and `text_outline_width` style to Labels (Bokeh) ([#6738](https://github.com/holoviz/holoviews/pull/6738), [#6746](https://github.com/holoviz/holoviews/pull/6746))
+- Add support for timedelta axis and Narwhals duration (Bokeh) ([#6734](https://github.com/holoviz/holoviews/pull/6734))
+- Add numpy masked array to `masked_types` ([#6732](https://github.com/holoviz/holoviews/pull/6732))
+
+Bug Fixes:
+
+- Have hover tool work across different DynamicMaps elements (Bokeh) ([#6748](https://github.com/holoviz/holoviews/pull/6748))
+- Suppress Runtime warnings for negative size values (Matplotlib) ([#6744](https://github.com/holoviz/holoviews/pull/6744))
+- Don't error if `Heatmap` is optimized and color style is used ([#6730](https://github.com/holoviz/holoviews/pull/6730))
+- Narwhals Series not being seen as arraylike and not computing `dim` expression ([#6729](https://github.com/holoviz/holoviews/pull/6729))
+- Check categorical legend dtypes for `categories` before accessing it ([#6053](https://github.com/holoviz/holoviews/pull/6053))
+- Element interface mask to allow for `np.nan` ([#5790](https://github.com/holoviz/holoviews/pull/5790))
+
+Documentation:
+
+- Add documentation for `legend_opts` (Bokeh) ([#6751](https://github.com/holoviz/holoviews/pull/6751))
+
 ### Version 1.22.0
 
 **November 10, 2025**
