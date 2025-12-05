@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 try:
+    import dask
     import dask.dataframe as dd
 except ImportError:
     dd = None
@@ -120,7 +121,8 @@ class ToTestCase(DatasetPropertyTestCase):
     def test_to_holomap_dask(self):
         if dd is None:
             pytest.skip("Dask required to test .to with dask dataframe.")
-        ddf = dd.from_pandas(self.df, npartitions=2)
+        with dask.config.set({"dataframe.convert-string": False}):
+            ddf = dd.from_pandas(self.df, npartitions=2)
         dds = Dataset(
             ddf,
             kdims=[

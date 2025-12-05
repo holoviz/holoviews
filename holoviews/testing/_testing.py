@@ -49,6 +49,7 @@ class _DataComparison:
 
             cls.equality_funcs[pd.Series] = cls.compare_pandas_series
             cls.equality_funcs[pd.DataFrame] = cls.compare_pandas_dataframe
+            cls.equality_funcs[pd.arrays.ArrowStringArray] = cls.compare_pandas_array
 
         if _is_installed("dask"):
             import dask.array as da
@@ -90,6 +91,12 @@ class _DataComparison:
             assert_array_equal(arr1, arr2)
         else:
             assert_array_almost_equal(arr1, arr2)
+
+    @classmethod
+    def compare_pandas_array(cls, ser1, ser2):
+        from pandas.testing import assert_extension_array_equal
+
+        assert_extension_array_equal(ser1, ser2)
 
     @classmethod
     def compare_pandas_series(cls, ser1, ser2):
