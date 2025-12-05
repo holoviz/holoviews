@@ -520,6 +520,43 @@ def test_hover_heatmap_image(serve_hv, x_axis_type, y_axis_type):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
+def test_hover_across_dynamicmaps(serve_panel):
+    data = pd.DataFrame({"x": range(2), "y": range(2), "category": ["A", "B"]})
+    el = (
+        hv.Dataset(data)
+        .to(hv.Points, kdims=["x", "y"], groupby="category")
+        .opts(tools=["hover"], size=10, show_legend=False, xlim=(-1, 3), ylim=(-1, 3), hit_dilation=100)
+    )
+    widget = pn.widgets.MultiSelect(value=["A"], options=["A", "B"])
+    dmap = hv.DynamicMap(
+        lambda value: el.get(value).overlay(),
+        streams=[widget.param.value]
+    )
+    col = pn.Column(widget, dmap)
+    page = serve_panel(col)
+
+    hv_plot = page.locator(".bk-events")
+    expect(hv_plot).to_have_count(1)
+    bbox = hv_plot.bounding_box()
+
+    for i, cat in enumerate(("A", "B")):
+        widget.value = [cat]
+        page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+        page.mouse.up()
+        tooltip = page.locator(".bk-Tooltip")
+        expect(tooltip).to_have_count(1)
+        expect(tooltip.first).to_contain_text(f"category: {cat} x: {i} y: {i}")
+
+    widget.value = ["A", "B"]
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    page.mouse.up()
+    tooltip = page.locator(".bk-Tooltip")
+    expect(tooltip).to_have_count(2)
+    expect(tooltip.first).to_contain_text("category: A x: 0 y: 0")
+    expect(tooltip.last).to_contain_text("category: B x: 1 y: 1")
+
+
+@pytest.mark.usefixtures("bokeh_backend")
 def test_hover_heatmap_categorical_outside_plot_area(serve_hv, caplog):
     # Test for https://github.com/holoviz/holoviews/pull/6438
     df = pd.DataFrame([
