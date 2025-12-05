@@ -34,12 +34,17 @@ class DaskSpatialPandasInterface(SpatialPandasInterface):
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
+        import dask
         import dask.dataframe as dd
         data, dims, params = super().init(
             eltype, data, kdims, vdims
         )
         if not isinstance(data, cls.frame_type()):
-            data = dd.from_pandas(data, npartitions=1)
+            # convert-string will convert the object dtype to string
+            # even if the object is a list
+            # https://github.com/dask/dask/issues/10631
+            with dask.config.set({"dataframe.convert-string": False}):
+                data = dd.from_pandas(data, npartitions=1)
         return data, dims, params
 
     @classmethod

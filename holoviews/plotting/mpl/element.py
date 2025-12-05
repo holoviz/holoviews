@@ -715,6 +715,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             if (not np.isscalar(val) and len(util.unique_array(val)) == 1 and
                 ("color" not in k or validate('color', val))):
                 val = val[0]
+            if isinstance(val, util.arraylike_types):
+                val = np.asarray(val)
 
             if not np.isscalar(val) and k in self._nonvectorized_styles:
                 element = type(element).__name__

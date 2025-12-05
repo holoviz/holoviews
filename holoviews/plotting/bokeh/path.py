@@ -6,7 +6,7 @@ from bokeh.models import FactorRange
 
 from ...core import util
 from ...core.dimension import Dimension
-from ...core.util import dtype_kind
+from ...core.util import arraylike_types, dtype_kind
 from ...element import Contours, Polygons
 from ...util.transform import dim
 from .callbacks import PolyDrawCallback, PolyEditCallback
@@ -50,7 +50,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
             data = super()._element_transform(transform, element, ranges)
             new_data = []
             for d in data:
-                if isinstance(d, np.ndarray) and len(d) == 1:
+                if isinstance(d, arraylike_types) and len(d) == 1:
                     new_data.append(d[0])
                 else:
                     new_data.append(d)

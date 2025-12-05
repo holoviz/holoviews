@@ -2,7 +2,7 @@ exclude: (\.min\.js$|\.svg$|\.html$)
 default_stages: [pre-commit]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # frozen: v6.0.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -17,30 +17,30 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.3
+    rev: 1a1f58ba4c35362efe8fed2279715a905baee93d # frozen: v0.14.8
     hooks:
       - id: ruff-check
   - repo: https://github.com/hoxbro/clean_notebook
-    rev: v0.1.17
+    rev: 9f524ec87ccbde34b35dbab058b45024cdb41887 # frozen: v0.1.17
     hooks:
       - id: clean-notebook
         args: [--strip-trailing-newlines]
   - repo: https://github.com/crate-ci/typos
-    rev: v1.38.1
+    rev: 24c5854966d17070a3b25e2c2dfc63ec5bc94cf4 # frozen: v1.40.0
     hooks:
       - id: typos
   - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: v1.10.0
+    rev: 3a6eb0fadf60b3cccfd80bad9dbb6fae7e47b316 # frozen: v1.10.0
     hooks:
       - id: rst-backticks
       - id: rst-directive-colons
       - id: rst-inline-touching-normal
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.11.0.1
+    rev: 745eface02aef23e168a8afb6b5737818efbea95 # frozen: v0.11.0.1
     hooks:
       - id: shellcheck
   - repo: https://github.com/hoxbro/prettier-pre-commit
-    rev: v3.6.2
+    rev: bae77de89db2ee6b2052f9647b14246e9ee19cd1 # frozen: v3.7.4
     hooks:
       - id: prettier
         exclude: conda.recipe/meta.yaml
@@ -49,7 +49,7 @@ repos:
           - yaml
           - css
   - repo: https://github.com/hoxbro/taplo-pre-commit
-    rev: v0.9.3
+    rev: 605f960c3c571f814f535622a688bcde63ee87f6 # frozen: v0.9.3
     hooks:
       - id: taplo
         args:

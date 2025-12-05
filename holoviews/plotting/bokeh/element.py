@@ -648,13 +648,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         If empty initializes with no data.
 
         """
-        if 'hover' not in self.handles or self.static_source:
+        has_hover = 'hover' in self.handles
+        if not has_hover and not self.overlay_dims:
             return
 
-        for d in (dimensions or element.dimensions()):
-            dim = util.dimension_sanitizer(d.name)
-            if dim not in data:
-                data[dim] = element.dimension_values(d)
+        if has_hover and not self.static_source:
+            for d in (dimensions or element.dimensions()):
+                dim = util.dimension_sanitizer(d.name)
+                if dim not in data:
+                    data[dim] = element.dimension_values(d)
+
+        if not data:
+            return
 
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)
@@ -3596,6 +3601,14 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if not self.tabs:
                 init_kwargs['plot'] = self.handles['plot']
             self._create_dynamic_subplots(key, items, ranges, **init_kwargs)
+            if overlay_hover := self.handles.get('hover'):
+                if overlay_hover.renderers == 'auto':
+                    overlay_hover.renderers = []
+                for k, _ in items:
+                    if k in self.subplots and 'glyph_renderer' in self.subplots[k].handles:
+                        renderer = self.subplots[k].handles['glyph_renderer']
+                        if renderer not in overlay_hover.renderers:
+                            overlay_hover.renderers.append(renderer)
             if not self.overlaid and not self.tabs:
                 self._process_legend(element)
 
