@@ -10,9 +10,9 @@ import param
 import pytest
 
 import holoviews as hv
-from holoviews.core.util.dependencies import PANDAS_GE_3_0_0
 
 try:
+    import dask
     import dask.array as da
     import dask.dataframe as dd
 except ImportError:
@@ -42,12 +42,9 @@ from holoviews.core.data import Dataset
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.util.transform import dim
 
-if PANDAS_GE_3_0_0:
-    pandas_3_0_0_dask_warning = pytest.mark.filterwarnings(
-        "ignore:Dask currently has limited support for converting pandas extension dtypes to arrays:UserWarning"
-    )
-else:
-    pandas_3_0_0_dask_warning = lambda x: x
+dask_conversion_warning = pytest.mark.filterwarnings(
+    "ignore:Dask currently has limited support for converting pandas extension dtypes to arrays:UserWarning"
+)
 
 
 class Params(param.Parameterized):
@@ -98,7 +95,7 @@ class TestDimTransforms(ComparisonTestCase):
 
     # Assertion helpers
 
-    def assert_apply(self, expr, expected, skip_dask=False, skip_no_index=False):
+    def assert_apply(self, expr, expected, *, skip_dask=False, skip_no_index=False, dask_convert_string=None):
         if np.isscalar(expected):
             # Pandas input
             self.assertEqual(
@@ -140,8 +137,9 @@ class TestDimTransforms(ComparisonTestCase):
         if skip_dask or dd is None:
             return
 
-        # Check using dataset backed by Dask DataFrame
-        expected_dask = dd.from_pandas(expected, npartitions=2)
+        # Check using dataset backed by Dask DataFrame,
+        with dask.config.set({"dataframe.convert-string": dask_convert_string}):
+            expected_dask = dd.from_pandas(expected, npartitions=2)
 
         # keep_index=False, compute=False
         if not skip_no_index:
@@ -374,13 +372,14 @@ class TestDimTransforms(ComparisonTestCase):
         )
         self.assert_apply(expr, expected)
 
-    @pandas_3_0_0_dask_warning
+    @dask_conversion_warning
     def test_bin_transform_with_labels(self):
         expr = dim('int').bin([0, 5, 10], ['A', 'B'])
         expected = pd.Series(
             ['A', 'A', 'A', 'A', 'A', 'B', 'B', 'B', 'B', 'B']
         )
-        self.assert_apply(expr, expected)
+        # don't use dask convert-string to ensure roundtrip
+        self.assert_apply(expr, expected, dask_convert_string=False)
 
     def test_categorize_transform_list(self):
         expr = dim('categories').categorize(['circle', 'square', 'triangle'])
@@ -390,7 +389,7 @@ class TestDimTransforms(ComparisonTestCase):
         # We skip dask because results will depend on partition structure
         self.assert_apply(expr, expected, skip_dask=True)
 
-    @pandas_3_0_0_dask_warning
+    @dask_conversion_warning
     def test_categorize_transform_dict(self):
         expr = dim('categories').categorize(
             {'A': 'circle', 'B': 'square', 'C': 'triangle'}
@@ -399,9 +398,10 @@ class TestDimTransforms(ComparisonTestCase):
             (['circle', 'square', 'triangle'] * 3) + ['circle']
         )
         # We don't skip dask because results are now stable across partitions
-        self.assert_apply(expr, expected)
+        # don't use dask convert-string to ensure roundtrip
+        self.assert_apply(expr, expected, dask_convert_string=False)
 
-    @pandas_3_0_0_dask_warning
+    @dask_conversion_warning
     def test_categorize_transform_dict_with_default(self):
         expr = dim('categories').categorize(
             {'A': 'circle', 'B': 'square'}, default='triangle'
@@ -410,7 +410,8 @@ class TestDimTransforms(ComparisonTestCase):
             (['circle', 'square', 'triangle'] * 3) + ['circle']
         )
         # We don't skip dask because results are stable across partitions
-        self.assert_apply(expr, expected)
+        # don't use dask convert-string to ensure roundtrip
+        self.assert_apply(expr, expected, dask_convert_string=False)
 
     # Numpy functions
 
@@ -480,10 +481,11 @@ class TestDimTransforms(ComparisonTestCase):
         self.assertEqual(repr(dim('date').df.dt.year),
                          "dim('date').pd.dt.year")
 
-    @pandas_3_0_0_dask_warning
+    @dask_conversion_warning
     def test_pandas_str_accessor(self):
         expr = dim('categories').df.str.lower()
-        self.assert_apply(expr, self.repeating.str.lower())
+        # Use dask convert-string as we use the setup data
+        self.assert_apply(expr, self.repeating.str.lower(), dask_convert_string=True)
 
     def test_pandas_chained_methods(self):
         expr = dim('int').df.rolling(1).mean()
