@@ -966,7 +966,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 xdiff = 1
             else:
                 xdiff = np.min(xdiff)
-            width = (1 - self.bar_padding) * (date2num(xdiff) / 1000 if is_dt else xdiff)
+            width = (1 - self.bar_padding) * (date2num(xdiff.astype("timedelta64[us]")) if is_dt else xdiff)
             data_width = (1 - self.bar_padding) * xdiff
         else:
             xdiff = len(values.get('category', [None]))

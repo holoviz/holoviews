@@ -860,9 +860,7 @@ def asarray(arraylike, strict=True):
         return arraylike
     elif isinstance(arraylike, list):
         return np.asarray(arraylike, dtype=object)
-    elif not isinstance(arraylike, np.ndarray) and isinstance(arraylike, arraylike_types):
-        return arraylike.values
-    elif hasattr(arraylike, '__array__'):
+    elif hasattr(arraylike, '__array__') or isinstance(arraylike, arraylike_types):
         return np.asarray(arraylike)
     elif strict:
         raise ValueError(f'Could not convert {type(arraylike)} type to array')

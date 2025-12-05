@@ -296,15 +296,21 @@ class AggregationOperation(ResampleOperation2D):
             for col in dfdata.columns:
                 if col in agg.coords:
                     continue
-                val = dfdata[col].values[index]
-                if dtype_kind(val) == 'f':
+                ser = dfdata[col]
+                kind = dtype_kind(ser)
+                if kind == "O" and getattr(ser.dtype, "storage", None) == "pyarrow":
+                    # pyarrow can only handle 1-dimensional
+                    val = np.asarray(ser)[index]
+                else:
+                    val = ser.values[index]
+                if kind == 'f':
                     val[neg1] = np.nan
                 elif isinstance(val.dtype, pd.CategoricalDtype):
                     val = val.to_numpy()
                     val[neg1] = "-"
-                elif dtype_kind(val) == "O":
+                elif kind == "O":
                     val[neg1] = "-"
-                elif dtype_kind(val) == "M":
+                elif kind == "M":
                     val[neg1] = np.datetime64("NaT")
                 else:
                     val = val.astype(np.float64)

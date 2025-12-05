@@ -192,17 +192,12 @@ class NarwhalsInterface(Interface):
                 return np.nan, np.nan
             return cmin.item(), cmax.item()
         else:
+            col = nw.col(name)
             if dimension.nodata is not None:
-                expr = (
-                    nw.when(nw.col(name) == dimension.nodata)
-                    .then(None)
-                    .otherwise(nw.col(name))
-                    .alias(name)
+                df_column = df_column.select(
+                    nw.when(col != dimension.nodata).then(col)
                 )
-                df_column = df_column.select(expr)
-            if dataset.data.implementation in _NO_DROP_NULL:
-                col = nw.col(name)
-            else:
+            if dataset.data.implementation not in _NO_DROP_NULL:
                 col = nw.col(name).drop_nulls()
             # NOTE: Some narwhals backends (duckdb) will return nan as
             # the max value

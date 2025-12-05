@@ -660,7 +660,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if 'norm' in plot_kwargs: # vmin/vmax should now be exclusively in norm
             plot_kwargs.pop('vmin', None)
             plot_kwargs.pop('vmax', None)
-        with warnings.catch_warnings():
+        with (warnings.catch_warnings(), np.errstate(invalid="ignore")):
             # scatter have a default cmap and with an empty array will emit this warning
             warnings.filterwarnings('ignore', "No data for colormapping provided via 'c'")
             artist = plot_fn(*plot_args, **plot_kwargs)
@@ -715,6 +715,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             if (not np.isscalar(val) and len(util.unique_array(val)) == 1 and
                 ("color" not in k or validate('color', val))):
                 val = val[0]
+            if isinstance(val, util.arraylike_types):
+                val = np.asarray(val)
 
             if not np.isscalar(val) and k in self._nonvectorized_styles:
                 element = type(element).__name__

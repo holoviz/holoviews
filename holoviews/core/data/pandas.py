@@ -460,7 +460,12 @@ class PandasInterface(Interface, PandasAPI):
             data = (data if isindex else data.dt).tz_localize(None)
         if not expanded:
             return pd.unique(data)
-        return data.values if hasattr(data, 'values') else data
+        if hasattr(data, 'values'):
+            data = data.values
+            # https://pandas.pydata.org/docs/dev/user_guide/copy_on_write.html#read-only-numpy-arrays
+            if hasattr(data, "flags") and not data.flags.writeable:
+                data = data.copy()
+        return data
 
 
     @classmethod
