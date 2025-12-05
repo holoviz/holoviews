@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import pandas as pd
 import panel as pn
@@ -515,3 +517,35 @@ def test_hover_heatmap_image(serve_hv, x_axis_type, y_axis_type):
     expect(tooltip).to_contain_text("x: 10.100" if is_lambda(x_axis_type) else "x: 10")
     expect(tooltip).to_contain_text("y: 4.100" if is_lambda(y_axis_type) else "y: 4")
     expect(tooltip).to_contain_text("z: 53")
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_hover_heatmap_categorical_outside_plot_area(serve_hv, caplog):
+    # Test for https://github.com/holoviz/holoviews/pull/6438
+    df = pd.DataFrame([
+        [0, "A", 10],
+        [0, "B", 20],
+        [1, "A", 20],
+        [1, "B", 30]
+    ], columns=["key1", "key2", "value"])
+
+    ds = hv.Dataset(df)
+    heatmap = ds.to(hv.HeatMap, kdims=["key1", "key2"], vdims="value").opts(tools=["hover"])
+
+    hv.streams.PointerXY(source=heatmap)
+
+    page = serve_hv(heatmap)
+    hv_plot = page.locator(".bk-events")
+    expect(hv_plot).to_have_count(1)
+    bbox = hv_plot.bounding_box()
+    page.mouse.wheel(0, 1000)
+
+    with caplog.at_level(logging.ERROR):
+        # Hover above the plot
+        page.mouse.move(bbox["x"] + bbox["width"] * 0.5, 10)
+        page.mouse.up()
+        page.wait_for_timeout(100)
+
+    assert not any(
+        "IndexError('list index out of range')" in msg[2] for msg in caplog.record_tuples
+    )
