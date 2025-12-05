@@ -2155,7 +2155,7 @@ Enhancements:
 
 - Add numpy log to dim transforms
   ([#3731](https://github.com/pyviz/holoviews/issues/3731))
-- Make Buffer stream following behavior togglable
+- Make Buffer stream following behavior toggleable
   ([#3823](https://github.com/pyviz/holoviews/issues/3823))
 - Added internal methods to access dask arrays and made histogram
   operation operate on dask arrays
