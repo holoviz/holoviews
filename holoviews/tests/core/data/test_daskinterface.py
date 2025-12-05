@@ -3,16 +3,26 @@ import pandas as pd
 import pytest
 
 try:
+    import dask
     import dask.dataframe as dd
 except ImportError:
     pytest.skip("Could not import dask, skipping DaskInterface tests.", allow_module_level=True)
 
 from holoviews.core.data import Dataset
-from holoviews.core.util import PANDAS_VERSION
+from holoviews.core.util.dependencies import (
+    PANDAS_GE_3_0_0,
+    PANDAS_VERSION,
+    _no_import_version,
+)
 from holoviews.testing import assert_data_equal, assert_element_equal
 from holoviews.util.transform import dim
 
 from .test_pandasinterface import BasePandasInterfaceTests
+
+_DASK_CONVERT_STRING = (
+    _no_import_version("dask") >= (2023, 7, 1)
+    and dask.config.get("dataframe.convert-string") in (True, None)
+)
 
 
 class DaskDatasetTest(BasePandasInterfaceTests):
@@ -136,3 +146,16 @@ class DaskDatasetTest(BasePandasInterfaceTests):
         df = self.dataset_hm.dframe(['x'])
         expected = self.frame({'x': self.xs}, dtype=df.dtypes.iloc[0]).compute()
         assert_data_equal(df, expected)
+
+    def test_dataset_dataset_ht_dtypes(self):
+        ds = self.table
+        if _DASK_CONVERT_STRING:
+            string_dtype = pd.StringDtype(na_value=pd.NA, storage="pyarrow")
+        elif PANDAS_GE_3_0_0:
+            string_dtype = pd.StringDtype(na_value=np.nan)
+        else:
+            string_dtype = np.dtype('object')
+        assert ds.interface.dtype(ds, 'Gender') == string_dtype
+        assert ds.interface.dtype(ds, 'Age') == np.dtype(int)
+        assert ds.interface.dtype(ds, 'Weight') == np.dtype(int)
+        assert ds.interface.dtype(ds, 'Height') == np.dtype('float64')

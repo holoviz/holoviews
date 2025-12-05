@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import pandas as pd
 import panel as pn
@@ -515,3 +517,72 @@ def test_hover_heatmap_image(serve_hv, x_axis_type, y_axis_type):
     expect(tooltip).to_contain_text("x: 10.100" if is_lambda(x_axis_type) else "x: 10")
     expect(tooltip).to_contain_text("y: 4.100" if is_lambda(y_axis_type) else "y: 4")
     expect(tooltip).to_contain_text("z: 53")
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_hover_across_dynamicmaps(serve_panel):
+    data = pd.DataFrame({"x": range(2), "y": range(2), "category": ["A", "B"]})
+    el = (
+        hv.Dataset(data)
+        .to(hv.Points, kdims=["x", "y"], groupby="category")
+        .opts(tools=["hover"], size=10, show_legend=False, xlim=(-1, 3), ylim=(-1, 3), hit_dilation=100)
+    )
+    widget = pn.widgets.MultiSelect(value=["A"], options=["A", "B"])
+    dmap = hv.DynamicMap(
+        lambda value: el.get(value).overlay(),
+        streams=[widget.param.value]
+    )
+    col = pn.Column(widget, dmap)
+    page = serve_panel(col)
+
+    hv_plot = page.locator(".bk-events")
+    expect(hv_plot).to_have_count(1)
+    bbox = hv_plot.bounding_box()
+
+    for i, cat in enumerate(("A", "B")):
+        widget.value = [cat]
+        page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+        page.mouse.up()
+        tooltip = page.locator(".bk-Tooltip")
+        expect(tooltip).to_have_count(1)
+        expect(tooltip.first).to_contain_text(f"category: {cat} x: {i} y: {i}")
+
+    widget.value = ["A", "B"]
+    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    page.mouse.up()
+    tooltip = page.locator(".bk-Tooltip")
+    expect(tooltip).to_have_count(2)
+    expect(tooltip.first).to_contain_text("category: A x: 0 y: 0")
+    expect(tooltip.last).to_contain_text("category: B x: 1 y: 1")
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_hover_heatmap_categorical_outside_plot_area(serve_hv, caplog):
+    # Test for https://github.com/holoviz/holoviews/pull/6438
+    df = pd.DataFrame([
+        [0, "A", 10],
+        [0, "B", 20],
+        [1, "A", 20],
+        [1, "B", 30]
+    ], columns=["key1", "key2", "value"])
+
+    ds = hv.Dataset(df)
+    heatmap = ds.to(hv.HeatMap, kdims=["key1", "key2"], vdims="value").opts(tools=["hover"])
+
+    hv.streams.PointerXY(source=heatmap)
+
+    page = serve_hv(heatmap)
+    hv_plot = page.locator(".bk-events")
+    expect(hv_plot).to_have_count(1)
+    bbox = hv_plot.bounding_box()
+    page.mouse.wheel(0, 1000)
+
+    with caplog.at_level(logging.ERROR):
+        # Hover above the plot
+        page.mouse.move(bbox["x"] + bbox["width"] * 0.5, 10)
+        page.mouse.up()
+        page.wait_for_timeout(100)
+
+    assert not any(
+        "IndexError('list index out of range')" in msg[2] for msg in caplog.record_tuples
+    )

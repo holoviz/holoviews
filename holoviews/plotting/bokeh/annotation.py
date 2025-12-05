@@ -22,7 +22,7 @@ from .styles import (
     line_properties,
     text_properties,
 )
-from .util import BOKEH_GE_3_2_0, date_to_integer
+from .util import BOKEH_GE_3_2_0, BOKEH_GE_3_9_0, date_to_integer
 
 arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
 arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
@@ -189,6 +189,7 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
         'cmap',
         'angle',
         'text_outline_color',
+        *(("text_outline_width",) if BOKEH_GE_3_9_0 else ())
     ]
 
     _nonvectorized_styles = [*base_properties, 'cmap']

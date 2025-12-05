@@ -7,6 +7,7 @@ from holoviews.core.data.interface import DataError
 from holoviews.core.data.pandas import PandasInterface
 from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
+from holoviews.core.util.dependencies import PANDAS_GE_3_0_0
 from holoviews.element import Distribution, Points, Scatter
 from holoviews.testing import assert_element_equal
 
@@ -172,6 +173,14 @@ class BasePandasInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         df = pd.DataFrame(range(4), columns=["values"], index=list("BADC"))
         ds = Dataset(df, kdims='index')
         assert ds.range('index') == ('A', 'D')
+
+    def test_dataset_dataset_ht_dtypes(self):
+        ds = self.table
+        string_dtype = pd.StringDtype(na_value=np.nan) if PANDAS_GE_3_0_0 else np.dtype('object')
+        assert ds.interface.dtype(ds, 'Gender') == string_dtype
+        assert ds.interface.dtype(ds, 'Age') == np.dtype(int)
+        assert ds.interface.dtype(ds, 'Weight') == np.dtype(int)
+        assert ds.interface.dtype(ds, 'Height') == np.dtype('float64')
 
 
 class PandasInterfaceTests(BasePandasInterfaceTests):
@@ -412,6 +421,14 @@ class PandasInterfaceMultiIndexTests(HeterogeneousColumnTests, InterfaceTests):
         assert list(grouped.keys()) == [0, 1, 2, 3]
         for k, v in grouped.items():
             pd.testing.assert_frame_equal(v.data, ds.select(values=k).data)
+
+    def test_dataset_dataset_ht_dtypes(self):
+        ds = self.table
+        string_dtype = pd.StringDtype(na_value=np.nan) if PANDAS_GE_3_0_0 else np.dtype('object')
+        assert ds.interface.dtype(ds, 'Gender') == string_dtype
+        assert ds.interface.dtype(ds, 'Age') == np.dtype(int)
+        assert ds.interface.dtype(ds, 'Weight') == np.dtype(int)
+        assert ds.interface.dtype(ds, 'Height') == np.dtype('float64')
 
     def test_regression_no_auto_index(self):
         # https://github.com/holoviz/holoviews/issues/6298
