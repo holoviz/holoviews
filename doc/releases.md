@@ -28,6 +28,10 @@ Documentation:
 
 - Add documentation for `legend_opts` (Bokeh) ([#6751](https://github.com/holoviz/holoviews/pull/6751))
 
+Compatibility:
+
+- Pandas 3.0.0 ([#6749](https://github.com/holoviz/holoviews/pull/6749))
+
 ### Version 1.22.0
 
 **November 10, 2025**
