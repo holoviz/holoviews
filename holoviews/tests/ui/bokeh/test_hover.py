@@ -554,8 +554,8 @@ def test_hover_across_dynamicmaps(serve_panel):
     expect(tooltip).to_have_count(2)
     expect(tooltip.first).to_contain_text("category: A x: 0 y: 0")
     expect(tooltip.last).to_contain_text("category: B x: 1 y: 1")
-    
-    
+
+
 @pytest.mark.usefixtures("bokeh_backend")
 def test_hover_heatmap_categorical_outside_plot_area(serve_hv, caplog):
     # Test for https://github.com/holoviz/holoviews/pull/6438
