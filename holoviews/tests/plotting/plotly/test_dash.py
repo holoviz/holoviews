@@ -1,10 +1,11 @@
-import unittest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 try:
     import dash  # noqa: F401
 except ImportError:
-    raise unittest.SkipTest("Dash not installed")
+    pytest.skip("Dash not installed", allow_module_level=True)
 
 from dash._callback_context import CallbackContext
 
@@ -16,6 +17,7 @@ from holoviews.plotting.plotly.dash import (
     to_dash,
 )
 from holoviews.streams import BoundsXY, RangeXY, Selection1D
+from holoviews.testing import assert_element_equal
 
 from .test_plot import TestPlotlyPlot
 
@@ -30,8 +32,8 @@ pio.templates.default = None
 
 class TestHoloViewsDash(TestPlotlyPlot):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
 
         # Build Dash app mock
         self.app = MagicMock()
@@ -46,16 +48,16 @@ class TestHoloViewsDash(TestPlotlyPlot):
         components = to_dash(self.app, [scatter])
 
         # Check returned components
-        self.assertIsInstance(components, DashComponents)
-        self.assertEqual(len(components.graphs), 1)
-        self.assertEqual(len(components.kdims), 0)
-        self.assertIsInstance(components.store, Store)
-        self.assertEqual(len(components.resets), 0)
+        assert isinstance(components, DashComponents)
+        assert len(components.graphs) == 1
+        assert len(components.kdims) == 0
+        assert isinstance(components.store, Store)
+        assert len(components.resets) == 0
 
         # Check initial figure
         fig = components.graphs[0].figure
-        self.assertEqual(len(fig["data"]), 1)
-        self.assertEqual(fig["data"][0]["type"], "scatter")
+        assert len(fig["data"]) == 1
+        assert fig["data"][0]["type"] == "scatter"
 
     def test_boundsxy_dynamic_map(self):
         # Build Holoviews Elements
@@ -70,11 +72,11 @@ class TestHoloViewsDash(TestPlotlyPlot):
         components = to_dash(self.app, [scatter, dmap], reset_button=True)
 
         # Check returned components
-        self.assertIsInstance(components, DashComponents)
-        self.assertEqual(len(components.graphs), 2)
-        self.assertEqual(len(components.kdims), 0)
-        self.assertIsInstance(components.store, Store)
-        self.assertEqual(len(components.resets), 1)
+        assert isinstance(components, DashComponents)
+        assert len(components.graphs) == 2
+        assert len(components.kdims) == 0
+        assert isinstance(components.store, Store)
+        assert len(components.resets) == 1
 
         # Get arguments passed to @app.callback decorator
         decorator_args = next(iter(self.app.callback.call_args_list[0]))
@@ -83,10 +85,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         # Check outputs
         expected_outputs = [(g.id, "figure") for g in components.graphs] + \
                            [(components.store.id, "data")]
-        self.assertEqual(
-            [(output.component_id, output.component_property) for output in outputs],
-            expected_outputs
-        )
+        assert [(output.component_id, output.component_property) for output in outputs] == expected_outputs
 
         # Check inputs
         expected_inputs = [
@@ -95,32 +94,23 @@ class TestHoloViewsDash(TestPlotlyPlot):
             for prop in ["selectedData", "relayoutData"]
         ] + [(components.resets[0].id, "n_clicks")]
 
-        self.assertEqual(
-            [(ip.component_id, ip.component_property) for ip in inputs],
-            expected_inputs,
-        )
+        assert [(ip.component_id, ip.component_property) for ip in inputs] == expected_inputs
 
         # Check State
         expected_state = [
             (components.store.id, "data")
         ]
-        self.assertEqual(
-            [(state.component_id, state.component_property) for state in states],
-            expected_state,
-        )
+        assert [(state.component_id, state.component_property) for state in states] == expected_state
 
         # Check initial figures
         fig1 = components.graphs[0].figure
         fig2 = components.graphs[1].figure
-        self.assertEqual(fig1["data"][0]["type"], "scatter")
+        assert fig1["data"][0]["type"] == "scatter"
 
         # Second figure holds the bounds element
-        self.assertEqual(len(fig2["data"]), 0)
-        self.assertEqual(len(fig2["layout"]["shapes"]), 1)
-        self.assertEqual(
-            fig2["layout"]["shapes"][0]["path"],
-            "M0 0L0 0L0 0L0 0L0 0Z"
-        )
+        assert len(fig2["data"]) == 0
+        assert len(fig2["layout"]["shapes"]) == 1
+        assert fig2["layout"]["shapes"][0]["path"] == "M0 0L0 0L0 0L0 0L0 0Z"
 
         # Get callback function
         callback_fn = self.app.callback.return_value.call_args[0][0]
@@ -142,22 +132,19 @@ class TestHoloViewsDash(TestPlotlyPlot):
             )
 
         # First figure is the scatter trace
-        self.assertEqual(fig1["data"][0]["type"], "scatter")
+        assert fig1["data"][0]["type"] == "scatter"
 
         # Second figure holds the bounds element
-        self.assertEqual(len(fig2["data"]), 0)
-        self.assertEqual(len(fig2["layout"]["shapes"]), 1)
-        self.assertEqual(
+        assert len(fig2["data"]) == 0
+        assert len(fig2["layout"]["shapes"]) == 1
+        assert_element_equal(
             fig2["layout"]["shapes"][0]["path"],
             "M1 3L1 4L2 4L2 3L1 3Z",
         )
 
         # Check that store was updated
-        self.assertEqual(
-            decode_store_data(new_store),
-            {"streams": {id(boundsxy): {"bounds": (1, 3, 2, 4)}},
+        assert decode_store_data(new_store) == {"streams": {id(boundsxy): {"bounds": (1, 3, 2, 4)}},
              "kdims": {}}
-        )
 
         # Click reset button
         with patch.object(
@@ -171,23 +158,17 @@ class TestHoloViewsDash(TestPlotlyPlot):
             )
 
         # First figure is the scatter trace
-        self.assertEqual(fig1["data"][0]["type"], "scatter")
+        assert fig1["data"][0]["type"] == "scatter"
 
         # Second figure holds reset bounds element
-        self.assertEqual(len(fig2["data"]), 0)
-        self.assertEqual(len(fig2["layout"]["shapes"]), 1)
-        self.assertEqual(
-            fig2["layout"]["shapes"][0]["path"],
-            "M0 0L0 0L0 0L0 0L0 0Z"
-        )
+        assert len(fig2["data"]) == 0
+        assert len(fig2["layout"]["shapes"]) == 1
+        assert fig2["layout"]["shapes"][0]["path"] == "M0 0L0 0L0 0L0 0L0 0Z"
 
         # Reset button should clear bounds in store
-        self.assertEqual(
-            decode_store_data(new_store),
-            {"streams": {id(boundsxy): {"bounds": None}},
+        assert decode_store_data(new_store) == {"streams": {id(boundsxy): {"bounds": None}},
              "reset_nclicks": 1,
              "kdims": {}}
-        )
 
     def test_rangexy_dynamic_map(self):
 
@@ -211,11 +192,11 @@ class TestHoloViewsDash(TestPlotlyPlot):
         components = to_dash(self.app, [scatter, dmap], reset_button=True)
 
         # Check returned components
-        self.assertIsInstance(components, DashComponents)
-        self.assertEqual(len(components.graphs), 2)
-        self.assertEqual(len(components.kdims), 0)
-        self.assertIsInstance(components.store, Store)
-        self.assertEqual(len(components.resets), 1)
+        assert isinstance(components, DashComponents)
+        assert len(components.graphs) == 2
+        assert len(components.kdims) == 0
+        assert isinstance(components.store, Store)
+        assert len(components.resets) == 1
 
         # Get arguments passed to @app.callback decorator
         decorator_args = next(iter(self.app.callback.call_args_list[0]))
@@ -224,10 +205,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         # Check outputs
         expected_outputs = [(g.id, "figure") for g in components.graphs] + \
                            [(components.store.id, "data")]
-        self.assertEqual(
-            [(output.component_id, output.component_property) for output in outputs],
-            expected_outputs
-        )
+        assert [(output.component_id, output.component_property) for output in outputs] == expected_outputs
 
         # Check inputs
         expected_inputs = [
@@ -236,19 +214,13 @@ class TestHoloViewsDash(TestPlotlyPlot):
                               for prop in ["selectedData", "relayoutData"]
                           ] + [(components.resets[0].id, "n_clicks")]
 
-        self.assertEqual(
-            [(ip.component_id, ip.component_property) for ip in inputs],
-            expected_inputs,
-        )
+        assert [(ip.component_id, ip.component_property) for ip in inputs] == expected_inputs
 
         # Check State
         expected_state = [
             (components.store.id, "data")
         ]
-        self.assertEqual(
-            [(state.component_id, state.component_property) for state in states],
-            expected_state,
-        )
+        assert [(state.component_id, state.component_property) for state in states] == expected_state
 
         # Get callback function
         callback_fn = self.app.callback.return_value.call_args[0][0]
@@ -273,19 +245,16 @@ class TestHoloViewsDash(TestPlotlyPlot):
             )
 
         # First figure is the scatter trace
-        self.assertEqual(fig1["data"][0]["type"], "scatter")
+        assert fig1["data"][0]["type"] == "scatter"
 
         # Second figure holds the bounds element
-        self.assertEqual(len(fig2["data"]), 1)
-        self.assertEqual(list(fig2["data"][0]["x"]), [1, 3])
-        self.assertEqual(list(fig2["data"][0]["y"]), [2, 4])
+        assert len(fig2["data"]) == 1
+        assert list(fig2["data"][0]["x"]) == [1, 3]
+        assert list(fig2["data"][0]["y"]) == [2, 4]
 
         # Check updated store
-        self.assertEqual(
-            decode_store_data(new_store),
-            {"streams": {id(rangexy): {'x_range': (1, 3), 'y_range': (2, 4)}},
+        assert decode_store_data(new_store) == {"streams": {id(rangexy): {'x_range': (1, 3), 'y_range': (2, 4)}},
              "kdims": {}}
-        )
 
     def test_selection1d_dynamic_map(self):
         # Create dynamic map that inputs selection1d, returns overlay of scatter on
@@ -301,11 +270,11 @@ class TestHoloViewsDash(TestPlotlyPlot):
         components = to_dash(self.app, [scatter, dmap], reset_button=True)
 
         # Check returned components
-        self.assertIsInstance(components, DashComponents)
-        self.assertEqual(len(components.graphs), 2)
-        self.assertEqual(len(components.kdims), 0)
-        self.assertIsInstance(components.store, Store)
-        self.assertEqual(len(components.resets), 1)
+        assert isinstance(components, DashComponents)
+        assert len(components.graphs) == 2
+        assert len(components.kdims) == 0
+        assert isinstance(components.store, Store)
+        assert len(components.resets) == 1
 
         # Get arguments passed to @app.callback decorator
         decorator_args = next(iter(self.app.callback.call_args_list[0]))
@@ -314,10 +283,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         # Check outputs
         expected_outputs = [(g.id, "figure") for g in components.graphs] + \
                            [(components.store.id, "data")]
-        self.assertEqual(
-            [(output.component_id, output.component_property) for output in outputs],
-            expected_outputs
-        )
+        assert [(output.component_id, output.component_property) for output in outputs] == expected_outputs
 
         # Check inputs
         expected_inputs = [
@@ -326,31 +292,25 @@ class TestHoloViewsDash(TestPlotlyPlot):
                               for prop in ["selectedData", "relayoutData"]
                           ] + [(components.resets[0].id, "n_clicks")]
 
-        self.assertEqual(
-            [(ip.component_id, ip.component_property) for ip in inputs],
-            expected_inputs,
-        )
+        assert [(ip.component_id, ip.component_property) for ip in inputs] == expected_inputs
 
         # Check State
         expected_state = [
             (components.store.id, "data")
         ]
-        self.assertEqual(
-            [(state.component_id, state.component_property) for state in states],
-            expected_state,
-        )
+        assert [(state.component_id, state.component_property) for state in states] == expected_state
 
         # Check initial figures
         _fig1 = components.graphs[0].figure
         fig2 = components.graphs[1].figure
 
         # Figure holds the scatter trace
-        self.assertEqual(len(fig2["data"]), 1)
+        assert len(fig2["data"]) == 1
 
         # Check expected marker size
-        self.assertEqual(fig2["data"][0]["marker"]["size"], 1)
-        self.assertEqual(list(fig2["data"][0]["x"]), [])
-        self.assertEqual(list(fig2["data"][0]["y"]), [])
+        assert fig2["data"][0]["marker"]["size"] == 1
+        assert list(fig2["data"][0]["x"]) == []
+        assert list(fig2["data"][0]["y"]) == []
 
         # Get callback function
         callback_fn = self.app.callback.return_value.call_args[0][0]
@@ -383,19 +343,16 @@ class TestHoloViewsDash(TestPlotlyPlot):
             )
 
         # Figure holds the scatter trace
-        self.assertEqual(len(fig2["data"]), 1)
+        assert len(fig2["data"]) == 1
 
         # Check expected marker size
-        self.assertEqual(fig2["data"][0]["marker"]["size"], 3)
-        self.assertEqual(list(fig2["data"][0]["x"]), [0, 2])
-        self.assertEqual(list(fig2["data"][0]["y"]), [0, 2])
+        assert fig2["data"][0]["marker"]["size"] == 3
+        assert list(fig2["data"][0]["x"]) == [0, 2]
+        assert list(fig2["data"][0]["y"]) == [0, 2]
 
         # Check that store was updated
-        self.assertEqual(
-            decode_store_data(new_store),
-            {"streams": {id(selection1d): {"index": [0, 2]}},
+        assert decode_store_data(new_store) == {"streams": {id(selection1d): {"index": [0, 2]}},
              "kdims": {}}
-        )
 
         # Click reset button
         store = new_store
@@ -408,15 +365,15 @@ class TestHoloViewsDash(TestPlotlyPlot):
             )
 
         # Figure holds the scatter trace
-        self.assertEqual(len(fig2["data"]), 1)
+        assert len(fig2["data"]) == 1
 
         # Check expected marker size
-        self.assertEqual(fig2["data"][0]["marker"]["size"], 1)
-        self.assertEqual(list(fig2["data"][0]["x"]), [])
-        self.assertEqual(list(fig2["data"][0]["y"]), [])
+        assert fig2["data"][0]["marker"]["size"] == 1
+        assert list(fig2["data"][0]["x"]) == []
+        assert list(fig2["data"][0]["y"]) == []
 
         # Check that store was updated
-        self.assertEqual(
+        assert_element_equal(
             decode_store_data(new_store),
             {"streams": {id(selection1d): {"index": []}}, 'reset_nclicks': 1,
              "kdims": {}},
@@ -433,11 +390,11 @@ class TestHoloViewsDash(TestPlotlyPlot):
         components = to_dash(self.app, [dmap])
 
         # Check returned components
-        self.assertIsInstance(components, DashComponents)
-        self.assertEqual(len(components.graphs), 1)
-        self.assertEqual(len(components.kdims), 1)
-        self.assertIsInstance(components.store, Store)
-        self.assertEqual(len(components.resets), 0)
+        assert isinstance(components, DashComponents)
+        assert len(components.graphs) == 1
+        assert len(components.kdims) == 1
+        assert isinstance(components.store, Store)
+        assert len(components.resets) == 0
 
         # Get arguments passed to @app.callback decorator
         decorator_args = next(iter(self.app.callback.call_args_list[0]))
@@ -446,10 +403,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         # Check outputs
         expected_outputs = [(g.id, "figure") for g in components.graphs] + \
                            [(components.store.id, "data")]
-        self.assertEqual(
-            [(output.component_id, output.component_property) for output in outputs],
-            expected_outputs
-        )
+        assert [(output.component_id, output.component_property) for output in outputs] == expected_outputs
 
         # Check inputs
         expected_inputs = [
@@ -458,19 +412,13 @@ class TestHoloViewsDash(TestPlotlyPlot):
             for prop in ["selectedData", "relayoutData"]
         ] + [(next(iter(components.kdims.values())).children[1].id, 'value')]
 
-        self.assertEqual(
-            [(ip.component_id, ip.component_property) for ip in inputs],
-            expected_inputs,
-        )
+        assert [(ip.component_id, ip.component_property) for ip in inputs] == expected_inputs
 
         # Check State
         expected_state = [
             (components.store.id, "data")
         ]
-        self.assertEqual(
-            [(state.component_id, state.component_property) for state in states],
-            expected_state,
-        )
+        assert [(state.component_id, state.component_property) for state in states] == expected_state
 
         # Get callback function
         callback_fn = self.decorator.call_args_list[0][0][0]
@@ -483,6 +431,6 @@ class TestHoloViewsDash(TestPlotlyPlot):
             )
 
         # First figure is the scatter trace
-        self.assertEqual(fig["data"][0]["type"], "scatter")
-        self.assertEqual(list(fig["data"][0]["x"]), [0, 1])
-        self.assertEqual(list(fig["data"][0]["y"]), [3, 3])
+        assert fig["data"][0]["type"] == "scatter"
+        assert list(fig["data"][0]["x"]) == [0, 1]
+        assert list(fig["data"][0]["y"]) == [3, 3]

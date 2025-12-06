@@ -50,7 +50,16 @@ from ..core.util import (
     is_float,
 )
 from ..core.util.dependencies import _is_installed
+from ..util.warnings import deprecated
 from . import *  # noqa (All Elements need to support comparison)
+
+
+def __getattr__(attr):
+    if attr == "assert_element_equal":
+        from holoviews.testing import assert_element_equal
+        deprecated("1.25.0", old="holoviews.element.comparison.assert_element_equal", new="holoviews.testing.assert_element_equal")
+        return assert_element_equal
+    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
 
 
 class ComparisonInterface:
@@ -67,6 +76,16 @@ class ComparisonInterface:
 
     equality_type_funcs = {}
     failureException = AssertionError
+
+    def __init_subclass__(self, *args, **kwargs):
+        deprecated(
+            "1.25.0",
+            "Inheriting from 'holoviews.element.comparison.ComparisonInterface'",
+            "'holoviews.testing.assert_element_equal' to check HoloViews elements",
+            repr_old=False,
+            repr_new=False
+        )
+        super().__init_subclass__(*args, **kwargs)
 
     @classmethod
     def simple_equality(cls, first, second, msg=None):
@@ -869,16 +888,3 @@ class IPTestCase(ComparisonTestCase):
 
         """
         self.ip.run_line_magic(*args, **kwargs)
-
-
-_assert_element_equal = ComparisonTestCase().assertEqual
-
-def assert_element_equal(element1, element2):
-    # Filter non-holoviews elements
-    hv_types = (Element, Layout)
-    if not isinstance(element1, hv_types):
-        raise TypeError(f"First argument is not an allowed type but a {type(element1).__name__!r}.")
-    if not isinstance(element2, hv_types):
-        raise TypeError(f"Second argument is not an allowed type but a {type(element2).__name__!r}.")
-
-    _assert_element_equal(element1, element2)

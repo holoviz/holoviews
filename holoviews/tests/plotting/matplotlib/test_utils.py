@@ -2,6 +2,7 @@ import numpy as np
 
 from holoviews.element import Polygons
 from holoviews.plotting.mpl.util import polygons_to_path_patches
+from holoviews.testing import assert_data_equal
 
 from .test_plot import TestMPLPlot
 
@@ -21,14 +22,14 @@ class TestUtils(TestMPLPlot):
         paths = polygons_to_path_patches(polys)
 
 
-        self.assertEqual(len(paths), 1)
-        self.assertEqual(len(paths[0]), 3)
-        self.assertEqual(paths[0][0].get_path().vertices, np.array([
+        assert len(paths) == 1
+        assert len(paths[0]) == 3
+        assert_data_equal(paths[0][0].get_path().vertices, np.array([
             (1, 2), (2, 0), (3, 7), (1, 2),
             (1.5, 2), (2, 3), (1.6, 1.6), (1.5, 2),
             (2.1, 4.5), (2.5, 5), (2.3, 3.5), (2.1, 4.5)]))
-        self.assertEqual(paths[0][0].get_path().codes, np.array([1, 2, 2, 79, 1, 2, 2, 79, 1, 2, 2, 79], dtype='uint8'))
-        self.assertEqual(paths[0][1].get_path().vertices, np.array([(3, 2), (7, 5), (6, 7),  (3, 2),]))
-        self.assertEqual(paths[0][1].get_path().codes, np.array([1, 2, 2, 79], dtype='uint8'))
-        self.assertEqual(paths[0][2].get_path().vertices, np.array([(0, 0), (0, 1), (0, 0)]))
-        self.assertEqual(paths[0][1].get_path().codes, np.array([1, 2, 2, 79], dtype='uint8'))
+        assert_data_equal(paths[0][0].get_path().codes, np.array([1, 2, 2, 79, 1, 2, 2, 79, 1, 2, 2, 79], dtype='uint8'))
+        assert_data_equal(paths[0][1].get_path().vertices, np.array([(3, 2), (7, 5), (6, 7),  (3, 2),]))
+        assert_data_equal(paths[0][1].get_path().codes, np.array([1, 2, 2, 79], dtype='uint8'))
+        assert_data_equal(paths[0][2].get_path().vertices, np.array([(0, 0), (0, 1), (0, 0)]))
+        assert_data_equal(paths[0][1].get_path().codes, np.array([1, 2, 2, 79], dtype='uint8'))

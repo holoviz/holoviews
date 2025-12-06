@@ -1,14 +1,12 @@
-import unittest
-from unittest import SkipTest
-
 import numpy as np
 import pandas as pd
+import pytest
 
 try:
     import dask
     import dask.dataframe as dd
 except ImportError:
-    raise SkipTest("Could not import dask, skipping DaskInterface tests.")
+    pytest.skip("Could not import dask, skipping DaskInterface tests.", allow_module_level=True)
 
 from holoviews.core.data import Dataset
 from holoviews.core.util.dependencies import (
@@ -16,6 +14,7 @@ from holoviews.core.util.dependencies import (
     PANDAS_VERSION,
     _no_import_version,
 )
+from holoviews.testing import assert_data_equal, assert_element_equal
 from holoviews.util.transform import dim
 
 from .test_pandasinterface import BasePandasInterfaceTests
@@ -43,61 +42,61 @@ class DaskDatasetTest(BasePandasInterfaceTests):
 
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_add_dimensions_values_ht(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_2D_aggregate_spread_fn_with_duplicates(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_reverse_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_reverse_vdim_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_vdim_ht(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_vdim_hm(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_vdim_hm_alias(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_sort_string_ht(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_boolean_index(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_aggregate_string_types_size(self):
-        raise SkipTest("Not supported")
+        pytest.skip("Not supported")
 
     def test_dataset_2D_aggregate_partial_hm(self):
-        raise SkipTest("Temporarily skipped")
+        pytest.skip("Temporarily skipped")
 
     def test_dataset_2D_aggregate_partial_ht(self):
-        raise SkipTest("Temporarily skipped")
+        pytest.skip("Temporarily skipped")
 
     def test_dataset_2D_partial_reduce_ht(self):
-        raise SkipTest("Temporarily skipped")
+        pytest.skip("Temporarily skipped")
 
     def test_dataset_aggregate_string_types(self):
-        raise SkipTest("Temporarily skipped")
+        pytest.skip("Temporarily skipped")
 
-    @unittest.skipIf(
+    @pytest.mark.skipif(
         PANDAS_VERSION >= (2, 0, 0),
         reason="Not supported yet, https://github.com/dask/dask/issues/9913"
     )
     def test_dataset_aggregate_ht(self):
         super().test_dataset_aggregate_ht()
 
-    @unittest.skipIf(
+    @pytest.mark.skipif(
         PANDAS_VERSION >= (2, 0, 0),
         reason="Not supported yet, https://github.com/dask/dask/issues/9913"
     )
@@ -105,23 +104,23 @@ class DaskDatasetTest(BasePandasInterfaceTests):
         super().test_dataset_aggregate_ht_alias()
 
     def test_dataset_from_multi_index(self):
-        raise SkipTest("Temporarily skipped")
+        pytest.skip("Temporarily skipped")
         df = pd.DataFrame({'x': np.arange(10), 'y': np.arange(10), 'z': np.random.rand(10)})
         ddf = dd.from_pandas(df, 1)
         ds = Dataset(ddf.groupby(['x', 'y']).mean(), ['x', 'y'])
-        self.assertEqual(ds, Dataset(df, ['x', 'y']))
+        assert_element_equal(ds, Dataset(df, ['x', 'y']))
 
     def test_dataset_from_multi_index_tuple_dims(self):
-        raise SkipTest("Temporarily skipped")
+        pytest.skip("Temporarily skipped")
         df = pd.DataFrame({'x': np.arange(10), 'y': np.arange(10), 'z': np.random.rand(10)})
         ddf = dd.from_pandas(df, 1)
         ds = Dataset(ddf.groupby(['x', 'y']).mean(), [('x', 'X'), ('y', 'Y')])
-        self.assertEqual(ds, Dataset(df, [('x', 'X'), ('y', 'Y')]))
+        assert_element_equal(ds, Dataset(df, [('x', 'X'), ('y', 'Y')]))
 
     def test_dataset_range_categorical_dimension(self):
         ddf = self.frame({'a': ['1', '2', '3']})
         ds = Dataset(ddf)
-        self.assertEqual(ds.range(0), ('1', '3'))
+        assert ds.range(0) == ('1', '3')
 
     def test_dataset_range_categorical_dimension_empty(self):
         ddf = self.frame({'a': ['1', '2', '3']})
@@ -140,13 +139,13 @@ class DaskDatasetTest(BasePandasInterfaceTests):
         new_ds = ds.select(selection_expr=dim('b') == 10)
 
         # Make sure that selecting by expression didn't cause evaluation
-        self.assertIsInstance(new_ds.data, dd.DataFrame)
-        self.assertEqual(new_ds.data.compute(), df[df.b == 10])
+        assert isinstance(new_ds.data, dd.DataFrame)
+        assert_data_equal(new_ds.data.compute(), df[df.b == 10])
 
     def test_dataset_get_dframe_by_dimension(self):
         df = self.dataset_hm.dframe(['x'])
         expected = self.frame({'x': self.xs}, dtype=df.dtypes.iloc[0]).compute()
-        self.assertEqual(df, expected)
+        assert_data_equal(df, expected)
 
     def test_dataset_dataset_ht_dtypes(self):
         ds = self.table

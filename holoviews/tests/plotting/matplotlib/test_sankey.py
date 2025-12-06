@@ -2,6 +2,7 @@ import numpy as np
 
 from holoviews.core.data import Dataset
 from holoviews.element import Sankey
+from holoviews.testing import assert_data_equal
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -22,9 +23,9 @@ class TestSankeyPlot(TestMPLPlot):
                      'y': np.array([125.454545, 375.454545,  48.787879, 229.090909, 430.30303 ]),
                      'text': ['A - 18', 'B - 15', 'X - 7', 'Y - 16', 'Z - 10']}
         for i, text in enumerate(labels):
-            self.assertEqual(text.xy[0], text_data['x'][i])
-            self.assertEqual(text.xy[1], text_data['y'][i])
-            self.assertEqual(text.get_text(), text_data['text'][i])
+            assert text.xy[0] == text_data['x'][i]
+            assert np.isclose(text.xy[1], text_data['y'][i])
+            assert text.get_text() == text_data['text'][i]
 
         quad_data = {
             'x0': [0, 0, 985.0, 985.0, 985.0],
@@ -35,7 +36,7 @@ class TestSankeyPlot(TestMPLPlot):
         for i, rect in enumerate(rects.get_paths()):
             x0, x1, y0, y1 = (quad_data[c][i] for c in ('x0', 'x1', 'y0', 'y1'))
             arr = np.array([[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]])
-            self.assertEqual(rect.vertices, arr)
+            assert_data_equal(rect.vertices, arr)
 
 
     def test_sankey_label_index(self):
@@ -51,6 +52,6 @@ class TestSankeyPlot(TestMPLPlot):
                      'y': np.array([125.454545, 375.454545,  48.787879, 229.090909, 430.30303 ]),
                      'text': ['A - 18', 'B - 15', 'X - 7', 'Y - 16', 'Z - 10']}
         for i, text in enumerate(labels):
-            self.assertEqual(text.xy[0], text_data['x'][i])
-            self.assertEqual(text.xy[1], text_data['y'][i])
-            self.assertEqual(text.get_text(), text_data['text'][i])
+            assert text.xy[0] == text_data['x'][i]
+            assert np.isclose(text.xy[1], text_data['y'][i])
+            assert text.get_text() == text_data['text'][i]

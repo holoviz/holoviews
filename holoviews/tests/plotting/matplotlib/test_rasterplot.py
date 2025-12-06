@@ -1,6 +1,5 @@
-from unittest import SkipTest
-
 import numpy as np
+import pytest
 from matplotlib.colors import ListedColormap
 
 from holoviews.element import Image, ImageStack, Raster
@@ -54,7 +53,7 @@ class TestRasterPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(img)
         artist = plot.handles['artist']
         cmap = artist.get_cmap()
-        self.assertIsInstance(cmap, ListedColormap)
+        assert isinstance(cmap, ListedColormap)
         assert cmap.colors == colors
 
     def test_image_cbar_extend_both(self):
@@ -82,7 +81,7 @@ class TestRasterPlot(TestMPLPlot):
         try:
             import datashader  # noqa: F401
         except ImportError:
-            raise SkipTest("Test requires datashader")
+            pytest.skip("Test requires datashader")
         x = np.arange(0, 3)
         y = np.arange(5, 8)
         a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
