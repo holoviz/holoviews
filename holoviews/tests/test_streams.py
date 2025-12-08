@@ -17,7 +17,9 @@ from holoviews.testing import assert_data_equal, assert_dict_equal, assert_eleme
 from holoviews.util import Dynamic, extension
 from holoviews.util.transform import dim
 
-from .utils import LoggingComparison
+from .utils import LoggingComparison, optional_dependencies
+
+_, shapely_skip = optional_dependencies("shapely")
 
 PARAM_GE_2_0_0 = PARAM_VERSION >= (2, 0, 0)
 
@@ -1408,14 +1410,8 @@ class TestExprSelectionStream:
         assert expr_stream.bbox == {'x': (2.5, 8)}
 
 
+    @shapely_skip
     def test_selection_expr_stream_polygon_index_cols(self):
-        # TODO: Should test both spatialpandas and shapely
-        # Create SelectionExpr on element
-
-        try: import shapely # noqa
-        except ImportError:
-            try: import spatialpandas # noqa
-            except ImportError: pytest.skip('Shapely required for polygon selection')
         poly = Polygons([
             [(0, 0, 'a'), (2, 0, 'a'), (1, 1, 'a')],
             [(2, 0, 'b'), (4, 0, 'b'), (3, 1, 'b')],
