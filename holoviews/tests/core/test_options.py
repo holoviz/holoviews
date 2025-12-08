@@ -1063,22 +1063,10 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         Store.current_backend = 'bokeh'
         StoreOptions.set_options(self.raw, style={'Image':{'cmap':'Purple'}})
 
-    def _create_tmp_path(self):
-        # TODO: Remove this when we use pytest
-        import tempfile
-        from pathlib import Path
-
-        tmp_dir = tempfile.TemporaryDirectory()
-        tmp_path = Path(tmp_dir.name)
-
-        return tmp_dir, tmp_path
-
-
-    def test_raw_pickle(self):
+    def test_raw_pickle(self, tmp_path):
         """
         Test usual pickle saving and loading (no style information preserved)
         """
-        tmp_dir, tmp_path = self._create_tmp_path()  # Pytest remove
 
         fname= tmp_path / 'test_raw_pickle.pkl'
         with open(fname,'wb') as handle:
@@ -1097,14 +1085,11 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
         assert bokeh_opts == {}
 
-        tmp_dir.cleanup()  # Pytest remove
 
-    def test_pickle_mpl_bokeh(self):
+    def test_pickle_mpl_bokeh(self, tmp_path):
         """
         Test pickle saving and loading with Store (style information preserved)
         """
-        tmp_dir, tmp_path = self._create_tmp_path()  # Pytest remove
-
         fname = tmp_path / 'test_pickle_mpl_bokeh.pkl'
         with open(fname,'wb') as handle:
             Store.dump(self.raw, handle)
@@ -1121,5 +1106,3 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         Store.current_backend = 'bokeh'
         bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
         assert bokeh_opts == {'cmap':'Purple'}
-
-        tmp_dir.cleanup()  # Pytest remove
