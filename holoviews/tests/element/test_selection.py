@@ -36,7 +36,6 @@ ds, ds_skip = optional_dependencies("datashader")
 spd, spd_skip = optional_dependencies("spatialpandas")
 shapely, shapely_skip = optional_dependencies("shapely")
 dd, dd_skip = optional_dependencies("dask.dataframe")
-_, shapelib_skip = optional_dependencies("spatialpandas", "shapely")  # TODO: Should be testing for both cases
 
 
 class TestIndexExpr:
@@ -263,8 +262,10 @@ class TestSelection2DExpr:
         assert_data_equal(expr.apply(points), np.array([False, True, True, False, False]))
         assert_element_equal(region, Rectangles([(0, 1, 2, 3)]) * Path([]))
 
-    @shapelib_skip
-    def test_points_selection_geom(self):
+    @pytest.mark.parametrize("module", ["spatialpandas", "shapely"])
+    def test_points_selection_geom(self, unimport, module):
+        pytest.importorskip(module)
+        unimport("spatialpandas" if module == "shapely" else "shapely")
         points = Points([3, 2, 1, 3, 4])
         geom = np.array([(-0.1, -0.1), (1.4, 0), (1.4, 2.2), (-0.1, 2.2)])
         expr, bbox, region = points._get_selection_expr_for_stream_value(geometry=geom)
@@ -273,8 +274,10 @@ class TestSelection2DExpr:
         assert_data_equal(expr.apply(points), np.array([False, True, False, False, False]))
         assert_element_equal(region, Rectangles([]) * Path([[*geom, (-0.1, -0.1)]]))
 
-    @shapelib_skip
-    def test_points_selection_geom_inverted(self):
+    @pytest.mark.parametrize("module", ["spatialpandas", "shapely"])
+    def test_points_selection_geom_inverted(self, unimport, module):
+        pytest.importorskip(module)
+        unimport("spatialpandas" if module == "shapely" else "shapely")
         points = Points([3, 2, 1, 3, 4]).opts(invert_axes=True)
         geom = np.array([(-0.1, -0.1), (1.4, 0), (1.4, 2.2), (-0.1, 2.2)])
         expr, bbox, region = points._get_selection_expr_for_stream_value(geometry=geom)
