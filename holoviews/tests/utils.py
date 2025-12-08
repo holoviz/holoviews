@@ -167,12 +167,12 @@ class LoggingComparison:
 
 
 @overload
-def optional_dependencies(name: str) -> tuple[MaybeModuleType, MarkDecorator]: ...
+def optional_dependencies(name: str, /) -> tuple[MaybeModuleType, MarkDecorator]: ...
 
 @overload
 def optional_dependencies(*names: str) -> tuple[tuple[MaybeModuleType, ...], MarkDecorator]: ...
 
-def optional_dependencies(*names: str) -> tuple[MaybeModuleType, MarkDecorator]:
+def optional_dependencies(*names: str):
     """Check if a dependency is installed and return the module and a fixture that skips test.
     """
     modules = []
