@@ -30,33 +30,13 @@ from holoviews.element.selection import spatial_select_columnar
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 from holoviews.util.transform import dim
 
-try:
-    import datashader as ds
-except ImportError:
-    ds = None
+from ..utils import optional_dependencies
 
-try:
-    import spatialpandas as spd
-except ImportError:
-    spd = None
-
-try:
-    import shapely
-except ImportError:
-    shapely = None
-
-try:
-    import dask.dataframe as dd
-except ImportError:
-    dd = None
-
-spd_available = pytest.mark.skipif(spd is None, reason="spatialpandas is not available")
-shapelib_available = pytest.mark.skipif(shapely is None and spd is None,
-                            reason='Neither shapely nor spatialpandas are available')
-shapely_available = pytest.mark.skipif(shapely is None, reason='shapely is not available')
-ds_available = pytest.mark.skipif(ds is None, reason='datashader not available')
-dd_available = pytest.mark.skipif(dd is None, reason='dask.dataframe not available')
-
+ds, ds_skip = optional_dependencies("datashader")
+spd, spd_skip = optional_dependencies("spatialpandas")
+shapely, shapely_skip = optional_dependencies("shapely")
+dd, dd_skip = optional_dependencies("dask.dataframe")
+_, shapelib_skip = optional_dependencies("spatialpandas", "shapely")  # TODO: Should be testing for both cases
 
 
 class TestIndexExpr:
@@ -283,7 +263,7 @@ class TestSelection2DExpr:
         assert_data_equal(expr.apply(points), np.array([False, True, True, False, False]))
         assert_element_equal(region, Rectangles([(0, 1, 2, 3)]) * Path([]))
 
-    @shapelib_available
+    @shapelib_skip
     def test_points_selection_geom(self):
         points = Points([3, 2, 1, 3, 4])
         geom = np.array([(-0.1, -0.1), (1.4, 0), (1.4, 2.2), (-0.1, 2.2)])
@@ -293,7 +273,7 @@ class TestSelection2DExpr:
         assert_data_equal(expr.apply(points), np.array([False, True, False, False, False]))
         assert_element_equal(region, Rectangles([]) * Path([[*geom, (-0.1, -0.1)]]))
 
-    @shapelib_available
+    @shapelib_skip
     def test_points_selection_geom_inverted(self):
         points = Points([3, 2, 1, 3, 4]).opts(invert_axes=True)
         geom = np.array([(-0.1, -0.1), (1.4, 0), (1.4, 2.2), (-0.1, 2.2)])
@@ -377,8 +357,8 @@ class TestSelection2DExpr:
         ]))
         assert_element_equal(region, Rectangles([(1.5, 0.5, 3.1, 2.1)]) * Path([]))
 
-    @ds_available
-    @spd_available
+    @ds_skip
+    @spd_skip
     def test_img_selection_geom(self):
         img = Image(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3)))
         geom = np.array([(-0.4, -0.1), (0.6, -0.1), (0.4, 1.7), (-0.1, 1.7)])
@@ -393,7 +373,7 @@ class TestSelection2DExpr:
         ]))
         assert_element_equal(region, Rectangles([]) * Path([[*geom, (-0.4, -0.1)]]))
 
-    @ds_available
+    @ds_skip
     def test_img_selection_geom_inverted(self):
         img = Image(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3))).opts(invert_axes=True)
         geom = np.array([(-0.4, -0.1), (0.6, -0.1), (0.4, 1.7), (-0.1, 1.7)])
@@ -502,7 +482,7 @@ class TestSelectionGeomExpr:
         assert_data_equal(expr.apply(rect), np.array([True, True, True]))
         assert_element_equal(region, Rectangles([(0.9, 0, 4.9, 3.5)]) * Path([]))
 
-    @shapely_available
+    @shapely_skip
     def test_rect_geom_selection(self):
         rect = Rectangles([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)])
         geom = np.array([(-0.4, -0.1), (2.2, -0.1), (2.2, 4.1), (-0.1, 4.2)])
@@ -514,7 +494,7 @@ class TestSelectionGeomExpr:
         assert_data_equal(expr.apply(rect), np.array([True, True, False]))
         assert_element_equal(region, Rectangles([]) * Path([[*geom, (-0.4, -0.1)]]))
 
-    @shapely_available
+    @shapely_skip
     def test_rect_geom_selection_inverted(self):
         rect = Rectangles([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)]).opts(invert_axes=True)
         geom = np.array([(-0.4, -0.1), (3.2, -0.1), (3.2, 4.1), (-0.1, 4.2)])
@@ -548,7 +528,7 @@ class TestSelectionGeomExpr:
         assert_data_equal(expr.apply(segs), np.array([True, True, True]))
         assert_element_equal(region, Rectangles([(0.9, 0, 4.9, 3.5)]) * Path([]))
 
-    @shapely_available
+    @shapely_skip
     def test_segs_geom_selection(self):
         rect = Segments([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)])
         geom = np.array([(-0.4, -0.1), (2.2, -0.1), (2.2, 4.1), (-0.1, 4.2)])
@@ -560,7 +540,7 @@ class TestSelectionGeomExpr:
         assert_data_equal(expr.apply(rect), np.array([True, True, False]))
         assert_element_equal(region, Rectangles([]) * Path([[*geom, (-0.4, -0.1)]]))
 
-    @shapely_available
+    @shapely_skip
     def test_segs_geom_selection_inverted(self):
         rect = Segments([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)]).opts(invert_axes=True)
         geom = np.array([(-0.4, -0.1), (3.2, -0.1), (3.2, 4.1), (-0.1, 4.2)])
@@ -605,7 +585,7 @@ class TestSelectionPolyExpr:
         assert_data_equal(expr.apply(poly, expanded=False), np.array([False, False, True]))
         assert_element_equal(region, Rectangles([(0.2, -0.2, 0.6, 0.6)]) * Path([]))
 
-    @shapely_available
+    @shapely_skip
     def test_poly_geom_selection(self):
         poly = Polygons([
             [(0, 0), (0.2, 0.1), (0.3, 0.4), (0.1, 0.2)],
@@ -619,7 +599,7 @@ class TestSelectionPolyExpr:
         assert_data_equal(expr.apply(poly, expanded=False), np.array([False, True, True]))
         assert_element_equal(region, Rectangles([]) * Path([[*geom, (0.2, -0.15)]]))
 
-    @shapely_available
+    @shapely_skip
     def test_poly_geom_selection_inverted(self):
         poly = Polygons([
             [(0, 0), (0.2, 0.1), (0.3, 0.4), (0.1, 0.2)],
@@ -667,12 +647,12 @@ class TestSpatialSelectColumnar:
         mask = spatial_select_columnar(pandas_df.x.to_numpy(copy=True), pandas_df.y.to_numpy(copy=True), geometry, self.method)
         assert np.array_equal(mask, pt_mask)
 
-    @dd_available
+    @dd_skip
     def test_dask(self, geometry, pt_mask, dask_df):
         mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry, self.method)
         assert np.array_equal(mask.compute(), pt_mask)
 
-    @dd_available
+    @dd_skip
     def test_meta_dtype(self, geometry, pt_mask, dask_df):
         mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry, self.method)
         assert mask._meta.dtype == np.bool_
@@ -698,13 +678,13 @@ class TestSpatialSelectColumnar:
 
 
 
-@pytest.mark.skipif(shapely is None, reason='Shapely not available')
+@shapely_skip
 class TestSpatialSelectColumnarShapely(TestSpatialSelectColumnar):
     __test__ = True
     method = 'shapely'
 
 
-@pytest.mark.skipif(spd is None, reason='Spatialpandas not available')
+@spd_skip
 class TestSpatialSelectColumnarSpatialpandas(TestSpatialSelectColumnar):
     __test__ = True
     method = 'spatialpandas'

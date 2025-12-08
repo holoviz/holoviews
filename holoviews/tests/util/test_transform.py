@@ -10,37 +10,15 @@ import param
 import pytest
 
 import holoviews as hv
-
-try:
-    import dask
-    import dask.array as da
-    import dask.dataframe as dd
-except ImportError:
-    da, dd = None, None
-
-try:
-    import xarray as xr
-except ImportError:
-    xr = None
-
-xr_skip = pytest.mark.skipif(xr is None, reason="xarray not available")
-
-try:
-    import spatialpandas as spd
-except ImportError:
-    spd = None
-
-try:
-    import shapely
-except ImportError:
-    shapely = None
-
-shapelib_available = pytest.mark.skipif(shapely is None and spd is None,
-                            reason='Neither shapely nor spatialpandas are available')
-
 from holoviews.core.data import Dataset
 from holoviews.testing import assert_element_equal
 from holoviews.util.transform import dim
+
+from ..utils import optional_dependencies
+
+(dask, da, dd), dask_skip = optional_dependencies("dask", "dask.array", "dask.dataframe")
+xr, xr_skip = optional_dependencies("xarray")
+(spd, shapely), shapelib_available = optional_dependencies("spatialpandas", "shapely")
 
 dask_conversion_warning = pytest.mark.filterwarnings(
     "ignore:Dask currently has limited support for converting pandas extension dtypes to arrays:UserWarning"

@@ -1,11 +1,22 @@
+from __future__ import annotations
+
+import importlib
 import logging
 import os
 import sys
+from types import ModuleType
+from typing import TYPE_CHECKING, overload
 
 import param
 import pytest
 
+from holoviews.core.util.dependencies import _is_installed
 from holoviews.util.warnings import deprecated
+
+if TYPE_CHECKING:
+    from _pytest.mark.structures import MarkDecorator
+
+    MaybeModuleType = ModuleType | None
 
 cwd = os.path.abspath(os.path.split(__file__)[0])
 sys.path.insert(0, os.path.join(cwd, '..'))
@@ -153,3 +164,27 @@ class LoggingComparison:
             for level, msgs in messages.items():
                 for msg in msgs:
                     log.log(LEVELS[level], msg)
+
+
+@overload
+def optional_dependencies(name: str) -> tuple[MaybeModuleType, MarkDecorator]: ...
+
+@overload
+def optional_dependencies(*names: str) -> tuple[tuple[MaybeModuleType, ...], MarkDecorator]: ...
+
+def optional_dependencies(*names: str) -> tuple[MaybeModuleType, MarkDecorator]:
+    """Check if a dependency is installed and return the module and a fixture that skips test.
+    """
+    modules = []
+    for name in names:
+        if _is_installed(name):
+            modules.append(importlib.import_module(name))
+        else:
+            modules.append(None)
+
+    if len(names) == 1:
+        fixture = pytest.mark.skipif(modules[0] is None, reason=f"{name} is not installed")
+        return modules[0], fixture
+
+    fixture = pytest.mark.skipif(not all(modules), reason=f"Not all of {', '.join(names)} are installed")
+    return tuple(modules), fixture

@@ -1411,6 +1411,7 @@ class TestExprSelectionStream:
     def test_selection_expr_stream_polygon_index_cols(self):
         # TODO: Should test both spatialpandas and shapely
         # Create SelectionExpr on element
+
         try: import shapely # noqa
         except ImportError:
             try: import spatialpandas # noqa
