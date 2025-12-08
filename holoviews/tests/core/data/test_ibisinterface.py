@@ -250,21 +250,20 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         )
         assert_element_equal(self.table.groupby(["Age"]), grouped)
 
-    def test_aggregation_operations(self):
-        for agg in [
-            np.min, np.nanmin, np.max, np.nanmax, np.mean, np.nanmean,
-            np.sum, np.nansum, len, np.count_nonzero,
-            # TODO: var-based operations failing this test
-            # np.std, np.nanstd, np.var, np.nanvar
-        ]:
-            data = self.table.dframe()
-            expected = self.table.clone(
-                data=data
-            ).aggregate("Gender", agg).sort()
+    @pytest.mark.parametrize("agg", [
+         np.min, np.nanmin, np.max, np.nanmax, np.mean, np.nanmean,
+         np.sum, np.nansum, len, np.count_nonzero,
+         # TODO: var-based operations failing this test
+         # np.std, np.nanstd, np.var, np.nanvar
+     ])
+    def test_aggregation_operations(self, agg):
+        data = self.table.dframe()
+        expected = self.table.clone(
+            data=data
+        ).aggregate("Gender", agg).sort()
 
-            result = self.table.aggregate("Gender", agg).sort()
-
-            assert_element_equal(expected, result)
+        result = self.table.aggregate("Gender", agg).sort()
+        assert_element_equal(expected, result)
 
     def test_select_with_neighbor(self):
         try:
