@@ -1,18 +1,13 @@
-import pandas as pd
-import pytest
-
-try:
-    import scipy
-except ImportError:
-    scipy = None
-scipy_skip = pytest.mark.skipif(scipy is None, reason="SciPy is not available.")
-
 import numpy as np
+import pandas as pd
 
 from holoviews import Curve, Scatter
 from holoviews.operation.timeseries import resample, rolling, rolling_outlier_std
 from holoviews.testing import assert_element_equal
 
+from ..utils import optional_dependencies
+
+scipy, scipy_skip = optional_dependencies('scipy')
 
 class TimeseriesOperationTests:
     """
