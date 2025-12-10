@@ -1265,19 +1265,27 @@ def get_ticker_axis_props(ticker):
     return axis_props
 
 
-def get_tool_id(tool: str | tools.Tool) -> tuple[type[tools.Tool], str | tuple | None]:
+def get_tool_id(
+    tool: str | tools.Tool,
+    *,
+    properties: tuple[str, ...] = ("dimensions", "tags", "name", "description", "icon"),
+    skip_tags: set[str] | None = None
+) -> tuple[type[tools.Tool], str | tuple | None]:
     """
     Returns the tool type and an identifier for a given tool.
 
     The identifier allows distinguishing tools of the same type but with
     different properties. This function checks all disambiguation properties
-    (dimensions, tags, name, description, icon) and returns a composite
-    identifier if multiple properties are present.
+    and returns a composite identifier if multiple properties are present.
 
     Parameters
     ----------
     tool : str or Bokeh Tool class
         Tool specification as string name or Tool class instance
+    properties : tuple of str, optional
+        Properties to check for disambiguation (default: dimensions, tags, name, description, icon)
+    skip_tags : set of str or None, optional
+        Tag values to ignore during identification (default: {'hv_created'})
 
     Returns
     -------
@@ -1287,6 +1295,9 @@ def get_tool_id(tool: str | tools.Tool) -> tuple[type[tools.Tool], str | tuple |
         - tuple: Multiple property values as tuple of tuples
         - None: No distinguishing properties
     """
+    if skip_tags is None:
+        skip_tags = {'hv_created'}
+
     is_str = isinstance(tool, str)
     tool_type = TOOL_TYPES.get(tool) if is_str else type(tool)
 
@@ -1299,23 +1310,25 @@ def get_tool_id(tool: str | tools.Tool) -> tuple[type[tools.Tool], str | tuple |
             return tool_type, dimension
         elif tool == 'auto_box_zoom':
             return tool_type, 'auto'
-    else:
-        identifiers = []
-        for name in ("dimensions", "tags", "name", "description", "icon"):
-            if identifier := getattr(tool, name, None):
-                # Skip tags that are only for internal bookkeeping
-                if name == "tags" and identifier == ['hv_created']:
-                    continue
-                # Convert lists to tuples (hashable)
-                if isinstance(identifier, list):
-                    identifier = tuple(identifier)
-                identifiers.append((name, identifier))
+        return tool_type, None
 
-        # Return composite identifier if multiple properties exist
-        if len(identifiers) == 0:
-            return tool_type, None
-        elif len(identifiers) == 1:
-            return tool_type, identifiers[0][1]
-        else:
-            return tool_type, tuple(identifiers)
-    return tool_type, None
+    identifiers = {}
+    for prop_name in properties:
+        value = getattr(tool, prop_name, None)
+        if not value:
+            continue
+        # Skip internal tags
+        if prop_name == "tags" and (value == list(skip_tags) or set(value) == skip_tags):
+            continue
+        # Convert lists to tuples for hashability
+        if isinstance(value, list):
+            value = tuple(value)
+
+        identifiers[prop_name] = value
+
+    if not identifiers:
+        return tool_type, None
+    elif len(identifiers) == 1:
+        return tool_type, next(iter(identifiers.values()))
+    else:
+        return tool_type, tuple(identifiers.items())
