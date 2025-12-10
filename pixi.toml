@@ -113,14 +113,14 @@ COVERAGE_CORE = "sysmon"
 [feature.py314.dependencies]
 python = "3.14.*,!=3.14.1" # https://github.com/python/cpython/issues/142214
 
+[feature.py314.activation.env]
+COVERAGE_CORE = "sysmon"
+
 [feature.pandas3]
 channels = ["conda-forge/label/pandas_rc"]
 
 [feature.pandas3.dependencies]
 pandas = { version = "==3.0.0rc0", channel = "conda-forge/label/pandas_rc" }
-
-[feature.py314.activation.env]
-COVERAGE_CORE = "sysmon"
 
 [feature.optional.dependencies]
 bokeh_sampledata = "*"
@@ -159,7 +159,7 @@ bokeh_sampledata = "*"
 cftime = "*"
 contourpy = "*"
 dask-core = "*"
-# datashader = ">=0.11.1"
+datashader = ">=0.11.1"
 ffmpeg = "*"
 ibis-sqlite = "*"
 ipython = ">=5.4.0"
@@ -179,7 +179,7 @@ scikit-image = "*"
 scipy = "*"
 selenium = "*"
 shapely = "*"
-# spatialpandas = "*"
+spatialpandas = "*"
 xarray = ">=0.10.4"
 xyzservices = "*"
 

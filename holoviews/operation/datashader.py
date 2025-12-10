@@ -41,7 +41,7 @@ from ..core.util import (
     dtype_kind,
     get_param_values,
 )
-from ..core.util.dependencies import _LazyModule
+from ..core.util.dependencies import PANDAS_GE_3_0_0, _LazyModule
 from ..element import (
     RGB,
     Area,
@@ -1269,8 +1269,13 @@ class shade(LinkableOperation):
         """
         if not isinstance(overlay, NdOverlay):
             raise ValueError('Only NdOverlays can be concatenated')
-        xarr = xr.concat([v.data.transpose() for v in overlay.values()],
-                         pd.Index(overlay.keys(), name=overlay.kdims[0].name))
+        index = pd.Index(overlay.keys(), name=overlay.kdims[0].name)
+        if PANDAS_GE_3_0_0 and dtype_kind(index) == "O":
+            index = index.astype("O")
+        xarr = xr.concat(
+            [v.data.transpose() for v in overlay.values()],
+            index
+        )
         params = dict(get_param_values(overlay.last),
                       vdims=overlay.last.vdims,
                       kdims=overlay.kdims+overlay.last.kdims)
