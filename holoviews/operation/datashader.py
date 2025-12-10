@@ -41,7 +41,7 @@ from ..core.util import (
     dtype_kind,
     get_param_values,
 )
-from ..core.util.dependencies import _LazyModule
+from ..core.util.dependencies import PANDAS_GE_3_0_0, _LazyModule
 from ..element import (
     RGB,
     Area,
@@ -489,15 +489,21 @@ class aggregate(LineAggregationOperation):
             for col in dfdata.columns:
                 if col in agg.coords:
                     continue
-                val = dfdata[col].values[index]
-                if dtype_kind(val) == 'f':
+                ser = dfdata[col]
+                kind = dtype_kind(ser)
+                if kind == "O" and getattr(ser.dtype, "storage", None) == "pyarrow":
+                    # pyarrow can only handle 1-dimensional
+                    val = np.asarray(ser)[index]
+                else:
+                    val = ser.values[index]
+                if kind == 'f':
                     val[neg1] = np.nan
                 elif isinstance(val.dtype, pd.CategoricalDtype):
                     val = val.to_numpy()
                     val[neg1] = "-"
-                elif dtype_kind(val) == "O":
+                elif kind == "O":
                     val[neg1] = "-"
-                elif dtype_kind(val) == "M":
+                elif kind == "M":
                     val[neg1] = np.datetime64("NaT")
                 else:
                     val = val.astype(np.float64)
@@ -1263,8 +1269,13 @@ class shade(LinkableOperation):
         """
         if not isinstance(overlay, NdOverlay):
             raise ValueError('Only NdOverlays can be concatenated')
-        xarr = xr.concat([v.data.transpose() for v in overlay.values()],
-                         pd.Index(overlay.keys(), name=overlay.kdims[0].name))
+        index = pd.Index(overlay.keys(), name=overlay.kdims[0].name)
+        if PANDAS_GE_3_0_0 and dtype_kind(index) == "O":
+            index = index.astype("O")
+        xarr = xr.concat(
+            [v.data.transpose() for v in overlay.values()],
+            index
+        )
         params = dict(get_param_values(overlay.last),
                       vdims=overlay.last.vdims,
                       kdims=overlay.kdims+overlay.last.kdims)

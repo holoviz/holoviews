@@ -33,6 +33,7 @@ from holoviews import (
     TriMesh,
     renderer,
 )
+from holoviews.core.util.dependencies import PANDAS_GE_3_0_0
 from holoviews.element.comparison import Comparison, ComparisonTestCase
 from holoviews.operation import apply_when
 from holoviews.streams import Tap
@@ -1501,7 +1502,7 @@ def test_selector_rasterize_with_datetime_column():
     df = pd.DataFrame({
         "x": np.random.uniform(-180, 180, n),
         "y": np.random.uniform(-90, 90, n),
-        "Timestamp": pd.date_range(start="2023-01-01", periods=n, freq="D"),
+        "Timestamp": pd.date_range(start="2023-01-01", periods=n, freq="D", unit="ns"),
         "Value": np.random.rand(n) * 100,
     })
     point_plot = Points(df)
@@ -1777,11 +1778,12 @@ def test_imagestack_dynspread():
 def test_datashade_count_cat_no_change_inplace():
     # Test for https://github.com/holoviz/holoviews/issues/6324
     df = pd.DataFrame({"x": range(3), "y": range(3), "c": list(map(str, range(3)))})
-    assert df["c"].dtype == "object"
+    expected_dtype = pd.StringDtype(na_value=np.nan) if PANDAS_GE_3_0_0 else "object"
+    assert df["c"].dtype == expected_dtype
     op = datashade(Points(df), aggregator=ds.count_cat("c"))
     render(op)
     # Should not convert to category dtype
-    assert df["c"].dtype == "object"
+    assert df["c"].dtype == expected_dtype
 
 
 @pytest.mark.parametrize("lazy", [False, True])

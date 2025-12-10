@@ -7,6 +7,7 @@ import os
 import unittest
 from itertools import product
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import narwhals.stable.v2 as nw
 import numpy as np
@@ -589,8 +590,7 @@ class TestDatetimeUtils(unittest.TestCase):
         self.assertEqual(drange[-1], end-np.timedelta64(50, 'ms'))
 
     def test_timezone_to_int(self):
-        import pytz
-        timezone = pytz.timezone("Europe/Copenhagen")
+        timezone = ZoneInfo("Europe/Copenhagen")
 
         values = [
             datetime.datetime(2021, 4, 8, 12, 0, 0, 0),
