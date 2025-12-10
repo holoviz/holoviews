@@ -2,6 +2,7 @@ import sys
 
 import numpy as np
 
+from ...core.util import dtype_kind
 from .dask import DaskInterface
 from .interface import Interface
 from .spatialpandas import SpatialPandasInterface
@@ -56,7 +57,7 @@ class DaskSpatialPandasInterface(SpatialPandasInterface):
     def values(cls, dataset, dimension, expanded=True, flat=True, compute=True, keep_index=False):
         if compute and not keep_index:
             dtype = cls.dtype(dataset, dimension)
-            meta = np.array([], dtype=dtype.base)
+            meta = np.array([], dtype="O" if dtype_kind(dtype) == "O" else dtype.base)
             return dataset.data.map_partitions(
                 cls.partition_values, meta=meta, dataset=dataset,
                 dimension=dimension, expanded=expanded, flat=flat
