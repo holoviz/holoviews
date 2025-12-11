@@ -927,10 +927,13 @@ def isdatetime(value):
     """Whether the array or scalar is recognized datetime type.
 
     """
-    if isinstance(value, np.ndarray):
-        return (dtype_kind(value) == "M" or
-                (dtype_kind(value) == "O" and len(value) and
-                 isinstance(value[0], datetime_types)))
+    if isinstance(value, arraylike_types):
+        kind = dtype_kind(value)
+        return (
+            kind == "M" or (
+                kind == "O" and len(value) and isinstance(value[0], datetime_types)
+            )
+        )
     else:
         return isinstance(value, datetime_types)
 
