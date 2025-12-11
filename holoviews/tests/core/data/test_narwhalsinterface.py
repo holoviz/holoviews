@@ -314,11 +314,6 @@ class CudfNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
         with pytest.raises(TypeError, match=re.escape(msg)):
             super().test_dataset_groupby_dynamic()
 
-    def test_dataset_nodata_range(self):
-        msg = "cudf does not support mixed types, please type-cast the column of dataframe/series and other to same dtypes."
-        with pytest.raises(TypeError, match=re.escape(msg)):
-            return super().test_dataset_nodata_range()
-
     def test_dataset_sample_hm(self):
         samples = self.dataset_hm.sample([0, 5, 10]).dimension_values('y')
         assert samples.implementation == nw.Implementation.CUDF
