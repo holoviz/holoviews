@@ -1003,6 +1003,7 @@ def test_parse_datetime(test_input, expected_output, with_pandas, monkeypatch):
 
 
 def test_isdatetime_pyarrow():
+    pytest.importorskip("pyarrow")
     ser = pd.to_datetime(["2024-01-01", "2024-01-02"]).astype("date32[pyarrow]")
     assert isinstance(ser.dtype, pd.core.dtypes.dtypes.ArrowDtype)
     assert isdatetime(ser)
