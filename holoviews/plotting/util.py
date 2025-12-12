@@ -1434,7 +1434,7 @@ class flatten_stack(Operation):
 
 
 # https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/named-color
-_NAMED_CSS_COLORS = [
+_NAMED_CSS_COLORS = (
     "aliceblue",
     "antiquewhite",
     "aqua",
@@ -1583,4 +1583,4 @@ _NAMED_CSS_COLORS = [
     "whitesmoke",
     "yellow",
     "yellowgreen",
-]
+)

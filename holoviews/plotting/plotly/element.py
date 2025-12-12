@@ -393,13 +393,13 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                     new_style.update(copts)
                 else:  # categorical
                     categories, cat_indices = np.unique(val, return_inverse=True)
-                    is_plotly_allowed_color = all(
+                    is_plotly_allowed_colors = all(
                         isinstance(c, str) and (
                             c.startswith(('#', 'rgb', 'hsl', 'hsv')) or c in _NAMED_CSS_COLORS
                         ) for c in categories
                     )
 
-                    if not is_plotly_allowed_color:
+                    if not is_plotly_allowed_colors:
                         val = cat_indices
 
                         copts = self.get_color_opts(v, element, ranges, style)
