@@ -3,7 +3,6 @@ import uuid
 
 import numpy as np
 import param
-from plotly import colors as plotly_colors
 
 from ... import Tiles
 from ...core import util
@@ -14,7 +13,7 @@ from ...core.util import dtype_kind
 from ...streams import Stream
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dim_range_key
+from ..util import _NAMED_CSS_COLORS, dim_range_key
 from .plot import PlotlyPlot
 from .util import (
     PLOTLY_MAP,
@@ -394,19 +393,13 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                     new_style.update(copts)
                 else:  # categorical
                     categories, cat_indices = np.unique(val, return_inverse=True)
-                    is_color_spec = True
-                    for v_item in categories:
-                        if not isinstance(v_item, str):
-                             is_color_spec = False
-                             break
-                        if not v_item.startswith(('#', 'rgb', 'hsl', 'hsv')):
-                             try:
-                                 plotly_colors.validate_colors(v_item)
-                             except Exception:
-                                 is_color_spec = False
-                                 break
+                    is_plotly_allowed_color = all(
+                        isinstance(c, str) and (
+                            c.startswith(('#', 'rgb', 'hsl', 'hsv')) or c in _NAMED_CSS_COLORS
+                        ) for c in categories
+                    )
 
-                    if not is_color_spec:
+                    if not is_plotly_allowed_color:
                         val = cat_indices
 
                         copts = self.get_color_opts(v, element, ranges, style)
