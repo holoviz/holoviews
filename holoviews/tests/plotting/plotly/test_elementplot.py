@@ -282,3 +282,21 @@ class TestColorbarPlot(TestPlotlyPlot):
         state = self._get_plot_state(scatter)
         assert state["data"][0]["marker"]["cmin"] == 0
         assert state["data"][0]["marker"]["cmax"] == 2
+
+    def test_categorical_colorbar_ticks(self):
+        scatter = Scatter([
+            (0, 1, 'Category A'), (1, 2, 'Category B'), (2, 3, 'Category C')
+        ], vdims=['y', 'category']).opts(color='category', colorbar=True)
+        state = self._get_plot_state(scatter)
+
+        assert np.array_equal(state['data'][0]['marker']['color'], np.array([0, 1, 2]))
+
+        assert 'colorbar' in state['data'][0]['marker']
+        colorbar = state['data'][0]['marker']['colorbar']
+        assert colorbar['tickmode'] == 'array'
+        assert colorbar['tickvals'] == [0, 1, 2]
+        assert colorbar['ticktext'] == ['Category A', 'Category B', 'Category C']
+
+        assert state['data'][0]['marker']['cmin'] == 0
+        assert state['data'][0]['marker']['cmax'] == 2
+        assert state['data'][0]['marker']['cauto'] is False
