@@ -1369,8 +1369,7 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         t = pd.date_range(start='2020-01-01 10:00', end='2020-01-01 12:00', freq='h', tz='Asia/Shanghai')
         d = pd.DataFrame({'t': t, 'y': [1, 2, 3]})
         curve = Curve(d, kdims=['t'], vdims=['y'])
-
-        img = rasterize(curve, line_width=1, dynamic=False)
+        img = rasterize(curve, dynamic=False)
         assert isinstance(img, Image)
 
 
