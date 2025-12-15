@@ -16,8 +16,12 @@ from holoviews.util.transform import dim
 
 from ..utils import optional_dependencies
 
-(dask, da, dd), dask_skip = optional_dependencies("dask", "dask.array", "dask.dataframe")
+dask, dask_skip = optional_dependencies("dask")
 xr, xr_skip = optional_dependencies("xarray")
+
+if dask:
+    import dask.array as da
+    import dask.dataframe as dd
 
 dask_conversion_warning = pytest.mark.filterwarnings(
     "ignore:Dask currently has limited support for converting pandas extension dtypes to arrays:UserWarning"

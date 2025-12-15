@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 from types import ModuleType
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Literal, overload
 
 import param
 import pytest
@@ -14,6 +14,21 @@ from holoviews.core.util.dependencies import _is_installed
 from holoviews.util.warnings import deprecated
 
 if TYPE_CHECKING:
+    import dask
+    import dask.array as da
+    import dask.dataframe as dd
+    import datashader
+    import ibis
+    import matplotlib as mpl
+    import networkx as nx
+    import notebook
+    import plotly
+    import pyparsing
+    import scipy
+    import shapely
+    import spatialpandas
+    import tsdownsample
+    import xarray
     from _pytest.mark.structures import MarkDecorator
 
     MaybeModuleType = ModuleType | None
@@ -167,24 +182,58 @@ class LoggingComparison:
 
 
 @overload
-def optional_dependencies(name: str, /) -> tuple[MaybeModuleType, MarkDecorator]: ...
+def optional_dependencies(name: Literal["scipy"], /) -> tuple[scipy, MarkDecorator]: ...
 
 @overload
-def optional_dependencies(*names: str) -> tuple[tuple[MaybeModuleType, ...], MarkDecorator]: ...
+def optional_dependencies(name: Literal["ibis"], /) -> tuple[ibis, MarkDecorator]: ...
 
-def optional_dependencies(*names: str):
+@overload
+def optional_dependencies(name: Literal["dask"], /) -> tuple[dask, MarkDecorator]: ...
+
+@overload
+def optional_dependencies(name: Literal["dask.array"], /) -> tuple[da, MarkDecorator]: ...
+
+@overload
+def optional_dependencies(name: Literal["dask.dataframe"], /) -> tuple[dd, MarkDecorator]: ...
+
+@overload
+def optional_dependencies(name: Literal["datashader"], /) -> tuple[datashader, MarkDecorator]: ...
+
+@overload
+def optional_dependencies(name: Literal["matplotlib"], /) -> tuple[mpl, MarkDecorator]: ...
+
+@overload
+def optional_dependencies(name: Literal["networkx"], /) -> tuple[nx, MarkDecorator]: ...
+
+@overload
+def optional_dependencies(name: Literal["notebook"], /) -> tuple[notebook, MarkDecorator]: ...
+
+@overload
+def optional_dependencies(name: Literal["plotly"], /) -> tuple[plotly, MarkDecorator]: ...
+
+@overload
+def optional_dependencies(name: Literal["pyparsing"], /) -> tuple[pyparsing, MarkDecorator]: ...
+
+@overload
+def optional_dependencies(name: Literal["shapely"], /) -> tuple[shapely, MarkDecorator]: ...
+
+@overload
+def optional_dependencies(name: Literal["spatialpandas"], /) -> tuple[spatialpandas, MarkDecorator]: ...
+
+@overload
+def optional_dependencies(name: Literal["tsdownsample"], /) -> tuple[tsdownsample, MarkDecorator]: ...
+
+@overload
+def optional_dependencies(name: Literal["xarray"], /) -> tuple[xarray, MarkDecorator]: ...
+
+
+def optional_dependencies(name: str, /) -> tuple[MaybeModuleType, MarkDecorator]:
     """Check if a dependency is installed and return the module and a fixture that skips test.
     """
-    modules = []
-    for name in names:
-        if _is_installed(name):
-            modules.append(importlib.import_module(name))
-        else:
-            modules.append(None)
+    if _is_installed(name):
+        module = importlib.import_module(name)
+    else:
+        module = None
 
-    if len(names) == 1:
-        fixture = pytest.mark.skipif(modules[0] is None, reason=f"{name} is not installed")
-        return modules[0], fixture
-
-    fixture = pytest.mark.skipif(not all(modules), reason=f"Not all of {', '.join(names)} are installed")
-    return tuple(modules), fixture
+    fixture = pytest.mark.skipif(module is None, reason=f"{name} is not installed")
+    return module, fixture

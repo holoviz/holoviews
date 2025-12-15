@@ -15,7 +15,7 @@ from holoviews.testing import assert_data_equal, assert_element_equal
 from ..utils import optional_dependencies
 
 nx, nx_skip = optional_dependencies("networkx")
-scipy, scipy_skip = optional_dependencies("scipyt")
+scipy, scipy_skip = optional_dependencies("scipy")
 
 class GraphTests:
 

@@ -7,7 +7,7 @@ from holoviews.testing import assert_element_equal
 
 from ..utils import optional_dependencies
 
-scipy, scipy_skip = optional_dependencies('scipy')
+scipy, scipy_skip = optional_dependencies("scipy")
 
 class TimeseriesOperationTests:
     """

@@ -35,7 +35,7 @@ from ..utils import optional_dependencies
 ds, ds_skip = optional_dependencies("datashader")
 spd, spd_skip = optional_dependencies("spatialpandas")
 shapely, shapely_skip = optional_dependencies("shapely")
-dd, dd_skip = optional_dependencies("dask.dataframe")
+dd, dask_skip = optional_dependencies("dask.dataframe")
 
 
 class TestIndexExpr:
@@ -656,12 +656,12 @@ class TestSpatialSelectColumnar:
         mask = spatial_select_columnar(pandas_df.x.to_numpy(copy=True), pandas_df.y.to_numpy(copy=True), geometry, self.method)
         assert np.array_equal(mask, pt_mask)
 
-    @dd_skip
+    @dask_skip
     def test_dask(self, geometry, pt_mask, dask_df):
         mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry, self.method)
         assert np.array_equal(mask.compute(), pt_mask)
 
-    @dd_skip
+    @dask_skip
     def test_meta_dtype(self, geometry, pt_mask, dask_df):
         mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry, self.method)
         assert mask._meta.dtype == np.bool_

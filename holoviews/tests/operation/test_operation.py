@@ -48,7 +48,7 @@ from holoviews.testing import assert_element_equal
 from ..utils import optional_dependencies
 
 mpl, mpl_skip = optional_dependencies("matplotlib")
-da, da_skip = optional_dependencies("dask.array")
+da, dask_skip = optional_dependencies("dask.array")
 ibis, ibis_skip = optional_dependencies("ibis")
 
 
@@ -423,7 +423,7 @@ class OperationTests:
             np.testing.assert_equal(exp, h.data["xy"])
             assert (h.data["xy_count"] == 5).all()
 
-    @da_skip
+    @dask_skip
     def test_dataset_histogram_dask(self):
         import dask.array as da
         ds = Dataset((da.from_array(np.array(range(10), dtype='f'), chunks=(3)),),
@@ -435,7 +435,7 @@ class OperationTests:
         assert isinstance(op_hist.data['x_frequency'], da.Array)
         assert_element_equal(op_hist, hist)
 
-    @da_skip
+    @dask_skip
     def test_dataset_cumulative_histogram_dask(self):
         import dask.array as da
         ds = Dataset((da.from_array(np.array(range(10), dtype='f'), chunks=(3)),),
@@ -447,7 +447,7 @@ class OperationTests:
         assert isinstance(op_hist.data['x_frequency'], da.Array)
         assert_element_equal(op_hist, hist)
 
-    @da_skip
+    @dask_skip
     def test_dataset_weighted_histogram_dask(self):
         import dask.array as da
         ds = Dataset((da.from_array(np.array(range(10), dtype='f'), chunks=3),

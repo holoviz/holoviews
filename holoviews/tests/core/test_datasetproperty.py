@@ -10,9 +10,13 @@ from holoviews.testing import assert_element_equal
 from ..utils import optional_dependencies
 
 ds, ds_skip = optional_dependencies("datashader")
-(dask, dd), dask_skip = optional_dependencies("dask", "dask.dataframe")
+dask, dask_skip = optional_dependencies("dask")
+
 if ds:
     from holoviews.operation.datashader import datashade, dynspread, rasterize
+
+if dask:
+    import dask.dataframe as dd
 
 
 class DatasetPropertyTestCase:

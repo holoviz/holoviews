@@ -6,7 +6,6 @@ from .test_plot import TestPlotlyPlot
 
 _, scipy_skip = optional_dependencies("scipy")
 
-
 @scipy_skip
 class TestDistributionPlot(TestPlotlyPlot):
 

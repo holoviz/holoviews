@@ -14,7 +14,10 @@ from holoviews.util.transform import dim
 from ...utils import optional_dependencies
 from .test_pandasinterface import BasePandasInterfaceTests
 
-(dask, dd), dask_skip = optional_dependencies("dask", "dask.dataframe")
+dask, dask_skip = optional_dependencies("dask")
+
+if dask:
+    import dask.dataframe as dd
 
 _DASK_CONVERT_STRING = (
     _no_import_version("dask") >= (2023, 7, 1)

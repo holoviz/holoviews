@@ -41,7 +41,7 @@ from holoviews.util import render
 from ..utils import optional_dependencies
 
 ds, ds_skip = optional_dependencies("datashader")
-spd, spd_skip = optional_dependencies("spatailpandas")
+spd, spd_skip = optional_dependencies("spatialpandas")
 
 if not ds:
     pytest.skip("datashader not installed", allow_module_level=True)
