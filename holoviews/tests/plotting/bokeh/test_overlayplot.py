@@ -425,11 +425,11 @@ def test_ndoverlay_categorical_y_ranges(order):
     assert output == expected
 
 @pytest.mark.parametrize(("tools", "new_tools"),
-    (
-        [None, []],
-        [["zoom_in"], ["ZoomInTool"]],
-        [["zoom_in", "zoom_out"], ["ZoomInTool", "ZoomOutTool"]]
-    ), ids=["0", "1", "2"])
+    [
+        (None, []),
+        (["zoom_in"], ["ZoomInTool"]),
+        (["zoom_in", "zoom_out"], ["ZoomInTool", "ZoomOutTool"])
+    ], ids=["none", "zoom_in", "zoom_in_and_zoom_out"])
 def test_overlay_opts_tools(tools, new_tools):
     overlay = Curve([1, 2, 3]) * Curve([2, 3, 4])
     if tools:
