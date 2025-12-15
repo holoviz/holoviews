@@ -88,6 +88,7 @@ asyncio_default_fixture_loop_scope = "function"
 minversion = "7"
 xfail_strict = "true"
 log_cli_level = "INFO"
+python_classes = "*Test*"
 filterwarnings = [
     "error",
     # Numpy warning triggered in Bokeh, when timedelta or datetime numpy scalar are compared to a numerical scalar
@@ -146,6 +147,8 @@ filterwarnings = [
     "ignore:'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16", # https://github.com/holoviz/panel/issues/8239
     "ignore:'asyncio.WindowsSelectorEventLoopPolicy' is deprecated and slated for removal in Python 3.16", # https://github.com/holoviz/panel/issues/8239
     "ignore:'_UnionGenericAlias' is deprecated and slated for removal in Python 3.17", # OK
+    # 2025-11
+    "ignore:Inheriting from 'holoviews.element.comparison.ComparisonInterface::holoviews.tests.element", # https://github.com/holoviz/holoviews/pull/6735
 ]
 
 [tool.coverage]
@@ -170,6 +173,7 @@ select = [
     "PLE",
     "PLR",
     "PLW",
+    "PT",
     "RUF",
     "UP",
     "W",
@@ -221,6 +225,8 @@ extend-unsafe-fixes = [
     "RUF002", # Ambiguous unicode character
     "RUF003", # Ambiguous unicode character
 ]
+"holoviews/element/comparison.py" = ["PT009"]
+"holoviews/tests/element/test_comparison*.py" = ["PT009", "PT027"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["holoviews"]

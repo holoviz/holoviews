@@ -24,7 +24,7 @@ def watch_hook(dim, pos):
 
 @pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize(
-    ["opts_kwargs", "hook", "drag_direction"],
+    ("opts_kwargs", "hook", "drag_direction"),
     [
         ({"logy": True}, watch_hook("y", "start"), "down"),
         ({"logx": True, "invert_axes": True}, watch_hook("x", "start"), "right"),

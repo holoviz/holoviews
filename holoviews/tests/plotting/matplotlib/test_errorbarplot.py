@@ -4,6 +4,7 @@ import pytest
 from holoviews.core.options import AbbreviatedException
 from holoviews.core.spaces import HoloMap
 from holoviews.element import ErrorBars
+from holoviews.testing import assert_data_equal
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -20,7 +21,7 @@ class TestErrorBarPlot(TestMPLPlot):
                               vdims=['y', 'perr', 'nerr', 'color']).opts(color='color')
         plot = mpl_renderer.get_plot(errorbars)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_edgecolors(),
+        assert_data_equal(artist.get_edgecolors(),
                          np.array([[0, 0, 0, 1], [1, 0, 0, 1], [0, 1, 0, 1]]))
 
     def test_errorbars_color_op_update(self):
@@ -32,10 +33,10 @@ class TestErrorBarPlot(TestMPLPlot):
         }).opts(color='color')
         plot = mpl_renderer.get_plot(errorbars)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_edgecolors(),
+        assert_data_equal(artist.get_edgecolors(),
                          np.array([[0, 0, 0, 1], [1, 0, 0, 1], [0, 1, 0, 1]]))
         plot.update((1,))
-        self.assertEqual(artist.get_edgecolors(),
+        assert_data_equal(artist.get_edgecolors(),
                          np.array([[1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]]))
 
     def test_errorbars_linear_color_op(self):
@@ -57,7 +58,7 @@ class TestErrorBarPlot(TestMPLPlot):
                               vdims=['y', 'perr', 'nerr', 'color']).opts(edgecolor='color')
         plot = mpl_renderer.get_plot(errorbars)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_edgecolors(), np.array([
+        assert_data_equal(artist.get_edgecolors(), np.array([
             [0, 0, 0, 1], [1, 0, 0, 1], [0, 1, 0, 1]]
         ))
 
@@ -73,7 +74,7 @@ class TestErrorBarPlot(TestMPLPlot):
                               vdims=['y', 'perr', 'nerr', 'line_width']).opts(linewidth='line_width')
         plot = mpl_renderer.get_plot(errorbars)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_linewidths(), [1, 4, 8])
+        assert artist.get_linewidths() == [1, 4, 8]
 
     def test_errorbars_line_width_op_update(self):
         errorbars = HoloMap({
@@ -84,6 +85,6 @@ class TestErrorBarPlot(TestMPLPlot):
         }).opts(linewidth='line_width')
         plot = mpl_renderer.get_plot(errorbars)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_linewidths(), [1, 4, 8])
+        assert artist.get_linewidths() == [1, 4, 8]
         plot.update((1,))
-        self.assertEqual(artist.get_linewidths(), [2, 6, 4])
+        assert artist.get_linewidths() == [2, 6, 4]

@@ -8,13 +8,14 @@ from holoviews.plotting.plotly.util import (
     PLOTLY_MAP,
     PLOTLY_SCATTERMAP,
 )
+from holoviews.testing import assert_data_equal
 
 from .test_plot import TestPlotlyPlot, plotly_renderer
 
 
 class TestMapboxTilesPlot(TestPlotlyPlot):
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
 
         # Precompute coordinates
         self.xs = [3000000, 2000000, 1000000]
@@ -38,28 +39,26 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         fig_dict = plotly_renderer.get_plot_state(tiles)
 
         # Check dummy trace
-        self.assertEqual(len(fig_dict["data"]), 1)
+        assert len(fig_dict["data"]) == 1
         dummy_trace = fig_dict["data"][0]
-        self.assertEqual(dummy_trace["type"], PLOTLY_SCATTERMAP)
-        self.assertEqual(dummy_trace["lon"], [])
-        self.assertEqual(dummy_trace["lat"], [])
-        self.assertEqual(dummy_trace["showlegend"], False)
+        assert dummy_trace["type"] == PLOTLY_SCATTERMAP
+        assert dummy_trace["lon"] == []
+        assert dummy_trace["lat"] == []
+        assert dummy_trace["showlegend"] is False
 
         # Check mapbox subplot
         subplot = fig_dict["layout"][PLOTLY_MAP]
-        self.assertEqual(subplot["style"], "white-bg")
-        self.assertEqual(
-            subplot['center'], {'lat': self.lat_center, 'lon': self.lon_center}
-        )
+        assert subplot["style"] == "white-bg"
+        assert subplot['center'] == {'lat': self.lat_center, 'lon': self.lon_center}
 
         # Check that xaxis and yaxis entries are not created
-        self.assertNotIn("xaxis", fig_dict["layout"])
-        self.assertNotIn("yaxis", fig_dict["layout"])
+        assert "xaxis" not in fig_dict["layout"]
+        assert "yaxis" not in fig_dict["layout"]
 
         # Check no layers are introduced when an empty tile server string is
         # passed
         layers = fig_dict["layout"][PLOTLY_MAP].get("layers", [])
-        self.assertEqual(len(layers), 0)
+        assert len(layers) == 0
 
     def test_styled_mapbox_tiles(self):
         opts = dict(mapstyle="dark") if PLOTLY_GE_6_0_0 else dict(mapboxstyle="dark", accesstoken="token-str")
@@ -69,12 +68,10 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
 
         # Check mapbox subplot
         subplot = fig_dict["layout"][PLOTLY_MAP]
-        self.assertEqual(subplot["style"], "dark")
+        assert subplot["style"] == "dark"
         if not PLOTLY_GE_6_0_0:
-            self.assertEqual(subplot["accesstoken"], "token-str")
-        self.assertEqual(
-            subplot['center'], {'lat': self.lat_center, 'lon': self.lon_center}
-        )
+            assert subplot["accesstoken"] == "token-str"
+        assert subplot['center'] == {'lat': self.lat_center, 'lon': self.lon_center}
 
     def test_raster_layer(self):
         tiles = StamenTerrain().redim.range(
@@ -84,30 +81,28 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         fig_dict = plotly_renderer.get_plot_state(tiles)
 
         # Check dummy trace
-        self.assertEqual(len(fig_dict["data"]), 1)
+        assert len(fig_dict["data"]) == 1
         dummy_trace = fig_dict["data"][0]
-        self.assertEqual(dummy_trace["type"], PLOTLY_SCATTERMAP)
-        self.assertEqual(dummy_trace["lon"], [])
-        self.assertEqual(dummy_trace["lat"], [])
-        self.assertEqual(dummy_trace["showlegend"], False)
+        assert dummy_trace["type"] == PLOTLY_SCATTERMAP
+        assert dummy_trace["lon"] == []
+        assert dummy_trace["lat"] == []
+        assert dummy_trace["showlegend"] is False
 
         # Check mapbox subplot
         subplot = fig_dict["layout"][PLOTLY_MAP]
-        self.assertEqual(subplot["style"], "white-bg")
-        self.assertEqual(
-            subplot['center'], {'lat': self.lat_center, 'lon': self.lon_center}
-        )
+        assert subplot["style"] == "white-bg"
+        assert subplot['center'] == {'lat': self.lat_center, 'lon': self.lon_center}
 
         # Check for raster layer
         layers = fig_dict["layout"][PLOTLY_MAP].get("layers", [])
-        self.assertEqual(len(layers), 1)
+        assert len(layers) == 1
         layer = layers[0]
-        self.assertEqual(layer["source"][0].lower(), tiles.data.lower())
-        self.assertEqual(layer["opacity"], 0.7)
-        self.assertEqual(layer["sourcetype"], "raster")
-        self.assertEqual(layer["minzoom"], 3)
-        self.assertEqual(layer["maxzoom"], 7)
-        self.assertEqual(layer["sourceattribution"], _ATTRIBUTIONS[('stamen', 'png')])
+        assert layer["source"][0].lower() == tiles.data.lower()
+        assert layer["opacity"] == 0.7
+        assert layer["sourcetype"] == "raster"
+        assert layer["minzoom"] == 3
+        assert layer["maxzoom"] == 7
+        assert layer["sourceattribution"] == _ATTRIBUTIONS[('stamen', 'png')]
 
     # xyzservices input
     def test_xyzservices_tileprovider(self):
@@ -120,11 +115,11 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         fig_dict = plotly_renderer.get_plot_state(tiles)
         # Check mapbox subplot
         layers = fig_dict["layout"][PLOTLY_MAP].get("layers", [])
-        self.assertEqual(len(layers), 1)
+        assert len(layers) == 1
         layer = layers[0]
-        self.assertEqual(layer["source"][0].lower(), osm.build_url(scale_factor="@2x"))
-        self.assertEqual(layer["maxzoom"], osm.max_zoom)
-        self.assertEqual(layer["sourceattribution"], osm.html_attribution)
+        assert layer["source"][0].lower() == osm.build_url(scale_factor="@2x")
+        assert layer["maxzoom"] == osm.max_zoom
+        assert layer["sourceattribution"] == osm.html_attribution
 
     def test_overlay(self):
         # Base layer is mapbox vector layer
@@ -164,77 +159,75 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         subplot = fig_dict["layout"][PLOTLY_MAP]
         layers = subplot["layers"]
 
-        self.assertEqual(len(traces), 5)
-        self.assertEqual(len(layers), 2)
+        assert len(traces) == 5
+        assert len(layers) == 2
 
         # Check vector layer
         dummy_trace = traces[0]
-        self.assertEqual(dummy_trace["type"], PLOTLY_SCATTERMAP)
-        self.assertEqual(dummy_trace["lon"], [])
-        self.assertEqual(dummy_trace["lat"], [])
-        self.assertFalse(dummy_trace["showlegend"])
+        assert dummy_trace["type"] == PLOTLY_SCATTERMAP
+        assert dummy_trace["lon"] == []
+        assert dummy_trace["lat"] == []
+        assert not dummy_trace["showlegend"]
 
-        self.assertEqual(subplot["style"], "dark")
+        assert subplot["style"] == "dark"
         if not PLOTLY_GE_6_0_0:
-            self.assertEqual(subplot["accesstoken"], "token-str")
-        self.assertEqual(
-            subplot['center'], {'lat': self.lat_center, 'lon': self.lon_center}
-        )
+            assert subplot["accesstoken"] == "token-str"
+        assert subplot['center'] == {'lat': self.lat_center, 'lon': self.lon_center}
 
         # Check raster layer
         dummy_trace = traces[1]
         raster_layer = layers[0]
-        self.assertEqual(dummy_trace["type"], PLOTLY_SCATTERMAP)
-        self.assertEqual(dummy_trace["lon"], [])
-        self.assertEqual(dummy_trace["lat"], [])
-        self.assertFalse(dummy_trace["showlegend"])
+        assert dummy_trace["type"] == PLOTLY_SCATTERMAP
+        assert dummy_trace["lon"] == []
+        assert dummy_trace["lat"] == []
+        assert not dummy_trace["showlegend"]
 
         # Check raster_layer
-        self.assertEqual(raster_layer["below"], "traces")
-        self.assertEqual(raster_layer["opacity"], 0.7)
-        self.assertEqual(raster_layer["sourcetype"], "raster")
-        self.assertEqual(raster_layer["source"][0].lower(), stamen_raster.data.lower())
+        assert raster_layer["below"] == "traces"
+        assert raster_layer["opacity"] == 0.7
+        assert raster_layer["sourcetype"] == "raster"
+        assert raster_layer["source"][0].lower() == stamen_raster.data.lower()
 
         # Check RGB layer
         dummy_trace = traces[2]
         rgb_layer = layers[1]
-        self.assertEqual(dummy_trace["type"], PLOTLY_SCATTERMAP)
-        self.assertEqual(dummy_trace["lon"], [None])
-        self.assertEqual(dummy_trace["lat"], [None])
-        self.assertFalse(dummy_trace["showlegend"])
+        assert dummy_trace["type"] == PLOTLY_SCATTERMAP
+        assert dummy_trace["lon"] == [None]
+        assert dummy_trace["lat"] == [None]
+        assert not dummy_trace["showlegend"]
 
         # Check rgb_layer
-        self.assertEqual(rgb_layer["below"], "traces")
-        self.assertEqual(rgb_layer["opacity"], 0.5)
-        self.assertEqual(rgb_layer["sourcetype"], "image")
-        self.assertTrue(rgb_layer["source"].startswith("data:image/png;base64,iVBOR"))
-        self.assertEqual(rgb_layer["coordinates"], [
+        assert rgb_layer["below"] == "traces"
+        assert rgb_layer["opacity"] == 0.5
+        assert rgb_layer["sourcetype"] == "image"
+        assert rgb_layer["source"].startswith("data:image/png;base64,iVBOR")
+        assert rgb_layer["coordinates"] == [
             [self.lon_range[0], self.lat_range[1]],
             [self.lon_range[1], self.lat_range[1]],
             [self.lon_range[1], self.lat_range[0]],
             [self.lon_range[0], self.lat_range[0]]
-        ])
+        ]
 
         # Check Points layer
         points_trace = traces[3]
-        self.assertEqual(points_trace["type"], PLOTLY_SCATTERMAP)
-        self.assertEqual(points_trace["lon"], np.array([0, self.lon_range[1]]))
-        self.assertEqual(points_trace["lat"], np.array([0, self.lat_range[1]]))
-        self.assertEqual(points_trace["mode"], "markers")
-        self.assertTrue(points_trace.get("showlegend", True))
+        assert points_trace["type"] == PLOTLY_SCATTERMAP
+        assert_data_equal(points_trace["lon"], np.array([0, self.lon_range[1]]))
+        assert_data_equal(points_trace["lat"], np.array([0, self.lat_range[1]]))
+        assert points_trace["mode"] == "markers"
+        assert points_trace["showlegend"]
 
         # Check Bounds layer
         bounds_trace = traces[4]
-        self.assertEqual(bounds_trace["type"], PLOTLY_SCATTERMAP)
-        self.assertEqual(bounds_trace["lon"], np.array([
+        assert bounds_trace["type"] == PLOTLY_SCATTERMAP
+        assert_data_equal(bounds_trace["lon"], np.array([
             self.lon_range[0], self.lon_range[0], 0, 0, self.lon_range[0]
         ]))
-        self.assertEqual(bounds_trace["lat"], np.array([
+        assert_data_equal(bounds_trace["lat"], np.array([
             self.lat_range[0], 0, 0, self.lat_range[0], self.lat_range[0]
         ]))
-        self.assertEqual(bounds_trace["mode"], "lines")
+        assert bounds_trace["mode"] == "lines"
         assert points_trace["showlegend"] is True
 
         # No xaxis/yaxis
-        self.assertNotIn("xaxis", fig_dict["layout"])
-        self.assertNotIn("yaxis", fig_dict["layout"])
+        assert "xaxis" not in fig_dict["layout"]
+        assert "yaxis" not in fig_dict["layout"]
