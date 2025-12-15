@@ -49,7 +49,7 @@ class TestDimTransforms:
             ['int', 'float', 'negative', 'categories', 'booleans']
         )
 
-        if dd is not None:
+        if dask is not None:
             ddf = dd.from_pandas(self.dataset.data, npartitions=2)
             self.dataset_dask = self.dataset.clone(data=ddf)
 
@@ -65,7 +65,7 @@ class TestDimTransforms:
             dims=['y','x']
         )
         self.dataset_xarray = Dataset(darray, vdims=['z'])
-        if da is not None:
+        if dask is not None:
             dask_array = da.from_array(array)
             dask_da = xr.DataArray(
                 data=dask_array,
@@ -82,7 +82,7 @@ class TestDimTransforms:
             assert expr.apply(self.dataset, keep_index=False) == expected
             assert expr.apply(self.dataset, keep_index=True) == expected
 
-            if dd is None:
+            if dask is None:
                 return
 
             # Dask input
@@ -107,7 +107,7 @@ class TestDimTransforms:
             check_names=False
         )
 
-        if skip_dask or dd is None:
+        if skip_dask or dask is None:
             return
 
         # Check using dataset backed by Dask DataFrame,
@@ -168,7 +168,7 @@ class TestDimTransforms:
             expected
         )
 
-        if skip_dask or da is None:
+        if skip_dask or dask is None:
             return
 
         # Check using dataset backed by Dask DataFrame

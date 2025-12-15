@@ -350,6 +350,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
 
 
 
+@dask_skip
 class DaskXArrayInterfaceTest(XArrayInterfaceTests):
     """
     Tests for XArray interface wrapping dask arrays
@@ -395,6 +396,7 @@ class DaskXArrayInterfaceTest(XArrayInterfaceTests):
 
 
 
+@xr_skip
 class ImageElement_XArrayInterfaceTests(BaseImageElementInterfaceTests):
 
     datatype = 'xarray'
@@ -467,11 +469,13 @@ class ImageElement_XArrayInterfaceTests(BaseImageElementInterfaceTests):
             Image(xrarr, kdims=['x', 'y'])
 
 
+@xr_skip
 class RGBElement_XArrayInterfaceTests(BaseRGBElementInterfaceTests):
 
     datatype = 'xarray'
 
     __test__ = True
+
     @property
     def data_type(self):
         return xr.Dataset
@@ -481,6 +485,7 @@ class RGBElement_XArrayInterfaceTests(BaseRGBElementInterfaceTests):
                         self.rgb_array[:, :, 1], self.rgb_array[:, :, 2]))
 
 
+@xr_skip
 class RGBElement_PackedXArrayInterfaceTests(BaseRGBElementInterfaceTests):
 
     datatype = 'xarray'
@@ -494,6 +499,7 @@ class RGBElement_PackedXArrayInterfaceTests(BaseRGBElementInterfaceTests):
         self.rgb = RGB((self.xs, self.ys, self.rgb_array))
 
 
+@xr_skip
 class HSVElement_XArrayInterfaceTest(BaseHSVElementInterfaceTests):
 
     datatype = 'xarray'

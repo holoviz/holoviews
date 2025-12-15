@@ -265,7 +265,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         except NotImplementedError:
             pytest.skip("Not supported")
 
-    if not IbisInterface.has_rowid():
+    if ibis and not IbisInterface.has_rowid():
 
         def test_dataset_iloc_slice_rows_slice_cols(self):
             pytest.skip("Not supported")

@@ -377,7 +377,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert xaxis.group_text_font_size == '18pt'
 
     def test_cftime_transform_gregorian_no_warn(self):
-        cftime = pytest.importskip("cftime")
+        cftime = pytest.importorskip("cftime")
         gregorian_dates = [cftime.DatetimeGregorian(2000, 2, 28),
                            cftime.DatetimeGregorian(2000, 3, 1),
                            cftime.DatetimeGregorian(2000, 3, 2)]
@@ -388,7 +388,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
                          np.array([951696000000, 951868800000, 951955200000]))
 
     def test_cftime_transform_noleap_warn(self):
-        cftime = pytest.importskip("cftime")
+        cftime = pytest.importorskip("cftime")
         gregorian_dates = [cftime.DatetimeNoLeap(2000, 2, 28),
                            cftime.DatetimeNoLeap(2000, 3, 1),
                            cftime.DatetimeNoLeap(2000, 3, 2)]
