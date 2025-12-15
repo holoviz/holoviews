@@ -29,6 +29,7 @@ from holoviews.core.util import (
     get_path,
     is_nan,
     is_null_or_na_scalar,
+    isdatetime,
     isfinite,
     make_path_unique,
     max_range,
@@ -985,3 +986,10 @@ def test_parse_datetime(test_input, expected_output, with_pandas, monkeypatch):
     result = util.parse_datetime(test_input)
     assert isinstance(result, np.datetime64)
     assert result == expected_output
+
+
+def test_isdatetime_pyarrow():
+    pytest.importorskip("pyarrow")
+    ser = pd.to_datetime(["2024-01-01", "2024-01-02"]).astype("date32[pyarrow]")
+    assert isinstance(ser.dtype, pd.core.dtypes.dtypes.ArrowDtype)
+    assert isdatetime(ser)
