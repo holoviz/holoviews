@@ -53,14 +53,11 @@ class TestScatterPlot(TestPlotlyPlot):
             (0, 1, 'A'), (1, 2, 'B'), (2, 3, 'C')
         ], vdims=['y', 'category']).opts(color='category')
         state = self._get_plot_state(scatter)
-        # Categorical values should be converted to numeric indices
-        self.assertEqual(np.array_equal(state['data'][0]['marker']['color'],
-                                        np.array([0, 1, 2])), True)
-        # Should have a colorscale applied
-        self.assertIn('colorscale', state['data'][0]['marker'])
-        # Should have proper cmin/cmax
-        self.assertEqual(state['data'][0]['marker']['cmin'], 0)
-        self.assertEqual(state['data'][0]['marker']['cmax'], 2)
+
+        np.testing.assert_array_equal(state['data'][0]['marker']['color'], [0, 1, 2])
+        assert 'colorscale' in state['data'][0]['marker']
+        assert state['data'][0]['marker']['cmin'] == 0
+        assert state['data'][0]['marker']['cmax'] == 2
 
     def test_scatter_markers(self):
         scatter = Scatter([
@@ -134,14 +131,11 @@ class TestMapboxScatterPlot(TestPlotlyPlot):
             (0, 1, 'A'), (1, 2, 'B'), (2, 3, 'C')
         ], vdims=['y', 'category']).opts(color='category')
         state = self._get_plot_state(scatter)
-        # Categorical values should be converted to numeric indices
-        self.assertEqual(np.array_equal(state['data'][1]['marker']['color'],
-                                        np.array([0, 1, 2])), True)
-        # Should have a colorscale applied
-        self.assertIn('colorscale', state['data'][1]['marker'])
-        # Should have proper cmin/cmax
-        self.assertEqual(state['data'][1]['marker']['cmin'], 0)
-        self.assertEqual(state['data'][1]['marker']['cmax'], 2)
+
+        np.testing.assert_array_equal(state['data'][1]['marker']['color'], [0, 1, 2])
+        assert 'colorscale' in state['data'][1]['marker']
+        assert state['data'][1]['marker']['cmin'] == 0
+        assert state['data'][1]['marker']['cmax'] == 2
 
 
     def test_scatter_markers(self):

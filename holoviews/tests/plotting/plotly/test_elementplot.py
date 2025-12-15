@@ -290,7 +290,7 @@ class TestColorbarPlot(TestPlotlyPlot):
         ], vdims=['y', 'category']).opts(color='category', colorbar=True)
         state = self._get_plot_state(scatter)
 
-        assert np.array_equal(state['data'][0]['marker']['color'], np.array([0, 1, 2]))
+        np.testing.assert_array_equal(state['data'][0]['marker']['color'], [0, 1, 2])
 
         assert 'colorbar' in state['data'][0]['marker']
         colorbar = state['data'][0]['marker']['colorbar']
