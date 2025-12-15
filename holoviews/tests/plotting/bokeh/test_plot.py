@@ -15,7 +15,6 @@ from holoviews import Curve
 from holoviews.core.element import Element
 from holoviews.core.options import Store
 from holoviews.core.spaces import DynamicMap
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.bokeh.callbacks import Callback
 from holoviews.plotting.bokeh.element import ElementPlot
 from holoviews.streams import Pipe
@@ -25,18 +24,18 @@ bokeh_renderer = Store.renderers['bokeh']
 from .. import option_intersections
 
 
-class TestPlotDefinitions(ComparisonTestCase):
+class TestPlotDefinitions:
 
     known_clashes = []
 
     def test_bokeh_option_definitions(self):
         # Check option definitions do not introduce new clashes
-        self.assertEqual(option_intersections('bokeh'), self.known_clashes)
+        assert option_intersections('bokeh') == self.known_clashes
 
 
-class TestBokehPlot(ComparisonTestCase):
+class TestBokehPlot:
 
-    def setUp(self):
+    def setup_method(self):
         self.previous_backend = Store.current_backend
         self.comm_manager = bokeh_renderer.comm_manager
         bokeh_renderer.comm_manager = comms.CommManager
@@ -46,7 +45,7 @@ class TestBokehPlot(ComparisonTestCase):
             self._padding[plot] = plot.padding
             plot.padding = 0
 
-    def tearDown(self):
+    def teardown_method(self):
         Store.current_backend = self.previous_backend
         bokeh_renderer.comm_manager = self.comm_manager
         Callback._callbacks = {}
@@ -58,10 +57,10 @@ class TestBokehPlot(ComparisonTestCase):
         plot.initialize_plot()
         cmapper = plot.handles[f'{prefix}color_mapper']
         low, high = element.range(dim)
-        self.assertEqual(cmapper.low, low)
-        self.assertEqual(cmapper.high, high)
+        assert cmapper.low == low
+        assert cmapper.high == high
         mapper_type = LogColorMapper if log else LinearColorMapper
-        self.assertTrue(isinstance(cmapper, mapper_type))
+        assert isinstance(cmapper, mapper_type)
 
     def _test_hover_info(self, element, tooltips, line_policy='nearest', formatters=None):
         if formatters is None:
@@ -72,20 +71,20 @@ class TestBokehPlot(ComparisonTestCase):
         renderers = [r for r in plot.traverse(lambda x: x.handles.get('glyph_renderer'))
                      if r is not None]
         hover = fig.select(dict(type=HoverTool))
-        self.assertTrue(len(hover))
-        self.assertEqual(hover[0].tooltips, tooltips)
-        self.assertEqual(hover[0].formatters, formatters)
-        self.assertEqual(hover[0].line_policy, line_policy)
+        assert len(hover)
+        assert hover[0].tooltips == tooltips
+        assert hover[0].formatters == formatters
+        assert hover[0].line_policy == line_policy
 
         if isinstance(element, Element):
             cds = fig.select_one(dict(type=ColumnDataSource))
             for label, lookup in hover[0].tooltips:
                 if label in element.dimensions():
-                    self.assertIn(lookup[2:-1], cds.data)
+                    assert lookup[2:-1] in cds.data
 
         # Ensure all the glyph renderers have a hover tool
         for renderer in renderers:
-            self.assertTrue(any(renderer in h.renderers for h in hover))
+            assert any(renderer in h.renderers for h in hover)
 
 
 def test_element_plot_stream_cleanup():

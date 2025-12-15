@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from holoviews.core.data import Dataset
+from holoviews.testing import assert_data_equal
 
 from .base import HeterogeneousColumnTests, InterfaceTests
 
@@ -35,10 +36,10 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         df = self.dataset_hm.dframe(['x'])
         expected = self.frame({'x': self.xs}, dtype=df.dtypes.iloc[0])
         assert isinstance(expected, self.data_type)
-        self.assertEqual(df, expected.to_pandas())
+        assert_data_equal(df, expected.to_pandas())
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         logging.getLogger('numba.cuda.cudadrv.driver').setLevel(30)
 
     @pytest.mark.xfail(reason="cuDF does not support variance aggregation")
@@ -48,8 +49,8 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
     def test_dataset_mixed_type_range(self):
         ds = Dataset((['A', 'B', 'C', None],), 'A')
         vmin, vmax = ds.range(0)
-        self.assertTrue(np.isnan(vmin))
-        self.assertTrue(np.isnan(vmax))
+        assert np.isnan(vmin)
+        assert np.isnan(vmax)
 
     @pytest.mark.xfail(reason="cuDF does not support variance aggregation")
     def test_dataset_aggregate_string_types_size(self):

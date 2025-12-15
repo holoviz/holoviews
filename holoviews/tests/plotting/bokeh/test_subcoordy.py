@@ -170,7 +170,7 @@ class TestSubcoordinateY(TestBokehPlot):
         overlay.opts(ylim=ylim)
         plot = bokeh_renderer.get_plot(overlay)
         y_range = plot.handles['y_range']
-        assert y_range.start, y_range.end == ylim
+        assert (y_range.start, y_range.end) == ylim
 
     def test_axis_labels(self):
         overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
@@ -382,7 +382,7 @@ class TestSubcoordinateY(TestBokehPlot):
         zoom_tools = [tool for tool in plot.state.tools if isinstance(tool, WheelZoomTool)]
         assert zoom_tools == plot.handles['zooms_subcoordy']['wheel_zoom']
         assert len(zoom_tools) == len(groups)
-        for zoom_tool, group in zip(zoom_tools, reversed(groups), strict=None):
+        for zoom_tool, group in zip(zoom_tools, reversed(groups), strict=True):
             assert len(zoom_tool.renderers) == 2
             assert len(set(zoom_tool.renderers)) == 2
             assert zoom_tool.dimensions == 'height'
