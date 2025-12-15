@@ -1363,6 +1363,14 @@ class DatashaderRasterizeTests:
         )
         xr.testing.assert_equal(rasterized.data, expected)
 
+    def test_rasterize_curve_with_timezone_aware_datetime(self):
+        # Test for https://github.com/holoviz/holoviews/issues/5127
+        t = pd.date_range(start='2020-01-01 10:00', end='2020-01-01 12:00', freq='h', tz='Asia/Shanghai')
+        d = pd.DataFrame({'t': t, 'y': [1, 2, 3]})
+        curve = Curve(d, kdims=['t'], vdims=['y'])
+        img = rasterize(curve, dynamic=False)
+        assert isinstance(img, Image)
+
 
 @pytest.mark.parametrize(('agg_input_fn', 'index_col'),
     [

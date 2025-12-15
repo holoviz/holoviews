@@ -371,6 +371,8 @@ class aggregate(LineAggregationOperation):
             if not is_custom and len(vals) and isinstance(vals.values[0], cftime_types):
                 vals = cftime_to_timestamp(vals, 'ns')
             elif dtype_kind(vals) == 'M':
+                if getattr(vals.dtype, "tz", None):
+                    vals = vals.dt.tz_localize(None)
                 vals = vals.astype('datetime64[ns]')
             elif vals.dtype == np.uint64:
                 raise TypeError(f"Dtype of uint64 for column {d.name} is not supported.")
