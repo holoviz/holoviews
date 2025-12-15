@@ -5,6 +5,7 @@ from holoviews.core import NdOverlay
 from holoviews.core.options import AbbreviatedException
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Contours, Path, Polygons
+from holoviews.testing import assert_data_equal
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -22,8 +23,8 @@ class TestPathPlot(TestMPLPlot):
             color='color', color_levels=levels, cmap=colors)
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
-        self.assertEqual(np.asarray(artist.get_array()), np.array(color))
-        self.assertEqual(artist.get_clim(), (994, 999))
+        assert_data_equal(np.asarray(artist.get_array()), np.array(color))
+        assert artist.get_clim() == (994, 999)
 
     def test_path_continuously_varying_alpha_op(self):
         xs = [1, 2, 3, 4]
@@ -43,7 +44,7 @@ class TestPathPlot(TestMPLPlot):
         path = Path([data], vdims='line_width').opts(linewidth='line_width')
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_linewidths(), line_width)
+        assert artist.get_linewidths() == line_width
 
     def test_path_continuously_varying_line_width_op_update(self):
         xs = [1, 2, 3, 4]
@@ -54,9 +55,9 @@ class TestPathPlot(TestMPLPlot):
         }).opts(linewidth='line_width')
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_linewidths(), [1, 7, 3, 2])
+        assert artist.get_linewidths() == [1, 7, 3, 2]
         plot.update((1,))
-        self.assertEqual(artist.get_linewidths(), [3, 8, 2, 3])
+        assert artist.get_linewidths() == [3, 8, 2, 3]
 
     def test_path_style_mapped_scalar_color_segments_array_and_cmap(self):
         # Five paths, scalar 'c' per geometry; style-mapped color
@@ -133,8 +134,8 @@ class TestPolygonPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(polygons)
         for j, splot in enumerate(plot.subplots.values()):
             artist = splot.handles['artist']
-            self.assertEqual(np.asarray(artist.get_array()), np.array([j]))
-            self.assertEqual(artist.get_clim(), (0, 4))
+            assert_data_equal(np.asarray(artist.get_array()), np.array([j]))
+            assert artist.get_clim() == (0, 4)
 
     def test_polygon_with_hole_plot(self):
         xs = [1, 2, 3]
@@ -144,13 +145,13 @@ class TestPolygonPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(poly)
         artist = plot.handles['artist']
         paths = artist.get_paths()
-        self.assertEqual(len(paths), 1)
+        assert len(paths) == 1
         path = paths[0]
-        self.assertEqual(path.vertices, np.array([
+        assert_data_equal(path.vertices, np.array([
             (1, 2), (2, 0), (3, 7), (1, 2), (1.5, 2), (2, 3), (1.6, 1.6),
             (1.5, 2), (2.1, 4.5), (2.5, 5), (2.3, 3.5), (2.1, 4.5)])
         )
-        self.assertEqual(path.codes, np.array([1, 2, 2, 79, 1, 2, 2, 79, 1, 2, 2, 79]))
+        assert_data_equal(path.codes, np.array([1, 2, 2, 79, 1, 2, 2, 79, 1, 2, 2, 79]))
 
     def test_multi_polygon_hole_plot(self):
         xs = [1, 2, 3, np.nan, 3, 7, 6]
@@ -162,18 +163,18 @@ class TestPolygonPlot(TestMPLPlot):
         poly = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'value': 1}], vdims=['value'])
         plot = mpl_renderer.get_plot(poly)
         artist = plot.handles['artist']
-        self.assertEqual(np.asarray(artist.get_array()), np.array([1, 1]))
+        assert_data_equal(np.asarray(artist.get_array()), np.array([1, 1]))
         paths = artist.get_paths()
-        self.assertEqual(len(paths), 2)
+        assert len(paths) == 2
         path = paths[0]
-        self.assertEqual(path.vertices, np.array([
+        assert_data_equal(path.vertices, np.array([
             (1, 2), (2, 0), (3, 7), (1, 2), (1.5, 2), (2, 3), (1.6, 1.6),
             (1.5, 2), (2.1, 4.5), (2.5, 5), (2.3, 3.5), (2.1, 4.5)])
         )
-        self.assertEqual(path.codes, np.array([1, 2, 2, 79, 1, 2, 2, 79, 1, 2, 2, 79]))
+        assert_data_equal(path.codes, np.array([1, 2, 2, 79, 1, 2, 2, 79, 1, 2, 2, 79]))
         path2 = paths[1]
-        self.assertEqual(path2.vertices, np.array([(3, 2), (7, 5), (6, 7), (3, 2)]))
-        self.assertEqual(path2.codes, np.array([1, 2, 2, 79]))
+        assert_data_equal(path2.vertices, np.array([(3, 2), (7, 5), (6, 7), (3, 2)]))
+        assert_data_equal(path2.codes, np.array([1, 2, 2, 79]))
 
     def test_polygons_color_op(self):
         polygons = Polygons([
@@ -184,7 +185,7 @@ class TestPolygonPlot(TestMPLPlot):
         artist = plot.handles['artist']
         colors = np.array([[0. , 0.501961, 0. , 1. ],
                            [1. , 0. , 0. , 1. ]])
-        self.assertEqual(artist.get_facecolors(), colors)
+        assert_data_equal(artist.get_facecolors(), colors)
 
     def test_polygons_color_op_update(self):
         polygons = HoloMap({
@@ -201,11 +202,11 @@ class TestPolygonPlot(TestMPLPlot):
         artist = plot.handles['artist']
         colors = np.array([[0, 0.501961, 0, 1],
                            [1, 0, 0, 1]])
-        self.assertEqual(artist.get_facecolors(), colors)
+        assert_data_equal(artist.get_facecolors(), colors)
         plot.update((1,))
         colors = np.array([[0, 0, 1, 1],
                            [0, 0.501961, 0, 1]])
-        self.assertEqual(artist.get_facecolors(), colors)
+        assert_data_equal(artist.get_facecolors(), colors)
 
     def test_polygons_linear_color_op(self):
         polygons = Polygons([
@@ -214,8 +215,8 @@ class TestPolygonPlot(TestMPLPlot):
         ], vdims='color').opts(color='color')
         plot = mpl_renderer.get_plot(polygons)
         artist = plot.handles['artist']
-        self.assertEqual(np.asarray(artist.get_array()), np.array([7, 3]))
-        self.assertEqual(artist.get_clim(), (3, 7))
+        assert_data_equal(np.asarray(artist.get_array()), np.array([7, 3]))
+        assert artist.get_clim() == (3, 7)
 
     def test_polygons_linear_color_op_update(self):
         polygons = HoloMap({
@@ -230,11 +231,11 @@ class TestPolygonPlot(TestMPLPlot):
         }).opts(color='color', framewise=True)
         plot = mpl_renderer.get_plot(polygons)
         artist = plot.handles['artist']
-        self.assertEqual(np.asarray(artist.get_array()), np.array([7, 3]))
-        self.assertEqual(artist.get_clim(), (3, 7))
+        assert_data_equal(np.asarray(artist.get_array()), np.array([7, 3]))
+        assert artist.get_clim() == (3, 7)
         plot.update((1,))
-        self.assertEqual(np.asarray(artist.get_array()), np.array([2, 5]))
-        self.assertEqual(artist.get_clim(), (2, 5))
+        assert_data_equal(np.asarray(artist.get_array()), np.array([2, 5]))
+        assert artist.get_clim() == (2, 5)
 
     def test_polygons_categorical_color_op(self):
         polygons = Polygons([
@@ -243,8 +244,8 @@ class TestPolygonPlot(TestMPLPlot):
         ], vdims='color').opts(color='color')
         plot = mpl_renderer.get_plot(polygons)
         artist = plot.handles['artist']
-        self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1]))
-        self.assertEqual(artist.get_clim(), (0, 1))
+        assert_data_equal(np.asarray(artist.get_array()), np.array([0, 1]))
+        assert artist.get_clim() == (0, 1)
 
     def test_polygons_alpha_op(self):
         polygons = Polygons([
@@ -262,7 +263,7 @@ class TestPolygonPlot(TestMPLPlot):
         ], vdims='line_width').opts(linewidth='line_width')
         plot = mpl_renderer.get_plot(polygons)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_linewidths(), [7, 3])
+        assert artist.get_linewidths() == [7, 3]
 
 
 
@@ -274,8 +275,8 @@ class TestContoursPlot(TestMPLPlot):
                     vdims='z').opts(color_index='z')
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
-        self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1, 0]))
-        self.assertEqual(artist.get_clim(), (0, 1))
+        assert_data_equal(np.asarray(artist.get_array()), np.array([0, 1, 0]))
+        assert artist.get_clim() == (0, 1)
 
     def test_contours_color_op(self):
         contours = Contours([
@@ -286,7 +287,7 @@ class TestContoursPlot(TestMPLPlot):
         artist = plot.handles['artist']
         colors = np.array([[0. , 0.501961, 0. , 1. ],
                            [1. , 0. , 0. , 1. ]])
-        self.assertEqual(artist.get_edgecolors(), colors)
+        assert_data_equal(artist.get_edgecolors(), colors)
 
     def test_contours_color_op_update(self):
         contours = HoloMap({
@@ -303,11 +304,11 @@ class TestContoursPlot(TestMPLPlot):
         artist = plot.handles['artist']
         colors = np.array([[0, 0.501961, 0, 1],
                            [1, 0, 0, 1]])
-        self.assertEqual(artist.get_edgecolors(), colors)
+        assert_data_equal(artist.get_edgecolors(), colors)
         plot.update((1,))
         colors = np.array([[0, 0, 1, 1],
                            [0, 0.501961, 0, 1]])
-        self.assertEqual(artist.get_edgecolors(), colors)
+        assert_data_equal(artist.get_edgecolors(), colors)
 
     def test_contours_linear_color_op(self):
         contours = Contours([
@@ -316,8 +317,8 @@ class TestContoursPlot(TestMPLPlot):
         ], vdims='color').opts(color='color')
         plot = mpl_renderer.get_plot(contours)
         artist = plot.handles['artist']
-        self.assertEqual(np.asarray(artist.get_array()), np.array([7, 3]))
-        self.assertEqual(artist.get_clim(), (3, 7))
+        assert_data_equal(np.asarray(artist.get_array()), np.array([7, 3]))
+        assert artist.get_clim() == (3, 7)
 
     def test_contours_linear_color_op_update(self):
         contours = HoloMap({
@@ -332,11 +333,11 @@ class TestContoursPlot(TestMPLPlot):
         }).opts(color='color', framewise=True)
         plot = mpl_renderer.get_plot(contours)
         artist = plot.handles['artist']
-        self.assertEqual(np.asarray(artist.get_array()), np.array([7, 3]))
-        self.assertEqual(artist.get_clim(), (3, 7))
+        assert_data_equal(np.asarray(artist.get_array()), np.array([7, 3]))
+        assert artist.get_clim() == (3, 7)
         plot.update((1,))
-        self.assertEqual(np.asarray(artist.get_array()), np.array([2, 5]))
-        self.assertEqual(artist.get_clim(), (2, 5))
+        assert_data_equal(np.asarray(artist.get_array()), np.array([2, 5]))
+        assert artist.get_clim() == (2, 5)
 
     def test_contours_categorical_color_op(self):
         contours = Contours([
@@ -345,8 +346,8 @@ class TestContoursPlot(TestMPLPlot):
         ], vdims='color').opts(color='color')
         plot = mpl_renderer.get_plot(contours)
         artist = plot.handles['artist']
-        self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1]))
-        self.assertEqual(artist.get_clim(), (0, 1))
+        assert_data_equal(np.asarray(artist.get_array()), np.array([0, 1]))
+        assert artist.get_clim() == (0, 1)
 
     def test_contours_alpha_op(self):
         contours = Contours([
@@ -364,7 +365,7 @@ class TestContoursPlot(TestMPLPlot):
         ], vdims='line_width').opts(linewidth='line_width')
         plot = mpl_renderer.get_plot(contours)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_linewidths(), [7, 3])
+        assert artist.get_linewidths() == [7, 3]
 
     def test_contours_line_width_op_update(self):
         contours = HoloMap({
@@ -379,6 +380,6 @@ class TestContoursPlot(TestMPLPlot):
         }).opts(linewidth='line_width', framewise=True)
         plot = mpl_renderer.get_plot(contours)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_linewidths(), [7, 3])
+        assert artist.get_linewidths() == [7, 3]
         plot.update((1,))
-        self.assertEqual(artist.get_linewidths(), [2, 5])
+        assert artist.get_linewidths() == [2, 5]

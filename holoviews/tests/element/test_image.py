@@ -3,32 +3,33 @@ Unit tests of Image elements
 """
 
 import numpy as np
+import pytest
 
 import holoviews as hv
 from holoviews.element import Curve, Image
+from holoviews.testing import assert_element_equal
 
-from ..utils import LoggingComparisonTestCase
+from ..utils import LoggingComparison
 
 
-class TestImage(LoggingComparisonTestCase):
+class TestImage(LoggingComparison):
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
         self.array1 = np.array([(0, 1, 2), (3, 4, 5)])
 
     def test_image_init(self):
         image = Image(self.array1)
-        self.assertEqual(image.xdensity, 3)
-        self.assertEqual(image.ydensity, 2)
+        assert image.xdensity == 3
+        assert image.ydensity == 2
 
     def test_image_index(self):
         image = Image(self.array1)
-        self.assertEqual(image[-.33, -0.25], 3)
+        assert image[-.33, -0.25] == 3
 
 
     def test_image_sample(self):
         image = Image(self.array1)
-        self.assertEqual(image.sample(y=0.25),
+        assert_element_equal(image.sample(y=0.25),
                          Curve(np.array([(-0.333333, 0), (0, 1), (0.333333, 2)]),
                                kdims=['x'], vdims=['z']))
 
@@ -36,7 +37,7 @@ class TestImage(LoggingComparisonTestCase):
         arr = np.random.rand(10,10)-0.5
         arr = np.ma.masked_where(arr<=0, arr)
         rrange = Image(arr).range(2)
-        self.assertEqual(rrange, (np.min(arr), np.max(arr)))
+        assert rrange == (np.min(arr), np.max(arr))
 
     def test_empty_image(self):
         Image([])
@@ -52,7 +53,7 @@ class TestImage(LoggingComparisonTestCase):
         Image({'vals':vals, 'xs':xs, 'ys':ys}, ['xs','ys'], 'vals')
         substr = ('set a higher tolerance on hv.config.image_rtol or '
                   'the rtol parameter in the Image constructor.')
-        self.log_handler.assertEndsWith('WARNING', substr)
+        self.log_handler.assert_endswith('WARNING', substr)
 
     def test_image_rtol_constructor(self):
         vals = np.random.rand(20,20)
@@ -77,12 +78,12 @@ class TestImage(LoggingComparisonTestCase):
         ys = np.linspace(0,10,20)
         ys[-1] += 0.001
         img = Image({'vals':vals, 'xs':xs, 'ys':ys}, ['xs','ys'], 'vals', rtol=10e-3)
-        self.assertEqual(img.clone().rtol, 10e-3)
+        assert img.clone().rtol == 10e-3
 
     def test_image_curvilinear_coords_error(self):
         x = np.arange(-1, 1, 0.1)
         y = np.arange(-1, 1, 0.1)
         X, Y = np.meshgrid(x, y)
         Z = np.sqrt(X**2 + Y**2) * np.cos(X)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             Image((X, Y, Z))

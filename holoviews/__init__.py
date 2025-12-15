@@ -77,7 +77,6 @@ To report issues go to https://github.com/holoviz/holoviews.
 import builtins
 import os
 import sys
-from typing import TYPE_CHECKING
 
 import param
 
@@ -124,6 +123,8 @@ from .util.warnings import (  # noqa: F401
     HoloviewsUserWarning,
 )
 
+TYPE_CHECKING = False
+
 if hasattr(builtins, "__IPYTHON__"):
     from .ipython import notebook_extension
     extension = notebook_extension
@@ -141,7 +142,6 @@ if '_pyodide' in sys.modules:
     else:
         extension = pyodide_extension
     del pyodide_extension, in_jupyterlite
-
 
 if TYPE_CHECKING:
     # Adding this here to have better docstring in LSP
@@ -183,15 +183,17 @@ def __getattr__(name):
         # Lazy loading Panel
         from .annotators import annotate
         return annotate
+    elif name == "testing":
+        import holoviews.testing
+        return holoviews.testing
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = [k for k in locals() if not k.startswith('_')]
-__all__ += ['__version__', 'annotate']
+__all__ += ['__version__', 'annotate', 'testing']
 
 def __dir__():
     return __all__
 
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
+    from . import testing
     from .annotators import annotate

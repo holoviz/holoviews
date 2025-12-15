@@ -5,7 +5,7 @@ from ...util.locator import MaxNLocator
 
 
 @pytest.mark.parametrize(
-    "n, vmin, vmax, expected",
+    ("n", "vmin", "vmax", "expected"),
     [
         (1, 20, 100, [0, 80, 160]),
         (2, 20, 100, [0, 40, 80, 120]),
@@ -45,7 +45,7 @@ def test_max_n_locator(n, vmin, vmax, expected):
     np.testing.assert_almost_equal(ticks, expected)
 
 
-@pytest.mark.parametrize("n", (0, -1, -2))
+@pytest.mark.parametrize("n", [0, -1, -2])
 def test_max_n_locator_invalid_n(n):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         _ = MaxNLocator(n)

@@ -7,6 +7,7 @@ import pytest
 
 from holoviews import Dataset, Dimension
 from holoviews.core.data import NarwhalsInterface
+from holoviews.testing import assert_data_equal
 
 from .base import HeterogeneousColumnTests, InterfaceTests
 
@@ -22,14 +23,14 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
     data_type = nw.DataFrame
     narwhals_backend = None
 
-    def setUp(self):
+    def setup_method(self):
         pytest.importorskip(self.narwhals_backend)
         NarwhalsInterface.narwhals_backend = self.narwhals_backend
-        super().setUp()
+        super().setup_method()
 
-    def tearDown(self):
+    def teardown_method(self):
         NarwhalsInterface.narwhals_backend = None
-        super().tearDown()
+        super().teardown_method()
 
     def frame(self, *args, **kwargs):
         mod = pytest.importorskip(self.narwhals_backend)
@@ -119,7 +120,7 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         ds = Dataset(
             self.frame({"Date": dt64}), [Dimension("Date", range=(dt64[0], dt64[-1]))]
         )
-        assert ds.range("Date"), (dt64[0], dt64[-1])
+        assert ds.range("Date") == (dt64[0], dt64[-1])
 
     @pytest.mark.filterwarnings(
         "ignore:Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated:FutureWarning"
@@ -210,9 +211,9 @@ class DaskNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     narwhals_backend = "pandas"
     force_sort = True
 
-    def setUp(self):
+    def setup_method(self):
         pytest.importorskip("dask.dataframe")
-        super().setUp()
+        super().setup_method()
 
     def frame(self, *args, **kwargs):
         import dask.dataframe as dd
@@ -226,16 +227,14 @@ class IbisNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     narwhals_backend = "pyarrow"
     force_sort = True
 
-    def setUp(self):
+    def setup_class(self):
         ibis = pytest.importorskip("ibis")
-        super().setUp()
         ibis.set_backend("sqlite")
 
-    def tearDown(self):
+    def teardown_class(self):
         import ibis
 
         ibis.set_backend(None)
-        super().tearDown()
 
     def frame(self, *args, **kwargs):
         import ibis
@@ -270,9 +269,9 @@ class DuckdbNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     narwhals_backend = "pyarrow"
     force_sort = True
 
-    def setUp(self):
+    def setup_method(self):
         pytest.importorskip("duckdb")
-        super().setUp()
+        super().setup_method()
 
     def frame(self, *args, **kwargs):
         import duckdb
@@ -314,3 +313,32 @@ class CudfNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
         msg = "Series object is not iterable."
         with pytest.raises(TypeError, match=re.escape(msg)):
             super().test_dataset_groupby_dynamic()
+
+    def test_dataset_sample_hm(self):
+        samples = self.dataset_hm.sample([0, 5, 10]).dimension_values('y')
+        assert samples.implementation == nw.Implementation.CUDF
+        assert_data_equal(np.array([0, 10, 20]), samples.to_numpy())
+
+    def test_dataset_sample_hm_alias(self):
+        samples = self.dataset_hm_alias.sample([0, 5, 10]).dimension_values('y')
+        assert samples.implementation == nw.Implementation.CUDF
+        assert_data_equal(np.array([0, 10, 20]), samples.to_numpy())
+
+    def test_dataset_add_dimensions_value_hm(self):
+        table = self.dataset_hm.add_dimension('z', 1, 0)
+        assert table.kdims[1] == 'z'
+        data = table.dimension_values('z')
+        assert data.implementation == nw.Implementation.CUDF
+        assert_data_equal(np.zeros(table.shape[0]), data.to_numpy())
+
+    def test_dataset_add_dimensions_values_hm(self):
+        table =  self.dataset_hm.add_dimension('z', 1, range(1,12))
+        assert table.kdims[1] == 'z'
+        data = table.dimension_values('z')
+        assert data.implementation == nw.Implementation.CUDF
+        assert_data_equal(np.array(list(range(1,12))), data.to_numpy())
+
+    def test_dataset_sample_ht(self):
+        samples = self.dataset_ht.sample([0, 5, 10]).dimension_values('y')
+        assert samples.implementation == nw.Implementation.CUDF
+        assert_data_equal(np.array([0, 0.5, 1]), samples.to_numpy())

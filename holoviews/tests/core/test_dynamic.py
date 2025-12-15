@@ -10,7 +10,6 @@ from holoviews import Dimension, GridSpace, Layout, NdLayout, NdOverlay
 from holoviews.core.options import Store
 from holoviews.core.spaces import Callable, DynamicMap, HoloMap
 from holoviews.element import Curve, Image, Points, Scatter, Text
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation import histogram
 from holoviews.plotting.util import initialize_dynamic
 from holoviews.streams import (
@@ -24,9 +23,10 @@ from holoviews.streams import (
     Stream,
     pointer_types,
 )
+from holoviews.testing import assert_element_equal
 from holoviews.util import Dynamic
 
-from ..utils import LoggingComparisonTestCase
+from ..utils import LoggingComparison
 from .test_dimensioned import CustomBackendTestCase, ExampleElement
 
 XY = Stream.define('XY', x=0,y=0)
@@ -43,7 +43,7 @@ def sine_array(phase, freq):
 class ExampleParameterized(param.Parameterized):
     example = param.Number(default=1)
 
-class DynamicMapConstructor(ComparisonTestCase):
+class TestDynamicMapConstructor:
 
     def test_simple_constructor_kdims(self):
         DynamicMap(lambda x: x, kdims=['test'])
@@ -51,13 +51,13 @@ class DynamicMapConstructor(ComparisonTestCase):
     def test_simple_constructor_invalid_no_kdims(self):
         regexp = ("Callable '<lambda>' accepts more positional arguments than there are "
                   "kdims and stream parameters")
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             DynamicMap(lambda x: x)
 
     def test_simple_constructor_invalid(self):
         regexp = (r"Callback '<lambda>' signature over \['x'\] does not accommodate "
                   r"required kdims \['x', 'y'\]")
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             DynamicMap(lambda x: x, kdims=['x','y'])
 
     def test_simple_constructor_streams(self):
@@ -80,24 +80,24 @@ class DynamicMapConstructor(ComparisonTestCase):
 
     def test_simple_constructor_streams_dict_invalid(self):
         regexp = "Cannot handle 'x' value 3 in streams dictionary"
-        with self.assertRaisesRegex(TypeError, regexp):
+        with pytest.raises(TypeError, match=regexp):
             DynamicMap(lambda x: x, streams=dict(x=3))
 
     def test_simple_constructor_streams_invalid_uninstantiated(self):
         regexp = ("The supplied streams list contains objects "
                   "that are not Stream instances:(.+?)")
-        with self.assertRaisesRegex(TypeError, regexp):
+        with pytest.raises(TypeError, match=regexp):
             DynamicMap(lambda x: x, streams=[PointerX])
 
     def test_simple_constructor_streams_invalid_type(self):
         regexp = ("The supplied streams list contains objects "
                   "that are not Stream instances:(.+?)")
-        with self.assertRaisesRegex(TypeError, regexp):
+        with pytest.raises(TypeError, match=regexp):
             DynamicMap(lambda x: x, streams=[3])
 
     def test_simple_constructor_streams_invalid_mismatch(self):
         regexp = "Callable '<lambda>' missing keywords to accept stream parameters: y"
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             DynamicMap(lambda x: x, streams=[PointerXY()])
 
     def test_simple_constructor_positional_stream_args(self):
@@ -107,25 +107,25 @@ class DynamicMapConstructor(ComparisonTestCase):
 
         def foo(x): return x
         regexp = "Callable 'foo' missing keywords to accept stream parameters: y"
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             DynamicMap(foo, streams=[PointerXY()])
 
 
-class DynamicMapPositionalStreamArgs(ComparisonTestCase):
+class TestDynamicMapPositionalStreamArgs:
     def test_positional_stream_args_without_streams(self):
         fn = lambda i: Curve([i, i])
         dmap = DynamicMap(fn, kdims=['i'], positional_stream_args=True)
-        self.assertEqual(dmap[0], Curve([0, 0]))
+        assert_element_equal(dmap[0], Curve([0, 0]))
 
     def test_positional_stream_args_with_only_stream(self):
         fn = lambda s: Curve([s['x'], s['y']])
         xy_stream = XY(x=1, y=2)
         dmap = DynamicMap(fn, streams=[xy_stream], positional_stream_args=True)
-        self.assertEqual(dmap[()], Curve([1, 2]))
+        assert_element_equal(dmap[()], Curve([1, 2]))
 
         # Update stream values
         xy_stream.event(x=5, y=7)
-        self.assertEqual(dmap[()], Curve([5, 7]))
+        assert_element_equal(dmap[()], Curve([5, 7]))
 
     def test_positional_stream_args_with_single_kdim_and_stream(self):
         fn = lambda i, s: Points([i, i]) + Curve([s['x'], s['y']])
@@ -133,11 +133,11 @@ class DynamicMapPositionalStreamArgs(ComparisonTestCase):
         dmap = DynamicMap(
             fn, kdims=['i'], streams=[xy_stream], positional_stream_args=True
         )
-        self.assertEqual(dmap[6], Points([6, 6]) + Curve([1, 2]))
+        assert_element_equal(dmap[6], Points([6, 6]) + Curve([1, 2]))
 
         # Update stream values
         xy_stream.event(x=5, y=7)
-        self.assertEqual(dmap[3], Points([3, 3]) + Curve([5, 7]))
+        assert_element_equal(dmap[3], Points([3, 3]) + Curve([5, 7]))
 
     def test_positional_stream_args_with_multiple_kdims_and_stream(self):
         fn = lambda i, j, s1, s2: Points([i, j]) + Curve([s1['x'], s2['y']])
@@ -150,12 +150,12 @@ class DynamicMapPositionalStreamArgs(ComparisonTestCase):
             streams=[x_stream, y_stream],
             positional_stream_args=True
         )
-        self.assertEqual(dmap[0, 1], Points([0, 1]) + Curve([2, 3]))
+        assert_element_equal(dmap[0, 1], Points([0, 1]) + Curve([2, 3]))
 
         # Update stream values
         x_stream.event(x=5)
         y_stream.event(y=6)
-        self.assertEqual(dmap[3, 4], Points([3, 4]) + Curve([5, 6]))
+        assert_element_equal(dmap[3, 4], Points([3, 4]) + Curve([5, 6]))
 
     def test_initialize_with_overlapping_stream_params(self):
         fn = lambda xy0, xy1: \
@@ -165,126 +165,126 @@ class DynamicMapPositionalStreamArgs(ComparisonTestCase):
         dmap = DynamicMap(
             fn, streams=[xy_stream0, xy_stream1], positional_stream_args=True
         )
-        self.assertEqual(dmap[()], Points([1, 2]) + Curve([3, 4]))
+        assert_element_equal(dmap[()], Points([1, 2]) + Curve([3, 4]))
 
 
-class DynamicMapMethods(ComparisonTestCase):
+class TestDynamicMapMethods:
 
     def test_deep_relabel_label(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap = DynamicMap(fn, kdims=['i']).relabel(label='Test')
-        self.assertEqual(dmap[0].label, 'Test')
+        assert dmap[0].label == 'Test'
 
     def test_deep_relabel_group(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap = DynamicMap(fn, kdims=['i']).relabel(group='Test')
-        self.assertEqual(dmap[0].group, 'Test')
+        assert dmap[0].group == 'Test'
 
     def test_redim_dimension_name(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap = DynamicMap(fn, kdims=['i']).redim(i='New')
-        self.assertEqual(dmap.kdims[0].name, 'New')
+        assert dmap.kdims[0].name == 'New'
 
     def test_redim_dimension_range_aux(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap = DynamicMap(fn, kdims=['i']).redim.range(i=(0,1))
-        self.assertEqual(dmap.kdims[0].range, (0,1))
+        assert dmap.kdims[0].range == (0,1)
 
     def test_redim_dimension_values_cache_reset_1D(self):
         # Setting the values should drop mismatching keys from the cache
         fn = lambda i: Curve([i,i])
         dmap = DynamicMap(fn, kdims=['i'])[{0,1,2,3,4,5}]
-        self.assertEqual(dmap.keys(), [0,1,2,3,4,5])
+        assert dmap.keys() == [0,1,2,3,4,5]
         redimmed = dmap.redim.values(i=[2,3,5,6,8])
-        self.assertEqual(redimmed.keys(), [2,3,5])
+        assert redimmed.keys() == [2,3,5]
 
     def test_redim_dimension_values_cache_reset_2D_single(self):
         # Setting the values should drop mismatching keys from the cache
         fn = lambda i,j: Curve([i,j])
         keys = [(0,1),(1,0),(2,2),(2,5), (3,3)]
         dmap = DynamicMap(fn, kdims=['i','j'])[keys]
-        self.assertEqual(dmap.keys(), keys)
+        assert dmap.keys() == keys
         redimmed = dmap.redim.values(i=[2,10,50])
-        self.assertEqual(redimmed.keys(), [(2,2),(2,5)])
+        assert redimmed.keys() == [(2,2),(2,5)]
 
     def test_redim_dimension_values_cache_reset_2D_multi(self):
         # Setting the values should drop mismatching keys from the cache
         fn = lambda i,j: Curve([i,j])
         keys = [(0,1),(1,0),(2,2),(2,5), (3,3)]
         dmap = DynamicMap(fn, kdims=['i','j'])[keys]
-        self.assertEqual(dmap.keys(), keys)
+        assert dmap.keys() == keys
         redimmed = dmap.redim.values(i=[2,10,50], j=[5,50,100])
-        self.assertEqual(redimmed.keys(), [(2,5)])
+        assert redimmed.keys() == [(2,5)]
 
 
     def test_redim_dimension_unit_aux(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap = DynamicMap(fn, kdims=['i']).redim.unit(i='m/s')
-        self.assertEqual(dmap.kdims[0].unit, 'm/s')
+        assert dmap.kdims[0].unit == 'm/s'
 
     def test_redim_dimension_type_aux(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap = DynamicMap(fn, kdims=['i']).redim.type(i=int)
-        self.assertEqual(dmap.kdims[0].type, int)
+        assert dmap.kdims[0].type is int
 
     def test_deep_redim_dimension_name(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap = DynamicMap(fn, kdims=['i']).redim(x='X')
-        self.assertEqual(dmap[0].kdims[0].name, 'X')
+        assert dmap[0].kdims[0].name == 'X'
 
     def test_deep_redim_dimension_name_with_spec(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap = DynamicMap(fn, kdims=['i']).redim(Image, x='X')
-        self.assertEqual(dmap[0].kdims[0].name, 'X')
+        assert dmap[0].kdims[0].name == 'X'
 
     def test_deep_getitem_bounded_kdims(self):
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
-        self.assertEqual(dmap[:, 5:10][10], fn(10)[5:10])
+        assert_element_equal(dmap[:, 5:10][10], fn(10)[5:10])
 
     def test_deep_getitem_bounded_kdims_and_vdims(self):
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
-        self.assertEqual(dmap[:, 5:10, 0:5][10], fn(10)[5:10, 0:5])
+        assert_element_equal(dmap[:, 5:10, 0:5][10], fn(10)[5:10, 0:5])
 
     def test_deep_getitem_cross_product_and_slice(self):
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
-        self.assertEqual(dmap[[10, 11, 12], 5:10],
+        assert_element_equal(dmap[[10, 11, 12], 5:10],
                          dmap.clone([(i, fn(i)[5:10]) for i in range(10, 13)]))
 
     def test_deep_getitem_index_and_slice(self):
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
-        self.assertEqual(dmap[10, 5:10], fn(10)[5:10])
+        assert_element_equal(dmap[10, 5:10], fn(10)[5:10])
 
     def test_deep_getitem_cache_sliced(self):
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
         dmap[10] # Add item to cache
-        self.assertEqual(dmap[:, 5:10][10], fn(10)[5:10])
+        assert_element_equal(dmap[:, 5:10][10], fn(10)[5:10])
 
     def test_deep_select_slice_kdim(self):
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
-        self.assertEqual(dmap.select(x=(5, 10))[10], fn(10)[5:10])
+        assert_element_equal(dmap.select(x=(5, 10))[10], fn(10)[5:10])
 
     def test_deep_select_slice_kdim_and_vdims(self):
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
-        self.assertEqual(dmap.select(x=(5, 10), y=(0, 5))[10], fn(10)[5:10, 0:5])
+        assert_element_equal(dmap.select(x=(5, 10), y=(0, 5))[10], fn(10)[5:10, 0:5])
 
     def test_deep_select_slice_kdim_no_match(self):
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
-        self.assertEqual(dmap.select(DynamicMap, x=(5, 10))[10], fn(10))
+        assert_element_equal(dmap.select(DynamicMap, x=(5, 10))[10], fn(10))
 
     def test_deep_apply_element_function(self):
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
         mapped = dmap.apply(lambda x: x.clone(x.data*2))
         curve = fn(10)
-        self.assertEqual(mapped[10], curve.clone(curve.data*2))
+        assert_element_equal(mapped[10], curve.clone(curve.data*2))
 
     def test_deep_apply_element_param_function(self):
         fn = lambda i: Curve(np.arange(i))
@@ -298,20 +298,20 @@ class DynamicMapMethods(ComparisonTestCase):
         mapped = dmap.apply(op)
         test.a = 2
         curve = fn(10)
-        self.assertEqual(mapped[10], curve.clone(curve.data*2))
+        assert_element_equal(mapped[10], curve.clone(curve.data*2))
 
     def test_deep_apply_element_function_with_kwarg(self):
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
         mapped = dmap.apply(lambda x, label: x.relabel(label), label='New label')
-        self.assertEqual(mapped[10], fn(10).relabel('New label'))
+        assert_element_equal(mapped[10], fn(10).relabel('New label'))
 
     def test_deep_map_apply_element_function_with_stream_kwarg(self):
         stream = Stream.define('Test', label='New label')()
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
         mapped = dmap.apply(lambda x, label: x.relabel(label), streams=[stream])
-        self.assertEqual(mapped[10], fn(10).relabel('New label'))
+        assert_element_equal(mapped[10], fn(10).relabel('New label'))
 
     def test_deep_map_apply_parameterized_method_with_stream_kwarg(self):
         class Test(param.Parameterized):
@@ -327,9 +327,9 @@ class DynamicMapMethods(ComparisonTestCase):
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
         mapped = dmap.apply(lambda x, label: x.relabel(label), label=test.value)
         curve = fn(10)
-        self.assertEqual(mapped[10], curve.relabel('Label'))
+        assert_element_equal(mapped[10], curve.relabel('Label'))
         test.label = 'new label'
-        self.assertEqual(mapped[10], curve.relabel('New Label'))
+        assert_element_equal(mapped[10], curve.relabel('New Label'))
 
     def test_deep_apply_parameterized_method_with_dependency(self):
         class Test(param.Parameterized):
@@ -345,9 +345,9 @@ class DynamicMapMethods(ComparisonTestCase):
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
         mapped = dmap.apply(test.relabel)
         curve = fn(10)
-        self.assertEqual(mapped[10], curve.relabel('Label'))
+        assert_element_equal(mapped[10], curve.relabel('Label'))
         test.label = 'new label'
-        self.assertEqual(mapped[10], curve.relabel('New Label'))
+        assert_element_equal(mapped[10], curve.relabel('New Label'))
 
     def test_deep_apply_parameterized_method_with_dependency_and_static_kwarg(self):
         class Test(param.Parameterized):
@@ -363,9 +363,9 @@ class DynamicMapMethods(ComparisonTestCase):
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
         mapped = dmap.apply(test.relabel, group='Group')
         curve = fn(10)
-        self.assertEqual(mapped[10], curve.relabel('Label', 'Group'))
+        assert_element_equal(mapped[10], curve.relabel('Label', 'Group'))
         test.label = 'new label'
-        self.assertEqual(mapped[10], curve.relabel('New Label', 'Group'))
+        assert_element_equal(mapped[10], curve.relabel('New Label', 'Group'))
 
     def test_deep_map_transform_element_type(self):
         fn = lambda i: Curve(np.arange(i))
@@ -373,7 +373,7 @@ class DynamicMapMethods(ComparisonTestCase):
         dmap[10]
         mapped = dmap.map(lambda x: Scatter(x), Curve)
         area = mapped[11]
-        self.assertEqual(area, Scatter(fn(11)))
+        assert_element_equal(area, Scatter(fn(11)))
 
     def test_deep_apply_transform_element_type(self):
         fn = lambda i: Curve(np.arange(i))
@@ -381,14 +381,14 @@ class DynamicMapMethods(ComparisonTestCase):
         dmap[10]
         mapped = dmap.apply(lambda x: Scatter(x))
         area = mapped[11]
-        self.assertEqual(area, Scatter(fn(11)))
+        assert_element_equal(area, Scatter(fn(11)))
 
     def test_deep_map_apply_dmap_function(self):
         fn = lambda i: Curve(np.arange(i))
         dmap1 = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
         dmap2 = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
         mapped = (dmap1 + dmap2).map(lambda x: x[10], DynamicMap)
-        self.assertEqual(mapped, Layout([('DynamicMap.I', fn(10)),
+        assert_element_equal(mapped, Layout([('DynamicMap.I', fn(10)),
                                          ('DynamicMap.II', fn(10))]))
 
     def test_deep_map_apply_dmap_function_no_clone(self):
@@ -397,7 +397,7 @@ class DynamicMapMethods(ComparisonTestCase):
         dmap2 = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
         layout = (dmap1 + dmap2)
         mapped = layout.map(lambda x: x[10], DynamicMap, clone=False)
-        self.assertIs(mapped, layout)
+        assert mapped is layout
 
     def test_dynamic_reindex_reorder(self):
         history = deque(maxlen=10)
@@ -407,7 +407,7 @@ class DynamicMapMethods(ComparisonTestCase):
         dmap = DynamicMap(history_callback, kdims=['x', 'y'])
         reindexed = dmap.reindex(['y', 'x'])
         points = reindexed[2, 1]
-        self.assertEqual(points, Points([(1, 2)]))
+        assert_element_equal(points, Points([(1, 2)]))
 
     def test_dynamic_reindex_drop_raises_exception(self):
         history = deque(maxlen=10)
@@ -417,7 +417,7 @@ class DynamicMapMethods(ComparisonTestCase):
         dmap = DynamicMap(history_callback, kdims=['x', 'y'])
         exception = ("DynamicMap does not allow dropping dimensions, "
                      "reindex may only be used to reorder dimensions.")
-        with self.assertRaisesRegex(ValueError, exception):
+        with pytest.raises(ValueError, match=exception):
             dmap.reindex(['x'])
 
     def test_dynamic_groupby_kdims_and_streams(self):
@@ -427,24 +427,24 @@ class DynamicMapMethods(ComparisonTestCase):
         buff = Buffer(data=np.empty((0, 3)))
         dmap = DynamicMap(plot_function, streams=[buff], kdims='mydim').redim.values(mydim=[0, 1, 2])
         ndlayout = dmap.groupby('mydim', container_type=NdLayout)
-        self.assertIsInstance(ndlayout[0], DynamicMap)
+        assert isinstance(ndlayout[0], DynamicMap)
         data = np.array([(0, 0, 0), (1, 1, 1), (2, 2, 2)])
         buff.send(data)
-        self.assertIs(ndlayout[0].callback.inputs[0], dmap)
-        self.assertIs(ndlayout[1].callback.inputs[0], dmap)
-        self.assertIs(ndlayout[2].callback.inputs[0], dmap)
-        self.assertEqual(ndlayout[0][()], Scatter([(0, 0)]))
-        self.assertEqual(ndlayout[1][()], Scatter([(1, 1)]))
-        self.assertEqual(ndlayout[2][()], Scatter([(2, 2)]))
+        assert ndlayout[0].callback.inputs[0] is dmap
+        assert ndlayout[1].callback.inputs[0] is dmap
+        assert ndlayout[2].callback.inputs[0] is dmap
+        assert_element_equal(ndlayout[0][()], Scatter([(0, 0)]))
+        assert_element_equal(ndlayout[1][()], Scatter([(1, 1)]))
+        assert_element_equal(ndlayout[2][()], Scatter([(2, 2)]))
 
     def test_dynamic_split_overlays_on_ndoverlay(self):
         dmap = DynamicMap(lambda: NdOverlay({i: Points([i]) for i in range(3)}))
         initialize_dynamic(dmap)
         keys, dmaps = dmap._split_overlays()
-        self.assertEqual(keys, [(0,), (1,), (2,)])
-        self.assertEqual(dmaps[0][()], Points([0]))
-        self.assertEqual(dmaps[1][()], Points([1]))
-        self.assertEqual(dmaps[2][()], Points([2]))
+        assert keys == [(0,), (1,), (2,)]
+        assert_element_equal(dmaps[0][()], Points([0]))
+        assert_element_equal(dmaps[1][()], Points([1]))
+        assert_element_equal(dmaps[2][()], Points([2]))
 
     def test_dynamic_split_overlays_on_overlay(self):
         dmap1 = DynamicMap(lambda: Points([]))
@@ -452,9 +452,9 @@ class DynamicMapMethods(ComparisonTestCase):
         dmap = dmap1 * dmap2
         initialize_dynamic(dmap)
         keys, dmaps = dmap._split_overlays()
-        self.assertEqual(keys, [('Points', 'I'), ('Curve', 'I')])
-        self.assertEqual(dmaps[0][()], Points([]))
-        self.assertEqual(dmaps[1][()], Curve([]))
+        assert keys == [('Points', 'I'), ('Curve', 'I')]
+        assert_element_equal(dmaps[0][()], Points([]))
+        assert_element_equal(dmaps[1][()], Curve([]))
 
     def test_dynamic_split_overlays_on_varying_order_overlay(self):
         def cb(i):
@@ -465,11 +465,11 @@ class DynamicMapMethods(ComparisonTestCase):
         dmap = DynamicMap(cb, kdims='i').redim.range(i=(0, 4))
         initialize_dynamic(dmap)
         keys, dmaps = dmap._split_overlays()
-        self.assertEqual(keys, [('Curve', 'I'), ('Points', 'I')])
-        self.assertEqual(dmaps[0][0], Curve([]))
-        self.assertEqual(dmaps[0][1], Curve([]))
-        self.assertEqual(dmaps[1][0], Points([]))
-        self.assertEqual(dmaps[1][1], Points([]))
+        assert keys == [('Curve', 'I'), ('Points', 'I')]
+        assert_element_equal(dmaps[0][0], Curve([]))
+        assert_element_equal(dmaps[0][1], Curve([]))
+        assert_element_equal(dmaps[1][0], Points([]))
+        assert_element_equal(dmaps[1][1], Points([]))
 
     def test_dynamic_split_overlays_on_missing_item_in_overlay(self):
         def cb(i):
@@ -480,11 +480,11 @@ class DynamicMapMethods(ComparisonTestCase):
         dmap = DynamicMap(cb, kdims='i').redim.range(i=(0, 4))
         initialize_dynamic(dmap)
         keys, dmaps = dmap._split_overlays()
-        self.assertEqual(keys, [('Curve', 'I'), ('Points', 'I')])
-        self.assertEqual(dmaps[0][0], Curve([]))
-        self.assertEqual(dmaps[0][1], Curve([]))
-        self.assertEqual(dmaps[1][0], Points([]))
-        with self.assertRaises(KeyError):
+        assert keys == [('Curve', 'I'), ('Points', 'I')]
+        assert_element_equal(dmaps[0][0], Curve([]))
+        assert_element_equal(dmaps[0][1], Curve([]))
+        assert_element_equal(dmaps[1][0], Points([]))
+        with pytest.raises(KeyError):
             dmaps[1][1]
 
 
@@ -495,13 +495,13 @@ class DynamicMapOptionsTests(CustomBackendTestCase):
         dmap = DynamicMap(lambda X: ExampleElement(None), kdims=['X']).redim.range(X=(0,10))
         dmap = dmap.options(plot_opt1='red')
         opts = Store.lookup_options('backend_1', dmap[0], 'plot')
-        self.assertEqual(opts.options, {'plot_opt1': 'red'})
+        assert opts.options == {'plot_opt1': 'red'}
 
     def test_dynamic_options_no_clone(self):
         dmap = DynamicMap(lambda X: ExampleElement(None), kdims=['X']).redim.range(X=(0,10))
         dmap.options(plot_opt1='red', clone=False)
         opts = Store.lookup_options('backend_1', dmap[0], 'plot')
-        self.assertEqual(opts.options, {'plot_opt1': 'red'})
+        assert opts.options == {'plot_opt1': 'red'}
 
     def test_dynamic_opts_link_inputs(self):
         stream = LinkedStream()
@@ -510,82 +510,82 @@ class DynamicMapOptionsTests(CustomBackendTestCase):
                           kdims=['X']).redim.range(X=(0,10))
         styled_dmap = dmap.options(plot_opt1='red', clone=False)
         opts = Store.lookup_options('backend_1', dmap[0], 'plot')
-        self.assertEqual(opts.options, {'plot_opt1': 'red'})
-        self.assertIs(styled_dmap, dmap)
-        self.assertTrue(dmap.callback.link_inputs)
+        assert opts.options == {'plot_opt1': 'red'}
+        assert styled_dmap is dmap
+        assert dmap.callback.link_inputs
         unstyled_dmap = dmap.callback.inputs[0].callback.inputs[0]
         opts = Store.lookup_options('backend_1', unstyled_dmap[0], 'plot')
-        self.assertEqual(opts.options, {})
+        assert opts.options == {}
         original_dmap = unstyled_dmap.callback.inputs[0]
-        self.assertIs(stream, original_dmap.streams[0])
+        assert stream is original_dmap.streams[0]
 
 
-class DynamicMapUnboundedProperty(ComparisonTestCase):
+class TestDynamicMapUnboundedProperty:
 
     def test_callable_bounded_init(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
-        self.assertEqual(dmap.unbounded, [])
+        assert dmap.unbounded == []
 
     def test_callable_bounded_clone(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
-        self.assertEqual(dmap, dmap.clone())
-        self.assertEqual(dmap.unbounded, [])
+        assert_element_equal(dmap, dmap.clone())
+        assert dmap.unbounded == []
 
     def test_sampled_unbounded_init(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=['i'])
-        self.assertEqual(dmap.unbounded, ['i'])
+        assert dmap.unbounded == ['i']
 
     def test_sampled_unbounded_resample(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=['i'])
-        self.assertEqual(dmap[{0, 1, 2}].keys(), [0, 1, 2])
-        self.assertEqual(dmap.unbounded, ['i'])
+        assert dmap[{0, 1, 2}].keys() == [0, 1, 2]
+        assert dmap.unbounded == ['i']
 
     def test_mixed_kdim_streams_unbounded(self):
         dmap=DynamicMap(lambda x,y,z: x+y, kdims=['z'], streams=[XY()])
-        self.assertEqual(dmap.unbounded, ['z'])
+        assert dmap.unbounded == ['z']
 
     def test_mixed_kdim_streams_bounded_redim(self):
         dmap=DynamicMap(lambda x,y,z: x+y, kdims=['z'], streams=[XY()])
-        self.assertEqual(dmap.redim.range(z=(-0.5,0.5)).unbounded, [])
+        assert dmap.redim.range(z=(-0.5,0.5)).unbounded == []
 
 
-class DynamicMapCurrentKeyProperty(ComparisonTestCase):
+class TestDynamicMapCurrentKeyProperty:
 
     def test_current_key_None_on_init(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap = DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
-        self.assertIsNone(dmap.current_key)
+        assert dmap.current_key is None
 
     def test_current_key_one_dimension(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
         dmap[0]
-        self.assertEqual(dmap.current_key, 0)
+        assert dmap.current_key == 0
         dmap[1]
-        self.assertEqual(dmap.current_key, 1)
+        assert dmap.current_key == 1
         dmap[0]
-        self.assertEqual(dmap.current_key, 0)
-        self.assertNotEqual(dmap.current_key, dmap.last_key)
+        assert dmap.current_key == 0
+        assert dmap.current_key != dmap.last_key
 
     def test_current_key_multiple_dimensions(self):
         fn = lambda i, j: Curve([i, j])
         dmap=DynamicMap(fn, kdims=[Dimension('i', range=(0,5)), Dimension('j', range=(0,5))])
         dmap[0, 2]
-        self.assertEqual(dmap.current_key, (0, 2))
+        assert dmap.current_key == (0, 2)
         dmap[5, 5]
-        self.assertEqual(dmap.current_key, (5, 5))
+        assert dmap.current_key == (5, 5)
         dmap[0, 2]
-        self.assertEqual(dmap.current_key, (0, 2))
-        self.assertNotEqual(dmap.current_key, dmap.last_key)
+        assert dmap.current_key == (0, 2)
+        assert dmap.current_key != dmap.last_key
 
 
-class DynamicTransferStreams(ComparisonTestCase):
+class TestDynamicTransferStreams:
 
-    def setUp(self):
+    def setup_method(self):
         self.dimstream = PointerX(x=0)
         self.stream = PointerY(y=0)
         self.dmap = DynamicMap(lambda x, y, z: Curve([x, y, z]),
@@ -593,31 +593,31 @@ class DynamicTransferStreams(ComparisonTestCase):
 
     def test_dynamic_redim_inherits_streams(self):
         redimmed = self.dmap.redim.range(z=(0, 5))
-        self.assertEqual(redimmed.streams, self.dmap.streams)
+        assert redimmed.streams == self.dmap.streams
 
     def test_dynamic_relabel_inherits_streams(self):
         relabelled = self.dmap.relabel(label='Test')
-        self.assertEqual(relabelled.streams, self.dmap.streams)
+        assert relabelled.streams == self.dmap.streams
 
     def test_dynamic_map_inherits_streams(self):
         mapped = self.dmap.map(lambda x: x, Curve)
-        self.assertEqual(mapped.streams, self.dmap.streams)
+        assert mapped.streams == self.dmap.streams
 
     def test_dynamic_select_inherits_streams(self):
         selected = self.dmap.select(Curve, x=(0, 5))
-        self.assertEqual(selected.streams, self.dmap.streams)
+        assert selected.streams == self.dmap.streams
 
     def test_dynamic_hist_inherits_streams(self):
         hist = self.dmap.hist(adjoin=False)
-        self.assertEqual(hist.streams, self.dmap.streams)
+        assert hist.streams == self.dmap.streams
 
     def test_dynamic_mul_inherits_dim_streams(self):
         hist = self.dmap * self.dmap
-        self.assertEqual(hist.streams, self.dmap.streams[1:])
+        assert hist.streams == self.dmap.streams[1:]
 
     def test_dynamic_util_inherits_dim_streams(self):
         hist = Dynamic(self.dmap)
-        self.assertEqual(hist.streams, self.dmap.streams[1:])
+        assert hist.streams == self.dmap.streams[1:]
 
     def test_dynamic_util_parameterized_method(self):
         class Test(param.Parameterized):
@@ -630,41 +630,41 @@ class DynamicTransferStreams(ComparisonTestCase):
         test = Test()
         dmap = Dynamic(self.dmap, operation=test.apply_label)
         test.label = 'custom label'
-        self.assertEqual(dmap[(0, 3)].label, 'custom label')
+        assert dmap[(0, 3)].label == 'custom label'
 
     def test_dynamic_util_inherits_dim_streams_clash(self):
         exception = (r"The supplied stream objects PointerX\(x=None\) and "
                      r"PointerX\(x=0\) clash on the following parameters: \['x'\]")
-        with self.assertRaisesRegex(Exception, exception):
+        with pytest.raises(Exception, match=exception):
             Dynamic(self.dmap, streams=[PointerX])
 
     def test_dynamic_util_inherits_dim_streams_clash_dict(self):
         exception = (r"The supplied stream objects PointerX\(x=None\) and "
                      r"PointerX\(x=0\) clash on the following parameters: \['x'\]")
-        with self.assertRaisesRegex(Exception, exception):
+        with pytest.raises(Exception, match=exception):
             Dynamic(self.dmap, streams=dict(x=PointerX.param.x))
 
 
 
-class DynamicTestOperation(ComparisonTestCase):
+class DynamicTestOperation:
 
     def test_dynamic_operation(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=['i'])
         dmap_with_fn = Dynamic(dmap, operation=lambda x: x.clone(x.data*2))
-        self.assertEqual(dmap_with_fn[5], Image(sine_array(0,5)*2))
+        assert_element_equal(dmap_with_fn[5], Image(sine_array(0,5)*2))
 
     def test_dynamic_operation_on_hmap(self):
         hmap = HoloMap({i: Image(sine_array(0,i)) for i in range(10)})
         dmap = Dynamic(hmap, operation=lambda x: x)
-        self.assertEqual(dmap.kdims[0].name, hmap.kdims[0].name)
-        self.assertEqual(dmap.kdims[0].values, hmap.keys())
+        assert dmap.kdims[0].name == hmap.kdims[0].name
+        assert dmap.kdims[0].values == hmap.keys()
 
     def test_dynamic_operation_link_inputs_not_transferred_on_clone(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=['i'])
         dmap_with_fn = Dynamic(dmap, link_inputs=False, operation=lambda x: x.clone(x.data*2))
-        self.assertTrue(dmap_with_fn.clone().callback.link_inputs)
+        assert dmap_with_fn.clone().callback.link_inputs
 
     def test_dynamic_operation_on_element(self):
         img = Image(sine_array(0,5))
@@ -672,8 +672,8 @@ class DynamicTestOperation(ComparisonTestCase):
         dmap_with_fn = Dynamic(img, operation=lambda obj, x, y: obj.clone(obj.data*x+y),
                                streams=[posxy])
         element = dmap_with_fn[()]
-        self.assertEqual(element, Image(sine_array(0,5)*2+1))
-        self.assertEqual(dmap_with_fn.streams, [posxy])
+        assert_element_equal(element, Image(sine_array(0,5)*2+1))
+        assert dmap_with_fn.streams == [posxy]
 
     def test_dynamic_operation_on_element_dict(self):
         img = Image(sine_array(0,5))
@@ -681,7 +681,7 @@ class DynamicTestOperation(ComparisonTestCase):
         dmap_with_fn = Dynamic(img, operation=lambda obj, x, y: obj.clone(obj.data*x+y),
                                streams=dict(x=posxy.param.x, y=posxy.param.y))
         element = dmap_with_fn[()]
-        self.assertEqual(element, Image(sine_array(0,5)*3+1))
+        assert_element_equal(element, Image(sine_array(0,5)*3+1))
 
     def test_dynamic_operation_with_kwargs(self):
         fn = lambda i: Image(sine_array(0,i))
@@ -689,38 +689,36 @@ class DynamicTestOperation(ComparisonTestCase):
         def fn(x, multiplier=2):
             return x.clone(x.data*multiplier)
         dmap_with_fn = Dynamic(dmap, operation=fn, kwargs=dict(multiplier=3))
-        self.assertEqual(dmap_with_fn[5], Image(sine_array(0,5)*3))
+        assert_element_equal(dmap_with_fn[5], Image(sine_array(0,5)*3))
 
     def test_dynamic_operation_init_renamed_stream_params(self):
         img = Image(sine_array(0,5))
         stream = RangeX(rename={'x_range': 'bin_range'})
         histogram(img, bin_range=(0, 1), streams=[stream], dynamic=True)
-        self.assertEqual(stream.x_range, (0, 1))
+        assert stream.x_range == (0, 1)
 
     def test_dynamic_operation_init_stream_params(self):
         img = Image(sine_array(0,5))
         stream = Stream.define('TestStream', bin_range=None)()
         histogram(img, bin_range=(0, 1), streams=[stream], dynamic=True)
-        self.assertEqual(stream.bin_range, (0, 1))
+        assert stream.bin_range == (0, 1)
 
 
-
-
-class DynamicTestOverlay(ComparisonTestCase):
+class DynamicTestOverlay:
 
     def test_dynamic_element_overlay(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=['i'])
         dynamic_overlay = dmap * Image(sine_array(0,10))
         overlaid = Image(sine_array(0,5)) * Image(sine_array(0,10))
-        self.assertEqual(dynamic_overlay[5], overlaid)
+        assert_element_equal(dynamic_overlay[5], overlaid)
 
     def test_dynamic_element_underlay(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=['i'])
         dynamic_overlay = Image(sine_array(0,10)) * dmap
         overlaid = Image(sine_array(0,10)) * Image(sine_array(0,5))
-        self.assertEqual(dynamic_overlay[5], overlaid)
+        assert_element_equal(dynamic_overlay[5], overlaid)
 
     def test_dynamic_dynamicmap_overlay(self):
         fn = lambda i: Image(sine_array(0,i))
@@ -729,7 +727,7 @@ class DynamicTestOverlay(ComparisonTestCase):
         dmap2=DynamicMap(fn2, kdims=['i'])
         dynamic_overlay = dmap * dmap2
         overlaid = Image(sine_array(0,5)) * Image(sine_array(0,10))
-        self.assertEqual(dynamic_overlay[5], overlaid)
+        assert_element_equal(dynamic_overlay[5], overlaid)
 
     def test_dynamic_holomap_overlay(self):
         fn = lambda i: Image(sine_array(0,i))
@@ -737,7 +735,7 @@ class DynamicTestOverlay(ComparisonTestCase):
         hmap = HoloMap({i: Image(sine_array(0,i*2)) for i in range(10)}, kdims=['i'])
         dynamic_overlay = dmap * hmap
         overlaid = Image(sine_array(0,5)) * Image(sine_array(0,10))
-        self.assertEqual(dynamic_overlay[5], overlaid)
+        assert_element_equal(dynamic_overlay[5], overlaid)
 
     def test_dynamic_overlay_memoization(self):
         """Tests that Callable memoizes unchanged callbacks"""
@@ -753,14 +751,14 @@ class DynamicTestOverlay(ComparisonTestCase):
 
         overlaid = dmap * dmap2
         overlay = overlaid[()]
-        self.assertEqual(overlay.Scatter.I, fn(None, None))
+        assert_element_equal(overlay.Scatter.I, fn(None, None))
 
         dmap.event(x=1, y=2)
         overlay = overlaid[()]
         # Ensure dmap return value was updated
-        self.assertEqual(overlay.Scatter.I, fn(1, 2))
+        assert_element_equal(overlay.Scatter.I, fn(1, 2))
         # Ensure dmap2 callback was called only once
-        self.assertEqual(counter[0], 1)
+        assert counter[0] == 1
 
     def test_dynamic_event_renaming_valid(self):
 
@@ -779,27 +777,27 @@ class DynamicTestOverlay(ComparisonTestCase):
         dmap = DynamicMap(fn, kdims=[], streams=[xy])
 
         regexp = '(.+?)do not correspond to stream parameters'
-        with self.assertRaisesRegex(KeyError, regexp):
+        with pytest.raises(KeyError, match=regexp):
             dmap.event(x=1, y=2)
 
 
-class DynamicCallableMemoize(ComparisonTestCase):
+class TestDynamicCallableMemoize:
 
     def test_dynamic_keydim_not_memoize(self):
         dmap = DynamicMap(lambda x: Curve([(0, x)]), kdims=['x'])
-        self.assertEqual(dmap[0], Curve([(0, 0)]))
-        self.assertEqual(dmap[1], Curve([(0, 1)]))
+        assert_element_equal(dmap[0], Curve([(0, 0)]))
+        assert_element_equal(dmap[1], Curve([(0, 1)]))
 
     def test_dynamic_keydim_memoize(self):
         dmap = DynamicMap(lambda x: Curve([(0, x)]), kdims=['x'])
-        self.assertIs(dmap[0], dmap[0])
+        assert dmap[0] is dmap[0]
 
     def test_dynamic_keydim_memoize_disable(self):
         dmap = DynamicMap(Callable(lambda x: Curve([(0, x)]), memoize=False), kdims=['x'])
         first = dmap[0]
         del dmap.data[(0,)]
         second = dmap[0]
-        self.assertIsNot(first, second)
+        assert first is not second
 
     def test_dynamic_callable_memoize(self):
         # Always memoized only one of each held
@@ -816,11 +814,11 @@ class DynamicCallableMemoize(ComparisonTestCase):
 
         x.event(x=1)
         x.event(x=1)
-        self.assertEqual(dmap[()], Curve([1]))
+        assert_element_equal(dmap[()], Curve([1]))
 
         x.event(x=2)
         x.event(x=2)
-        self.assertEqual(dmap[()], Curve([1, 2]))
+        assert_element_equal(dmap[()], Curve([1, 2]))
 
 
     def test_dynamic_callable_disable_callable_memoize(self):
@@ -840,14 +838,14 @@ class DynamicCallableMemoize(ComparisonTestCase):
 
         x.event(x=1)
         x.event(x=1)
-        self.assertEqual(dmap[()], Curve([1, 1, 1]))
+        assert_element_equal(dmap[()], Curve([1, 1, 1]))
 
         x.event(x=2)
         x.event(x=2)
-        self.assertEqual(dmap[()], Curve([1, 1, 1, 2, 2, 2]))
+        assert_element_equal(dmap[()], Curve([1, 1, 1, 2, 2, 2]))
 
 
-class DynamicMapRX(ComparisonTestCase):
+class TestDynamicMapRX:
 
     def test_dynamic_rx(self):
         freq = param.rx(1)
@@ -860,14 +858,14 @@ class DynamicMapRX(ComparisonTestCase):
         fn_param, freq_param = pstream.parameters
         assert getattr(fn_param.owner, fn_param.name) == sine_array
         assert getattr(freq_param.owner, freq_param.name) == 1
-        self.assertEqual(dmap[()], Curve(sine_array(0, 1)))
+        assert_element_equal(dmap[()], Curve(sine_array(0, 1)))
         freq.rx.value = 2
-        self.assertEqual(dmap[()], Curve(sine_array(0, 2)))
+        assert_element_equal(dmap[()], Curve(sine_array(0, 2)))
 
 
-class StreamSubscribersAddandClear(ComparisonTestCase):
+class TestStreamSubscribersAddandClear:
 
-    def setUp(self):
+    def setup_method(self):
         self.fn1 = lambda x: x
         self.fn2 = lambda x: x**2
         self.fn3 = lambda x: x**3
@@ -879,9 +877,9 @@ class StreamSubscribersAddandClear(ComparisonTestCase):
         pointerx.add_subscriber(self.fn2, precedence=1)
         pointerx.add_subscriber(self.fn3, precedence=1.5)
         pointerx.add_subscriber(self.fn4, precedence=10)
-        self.assertEqual(pointerx.subscribers,  [self.fn1,self.fn2,self.fn3,self.fn4])
+        assert pointerx.subscribers == [self.fn1,self.fn2,self.fn3,self.fn4]
         pointerx.clear('all')
-        self.assertEqual(pointerx.subscribers,  [])
+        assert pointerx.subscribers == []
 
     def test_subscriber_clear_user(self):
         pointerx = PointerX(x=2)
@@ -889,9 +887,9 @@ class StreamSubscribersAddandClear(ComparisonTestCase):
         pointerx.add_subscriber(self.fn2, precedence=1)
         pointerx.add_subscriber(self.fn3, precedence=1.5)
         pointerx.add_subscriber(self.fn4, precedence=10)
-        self.assertEqual(pointerx.subscribers,  [self.fn1,self.fn2,self.fn3,self.fn4])
+        assert pointerx.subscribers == [self.fn1,self.fn2,self.fn3,self.fn4]
         pointerx.clear('user')
-        self.assertEqual(pointerx.subscribers,  [self.fn3,self.fn4])
+        assert pointerx.subscribers == [self.fn3,self.fn4]
 
 
     def test_subscriber_clear_internal(self):
@@ -900,12 +898,12 @@ class StreamSubscribersAddandClear(ComparisonTestCase):
         pointerx.add_subscriber(self.fn2, precedence=1)
         pointerx.add_subscriber(self.fn3, precedence=1.5)
         pointerx.add_subscriber(self.fn4, precedence=10)
-        self.assertEqual(pointerx.subscribers,  [self.fn1,self.fn2,self.fn3,self.fn4])
+        assert pointerx.subscribers == [self.fn1,self.fn2,self.fn3,self.fn4]
         pointerx.clear('internal')
-        self.assertEqual(pointerx.subscribers,  [self.fn1,self.fn2])
+        assert pointerx.subscribers == [self.fn1,self.fn2]
 
 
-class DynamicStreamReset(ComparisonTestCase):
+class TestDynamicStreamReset:
 
     def test_dynamic_callable_stream_transient(self):
         # Enable transient stream meaning memoization only happens when
@@ -925,11 +923,11 @@ class DynamicStreamReset(ComparisonTestCase):
 
         x.event(x=1)
         x.event(x=1)
-        self.assertEqual(dmap[()], Curve([1, 1]))
+        assert_element_equal(dmap[()], Curve([1, 1]))
 
         x.event(x=2)
         x.event(x=2)
-        self.assertEqual(dmap[()], Curve([1, 1, 2, 2]))
+        assert_element_equal(dmap[()], Curve([1, 1, 2, 2]))
 
     def test_dynamic_stream_transients(self):
         # Ensure Stream reset option resets streams to default value
@@ -961,8 +959,8 @@ class DynamicStreamReset(ComparisonTestCase):
             x.event(x=i)
             y.event(y=i)
 
-        self.assertEqual(history_callback.xresets, 2)
-        self.assertEqual(history_callback.yresets, 2)
+        assert history_callback.xresets == 2
+        assert history_callback.yresets == 2
 
     def test_dynamic_callable_stream_hashkey(self):
         # Enable transient stream meaning memoization only happens when
@@ -987,15 +985,15 @@ class DynamicStreamReset(ComparisonTestCase):
 
         x.event(x=1)
         x.event(x=1)
-        self.assertEqual(dmap[()], Curve([1, 1, 1]))
+        assert_element_equal(dmap[()], Curve([1, 1, 1]))
 
         x.event(x=2)
         x.event(x=2)
-        self.assertEqual(dmap[()], Curve([1, 1, 1, 2, 2, 2]))
+        assert_element_equal(dmap[()], Curve([1, 1, 1, 2, 2, 2]))
 
 
 
-class TestPeriodicStreamUpdate(ComparisonTestCase):
+class TestPeriodicStreamUpdate:
 
     def test_periodic_counter_blocking(self):
         class Counter:
@@ -1011,7 +1009,7 @@ class TestPeriodicStreamUpdate(ComparisonTestCase):
         # Add stream subscriber mocking plot
         next_stream.add_subscriber(lambda **kwargs: dmap[()])
         dmap.periodic(0.01, 100)
-        self.assertEqual(counter.count, 100)
+        assert counter.count == 100
 
     def test_periodic_param_fn_blocking(self):
         def callback(x): return Curve([1,2,3])
@@ -1020,7 +1018,7 @@ class TestPeriodicStreamUpdate(ComparisonTestCase):
         # Add stream subscriber mocking plot
         xval.add_subscriber(lambda **kwargs: dmap[()])
         dmap.periodic(0.01, 100, param_fn=lambda i: {'x':i})
-        self.assertEqual(xval.x, 100)
+        assert xval.x == 100
 
     @pytest.mark.flaky(reruns=3)
     def test_periodic_param_fn_non_blocking(self):
@@ -1030,13 +1028,13 @@ class TestPeriodicStreamUpdate(ComparisonTestCase):
         # Add stream subscriber mocking plot
         xval.add_subscriber(lambda **kwargs: dmap[()])
 
-        self.assertNotEqual(xval.x, 100)
+        assert xval.x != 100
         dmap.periodic(0.0001, 100, param_fn=lambda i: {'x': i}, block=False)
         time.sleep(2)
         if not dmap.periodic.instance.completed:
             raise RuntimeError('Periodic callback timed out.')
         dmap.periodic.stop()
-        self.assertEqual(xval.x, 100)
+        assert xval.x == 100
 
     def test_periodic_param_fn_blocking_period(self):
         def callback(x):
@@ -1048,7 +1046,7 @@ class TestPeriodicStreamUpdate(ComparisonTestCase):
         start = time.time()
         dmap.periodic(0.5, 10, param_fn=lambda i: {'x':i}, block=True)
         end = time.time()
-        self.assertEqual((end - start) > 5, True)
+        assert (end - start) > 5
 
 
     def test_periodic_param_fn_blocking_timeout(self):
@@ -1061,18 +1059,18 @@ class TestPeriodicStreamUpdate(ComparisonTestCase):
         start = time.time()
         dmap.periodic(0.5, 100, param_fn=lambda i: {'x':i}, timeout=3)
         end = time.time()
-        self.assertEqual((end - start) < 5, True)
+        assert (end - start) < 5
 
 
-class DynamicCollate(LoggingComparisonTestCase):
+class TestDynamicCollate(LoggingComparison):
 
     def test_dynamic_collate_layout(self):
         def callback():
             return Image(np.array([[0, 1], [2, 3]])) + Text(0, 0, 'Test')
         dmap = DynamicMap(callback, kdims=[])
         layout = dmap.collate()
-        self.assertEqual(list(layout.keys()), [('Image', 'I'), ('Text', 'I')])
-        self.assertEqual(layout.Image.I[()], Image(np.array([[0, 1], [2, 3]])))
+        assert list(layout.keys()) == [('Image', 'I'), ('Text', 'I')]
+        assert_element_equal(layout.Image.I[()], Image(np.array([[0, 1], [2, 3]])))
 
     def test_dynamic_collate_layout_raise_no_remapping_error(self):
         def callback(x, y):
@@ -1080,7 +1078,7 @@ class DynamicCollate(LoggingComparisonTestCase):
         stream = PointerXY()
         cb_callable = Callable(callback)
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
-        with self.assertRaisesRegex(ValueError, 'The following streams are set to be automatically linked'):
+        with pytest.raises(ValueError, match='The following streams are set to be automatically linked'):
             dmap.collate()
 
     def test_dynamic_collate_layout_raise_ambiguous_remapping_error(self):
@@ -1089,7 +1087,7 @@ class DynamicCollate(LoggingComparisonTestCase):
         stream = PointerXY()
         cb_callable = Callable(callback, stream_mapping={'Image': [stream]})
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
-        with self.assertRaisesRegex(ValueError, 'The stream_mapping supplied on the Callable is ambiguous'):
+        with pytest.raises(ValueError, match='The stream_mapping supplied on the Callable is ambiguous'):
             dmap.collate()
 
     def test_dynamic_collate_layout_with_integer_stream_mapping(self):
@@ -1099,8 +1097,8 @@ class DynamicCollate(LoggingComparisonTestCase):
         cb_callable = Callable(callback, stream_mapping={0: [stream]})
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
-        self.assertEqual(list(layout.keys()), [('Image', 'I'), ('Text', 'I')])
-        self.assertIs(stream.source, layout.Image.I)
+        assert list(layout.keys()) == [('Image', 'I'), ('Text', 'I')]
+        assert stream.source is layout.Image.I
 
     def test_dynamic_collate_layout_with_spec_stream_mapping(self):
         def callback(x, y):
@@ -1109,16 +1107,16 @@ class DynamicCollate(LoggingComparisonTestCase):
         cb_callable = Callable(callback, stream_mapping={'Image': [stream]})
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
-        self.assertEqual(list(layout.keys()), [('Image', 'I'), ('Text', 'I')])
-        self.assertIs(stream.source, layout.Image.I)
+        assert list(layout.keys()) == [('Image', 'I'), ('Text', 'I')]
+        assert stream.source is layout.Image.I
 
     def test_dynamic_collate_ndlayout(self):
         def callback():
             return NdLayout({i: Image(np.array([[i, 1], [2, 3]])) for i in range(1, 3)})
         dmap = DynamicMap(callback, kdims=[])
         layout = dmap.collate()
-        self.assertEqual(list(layout.keys()), [1, 2])
-        self.assertEqual(layout[1][()], Image(np.array([[1, 1], [2, 3]])))
+        assert list(layout.keys()) == [1, 2]
+        assert_element_equal(layout[1][()], Image(np.array([[1, 1], [2, 3]])))
 
     def test_dynamic_collate_ndlayout_with_integer_stream_mapping(self):
         def callback(x, y):
@@ -1127,8 +1125,8 @@ class DynamicCollate(LoggingComparisonTestCase):
         cb_callable = Callable(callback, stream_mapping={0: [stream]})
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
-        self.assertEqual(list(layout.keys()), [1, 2])
-        self.assertIs(stream.source, layout[1])
+        assert list(layout.keys()) == [1, 2]
+        assert stream.source is layout[1]
 
     def test_dynamic_collate_ndlayout_with_key_stream_mapping(self):
         def callback(x, y):
@@ -1137,8 +1135,8 @@ class DynamicCollate(LoggingComparisonTestCase):
         cb_callable = Callable(callback, stream_mapping={(1,): [stream]})
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
-        self.assertEqual(list(layout.keys()), [1, 2])
-        self.assertIs(stream.source, layout[1])
+        assert list(layout.keys()) == [1, 2]
+        assert stream.source is layout[1]
 
     def test_dynamic_collate_grid(self):
         def callback():
@@ -1146,9 +1144,8 @@ class DynamicCollate(LoggingComparisonTestCase):
                               for i in range(1, 3) for j in range(1, 3)})
         dmap = DynamicMap(callback, kdims=[])
         grid = dmap.collate()
-        self.assertEqual(list(grid.keys()), [(i, j) for i in range(1, 3)
-                                             for j in range(1, 3)])
-        self.assertEqual(grid[(0, 1)][()], Image(np.array([[1, 1], [2, 3]])))
+        assert list(grid.keys()) == [(i, j,) for i in range(1, 3) for j in range(1, 3)]
+        assert_element_equal(grid[(0, 1)][()], Image(np.array([[1, 1], [2, 3]])))
 
     def test_dynamic_collate_grid_with_integer_stream_mapping(self):
         def callback():
@@ -1158,9 +1155,8 @@ class DynamicCollate(LoggingComparisonTestCase):
         cb_callable = Callable(callback, stream_mapping={1: [stream]})
         dmap = DynamicMap(cb_callable, kdims=[])
         grid = dmap.collate()
-        self.assertEqual(list(grid.keys()), [(i, j) for i in range(1, 3)
-                                             for j in range(1, 3)])
-        self.assertEqual(stream.source, grid[(1, 2)])
+        assert list(grid.keys()) == [(i, j,) for i in range(1, 3) for j in range(1, 3)]
+        assert_element_equal(stream.source, grid[(1, 2)])
 
     def test_dynamic_collate_grid_with_key_stream_mapping(self):
         def callback():
@@ -1170,9 +1166,8 @@ class DynamicCollate(LoggingComparisonTestCase):
         cb_callable = Callable(callback, stream_mapping={(1, 2): [stream]})
         dmap = DynamicMap(cb_callable, kdims=[])
         grid = dmap.collate()
-        self.assertEqual(list(grid.keys()), [(i, j) for i in range(1, 3)
-                                             for j in range(1, 3)])
-        self.assertEqual(stream.source, grid[(1, 2)])
+        assert list(grid.keys()) == [(i, j,) for i in range(1, 3) for j in range(1, 3)]
+        assert_element_equal(stream.source, grid[(1, 2)])
 
     def test_dynamic_collate_layout_with_changing_label(self):
         def callback(i):
@@ -1181,8 +1176,8 @@ class DynamicCollate(LoggingComparisonTestCase):
         layout = dmap.collate()
         dmap1, dmap2 = layout.values()
         el1, el2 = dmap1[2], dmap2[2]
-        self.assertEqual(el1.label, '2')
-        self.assertEqual(el2.label, '3')
+        assert el1.label == '2'
+        assert el2.label == '3'
 
     def test_dynamic_collate_ndlayout_with_changing_keys(self):
         def callback(i):
@@ -1191,8 +1186,8 @@ class DynamicCollate(LoggingComparisonTestCase):
         layout = dmap.collate()
         dmap1, dmap2 = layout.values()
         el1, el2 = dmap1[2], dmap2[2]
-        self.assertEqual(el1.label, '2')
-        self.assertEqual(el2.label, '3')
+        assert el1.label == '2'
+        assert el2.label == '3'
 
     def test_dynamic_collate_gridspace_with_changing_keys(self):
         def callback(i):
@@ -1201,8 +1196,8 @@ class DynamicCollate(LoggingComparisonTestCase):
         layout = dmap.collate()
         dmap1, dmap2 = layout.values()
         el1, el2 = dmap1[2], dmap2[2]
-        self.assertEqual(el1.label, '2')
-        self.assertEqual(el2.label, '3')
+        assert el1.label == '2'
+        assert el2.label == '3'
 
     def test_dynamic_collate_gridspace_with_changing_items_raises(self):
         def callback(i):
@@ -1211,9 +1206,9 @@ class DynamicCollate(LoggingComparisonTestCase):
         layout = dmap.collate()
         dmap1, _dmap2 = layout.values()
         err = 'Collated DynamicMaps must return GridSpace with consistent number of items.'
-        with self.assertRaisesRegex(ValueError, err):
+        with pytest.raises(ValueError, match=err):
             dmap1[4]
-        self.log_handler.assertContains('WARNING', err)
+        self.log_handler.assert_contains('WARNING', err)
 
     def test_dynamic_collate_gridspace_with_changing_item_types_raises(self):
         def callback(i):
@@ -1224,6 +1219,6 @@ class DynamicCollate(LoggingComparisonTestCase):
         dmap1, _dmap2 = layout.values()
         err = ('The objects in a GridSpace returned by a DynamicMap must '
                'consistently return the same number of items of the same type.')
-        with self.assertRaisesRegex(ValueError, err):
+        with pytest.raises(ValueError, match=err):
             dmap1[3]
-        self.log_handler.assertContains('WARNING', err)
+        self.log_handler.assert_contains('WARNING', err)
