@@ -1,17 +1,15 @@
-from unittest import SkipTest
-
-try:
-    import datashader  # noqa: F401
-except ImportError:
-   raise SkipTest("Test requires datashader")
-
 import numpy as np
+import pytest
 
 from holoviews.element import ImageStack
 from holoviews.plotting.plotly import RGBPlot
 
 from .test_plot import TestPlotlyPlot, plotly_renderer
 
+try:
+    import datashader  # noqa: F401
+except ImportError:
+    pytest.skip("Test requires datashader", allow_module_level=True)
 
 class TestImageStackPlot(TestPlotlyPlot):
     def test_image_stack(self):

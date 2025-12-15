@@ -11,6 +11,7 @@ from bokeh.models import (
 from holoviews.core.overlay import NdOverlay, Overlay
 from holoviews.element import Bars
 from holoviews.plotting.bokeh.util import property_to_dict
+from holoviews.testing import assert_data_equal
 
 from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
@@ -33,7 +34,7 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(bars)
         plot.initialize_plot()
         fig = plot.state
-        self.assertEqual(len(fig.legend), 0)
+        assert len(fig.legend) == 0
 
     def test_empty_bars(self):
         bars = Bars([], kdims=['x', 'y'], vdims=['z'])
@@ -41,43 +42,42 @@ class TestBarPlot(TestBokehPlot):
         plot.initialize_plot()
         source = plot.handles['source']
         for v in source.data.values():
-            self.assertEqual(len(v), 0)
+            assert len(v) == 0
 
     def test_bars_single_value(self):
         df = pd.DataFrame({"time": [1], "value": [-1]})
         bars = Bars(df)
         plot = bokeh_renderer.get_plot(bars)
         source = plot.handles['source']
-        assert source.data['time'], np.array([1])
-        assert source.data['value'], np.array([-1])
+        assert source.data['time'] == np.array([1])
+        assert source.data['value'] == np.array([-1])
 
     def test_bars_grouped_categories(self):
         bars = Bars([('A', 0, 1), ('A', 1, -1), ('B', 0, 2)],
                     kdims=['Index', 'Category'], vdims=['Value'])
         plot = bokeh_renderer.get_plot(bars)
         source = plot.handles['source']
-        self.assertEqual([tuple(x) for x in source.data['xoffsets']],
-                         [('A', '0'), ('B', '0'), ('A', '1')])
-        self.assertEqual(list(source.data['Category']), ['0', '0', '1'])
-        self.assertEqual(source.data['Value'], np.array([1, 2, -1]))
+        assert [tuple(x) for x in source.data['xoffsets']] == [('A', '0'), ('B', '0'), ('A', '1')]
+        assert list(source.data['Category']) == ['0', '0', '1']
+        assert_data_equal(source.data['Value'], np.array([1, 2, -1]))
         x_range = plot.handles['x_range']
-        self.assertEqual(x_range.factors, [('A', '0'), ('A', '1'), ('B', '0'), ('B', '1')])
+        assert x_range.factors == [('A', '0'), ('A', '1'), ('B', '0'), ('B', '1')]
 
     def test_bars_multi_level_sorted(self):
         box= Bars((['A', 'B']*15, [3, 10, 1]*10, np.random.randn(30)),
                   ['Group', 'Category'], 'Value').aggregate(function=np.mean)
         plot = bokeh_renderer.get_plot(box)
         x_range = plot.handles['x_range']
-        self.assertEqual(x_range.factors, [
-            ('A', '1'), ('A', '3'), ('A', '10'), ('B', '1'), ('B', '3'), ('B', '10')])
+        assert x_range.factors == [
+            ('A', '1'), ('A', '3'), ('A', '10'), ('B', '1'), ('B', '3'), ('B', '10')]
 
     def test_box_whisker_multi_level_sorted_alphanumerically(self):
         box= Bars(([3, 10, 1]*10, ['A', 'B']*15, np.random.randn(30)),
                   ['Group', 'Category'], 'Value').aggregate(function=np.mean)
         plot = bokeh_renderer.get_plot(box)
         x_range = plot.handles['x_range']
-        self.assertEqual(x_range.factors, [
-            ('1', 'A'), ('1', 'B'), ('3', 'A'), ('3', 'B'), ('10', 'A'), ('10', 'B')])
+        assert x_range.factors == [
+            ('1', 'A'), ('1', 'B'), ('3', 'A'), ('3', 'B'), ('10', 'A'), ('10', 'B')]
 
     def test_bars_multi_level_two_factors_in_overlay(self):
         # See: https://github.com/holoviz/holoviews/pull/5850
@@ -93,10 +93,10 @@ class TestBarPlot(TestBokehPlot):
                     kdims=['Index', 'Category'], vdims=['Value'])
         plot = bokeh_renderer.get_plot(bars.opts(stacked=True))
         source = plot.handles['source']
-        self.assertEqual(list(source.data['Category']), ['1', '0', '0'])
-        self.assertEqual(list(source.data['Index']), ['A', 'A', 'B'])
-        self.assertEqual(source.data['top'], np.array([0, 1, 2]))
-        self.assertEqual(source.data['bottom'], np.array([-1, 0, 0]))
+        assert list(source.data['Category']) == ['1', '0', '0']
+        assert list(source.data['Index']) == ['A', 'A', 'B']
+        assert_data_equal(source.data['top'], np.array([0, 1, 2]))
+        assert_data_equal(source.data['bottom'], np.array([-1, 0, 0]))
 
     def test_bars_logy(self):
         bars = Bars([('A', 1), ('B', 2), ('C', 3)],
@@ -105,11 +105,11 @@ class TestBarPlot(TestBokehPlot):
         source = plot.handles['source']
         glyph = plot.handles['glyph']
         y_range = plot.handles['y_range']
-        self.assertEqual(list(source.data['Index']), ['A', 'B', 'C'])
-        self.assertEqual(source.data['Value'], np.array([1, 2, 3]))
-        self.assertEqual(glyph.bottom, 0.01)
-        self.assertEqual(y_range.start, 0.01)
-        self.assertEqual(y_range.end, 3.348369522101713)
+        assert list(source.data['Index']) == ['A', 'B', 'C']
+        assert_data_equal(source.data['Value'], np.array([1, 2, 3]))
+        assert glyph.bottom == 0.01
+        assert y_range.start == 0.01
+        assert y_range.end == 3.348369522101713
 
     def test_bars_logy_explicit_range(self):
         bars = Bars([('A', 1), ('B', 2), ('C', 3)],
@@ -118,60 +118,60 @@ class TestBarPlot(TestBokehPlot):
         source = plot.handles['source']
         glyph = plot.handles['glyph']
         y_range = plot.handles['y_range']
-        self.assertEqual(list(source.data['Index']), ['A', 'B', 'C'])
-        self.assertEqual(source.data['Value'], np.array([1, 2, 3]))
-        self.assertEqual(glyph.bottom, 0.001)
-        self.assertEqual(y_range.start, 0.001)
-        self.assertEqual(y_range.end, 3)
+        assert list(source.data['Index']) == ['A', 'B', 'C']
+        assert_data_equal(source.data['Value'], np.array([1, 2, 3]))
+        assert glyph.bottom == 0.001
+        assert y_range.start == 0.001
+        assert y_range.end == 3
 
     def test_bars_ylim(self):
         bars = Bars([1, 2, 3]).opts(ylim=(0, 200))
         plot = bokeh_renderer.get_plot(bars)
         y_range = plot.handles['y_range']
-        self.assertEqual(y_range.start, 0)
-        self.assertEqual(y_range.end, 200)
+        assert y_range.start == 0
+        assert y_range.end == 200
 
     def test_bars_padding_square(self):
         points = Bars([(1, 2), (2, -1), (3, 3)]).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(points)
         y_range = plot.handles['y_range']
-        self.assertEqual(y_range.start, -1.4)
-        self.assertEqual(y_range.end, 3.4)
+        assert y_range.start == -1.4
+        assert y_range.end == 3.4
 
     def test_bars_padding_square_positive(self):
         points = Bars([(1, 2), (2, 1), (3, 3)]).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(points)
         y_range = plot.handles['y_range']
-        self.assertEqual(y_range.start, 0)
-        self.assertEqual(y_range.end, 3.2)
+        assert y_range.start == 0
+        assert y_range.end == 3.2
 
     def test_bars_padding_square_negative(self):
         points = Bars([(1, -2), (2, -1), (3, -3)]).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(points)
         y_range = plot.handles['y_range']
-        self.assertEqual(y_range.start, -3.2)
-        self.assertEqual(y_range.end, 0)
+        assert y_range.start == -3.2
+        assert y_range.end == 0
 
     def test_bars_padding_nonsquare(self):
         bars = Bars([(1, 2), (2, 1), (3, 3)]).opts(padding=0.1, width=600)
         plot = bokeh_renderer.get_plot(bars)
         y_range = plot.handles['y_range']
-        self.assertEqual(y_range.start, 0)
-        self.assertEqual(y_range.end, 3.2)
+        assert y_range.start == 0
+        assert y_range.end == 3.2
 
     def test_bars_padding_logx(self):
         bars = Bars([(1, 1), (2, 2), (3,3)]).opts(padding=0.1, logx=True)
         plot = bokeh_renderer.get_plot(bars)
         y_range = plot.handles['y_range']
-        self.assertEqual(y_range.start, 0)
-        self.assertEqual(y_range.end, 3.2)
+        assert y_range.start == 0
+        assert y_range.end == 3.2
 
     def test_bars_padding_logy(self):
         bars = Bars([(1, 2), (2, 1), (3, 3)]).opts(padding=0.1, logy=True)
         plot = bokeh_renderer.get_plot(bars)
         y_range = plot.handles['y_range']
-        self.assertEqual(y_range.start, 0.01)
-        self.assertEqual(y_range.end, 3.3483695221017129)
+        assert y_range.start == 0.01
+        assert y_range.end == 3.3483695221017129
 
     def test_bars_boolean_kdims(self):
         data = pd.DataFrame({"x1": [1, 1, 2, 2], "x2": [False, True, False, True], "y": [3, 1, 2, 2]})
@@ -190,9 +190,9 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(bars)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
-        self.assertEqual(cds.data['color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color'})
-        self.assertEqual(property_to_dict(glyph.line_color), 'black')
+        assert cds.data['color'] == ['#000', '#F00', '#0F0']
+        assert property_to_dict(glyph.fill_color) == {'field': 'color'}
+        assert property_to_dict(glyph.line_color) == 'black'
 
     def test_bars_linear_color_op(self):
         bars = Bars([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
@@ -201,12 +201,12 @@ class TestBarPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
-        self.assertTrue(cmapper, LinearColorMapper)
-        self.assertEqual(cmapper.low, 0)
-        self.assertEqual(cmapper.high, 2)
-        self.assertEqual(cds.data['color'], np.array([0, 1, 2]))
-        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
-        self.assertEqual(property_to_dict(glyph.line_color), 'black')
+        assert isinstance(cmapper, LinearColorMapper)
+        assert cmapper.low == 0
+        assert cmapper.high == 2
+        assert_data_equal(cds.data['color'], np.array([0, 1, 2]))
+        assert property_to_dict(glyph.fill_color) == {'field': 'color', 'transform': cmapper}
+        assert property_to_dict(glyph.line_color) == 'black'
 
     def test_bars_categorical_color_op(self):
         bars = Bars([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
@@ -215,11 +215,11 @@ class TestBarPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
-        self.assertTrue(cmapper, CategoricalColorMapper)
-        self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
-        self.assertEqual(cds.data['color'], np.array(['A', 'B', 'C']))
-        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'color', 'transform': cmapper})
-        self.assertEqual(property_to_dict(glyph.line_color), 'black')
+        assert isinstance(cmapper, CategoricalColorMapper)
+        assert cmapper.factors == ['A', 'B', 'C']
+        assert cds.data['color'] == ['A', 'B', 'C']
+        assert property_to_dict(glyph.fill_color) == {'field': 'color', 'transform': cmapper}
+        assert property_to_dict(glyph.line_color) == 'black'
 
     def test_bars_line_color_op(self):
         bars = Bars([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
@@ -227,9 +227,9 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(bars)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
-        self.assertEqual(cds.data['line_color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertNotEqual(property_to_dict(glyph.fill_color), {'field': 'line_color'})
-        self.assertEqual(property_to_dict(glyph.line_color), {'field': 'line_color'})
+        assert cds.data['line_color'] == ['#000', '#F00', '#0F0']
+        assert property_to_dict(glyph.fill_color) != {'field': 'line_color'}
+        assert property_to_dict(glyph.line_color) == {'field': 'line_color'}
 
     def test_bars_fill_color_op(self):
         bars = Bars([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
@@ -237,9 +237,9 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(bars)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
-        self.assertEqual(cds.data['fill_color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertEqual(property_to_dict(glyph.fill_color), {'field': 'fill_color'})
-        self.assertNotEqual(property_to_dict(glyph.line_color), {'field': 'fill_color'})
+        assert cds.data['fill_color'] == ['#000', '#F00', '#0F0']
+        assert property_to_dict(glyph.fill_color) == {'field': 'fill_color'}
+        assert property_to_dict(glyph.line_color) != {'field': 'fill_color'}
 
     def test_bars_alpha_op(self):
         bars = Bars([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -247,8 +247,8 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(bars)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
-        self.assertEqual(cds.data['alpha'], np.array([0, 0.2, 0.7]))
-        self.assertEqual(property_to_dict(glyph.fill_alpha), {'field': 'alpha'})
+        assert_data_equal(cds.data['alpha'], np.array([0, 0.2, 0.7]))
+        assert property_to_dict(glyph.fill_alpha) == {'field': 'alpha'}
 
     def test_bars_line_alpha_op(self):
         bars = Bars([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -256,9 +256,9 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(bars)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
-        self.assertEqual(cds.data['line_alpha'], np.array([0, 0.2, 0.7]))
-        self.assertEqual(property_to_dict(glyph.line_alpha), {'field': 'line_alpha'})
-        self.assertNotEqual(property_to_dict(glyph.fill_alpha), {'field': 'line_alpha'})
+        assert_data_equal(cds.data['line_alpha'], np.array([0, 0.2, 0.7]))
+        assert property_to_dict(glyph.line_alpha) == {'field': 'line_alpha'}
+        assert property_to_dict(glyph.fill_alpha) != {'field': 'line_alpha'}
 
     def test_bars_fill_alpha_op(self):
         bars = Bars([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -266,9 +266,9 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(bars)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
-        self.assertEqual(cds.data['fill_alpha'], np.array([0, 0.2, 0.7]))
-        self.assertNotEqual(property_to_dict(glyph.line_alpha), {'field': 'fill_alpha'})
-        self.assertEqual(property_to_dict(glyph.fill_alpha), {'field': 'fill_alpha'})
+        assert_data_equal(cds.data['fill_alpha'], np.array([0, 0.2, 0.7]))
+        assert property_to_dict(glyph.line_alpha) != {'field': 'fill_alpha'}
+        assert property_to_dict(glyph.fill_alpha) == {'field': 'fill_alpha'}
 
     def test_bars_line_width_op(self):
         bars = Bars([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
@@ -276,15 +276,15 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(bars)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
-        self.assertEqual(cds.data['line_width'], np.array([1, 4, 8]))
-        self.assertEqual(property_to_dict(glyph.line_width), {'field': 'line_width'})
+        assert_data_equal(cds.data['line_width'], np.array([1, 4, 8]))
+        assert property_to_dict(glyph.line_width) == {'field': 'line_width'}
 
     def test_op_ndoverlay_value(self):
         colors = ['blue', 'red']
         overlay = NdOverlay({color: Bars(np.arange(i+2)) for i, color in enumerate(colors)}, 'Color').opts('Bars', fill_color='Color')
         plot = bokeh_renderer.get_plot(overlay)
-        for subplot, color in zip(plot.subplots.values(),  colors, strict=None):
-            self.assertEqual(subplot.handles['glyph'].fill_color, color)
+        for subplot, color in zip(plot.subplots.values(),  colors, strict=True):
+            assert subplot.handles['glyph'].fill_color == color
 
     def test_bars_color_index_color_clash(self):
         bars = Bars([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
@@ -297,7 +297,7 @@ class TestBarPlot(TestBokehPlot):
             "e.g. `color=dim('color')` or `line_color=dim('color')`\nCannot declare style "
             "mapping for 'color' option and declare a color_index; ignoring the color_index.\n"
         )
-        self.assertEqual(log_msg, warning)
+        assert log_msg == warning
 
     def test_bars_continuous_data_list_same_interval(self):
         bars = Bars(([0, 1, 2], [10, 20, 30]))

@@ -2,24 +2,25 @@
 Unit tests of Ellipsis (...) in __getitem__
 """
 import numpy as np
+import pytest
 
 import holoviews as hv
-from holoviews.element.comparison import ComparisonTestCase
+from holoviews.testing import assert_data_equal
 
 
-class TestEllipsisCharts(ComparisonTestCase):
+class TestEllipsisCharts:
 
     def test_curve_ellipsis_slice_x(self):
         sliced = hv.Curve([(i,2*i) for i in range(10)])[2:7,...]
-        self.assertEqual(sliced.range('x'), (2,6))
+        assert sliced.range('x') == (2,6)
 
     def test_curve_ellipsis_slice_y(self):
         sliced = hv.Curve([(i,2*i) for i in range(10)])[..., 3:9]
-        self.assertEqual(sliced.range('y'), (4,8))
+        assert sliced.range('y') == (4,8)
 
     def test_points_ellipsis_slice_x(self):
          sliced = hv.Points([(i,2*i) for i in range(10)])[2:7,...]
-         self.assertEqual(sliced.range('x'), (2,6))
+         assert sliced.range('x') == (2,6)
 
     def test_scatter_ellipsis_value(self):
         hv.Scatter(range(10))[...,'y']
@@ -33,34 +34,33 @@ class TestEllipsisCharts(ComparisonTestCase):
 
     def test_points_ellipsis_slice_y(self):
         sliced = hv.Points([(i,2*i) for i in range(10)])[..., 3:9]
-        self.assertEqual(sliced.range('y'), (4,8))
+        assert sliced.range('y') == (4,8)
 
     def test_histogram_ellipsis_slice_value(self):
         frequencies, edges = np.histogram(range(20), 20)
         sliced = hv.Histogram((frequencies, edges))[..., 'Frequency']
-        self.assertEqual(len(sliced.dimension_values(0)), 20)
+        assert len(sliced.dimension_values(0)) == 20
 
     def test_histogram_ellipsis_slice_range(self):
         frequencies, edges = np.histogram(range(20), 20)
         sliced = hv.Histogram((edges, frequencies))[0:5, ...]
-        self.assertEqual(len(sliced.dimension_values(0)), 5)
+        assert len(sliced.dimension_values(0)) == 5
 
 
     def test_histogram_ellipsis_slice_value_missing(self):
         frequencies, edges = np.histogram(range(20), 20)
-        with self.assertRaises(IndexError):
+        with pytest.raises(IndexError):
             hv.Histogram((frequencies, edges))[..., 'Non-existent']
 
 
-class TestEllipsisTable(ComparisonTestCase):
+class TestEllipsisTable:
 
-    def setUp(self):
+    def setup_method(self):
         keys =   [('M',10), ('M',16), ('F',12)]
         values = [(15, 0.8), (18, 0.6), (10, 0.8)]
-        self.table =hv.Table(zip(keys,values, strict=None),
+        self.table =hv.Table(zip(keys,values, strict=True),
                              kdims = ['Gender', 'Age'],
                              vdims=['Weight', 'Height'])
-        super().setUp()
 
     def test_table_ellipsis_slice_value_weight(self):
         sliced = self.table[..., 'Weight']
@@ -77,12 +77,12 @@ class TestEllipsisTable(ComparisonTestCase):
 
 
 
-class TestEllipsisRaster(ComparisonTestCase):
+class TestEllipsisRaster:
 
     def test_raster_ellipsis_slice_value(self):
         data = np.random.rand(10,10)
         sliced = hv.Raster(data)[...,'z']
-        self.assertEqual(sliced.data, data)
+        assert_data_equal(sliced.data, data)
 
     def test_raster_ellipsis_slice_value_missing(self):
         data = np.random.rand(10,10)
@@ -95,7 +95,7 @@ class TestEllipsisRaster(ComparisonTestCase):
     def test_image_ellipsis_slice_value(self):
         data = np.random.rand(10,10)
         sliced = hv.Image(data)[...,'z']
-        self.assertEqual(sliced.data, data)
+        assert_data_equal(sliced.data, data)
 
     def test_image_ellipsis_slice_value_missing(self):
         data = np.random.rand(10,10)
@@ -108,8 +108,7 @@ class TestEllipsisRaster(ComparisonTestCase):
     def test_rgb_ellipsis_slice_value(self):
         data = np.random.rand(10,10,3)
         sliced = hv.RGB(data)[:,:,'R']
-        self. assertEqual(sliced.data, data[:,:,0])
-
+        assert_data_equal(sliced.data, data[:,:,0])
 
     def test_rgb_ellipsis_slice_value_missing(self):
         rgb = hv.RGB(np.random.rand(10,10,3))
@@ -121,24 +120,24 @@ class TestEllipsisRaster(ComparisonTestCase):
 
 
 
-class TestEllipsisDeepIndexing(ComparisonTestCase):
+class TestEllipsisDeepIndexing:
 
     def test_deep_ellipsis_curve_slicing_1(self):
         hmap = hv.HoloMap({i:hv.Curve([(j,j) for j in range(10)])
                    for i in range(10)})
         sliced = hmap[2:5,...]
-        self.assertEqual(sliced.keys(), [2, 3, 4])
+        assert sliced.keys() == [2, 3, 4]
 
 
     def test_deep_ellipsis_curve_slicing_2(self):
         hmap = hv.HoloMap({i:hv.Curve([(j,j) for j in range(10)])
                    for i in range(10)})
         sliced = hmap[2:5,1:8,...]
-        self.assertEqual(sliced.last.range('x'), (1,7))
+        assert sliced.last.range('x') == (1,7)
 
 
     def test_deep_ellipsis_curve_slicing_3(self):
         hmap = hv.HoloMap({i:hv.Curve([(j,2*j) for j in range(10)])
                    for i in range(10)})
         sliced = hmap[...,2:5]
-        self.assertEqual(sliced.last.range('y'), (2, 4))
+        assert sliced.last.range('y') == (2, 4)

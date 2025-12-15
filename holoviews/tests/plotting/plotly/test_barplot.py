@@ -3,6 +3,7 @@ import pandas as pd
 
 from holoviews.element import Bars
 from holoviews.plotting.plotly.util import PLOTLY_VERSION
+from holoviews.testing import assert_data_equal
 
 from .test_plot import TestPlotlyPlot
 
@@ -12,87 +13,87 @@ class TestBarsPlot(TestPlotlyPlot):
     def test_bars_plot(self):
         bars = Bars([3, 2, 1])
         state = self._get_plot_state(bars)
-        self.assertEqual(state['data'][0]['x'], [0, 1, 2])
-        self.assertEqual(state['data'][0]['y'], np.array([3, 2, 1]))
-        self.assertEqual(state['data'][0]['type'], 'bar')
-        self.assertEqual(state['layout']['xaxis']['range'], [None, None])
-        self.assertEqual(state['layout']['xaxis']['title']['text'], 'x')
-        self.assertEqual(state['layout']['yaxis']['range'], [0, 3.2])
-        self.assertEqual(state['layout']['yaxis']['title']['text'], 'y')
+        assert state['data'][0]['x'] == [0, 1, 2]
+        assert_data_equal(state['data'][0]['y'], np.array([3, 2, 1]))
+        assert state['data'][0]['type'] == 'bar'
+        assert state['layout']['xaxis']['range'] == [None, None]
+        assert state['layout']['xaxis']['title']['text'] == 'x'
+        assert state['layout']['yaxis']['range'] == [0, 3.2]
+        assert state['layout']['yaxis']['title']['text'] == 'y'
 
     def test_bars_plot_inverted(self):
         bars = Bars([3, 2, 1]).opts(invert_axes=True)
         state = self._get_plot_state(bars)
-        self.assertEqual(state['data'][0]['y'], [0, 1, 2])
-        self.assertEqual(state['data'][0]['x'], np.array([3, 2, 1]))
-        self.assertEqual(state['data'][0]['type'], 'bar')
-        self.assertEqual(state['layout']['xaxis']['range'], [0, 3.2])
-        self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')
-        self.assertEqual(state['layout']['yaxis']['range'], [None, None])
-        self.assertEqual(state['layout']['yaxis']['title']['text'], 'x')
+        assert state['data'][0]['y'] == [0, 1, 2]
+        assert_data_equal(state['data'][0]['x'], np.array([3, 2, 1]))
+        assert state['data'][0]['type'] == 'bar'
+        assert state['layout']['xaxis']['range'] == [0, 3.2]
+        assert state['layout']['xaxis']['title']['text'] == 'y'
+        assert state['layout']['yaxis']['range'] == [None, None]
+        assert state['layout']['yaxis']['title']['text'] == 'x'
 
     def test_bars_grouped(self):
         bars = Bars([('A', 1, 1), ('B', 2, 2), ('C', 2, 3), ('C', 1, 4)],
                     kdims=['A', 'B'])
         state = self._get_plot_state(bars)
-        self.assertEqual(state['data'][0]['x'], [['A', 'B', 'C', 'C'], ['1', '2', '2', '1']])
-        self.assertEqual(state['data'][0]['y'], np.array([1, 2, 3, 4]))
-        self.assertEqual(state['data'][0]['type'], 'bar')
-        self.assertEqual(state['layout']['barmode'], 'group')
-        self.assertEqual(state['layout']['xaxis']['range'], [None, None])
-        self.assertEqual(state['layout']['xaxis']['title']['text'], 'A, B')
-        self.assertEqual(state['layout']['yaxis']['range'], [0, 4.3])
-        self.assertEqual(state['layout']['yaxis']['title']['text'], 'y')
+        assert state['data'][0]['x'] == [['A', 'B', 'C', 'C'], ['1', '2', '2', '1']]
+        assert_data_equal(state['data'][0]['y'], np.array([1, 2, 3, 4]))
+        assert state['data'][0]['type'] == 'bar'
+        assert state['layout']['barmode'] == 'group'
+        assert state['layout']['xaxis']['range'] == [None, None]
+        assert state['layout']['xaxis']['title']['text'] == 'A, B'
+        assert state['layout']['yaxis']['range'] == [0, 4.3]
+        assert state['layout']['yaxis']['title']['text'] == 'y'
 
     def test_bars_grouped_inverted(self):
         bars = Bars([('A', 1, 1), ('B', 2, 2), ('C', 2, 3), ('C', 1, 4)],
                     kdims=['A', 'B']).opts(invert_axes=True)
         state = self._get_plot_state(bars)
-        self.assertEqual(state['data'][0]['y'], [['A', 'B', 'C', 'C'], ['1', '2', '2', '1']])
-        self.assertEqual(state['data'][0]['x'], np.array([1, 2, 3, 4]))
-        self.assertEqual(state['data'][0]['type'], 'bar')
-        self.assertEqual(state['layout']['barmode'], 'group')
-        self.assertEqual(state['layout']['yaxis']['range'], [None, None])
-        self.assertEqual(state['layout']['yaxis']['title']['text'], 'A, B')
-        self.assertEqual(state['layout']['xaxis']['range'], [0, 4.3])
-        self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')
+        assert state['data'][0]['y'] == [['A', 'B', 'C', 'C'], ['1', '2', '2', '1']]
+        assert_data_equal(state['data'][0]['x'], np.array([1, 2, 3, 4]))
+        assert state['data'][0]['type'] == 'bar'
+        assert state['layout']['barmode'] == 'group'
+        assert state['layout']['yaxis']['range'] == [None, None]
+        assert state['layout']['yaxis']['title']['text'] == 'A, B'
+        assert state['layout']['xaxis']['range'] == [0, 4.3]
+        assert state['layout']['xaxis']['title']['text'] == 'y'
 
     def test_bars_stacked(self):
         bars = Bars([('A', 1, 1), ('B', 2, 2), ('C', 2, 3), ('C', 1, 4)],
                     kdims=['A', 'B']).opts(stacked=True)
         state = self._get_plot_state(bars)
-        self.assertEqual(state['data'][0]['x'], ['A', 'B', 'C'])
-        self.assertEqual(state['data'][0]['y'], np.array([0, 2, 3]))
-        self.assertEqual(state['data'][0]['type'], 'bar')
-        self.assertEqual(state['data'][1]['x'], ['A', 'B', 'C'])
-        self.assertEqual(state['data'][1]['y'], np.array([1, 0, 4]))
-        self.assertEqual(state['data'][1]['type'], 'bar')
-        self.assertEqual(state['layout']['barmode'], 'stack')
-        self.assertEqual(state['layout']['xaxis']['range'], [None, None])
-        self.assertEqual(state['layout']['xaxis']['title']['text'], 'A')
-        self.assertEqual(state['layout']['yaxis']['range'], [0, 7.6])
-        self.assertEqual(state['layout']['yaxis']['title']['text'], 'y')
+        assert state['data'][0]['x'] == ['A', 'B', 'C']
+        assert_data_equal(state['data'][0]['y'], np.array([0, 2, 3]))
+        assert state['data'][0]['type'] == 'bar'
+        assert state['data'][1]['x'] == ['A', 'B', 'C']
+        assert_data_equal(state['data'][1]['y'], np.array([1, 0, 4]))
+        assert state['data'][1]['type'] == 'bar'
+        assert state['layout']['barmode'] == 'stack'
+        assert state['layout']['xaxis']['range'] == [None, None]
+        assert state['layout']['xaxis']['title']['text'] == 'A'
+        assert state['layout']['yaxis']['range'] == [0, 7.6]
+        assert state['layout']['yaxis']['title']['text'] == 'y'
 
     def test_bars_stacked_inverted(self):
         bars = Bars([('A', 1, 1), ('B', 2, 2), ('C', 2, 3), ('C', 1, 4)],
                     kdims=['A', 'B']).opts(stacked=True, invert_axes=True)
         state = self._get_plot_state(bars)
-        self.assertEqual(state['data'][0]['y'], ['A', 'B', 'C'])
-        self.assertEqual(state['data'][0]['x'], np.array([0, 2, 3]))
-        self.assertEqual(state['data'][0]['type'], 'bar')
-        self.assertEqual(state['data'][1]['y'], ['A', 'B', 'C'])
-        self.assertEqual(state['data'][1]['x'], np.array([1, 0, 4]))
-        self.assertEqual(state['data'][1]['type'], 'bar')
-        self.assertEqual(state['layout']['barmode'], 'stack')
-        self.assertEqual(state['layout']['yaxis']['range'], [None, None])
-        self.assertEqual(state['layout']['yaxis']['title']['text'], 'A')
-        self.assertEqual(state['layout']['xaxis']['range'], [0, 7.6])
-        self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')
+        assert state['data'][0]['y'] == ['A', 'B', 'C']
+        assert_data_equal(state['data'][0]['x'], np.array([0, 2, 3]))
+        assert state['data'][0]['type'] == 'bar'
+        assert state['data'][1]['y'] == ['A', 'B', 'C']
+        assert_data_equal(state['data'][1]['x'], np.array([1, 0, 4]))
+        assert state['data'][1]['type'] == 'bar'
+        assert state['layout']['barmode'] == 'stack'
+        assert state['layout']['yaxis']['range'] == [None, None]
+        assert state['layout']['yaxis']['title']['text'] == 'A'
+        assert state['layout']['xaxis']['range'] == [0, 7.6]
+        assert state['layout']['xaxis']['title']['text'] == 'y'
 
     def test_visible(self):
         element = Bars([3, 2, 1]).opts(visible=False)
         state = self._get_plot_state(element)
-        self.assertEqual(state['data'][0]['visible'], False)
+        assert state['data'][0]['visible'] is False
 
     def test_bars_continuous_data_list_same_interval(self):
         bars = Bars(([0, 1, 2], [10, 20, 30]))

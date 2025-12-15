@@ -4,6 +4,7 @@ import pytest
 from holoviews.core.options import AbbreviatedException
 from holoviews.core.spaces import HoloMap
 from holoviews.element import VectorField
+from holoviews.testing import assert_data_equal
 
 from ..utils import ParamLogStream
 from .test_plot import TestMPLPlot, mpl_renderer
@@ -20,7 +21,7 @@ class TestVectorFieldPlot(TestMPLPlot):
                                   vdims=['A', 'M', 'color']).opts(color='color')
         plot = mpl_renderer.get_plot(vectorfield)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_facecolors(), np.array([
+        assert_data_equal(artist.get_facecolors(), np.array([
             [0, 0, 0, 1],
             [1, 0, 0, 1],
             [0, 1, 0, 1]
@@ -34,13 +35,13 @@ class TestVectorFieldPlot(TestMPLPlot):
                            vdims=['A', 'M', 'color'])}).opts(color='color')
         plot = mpl_renderer.get_plot(vectorfield)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_facecolors(), np.array([
+        assert_data_equal(artist.get_facecolors(), np.array([
             [0, 0, 0, 1],
             [1, 0, 0, 1],
             [0, 1, 0, 1]
         ]))
         plot.update((1,))
-        self.assertEqual(artist.get_facecolors(), np.array([
+        assert_data_equal(artist.get_facecolors(), np.array([
             [0, 0, 1, 1],
             [0, 1, 0, 1],
             [1, 0, 0, 1]
@@ -54,19 +55,19 @@ class TestVectorFieldPlot(TestMPLPlot):
                            vdims=['A', 'M', 'color'])}).opts(color='color', framewise=True)
         plot = mpl_renderer.get_plot(vectorfield)
         artist = plot.handles['artist']
-        self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1, 2]))
-        self.assertEqual(artist.get_clim(), (0, 2))
+        assert_data_equal(np.asarray(artist.get_array()), np.array([0, 1, 2]))
+        assert artist.get_clim() == (0, 2)
         plot.update((1,))
-        self.assertEqual(np.asarray(artist.get_array()), np.array([3.2, 2, 4]))
-        self.assertEqual(artist.get_clim(), (2, 4))
+        assert_data_equal(np.asarray(artist.get_array()), np.array([3.2, 2, 4]))
+        assert artist.get_clim() == (2, 4)
 
     def test_vectorfield_categorical_color_op(self):
         vectorfield = VectorField([(0, 0, 0, 1, 'A'), (0, 1, 0, 1, 'B'), (0, 2, 0, 1, 'C')],
                                   vdims=['A', 'M', 'color']).opts(color='color')
         plot = mpl_renderer.get_plot(vectorfield)
         artist = plot.handles['artist']
-        self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1, 2]))
-        self.assertEqual(artist.get_clim(), (0, 2))
+        assert_data_equal(np.asarray(artist.get_array()), np.array([0, 1, 2]))
+        assert artist.get_clim() == (0, 2)
 
     def test_vectorfield_alpha_op(self):
         vectorfield = VectorField([(0, 0, 0, 1, 0), (0, 1, 0, 1, 0.2), (0, 2, 0, 1, 0.7)],
@@ -80,7 +81,7 @@ class TestVectorFieldPlot(TestMPLPlot):
                                   vdims=['A', 'M', 'line_width']).opts(linewidth='line_width')
         plot = mpl_renderer.get_plot(vectorfield)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_linewidths(), [1, 4, 8])
+        assert artist.get_linewidths() == [1, 4, 8]
 
     def test_vectorfield_line_width_op_update(self):
         vectorfield = HoloMap({
@@ -90,9 +91,9 @@ class TestVectorFieldPlot(TestMPLPlot):
                            vdims=['A', 'M', 'line_width'])}).opts(linewidth='line_width')
         plot = mpl_renderer.get_plot(vectorfield)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_linewidths(), [1, 4, 8])
+        assert artist.get_linewidths() == [1, 4, 8]
         plot.update((1,))
-        self.assertEqual(artist.get_linewidths(), [3, 2, 5])
+        assert artist.get_linewidths() == [3, 2, 5]
 
     def test_vectorfield_color_index_color_clash(self):
         vectorfield = VectorField([(0, 0, 0, 1, 0), (0, 1, 0, 1, 1), (0, 2, 0, 1, 2)],
@@ -105,4 +106,4 @@ class TestVectorFieldPlot(TestMPLPlot):
             "`color=dim('color')` or `line_color=dim('color')`\nCannot declare style mapping "
             "for 'color' option and declare a color_index; ignoring the color_index.\n"
         )
-        self.assertEqual(log_msg, warning)
+        assert log_msg == warning
