@@ -712,3 +712,10 @@ def assert_element_equal(element1, element2):
     assert not isinstance(element2, types), "use 'hv.testing.assert_data_equal' instead"
 
     _ElementComparison.assert_equal(element1, element2)
+
+
+def add_comparison(*element_types):
+    """Adds Element comparison for the given element types"""
+    er = _ElementComparison.register()
+    for element_type in element_types:
+        er[element_type] = _ElementComparison.compare_dataset
