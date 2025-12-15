@@ -264,6 +264,9 @@ class TestSelection2DExpr:
 
     @pytest.mark.parametrize("module", ["spatialpandas", "shapely"])
     def test_points_selection_geom(self, unimport, module):
+        # Will import _posixshmem on Linux + Python 3.14 + spatialpandas
+        # which does not work with unimport
+        import multiprocessing.resource_tracker  # noqa: F401
         pytest.importorskip(module)
         unimport("spatialpandas" if module == "shapely" else "shapely")
         points = Points([3, 2, 1, 3, 4])
@@ -276,6 +279,9 @@ class TestSelection2DExpr:
 
     @pytest.mark.parametrize("module", ["spatialpandas", "shapely"])
     def test_points_selection_geom_inverted(self, unimport, module):
+        # Will import _posixshmem on Linux + Python 3.14 + spatialpandas
+        # which does not work with unimport
+        import multiprocessing.resource_tracker  # noqa: F401
         pytest.importorskip(module)
         unimport("spatialpandas" if module == "shapely" else "shapely")
         points = Points([3, 2, 1, 3, 4]).opts(invert_axes=True)
