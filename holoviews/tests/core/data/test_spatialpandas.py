@@ -5,25 +5,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-try:
-    import spatialpandas
-    from spatialpandas.geometry import (
-        LineDtype,
-        MultiLineDtype,
-        MultiPointDtype,
-        MultiPolygonArray,
-        MultiPolygonDtype,
-        PointDtype,
-        PolygonDtype,
-    )
-except ImportError:
-    spatialpandas = None
-
-try:
-    import dask.dataframe as dd
-except ImportError:
-    dd = None
-
 from holoviews import Dimension
 from holoviews.core.data import (
     DaskSpatialPandasInterface,
@@ -35,7 +16,22 @@ from holoviews.core.data.spatialpandas import get_value_array
 from holoviews.element import Path, Points, Polygons
 from holoviews.testing import assert_data_equal, assert_element_equal
 
+from ...utils import optional_dependencies
 from .test_multiinterface import GeomTests
+
+spd, spd_skip = optional_dependencies("spatialpandas")
+dd, dask_skip = optional_dependencies("dask.dataframe")
+
+if spd:
+    from spatialpandas.geometry import (
+        LineDtype,
+        MultiLineDtype,
+        MultiPointDtype,
+        MultiPolygonArray,
+        MultiPolygonDtype,
+        PointDtype,
+        PolygonDtype,
+    )
 
 
 class RoundTripTests:
@@ -136,6 +132,7 @@ class RoundTripTests:
 
 
 
+@spd_skip
 class SpatialPandasTest(GeomTests, RoundTripTests):
     """
     Test of the SpatialPandasInterface.
@@ -146,10 +143,6 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
     interface = SpatialPandasInterface
 
     __test__ = True
-
-    def setup_method(self):
-        if spatialpandas is None:
-            pytest.skip('SpatialPandasInterface requires spatialpandas, skipping tests')
 
     def test_array_points_iloc_index_rows_index_cols(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
@@ -249,6 +242,8 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
         assert isinstance(path.data.geometry.dtype, MultiPolygonDtype)
 
 
+@spd_skip
+@dask_skip
 class DaskSpatialPandasTest(GeomTests, RoundTripTests):
     """
     Test of the DaskSpatialPandasInterface.
@@ -259,12 +254,6 @@ class DaskSpatialPandasTest(GeomTests, RoundTripTests):
     interface = DaskSpatialPandasInterface
 
     __test__ = True
-
-    def setup_method(self):
-        if spatialpandas is None:
-            pytest.skip('DaskSpatialPandasInterface requires spatialpandas, skipping tests')
-        elif dd is None:
-            pytest.skip('DaskSpatialPandasInterface requires dask, skipping tests')
 
     def test_array_points_iloc_index_row(self):
         pytest.skip("Not supported")

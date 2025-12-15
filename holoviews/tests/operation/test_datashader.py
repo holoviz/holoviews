@@ -1,11 +1,11 @@
 import datetime as dt
+import logging
 from contextlib import suppress
 
 import colorcet as cc
 import numpy as np
 import pandas as pd
 import pytest
-from numpy import nan
 
 from holoviews import (
     RGB,
@@ -35,12 +35,16 @@ from holoviews import (
 from holoviews.core.util.dependencies import PANDAS_GE_3_0_0
 from holoviews.operation import apply_when
 from holoviews.streams import Tap
+from holoviews.testing import assert_data_equal, assert_element_equal
 from holoviews.util import render
 
-try:
-    import datashader as ds
-except ImportError:
-    pytest.skip('Datashader not available', allow_module_level=True)
+from ..utils import optional_dependencies
+
+ds, ds_skip = optional_dependencies("datashader")
+spd, spd_skip = optional_dependencies("spatailpandas")
+
+if not ds:
+    pytest.skip("datashader not installed", allow_module_level=True)
 
 import dask.dataframe as dd
 import xarray as xr
@@ -61,17 +65,6 @@ from holoviews.operation.datashader import (
     spread,
     stack,
 )
-from holoviews.testing import assert_data_equal, assert_element_equal
-
-try:
-    import spatialpandas
-except ImportError:
-    spatialpandas = None
-
-spatialpandas_skip = pytest.mark.skipif(spatialpandas is None, reason="SpatialPandas not available")
-
-
-import logging
 
 numba_logger = logging.getLogger('numba')
 numba_logger.setLevel(logging.WARNING)
@@ -523,10 +516,10 @@ class DatashaderAggregateTests:
         xs = [0.375, 1.125, 1.875, 2.625]
         ys = [0.25, 0.75, 1.25, 1.75]
         arr = np.array([
-            [0.5, 0.5, nan, nan],
-            [0.5, 0.5, nan, nan],
+            [0.5, 0.5, np.nan, np.nan],
+            [0.5, 0.5, np.nan, np.nan],
             [0.5, 2. , 1.5, 1.5],
-            [nan, nan, nan, nan]
+            [np.nan, np.nan, np.nan, np.nan]
         ])
         expected = Image((xs, ys, arr), vdims='value')
         assert_element_equal(agg, expected)
@@ -714,7 +707,7 @@ class DatashaderAggregateTests:
         expected = RGB((xs, ys, arr))
         assert_element_equal(agg, expected)
 
-    @spatialpandas_skip
+    @spd_skip
     def test_line_rasterize(self):
         path = Path([[(0, 0), (1, 1), (2, 0)], [(0, 0), (0, 1)]], datatype=['spatialpandas'])
         agg = rasterize(path, width=4, height=4, dynamic=False)
@@ -729,7 +722,7 @@ class DatashaderAggregateTests:
         expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
-    @spatialpandas_skip
+    @spd_skip
     def test_multi_line_rasterize(self):
         path = Path([{'x': [0, 1, 2, np.nan, 0, 0], 'y': [0, 1, 0, np.nan, 0, 1]}],
                     datatype=['spatialpandas'])
@@ -745,7 +738,7 @@ class DatashaderAggregateTests:
         expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
-    @spatialpandas_skip
+    @spd_skip
     def test_ring_rasterize(self):
         path = Path([{'x': [0, 1, 2], 'y': [0, 1, 0], 'geom_type': 'Ring'}], datatype=['spatialpandas'])
         agg = rasterize(path, width=4, height=4, dynamic=False)
@@ -760,7 +753,7 @@ class DatashaderAggregateTests:
         expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
-    @spatialpandas_skip
+    @spd_skip
     def test_polygon_rasterize(self):
         poly = Polygons([
             {'x': [0, 1, 2], 'y': [0, 1, 0],
@@ -780,7 +773,7 @@ class DatashaderAggregateTests:
         expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
-    @spatialpandas_skip
+    @spd_skip
     def test_polygon_rasterize_mean_agg(self):
         poly = Polygons([
             {'x': [0, 1, 2], 'y': [0, 1, 0], 'z': 2.4},
@@ -797,7 +790,7 @@ class DatashaderAggregateTests:
         expected = Image((xs, ys, arr), vdims='z')
         assert_element_equal(agg, expected)
 
-    @spatialpandas_skip
+    @spd_skip
     def test_multi_poly_rasterize(self):
         poly = Polygons([{'x': [0, 1, 2, np.nan, 0, 0, 1],
                           'y': [0, 1, 0, np.nan, 0, 1, 1]}],
@@ -1623,7 +1616,7 @@ class InspectorTests:
             date_pts, dynamic=False, height=4, width=4,
             x_range=(np.datetime64('2024-09-25 11:00'), np.datetime64('2024-09-25 11:04')), y_range=(0, 1)
         )
-        if spatialpandas is None:
+        if spd is None:
             return
 
         xs1, xs2, ys1, ys2 = [1, 2, 3], [6, 7, 3], [2, 0, 7], [7, 5, 2]
@@ -1637,9 +1630,8 @@ class InspectorTests:
     def teardown_method(self):
         Tap.x, Tap.y = None, None
 
+    @spd_skip
     def test_inspect_points_or_polygons(self):
-        if spatialpandas is None:
-            pytest.skip('Polygon inspect tests require spatialpandas')
         polys = inspect(self.polysrgb,
                         max_indicators=3, dynamic=False, pixels=1, x=6, y=5)
         assert_element_equal(polys, Polygons([{'x': [6, 3, 7], 'y': [7, 2, 5], 'z': 2}], vdims='z'))
@@ -1705,27 +1697,23 @@ class InspectorTests:
         assert_data_equal(points.dimension_values('x'), np.array([np.datetime64('2024-09-25 11:00')]))
         assert_data_equal(points.dimension_values('y'), np.array([0.3]))
 
+    @spd_skip
     def test_polys_inspection_1px_mask_hit(self):
-        if spatialpandas is None:
-            pytest.skip('Polygon inspect tests require spatialpandas')
         polys = inspect_polygons(self.polysrgb,
                                  max_indicators=3, dynamic=False, pixels=1, x=6, y=5)
         assert_element_equal(polys, Polygons([{'x': [6, 3, 7], 'y': [7, 2, 5], 'z': 2}],
                                          vdims='z'))
 
-
+    @spd_skip
     def test_inspection_1px_mask_poly_df(self):
-        if spatialpandas is None:
-            pytest.skip('Polygon inspect tests require spatialpandas')
         inspector = inspect.instance(max_indicators=3, dynamic=False, pixels=1, x=6, y=5)
         inspector(self.polysrgb)
         assert len(inspector.hits) == 1
         data = [[6.0, 7.0, 3.0, 2.0, 7.0, 5.0, 6.0, 7.0]]
-        assert inspector.hits.iloc[0].geometry == spatialpandas.geometry.polygon.Polygon(data)
+        assert inspector.hits.iloc[0].geometry == spd.geometry.polygon.Polygon(data)
 
+    @spd_skip
     def test_polys_inspection_1px_mask_miss(self):
-        if spatialpandas is None:
-            pytest.skip('Polygon inspect tests require spatialpandas')
         polys = inspect_polygons(self.polysrgb,
                                  max_indicators=3, dynamic=False, pixels=1, x=0, y=0)
         assert_element_equal(polys, Polygons([], vdims='z'))

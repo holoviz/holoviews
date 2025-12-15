@@ -2,12 +2,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-try:
-    import dask
-    import dask.dataframe as dd
-except ImportError:
-    pytest.skip("Could not import dask, skipping DaskInterface tests.", allow_module_level=True)
-
 from holoviews.core.data import Dataset
 from holoviews.core.util.dependencies import (
     PANDAS_GE_3_0_0,
@@ -17,7 +11,10 @@ from holoviews.core.util.dependencies import (
 from holoviews.testing import assert_data_equal, assert_element_equal
 from holoviews.util.transform import dim
 
+from ...utils import optional_dependencies
 from .test_pandasinterface import BasePandasInterfaceTests
+
+(dask, dd), dask_skip = optional_dependencies("dask", "dask.dataframe")
 
 _DASK_CONVERT_STRING = (
     _no_import_version("dask") >= (2023, 7, 1)
@@ -25,16 +22,19 @@ _DASK_CONVERT_STRING = (
 )
 
 
+@dask_skip
 class DaskDatasetTest(BasePandasInterfaceTests):
     """
     Test of the pandas DaskDataset interface.
     """
 
     datatype = 'dask'
-    data_type = dd.DataFrame
     force_sort = True
-
     __test__ = True
+
+    @property
+    def data_type(self):
+        return dd.DataFrame
 
     def frame(self, *args, **kwargs):
         df = pd.DataFrame(*args, **kwargs)

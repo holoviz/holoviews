@@ -1,32 +1,23 @@
 import sqlite3
-import warnings
 from tempfile import NamedTemporaryFile
-
-import pytest
-
-try:
-    import ibis
-    # Getting this Warnings on Python 3.13 and Ibis 9.5
-    # DeprecationWarning: Attribute.__init__ missing 1 required positional argument: 'value'.
-    # This will become an error in Python 3.15.
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        from ibis import sqlite
-except ImportError:
-    pytest.skip("Could not import ibis, skipping IbisInterface tests.", allow_module_level=True)
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from holoviews.core.data import Dataset
 from holoviews.core.data.ibis import IBIS_VERSION, IbisInterface
 from holoviews.core.spaces import HoloMap
 from holoviews.testing import assert_element_equal
 
+from ...utils import optional_dependencies
 from .base import HeterogeneousColumnTests, InterfaceTests, ScalarColumnTests
+
+ibis, ibis_skip = optional_dependencies('ibis')
 
 
 def create_temp_db(df, name, index=False):
+    from ibis import sqlite
     with NamedTemporaryFile(delete=False) as my_file:
         filename = my_file.name
     con = sqlite3.Connection(filename)
@@ -34,6 +25,7 @@ def create_temp_db(df, name, index=False):
     return sqlite.connect(filename)
 
 
+@ibis_skip
 @pytest.mark.filterwarnings("ignore:'Ibis' datatype is deprecated")
 class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTests):
     """
@@ -41,9 +33,10 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
     """
 
     datatype = "ibis"
-    data_type = (ibis.expr.types.Expr,)
-
     __test__ = True
+
+    def data_type(self):
+        return (ibis.expr.types.Expr,)
 
     def setup_method(self):
         self.restore_datatype = self.element.datatype.copy()

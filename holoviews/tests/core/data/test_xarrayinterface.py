@@ -4,17 +4,13 @@ import numpy as np
 import pandas as pd
 import pytest
 
-try:
-    import xarray as xr
-except ImportError:
-    pytest.skip("Could not import xarray, skipping XArrayInterface tests.", allow_module_level=True)
-
 from holoviews.core.data import Dataset, XArrayInterface, concat
 from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
 from holoviews.element import HSV, RGB, Image, ImageStack, QuadMesh
 from holoviews.testing import assert_data_equal, assert_element_equal
 
+from ...utils import optional_dependencies
 from .test_gridinterface import BaseGridInterfaceTests
 from .test_imageinterface import (
     BaseHSVElementInterfaceTests,
@@ -22,16 +18,23 @@ from .test_imageinterface import (
     BaseRGBElementInterfaceTests,
 )
 
+xr, xr_skip = optional_dependencies("xarray")
+da, dask_skip = optional_dependencies("dask.array")
 
+
+@xr_skip
 class XArrayInterfaceTests(BaseGridInterfaceTests):
     """
     Tests for xarray interface
     """
 
     datatype = 'xarray'
-    data_type = xr.Dataset
 
     __test__ = True
+
+    @property
+    def data_type(self):
+        return xr.Dataset
 
     def get_irregular_dataarray(self, invert_y=True):
         multiplier = -1 if invert_y else 1
@@ -352,32 +355,22 @@ class DaskXArrayInterfaceTest(XArrayInterfaceTests):
     Tests for XArray interface wrapping dask arrays
     """
 
-    def setup_method(self):
-        try:
-            import dask.array # noqa
-        except ImportError:
-            pytest.skip('Dask could not be imported, cannot test '
-                           'dask arrays with XArrayInterface')
-        super().setup_method()
-
     def init_column_data(self):
-        import dask.array
         self.xs = np.array(range(11))
         self.xs_2 = self.xs**2
 
         self.y_ints = self.xs*2
-        dask_y = dask.array.from_array(np.array(self.y_ints), 2)
+        dask_y = da.from_array(np.array(self.y_ints), 2)
         self.dataset_hm = Dataset((self.xs, dask_y),
                                   kdims=['x'], vdims=['y'])
         self.dataset_hm_alias = Dataset((self.xs, dask_y),
                                         kdims=[('x', 'X')], vdims=[('y', 'Y')])
 
     def init_grid_data(self):
-        import dask.array
         self.grid_xs = [0, 1]
         self.grid_ys = [0.1, 0.2, 0.3]
         self.grid_zs = np.array([[0, 1], [2, 3], [4, 5]])
-        dask_zs = dask.array.from_array(self.grid_zs, 2)
+        dask_zs = da.from_array(self.grid_zs, 2)
         self.dataset_grid = self.element((self.grid_xs, self.grid_ys,
                                          dask_zs), kdims=['x', 'y'],
                                         vdims=['z'])
@@ -389,10 +382,9 @@ class DaskXArrayInterfaceTest(XArrayInterfaceTests):
                                             vdims=['z'])
 
     def test_xarray_dataset_with_scalar_dim_canonicalize(self):
-        import dask.array
         xs = [0, 1]
         ys = [0.1, 0.2, 0.3]
-        zs = dask.array.from_array(np.array([[[0, 1], [2, 3], [4, 5]]]), 2)
+        zs = da.from_array(np.array([[[0, 1], [2, 3], [4, 5]]]), 2)
         xrarr = xr.DataArray(zs, coords={'x': xs, 'y': ys, 't': [1]}, dims=['t', 'y', 'x'])
         xrds = xr.Dataset({'v': xrarr})
         ds = Dataset(xrds, kdims=['x', 'y'], vdims=['v'], datatype=['xarray'])
@@ -406,9 +398,12 @@ class DaskXArrayInterfaceTest(XArrayInterfaceTests):
 class ImageElement_XArrayInterfaceTests(BaseImageElementInterfaceTests):
 
     datatype = 'xarray'
-    data_type = xr.Dataset
 
     __test__ = True
+
+    @property
+    def data_type(self):
+        return xr.Dataset
 
     def init_data(self):
         self.image = Image((self.xs, self.ys, self.array))
@@ -475,9 +470,11 @@ class ImageElement_XArrayInterfaceTests(BaseImageElementInterfaceTests):
 class RGBElement_XArrayInterfaceTests(BaseRGBElementInterfaceTests):
 
     datatype = 'xarray'
-    data_type = xr.Dataset
 
     __test__ = True
+    @property
+    def data_type(self):
+        return xr.Dataset
 
     def init_data(self):
         self.rgb = RGB((self.xs, self.ys, self.rgb_array[:, :, 0],
@@ -487,9 +484,11 @@ class RGBElement_XArrayInterfaceTests(BaseRGBElementInterfaceTests):
 class RGBElement_PackedXArrayInterfaceTests(BaseRGBElementInterfaceTests):
 
     datatype = 'xarray'
-    data_type = xr.Dataset
-
     __test__ = True
+
+    @property
+    def data_type(self):
+        return xr.Dataset
 
     def init_data(self):
         self.rgb = RGB((self.xs, self.ys, self.rgb_array))
@@ -498,9 +497,12 @@ class RGBElement_PackedXArrayInterfaceTests(BaseRGBElementInterfaceTests):
 class HSVElement_XArrayInterfaceTest(BaseHSVElementInterfaceTests):
 
     datatype = 'xarray'
-    data_type = xr.Dataset
 
     __test__ = True
+
+    @property
+    def data_type(self):
+        return xr.Dataset
 
     def init_data(self):
         self.hsv = HSV((self.xs, self.ys, self.hsv_array[:, :, 0],
