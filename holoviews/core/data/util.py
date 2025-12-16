@@ -1,6 +1,13 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from .. import util
+
+if TYPE_CHECKING:
+    import dask.array as da
+else:
+    da = util._LazyModule("dask.array", bool_use_sys_modules=True)
 
 
 def finite_range(column, cmin, cmax):
@@ -37,22 +44,14 @@ def finite_range(column, cmin, cmax):
 
 def get_array_types():
     array_types = (np.ndarray,)
-    da = dask_array_module()
-    if da is not None:
+    if da:
         array_types += (da.Array,)
     return array_types
 
 def dask_array_module():
-    try:
-        import dask.array as da
-        return da
-    except ImportError:
-        return None
+    return da if da else None
 
 def is_dask(array):
-    da = dask_array_module()
-    if da is None:
-        return False
     return da and isinstance(array, da.Array)
 
 def cached(method):

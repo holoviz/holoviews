@@ -1,5 +1,6 @@
 import sys
 import types
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -8,19 +9,20 @@ from ..dimension import Dimension, asdim, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..util import dtype_kind
-from ..util.dependencies import _no_import_version
+from ..util.dependencies import _LazyModule, _no_import_version
 from .grid import GridInterface
 from .interface import DataError, Interface
 from .util import dask_array_module, finite_range
 
 XARRAY_VERSION = _no_import_version("xarray")
 
+if TYPE_CHECKING:
+    import cupy as cp
+else:
+    cp = _LazyModule("cupy", bool_use_sys_modules=True)
 
 def is_cupy(array):
-    if 'cupy' not in sys.modules:
-        return False
-    from cupy import ndarray
-    return isinstance(array, ndarray)
+    return cp and isinstance(array, cp.ndarray)
 
 
 class XArrayInterface(GridInterface):
@@ -422,8 +424,7 @@ class XArrayInterface(GridInterface):
             if compute and da and isinstance(data, da.Array):
                 data = data.compute()
             if is_cupy(data):
-                import cupy
-                data = cupy.asnumpy(data)
+                data = cp.asnumpy(data)
             if not keep_index:
                 data = cls.canonicalize(dataset, data, data_coords=data_coords,
                                         virtual_coords=virtual_coords)
@@ -654,6 +655,18 @@ class XArrayInterface(GridInterface):
             data = xr.Dataset(bands)
         else:
             data = dataset.data
+
+        if cp:
+            cupy_vars = [
+                var_name
+                for var_name, var in data.data_vars.items()
+                if is_cupy(var.data)
+            ]
+            if cupy_vars:
+                data = data.copy()
+                for var_name in cupy_vars:
+                    data[var_name].data = cp.asnumpy(data[var_name].data)
+
         data = data.to_dataframe().reset_index()
         if dimensions:
             return data[dimensions]
