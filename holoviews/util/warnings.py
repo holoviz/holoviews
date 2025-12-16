@@ -63,12 +63,15 @@ def find_stack_level():
 def deprecated(remove_version, old, new=None, extra=None, *, repr_old=True, repr_new=True):
     import holoviews as hv
 
-    current_version = Version(Version(hv.__version__).base_version)
+    full_version = Version(hv.__version__)
+    current_version = Version(full_version.base_version)
 
     if isinstance(remove_version, str):
         remove_version = Version(remove_version)
 
-    if remove_version <= current_version:
+    if remove_version <= current_version and not (
+        full_version.is_prerelease and full_version.pre[0] == "a"
+    ):
         # This error is mainly for developers to remove the deprecated.
         raise ValueError(
             f"{old!r} should have been removed in {remove_version}, current version {current_version}."
