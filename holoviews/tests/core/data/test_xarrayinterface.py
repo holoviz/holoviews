@@ -395,6 +395,48 @@ class DaskXArrayInterfaceTest(XArrayInterfaceTests):
         assert_data_equal(canonical, expected)
 
 
+@pytest.mark.gpu
+class GPUXArrayInterfaceTest(XArrayInterfaceTests):
+    """
+    Tests for XArray interface wrapping cupy arrays
+    """
+
+    def init_column_data(self):
+        import cupy as cp
+
+        self.xs = np.array(range(11))
+        self.xs_2 = self.xs**2
+
+        self.y_ints = self.xs*2
+        cupy_y = cp.array(self.y_ints)
+        self.dataset_hm = Dataset((self.xs, cupy_y),
+                                  kdims=['x'], vdims=['y'])
+        self.dataset_hm_alias = Dataset((self.xs, cupy_y),
+                                        kdims=[('x', 'X')], vdims=[('y', 'Y')])
+
+    def init_grid_data(self):
+        import cupy as cp
+
+        self.grid_xs = [0, 1]
+        self.grid_ys = [0.1, 0.2, 0.3]
+        self.grid_zs = np.array([[0, 1], [2, 3], [4, 5]])
+        cupy_zs = cp.array(self.grid_zs)
+        self.dataset_grid = self.element((self.grid_xs, self.grid_ys,
+                                         cupy_zs), kdims=['x', 'y'],
+                                        vdims=['z'])
+        self.dataset_grid_alias = self.element((self.grid_xs, self.grid_ys,
+                                               cupy_zs), kdims=[('x', 'X'), ('y', 'Y')],
+                                              vdims=[('z', 'Z')])
+        self.dataset_grid_inv = self.element((self.grid_xs[::-1], self.grid_ys[::-1],
+                                             cupy_zs), kdims=['x', 'y'],
+                                            vdims=['z'])
+
+    @pytest.mark.xfail
+    def test_nodata_range(self):
+        # https://github.com/pydata/xarray/pull/11026
+        super().test_nodata_range()
+
+
 
 @xr_skip
 class ImageElement_XArrayInterfaceTests(BaseImageElementInterfaceTests):
