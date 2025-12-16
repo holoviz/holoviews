@@ -5,25 +5,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-try:
-    import spatialpandas
-    from spatialpandas.geometry import (
-        LineDtype,
-        MultiLineDtype,
-        MultiPointDtype,
-        MultiPolygonArray,
-        MultiPolygonDtype,
-        PointDtype,
-        PolygonDtype,
-    )
-except ImportError:
-    spatialpandas = None
-
-try:
-    import dask.dataframe as dd
-except ImportError:
-    dd = None
-
 from holoviews import Dimension
 from holoviews.core.data import (
     DaskSpatialPandasInterface,
@@ -35,7 +16,14 @@ from holoviews.core.data.spatialpandas import get_value_array
 from holoviews.element import Path, Points, Polygons
 from holoviews.testing import assert_data_equal, assert_element_equal
 
+from ...utils import optional_dependencies
 from .test_multiinterface import GeomTests
+
+spd, spd_skip = optional_dependencies("spatialpandas")
+dd, dask_skip = optional_dependencies("dask.dataframe")
+
+if spd:
+    import spatialpandas.geometry as sgeom
 
 
 class RoundTripTests:
@@ -50,7 +38,7 @@ class RoundTripTests:
         points = Points([{'x': 0, 'y': 1, 'z': 0},
                          {'x': 1, 'y': 0, 'z': 1}], ['x', 'y'],
                         'z', datatype=[self.datatype])
-        assert isinstance(points.data.geometry.dtype, PointDtype)
+        assert isinstance(points.data.geometry.dtype, sgeom.PointDtype)
         roundtrip = points.clone(datatype=['multitabular'])
         assert roundtrip.interface.datatype == 'multitabular'
         expected = Points([{'x': 0, 'y': 1, 'z': 0},
@@ -64,7 +52,7 @@ class RoundTripTests:
         points = Points([{'x': xs, 'y': ys, 'z': 0},
                          {'x': xs[::-1], 'y': ys[::-1], 'z': 1}],
                         ['x', 'y'], 'z', datatype=[self.datatype])
-        assert isinstance(points.data.geometry.dtype, MultiPointDtype)
+        assert isinstance(points.data.geometry.dtype, sgeom.MultiPointDtype)
         roundtrip = points.clone(datatype=['multitabular'])
         assert roundtrip.interface.datatype == 'multitabular'
         expected = Points([{'x': xs, 'y': ys, 'z': 0},
@@ -78,7 +66,7 @@ class RoundTripTests:
         path = Path([{'x': xs, 'y': ys, 'z': 1},
                      {'x': xs[::-1], 'y': ys[::-1], 'z': 2}],
                     ['x', 'y'], 'z', datatype=[self.datatype])
-        assert isinstance(path.data.geometry.dtype, LineDtype)
+        assert isinstance(path.data.geometry.dtype, sgeom.LineDtype)
         roundtrip = path.clone(datatype=['multitabular'])
         assert roundtrip.interface.datatype == 'multitabular'
         expected = Path([{'x': xs, 'y': ys, 'z': 1},
@@ -92,7 +80,7 @@ class RoundTripTests:
         path = Path([{'x': xs, 'y': ys, 'z': 0},
                      {'x': xs[::-1], 'y': ys[::-1], 'z': 1}],
                     ['x', 'y'], 'z', datatype=[self.datatype])
-        assert isinstance(path.data.geometry.dtype, MultiLineDtype)
+        assert isinstance(path.data.geometry.dtype, sgeom.MultiLineDtype)
         roundtrip = path.clone(datatype=['multitabular'])
         assert roundtrip.interface.datatype == 'multitabular'
         expected = Path([{'x': xs, 'y': ys, 'z': 0},
@@ -106,7 +94,7 @@ class RoundTripTests:
         poly = Polygons([{'x': xs, 'y': ys, 'z': 0},
                          {'x': xs[::-1], 'y': ys[::-1], 'z': 1}],
                         ['x', 'y'], 'z', datatype=[self.datatype])
-        assert isinstance(poly.data.geometry.dtype, PolygonDtype)
+        assert isinstance(poly.data.geometry.dtype, sgeom.PolygonDtype)
         roundtrip = poly.clone(datatype=['multitabular'])
         assert roundtrip.interface.datatype == 'multitabular'
         expected = Polygons([{'x': [*xs, 1], 'y': [*ys, 2], 'z': 0},
@@ -124,7 +112,7 @@ class RoundTripTests:
         poly = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'z': 1},
                          {'x': xs[::-1], 'y': ys[::-1], 'z': 2}],
                         ['x', 'y'], 'z', datatype=[self.datatype])
-        assert isinstance(poly.data.geometry.dtype, MultiPolygonDtype)
+        assert isinstance(poly.data.geometry.dtype, sgeom.MultiPolygonDtype)
         roundtrip = poly.clone(datatype=['multitabular'])
         assert roundtrip.interface.datatype == 'multitabular'
         expected = Polygons([{'x': [1, 2, 3, 1, np.nan, 6, 3, 7, 6],
@@ -136,6 +124,7 @@ class RoundTripTests:
 
 
 
+@spd_skip
 class SpatialPandasTest(GeomTests, RoundTripTests):
     """
     Test of the SpatialPandasInterface.
@@ -147,10 +136,6 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
 
     __test__ = True
 
-    def setup_method(self):
-        if spatialpandas is None:
-            pytest.skip('SpatialPandasInterface requires spatialpandas, skipping tests')
-
     def test_array_points_iloc_index_rows_index_cols(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
         mds = Dataset(arrays, kdims=['x', 'y'], datatype=[self.datatype])
@@ -161,7 +146,7 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
     def test_point_constructor(self):
         points = Points([{'x': 0, 'y': 1}, {'x': 1, 'y': 0}], ['x', 'y'],
                         datatype=[self.datatype])
-        assert isinstance(points.data.geometry.dtype, PointDtype)
+        assert isinstance(points.data.geometry.dtype, sgeom.PointDtype)
         assert_data_equal(points.data.iloc[0, 0].flat_values, np.array([0, 1]))
         assert_data_equal(points.data.iloc[1, 0].flat_values, np.array([1, 0]))
 
@@ -170,7 +155,7 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
         ys = [2, 0, 7, 4]
         points = Points([{'x': xs, 'y': ys}, {'x': xs[::-1], 'y': ys[::-1]}], ['x', 'y'],
                         datatype=[self.datatype])
-        assert isinstance(points.data.geometry.dtype, MultiPointDtype)
+        assert isinstance(points.data.geometry.dtype, sgeom.MultiPointDtype)
         assert_data_equal(points.data.iloc[0, 0].buffer_values,
                          np.array([1, 2, 2, 0, 3, 7, 2, 4]))
         assert_data_equal(points.data.iloc[1, 0].buffer_values,
@@ -181,7 +166,7 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
         ys = [2, 0, 7]
         path = Path([{'x': xs, 'y': ys}, {'x': xs[::-1], 'y': ys[::-1]}],
                     ['x', 'y'], datatype=[self.datatype])
-        assert isinstance(path.data.geometry.dtype, LineDtype)
+        assert isinstance(path.data.geometry.dtype, sgeom.LineDtype)
         assert_data_equal(path.data.iloc[0, 0].buffer_values,
                          np.array([1, 2, 2, 0, 3, 7]))
         assert_data_equal(path.data.iloc[1, 0].buffer_values,
@@ -192,7 +177,7 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
         ys = [2, 0, 7, np.nan, 7, 5, 2]
         path = Path([{'x': xs, 'y': ys}, {'x': xs[::-1], 'y': ys[::-1]}],
                     ['x', 'y'], datatype=[self.datatype])
-        assert isinstance(path.data.geometry.dtype, MultiLineDtype)
+        assert isinstance(path.data.geometry.dtype, sgeom.MultiLineDtype)
         assert_data_equal(path.data.iloc[0, 0].buffer_values,
                          np.array([1, 2, 2, 0, 3, 7, 6, 7, 7, 5, 3, 2]))
         assert_data_equal(path.data.iloc[1, 0].buffer_values,
@@ -206,7 +191,7 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
         ]
         path = Polygons([{'x': xs, 'y': ys, 'holes': holes}, {'x': xs[::-1], 'y': ys[::-1]}],
                         ['x', 'y'], datatype=[self.datatype])
-        assert isinstance(path.data.geometry.dtype, PolygonDtype)
+        assert isinstance(path.data.geometry.dtype, sgeom.PolygonDtype)
         assert_data_equal(path.data.iloc[0, 0].buffer_values,
                          np.array([1., 2., 2., 0., 3., 7., 1., 2., 1.5, 2., 2., 3.,
                                    1.6, 1.6, 1.5, 2., 2.1, 4.5, 2.5, 5., 2.3, 3.5, 2.1, 4.5]))
@@ -223,7 +208,7 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
         path = Polygons([{'x': xs, 'y': ys, 'holes': holes},
                          {'x': xs[::-1], 'y': ys[::-1]}],
                         ['x', 'y'], datatype=[self.datatype])
-        assert isinstance(path.data.geometry.dtype, MultiPolygonDtype)
+        assert isinstance(path.data.geometry.dtype, sgeom.MultiPolygonDtype)
         assert_data_equal(path.data.iloc[0, 0].buffer_values,
                          np.array([1., 2., 2., 0., 3., 7., 1., 2., 1.5, 2., 2., 3., 1.6, 1.6,
                                    1.5, 2., 2.1, 4.5, 2.5, 5., 2.3, 3.5, 2.1, 4.5, 6., 7., 3.,
@@ -232,7 +217,7 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
                          np.array([3, 2, 7, 5, 6, 7, 3, 2, 3, 7, 1, 2, 2, 0, 3, 7]))
 
     def test_geometry_array_constructor(self):
-        polygons = MultiPolygonArray([
+        polygons = sgeom.MultiPolygonArray([
             # First Element
             [[[0, 0, 1, 0, 2, 2, -1, 4, 0, 0],         # Filled quadrilateral (CCW order)
               [0.5, 1,  1, 2,  1.5, 1.5,  0.5, 1],     # Triangular hole (CW order)
@@ -246,9 +231,11 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
         ]) # Rectangular hole (CW order)
 
         path = Polygons(polygons)
-        assert isinstance(path.data.geometry.dtype, MultiPolygonDtype)
+        assert isinstance(path.data.geometry.dtype, sgeom.MultiPolygonDtype)
 
 
+@spd_skip
+@dask_skip
 class DaskSpatialPandasTest(GeomTests, RoundTripTests):
     """
     Test of the DaskSpatialPandasInterface.
@@ -259,12 +246,6 @@ class DaskSpatialPandasTest(GeomTests, RoundTripTests):
     interface = DaskSpatialPandasInterface
 
     __test__ = True
-
-    def setup_method(self):
-        if spatialpandas is None:
-            pytest.skip('DaskSpatialPandasInterface requires spatialpandas, skipping tests')
-        elif dd is None:
-            pytest.skip('DaskSpatialPandasInterface requires dask, skipping tests')
 
     def test_array_points_iloc_index_row(self):
         pytest.skip("Not supported")

@@ -10,37 +10,18 @@ import param
 import pytest
 
 import holoviews as hv
-
-try:
-    import dask
-    import dask.array as da
-    import dask.dataframe as dd
-except ImportError:
-    da, dd = None, None
-
-try:
-    import xarray as xr
-except ImportError:
-    xr = None
-
-xr_skip = pytest.mark.skipif(xr is None, reason="xarray not available")
-
-try:
-    import spatialpandas as spd
-except ImportError:
-    spd = None
-
-try:
-    import shapely
-except ImportError:
-    shapely = None
-
-shapelib_available = pytest.mark.skipif(shapely is None and spd is None,
-                            reason='Neither shapely nor spatialpandas are available')
-
 from holoviews.core.data import Dataset
 from holoviews.testing import assert_element_equal
 from holoviews.util.transform import dim
+
+from ..utils import optional_dependencies
+
+dask, dask_skip = optional_dependencies("dask")
+xr, xr_skip = optional_dependencies("xarray")
+
+if dask:
+    import dask.array as da
+    import dask.dataframe as dd
 
 dask_conversion_warning = pytest.mark.filterwarnings(
     "ignore:Dask currently has limited support for converting pandas extension dtypes to arrays:UserWarning"
@@ -68,7 +49,7 @@ class TestDimTransforms:
             ['int', 'float', 'negative', 'categories', 'booleans']
         )
 
-        if dd is not None:
+        if dask is not None:
             ddf = dd.from_pandas(self.dataset.data, npartitions=2)
             self.dataset_dask = self.dataset.clone(data=ddf)
 
@@ -84,7 +65,7 @@ class TestDimTransforms:
             dims=['y','x']
         )
         self.dataset_xarray = Dataset(darray, vdims=['z'])
-        if da is not None:
+        if dask is not None:
             dask_array = da.from_array(array)
             dask_da = xr.DataArray(
                 data=dask_array,
@@ -101,7 +82,7 @@ class TestDimTransforms:
             assert expr.apply(self.dataset, keep_index=False) == expected
             assert expr.apply(self.dataset, keep_index=True) == expected
 
-            if dd is None:
+            if dask is None:
                 return
 
             # Dask input
@@ -126,7 +107,7 @@ class TestDimTransforms:
             check_names=False
         )
 
-        if skip_dask or dd is None:
+        if skip_dask or dask is None:
             return
 
         # Check using dataset backed by Dask DataFrame,
@@ -187,7 +168,7 @@ class TestDimTransforms:
             expected
         )
 
-        if skip_dask or da is None:
+        if skip_dask or dask is None:
             return
 
         # Check using dataset backed by Dask DataFrame
@@ -535,12 +516,15 @@ class TestDimTransforms:
         assert repr(expr) == repr(expr2)
 
 
-@shapelib_available
-def test_dataset_transform_by_spatial_select_expr_index_not_0_based():
+
+@pytest.mark.parametrize("module", ["spatialpandas", "shapely"])
+def test_dataset_transform_by_spatial_select_expr_index_not_0_based(unimport, module):
     """Ensure 'spatial_select' expression works when index not zero-based.
     Use 'spatial_select' defined by four nodes to select index 104, 105.
     Apply expression to dataset.transform to generate new 'flag' column where True
     for the two indexes."""
+    pytest.importorskip(module)
+    unimport("spatialpandas" if module == "shapely" else "shapely")
     df = pd.DataFrame({"a": [7, 3, 0.5, 2, 1, 1], "b": [3, 4, 3, 2, 2, 1]}, index=list(range(101, 107)))
     geometry = np.array(
         [

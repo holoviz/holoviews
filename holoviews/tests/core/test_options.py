@@ -1,4 +1,3 @@
-import contextlib
 import pickle
 import re
 
@@ -27,15 +26,18 @@ from holoviews.core.options import (
 from holoviews.plotting import bokeh  # noqa: F401
 from holoviews.testing import assert_element_equal
 
+from ..utils import optional_dependencies
+
 Options.skip_invalid = False
 
-# Needed a backend to register backend and options
-try:
-    from holoviews.plotting import mpl
-except ImportError:
-    mpl = None
-with contextlib.suppress(ImportError):
-    from holoviews.plotting import plotly  # noqa: F401
+mpl, mpl_skip = optional_dependencies("matplotlib")
+plotly, plotly_skip = optional_dependencies("plotly")
+
+if mpl:
+    import holoviews.plotting.mpl
+
+if plotly:
+    import holoviews.plotting.plotly  # noqa: F401
 
 
 class TestOptions:
@@ -268,14 +270,13 @@ class TestOptionTree:
         assert options.MyType.Child.options('group2').kwargs == {'kw2':'value2', 'kw4':'value4'}
 
 
+@mpl_skip
 class TestStoreInheritanceDynamic:
     """
     Tests to prevent regression after fix in PR #646
     """
 
     def setup_method(self):
-        if mpl is None:
-            pytest.skip("Matplotlib required to test Store inheritance")
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         options = Store.options()
@@ -454,6 +455,7 @@ class TestStoreInheritanceDynamic:
         assert custom_obj_lookup.kwargs == expected_custom_obj
 
 
+@mpl_skip
 class TestStoreInheritance:
     """
     Tests to prevent regression after fix in 71c1f3a that resolves
@@ -461,8 +463,6 @@ class TestStoreInheritance:
     """
 
     def setup_method(self):
-        if mpl is None:
-            pytest.skip("Matplotlib required to test Store inheritance")
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         self.store_copy = OptionTree(sorted(Store.options().items()),
@@ -534,11 +534,10 @@ class TestStoreInheritance:
 
 
 
+@mpl_skip
 class TestOptionsMethod:
 
     def setup_method(self):
-        if mpl is None:
-            pytest.skip("Matplotlib required to test Store inheritance")
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         self.store_copy = OptionTree(sorted(Store.options().items()),
@@ -580,11 +579,10 @@ class TestOptionsMethod:
         assert self.lookup_options(styled_im, 'style').options == dict(cmap='summer', interpolation='nearest')
 
 
+@mpl_skip
 class TestOptsMethod:
 
     def setup_method(self):
-        if mpl is None:
-            pytest.skip("Matplotlib required to test Store inheritance")
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         self.store_copy = OptionTree(sorted(Store.options().items()),
@@ -720,14 +718,13 @@ class TestOptionTreeFind:
 
 
 
+@mpl_skip
 class TestCrossBackendOptions:
     """
     Test the style system can style a single object across backends.
     """
 
     def setup_method(self):
-        if mpl is None:
-            pytest.skip("Matplotlib required to test Store inheritance")
         # Some tests require that plotly isn't loaded
         self.plotly_options = Store._options.pop('plotly', None)
         self.store_mpl = OptionTree(
@@ -865,17 +862,12 @@ class TestCrossBackendOptions:
         assert Curve([]).opts.get().kwargs["linewidth"] == 5
 
 
+@mpl_skip
+@plotly_skip
 class TestLookupOptions:
 
     def test_lookup_options_honors_backend(self):
         points = Points([[1, 2], [3, 4]])
-
-        try:
-            import holoviews.plotting.bokeh
-            import holoviews.plotting.mpl
-            import holoviews.plotting.plotly  # noqa
-        except ImportError:
-            pytest.skip("Matplotlib or Plotly not installed")
 
         backends = Store.loaded_backends()
 
@@ -913,6 +905,7 @@ class TestLookupOptions:
             assert "muted_alpha" not in options_matplotlib.keys()
 
 
+@mpl_skip
 @pytest.mark.usefixtures("bokeh_backend")
 class TestCrossBackendOptionSpecification:
     """
@@ -920,8 +913,6 @@ class TestCrossBackendOptionSpecification:
     """
 
     def setup_method(self):
-        if mpl is None:
-            pytest.skip("Matplotlib required to test Store inheritance")
         # Some tests require that plotly isn't loaded
         self.plotly_options = Store._options.pop('plotly', None)
         self.store_mpl = OptionTree(
@@ -1072,22 +1063,10 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         Store.current_backend = 'bokeh'
         StoreOptions.set_options(self.raw, style={'Image':{'cmap':'Purple'}})
 
-    def _create_tmp_path(self):
-        # Remove this when we use pytest
-        import tempfile
-        from pathlib import Path
-
-        tmp_dir = tempfile.TemporaryDirectory()
-        tmp_path = Path(tmp_dir.name)
-
-        return tmp_dir, tmp_path
-
-
-    def test_raw_pickle(self):
+    def test_raw_pickle(self, tmp_path):
         """
         Test usual pickle saving and loading (no style information preserved)
         """
-        tmp_dir, tmp_path = self._create_tmp_path()  # Pytest remove
 
         fname= tmp_path / 'test_raw_pickle.pkl'
         with open(fname,'wb') as handle:
@@ -1106,14 +1085,11 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
         assert bokeh_opts == {}
 
-        tmp_dir.cleanup()  # Pytest remove
 
-    def test_pickle_mpl_bokeh(self):
+    def test_pickle_mpl_bokeh(self, tmp_path):
         """
         Test pickle saving and loading with Store (style information preserved)
         """
-        tmp_dir, tmp_path = self._create_tmp_path()  # Pytest remove
-
         fname = tmp_path / 'test_pickle_mpl_bokeh.pkl'
         with open(fname,'wb') as handle:
             Store.dump(self.raw, handle)
@@ -1130,5 +1106,3 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         Store.current_backend = 'bokeh'
         bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
         assert bokeh_opts == {'cmap':'Purple'}
-
-        tmp_dir.cleanup()  # Pytest remove

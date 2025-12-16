@@ -6,12 +6,12 @@ from holoviews.core.spaces import HoloMap
 from holoviews.element.raster import HeatMap
 from holoviews.testing import assert_data_equal
 
-try:
-    from holoviews.plotting.mpl import RadialHeatMapPlot
-except ImportError:
-    pass
-
+from ...utils import optional_dependencies
 from .test_plot import TestMPLPlot, mpl_renderer
+
+mpl, mpl_skip = optional_dependencies("matplotlib")
+if mpl:
+    from holoviews.plotting.mpl import RadialHeatMapPlot
 
 
 class RadialHeatMapPlotTests(TestMPLPlot):
@@ -72,6 +72,7 @@ class RadialHeatMapPlotTests(TestMPLPlot):
         for circle, r in zip(yseparators, [0.25, 0.375], strict=True):
             assert circle.radius == r
 
+    @mpl_skip
     def test_heatmap_holomap(self):
         hm = HoloMap({'A': HeatMap(np.random.randint(0, 10, (100, 3))),
                       'B': HeatMap(np.random.randint(0, 10, (100, 3)))})

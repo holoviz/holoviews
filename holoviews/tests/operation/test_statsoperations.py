@@ -1,16 +1,15 @@
 import numpy as np
-import pytest
-
-try:
-    import scipy # noqa
-except ImportError:
-    pytest.skip('SciPy not available', allow_module_level=True)
 
 from holoviews import Area, Bivariate, Contours, Distribution, Image, Polygons
 from holoviews.operation.stats import bivariate_kde, univariate_kde
 from holoviews.testing import assert_element_equal
 
+from ..utils import optional_dependencies
 
+scipy, scipy_skip = optional_dependencies("scipy")
+
+
+@scipy_skip
 class KDEOperationTests:
     """
     Tests for the various timeseries operations including rolling,
