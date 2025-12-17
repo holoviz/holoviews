@@ -48,6 +48,17 @@ class TestScatterPlot(TestPlotlyPlot):
         assert np.array_equal(state['data'][0]['marker']['color'],
                                         np.array(['red', 'green', 'blue'])) is True
 
+    def test_scatter_categorical_color(self):
+        scatter = Scatter([
+            (0, 1, 'A'), (1, 2, 'B'), (2, 3, 'C')
+        ], vdims=['y', 'category']).opts(color='category')
+        state = self._get_plot_state(scatter)
+
+        np.testing.assert_array_equal(state['data'][0]['marker']['color'], [0, 1, 2])
+        assert 'colorscale' in state['data'][0]['marker']
+        assert state['data'][0]['marker']['cmin'] == 0
+        assert state['data'][0]['marker']['cmax'] == 2
+
     def test_scatter_markers(self):
         scatter = Scatter([
             (0, 1, 'square'), (1, 2, 'circle'), (2, 3, 'triangle-up')
@@ -114,6 +125,17 @@ class TestMapboxScatterPlot(TestPlotlyPlot):
         state = self._get_plot_state(scatter)
         assert np.array_equal(state['data'][1]['marker']['color'],
                                         np.array(['red', 'green', 'blue'])) is True
+
+    def test_scatter_categorical_color(self):
+        scatter = Tiles('') * Scatter([
+            (0, 1, 'A'), (1, 2, 'B'), (2, 3, 'C')
+        ], vdims=['y', 'category']).opts(color='category')
+        state = self._get_plot_state(scatter)
+
+        np.testing.assert_array_equal(state['data'][1]['marker']['color'], [0, 1, 2])
+        assert 'colorscale' in state['data'][1]['marker']
+        assert state['data'][1]['marker']['cmin'] == 0
+        assert state['data'][1]['marker']['cmax'] == 2
 
 
     def test_scatter_markers(self):
