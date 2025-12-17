@@ -1,7 +1,6 @@
 """
 Unit tests of the helper functions in utils
 """
-import pytest
 from pyviz_comms import CommManager
 
 from holoviews import Store
@@ -9,30 +8,21 @@ from holoviews.core.options import OptionTree
 from holoviews.plotting import bokeh
 from holoviews.util import Options, OutputSettings, opts, output
 
+from ..utils import LoggingComparison, optional_dependencies
+
 BACKENDS = ['matplotlib', 'bokeh']
 
-from ..utils import LoggingComparison
-
-try:
-    import notebook
-except ImportError:
-    notebook = None
-
-try:
-    from holoviews.plotting import mpl
-except ImportError:
-    mpl = None
+_, notebook_skip = optional_dependencies("notebook")
+_, mpl_skip = optional_dependencies("matplotlib")
 
 
-
+@mpl_skip
+@notebook_skip
 class TestOutputUtil:
 
     def setup_method(self):
-        if notebook is None:
-            pytest.skip("Jupyter Notebook not available")
-        if mpl is None:
-            pytest.skip("Matplotlib not available")
         from holoviews.ipython import notebook_extension
+        from holoviews.plotting import mpl
 
         notebook_extension(*BACKENDS)
         Store.current_backend = 'matplotlib'
@@ -40,8 +30,9 @@ class TestOutputUtil:
         Store.renderers['bokeh'] = bokeh.BokehRenderer.instance()
         OutputSettings.options =  dict(OutputSettings.defaults.items())
 
-
     def teardown_method(self):
+        from holoviews.plotting import mpl
+
         Store.renderers['matplotlib'] = mpl.MPLRenderer.instance()
         Store.renderers['bokeh'] = bokeh.BokehRenderer.instance()
         OutputSettings.options =  dict(OutputSettings.defaults.items())
@@ -72,14 +63,14 @@ class TestOutputUtil:
         assert output("fig='svg'",3) == 3
 
 
+@mpl_skip
 class TestOptsUtil(LoggingComparison):
     """
     Mirrors the magic tests in TestOptsMagic
     """
 
     def setup_method(self):
-        if mpl is None:
-            pytest.skip("Matplotlib not available")
+        from holoviews.plotting import mpl  # noqa: F401
         self.backend = Store.current_backend
         Store.current_backend = 'matplotlib'
         self.store_copy = OptionTree(sorted(Store.options().items()),

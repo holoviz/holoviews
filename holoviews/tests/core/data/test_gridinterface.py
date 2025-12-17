@@ -12,12 +12,7 @@ from holoviews.element import HSV, RGB, Curve, Image
 from holoviews.testing import assert_data_equal, assert_element_equal
 from holoviews.util.transform import dim
 
-try:
-    import dask.array as da
-except ImportError:
-    da = None
-
-
+from ...utils import optional_dependencies
 from .base import (
     DatatypeContext,
     GriddedInterfaceTests,
@@ -30,6 +25,7 @@ from .test_imageinterface import (
     BaseRGBElementInterfaceTests,
 )
 
+da, dask_skip = optional_dependencies("dask.array")
 
 class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, InterfaceTests):
 
@@ -356,11 +352,8 @@ class GridInterfaceTests(BaseGridInterfaceTests):
     __test__ = True
 
 
+@dask_skip
 class DaskGridInterfaceTests(GridInterfaceTests):
-
-    def setup_class(self):
-        if da is None:
-            pytest.skip('DaskGridInterfaceTests requires dask.')
 
     def init_column_data(self):
         self.xs = np.arange(11)

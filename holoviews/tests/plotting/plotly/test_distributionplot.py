@@ -1,18 +1,13 @@
-import pytest
 
 from holoviews.element import Distribution
 
+from ...utils import optional_dependencies
 from .test_plot import TestPlotlyPlot
 
+_, scipy_skip = optional_dependencies("scipy")
 
+@scipy_skip
 class TestDistributionPlot(TestPlotlyPlot):
-
-    def setup_method(self):
-        super().setup_method()
-        try:
-            import scipy  # noqa
-        except ImportError:
-            pytest.skip("Test requires scipy")
 
     def test_distribution_filled(self):
         dist = Distribution([1, 1.1,  2.1, 3, 2, 1, 2.2])

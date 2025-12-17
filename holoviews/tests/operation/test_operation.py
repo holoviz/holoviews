@@ -1,28 +1,10 @@
 import datetime as dt
 import random
-from importlib.util import find_spec
 
 import numpy as np
 import pandas as pd
 import param
 import pytest
-
-try:
-    import dask.array as da
-except ImportError:
-    da = None
-
-try:
-    import ibis
-
-    from holoviews.core.data.ibis import IBIS_VERSION
-except ImportError:
-    ibis = IBIS_VERSION = None
-
-try:
-    import cudf
-except ImportError:
-    cudf = None
 
 from holoviews import (
     AdjointLayout,
@@ -46,6 +28,7 @@ from holoviews import (
     renderer,
 )
 from holoviews.core.data.grid import GridInterface
+from holoviews.core.data.ibis import IBIS_VERSION
 from holoviews.core.operation import Operation
 from holoviews.core.options import SkipRendering
 from holoviews.operation.element import (
@@ -62,9 +45,11 @@ from holoviews.operation.element import (
 )
 from holoviews.testing import assert_element_equal
 
-mpl = find_spec("matplotlib")
-da_skip = pytest.mark.skipif(da is None, reason="dask.array is not available")
-ibis_skip = pytest.mark.skipif(ibis is None, reason="ibis is not available")
+from ..utils import optional_dependencies
+
+mpl, mpl_skip = optional_dependencies("matplotlib")
+da, dask_skip = optional_dependencies("dask.array")
+ibis, ibis_skip = optional_dependencies("ibis")
 
 
 class OperationTests:
@@ -186,10 +171,8 @@ class OperationTests:
         contour = Contours([], vdims=img.vdims)
         assert_element_equal(op_contours, contour)
 
+    @mpl_skip
     def test_image_contours_x_datetime(self):
-        if mpl is None:
-            pytest.skip("Matplotlib required to test datetime axes")
-
         x = np.array(['2023-09-01', '2023-09-03', '2023-09-05'], dtype='datetime64')
         y = [14, 15]
         z = np.array([[0, 1, 0], [0, 1, 0]])
@@ -212,9 +195,8 @@ class OperationTests:
                                              [15, 14, np.nan, 14, 15])
         np.testing.assert_array_almost_equal(op_contours.dimension_values('z'), [0.5]*5)
 
+    @mpl_skip
     def test_image_contours_y_datetime(self):
-        if mpl is None:
-            pytest.skip("Matplotlib required to test datetime axes")
         x = [14, 15, 16]
         y = np.array(['2023-09-01', '2023-09-03'], dtype='datetime64')
         z = np.array([[0, 1, 0], [0, 1, 0]])
@@ -238,9 +220,8 @@ class OperationTests:
 
         np.testing.assert_array_almost_equal(op_contours.dimension_values('z'), [0.5]*5)
 
+    @mpl_skip
     def test_image_contours_xy_datetime(self):
-        if mpl is None:
-            pytest.skip("Matplotlib required to test datetime axes")
         x = np.array(['2023-09-01', '2023-09-03', '2023-09-05'], dtype='datetime64')
         y = np.array(['2023-10-07', '2023-10-08'], dtype='datetime64')
         z = np.array([[0, 1, 0], [0, 1, 0]])
@@ -270,9 +251,8 @@ class OperationTests:
 
         np.testing.assert_array_almost_equal(op_contours.dimension_values('z'), [0.5]*5)
 
+    @mpl_skip
     def test_image_contours_z_datetime(self):
-        if mpl is None:
-            pytest.skip("Matplotlib required to test datetime axes")
         z = np.array([['2023-09-10', '2023-09-10'], ['2023-09-10', '2023-09-12']], dtype='datetime64')
         img = Image(z)
         op_contours = contours(img, levels=[np.datetime64('2023-09-11')])
@@ -443,7 +423,7 @@ class OperationTests:
             np.testing.assert_equal(exp, h.data["xy"])
             assert (h.data["xy_count"] == 5).all()
 
-    @da_skip
+    @dask_skip
     def test_dataset_histogram_dask(self):
         import dask.array as da
         ds = Dataset((da.from_array(np.array(range(10), dtype='f'), chunks=(3)),),
@@ -455,7 +435,7 @@ class OperationTests:
         assert isinstance(op_hist.data['x_frequency'], da.Array)
         assert_element_equal(op_hist, hist)
 
-    @da_skip
+    @dask_skip
     def test_dataset_cumulative_histogram_dask(self):
         import dask.array as da
         ds = Dataset((da.from_array(np.array(range(10), dtype='f'), chunks=(3)),),
@@ -467,7 +447,7 @@ class OperationTests:
         assert isinstance(op_hist.data['x_frequency'], da.Array)
         assert_element_equal(op_hist, hist)
 
-    @da_skip
+    @dask_skip
     def test_dataset_weighted_histogram_dask(self):
         import dask.array as da
         ds = Dataset((da.from_array(np.array(range(10), dtype='f'), chunks=3),
@@ -518,6 +498,7 @@ class OperationTests:
 
     @pytest.mark.gpu
     def test_dataset_histogram_cudf(self):
+        import cudf
         df = pd.DataFrame(dict(x=np.arange(10)))
         t = cudf.from_pandas(df)
         ds = Dataset(t, vdims='x')
@@ -529,6 +510,7 @@ class OperationTests:
 
     @pytest.mark.gpu
     def test_dataset_cumulative_histogram_cudf(self):
+        import cudf
         df = pd.DataFrame(dict(x=np.arange(10)))
         t = cudf.from_pandas(df)
         ds = Dataset(t, vdims='x')
@@ -540,6 +522,7 @@ class OperationTests:
 
     @pytest.mark.gpu
     def test_dataset_histogram_explicit_bins_cudf(self):
+        import cudf
         df = pd.DataFrame(dict(x=np.arange(10)))
         t = cudf.from_pandas(df)
         ds = Dataset(t, vdims='x')

@@ -6,10 +6,9 @@ from holoviews.core.overlay import NdOverlay, Overlay
 from holoviews.element import Curve
 from holoviews.operation.downsample import _ALGORITHMS, downsample1d
 
-try:
-    import tsdownsample
-except ImportError:
-    tsdownsample = None
+from ..utils import optional_dependencies
+
+tsdownsample, tsdownsample_skip = optional_dependencies("tsdownsample")
 
 algorithms = _ALGORITHMS.copy()
 algorithms.pop("viewport", None)  # viewport return slice(len(data)) no matter the width
@@ -31,7 +30,7 @@ def test_downsample1d_multi(plottype):
             assert value.size == downsample1d.width
 
 
-@pytest.mark.skipif(not tsdownsample, reason="tsdownsample not installed")
+@tsdownsample_skip
 @pytest.mark.parametrize("algorithm", algorithms)
 def test_downsample1d_non_contiguous(algorithm):
     x = np.arange(20)
@@ -95,7 +94,7 @@ def test_downsample_algorithm(algorithm, unimport):
         assert result.size == width
 
 
-@pytest.mark.skipif(not tsdownsample, reason="tsdownsample not installed")
+@tsdownsample_skip
 @pytest.mark.parametrize("algorithm", algorithms.values(), ids=algorithms)
 def test_downsample_algorithm_with_tsdownsample(algorithm):
     x = np.arange(1000)

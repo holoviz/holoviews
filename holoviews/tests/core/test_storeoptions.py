@@ -3,17 +3,19 @@ Unit tests of the StoreOptions class used to control custom options on
 Store as used by the %opts magic.
 """
 import numpy as np
-import pytest
 
 from holoviews import Curve, HoloMap, Image, Overlay
 from holoviews.core.options import Store, StoreOptions
 from holoviews.plotting import bokeh  # noqa: F401
 
-try:
-    from holoviews.plotting import mpl
-except ImportError:
-    mpl = None
+from ..utils import optional_dependencies
 
+mpl, mpl_skip = optional_dependencies("matplotlib")
+if mpl:
+    import holoviews.plotting.mpl  # noqa: F401
+
+
+@mpl_skip
 class TestStoreOptionsMerge:
 
     def setup_method(self):
@@ -40,6 +42,7 @@ class TestStoreOptionsMerge:
         assert out == self.expected
 
 
+@mpl_skip
 class TestStoreOptsMethod:
     """
     The .opts method makes use of most of the functionality in
@@ -47,9 +50,6 @@ class TestStoreOptsMethod:
     """
 
     def setup_method(self):
-        if mpl is None:
-            pytest.skip("Matplotlib required to test Store inheritance")
-
         Store.current_backend = 'matplotlib'
 
     def test_overlay_options_partitioned(self):

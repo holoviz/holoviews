@@ -377,10 +377,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert xaxis.group_text_font_size == '18pt'
 
     def test_cftime_transform_gregorian_no_warn(self):
-        try:
-            import cftime
-        except ImportError:
-            pytest.skip('Test requires cftime library')
+        cftime = pytest.importorskip("cftime")
         gregorian_dates = [cftime.DatetimeGregorian(2000, 2, 28),
                            cftime.DatetimeGregorian(2000, 3, 1),
                            cftime.DatetimeGregorian(2000, 3, 2)]
@@ -391,10 +388,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
                          np.array([951696000000, 951868800000, 951955200000]))
 
     def test_cftime_transform_noleap_warn(self):
-        try:
-            import cftime
-        except ImportError:
-            pytest.skip('Test requires cftime library')
+        cftime = pytest.importorskip("cftime")
         gregorian_dates = [cftime.DatetimeNoLeap(2000, 2, 28),
                            cftime.DatetimeNoLeap(2000, 3, 1),
                            cftime.DatetimeNoLeap(2000, 3, 2)]
@@ -823,16 +817,16 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
             "WARNING", "cb model could not be"
         )
 
-    def test_dynamicmap_subcoordinate_y_enabled_labels_mismatched(self):
-        cases = [  # TODO: pytest.mark.parametrize
-            ("", "", "", "1"),
-            ("", "1", "", "2"),
-            ("", "1", "2", "1"),
-            ("", "1", "2", "3"),
-            ("1", "2", "1", "4"),
-            ("1", "2", "4", "1"),
-            ("1", "2", "3", "4"),
-        ]
+    @pytest.mark.parametrize("labels", [
+        ("", "", "", "1"),
+        ("", "1", "", "2"),
+        ("", "1", "2", "1"),
+        ("", "1", "2", "3"),
+        ("1", "2", "1", "4"),
+        ("1", "2", "4", "1"),
+        ("1", "2", "3", "4"),
+    ])
+    def test_dynamicmap_subcoordinate_y_enabled_labels_mismatched(self, labels):
 
         def func(data, plot_labels):
             if not data:
@@ -844,36 +838,34 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
             plot2 = Curve([2, 1], label=plot_labels[3]).opts(subcoordinate_y=True)
             return plot1 * plot2
 
-        for labels in cases:
-            pipe = Pipe(data=False)
-            dmap = DynamicMap(lambda data, labels=labels: func(data, labels), streams=[pipe])
-            bokeh_renderer.get_plot(dmap)
+        pipe = Pipe(data=False)
+        dmap = DynamicMap(lambda data, labels=labels: func(data, labels), streams=[pipe])
+        bokeh_renderer.get_plot(dmap)
 
-            msg = 'Failed retrieving "subcoordinate_y". Labels mismatched for initial and updated DynamicMap plots.'
-            with pytest.raises(AbbreviatedException, match=msg):
-                pipe.send(True)
-
-    def test_dynamicmap_subcoordinate_y_enabled_labels_matched(self):
-        cases = [  # TODO: pytest.mark.parametrize
-            ("1", "2", "2", "1"),
-            ("1", "2", "1", "2"),
-        ]
-        def func(data, plot_labels):
-            if not data:
-                return (
-                        Curve([], label=plot_labels[0]) *
-                        Curve([], label=plot_labels[1])
-                )
-            plot1 = Curve([0, 1], label=plot_labels[2]).opts(subcoordinate_y=True)
-            plot2 = Curve([2, 1], label=plot_labels[3]).opts(subcoordinate_y=True)
-            return plot1 * plot2
-
-        for labels in cases:
-            pipe = Pipe(data=False)
-            dmap = DynamicMap(lambda data, labels=labels: func(data, labels), streams=[pipe])
-            bokeh_renderer.get_plot(dmap)
-            # works with no issue
+        msg = 'Failed retrieving "subcoordinate_y". Labels mismatched for initial and updated DynamicMap plots.'
+        with pytest.raises(AbbreviatedException, match=msg):
             pipe.send(True)
+
+    @pytest.mark.parametrize("labels", [
+        ("1", "2", "2", "1"),
+        ("1", "2", "1", "2"),
+    ])
+    def test_dynamicmap_subcoordinate_y_enabled_labels_matched(self, labels):
+        def func(data, plot_labels):
+            if not data:
+                return (
+                        Curve([], label=plot_labels[0]) *
+                        Curve([], label=plot_labels[1])
+                )
+            plot1 = Curve([0, 1], label=plot_labels[2]).opts(subcoordinate_y=True)
+            plot2 = Curve([2, 1], label=plot_labels[3]).opts(subcoordinate_y=True)
+            return plot1 * plot2
+
+        pipe = Pipe(data=False)
+        dmap = DynamicMap(lambda data, labels=labels: func(data, labels), streams=[pipe])
+        bokeh_renderer.get_plot(dmap)
+        # works with no issue
+        pipe.send(True)
 
     @pytest.mark.skipif(not BOKEH_GE_3_8_0, reason="requires Bokeh >= 3.8")
     def test_timedelta_axis_polars(self):

@@ -12,6 +12,10 @@ from holoviews.element.sankey import Sankey
 from holoviews.element.util import circular_layout, connect_edges, connect_edges_pd
 from holoviews.testing import assert_data_equal, assert_element_equal
 
+from ..utils import optional_dependencies
+
+nx, nx_skip = optional_dependencies("networkx")
+scipy, scipy_skip = optional_dependencies("scipy")
 
 class GraphTests:
 
@@ -128,10 +132,8 @@ class GraphTests:
         assert_element_equal(redimmed.edgepaths, graph.edgepaths.redim(x='x2', y='y2'))
 
 
+@scipy_skip
 class TestFromSparse:
-
-    def setup_method(self):
-        pytest.importorskip('scipy')
 
     @pytest.mark.parametrize("sparse_func", ["coo_array", "coo_matrix"])
     @pytest.mark.parametrize("graph_kwargs", [
@@ -169,16 +171,10 @@ class TestFromSparse:
             Graph.from_sparse(regular_array, nodes_data)
 
 
+@nx_skip
 class FromNetworkXTests:
 
-    def setup_method(self):
-        try:
-            import networkx as nx # noqa
-        except ImportError:
-            pytest.skip('Test requires networkx to be installed')
-
     def test_from_networkx_with_node_attrs(self):
-        import networkx as nx
         G = nx.karate_club_graph()
         graph = Graph.from_networkx(G, nx.circular_layout)
         clubs = np.array([
@@ -191,7 +187,6 @@ class FromNetworkXTests:
         assert_data_equal(graph.nodes.dimension_values('club'), clubs)
 
     def test_from_networkx_with_invalid_node_attrs(self):
-        import networkx as nx
         FG = nx.Graph()
         FG.add_node(1, test=[])
         FG.add_node(2, test=[])
@@ -202,28 +197,24 @@ class FromNetworkXTests:
         assert_data_equal(graph.array(), np.array([(1, 2)]))
 
     def test_from_networkx_with_edge_attrs(self):
-        import networkx as nx
         FG = nx.Graph()
         FG.add_weighted_edges_from([(1,2,0.125), (1,3,0.75), (2,4,1.2), (3,4,0.375)])
         graph = Graph.from_networkx(FG, nx.circular_layout)
         assert_data_equal(graph.dimension_values('weight'), np.array([0.125, 0.75, 1.2, 0.375]))
 
     def test_from_networkx_with_invalid_edge_attrs(self):
-        import networkx as nx
         FG = nx.Graph()
         FG.add_weighted_edges_from([(1,2,[]), (1,3,[]), (2,4,[]), (3,4,[])])
         graph = Graph.from_networkx(FG, nx.circular_layout)
         assert graph.vdims == []
 
     def test_from_networkx_only_nodes(self):
-        import networkx as nx
         G = nx.Graph()
         G.add_nodes_from([1, 2, 3])
         graph = Graph.from_networkx(G, nx.circular_layout)
         assert_data_equal(graph.nodes.dimension_values(2), np.array([1, 2, 3]))
 
     def test_from_networkx_custom_nodes(self):
-        import networkx as nx
         FG = nx.Graph()
         FG.add_weighted_edges_from([(1,2,0.125), (1,3,0.75), (2,4,1.2), (3,4,0.375)])
         nodes = Dataset([(1, 'A'), (2, 'B'), (3, 'A'), (4, 'B')], 'index', 'some_attribute')
@@ -231,7 +222,6 @@ class FromNetworkXTests:
         assert_data_equal(graph.nodes.dimension_values('some_attribute'), np.array(['A', 'B', 'A', 'B']))
 
     def test_from_networkx_dictionary_positions(self):
-        import networkx as nx
         G = nx.Graph()
         G.add_nodes_from([1, 2, 3])
         positions = nx.circular_layout(G)

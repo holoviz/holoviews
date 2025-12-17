@@ -3,17 +3,17 @@ import numpy as np
 from holoviews.core import DynamicMap, HoloMap, NdOverlay, Overlay
 from holoviews.element import Curve, Scatter
 
-from ...utils import LoggingComparison
+from ...utils import LoggingComparison, optional_dependencies
 from .test_plot import TestMPLPlot, mpl_renderer
 
-try:
+mpl, mpl_skip = optional_dependencies("matplotlib")
+if mpl:
     from holoviews.plotting.mpl import OverlayPlot
-except ImportError:
-    pass
 
 
 class TestOverlayPlot(LoggingComparison, TestMPLPlot):
 
+    @mpl_skip
     def test_interleaved_overlay(self):
         """
         Test to avoid regression after fix of https://github.com/holoviz/holoviews/issues/41

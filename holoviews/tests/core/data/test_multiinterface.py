@@ -13,11 +13,6 @@ from holoviews.core.data import Dataset, MultiInterface
 from holoviews.element import Path, Points, Polygons
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-try:
-    import dask.dataframe as dd
-except ImportError:
-    dd = None
-
 
 class GeomTests:
     """

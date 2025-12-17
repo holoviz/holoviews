@@ -1,16 +1,15 @@
 import numpy as np
-import pytest
 
 from holoviews.element import ImageStack
 from holoviews.plotting.plotly import RGBPlot
 
+from ...utils import optional_dependencies
 from .test_plot import TestPlotlyPlot, plotly_renderer
 
-try:
-    import datashader  # noqa: F401
-except ImportError:
-    pytest.skip("Test requires datashader", allow_module_level=True)
+ds, ds_skip = optional_dependencies("datashader")
 
+
+@ds_skip
 class TestImageStackPlot(TestPlotlyPlot):
     def test_image_stack(self):
         x = np.arange(0, 3)

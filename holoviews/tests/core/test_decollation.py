@@ -1,17 +1,14 @@
 import param
-import pytest
 
 from holoviews.core import DynamicMap, GridSpace, HoloMap, NdOverlay, Overlay
 from holoviews.element import Points
 from holoviews.streams import PlotSize, RangeXY, Stream
 from holoviews.testing import assert_element_equal
+from holoviews.tests.utils import optional_dependencies
 
-try:
+ds, ds_skip = optional_dependencies("datashader")
+if ds:
     from holoviews.operation.datashader import datashade, spread
-except ImportError:
-    spread = datashade = None
-
-datashade_skip = pytest.mark.skipif(datashade is None, reason="datashade is not available")
 
 
 class XY(Stream):
@@ -63,7 +60,7 @@ class TestDecollation:
             ]
         )
 
-        if datashade is None:
+        if ds is None:
             return
 
         # dmap produced by chained datashade and shade
@@ -126,7 +123,7 @@ class TestDecollation:
             Points([1.0, 2.0]) + Points([3.0, 4.0])
         )
 
-    @datashade_skip
+    @ds_skip
     def test_decollate_spread(self):
         decollated = self.dmap_spread_points.decollate()
         assert isinstance(decollated, DynamicMap)
@@ -150,7 +147,7 @@ class TestDecollation:
 
         assert_element_equal(expected, result)
 
-    @datashade_skip
+    @ds_skip
     def test_decollate_datashade_kdims(self):
         decollated = self.dmap_datashade_kdim_points.decollate()
         assert isinstance(decollated, DynamicMap)
@@ -178,7 +175,7 @@ class TestDecollation:
         assert_element_equal(expected, result)
 
 
-    @datashade_skip
+    @ds_skip
     def test_decollate_datashade_kdims_layout(self):
         layout = self.dmap_datashade_kdim_points + self.dmap_b
 

@@ -1,4 +1,5 @@
 import numpy as np
+from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
 from holoviews.element import VectorField
 from holoviews.plotting.bokeh.util import property_to_dict
@@ -6,11 +7,6 @@ from holoviews.testing import assert_data_equal
 
 from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
-
-try:
-    from bokeh.models import CategoricalColorMapper, LinearColorMapper
-except ImportError:
-    pass
 
 
 class TestVectorFieldPlot(TestBokehPlot):

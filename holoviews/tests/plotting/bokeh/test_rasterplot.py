@@ -270,10 +270,7 @@ class _ImageStackBase(TestRasterPlot):
         assert isinstance(plot, ImageStackPlot)
 
     def test_image_stack_xarray_dataset(self):
-        try:
-            import xarray as xr
-        except ImportError:
-            pytest.skip("xarray not available for core tests")
+        xr = pytest.importorskip("xarray")
 
         x = np.arange(self.xsize)
         y = np.arange(self.ysize) + 5
@@ -296,10 +293,7 @@ class _ImageStackBase(TestRasterPlot):
         assert isinstance(plot, ImageStackPlot)
 
     def test_image_stack_xarray_dataarray(self):
-        try:
-            import xarray as xr
-        except ImportError:
-            pytest.skip("xarray not available for core tests")
+        xr = pytest.importorskip("xarray")
 
         x = np.arange(self.xsize)
         y = np.arange(self.ysize) + 5

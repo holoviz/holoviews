@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
 from holoviews.element import Violin
@@ -8,17 +7,14 @@ from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.testing import assert_data_equal
 from holoviews.util.transform import dim
 
+from ...utils import optional_dependencies
 from .test_plot import TestBokehPlot, bokeh_renderer
 
+scipy, scipy_skip = optional_dependencies("scipy")
 
+
+@scipy_skip
 class TestBokehViolinPlot(TestBokehPlot):
-
-    def setup_method(self):
-        try:
-            import scipy # noqa
-        except ImportError:
-            pytest.skip('Violin plot requires SciPy to compute kde')
-        super().setup_method()
 
     def test_violin_simple(self):
         values = np.random.rand(100)

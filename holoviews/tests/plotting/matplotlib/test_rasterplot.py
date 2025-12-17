@@ -78,10 +78,8 @@ class TestRasterPlot(TestMPLPlot):
         assert plot.handles['cbar'].extend == 'neither'
 
     def test_image_stack(self):
-        try:
-            import datashader  # noqa: F401
-        except ImportError:
-            pytest.skip("Test requires datashader")
+        pytest.importorskip("datashader")
+
         x = np.arange(0, 3)
         y = np.arange(5, 8)
         a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
