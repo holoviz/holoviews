@@ -153,18 +153,19 @@ class ContourPlot(PathPlot):
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
 
+        # Determine color dimension before processing 'c' style option
+        # This is needed because 'c' gets converted to 'array' but we still
+        # need to know the dimension for categorical color handling
+        cdim = None
+        if 'array' not in style:
+            cidx = self.color_index+2 if isinstance(self.color_index, int) else self.color_index
+            cdim = element.get_dimension(cidx)
+
         if 'c' in style:
             style['array'] = style.pop('c')
             style['clim'] = style.pop('vmin'), style.pop('vmax')
         elif isinstance(style.get('color'), np.ndarray):
             style[color_prop] = style.pop('color')
-
-        # Process deprecated color_index
-        if 'array' not in style:
-            cidx = self.color_index+2 if isinstance(self.color_index, int) else self.color_index
-            cdim = element.get_dimension(cidx)
-        else:
-            cdim = None
 
         if cdim is None:
             return (paths,), style, {}
