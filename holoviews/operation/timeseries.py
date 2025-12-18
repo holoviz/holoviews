@@ -109,18 +109,21 @@ class rolling_outlier_std(Operation, RollingBase):
         Minimum sigma before a value is considered an outlier.""")
 
     def _process_layer(self, element, key=None):
-        import pandas as pd
-        ys = element.dimension_values(1)
-
-        # Calculate the variation in the distribution of the residual
-        avg = pd.Series(ys).rolling(**self._roll_kwargs()).mean()
-        residual = ys - avg
-        std = pd.Series(residual).rolling(**self._roll_kwargs()).std()
-
-        # Get indices of outliers
+        # convert element to DataFrame
+        df = PandasInterface.as_dframe(element)
+        xdim = element.kdims[0].name
+        vdim = element.vdims[0].name
+        df = df.set_index(xdim)
+        # rolling mean of the signal
+        avg = df[vdim].rolling(**self._roll_kwargs()).mean()
+        residual = df[vdim] - avg
+        # rolling std of residuals
+        std = residual.rolling(**self._roll_kwargs()).std()
         with np.errstate(invalid='ignore'):
-            outliers = (np.abs(residual) > std * self.p.sigma).values
-        return element[outliers].clone(new_type=Scatter)
+            outliers = np.abs(residual) > (std * self.p.sigma)
+        # filter DataFrame to outliers only
+        outlier_df = df[outliers].reset_index()
+        return element.clone(outlier_df, new_type=Scatter)
 
     def _process(self, element, key=None):
         return element.map(self._process_layer, Element)
