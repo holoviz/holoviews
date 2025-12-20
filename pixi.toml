@@ -120,7 +120,7 @@ COVERAGE_CORE = "sysmon"
 channels = ["conda-forge/label/pandas_rc"]
 
 [feature.pandas3.dependencies]
-pandas = { version = "==3.0.0rc0", channel = "conda-forge/label/pandas_rc" }
+pandas = { version = "3.0.*", channel = "conda-forge/label/pandas_rc" }
 
 [feature.optional.dependencies]
 bokeh_sampledata = "*"
