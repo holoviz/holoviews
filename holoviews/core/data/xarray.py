@@ -428,10 +428,10 @@ class XArrayInterface(GridInterface):
             if not keep_index:
                 data = cls.canonicalize(dataset, data, data_coords=data_coords,
                                         virtual_coords=virtual_coords)
-            return data.T.flatten() if flat and not keep_index else data
+            return data.flatten() if flat and not keep_index else data
         elif expanded:
             data = cls.coords(dataset, dim.name, expanded=True)
-            return data.T.flatten() if flat else data
+            return data.flatten() if flat else data
         else:
             if keep_index:
                 return dataset.data[dim.name]

@@ -348,6 +348,37 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
     def test_dataset_sample_hm_alias(self):
         pytest.skip("Not supported")
 
+    def test_vectorfield_xarray_pandas_consistency(self):
+        """Test that VectorField produces same output for xarray and pandas with same data."""
+        from holoviews.element import VectorField
+        
+        # Create test data
+        lon = np.array([0, 1, 2])
+        lat = np.array([0, 1, 2])
+        angles = np.array([[0, 0, 0], 
+                           [np.pi/2, np.pi/2, np.pi/2], 
+                           [np.pi, np.pi, np.pi]])
+        speed = np.ones((3, 3))
+        
+        # Create xarray dataset
+        ds = xr.Dataset({
+            'angle': (['lat', 'lon'], angles),
+            'speed': (['lat', 'lon'], speed)
+        }, coords={'lon': lon, 'lat': lat})
+        
+        # Create pandas dataframe (simulating ds.to_dataframe().reset_index())
+        df = ds.to_dataframe().reset_index()
+        
+        # Create VectorFields
+        vf_ds = VectorField(ds, ['lon', 'lat'], ['angle', 'speed'])
+        vf_df = VectorField(df, ['lon', 'lat'], ['angle', 'speed'])
+        
+        # Check that all dimension values match
+        assert_data_equal(vf_ds.dimension_values('lon'), vf_df.dimension_values('lon'))
+        assert_data_equal(vf_ds.dimension_values('lat'), vf_df.dimension_values('lat'))
+        assert_data_equal(vf_ds.dimension_values('angle'), vf_df.dimension_values('angle'))
+        assert_data_equal(vf_ds.dimension_values('speed'), vf_df.dimension_values('speed'))
+
 
 
 @dask_skip
