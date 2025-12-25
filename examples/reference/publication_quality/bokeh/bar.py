@@ -10,12 +10,12 @@
 # - Panel integration for web serving
 # ============================================================================
 
-import panel as pn
 import hvsampledata
-import holoviews as hv
-
+import panel as pn
 from bokeh.models.formatters import NumeralTickFormatter
 from bokeh.themes import Theme
+
+import holoviews as hv
 from holoviews.plotting.bokeh import ElementPlot
 
 # ============================================================================
@@ -66,9 +66,9 @@ def create_bokeh_theme(font_family=FONT_FAMILY, accent_color=ACCENT_COLOR):
             'Tooltip': {
                 "stylesheets": [f"""
                     .bk-tooltip-row-label {{
-                        color: {ACCENT_COLOR} !important;  
+                        color: {ACCENT_COLOR} !important;
             }}"""]
-                
+
             }
         }
     })
@@ -119,7 +119,6 @@ def get_earthquake_data():
 
 def aggregate_by_magnitude(earthquake_data):
     """Transform: Group earthquakes by magnitude class with statistics"""
-
     # Aggregate: count events and calculate average depth per magnitude class
     aggregated = (
         earthquake_data
@@ -140,7 +139,6 @@ def aggregate_by_magnitude(earthquake_data):
 
 def create_bar_chart(aggregated_data):
     """Create publication-quality bar chart with labels and tooltips"""
-
     default_tools=['save']
 
     # Main bar chart with professional styling
@@ -175,7 +173,7 @@ def create_bar_chart(aggregated_data):
         ],
         default_tools=default_tools
     )
-    
+
     # Overlay: bar chart * text labels
     return bar_chart * text_labels
 
