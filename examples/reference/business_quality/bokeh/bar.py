@@ -153,7 +153,7 @@ def create_bar_chart(aggregated_data):
         hover_tooltips=[
             ('Magnitude', '@mag_class'),
             ('Events', '@event_count{0,0}'),      # Format: 1,234
-            ('Percentage', '@percentage{0 a}%'), # Format: 45.7%
+            ('Percentage', '@percentage{0 a}%'), # Format: 45%
             ('Avg Depth', '@avg_depth{0f} km')  # Format: 99 km
         ],
         default_tools=default_tools
@@ -168,7 +168,7 @@ def create_bar_chart(aggregated_data):
             ('Magnitude', '@mag_class'),
             ('Events', '@event_count{0,0}'),      # Format: 1,234
             # tooltips below do currently not work on Labels
-            # ('Percentage', '@percentage{0 a}%'), # Format: 45.7%
+            # ('Percentage', '@percentage{0 a}%'), # Format: 45%
             # ('Avg Depth', '@avg_depth{0f} km'),  # Format: 99 km
         ],
         default_tools=default_tools
