@@ -71,6 +71,7 @@ no-default-feature = true
 [feature.required.dependencies]
 nomkl = "*"
 pip = "*"
+python-gil = "*"
 # Required
 bokeh = ">=3.1"
 colorcet = "*"
@@ -141,7 +142,7 @@ plotly = ">=4.0"
 polars = "*"
 pooch = "*"
 pyarrow = "*"
-pyparsing = "*"
+pyparsing = "<3.3.0" # removed in HoloViews 1.23
 python-duckdb = "*"
 scikit-image = "*"
 scipy = "*"
@@ -173,7 +174,7 @@ plotly = ">=4.0"
 polars = "*"
 pooch = "*"
 pyarrow = "*"
-pyparsing = "*"
+pyparsing = "<3.3.0" # removed in HoloViews 1.23
 python-duckdb = "*"
 scikit-image = "*"
 scipy = "*"
