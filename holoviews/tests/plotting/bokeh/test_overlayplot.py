@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import numpy as np
 import pandas as pd
 import panel as pn
@@ -421,6 +423,119 @@ def test_ndoverlay_categorical_y_ranges(order):
     output = plot.handles["y_range"].factors
     expected = sorted(map(str, df.values.ravel()))
     assert output == expected
+
+@pytest.mark.parametrize(("tools", "new_tools"),
+    [
+        (None, []),
+        (["zoom_in"], ["ZoomInTool"]),
+        (["zoom_in", "zoom_out"], ["ZoomInTool", "ZoomOutTool"])
+    ], ids=["none", "zoom_in", "zoom_in_and_zoom_out"])
+def test_overlay_opts_tools(tools, new_tools):
+    overlay = Curve([1, 2, 3]) * Curve([2, 3, 4])
+    if tools:
+        overlay.opts(tools=tools)
+    plot = bokeh_renderer.get_plot(overlay)
+
+    tool_types = [type(tool).__name__ for tool in plot.state.tools]
+    defaults = ['WheelZoomTool', 'SaveTool', 'PanTool', 'BoxZoomTool', 'ResetTool']
+    assert tool_types == [*defaults, *new_tools]
+
+
+def test_overlay_opts_tools_with_element_tools():
+    overlay = Curve([1, 2, 3]).opts(tools=['zoom_out']) * Curve([2, 3, 4]).opts(tools=['zoom_in'])
+    plot = bokeh_renderer.get_plot(overlay)
+
+    tool_types = [type(tool).__name__ for tool in plot.state.tools]
+    defaults = ['WheelZoomTool', 'SaveTool', 'PanTool', 'BoxZoomTool', 'ResetTool']
+    assert tool_types == [defaults[0], "ZoomOutTool", "ZoomInTool", *defaults[1:]]
+
+def test_overlay_default_tools_not_duplicated():
+    overlay = Curve([1, 2, 3]) * Curve([2, 3, 4])
+    plot = bokeh_renderer.get_plot(overlay)
+
+    # Count each tool type
+    tool_type_counts = defaultdict(int)
+    for tool in plot.state.tools:
+        tool_type_counts[type(tool).__name__] += 1
+
+    # Each default tool should appear exactly once
+    assert tool_type_counts['PanTool'] == 1
+    assert tool_type_counts['WheelZoomTool'] == 1
+    assert tool_type_counts['SaveTool'] == 1
+    assert tool_type_counts['BoxZoomTool'] == 1
+    assert tool_type_counts['ResetTool'] == 1
+
+
+@pytest.mark.parametrize(
+    ("tool_strings", "expected_dimensions", "expected_count"),
+    [
+        (["xpan", "ypan"], ["both", "width", "height"], 3),
+        (["pan", "xpan", "ypan"], ["both", "width", "height"], 3),
+    ],
+    ids=["directional_only", "generic_and_directional"],
+)
+def test_overlay_opts_directional_pan_tools(tool_strings, expected_dimensions, expected_count):
+    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=tool_strings)
+    plot = bokeh_renderer.get_plot(overlay)
+
+    tools = [tool for tool in plot.state.tools if type(tool).__name__ == "PanTool"]
+    assert len(tools) == expected_count
+
+    dimensions = [tool.dimensions for tool in tools]
+    for dimension in expected_dimensions:
+        assert dimension in dimensions
+
+
+@pytest.mark.parametrize(
+    ("tool_strings", "expected_dimensions", "expected_count"),
+    [
+        (["xzoom_in", "yzoom_in"], ["width", "height"], 2),
+        (["zoom_in", "xzoom_in", "yzoom_in"], ["both", "width", "height"], 3),
+    ],
+    ids=["directional_only", "generic_and_directional"],
+)
+def test_overlay_opts_directional_zoom_in_tools(tool_strings, expected_dimensions, expected_count):
+    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=tool_strings)
+    plot = bokeh_renderer.get_plot(overlay)
+
+    tools = [tool for tool in plot.state.tools if type(tool).__name__ == "ZoomInTool"]
+    assert len(tools) == expected_count
+
+    dimensions = [tool.dimensions for tool in tools]
+    for dimension in expected_dimensions:
+        assert dimension in dimensions
+
+
+@pytest.mark.parametrize(
+    ("tool_strings", "expected_dimensions", "expected_count"),
+    [
+        (["xbox_zoom", "ybox_zoom"], ["auto", "width", "height"], 3),
+        (["box_zoom", "xbox_zoom", "ybox_zoom"], ["auto", "both", "width", "height"], 4),
+    ],
+    ids=["directional_only", "generic_and_directional"],
+)
+def test_overlay_opts_directional_box_zoom_tools(tool_strings, expected_dimensions, expected_count):
+    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=tool_strings)
+    plot = bokeh_renderer.get_plot(overlay)
+
+    tools = [tool for tool in plot.state.tools if type(tool).__name__ == "BoxZoomTool"]
+    assert len(tools) == expected_count
+
+    dimensions = [tool.dimensions for tool in tools]
+    for dimension in expected_dimensions:
+        assert dimension in dimensions
+
+def test_overlay_opts_mixed_tools_no_duplicates():
+    overlay = (
+        Curve([1, 2, 3]).opts(tools=['xpan']) *
+        Curve([2, 3, 4]).opts(tools=['xpan'])
+    ).opts(tools=['xpan'])
+    plot = bokeh_renderer.get_plot(overlay)
+
+    pan_tools = [tool for tool in plot.state.tools if type(tool).__name__ == 'PanTool']
+    # Should only have one xpan tool despite being specified multiple times
+    xpan_tools = [tool for tool in pan_tools if tool.dimensions == 'width']
+    assert len(xpan_tools) == 1
 
 
 class TestLegends(TestBokehPlot):
