@@ -214,6 +214,8 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
         data[tdim] = [dims[2].pprint_value(v) for v in element.dimension_values(2)]
         self._categorize_data(data, (xdim, ydim), element.dimensions())
 
+        self._get_hover_data(data, element)
+
         cdim = element.get_dimension(self.color_index)
         if cdim is None:
             return data, mapping, style

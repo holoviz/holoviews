@@ -197,3 +197,36 @@ class TestLabelsPlot(TestBokehPlot):
             ]) for i in range(3)}
         ).overlay()
         assert isinstance(hm[0].opts["text_color"], Cycle)
+
+    def test_labels_hover_with_vdims(self):
+        labels = Labels(
+            [(0, 1, 'A', 10.5, 100), (1, 0, 'B', 20.3, 200)],
+            vdims=['text', 'value', 'count']
+        ).opts(hover_tooltips=[('Text', '@text'), ('Value', '@value'), ('Count', '@count')])
+        plot = bokeh_renderer.get_plot(labels)
+        source = plot.handles['source']
+        glyph = plot.handles['glyph']
+
+        expected = {
+            'x': np.array([0, 1]),
+            'y': np.array([1, 0]),
+            'text': ['A', 'B'],
+            'value': np.array([10.5, 20.3]),
+            'count': np.array([100, 200])
+        }
+        for k, vals in expected.items():
+            assert k in source.data, f"Expected key '{k}' not found in source.data"
+            np.testing.assert_array_equal(source.data[k], vals)
+
+        assert glyph.x == 'x'
+        assert glyph.y == 'y'
+        assert glyph.text == 'text'
+
+        assert 'hover' in plot.handles, "Hover tool should be present when hover_tooltips is specified"
+        hover = plot.handles['hover']
+        assert hover.tooltips is not None, "Hover tool should have tooltips configured"
+
+        tooltip_str = str(hover.tooltips)
+        assert '@{text}' in tooltip_str or '@text' in tooltip_str, "Tooltips should reference text field"
+        assert '@{value}' in tooltip_str or '@value' in tooltip_str, "Tooltips should reference value field"
+        assert '@{count}' in tooltip_str or '@count' in tooltip_str, "Tooltips should reference count field"
