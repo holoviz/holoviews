@@ -84,8 +84,9 @@ class Scatter(Selection1DExpr, Chart):
 
     Create a scatter plot from tabular data with multiple value dimensions for color and size::
 
-        import holoviews as hv
+        import numpy as np
         import pandas as pd
+        import holoviews as hv
         hv.extension('bokeh')
 
         data = pd.DataFrame(
