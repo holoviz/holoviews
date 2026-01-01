@@ -1747,6 +1747,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         elif self.aspect is not None:
             return self.aspect
         elif self.width is not None and self.height is not None:
+            # FIX: Added a check for zero height here
+            if self.height == 0:
+                return 0
             return self.width/self.height
         else:
             return 1
