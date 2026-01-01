@@ -103,7 +103,7 @@ class Scatter(Selection1DExpr, Chart):
 
     References
     ----------
-    .. https://holoviews.org/reference/elements/bokeh/Scatter.html
+    https://holoviews.org/reference/elements/bokeh/Scatter.html
     """
 
     group = param.String(default='Scatter', constant=True)
