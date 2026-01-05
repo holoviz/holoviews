@@ -6,7 +6,7 @@ from holoviews.core.options import Cycle
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Labels
 from holoviews.plotting.bokeh.util import property_to_dict
-from holoviews.testing import assert_data_equal
+from holoviews.testing import assert_data_equal, assert_dict_equal
 
 from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
@@ -206,27 +206,19 @@ class TestLabelsPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(labels)
         source = plot.handles['source']
         glyph = plot.handles['glyph']
+        hover = plot.handles['hover']
 
         expected = {
             'x': np.array([0, 1]),
             'y': np.array([1, 0]),
             'text': ['A', 'B'],
             'value': np.array([10.5, 20.3]),
-            'count': np.array([100, 200])
+            'count': np.array([100, 200]),
         }
-        for k, vals in expected.items():
-            assert k in source.data, f"Expected key '{k}' not found in source.data"
-            np.testing.assert_array_equal(source.data[k], vals)
+        assert_dict_equal(source.data, expected)
 
         assert glyph.x == 'x'
         assert glyph.y == 'y'
         assert glyph.text == 'text'
 
-        assert 'hover' in plot.handles, "Hover tool should be present when hover_tooltips is specified"
-        hover = plot.handles['hover']
-        assert hover.tooltips is not None, "Hover tool should have tooltips configured"
-
-        tooltip_str = str(hover.tooltips)
-        assert '@{text}' in tooltip_str or '@text' in tooltip_str, "Tooltips should reference text field"
-        assert '@{value}' in tooltip_str or '@value' in tooltip_str, "Tooltips should reference value field"
-        assert '@{count}' in tooltip_str or '@count' in tooltip_str, "Tooltips should reference count field"
+        assert hover.tooltips == [('Text', '@{text}'), ('Value', '@{value}'), ('Count', '@{count}')]
