@@ -73,9 +73,8 @@ class TimeseriesOperationTests:
         assert_element_equal(outliers, Scatter([(pd.Timestamp("2016-01-05"), 10)]))
 
     def test_rolling_outliers_std_dataset(self):
-        # Create Dataset explicitly
+        # create Dataset explicitly
         ds = Dataset((self.dates, self.outliers), kdims=['x'], vdims=['y'])
-        # Convert to Curve (common Dataset → Element workflow)
         curve = ds.to(Curve)
         outliers = rolling_outlier_std(curve, rolling_window=2, sigma=1)
         expected = Scatter([(pd.Timestamp("2016-01-05"), 10)])
