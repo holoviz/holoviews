@@ -309,7 +309,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         doc="A list of plugin tools to use on the plot.")
 
     tools = param.List(default=[], doc="""
-        A list of plugin tools to use on the plot.""")
+        A list of additional plugin tools to use on the plot.
+        Use this parameter to add extra tools to the set of default tools.""")
 
     hover_tooltips = param.ClassSelector(class_=(list, str), doc="""
         A list of dimensions to be displayed in the hover tooltip.""")
@@ -1747,7 +1748,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         elif self.aspect is not None:
             return self.aspect
         elif self.width is not None and self.height is not None:
-            return self.width/self.height
+            return self.width/self.height if self.height else 0
         else:
             return 1
 

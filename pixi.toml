@@ -71,6 +71,7 @@ no-default-feature = true
 [feature.required.dependencies]
 nomkl = "*"
 pip = "*"
+python-gil = "*"
 # Required
 bokeh = ">=3.1"
 colorcet = "*"
@@ -120,7 +121,7 @@ COVERAGE_CORE = "sysmon"
 channels = ["conda-forge/label/pandas_rc"]
 
 [feature.pandas3.dependencies]
-pandas = { version = "==3.0.0rc0", channel = "conda-forge/label/pandas_rc" }
+pandas = { version = "3.0.*", channel = "conda-forge/label/pandas_rc" }
 
 [feature.optional.dependencies]
 bokeh_sampledata = "*"
@@ -141,7 +142,7 @@ plotly = ">=4.0"
 polars = "*"
 pooch = "*"
 pyarrow = "*"
-pyparsing = "*"
+pyparsing = "<3.3.0" # removed in HoloViews 1.23
 python-duckdb = "*"
 scikit-image = "*"
 scipy = "*"
@@ -173,7 +174,7 @@ plotly = ">=4.0"
 polars = "*"
 pooch = "*"
 pyarrow = "*"
-pyparsing = "*"
+pyparsing = "<3.3.0" # removed in HoloViews 1.23
 python-duckdb = "*"
 scikit-image = "*"
 scipy = "*"
