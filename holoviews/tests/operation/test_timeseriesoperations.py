@@ -76,10 +76,10 @@ class TimeseriesOperationTests:
     def test_rolling_outliers_std_dataset(self):
         # create Dataset explicitly
         ds = xr.Dataset(
-            data_vars={"value": ("time", self.outliers)},
-            coords={"time": self.dates}
+            data_vars={"y": ("x", self.outliers)},
+            coords={"x": self.dates}
         )
-        curve = Curve(ds, ["time"], ["value"])
+        curve = Curve(ds, ["x"], ["y"])
         outliers = rolling_outlier_std(curve, rolling_window=2, sigma=1)
         expected = Scatter([(pd.Timestamp("2016-01-05"), 10)])
         assert_element_equal(outliers, expected)
