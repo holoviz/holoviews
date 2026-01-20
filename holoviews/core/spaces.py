@@ -1289,12 +1289,17 @@ class DynamicMap(HoloMap):
             empty = self._stream_parameters() == [] and self.kdims==[]
             if dimensionless or empty:
                 raise KeyError('Using dimensionless streams disables DynamicMap cache')
-            cache = super().__getitem__(key)
+            if sample and any(getattr(dim, "values", None) for dim in self.kdims):
+                cached_data = {k: self.data[k] for k in key if k in self.data}
+                cache = None
+            else:
+                cache = super().__getitem__(key)
+                cached_data = cache.data
         except KeyError:
-            cache = None
+            cache, cached_data = None, {}
 
         # If the key expresses a cross product, compute the elements and return
-        product = self._cross_product(tuple_key, cache.data if cache else {}, data_slice)
+        product = self._cross_product(tuple_key, cached_data, data_slice)
         if product is not None:
             return product
 
