@@ -25,15 +25,6 @@ def show_traceback():
     print(FULL_TRACEBACK)
 
 
-def __getattr__(attr):
-    if attr == "IPTestCase":
-        from ..element.comparison import IPTestCase
-        from ..util.warnings import deprecated
-        deprecated("1.23.0", old="holoviews.ipython.IPTestCase", new="holoviews.element.comparison.IPTestCase")
-        return IPTestCase
-    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
-
-
 class notebook_extension(extension):
     """Notebook specific extension to hv.extension that offers options for
     controlling the notebook environment.
