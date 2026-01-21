@@ -147,8 +147,6 @@ if TYPE_CHECKING:
     # Adding this here to have better docstring in LSP
     from .util import extension
 
-# A single holoviews.rc file may be executed if found.
-# In HoloViews 1.23.0, it will need to be set with env. var. HOLOVIEWSRC
 _load_rc_file()
 
 def help(obj, visualization=True, ansi=True, backend=None,

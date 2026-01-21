@@ -1107,29 +1107,16 @@ class Dynamic(param.ParameterizedFunction):
 
 
 def _load_rc_file():
-    files = [
-        os.environ.get("HOLOVIEWSRC", ''),
-        os.path.abspath(os.path.join(os.path.split(__file__)[0], '..', '..', 'holoviews.rc')),
-        "~/.holoviews.rc",
-        "~/.config/holoviews/holoviews.rc"
-    ]
+    file = os.getenv("HOLOVIEWSRC")
+    if not file:
+        return
+    filename = os.path.expanduser(file)
+    if not os.path.isfile(filename):
+        print(f"Warning: {filename!r} does not exist")
+        return
 
-    # A single holoviews.rc file may be executed if found.
-    for idx, file in enumerate(files):
-        filename = os.path.expanduser(file)
-        if os.path.isfile(filename):
-            with open(filename, encoding='utf8') as f:
-                try:
-                    exec(compile(f.read(), filename, 'exec'))
-                except Exception as e:
-                    print(f"Warning: Could not load {filename!r} [{str(e)!r}]")
-
-            if idx != 0:
-                from .warnings import deprecated
-                deprecated(
-                    "1.23.0",
-                    "Automatic detections of HoloViews config file",
-                    extra=f"You can disable this warning by setting the environment variable 'HOLOVIEWSRC' to {filename!r}.",
-                    repr_old=False,
-                )
-            return
+    with open(filename, encoding='utf8') as f:
+        try:
+            exec(compile(f.read(), filename, 'exec'))
+        except Exception as e:
+            print(f"Warning: Could not load {filename!r} [{str(e)!r}]")
