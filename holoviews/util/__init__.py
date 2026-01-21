@@ -26,7 +26,6 @@ from ..core.overlay import Overlay
 from ..operation.element import function
 from ..streams import Params, Stream, streams_list_from_dict
 from .settings import OutputSettings, list_backends, list_formats
-from .warnings import deprecated
 
 Store.output_settings = OutputSettings
 
@@ -704,14 +703,11 @@ class extension(_pyviz_extension):
             if p in self._backends:
                 imports.append((p, self._backends[p]))
         if not imports:
-            deprecated(
-                "1.23.0",
-                "Calling 'hv.extension()' without arguments",
-                'hv.extension("matplotlib")',
-                repr_old=False,
+            msg = (
+                "Calling 'hv.extension()' without arguments is not supported. "
+                "Use e.g. hv.extension('bokeh')."
             )
-            args = ['matplotlib']
-            imports = [('matplotlib', 'mpl')]
+            raise TypeError(msg)
 
         args = list(args)
         selected_backend = None
