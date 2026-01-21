@@ -1,8 +1,6 @@
 import builtins
 import datetime as dt
-import functools
 import hashlib
-import importlib
 import inspect
 import itertools
 import json
@@ -2441,38 +2439,6 @@ def flatten(line):
             yield from flatten(element)
         else:
             yield element
-
-
-def lazy_isinstance(obj, class_or_tuple):
-    """Lazy isinstance check
-
-    Will only import the module of the object if the module of the
-    obj matches the first value of an item in class_or_tuple.
-
-    lazy_isinstance(obj, 'dask.dataframe:DataFrame')
-
-    Will :
-        1) check if the first module is dask
-        2) If it dask, import dask.dataframe
-        3) Do an isinstance check for dask.dataframe.DataFrame
-
-    """
-    from ...util.warnings import deprecated
-
-    deprecated("1.23.0", "lazy_isinstance") # Not used in HoloViews anymore
-
-    if isinstance(class_or_tuple, str):
-        class_or_tuple = (class_or_tuple,)
-
-    obj_mod_name = obj.__module__.split('.')[0]
-    for cls in class_or_tuple:
-        mod_name, _, attr_name = cls.partition(':')
-        if not obj_mod_name.startswith(mod_name.split(".")[0]):
-            continue
-        mod = importlib.import_module(mod_name)
-        if isinstance(obj, functools.reduce(getattr, attr_name.split('.'), mod)):
-            return True
-    return False
 
 
 def dtype_kind(obj) -> str:
