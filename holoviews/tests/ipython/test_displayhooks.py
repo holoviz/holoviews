@@ -23,9 +23,7 @@ class TestDisplayHooks(IPythonCase):
 
 class TestHTMLDisplay(TestDisplayHooks):
 
-    def setup_method(self):
-        self.format = ['html']
-        super().setup_method()
+    format = ['html']
 
     def test_store_render_html(self):
         curve = Curve([1, 2, 3])
@@ -36,9 +34,7 @@ class TestHTMLDisplay(TestDisplayHooks):
 
 class TestPNGDisplay(TestDisplayHooks):
 
-    def setup_method(self):
-        self.format = ['png']
-        super().setup_method()
+    format = ['png']
 
     def test_store_render_png(self):
         curve = Curve([1, 2, 3])
@@ -49,9 +45,7 @@ class TestPNGDisplay(TestDisplayHooks):
 
 class TestSVGDisplay(TestDisplayHooks):
 
-    def setup_method(self):
-        self.format = ['svg']
-        super().setup_method()
+    format = ['svg']
 
     def test_store_render_svg(self):
         curve = Curve([1, 2, 3])
@@ -62,9 +56,7 @@ class TestSVGDisplay(TestDisplayHooks):
 
 class TestCombinedDisplay(TestDisplayHooks):
 
-    def setup_method(self):
-        self.format = ['html', 'svg', 'png']
-        super().setup_method()
+    format = ['html', 'svg', 'png']
 
     def test_store_render_combined(self):
         curve = Curve([1, 2, 3])

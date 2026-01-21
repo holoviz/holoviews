@@ -10,10 +10,12 @@ import holoviews as hv
 
 from ..core.dimension import LabelledData
 from ..core.options import Store
+from ..core.pprint import InfoPrinter
 from ..core.tree import AttrTree
 from ..util import extension
 from .display_hooks import display, png_display, pprint_display, svg_display
-from .magics import load_magics
+
+InfoPrinter.store = Store
 
 AttrTree._disabled_prefixes = ['_repr_','_ipython_canary_method_should_not_exist']
 
@@ -122,7 +124,6 @@ class notebook_extension(extension):
         loaded = notebook_extension._loaded
         if loaded == False:
             param_ext.load_ipython_extension(ip, verbose=False)
-            load_magics(ip)
             Store.output_settings.initialize(list(Store.renderers.keys()))
             Store.set_display_hook('html+js', LabelledData, pprint_display)
             Store.set_display_hook('png', LabelledData, png_display)
