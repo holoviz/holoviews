@@ -7,7 +7,7 @@ the process of plotting.
 
 HoloViews
 
-- supports a wide range of data sources including Pandas, Dask, XArray Rapids cuDF, Intake, Geopandas, NetworkX and Ibis.
+- supports a wide range of data sources, including Pandas, Dask, polars, duckdb, Xarray, cuDF, NetworkX, and Ibis.
 
 - supports the plotting backends Bokeh (default), Matplotlib and Plotly.
 
