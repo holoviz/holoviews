@@ -149,6 +149,8 @@ filterwarnings = [
     "ignore:'_UnionGenericAlias' is deprecated and slated for removal in Python 3.17", # OK
     # 2025-11
     "ignore:Inheriting from 'holoviews.element.comparison.ComparisonInterface::holoviews.tests.element", # https://github.com/holoviz/holoviews/pull/6735
+    # 2026-01
+    "ignore:The cuda.core.experimental namespace is deprecated:DeprecationWarning:numba.cuda", # OK
 ]
 
 [tool.coverage]
