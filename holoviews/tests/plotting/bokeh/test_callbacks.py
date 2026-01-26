@@ -280,6 +280,16 @@ class TestEditToolCallbacks(CallbackTestCase):
         element = Rectangles([(-0.25, -1, 0.25, 1), (0, 0.75, 2, 1.25)])
         assert_element_equal(box_edit.element, element)
 
+    def test_box_edit_stream_data_initialized(self):
+        boxes = Rectangles([(-0.5, -0.5, 0.5, 0.5), (0, 0, 1, 1)])
+        box_edit = BoxEdit(source=boxes)
+        bokeh_server_renderer.get_plot(boxes)
+
+        assert list(box_edit.data['x0']) == [-0.5, 0]
+        assert list(box_edit.data['y0']) == [-0.5, 0]
+        assert list(box_edit.data['x1']) == [0.5, 1]
+        assert list(box_edit.data['y1']) == [0.5, 1]
+
     async def test_box_edit_callback_legacy(self):
         boxes = Polygons([Box(0, 0, 1)])
         box_edit = BoxEdit(source=boxes)
