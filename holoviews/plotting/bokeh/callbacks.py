@@ -1575,7 +1575,7 @@ class PolyDrawCallback(GlyphDrawCallback):
             vertex_style = dict({'size': 10}, **stream.vertex_style)
             r1 = plot.state.scatter([], [], **vertex_style)
             kwargs['vertex_renderer'] = r1
-            # Link vertex_renderer visibility to glyph_renderer visibility (issue #6717)
+            r1.visible = plot.handles['glyph_renderer'].visible
             plot.handles['glyph_renderer'].js_link('visible', r1, 'visible')
         if stream.styles:
             self._create_style_callback(cds, glyph)
@@ -1732,8 +1732,6 @@ class PolyEditCallback(PolyDrawCallback):
             r1 = plot.state.scatter([], [], **vertex_style)
             vertex_tool = PolyEditTool(vertex_renderer=r1, **kwargs)
             plot.state.tools.append(vertex_tool)
-            # Link vertex_renderer visibility to glyph_renderer visibility (issue #6717)
-            plot.handles['glyph_renderer'].js_link('visible', r1, 'visible')
         vertex_tool.renderers.append(plot.handles['glyph_renderer'])
         self._update_cds_vdims(cds.data)
         CDSCallback.initialize(self, plot_id)
