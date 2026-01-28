@@ -1094,10 +1094,11 @@ class Interface(param.Parameterized):
 
         Returns
         -------
-        str
-            The geometry type
+        str | None
+            The geometry type otherwise None
         """
-        raise NotImplementedError
+        # Not using NotImplementedError as default to allow graceful fallback
+        return None
 
     @classmethod
     def has_holes(cls, dataset):
