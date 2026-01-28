@@ -162,14 +162,31 @@ class Interface(param.Parameterized):
 
     @classmethod
     def register(cls, interface):
+        """
+        Registers a new Interface.
+        """
         cls.interfaces[interface.datatype] = interface
 
     @classmethod
     def cast(cls, datasets, datatype=None, cast_type=None):
-        """Given a list of Dataset objects, cast them to the specified
+        """
+        Given a list of Dataset objects, cast them to the specified
         datatype (by default the format matching the current interface)
         with the given cast_type (if specified).
 
+        Parameters
+        ----------
+        datasets : list
+            List of Dataset objects to cast
+        datatype : str, optional
+            The datatype to cast to
+        cast_type : type, optional
+            The type to cast to
+
+        Returns
+        -------
+        list
+            List of cast Dataset objects
         """
         datatype = datatype or cls.datatype
         cast = []
@@ -181,6 +198,9 @@ class Interface(param.Parameterized):
 
     @classmethod
     def error(cls):
+        """
+        Error message raised if interface could not resolve data.
+        """
         info = dict(interface=cls.__name__)
         url = "https://holoviews.org/user_guide/%s_Datasets.html"
         if cls.multi:
@@ -276,6 +296,11 @@ class Interface(param.Parameterized):
 
     @classmethod
     def validate(cls, dataset, vdims=True):
+        """
+        Validation runs after the Dataset has been constructed and should
+        validate that the Dataset is correctly formed and contains
+        all declared dimensions.
+        """
         dims = 'all' if vdims else 'key'
         not_found = [d for d in dataset.dimensions(dims, label='name')
                      if d not in dataset.data]
@@ -286,15 +311,43 @@ class Interface(param.Parameterized):
 
     @classmethod
     def persist(cls, dataset):
-        """Should return a persisted version of the Dataset.
+        """
+        Persists the data backing the Dataset in memory.
 
+        Notes
+        -----
+        This is a no-op if the data is already in memory.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to persist
+
+        Returns
+        -------
+        Dataset
+            Dataset with the data persisted to memory
         """
         return dataset
 
     @classmethod
     def compute(cls, dataset):
-        """Should return a computed version of the Dataset.
+        """
+        Converts a lazy Dataset to a non-lazy, in-memory format.
 
+        Notes
+        -----
+        This is a no-op if the data is already non-lazy.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to compute
+
+        Returns
+        -------
+        Dataset
+            Dataset with non-lazy data
         """
         return dataset
 
@@ -304,13 +357,44 @@ class Interface(param.Parameterized):
 
     @classmethod
     def isscalar(cls, dataset, dim):
+        """
+        Whether the selected dimension is a scalar value.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to query
+        dim : str or Dimension
+            Dimension to check for scalar value
+
+        Returns
+        -------
+        bool
+            Whether the dimension is scalar
+        """
         return len(cls.values(dataset, dim, expanded=False)) == 1
 
     @classmethod
     def isunique(cls, dataset, dim, per_geom=False):
-        """Compatibility method introduced for v1.13.0 to smooth
+        """
+        Whether the selected dimension has only a single unique value.
+
+        Compatibility method introduced for v1.13.0 to smooth
         over addition of per_geom kwarg for isscalar method.
 
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to query
+        dim : str or Dimension
+            Dimension to check for scalar value
+        per_geom : bool, default False
+            Whether to check per geometry
+
+        Returns
+        -------
+        bool
+            Whether the dimension is scalar
         """
         try:
             return cls.isscalar(dataset, dim, per_geom)
@@ -319,6 +403,21 @@ class Interface(param.Parameterized):
 
     @classmethod
     def dtype(cls, dataset, dimension):
+        """
+        Returns the dtype for the selected dimension.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to query
+        dimension : str or Dimension
+            Dimension to return the dtype for
+
+        Returns
+        -------
+        numpy.dtype
+            The dtype of the selected dimension
+        """
         name = dataset.get_dimension(dimension, strict=True).name
         data = dataset.data[name]
         if util.isscalar(data):
@@ -328,8 +427,20 @@ class Interface(param.Parameterized):
 
     @classmethod
     def replace_value(cls, data, nodata):
-        """Replace `nodata` value in data with NaN
+        """
+        Replace `nodata` value in data with NaN.
 
+        Parameters
+        ----------
+        data : ndarray
+            The data array
+        nodata : number
+            The nodata value to replace
+
+        Returns
+        -------
+        ndarray
+            Array with the nodata value replaced with NaN
         """
         data = data.astype('float64')
         mask = data != nodata
@@ -339,11 +450,23 @@ class Interface(param.Parameterized):
 
     @classmethod
     def select_mask(cls, dataset, selection):
-        """Given a Dataset object and a dictionary with dimension keys and
+        """
+        Given a Dataset object and a dictionary with dimension keys and
         selection keys (i.e. tuple ranges, slices, sets, lists, or literals)
         return a boolean mask over the rows in the Dataset object that
         have been selected.
 
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to select from
+        selection : dict
+            Dictionary containing selections for each column
+
+        Returns
+        -------
+        ndarray of bool
+            Boolean array representing the selection mask
         """
         mask = np.ones(len(dataset), dtype=np.bool_)
         for dim, sel in selection.items():
@@ -409,9 +532,63 @@ class Interface(param.Parameterized):
         all_kdims = all(d in selected for d in dataset.kdims)
         return all_scalar and all_kdims
 
+    @classmethod
+    def values(cls, dataset, dimension, expanded=True, flat=True, compute=True, keep_index=False):
+        """
+        Returns the values along a dimension of the dataset.
+
+        Notes
+        -----
+        The expanded keyword has different behavior for gridded
+        interfaces where it determines whether 1D coordinates
+        are expanded into a multi-dimensional array.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to query
+        dimension : str or Dimension
+            Dimension to return the values for
+        expanded : bool, default True
+            When false returns unique values along the dimension
+        flat : bool, default True
+            Whether to flatten the array
+        compute : bool, default True
+            Whether to load lazy data into memory as a NumPy array
+        keep_index : bool, default False
+            Whether to return the data with an index (if present)
+
+        Returns
+        -------
+        array-like
+            Dimension values in the requested format
+        """
+        raise NotImplementedError
 
     @classmethod
     def range(cls, dataset, dimension):
+        """
+        Computes the minimum and maximum value along a dimension.
+
+        Notes
+        -----
+        In the past categorical and string columns were handled by sorting
+        the values and taking the first and last value. This behavior is
+        deprecated and will be removed in 2.0. In future the range for
+        these columns will be returned as (None, None).
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to query
+        dimension : str or Dimension
+            Dimension to compute the range on
+
+        Returns
+        -------
+        tuple
+            Tuple of (min, max) values
+        """
         column = dataset.dimension_values(dimension)
         if dtype_kind(column) == 'M':
             return column.min(), column.max()
@@ -431,8 +608,22 @@ class Interface(param.Parameterized):
 
     @classmethod
     def concatenate(cls, datasets, datatype=None, new_type=None):
-        """Utility function to concatenate an NdMapping of Dataset objects.
+        """
+        Utility function to concatenate an NdMapping of Dataset objects.
 
+        Parameters
+        ----------
+        datasets : NdMapping or list
+            NdMapping or list of Dataset objects to concatenate
+        datatype : str, optional
+            The datatype to use for concatenation
+        new_type : type, optional
+            The type to use for the resulting Dataset
+
+        Returns
+        -------
+        Dataset
+            Concatenated Dataset
         """
         from . import Dataset, default_datatype
         new_type = new_type or Dataset
@@ -468,7 +659,191 @@ class Interface(param.Parameterized):
         return template.clone(concat_data, kdims=dimensions+template.kdims, new_type=new_type)
 
     @classmethod
+    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+        """
+        Returns a copy of the data with the dimension values added.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The Dataset to add the dimension to
+        dimension : Dimension
+            The dimension to add
+        dim_pos : int
+            The position in the data to add it to
+        values : array-like
+            The array of values to add
+        vdim : bool
+            Whether the data is a value dimension
+
+        Returns
+        -------
+        data
+            A copy of the data with the new dimension
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def assign(cls, dataset, new_data):
+        """
+        Adds a dictionary containing data for multiple new dimensions
+        to a copy of the dataset.data.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The Dataset to add the dimension to
+        new_data : dict
+            Dictionary containing new data to add to the Dataset
+
+        Returns
+        -------
+        data
+            A copy of the data with the new data dimensions added
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
+        """
+        Groups the data by one or more dimensions.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to group
+        dimensions : list
+            List of dimensions to group by
+        container_type : type
+            Type of container to return
+        group_type : type
+            Type of group elements
+        **kwargs
+            Additional keyword arguments
+
+        Returns
+        -------
+        data
+            Grouped data
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def iloc(cls, dataset, index):
+        """
+        Implements integer indexing on the rows and columns of the data.
+
+        Notes
+        -----
+        Only implement for tabular interfaces.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to apply the indexing operation on
+        index : tuple or int
+            Index specification (row_index, col_index) or row_index
+
+        Returns
+        -------
+        data
+            Indexed data
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def sample(cls, dataset, samples=None):
+        """
+        Samples the dataset.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to sample
+        samples : list, optional
+            Sample specifications
+
+        Returns
+        -------
+        data
+            Sampled data
+        """
+        if samples is None:
+            samples = []
+        raise NotImplementedError
+
+    @classmethod
+    def select(cls, dataset, selection_mask=None, **selection):
+        """
+        Selects a subset of the data.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to select from
+        selection_mask : ndarray, optional
+            Boolean mask for selection
+        **selection
+            Selection specifications for each dimension
+
+        Returns
+        -------
+        data
+            Selected data
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def aggregate(cls, dataset, kdims, function, **kwargs):
+        """
+        Aggregates the data along specified dimensions.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to aggregate
+        kdims : list
+            List of key dimensions to aggregate over
+        function : str or callable
+            Aggregation function to apply
+        **kwargs
+            Additional keyword arguments
+
+        Returns
+        -------
+        data
+            Aggregated data
+        """
+        raise NotImplementedError
+
+    @classmethod
     def histogram(cls, array, bins, density=True, weights=None):
+        """
+        Computes the histogram on the dimension values with support
+        for specific bins, normalization and weighting.
+
+        Notes
+        -----
+        Usually the dimension_values and weights are assumed to be arrays
+        but each interface should support data stored in whatever format
+        it uses to store dimensions internally.
+
+        Parameters
+        ----------
+        array : array-like
+            In memory representation of the dimension values
+        bins : ndarray or int
+            An array of bins or the number of bins
+        density : bool, default True
+            Whether to normalize the histogram
+        weights : array-like, optional
+            In memory representation of the weighting
+
+        Returns
+        -------
+        tuple
+            Tuple of (histogram values, bin edges)
+        """
         if util.is_dask_array(array):
             import dask.array as da
             histogram = da.histogram
@@ -485,51 +860,304 @@ class Interface(param.Parameterized):
 
     @classmethod
     def reduce(cls, dataset, reduce_dims, function, **kwargs):
+        """
+        Reduces one or more dimensions using the supplied reduction function.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to reduce
+        reduce_dims : list
+            List of dimensions to reduce
+        function : str or ufunc
+            Reduction operation to apply
+        **kwargs
+            Additional keyword arguments
+
+        Returns
+        -------
+        Dataset
+            Dataset containing the reduced (or aggregated) data
+        """
         kdims = [kdim for kdim in dataset.kdims if kdim not in reduce_dims]
         return cls.aggregate(dataset, kdims, function, **kwargs)
 
     @classmethod
+    def mask(cls, dataset, mask, mask_value=np.nan):
+        """
+        Masks the data with a given mask array.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to mask
+        mask : ndarray
+            Boolean mask array
+        mask_value : scalar, default np.nan
+            Value to use for masked elements
+
+        Returns
+        -------
+        data
+            Masked data
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def reindex(cls, dataset, kdims, vdims):
+        """
+        Reindexes data given new key and value dimensions.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to reindex
+        kdims : list
+            New key dimensions
+        vdims : list
+            New value dimensions
+
+        Returns
+        -------
+        data
+            Reindexed data
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def sort(cls, dataset, by=None, reverse=False):
+        """
+        Sorts the data by one or more dimensions.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to sort
+        by : list, optional
+            List of dimensions to sort by
+        reverse : bool, default False
+            Whether to sort in reverse order
+
+        Returns
+        -------
+        data
+            Sorted data
+        """
+        if by is None:
+            by = []
+        raise NotImplementedError
+
+    @classmethod
     def array(cls, dataset, dimensions):
+        """
+        Returns the data as a numpy.ndarray containing the selected dimensions.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to convert
+        dimensions : list of str
+            List of dimensions to include
+
+        Returns
+        -------
+        ndarray
+            A Numpy ndarray containing the selected dimensions
+        """
         return Element.array(dataset, dimensions)
 
     @classmethod
     def dframe(cls, dataset, dimensions):
+        """
+        Returns the data as a pandas.DataFrame containing the selected dimensions.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to convert
+        dimensions : list of str
+            List of dimensions to include
+
+        Returns
+        -------
+        DataFrame
+            A pandas DataFrame containing the selected dimensions
+        """
         return Element.dframe(dataset, dimensions)
 
     @classmethod
     def columns(cls, dataset, dimensions):
+        """
+        Returns the data as a dictionary of 1D arrays indexed by column name.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to convert
+        dimensions : list of str
+            List of dimensions to include
+
+        Returns
+        -------
+        dict
+            Dictionary mapping column names to arrays
+        """
         return Element.columns(dataset, dimensions)
 
     @classmethod
     def shape(cls, dataset):
+        """
+        Returns the shape of the data.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to get the shape from
+
+        Returns
+        -------
+        tuple of int
+            The shape of the data (rows, cols)
+        """
         return dataset.data.shape
 
     @classmethod
     def length(cls, dataset):
+        """
+        Returns the number of rows in the Dataset.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to get the length from
+
+        Returns
+        -------
+        int
+            Length of the data
+        """
         return len(dataset.data)
 
     @classmethod
     def nonzero(cls, dataset):
+        """
+        Returns a boolean indicating whether the Dataset contains any data.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to check
+
+        Returns
+        -------
+        bool
+            Whether the dataset is not empty
+        """
         return bool(cls.length(dataset))
 
     @classmethod
     def redim(cls, dataset, dimensions):
+        """
+        Renames dimensions in the data.
+
+        Notes
+        -----
+        Only meaningful for data formats that store dimension names.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to transform
+        dimensions : dict
+            Dictionary mapping from old to new dimension names
+
+        Returns
+        -------
+        data
+            Data after the dimension names have been transformed
+        """
         return dataset.data
 
     @classmethod
+    def geom_type(cls, dataset):
+        """
+        Returns the geometry type of the data.
+
+        Notes
+        -----
+        Only meaningful to implement on Interfaces that support geometry data.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to query
+
+        Returns
+        -------
+        str
+            The geometry type
+        """
+        raise NotImplementedError
+
+    @classmethod
     def has_holes(cls, dataset):
+        """
+        Whether the Dataset contains geometries with holes.
+
+        Notes
+        -----
+        Only meaningful to implement on Interfaces that support geometry data.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to check
+
+        Returns
+        -------
+        bool
+            Whether the Dataset contains geometries with holes
+        """
         return False
 
     @classmethod
     def holes(cls, dataset):
+        """
+        Returns a list of lists of arrays containing the holes for
+        each geometry in the Dataset.
+
+        Notes
+        -----
+        Only meaningful to implement on Interfaces that support geometry data.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to extract holes from
+
+        Returns
+        -------
+        list of list of ndarray
+            List of list of arrays representing geometry holes
+        """
         coords = cls.values(dataset, dataset.kdims[0])
         splits = np.where(np.isnan(coords.astype('float')))[0]
         return [[[]]*(len(splits)+1)]
 
     @classmethod
     def as_dframe(cls, dataset):
-        """Returns the data of a Dataset as a dataframe avoiding copying
+        """
+        Returns the data of a Dataset as a dataframe avoiding copying
         if it already a dataframe type.
 
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to convert
+
+        Returns
+        -------
+        DataFrame
+            DataFrame representation of the data
         """
         return dataset.dframe()
