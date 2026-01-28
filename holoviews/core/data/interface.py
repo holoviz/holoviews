@@ -173,20 +173,6 @@ class Interface(param.Parameterized):
         Given a list of Dataset objects, cast them to the specified
         datatype (by default the format matching the current interface)
         with the given cast_type (if specified).
-
-        Parameters
-        ----------
-        datasets : list
-            List of Dataset objects to cast
-        datatype : str, optional
-            The datatype to cast to
-        cast_type : type, optional
-            The type to cast to
-
-        Returns
-        -------
-        list
-            List of cast Dataset objects
         """
         datatype = datatype or cls.datatype
         cast = []
@@ -610,20 +596,6 @@ class Interface(param.Parameterized):
     def concatenate(cls, datasets, datatype=None, new_type=None):
         """
         Utility function to concatenate an NdMapping of Dataset objects.
-
-        Parameters
-        ----------
-        datasets : NdMapping or list
-            NdMapping or list of Dataset objects to concatenate
-        datatype : str, optional
-            The datatype to use for concatenation
-        new_type : type, optional
-            The type to use for the resulting Dataset
-
-        Returns
-        -------
-        Dataset
-            Concatenated Dataset
         """
         from . import Dataset, default_datatype
         new_type = new_type or Dataset
@@ -705,27 +677,6 @@ class Interface(param.Parameterized):
 
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
-        """
-        Groups the data by one or more dimensions.
-
-        Parameters
-        ----------
-        dataset : Dataset
-            The dataset to group
-        dimensions : list
-            List of dimensions to group by
-        container_type : type
-            Type of container to return
-        group_type : type
-            Type of group elements
-        **kwargs
-            Additional keyword arguments
-
-        Returns
-        -------
-        data
-            Grouped data
-        """
         raise NotImplementedError
 
     @classmethod
@@ -753,67 +704,16 @@ class Interface(param.Parameterized):
 
     @classmethod
     def sample(cls, dataset, samples=None):
-        """
-        Samples the dataset.
-
-        Parameters
-        ----------
-        dataset : Dataset
-            The dataset to sample
-        samples : list, optional
-            Sample specifications
-
-        Returns
-        -------
-        data
-            Sampled data
-        """
         if samples is None:
             samples = []
         raise NotImplementedError
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
-        """
-        Selects a subset of the data.
-
-        Parameters
-        ----------
-        dataset : Dataset
-            The dataset to select from
-        selection_mask : ndarray, optional
-            Boolean mask for selection
-        **selection
-            Selection specifications for each dimension
-
-        Returns
-        -------
-        data
-            Selected data
-        """
         raise NotImplementedError
 
     @classmethod
     def aggregate(cls, dataset, kdims, function, **kwargs):
-        """
-        Aggregates the data along specified dimensions.
-
-        Parameters
-        ----------
-        dataset : Dataset
-            The dataset to aggregate
-        kdims : list
-            List of key dimensions to aggregate over
-        function : str or callable
-            Aggregation function to apply
-        **kwargs
-            Additional keyword arguments
-
-        Returns
-        -------
-        data
-            Aggregated data
-        """
         raise NotImplementedError
 
     @classmethod
@@ -884,23 +784,6 @@ class Interface(param.Parameterized):
 
     @classmethod
     def mask(cls, dataset, mask, mask_value=np.nan):
-        """
-        Masks the data with a given mask array.
-
-        Parameters
-        ----------
-        dataset : Dataset
-            The dataset to mask
-        mask : ndarray
-            Boolean mask array
-        mask_value : scalar, default np.nan
-            Value to use for masked elements
-
-        Returns
-        -------
-        data
-            Masked data
-        """
         raise NotImplementedError
 
     @classmethod
@@ -926,23 +809,6 @@ class Interface(param.Parameterized):
 
     @classmethod
     def sort(cls, dataset, by=None, reverse=False):
-        """
-        Sorts the data by one or more dimensions.
-
-        Parameters
-        ----------
-        dataset : Dataset
-            The dataset to sort
-        by : list, optional
-            List of dimensions to sort by
-        reverse : bool, default False
-            Whether to sort in reverse order
-
-        Returns
-        -------
-        data
-            Sorted data
-        """
         if by is None:
             by = []
         raise NotImplementedError
@@ -1080,24 +946,7 @@ class Interface(param.Parameterized):
 
     @classmethod
     def geom_type(cls, dataset):
-        """
-        Returns the geometry type of the data.
-
-        Notes
-        -----
-        Only meaningful to implement on Interfaces that support geometry data.
-
-        Parameters
-        ----------
-        dataset : Dataset
-            The dataset to query
-
-        Returns
-        -------
-        str | None
-            The geometry type otherwise None
-        """
-        # Not using NotImplementedError as default to allow graceful fallback
+        # Not using NotImplementedError to allow graceful fallback
         return None
 
     @classmethod
