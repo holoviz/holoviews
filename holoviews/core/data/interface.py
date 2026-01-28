@@ -418,14 +418,14 @@ class Interface(param.Parameterized):
 
         Parameters
         ----------
-        data : ndarray
+        data : np.ndarray
             The data array
         nodata : number
             The nodata value to replace
 
         Returns
         -------
-        ndarray
+        np.ndarray
             Array with the nodata value replaced with NaN
         """
         data = data.astype('float64')
@@ -572,7 +572,7 @@ class Interface(param.Parameterized):
 
         Returns
         -------
-        tuple
+        tuple[Any, Any]
             Tuple of (min, max) values
         """
         column = dataset.dimension_values(dimension)
@@ -732,7 +732,7 @@ class Interface(param.Parameterized):
         ----------
         array : array-like
             In memory representation of the dimension values
-        bins : ndarray or int
+        bins : np.ndarray | int
             An array of bins or the number of bins
         density : bool, default True
             Whether to normalize the histogram
@@ -741,7 +741,7 @@ class Interface(param.Parameterized):
 
         Returns
         -------
-        tuple
+        tuple[np.ndarray, np.ndarray]
             Tuple of (histogram values, bin edges)
         """
         if util.is_dask_array(array):
@@ -790,20 +790,6 @@ class Interface(param.Parameterized):
     def reindex(cls, dataset, kdims, vdims):
         """
         Reindexes data given new key and value dimensions.
-
-        Parameters
-        ----------
-        dataset : Dataset
-            The dataset to reindex
-        kdims : list
-            New key dimensions
-        vdims : list
-            New value dimensions
-
-        Returns
-        -------
-        data
-            Reindexed data
         """
         raise NotImplementedError
 
@@ -822,12 +808,12 @@ class Interface(param.Parameterized):
         ----------
         dataset : Dataset
             The dataset to convert
-        dimensions : list of str
+        dimensions : list[str]
             List of dimensions to include
 
         Returns
         -------
-        ndarray
+        np.ndarray
             A Numpy ndarray containing the selected dimensions
         """
         return Element.array(dataset, dimensions)
@@ -841,7 +827,7 @@ class Interface(param.Parameterized):
         ----------
         dataset : Dataset
             The dataset to convert
-        dimensions : list of str
+        dimensions : list[str]
             List of dimensions to include
 
         Returns
@@ -860,12 +846,12 @@ class Interface(param.Parameterized):
         ----------
         dataset : Dataset
             The dataset to convert
-        dimensions : list of str
+        dimensions : list[str]
             List of dimensions to include
 
         Returns
         -------
-        dict
+        dict[str, np.ndarray]
             Dictionary mapping column names to arrays
         """
         return Element.columns(dataset, dimensions)
@@ -882,7 +868,7 @@ class Interface(param.Parameterized):
 
         Returns
         -------
-        tuple of int
+        tuple[int, int]
             The shape of the data (rows, cols)
         """
         return dataset.data.shape
@@ -934,7 +920,7 @@ class Interface(param.Parameterized):
         ----------
         dataset : Dataset
             The dataset to transform
-        dimensions : dict
+        dimensions : dict[str, str]
             Dictionary mapping from old to new dimension names
 
         Returns
@@ -987,7 +973,7 @@ class Interface(param.Parameterized):
 
         Returns
         -------
-        list of list of ndarray
+        list[list[np.ndarray]]
             List of list of arrays representing geometry holes
         """
         coords = cls.values(dataset, dataset.kdims[0])
