@@ -765,6 +765,14 @@ class OperationTests:
         curve = Curve((dates_interp, [0, 0, 1, 1, 2, 2, 3]))
         assert_element_equal(interpolated, curve)
 
+    @pytest.mark.parametrize("dtype", [pd.Int64Dtype(), np.int64])
+    def test_interpolate_pandas_dtype_curve_post(self, dtype):
+        df = pd.DataFrame(dict(a=[1, 2, 3], b=[3, 4, 5]), dtype=dtype)
+        interpolated = interpolate_curve(Curve(df), interpolation='steps-post')
+        df = pd.DataFrame(dict(a=[1, 2, 2, 3, 3], b=[3, 3, 4, 4, 5]))
+        expected = Curve(df)
+        assert_element_equal(interpolated, expected)
+
     def test_stack_area_overlay(self):
         areas = Area([1, 2, 3]) * Area([1, 2, 3])
         stacked = Area.stack(areas)
