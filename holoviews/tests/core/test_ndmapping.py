@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from holoviews import Dataset, HoloMap
 from holoviews.core import Dimension
@@ -133,6 +134,21 @@ class NdIndexableMappingTest:
     def test_ndmapping_slice_upper_bound_exclusive2_float(self):
         ndmap = NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
         assert ndmap[:, 0.0:3.0].keys() == [(1, 2.0)]
+
+    @pytest.mark.parametrize(
+        ("kdims", "data", "keys"),
+        [
+            ([Dimension("x", values=[1, 2]), "y"], {(1, 0.5): "a", (2, 0.5): "b"}, {(1, 0.5)}),
+            ([Dimension("x", values=["1", "2"]), "y"], {("1", 0.5): "a", ("2", 0.5): "b"}, {("1", 0.5)}),
+        ],
+        ids=["int_values", "str_values"],
+    )
+    def test_explicit_tuple_set_slicing(self, kdims, data, keys):
+        ndmap = NdMapping(data, kdims=kdims)
+        result = ndmap[keys]
+        assert len(result) == len(keys)
+        for key in keys:
+            assert key in result.data
 
     def test_idxmapping_unsorted(self):
         data = [('B', 1), ('C', 2), ('A', 3)]
