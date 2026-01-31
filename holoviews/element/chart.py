@@ -58,11 +58,52 @@ class Chart(Dataset, Element2D):
 
 
 class Scatter(Selection1DExpr, Chart):
-    """Scatter is a Chart element representing a set of points in a 1D
-    coordinate system where the key dimension maps to the points
-    location along the x-axis while the first value dimension
-    represents the location of the point along the y-axis.
+    """Scatter plots show the relationship between two variables as points.
 
+    Each point's x-position comes from the key dimension (kdim, typically
+    the independent variable), while its y-position comes from the first
+    value dimension (vdim, typically the dependent variable).
+
+    Additional value dimensions can control point color, size, and other properties.
+
+    Examples
+    --------
+    Create a basic scatter plot from array data::
+
+        import numpy as np
+        import holoviews as hv
+        hv.extension('bokeh')
+
+        data = np.random.randn(20).cumsum()
+        scatter = hv.Scatter(data)
+        scatter
+
+    Customize appearance with options::
+
+        scatter.opts(color='red', size=10, marker='circle')
+
+    Create a scatter plot from tabular data with multiple value dimensions for color and size::
+
+        import numpy as np
+        import pandas as pd
+        import holoviews as hv
+        hv.extension('bokeh')
+
+        data = pd.DataFrame(
+            np.random.rand(100, 4),
+            columns=['x', 'y', 'z', 'size']
+        )
+        scatter = hv.Scatter(data, kdims='x', vdims=['y', 'z', 'size'])
+        scatter.opts(color='z', size=hv.dim('size')*10)
+
+    See Also
+    --------
+    Curve : Line plot element
+    Points : 2D point cloud element
+
+    References
+    ----------
+    https://holoviews.org/reference/elements/bokeh/Scatter.html
     """
 
     group = param.String(default='Scatter', constant=True)
