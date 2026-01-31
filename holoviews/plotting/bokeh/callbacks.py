@@ -1575,6 +1575,8 @@ class PolyDrawCallback(GlyphDrawCallback):
             vertex_style = dict({'size': 10}, **stream.vertex_style)
             r1 = plot.state.scatter([], [], **vertex_style)
             kwargs['vertex_renderer'] = r1
+            r1.visible = plot.handles['glyph_renderer'].visible
+            plot.handles['glyph_renderer'].js_link('visible', r1, 'visible')
         if stream.styles:
             self._create_style_callback(cds, glyph)
         if stream.tooltip:
