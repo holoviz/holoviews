@@ -1068,10 +1068,14 @@ class interpolate_curve(Operation):
 
     @staticmethod
     def _get_dtype(obj):
-        if dtype_kind(obj) == "O":
+        dtype = obj.dtype
+        if hasattr(dtype, "numpy_dtype"):
+            # Handle non-numpy objects like Pandas Int64Dtype
+            return dtype.numpy_dtype
+        if dtype_kind(dtype) == "O":
             # Handle non-numpy objects like Pandas 3.0 StringArray
             return "O"
-        return obj.dtype
+        return dtype
 
     @classmethod
     def pts_to_prestep(cls, x, values):
