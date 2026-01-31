@@ -140,8 +140,9 @@ class NdIndexableMappingTest:
         [
             ([Dimension("x", values=[1, 2]), "y"], {(1, 0.5): "a", (2, 0.5): "b"}, {(1, 0.5)}),
             ([Dimension("x", values=["1", "2"]), "y"], {("1", 0.5): "a", ("2", 0.5): "b"}, {("1", 0.5)}),
+            (["x", Dimension("y", values=[0.5, 1.5])], {(1, 0.5): "a", (1, 1.5): "b"}, {(1, 0.5)}),
         ],
-        ids=["int_values", "str_values"],
+        ids=["int_values_first", "str_values_first", "int_values_on_second"],
     )
     def test_explicit_tuple_set_slicing(self, kdims, data, keys):
         ndmap = NdMapping(data, kdims=kdims)
