@@ -29,7 +29,7 @@
 
 ## Checklist
 
-- [ ] My PR title follows the conventional commit format shown above
+- [ ] My PR title follows the conventional format shown above
 - [ ] I have added tests, and confirmed that the test suite is passing
 - [ ] I have updated the documentation (if applicable)
 
