@@ -346,6 +346,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         default=None, class_=(str, TickFormatter, FunctionType), doc="""
         Formatter for ticks along the x-axis.""")
 
+    x2rotation = param.Integer(default=None, bounds=(0, 360), doc="""
+        Rotation angle of the xticks.""")
+
     _categorical = False
     _allow_implicit_categories = True
 
@@ -1177,6 +1180,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if ticksize:
                 axis_props['major_label_text_font_size'] = ticksize
             rotation = self.xrotation if axis == 'x' else self.yrotation
+            if axis == 'x':
+                axis_props['group_label_orientation'] = np.radians(self.x2rotation)
             if rotation:
                 axis_props['major_label_orientation'] = np.radians(rotation)
             ticker = self.xticks if axis == 'x' else self.yticks
