@@ -26,7 +26,6 @@ from ..core.overlay import Overlay
 from ..operation.element import function
 from ..streams import Params, Stream, streams_list_from_dict
 from .settings import OutputSettings, list_backends, list_formats
-from .warnings import deprecated
 
 Store.output_settings = OutputSettings
 
@@ -704,14 +703,11 @@ class extension(_pyviz_extension):
             if p in self._backends:
                 imports.append((p, self._backends[p]))
         if not imports:
-            deprecated(
-                "1.23.0",
-                "Calling 'hv.extension()' without arguments",
-                'hv.extension("matplotlib")',
-                repr_old=False,
+            msg = (
+                "Calling 'hv.extension()' without arguments is not supported. "
+                "Use e.g. hv.extension('bokeh')."
             )
-            args = ['matplotlib']
-            imports = [('matplotlib', 'mpl')]
+            raise TypeError(msg)
 
         args = list(args)
         selected_backend = None
@@ -1107,29 +1103,16 @@ class Dynamic(param.ParameterizedFunction):
 
 
 def _load_rc_file():
-    files = [
-        os.environ.get("HOLOVIEWSRC", ''),
-        os.path.abspath(os.path.join(os.path.split(__file__)[0], '..', '..', 'holoviews.rc')),
-        "~/.holoviews.rc",
-        "~/.config/holoviews/holoviews.rc"
-    ]
+    file = os.getenv("HOLOVIEWSRC")
+    if not file:
+        return
+    filename = os.path.expanduser(file)
+    if not os.path.isfile(filename):
+        print(f"Warning: {filename!r} does not exist")
+        return
 
-    # A single holoviews.rc file may be executed if found.
-    for idx, file in enumerate(files):
-        filename = os.path.expanduser(file)
-        if os.path.isfile(filename):
-            with open(filename, encoding='utf8') as f:
-                try:
-                    exec(compile(f.read(), filename, 'exec'))
-                except Exception as e:
-                    print(f"Warning: Could not load {filename!r} [{str(e)!r}]")
-
-            if idx != 0:
-                from .warnings import deprecated
-                deprecated(
-                    "1.23.0",
-                    "Automatic detections of HoloViews config file",
-                    extra=f"You can disable this warning by setting the environment variable 'HOLOVIEWSRC' to {filename!r}.",
-                    repr_old=False,
-                )
-            return
+    with open(filename, encoding='utf8') as f:
+        try:
+            exec(compile(f.read(), filename, 'exec'))
+        except Exception as e:
+            print(f"Warning: Could not load {filename!r} [{str(e)!r}]")
