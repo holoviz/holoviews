@@ -431,12 +431,6 @@ class GPUXArrayInterfaceTest(XArrayInterfaceTests):
                                              cupy_zs), kdims=['x', 'y'],
                                             vdims=['z'])
 
-    @pytest.mark.xfail
-    def test_nodata_range(self):
-        # https://github.com/pydata/xarray/pull/11026
-        super().test_nodata_range()
-
-
 
 @xr_skip
 class ImageElement_XArrayInterfaceTests(BaseImageElementInterfaceTests):

@@ -150,7 +150,7 @@ filterwarnings = [
     # 2025-11
     "ignore:Inheriting from 'holoviews.element.comparison.ComparisonInterface::holoviews.tests.element", # https://github.com/holoviz/holoviews/pull/6735
     # 2026-01
-    "ignore:The cuda.core.experimental namespace is deprecated:DeprecationWarning:numba.cuda", # OK
+    "ignore:The cuda.core.experimental namespace is deprecated:DeprecationWarning:numba.cuda", # https://github.com/rapidsai/cudf/pull/20933
 ]
 
 [tool.coverage]
