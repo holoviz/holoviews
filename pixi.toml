@@ -45,7 +45,7 @@ features = ["required", "py314", "test-core", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-gpu]
-features = ["required", "py312", "test-core", "optional", "test-gpu"]
+features = ["required", "py313", "test-core", "optional", "test-gpu"]
 no-default-feature = true
 
 [environments.docs]
@@ -128,7 +128,6 @@ plotly = ">=4.0"
 polars = "*"
 pooch = "*"
 pyarrow = "*"
-pyparsing = "<3.3.0" # removed in HoloViews 1.23
 python-duckdb = "*"
 scikit-image = "*"
 scipy = "*"
@@ -160,7 +159,6 @@ plotly = ">=4.0"
 polars = "*"
 pooch = "*"
 pyarrow = "*"
-pyparsing = "<3.3.0" # removed in HoloViews 1.23
 python-duckdb = "*"
 scikit-image = "*"
 scipy = "*"
@@ -222,7 +220,7 @@ platforms = ["linux-64"]
 NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = "0"
 
 [feature.test-gpu.dependencies]
-cuda-version = "12.2.*"
+cuda-version = "13.1.*"
 cudf = "25.12.*"
 cupy = "*"
 # cuspatial = "*"  # Paused development: https://docs.rapids.ai/notices/rsn0045/
