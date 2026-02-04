@@ -21,7 +21,7 @@ repos:
     hooks:
       - id: ruff-check
   - repo: https://github.com/hoxbro/clean_notebook
-    rev: e21afc0863da54e0d24e9351f241c30c48327558 # frozen: v0.1.17
+    rev: 3b2c8151041168800c746b6d021c9a4b34187f3b # frozen: v0.2.0
     hooks:
       - id: clean-notebook
         args: [--strip-trailing-newlines]
