@@ -968,7 +968,7 @@ class Compositor(param.Parameterized):
 
             # Guard against infinite recursion for no-ops
             spec_fn = lambda x: not isinstance(x, CompositeOverlay)
-            new_ids = tuple(overlay.traverse(lambda x: id(x), [spec_fn]))
+            new_ids = tuple(overlay.traverse(id, [spec_fn]))
             if new_ids == prev_ids:
                 return overlay
             prev_ids = new_ids
@@ -1264,7 +1264,7 @@ class Store:
                                     pattern=pattern, elements=elements)
 
         if parameterized_object and recursive:
-            hierarchy = obj.traverse(lambda x: type(x))
+            hierarchy = obj.traverse(type)
             listed = []
             for c in hierarchy[1:]:
                 if c not in listed:

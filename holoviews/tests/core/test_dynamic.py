@@ -371,7 +371,7 @@ class TestDynamicMapMethods:
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
         dmap[10]
-        mapped = dmap.map(lambda x: Scatter(x), Curve)
+        mapped = dmap.map(Scatter, Curve)
         area = mapped[11]
         assert_element_equal(area, Scatter(fn(11)))
 
@@ -379,7 +379,7 @@ class TestDynamicMapMethods:
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
         dmap[10]
-        mapped = dmap.apply(lambda x: Scatter(x))
+        mapped = dmap.apply(Scatter)
         area = mapped[11]
         assert_element_equal(area, Scatter(fn(11)))
 

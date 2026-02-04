@@ -46,8 +46,8 @@ points = hv.Points(df, kdims=['pickup_x', 'pickup_y'], vdims=[])
 agg = aggregate(points, link_inputs=True, x_sampling=0.0001, y_sampling=0.0001)
 pointerx = hv.streams.PointerX(x=np.mean(points.range('pickup_x')), source=points)
 pointery = hv.streams.PointerY(y=np.mean(points.range('pickup_y')), source=points)
-vline = hv.DynamicMap(lambda x: hv.VLine(x), streams=[pointerx])
-hline = hv.DynamicMap(lambda y: hv.HLine(y), streams=[pointery])
+vline = hv.DynamicMap(hv.VLine, streams=[pointerx])
+hline = hv.DynamicMap(hv.HLine, streams=[pointery])
 
 sampled = hv.util.Dynamic(agg, operation=lambda obj, x: obj.sample(pickup_x=x),
                           streams=[pointerx], link_inputs=False)
