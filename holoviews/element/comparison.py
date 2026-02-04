@@ -828,7 +828,7 @@ class IPTestCase(ComparisonTestCase):
 
         super().setUp()
         self.exits = []
-        with patch('atexit.register', lambda x: self.exits.append(x)):
+        with patch('atexit.register', self.exits.append):
             config = Config()
             config.HistoryManager.hist_file = ':memory:'
             self.ip = IPython.InteractiveShell(

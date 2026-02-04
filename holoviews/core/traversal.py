@@ -53,7 +53,7 @@ def unique_dimkeys(obj, default_dim='Frame'):
     # Find unique keys
     if subset:
         dims = merge_dimensions(dim_groups)
-        all_dims = sorted(dims, key=lambda x: dim_groups[0].index(x))
+        all_dims = sorted(dims, key=dim_groups[0].index)
     else:
         # Handle condition when HoloMap/DynamicMap dimensions do not overlap
         hmaps = obj.traverse(lambda x: x, ['HoloMap'])
