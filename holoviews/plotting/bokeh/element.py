@@ -88,6 +88,7 @@ from .util import (
     get_scale,
     get_tab_title,
     get_ticker_axis_props,
+    get_tool_id,
     glyph_order,
     hold_policy,
     hold_render,
@@ -3250,40 +3251,55 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             callbacks = []
         hover_tools = {}
         zooms_subcoordy = {}
-        _zoom_types = (tools.WheelZoomTool, tools.ZoomInTool, tools.ZoomOutTool)
-        init_tools, tool_types = [], []
+        zoom_types = (tools.WheelZoomTool, tools.ZoomInTool, tools.ZoomOutTool)
+        init_tools, tool_ids = [], set()
+
+        def process_tool(tool, skip_subcoordy_overlay_check=False):
+            tool_id = get_tool_id(tool)
+
+            if (skip_subcoordy_overlay_check and self.subcoordinate_y and
+                tool_id[0] in zoom_types and isinstance(tool, str) and
+                not tool.startswith('x') and tool.replace('_tool', '') in zooms_subcoordy):
+                return False
+
+            # Handle HoverTool deduplication by tooltips
+            if isinstance(tool, tools.HoverTool):
+                if isinstance(tool.tooltips, bokeh.models.dom.Div):
+                    tooltips = tool.tooltips
+                else:
+                    tooltips = tuple(tool.tooltips) if tool.tooltips else ()
+                if tooltips in hover_tools:
+                    return False
+                hover_tools[tooltips] = tool
+            elif (
+                self.subcoordinate_y and isinstance(tool, zoom_types)
+                and 'hv_created' in tool.tags and len(tool.tags) == 2
+            ):
+                if tool.tags[1] in zooms_subcoordy:
+                    return False
+                zooms_subcoordy[tool.tags[1]] = tool
+                self.handles['zooms_subcoordy'] = zooms_subcoordy
+            elif tool_id in tool_ids:
+                return False
+
+            tool_ids.add(tool_id)
+            return True
+
+        # Collect tools from subplots
         for key, subplot in self.subplots.items():
             el = element.get(key)
             if el is not None:
                 el_tools = subplot._init_tools(el, self.callbacks)
                 for tool in el_tools:
-                    if isinstance(tool, str):
-                        tool_type = TOOL_TYPES.get(tool)
-                    else:
-                        tool_type = type(tool)
-                    if isinstance(tool, tools.HoverTool):
-                        if isinstance(tool.tooltips, bokeh.models.dom.Div):
-                            tooltips = tool.tooltips
-                        else:
-                            tooltips = tuple(tool.tooltips) if tool.tooltips else ()
-                        if tooltips in hover_tools:
-                            continue
-                        else:
-                            hover_tools[tooltips] = tool
-                    elif (
-                        self.subcoordinate_y and isinstance(tool, _zoom_types)
-                        and 'hv_created' in tool.tags and len(tool.tags) == 2
-                    ):
-                        if tool.tags[1] in zooms_subcoordy:
-                            continue
-                        else:
-                            zooms_subcoordy[tool.tags[1]] = tool
-                            self.handles['zooms_subcoordy'] = zooms_subcoordy
-                    elif tool_type in tool_types:
-                        continue
-                    else:
-                        tool_types.append(tool_type)
-                    init_tools.append(tool)
+                    if process_tool(tool):
+                        init_tools.append(tool)
+
+        # Add tools specified directly on the overlay
+        overlay_tools = self.default_tools + self.tools
+        for tool in overlay_tools:
+            if process_tool(tool, skip_subcoordy_overlay_check=True):
+                init_tools.append(tool)
+
         self.handles['hover_tools'] = hover_tools
         return init_tools
 
