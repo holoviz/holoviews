@@ -279,6 +279,13 @@ class XArrayInterface(GridInterface):
                                 "non-matching array dimensions:\n\n{}".format('\n'.join(nonmatching)), cls)
 
     @classmethod
+    def irregular(cls, dataset, dim):
+        if dataset.data[dimension_name(dim)].ndim > 1:
+            return True
+        dim_name = dimension_name(dim)
+        return dim_name not in dataset.data.dims and dim_name in dataset.data.coords
+
+    @classmethod
     def compute(cls, dataset):
         return dataset.clone(dataset.data.compute())
 
