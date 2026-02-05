@@ -487,6 +487,33 @@ class TestDynamicMapMethods:
         with pytest.raises(KeyError):
             dmaps[1][1]
 
+    @pytest.mark.parametrize(
+        ('kdims', 'keys'),
+        [
+            ([Dimension("x", values=[1, 2]), "y"], {(1, 0.5)}),
+            ([Dimension("x", values=["1", "2"]), "y"], {("1", 0.5)}),
+            ([Dimension("x", range=(1, 5)), "y"], {(1, 0.5)}),
+        ],
+        ids=["int_values", "str_values", "no_values"],
+    )
+    def test_explicit_tuple_set_slicing(self, kdims, keys):
+        call_count = [0]
+
+        def callback(x, y):
+            call_count[0] += 1
+            return Curve([x, y])
+
+        dmap = DynamicMap(callback, kdims=kdims)
+        result = dmap[keys]
+        assert len(result) == len(keys)
+        for key in keys:
+            assert key in result.data
+
+        assert call_count[0] == 1
+
+        # Check we hit cache
+        result = dmap[keys]
+        assert call_count[0] == 1
 
 
 class DynamicMapOptionsTests(CustomBackendTestCase):
