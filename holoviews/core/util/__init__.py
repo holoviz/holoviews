@@ -1247,7 +1247,7 @@ def unique_array(arr):
 
     if isinstance(arr, np.ndarray) and dtype_kind(arr) not in 'MO':
         # Avoid expensive unpacking if not potentially datetime
-        return _unique(arr)
+        return _unique(arr.ravel())
 
     values = []
     for v in arr:
