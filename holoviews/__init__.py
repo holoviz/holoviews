@@ -251,7 +251,6 @@ def __getattr__(name):
 __all__ = [
     "HSV",
     "RGB",
-    "TYPE_CHECKING",
     "AdjointLayout",
     "Annotation",
     "Area",

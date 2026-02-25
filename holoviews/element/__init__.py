@@ -19,7 +19,7 @@ from .annotation import (
     VSpan,
     VSpans,
 )
-from .chart import (  # noqa: F401
+from .chart import (
     Area,
     Bars,
     Chart,
@@ -32,7 +32,7 @@ from .chart import (  # noqa: F401
 )
 from .chart3d import Path3D, Scatter3D, Surface, TriSurface
 from .geom import Points, Rectangles, Segments, VectorField
-from .graphs import (  # noqa: F401
+from .graphs import (
     Chord,
     EdgePaths,
     Graph,
@@ -161,6 +161,7 @@ __all__ = [
     "Bounds",
     "Box",
     "BoxWhisker",
+    "Chart",
     "Chord",
     "Contours",
     "Curve",
@@ -170,6 +171,7 @@ __all__ = [
     "Div",
     "EdgePaths",
     "Element",
+    "ElementConversion",
     "Ellipse",
     "ErrorBars",
     "Graph",
@@ -213,4 +215,5 @@ __all__ = [
     "VectorField",
     "VectorizedAnnotation",
     "Violin",
+    "circular_layout",
 ]

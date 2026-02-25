@@ -2,8 +2,8 @@ from datetime import date, datetime
 
 import numpy as np
 
-from .accessors import Apply, Redim  # noqa (API import)
-from .boundingregion import AARectangle, BoundingBox, BoundingEllipse  # noqa: F401
+from .accessors import Apply, Redim
+from .boundingregion import AARectangle, BoundingBox, BoundingEllipse
 from .data import Dataset
 from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
 from .element import Collator, Element, Element2D, Element3D, Tabular
@@ -11,12 +11,12 @@ from .io import FileArchive
 from .layout import AdjointLayout, Empty, Layout, NdLayout
 from .ndmapping import MultiDimensionalMapping, NdMapping, UniformNdMapping
 from .operation import Operation
-from .options import Store, StoreOptions  # noqa (API import)
+from .options import Store, StoreOptions
 from .overlay import CompositeOverlay, NdOverlay, Overlay
 from .sheetcoords import SheetCoordinateSystem
 from .spaces import DynamicMap, GridMatrix, GridSpace, HoloMap
 from .tree import AttrTree
-from .util import config  # noqa (API import)
+from .util import config
 
 archive = FileArchive()
 
@@ -38,7 +38,9 @@ Dimension.type_formatters['pandas._libs.tslibs.timestamps.Timestamp'] = "%Y-%m-%
 
 
 __all__ = [
+    "AARectangle",
     "AdjointLayout",
+    "Apply",
     "AttrTree",
     "BoundingBox",
     "BoundingEllipse",
@@ -52,6 +54,7 @@ __all__ = [
     "Element2D",
     "Element3D",
     "Empty",
+    "FileArchive",
     "GridMatrix",
     "GridSpace",
     "HoloMap",
@@ -62,12 +65,17 @@ __all__ = [
     "NdOverlay",
     "Operation",
     "Overlay",
+    "Redim",
     "SheetCoordinateSystem",
+    "Store",
+    "StoreOptions",
     "Tabular",
     "UniformNdMapping",
     "ViewableElement",
     "ViewableTree",
+    "archive",
     "boundingregion",
+    "config",
     "dimension",
     "element",
     "layout",

@@ -1,7 +1,7 @@
 from ..core import Overlay  # noqa (API import)
 from ..core.operation import Operation
 from ..core.options import Compositor
-from .element import (  # noqa: F401
+from .element import (
     apply_when,
     categorical_aggregate2d,
     chain,
@@ -33,6 +33,7 @@ for _name in dir():
 __all__ = [
     "Compositor",
     "Operation",
+    "apply_when",
     "categorical_aggregate2d",
     "chain",
     "collapse",
@@ -43,6 +44,7 @@ __all__ = [
     "factory",
     "function",
     "gradient",
+    "gridmatrix",
     "histogram",
     "image_overlay",
     "interpolate_curve",

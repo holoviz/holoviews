@@ -10,8 +10,8 @@ from ..element import RGB, Area, Image, ImageStack, Polygons, QuadMesh, Raster
 from ..element.sankey import Sankey, _layout_sankey
 from ..operation.stats import bivariate_kde, univariate_kde
 from .plot import Plot
-from .renderer import HTML_TAGS, Renderer  # noqa (API import)
-from .util import apply_nodata, flatten_stack, list_cmaps  # noqa (API import)
+from .renderer import HTML_TAGS, Renderer
+from .util import apply_nodata, flatten_stack, list_cmaps
 
 Compositor.register(Compositor("Image", apply_nodata, None,
                                'data', transfer_options=True,
@@ -62,7 +62,12 @@ DEFAULT_CYCLE = ['#30a2da', '#fc4f30', '#e5ae38', '#6d904f', '#8b8b8b', '#17becf
 Cycle.default_cycles['default_colors'] = DEFAULT_CYCLE
 
 __all__ = [
-    "Cycle",
-    "Plot",
-    "Renderer",
+   "DEFAULT_CYCLE",
+   "HTML_TAGS",
+   "Cycle",
+   "Plot",
+   "Renderer",
+   "apply_nodata",
+   "flatten_stack",
+   "list_cmaps",
 ]
