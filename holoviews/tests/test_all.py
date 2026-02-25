@@ -1,42 +1,25 @@
 import importlib
-import types
+import json
+from pathlib import Path
 
 import pytest
 
-MODULES = [
-    "holoviews",
-    "holoviews.core",
-    "holoviews.element",
-    "holoviews.operation",
-    "holoviews.plotting",
-]
+HERE = Path(__file__).parent
+ALL_JSON = HERE / "all.json"
+
+with ALL_JSON.open("r", encoding="utf-8") as f:
+    EXPECTED = json.load(f)
 
 
-@pytest.fixture(params=MODULES)
-def module(request):
-    return importlib.import_module(request.param)
 
+@pytest.mark.parametrize("module_name", sorted(EXPECTED))
+def test_all_matches_snapshot(module_name):
+    module = importlib.import_module(module_name)
+    expected = EXPECTED[module_name]
 
-def test_all_no_underscores(module):
-    underscored = [name for name in module.__all__ if name.startswith("_") and name != "__version__"]
-    assert not underscored
+    if expected is None:
+        assert not hasattr(module, "__all__")
+        return
 
-
-def test_all_exists(module):
     assert hasattr(module, "__all__")
-    missing = [name for name in module.__all__ if not hasattr(module, name)]
-    assert not missing
-
-
-def test_all_complete(module):
-    mod_attrs = {
-        name
-        for name, obj in vars(module).items()
-        if not name.startswith("_")
-        and name != "TYPE_CHECKING"
-        and not isinstance(obj, types.ModuleType)
-        and not hasattr(obj, "__module__")
-    }
-    exported = set(module.__all__)
-    not_exported = sorted(mod_attrs - exported)
-    assert not not_exported
+    assert set(module.__all__) == set(expected)
