@@ -598,6 +598,14 @@ class Layout(Layoutable, ViewableTree):
         return self.__mul__(other, reverse=True)
 
 
-__all__ = list({_k for _k, _v in locals().items()
-                    if isinstance(_v, type) and (issubclass(_v, Dimensioned)
-                                                 or issubclass(_v, Layout))})
+__all__ = [
+    "AdjointLayout",
+    "Dimensioned",
+    "Empty",
+    "Layout",
+    "NdLayout",
+    "NdMapping",
+    "UniformNdMapping",
+    "ViewableElement",
+    "ViewableTree",
+]

@@ -330,6 +330,14 @@ class NdOverlay(Overlayable, UniformNdMapping, CompositeOverlay):
 
 
 __all__ = [
-    *{_k for _k, _v in locals().items() if isinstance(_v, type) and issubclass(_v, Dimensioned)},
-    "Overlayable"
+    "AdjointLayout",
+    "CompositeOverlay",
+    "Dimensioned",
+    "Layout",
+    "NdOverlay",
+    "Overlay",
+    "Overlayable",
+    "UniformNdMapping",
+    "ViewableElement",
+    "ViewableTree",
 ]

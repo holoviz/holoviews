@@ -3,6 +3,7 @@ Unit test of the streams system
 """
 from collections import defaultdict
 
+import numpy as np
 import pandas as pd
 import param
 import pytest
@@ -12,7 +13,27 @@ import holoviews as hv
 from holoviews.core.spaces import DynamicMap
 from holoviews.core.util import NUMPY_GE_2_0_0, PARAM_VERSION
 from holoviews.element import Curve, Histogram, Points, Polygons, Scatter
-from holoviews.streams import *  # noqa (Test all available streams)
+from holoviews.streams import (
+    Buffer,
+    Derived,
+    History,
+    Lasso,
+    LinkedStream,
+    ParamMethod,
+    ParamRefs,
+    Params,
+    Pipe,
+    PlotSize,
+    PointerX,
+    PointerXY,
+    PointerY,
+    RangeXY,
+    Selection1D,
+    SelectionExpr,
+    SelectionXY,
+    Stream,
+    Tap,
+)
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 from holoviews.util import Dynamic, extension
 from holoviews.util.transform import dim
