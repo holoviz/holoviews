@@ -10,8 +10,8 @@ from ..element import RGB, Area, Image, ImageStack, Polygons, QuadMesh, Raster
 from ..element.sankey import Sankey, _layout_sankey
 from ..operation.stats import bivariate_kde, univariate_kde
 from .plot import Plot
-from .renderer import HTML_TAGS, Renderer
-from .util import apply_nodata, flatten_stack, list_cmaps
+from .renderer import HTML_TAGS, Renderer  # noqa: F401
+from .util import apply_nodata, flatten_stack, list_cmaps  # noqa: F401
 
 Compositor.register(Compositor("Image", apply_nodata, None,
                                'data', transfer_options=True,
@@ -56,17 +56,13 @@ Compositor.register(Compositor("ImageStack", flatten_stack, None,
                                backends=['matplotlib', 'plotly']))
 
 
-_DEFAULT_CYCLE = ['#30a2da', '#fc4f30', '#e5ae38', '#6d904f', '#8b8b8b', '#17becf',
+DEFAULT_CYCLE = ['#30a2da', '#fc4f30', '#e5ae38', '#6d904f', '#8b8b8b', '#17becf',
                  '#9467bd', '#d62728', '#1f77b4', '#e377c2', '#8c564b', '#bcbd22']
 
-Cycle.default_cycles['default_colors'] = _DEFAULT_CYCLE
+Cycle.default_cycles['default_colors'] = DEFAULT_CYCLE
 
 __all__ = [
-   "HTML_TAGS",
    "Cycle",
    "Plot",
    "Renderer",
-   "apply_nodata",
-   "flatten_stack",
-   "list_cmaps",
 ]

@@ -11,7 +11,6 @@ with ALL_JSON.open("r", encoding="utf-8") as f:
     EXPECTED = json.load(f)
 
 
-
 @pytest.mark.parametrize("module_name", sorted(EXPECTED))
 def test_all_matches_snapshot(module_name):
     module = importlib.import_module(module_name)

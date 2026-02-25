@@ -24,8 +24,7 @@ from .element import (
 )
 
 
-for _name in dir():
-    _obj = globals()[_name]
+for _obj in list(locals()):
     if isinstance(_obj, type) and issubclass(_obj, Operation) and _obj is not Operation:
         Compositor.operations.append(_obj)
 
