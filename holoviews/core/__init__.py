@@ -1,16 +1,21 @@
 from datetime import date, datetime
 
-from .boundingregion import *
-from .data import *
-from .dimension import *
-from .element import *
+import numpy as np
+
+from .accessors import Apply, Redim  # noqa (API import)
+from .boundingregion import AARectangle, BoundingBox, BoundingEllipse  # noqa: F401
+from .data import Dataset
+from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
+from .element import Collator, Element, Element2D, Element3D, Tabular
 from .io import FileArchive
-from .layout import *
-from .operation import *
-from .overlay import *
-from .sheetcoords import *
-from .spaces import *
-from .tree import *
+from .layout import AdjointLayout, Empty, Layout, NdLayout
+from .ndmapping import MultiDimensionalMapping, NdMapping, UniformNdMapping
+from .operation import Operation
+from .options import Store, StoreOptions  # noqa (API import)
+from .overlay import CompositeOverlay, NdOverlay, Overlay
+from .sheetcoords import SheetCoordinateSystem
+from .spaces import DynamicMap, GridMatrix, GridSpace, HoloMap
+from .tree import AttrTree
 from .util import config  # noqa (API import)
 
 archive = FileArchive()
@@ -32,13 +37,43 @@ Dimension.type_formatters[date] = '%Y-%m-%d'
 Dimension.type_formatters['pandas._libs.tslibs.timestamps.Timestamp'] = "%Y-%m-%d %H:%M:%S"
 
 
-def public(obj):
-    if not isinstance(obj, type): return False
-    baseclasses = [Dimension, Dimensioned, Operation, BoundingBox,
-                   SheetCoordinateSystem, AttrTree]
-    return any([issubclass(obj, bc) for bc in baseclasses])
-
 __all__ = [
-    *{_k for _k, _v in locals().items() if public(_v)},
-    "boundingregion", "dimension", "layer", "layout", "ndmapping", "operation", "options", "sheetcoords", "tree", "element"
+    "AdjointLayout",
+    "AttrTree",
+    "BoundingBox",
+    "BoundingEllipse",
+    "Collator",
+    "CompositeOverlay",
+    "Dataset",
+    "Dimension",
+    "Dimensioned",
+    "DynamicMap",
+    "Element",
+    "Element2D",
+    "Element3D",
+    "Empty",
+    "GridMatrix",
+    "GridSpace",
+    "HoloMap",
+    "Layout",
+    "MultiDimensionalMapping",
+    "NdLayout",
+    "NdMapping",
+    "NdOverlay",
+    "Operation",
+    "Overlay",
+    "SheetCoordinateSystem",
+    "Tabular",
+    "UniformNdMapping",
+    "ViewableElement",
+    "ViewableTree",
+    "boundingregion",
+    "dimension",
+    "element",
+    "layout",
+    "ndmapping",
+    "operation",
+    "options",
+    "sheetcoords",
+    "tree",
 ]

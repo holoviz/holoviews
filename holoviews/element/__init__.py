@@ -1,16 +1,51 @@
 from ..core import HoloMap
 from ..core.data import DataConversion, Dataset
-from .annotation import *
-from .chart import *
-from .chart3d import *
-from .geom import *
-from .graphs import *
-from .path import *
-from .raster import *
-from .sankey import *
-from .stats import *
-from .tabular import *
-from .tiles import *
+from ..core.element import Element
+from .annotation import (
+    Annotation,
+    Arrow,
+    Div,
+    HLine,
+    HLines,
+    HSpan,
+    HSpans,
+    Labels,
+    Slope,
+    Spline,
+    Text,
+    VectorizedAnnotation,
+    VLine,
+    VLines,
+    VSpan,
+    VSpans,
+)
+from .chart import (  # noqa: F401
+    Area,
+    Bars,
+    Chart,
+    Curve,
+    ErrorBars,
+    Histogram,
+    Scatter,
+    Spikes,
+    Spread,
+)
+from .chart3d import Path3D, Scatter3D, Surface, TriSurface
+from .geom import Points, Rectangles, Segments, VectorField
+from .graphs import (  # noqa: F401
+    Chord,
+    EdgePaths,
+    Graph,
+    Nodes,
+    TriMesh,
+    circular_layout,
+)
+from .path import Bounds, Box, Contours, Dendrogram, Ellipse, Path, Polygons
+from .raster import HSV, RGB, HeatMap, Image, ImageStack, QuadMesh, Raster
+from .sankey import Sankey
+from .stats import Bivariate, BoxWhisker, Distribution, HexTiles, Violin
+from .tabular import ItemTable, Table
+from .tiles import Tiles
 
 
 class ElementConversion(DataConversion):
@@ -115,9 +150,67 @@ class ElementConversion(DataConversion):
 Dataset._conversion_interface = ElementConversion
 
 
-def public(obj):
-    if not isinstance(obj, type) or getattr(obj, 'abstract', False) and obj is not Element:
-        return False
-    return issubclass(obj, Element)
-
-__all__ = list({_k for _k, _v in locals().items() if public(_v)})
+__all__ = [
+    "HSV",
+    "RGB",
+    "Annotation",
+    "Area",
+    "Arrow",
+    "Bars",
+    "Bivariate",
+    "Bounds",
+    "Box",
+    "BoxWhisker",
+    "Chord",
+    "Contours",
+    "Curve",
+    "Dataset",
+    "Dendrogram",
+    "Distribution",
+    "Div",
+    "EdgePaths",
+    "Element",
+    "Ellipse",
+    "ErrorBars",
+    "Graph",
+    "HLine",
+    "HLines",
+    "HSpan",
+    "HSpans",
+    "HeatMap",
+    "HexTiles",
+    "Histogram",
+    "Image",
+    "ImageStack",
+    "ItemTable",
+    "Labels",
+    "Nodes",
+    "Path",
+    "Path3D",
+    "Points",
+    "Polygons",
+    "QuadMesh",
+    "Raster",
+    "Rectangles",
+    "Sankey",
+    "Scatter",
+    "Scatter3D",
+    "Segments",
+    "Slope",
+    "Spikes",
+    "Spline",
+    "Spread",
+    "Surface",
+    "Table",
+    "Text",
+    "Tiles",
+    "TriMesh",
+    "TriSurface",
+    "VLine",
+    "VLines",
+    "VSpan",
+    "VSpans",
+    "VectorField",
+    "VectorizedAnnotation",
+    "Violin",
+]
