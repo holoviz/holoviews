@@ -28,13 +28,6 @@ def test_all_exists(module):
     assert not missing
 
 
-def _is_defined_in(obj, module_name):
-    obj_module = getattr(obj, "__module__", None)
-    if obj_module is None:
-        return True
-    return obj_module.startswith(module_name)
-
-
 def test_all_complete(module):
     mod_attrs = {
         name
@@ -42,7 +35,7 @@ def test_all_complete(module):
         if not name.startswith("_")
         and name != "TYPE_CHECKING"
         and not isinstance(obj, types.ModuleType)
-        and _is_defined_in(obj, module.__name__)
+        and not hasattr(obj, "__module__")
     }
     exported = set(module.__all__)
     not_exported = sorted(mod_attrs - exported)

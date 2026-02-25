@@ -22,7 +22,7 @@ from .annotation import (
 from .chart import (
     Area,
     Bars,
-    Chart,
+    Chart,  # noqa: F401
     Curve,
     ErrorBars,
     Histogram,
@@ -38,7 +38,7 @@ from .graphs import (
     Graph,
     Nodes,
     TriMesh,
-    circular_layout,
+    circular_layout,  # noqa: F401
 )
 from .path import Bounds, Box, Contours, Dendrogram, Ellipse, Path, Polygons
 from .raster import HSV, RGB, HeatMap, Image, ImageStack, QuadMesh, Raster
@@ -161,7 +161,6 @@ __all__ = [
     "Bounds",
     "Box",
     "BoxWhisker",
-    "Chart",
     "Chord",
     "Contours",
     "Curve",
@@ -171,7 +170,6 @@ __all__ = [
     "Div",
     "EdgePaths",
     "Element",
-    "ElementConversion",
     "Ellipse",
     "ErrorBars",
     "Graph",
@@ -215,5 +213,4 @@ __all__ = [
     "VectorField",
     "VectorizedAnnotation",
     "Violin",
-    "circular_layout",
 ]

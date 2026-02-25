@@ -56,13 +56,12 @@ Compositor.register(Compositor("ImageStack", flatten_stack, None,
                                backends=['matplotlib', 'plotly']))
 
 
-DEFAULT_CYCLE = ['#30a2da', '#fc4f30', '#e5ae38', '#6d904f', '#8b8b8b', '#17becf',
+_DEFAULT_CYCLE = ['#30a2da', '#fc4f30', '#e5ae38', '#6d904f', '#8b8b8b', '#17becf',
                  '#9467bd', '#d62728', '#1f77b4', '#e377c2', '#8c564b', '#bcbd22']
 
-Cycle.default_cycles['default_colors'] = DEFAULT_CYCLE
+Cycle.default_cycles['default_colors'] = _DEFAULT_CYCLE
 
 __all__ = [
-   "DEFAULT_CYCLE",
    "HTML_TAGS",
    "Cycle",
    "Plot",
