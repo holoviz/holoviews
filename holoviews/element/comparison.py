@@ -41,6 +41,7 @@ from ..core import (
     NdOverlay,
     Overlay,
 )
+from ..core.data import Dataset
 from ..core.options import Cycle, Options
 from ..core.util import (
     cast_array_to_int64,
@@ -65,7 +66,6 @@ from . import (  # noqa: F401 (All Elements need to support comparison)
     Chord,
     Contours,
     Curve,
-    Dataset,
     Dendrogram,
     Distribution,
     Div,

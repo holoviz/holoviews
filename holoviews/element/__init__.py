@@ -38,7 +38,6 @@ from .graphs import (
     Graph,
     Nodes,
     TriMesh,
-    circular_layout,  # noqa: F401
 )
 from .path import Bounds, Box, Contours, Dendrogram, Ellipse, Path, Polygons
 from .raster import HSV, RGB, HeatMap, Image, ImageStack, QuadMesh, Raster
@@ -46,6 +45,7 @@ from .sankey import Sankey
 from .stats import Bivariate, BoxWhisker, Distribution, HexTiles, Violin
 from .tabular import ItemTable, Table
 from .tiles import Tiles
+from .util import circular_layout  # noqa: F401
 
 
 class ElementConversion(DataConversion):
