@@ -82,7 +82,7 @@ import param
 
 from . import util
 from .__version import __version__
-from .core import archive, config
+from .core import DynamicMap, GridMatrix, GridSpace, HoloMap, archive, config
 from .core.boundingregion import BoundingBox
 from .core.dimension import Dimension
 from .core.element import Collator, Element
@@ -96,13 +96,7 @@ from .core.options import (
     StoreOptions,
 )
 from .core.overlay import NdOverlay, Overlay
-from .core.spaces import (
-    Callable,
-    DynamicMap,
-    GridMatrix,
-    GridSpace,
-    HoloMap,
-)
+from .core.spaces import Callable
 from .element import (
     HSV,
     RGB,

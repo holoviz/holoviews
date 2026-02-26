@@ -1070,8 +1070,7 @@ class SelectionExpr(Derived):
     region_element = param.Parameter(default=None, constant=True)
 
     def __init__(self, source, include_region=True, **params):
-        from .core.spaces import DynamicMap
-        from .element import Element
+        from .core import DynamicMap, Element
         from .plotting.util import initialize_dynamic
 
         self._index_cols = params.pop('index_cols', None)
