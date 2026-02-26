@@ -4,18 +4,12 @@ import numpy as np
 import param
 from param.parameterized import bothmethod
 
-from .core import (
-    AdjointLayout,
-    Dataset,
-    Element,
-    GridSpace,
-    Layout,
-    NdOverlay,
-    Overlay,
-    Store,
-)
-from .core.options import CallbackError
-from .core.spaces import DynamicMap
+from .core.data import Dataset
+from .core.element import Element
+from .core.layout import AdjointLayout, Layout
+from .core.options import CallbackError, Store
+from .core.overlay import NdOverlay, Overlay
+from .core.spaces import DynamicMap, GridSpace
 from .streams import (
     CrossFilterSet,
     Derived,

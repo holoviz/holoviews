@@ -82,31 +82,23 @@ import param
 
 from . import util
 from .__version import __version__
-from .core import (
-    AdjointLayout,
-    BoundingBox,
-    Collator,
-    Dataset,
-    Dimension,
-    DynamicMap,
-    Element,
-    Empty,
-    GridMatrix,
-    GridSpace,
-    HoloMap,
-    Layout,
-    NdLayout,
-    NdMapping,
-    NdOverlay,
-    Overlay,
+from .core import archive, config
+from .core.boundingregion import BoundingBox
+from .core.data import Dataset
+from .core.dimension import Dimension
+from .core.element import Collator, Element
+from .core.layout import AdjointLayout, Empty, Layout, NdLayout
+from .core.ndmapping import NdMapping
+from .core.operation import Operation
+from .core.options import (
+    Cycle,
+    Options,
+    Palette,
     Store,
     StoreOptions,
-    archive,
-    config,
 )
-from .core.operation import Operation
-from .core.options import Cycle, Options, Palette
-from .core.spaces import Callable
+from .core.overlay import NdOverlay, Overlay
+from .core.spaces import Callable, DynamicMap, GridMatrix, GridSpace, HoloMap
 from .element import (
     HSV,
     RGB,
