@@ -3,7 +3,6 @@ from ..core.operation import Operation
 from ..core.options import Compositor
 from .element import (
     apply_when,
-    categorical_aggregate2d,
     chain,
     collapse,
     contours,
@@ -22,7 +21,7 @@ from .element import (
     threshold,
     transform,
 )
-
+from ..element.util import categorical_aggregate2d
 
 for _obj in list(locals()):
     if isinstance(_obj, type) and issubclass(_obj, Operation) and _obj is not Operation:

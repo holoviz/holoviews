@@ -27,7 +27,8 @@ class AccessorPipelineMeta(type):
                 factory,
                 method as method_op,
             )
-            from .data import Dataset, MultiDimensionalMapping
+            from .data import Dataset
+            from .ndmapping import MultiDimensionalMapping
             inst = args[0]
 
             if not hasattr(inst._obj, '_pipeline'):

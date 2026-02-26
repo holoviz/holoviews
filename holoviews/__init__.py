@@ -82,20 +82,30 @@ import param
 
 from . import util
 from .__version import __version__
-from .core import DynamicMap, GridMatrix, GridSpace, HoloMap, archive, config
-from .core.boundingregion import BoundingBox
-from .core.dimension import Dimension
-from .core.element import Collator, Element
-from .core.layout import AdjointLayout, Empty, Layout, NdLayout
-from .core.ndmapping import NdMapping
-from .core.options import (
-    Cycle,
-    Options,
-    Palette,
+from .core import (
+    AdjointLayout,
+    BoundingBox,
+    Collator,
+    Dataset,
+    Dimension,
+    DynamicMap,
+    Element,
+    Empty,
+    GridMatrix,
+    GridSpace,
+    HoloMap,
+    Layout,
+    NdLayout,
+    NdMapping,
+    NdOverlay,
+    Overlay,
     Store,
     StoreOptions,
+    archive,
+    config,
 )
-from .core.overlay import NdOverlay, Overlay
+from .core.operation import Operation
+from .core.options import Cycle, Options, Palette
 from .core.spaces import Callable
 from .element import (
     HSV,
@@ -111,7 +121,6 @@ from .element import (
     Chord,
     Contours,
     Curve,
-    Dataset,
     Dendrogram,
     Distribution,
     Div,
@@ -161,7 +170,6 @@ from .element import (
     VSpans,
     __all__ as elements_list,
 )
-from .operation import Operation
 from .selection import link_selections
 from .util import (
     _load_rc_file,

@@ -16,7 +16,8 @@ from ...core import (
     NdLayout,
     config,
 )
-from ...core.options import Cycle, Options, Palette
+from ...core.element import Element
+from ...core.options import Cycle, Options, Palette, Store
 from ...core.overlay import NdOverlay, Overlay
 from ...element import (
     HSV,
@@ -34,7 +35,6 @@ from ...element import (
     Dendrogram,
     Distribution,
     EdgePaths,
-    Element,
     Ellipse,
     ErrorBars,
     Graph,
@@ -115,7 +115,7 @@ from .graphs import ChordPlot, GraphPlot, TriMeshPlot
 from .heatmap import HeatMapPlot, RadialHeatMapPlot
 from .hex_tiles import HexTilesPlot
 from .path import ContourPlot, PathPlot, PolygonPlot
-from .plot import AdjointLayoutPlot, GridPlot, LayoutPlot, MPLPlot, Store
+from .plot import AdjointLayoutPlot, GridPlot, LayoutPlot, MPLPlot
 from .raster import QuadMeshPlot, RasterGridPlot, RasterPlot, RGBPlot
 from .renderer import MPLRenderer
 from .sankey import SankeyPlot

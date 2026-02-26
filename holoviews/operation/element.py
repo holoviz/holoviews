@@ -40,7 +40,6 @@ from ..core.util import (
     isdatetime,
     isfinite,
     label_sanitizer,
-    warn,
 )
 from ..element.chart import Histogram, Scatter
 from ..element.path import Contours, Dendrogram, Polygons
@@ -48,6 +47,7 @@ from ..element.raster import RGB, HeatMap, Image
 from ..element.util import categorical_aggregate2d  # noqa (API import)
 from ..streams import RangeXY
 from ..util.locator import MaxNLocator
+from ..util.warnings import warn
 
 column_interfaces = [ArrayInterface, DictInterface, PandasInterface]
 

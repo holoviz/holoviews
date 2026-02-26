@@ -14,7 +14,7 @@ from ...operation import interpolate_curve
 from ...util.transform import dim
 from ...util.warnings import warn
 from ..mixins import AreaMixin, BarsMixin, SpikesMixin
-from ..util import compute_sizes, get_min_distance
+from ..util import compute_sizes, get_min_distance, rgb2hex
 from .element import ColorbarPlot, ElementPlot, LegendPlot, OverlayPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import (
@@ -23,7 +23,6 @@ from .styles import (
     fill_properties,
     line_properties,
     mpl_to_bokeh,
-    rgb2hex,
 )
 from .util import BOKEH_GE_3_8_0, categorize_array
 

@@ -15,6 +15,7 @@ from .core import (
     Store,
 )
 from .core.options import CallbackError
+from .core.spaces import DynamicMap
 from .streams import (
     CrossFilterSet,
     Derived,
@@ -24,7 +25,6 @@ from .streams import (
     SelectMode,
     Stream,
 )
-from .util import DynamicMap
 
 
 class _Cmap(Stream):
