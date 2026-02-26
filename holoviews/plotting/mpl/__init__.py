@@ -80,6 +80,7 @@ from ...element import (
 from ..plot import PlotSelector
 from ..util import fire_colors
 from .annotation import (
+    AnnotationPlot,  # noqa: F401
     ArrowPlot,
     HLinePlot,
     HLinesAnnotationPlot,

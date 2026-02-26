@@ -31,7 +31,7 @@ from .chart import (
     Spread,
 )
 from .chart3d import Path3D, Scatter3D, Surface, TriSurface
-from .geom import Points, Rectangles, Segments, VectorField
+from .geom import Geometry, Points, Rectangles, Segments, VectorField
 from .graphs import (
     Chord,
     EdgePaths,
@@ -172,6 +172,7 @@ __all__ = [
     "Element",
     "Ellipse",
     "ErrorBars",
+    "Geometry",
     "Graph",
     "HLine",
     "HLines",

@@ -180,6 +180,7 @@
     "Element",
     "Ellipse",
     "ErrorBars",
+    "Geometry",
     "Graph",
     "HLine",
     "HLines",
