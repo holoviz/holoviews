@@ -44,7 +44,7 @@ from .raster import HSV, RGB, HeatMap, Image, ImageStack, QuadMesh, Raster
 from .sankey import Sankey
 from .stats import Bivariate, BoxWhisker, Distribution, HexTiles, Violin
 from .tabular import ItemTable, Table
-from .tiles import Tiles, stamen_sources, tile_sources
+from .tiles import Tiles, stamen_sources, tile_sources  # noqa: F401
 from .util import circular_layout  # noqa: F401
 
 
@@ -213,6 +213,4 @@ __all__ = [
     "VectorField",
     "VectorizedAnnotation",
     "Violin",
-    "stamen_sources",
-    "tile_sources",
 ]
