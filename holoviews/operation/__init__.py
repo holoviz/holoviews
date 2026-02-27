@@ -23,7 +23,7 @@ from .element import (
 )
 from ..element.util import categorical_aggregate2d
 
-for _obj in list(locals()):
+for _obj in list(locals().values()):
     if isinstance(_obj, type) and issubclass(_obj, Operation) and _obj is not Operation:
         Compositor.operations.append(_obj)
 
