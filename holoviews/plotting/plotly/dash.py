@@ -9,16 +9,13 @@ from dash.exceptions import PreventUpdate
 
 # Holoviews imports
 import holoviews as hv
-
-from ...core import DynamicMap
-from ...core.decollate import (
+from holoviews.core import DynamicMap
+from holoviews.core.decollate import (
     expr_to_fn_of_stream_contents,
     to_expr_extract_streams,
 )
-from ...streams import Derived, History
-from ..util import initialize_dynamic
-from . import PlotlyRenderer
-from .callbacks import (
+from holoviews.plotting.plotly import PlotlyRenderer
+from holoviews.plotting.plotly.callbacks import (
     BoundsXCallback,
     BoundsXYCallback,
     BoundsYCallback,
@@ -27,7 +24,9 @@ from .callbacks import (
     RangeYCallback,
     Selection1DCallback,
 )
-from .util import clean_internal_figure_properties
+from holoviews.plotting.plotly.util import clean_internal_figure_properties
+from holoviews.plotting.util import initialize_dynamic
+from holoviews.streams import Derived, History
 
 # Dash imports
 try:
