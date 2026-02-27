@@ -223,7 +223,10 @@
     "VSpans",
     "VectorField",
     "VectorizedAnnotation",
-    "Violin"
+    "Violin",
+    "circular_layout",
+    "stamen_sources",
+    "tile_sources"
   ],
   "holoviews.ipython": null,
   "holoviews.operation": [

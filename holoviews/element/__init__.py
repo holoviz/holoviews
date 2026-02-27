@@ -44,8 +44,8 @@ from .raster import HSV, RGB, HeatMap, Image, ImageStack, QuadMesh, Raster
 from .sankey import Sankey
 from .stats import Bivariate, BoxWhisker, Distribution, HexTiles, Violin
 from .tabular import ItemTable, Table
-from .tiles import Tiles, stamen_sources, tile_sources  # noqa: F401
-from .util import circular_layout  # noqa: F401
+from .tiles import Tiles, stamen_sources, tile_sources
+from .util import circular_layout
 
 
 class ElementConversion(DataConversion):
@@ -214,4 +214,9 @@ __all__ = [
     "VectorField",
     "VectorizedAnnotation",
     "Violin",
+    "circular_layout",
+    "stamen_sources",
+    "tile_sources"
 ]
+
+elements_list = list(set(__all__) - {"stamen_sources", "tile_sources", "circular_layout"})

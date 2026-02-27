@@ -160,7 +160,7 @@ from .element import (
     VLines,
     VSpan,
     VSpans,
-    __all__ as elements_list,
+    elements_list,
 )
 from .selection import link_selections
 from .util import (
