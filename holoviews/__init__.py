@@ -229,9 +229,6 @@ def help(obj, visualization=True, ansi=True, backend=None,
         import pydoc
         pydoc.help(obj)
 
-
-del builtins, os, sys, _load_rc_file
-
 def __getattr__(name):
     if name == "annotate":
         # Lazy loading Panel
@@ -361,4 +358,4 @@ if TYPE_CHECKING:
     from . import testing
     from .annotators import annotate
 
-del TYPE_CHECKING
+del TYPE_CHECKING, builtins, os, sys, _load_rc_file
