@@ -360,3 +360,5 @@ def __dir__():
 if TYPE_CHECKING:
     from . import testing
     from .annotators import annotate
+
+del TYPE_CHECKING
