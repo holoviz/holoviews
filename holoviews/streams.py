@@ -1122,10 +1122,22 @@ class SelectionExpr(Derived):
         }
 
     def transform(self):
-        # Skip index streams if no index_cols are provided
+        # Skip Selection1D when no index_cols, unless element opts in.
+        from .core.spaces import DynamicMap
+        source = self.source
+        if isinstance(source, DynamicMap):
+            element_type = source.type
+        else:
+            element_type = type(source)
+
+        uses_selection1d_standalone = getattr(
+            element_type, '_selection_uses_selection1d_without_index_cols', False
+        )
+
         for stream in self.input_streams:
             if (isinstance(stream, Selection1D) and stream._triggering
-                and not self._index_cols):
+                and not self._index_cols
+                and not uses_selection1d_standalone):
                 return
         return super().transform()
 

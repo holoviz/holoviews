@@ -8,7 +8,7 @@ from .geom import (  # noqa: F401 backward compatible import
     Rectangles,
     VectorField,
 )
-from .selection import Selection1DExpr
+from .selection import Selection1DExpr, SelectionBarsExpr
 
 
 class Chart(Dataset, Element2D):
@@ -156,7 +156,7 @@ class Spread(ErrorBars):
     group = param.String(default='Spread', constant=True)
 
 
-class Bars(Selection1DExpr, Chart):
+class Bars(SelectionBarsExpr, Chart):
     """Bars is a Chart element representing categorical observations
     using the height of rectangular bars. The key dimensions represent
     the categorical groupings of the data, but may also be used to
