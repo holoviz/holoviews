@@ -1,9 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from holoviews import render
-from holoviews.core.data import Dataset, Dimension
-from holoviews.element import Sankey
+import holoviews as hv
 from holoviews.testing import assert_data_equal, assert_dict_equal
 
 from .test_plot import TestBokehPlot, bokeh_renderer
@@ -12,7 +10,7 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 class TestSankeyPlot(TestBokehPlot):
 
     def test_sankey_simple(self):
-        sankey = Sankey([
+        sankey = hv.Sankey([
             ('A', 'X', 5), ('A', 'Y', 7), ('A', 'Z', 6),
             ('B', 'X', 2), ('B', 'Y', 9), ('B', 'Z', 4)]
         )
@@ -50,10 +48,10 @@ class TestSankeyPlot(TestBokehPlot):
 
 
     def test_sankey_label_index(self):
-        sankey = Sankey(([
+        sankey = hv.Sankey(([
             (0, 2, 5), (0, 3, 7), (0, 4, 6),
             (1, 2, 2), (1, 3, 9), (1, 4, 4)],
-            Dataset(enumerate('ABXYZ'), 'index', 'label'))
+            hv.Dataset(enumerate('ABXYZ'), 'index', 'label'))
         ).opts(label_index='label', tools=['hover'])
         plot = bokeh_renderer.get_plot(sankey)
 
@@ -90,9 +88,9 @@ class TestSankeyPlot(TestBokehPlot):
         ]
         df = pd.DataFrame(data, columns=["Source", "Dest", "Count"])
 
-        kdims = [Dimension("Source"), Dimension("Dest", label="Dest Label")]
-        plot = Sankey(df, kdims=kdims, vdims=["Count"])
+        kdims = [hv.Dimension("Source"), hv.Dimension("Dest", label="Dest Label")]
+        plot = hv.Sankey(df, kdims=kdims, vdims=["Count"])
         plot = plot.opts(edge_color="Dest Label")
 
         # To provoke the error in the issue
-        render(plot)
+        hv.render(plot)

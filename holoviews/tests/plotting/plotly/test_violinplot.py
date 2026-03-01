@@ -1,6 +1,6 @@
 import numpy as np
 
-from holoviews.element import Violin
+import holoviews as hv
 from holoviews.testing import assert_data_equal
 
 from .test_plot import TestPlotlyPlot
@@ -9,7 +9,7 @@ from .test_plot import TestPlotlyPlot
 class TestViolinPlot(TestPlotlyPlot):
 
     def test_violin_single(self):
-        violin = Violin([1, 1, 2, 3, 3, 4, 5, 5])
+        violin = hv.Violin([1, 1, 2, 3, 3, 4, 5, 5])
         state = self._get_plot_state(violin)
         assert len(state['data']) == 1
         assert state['data'][0]['type'] == 'violin'
@@ -20,7 +20,7 @@ class TestViolinPlot(TestPlotlyPlot):
         assert state['layout']['yaxis']['title']['text'] == 'y'
 
     def test_violin_single_invert_axes(self):
-        violin = Violin([1, 1, 2, 3, 3, 4, 5, 5]).opts(invert_axes=True)
+        violin = hv.Violin([1, 1, 2, 3, 3, 4, 5, 5]).opts(invert_axes=True)
         state = self._get_plot_state(violin)
         assert len(state['data']) == 1
         assert state['data'][0]['type'] == 'violin'
@@ -31,7 +31,7 @@ class TestViolinPlot(TestPlotlyPlot):
         assert state['layout']['xaxis']['title']['text'] == 'y'
 
     def test_violin_multi(self):
-        violin = Violin((['A']*8+['B']*8, [1, 1, 2, 3, 3, 4, 5, 5]*2), 'x', 'y')
+        violin = hv.Violin((['A']*8+['B']*8, [1, 1, 2, 3, 3, 4, 5, 5]*2), 'x', 'y')
         state = self._get_plot_state(violin)
         assert len(state['data']) == 2
         assert state['data'][0]['type'] == 'violin'
@@ -45,7 +45,7 @@ class TestViolinPlot(TestPlotlyPlot):
         assert state['layout']['yaxis']['title']['text'] == 'y'
 
     def test_violin_multi_invert_axes(self):
-        violin = Violin((['A']*8+['B']*8, [1, 1, 2, 3, 3, 4, 5, 5]*2), 'x', 'y').opts(
+        violin = hv.Violin((['A']*8+['B']*8, [1, 1, 2, 3, 3, 4, 5, 5]*2), 'x', 'y').opts(
             invert_axes=True)
         state = self._get_plot_state(violin)
         assert len(state['data']) == 2
@@ -60,6 +60,6 @@ class TestViolinPlot(TestPlotlyPlot):
         assert state['layout']['xaxis']['title']['text'] == 'y'
 
     def test_visible(self):
-        element = Violin([1, 1, 2, 3, 3, 4, 5, 5]).opts(visible=False)
+        element = hv.Violin([1, 1, 2, 3, 3, 4, 5, 5]).opts(visible=False)
         state = self._get_plot_state(element)
         assert state['data'][0]['visible'] is False

@@ -1,10 +1,7 @@
 import numpy as np
 from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
-from holoviews.core.dimension import Dimension
-from holoviews.core.options import Cycle
-from holoviews.core.spaces import HoloMap
-from holoviews.element import Labels
+import holoviews as hv
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.testing import assert_data_equal, assert_dict_equal
 
@@ -15,7 +12,7 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 class TestLabelsPlot(TestBokehPlot):
 
     def test_labels_simple(self):
-        labels = Labels([(0, 1, 'A'), (1, 0, 'B')])
+        labels = hv.Labels([(0, 1, 'A'), (1, 0, 'B')])
         plot = bokeh_renderer.get_plot(labels)
         source = plot.handles['source']
         glyph = plot.handles['glyph']
@@ -28,7 +25,7 @@ class TestLabelsPlot(TestBokehPlot):
         assert glyph.text == 'Label'
 
     def test_labels_empty(self):
-        labels = Labels([])
+        labels = hv.Labels([])
         plot = bokeh_renderer.get_plot(labels)
         source = plot.handles['source']
         glyph = plot.handles['glyph']
@@ -40,8 +37,8 @@ class TestLabelsPlot(TestBokehPlot):
         assert glyph.text == 'Label'
 
     def test_labels_formatter(self):
-        vdim = Dimension('text', value_format=lambda x: f'{x:.1f}')
-        labels = Labels([(0, 1, 0.33333), (1, 0, 0.66666)], vdims=vdim)
+        vdim = hv.Dimension('text', value_format=lambda x: f'{x:.1f}')
+        labels = hv.Labels([(0, 1, 0.33333), (1, 0, 0.66666)], vdims=vdim)
         plot = bokeh_renderer.get_plot(labels)
         source = plot.handles['source']
         glyph = plot.handles['glyph']
@@ -54,7 +51,7 @@ class TestLabelsPlot(TestBokehPlot):
         assert glyph.text == 'text'
 
     def test_labels_inverted(self):
-        labels = Labels([(0, 1, 'A'), (1, 0, 'B')]).opts(invert_axes=True)
+        labels = hv.Labels([(0, 1, 'A'), (1, 0, 'B')]).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(labels)
         source = plot.handles['source']
         glyph = plot.handles['glyph']
@@ -66,7 +63,7 @@ class TestLabelsPlot(TestBokehPlot):
         assert glyph.text == 'Label'
 
     def test_labels_color_mapped_text_vals(self):
-        labels = Labels([(0, 1, 0.33333), (1, 0, 0.66666)]).opts(color_index=2)
+        labels = hv.Labels([(0, 1, 0.33333), (1, 0, 0.66666)]).opts(color_index=2)
         plot = bokeh_renderer.get_plot(labels)
         source = plot.handles['source']
         glyph = plot.handles['glyph']
@@ -84,7 +81,7 @@ class TestLabelsPlot(TestBokehPlot):
         assert cmapper.high == 0.66666
 
     def test_labels_color_mapped(self):
-        labels = Labels([(0, 1, 0.33333, 2), (1, 0, 0.66666, 1)], vdims=['text', 'color']).opts(color_index=3)
+        labels = hv.Labels([(0, 1, 0.33333, 2), (1, 0, 0.66666, 1)], vdims=['text', 'color']).opts(color_index=3)
         plot = bokeh_renderer.get_plot(labels)
         source = plot.handles['source']
         glyph = plot.handles['glyph']
@@ -106,7 +103,7 @@ class TestLabelsPlot(TestBokehPlot):
     ###########################
 
     def test_label_color_op(self):
-        labels = Labels([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
+        labels = hv.Labels([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
                         vdims='color').opts(text_color='color')
         plot = bokeh_renderer.get_plot(labels)
         cds = plot.handles['cds']
@@ -115,7 +112,7 @@ class TestLabelsPlot(TestBokehPlot):
         assert property_to_dict(glyph.text_color) == {'field': 'text_color'}
 
     def test_label_linear_color_op(self):
-        labels = Labels([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+        labels = hv.Labels([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                         vdims='color').opts(text_color='color')
         plot = bokeh_renderer.get_plot(labels)
         cds = plot.handles['cds']
@@ -128,7 +125,7 @@ class TestLabelsPlot(TestBokehPlot):
         assert property_to_dict(glyph.text_color) == {'field': 'text_color', 'transform': cmapper}
 
     def test_label_categorical_color_op(self):
-        labels = Labels([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
+        labels = hv.Labels([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
                         vdims='color').opts(text_color='color')
         plot = bokeh_renderer.get_plot(labels)
         cds = plot.handles['cds']
@@ -140,7 +137,7 @@ class TestLabelsPlot(TestBokehPlot):
         assert property_to_dict(glyph.text_color) == {'field': 'text_color', 'transform': cmapper}
 
     def test_label_angle_op(self):
-        labels = Labels([(0, 0, 0), (0, 1, 45), (0, 2, 90)],
+        labels = hv.Labels([(0, 0, 0), (0, 1, 45), (0, 2, 90)],
                         vdims='angle').opts(angle='angle')
         plot = bokeh_renderer.get_plot(labels)
         cds = plot.handles['cds']
@@ -149,7 +146,7 @@ class TestLabelsPlot(TestBokehPlot):
         assert property_to_dict(glyph.angle) == {'field': 'angle'}
 
     def test_label_alpha_op(self):
-        labels = Labels([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
+        labels = hv.Labels([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
                         vdims='alpha').opts(text_alpha='alpha')
         plot = bokeh_renderer.get_plot(labels)
         cds = plot.handles['cds']
@@ -158,7 +155,7 @@ class TestLabelsPlot(TestBokehPlot):
         assert property_to_dict(glyph.text_alpha) == {'field': 'text_alpha'}
 
     def test_label_font_size_op_strings(self):
-        labels = Labels([(0, 0, '10pt'), (0, 1, '4pt'), (0, 2, '8pt')],
+        labels = hv.Labels([(0, 0, '10pt'), (0, 1, '4pt'), (0, 2, '8pt')],
                         vdims='size').opts(text_font_size='size')
         plot = bokeh_renderer.get_plot(labels)
         cds = plot.handles['cds']
@@ -167,7 +164,7 @@ class TestLabelsPlot(TestBokehPlot):
         assert property_to_dict(glyph.text_font_size) == {'field': 'text_font_size'}
 
     def test_label_font_size_op_ints(self):
-        labels = Labels([(0, 0, 10), (0, 1, 4), (0, 2, 8)],
+        labels = hv.Labels([(0, 0, 10), (0, 1, 4), (0, 2, 8)],
                         vdims='size').opts(text_font_size='size')
         plot = bokeh_renderer.get_plot(labels)
         cds = plot.handles['cds']
@@ -176,7 +173,7 @@ class TestLabelsPlot(TestBokehPlot):
         assert property_to_dict(glyph.text_font_size) == {'field': 'text_font_size'}
 
     def test_labels_color_index_color_clash(self):
-        labels = Labels([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+        labels = hv.Labels([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                         vdims='color').opts(text_color='color', color_index='color')
         with ParamLogStream() as log:
             bokeh_renderer.get_plot(labels)
@@ -190,16 +187,16 @@ class TestLabelsPlot(TestBokehPlot):
         assert log_msg == warning
 
     def test_labels_text_color_cycle(self):
-        hm = HoloMap(
-            {i: Labels([
+        hm = hv.HoloMap(
+            {i: hv.Labels([
                 (0, 0 + i, "Label 1"),
                 (1, 1 + i, "Label 2")
             ]) for i in range(3)}
         ).overlay()
-        assert isinstance(hm[0].opts["text_color"], Cycle)
+        assert isinstance(hm[0].opts["text_color"], hv.Cycle)
 
     def test_labels_hover_with_vdims(self):
-        labels = Labels(
+        labels = hv.Labels(
             [(0, 1, 'A', 10.5, 100), (1, 0, 'B', 20.3, 200)],
             vdims=['text', 'value', 'count']
         ).opts(hover_tooltips=[('Text', '@text'), ('Value', '@value'), ('Count', '@count')])

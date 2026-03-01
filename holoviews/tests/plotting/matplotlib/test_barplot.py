@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from matplotlib.text import Text
 
-from holoviews.element import Bars
+import holoviews as hv
 
 from ...utils import LoggingComparison
 from .test_plot import TestMPLPlot, mpl_renderer
@@ -12,14 +12,14 @@ from .test_plot import TestMPLPlot, mpl_renderer
 class TestBarPlot(LoggingComparison, TestMPLPlot):
 
     def test_bars_continuous_data_list_same_interval(self):
-        bars = Bars(([0, 1, 2], [10, 20, 30]))
+        bars = hv.Bars(([0, 1, 2], [10, 20, 30]))
         plot = mpl_renderer.get_plot(bars)
         ax = plot.handles["axis"]
         np.testing.assert_almost_equal(ax.get_xlim(), (-0.4, 2.4))
         assert ax.patches[0].get_width() == 0.8
 
     def test_bars_continuous_data_list_diff_interval(self):
-        bars = Bars(([0, 3, 10], [10, 20, 30]))
+        bars = hv.Bars(([0, 3, 10], [10, 20, 30]))
         plot = mpl_renderer.get_plot(bars)
         ax = plot.handles["axis"]
         np.testing.assert_almost_equal(ax.get_xlim(), (-1.2, 11.2))
@@ -27,7 +27,7 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
         assert len(ax.get_xticks()) > 3
 
     def test_bars_continuous_datetime(self):
-        bars = Bars((pd.date_range("1/1/2000", periods=10), np.random.rand(10)))
+        bars = hv.Bars((pd.date_range("1/1/2000", periods=10), np.random.rand(10)))
         plot = mpl_renderer.get_plot(bars)
         ax = plot.handles["axis"]
         assert ax.get_xticklabels()[0].get_text() == "2000-01-01"
@@ -42,7 +42,7 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
         assert ax.get_xticklabels()[-1].get_text() == "10"
 
     def test_bars_not_continuous_data_list(self):
-        bars = Bars([("A", 1), ("B", 2), ("C", 3)])
+        bars = hv.Bars([("A", 1), ("B", 2), ("C", 3)])
         plot = mpl_renderer.get_plot(bars)
         ax = plot.handles["axis"]
         np.testing.assert_almost_equal(ax.get_xlim(), (-0.4, 2.4))
@@ -63,7 +63,7 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
         pets_sample = np.random.choice(pets, samples)
         gender_sample = np.random.choice(genders, samples)
 
-        bars = Bars(
+        bars = hv.Bars(
             (pets_sample, gender_sample, np.ones(samples)), ["Pets", "Gender"]
         ).aggregate(function=np.sum)
         plot = mpl_renderer.get_plot(bars)
@@ -106,7 +106,7 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
         gender_sample = np.random.choice(genders, samples)
 
         bars = (
-            Bars((pets_sample, gender_sample, np.ones(samples)), ["Pets", "Gender"])
+            hv.Bars((pets_sample, gender_sample, np.ones(samples)), ["Pets", "Gender"])
             .aggregate(function=np.sum)
             .opts(stacked=True)
         )
@@ -128,7 +128,7 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
             assert ticklabel.get_position() == expected[i].get_position()
 
     def test_group_dim(self):
-        bars = Bars(
+        bars = hv.Bars(
             ([3, 10, 1] * 10, ["A", "B"] * 15, np.random.randn(30)),
             ["Group", "Category"],
             "Value",

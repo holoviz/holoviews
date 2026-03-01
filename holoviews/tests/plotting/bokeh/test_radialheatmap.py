@@ -3,8 +3,7 @@ from itertools import product
 import numpy as np
 from bokeh.models import ColorBar
 
-from holoviews.core.spaces import HoloMap
-from holoviews.element.raster import HeatMap
+import holoviews as hv
 from holoviews.plotting.bokeh import RadialHeatMapPlot
 from holoviews.testing import assert_data_equal, assert_dict_equal
 
@@ -37,7 +36,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         opts = dict(HeatMap=plot_opts)
 
         # provide element and plot instances for tests
-        self.element = HeatMap((self.x, self.y, self.z)).opts(opts)
+        self.element = hv.HeatMap((self.x, self.y, self.z)).opts(opts)
         self.plot = bokeh_renderer.get_plot(self.element)
 
 
@@ -274,18 +273,18 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         assert list(source_ann["z"]) == self.z
 
     def test_heatmap_holomap(self):
-        hm = HoloMap({'A': HeatMap(np.random.randint(0, 10, (100, 3))),
-                      'B': HeatMap(np.random.randint(0, 10, (100, 3)))})
+        hm = hv.HoloMap({'A': hv.HeatMap(np.random.randint(0, 10, (100, 3))),
+                      'B': hv.HeatMap(np.random.randint(0, 10, (100, 3)))})
         plot = bokeh_renderer.get_plot(hm.opts(radial=True))
         assert isinstance(plot, RadialHeatMapPlot)
 
     def test_radial_heatmap_colorbar(self):
-        hm = HeatMap([(0, 0, 1), (0, 1, 2), (1, 0, 3)]).opts(radial=True, colorbar=True)
+        hm = hv.HeatMap([(0, 0, 1), (0, 1, 2), (1, 0, 3)]).opts(radial=True, colorbar=True)
         plot = bokeh_renderer.get_plot(hm)
         assert isinstance(plot.handles.get('colorbar'), ColorBar)
 
     def test_radial_heatmap_ranges(self):
-        hm = HeatMap([(0, 0, 1), (0, 1, 2), (1, 0, 3)]).opts(radial=True, colorbar=True)
+        hm = hv.HeatMap([(0, 0, 1), (0, 1, 2), (1, 0, 3)]).opts(radial=True, colorbar=True)
         plot = bokeh_renderer.get_plot(hm)
         assert plot.handles['x_range'].start == -0.05
         assert plot.handles['x_range'].end == 1.05

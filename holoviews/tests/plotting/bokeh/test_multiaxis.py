@@ -1,6 +1,6 @@
 from bokeh.models import LinearAxis, LinearScale, LogAxis, LogScale
 
-from holoviews.element import Curve
+import holoviews as hv
 
 from ...utils import LoggingComparison
 from .test_plot import TestBokehPlot, bokeh_renderer
@@ -9,18 +9,18 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
 
     def test_multi_y_disabled(self):
-        overlay = (Curve(range(10)) * Curve(range(10)))
+        overlay = (hv.Curve(range(10)) * hv.Curve(range(10)))
         plot = bokeh_renderer.get_plot(overlay).state
         assert len(plot.yaxis) == 1
 
     def test_multi_y_enabled_two_curves_one_vdim(self):
-        overlay = (Curve(range(10)) * Curve(range(10))).opts(multi_y=True)
+        overlay = (hv.Curve(range(10)) * hv.Curve(range(10))).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay).state
         assert len(plot.yaxis) == 1
 
     def test_multi_y_enabled_two_curves_two_vdim(self):
-        overlay = (Curve(range(10), vdims=['A'])
-                   * Curve(range(10), vdims=['B'])).opts(multi_y=True)
+        overlay = (hv.Curve(range(10), vdims=['A'])
+                   * hv.Curve(range(10), vdims=['B'])).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         assert len(plot.state.yaxis) == 2
         y_range = plot.handles['y_range']
@@ -32,9 +32,9 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
         assert extra_y_ranges['B'].end == 9
 
     def test_multi_y_enabled_three_curves_two_vdim(self):
-        curve_1A = Curve(range(10), vdims=['A'])
-        curve_2B = Curve(range(11), vdims=['B'])
-        curve_3A = Curve(range(12), vdims=['A'])
+        curve_1A = hv.Curve(range(10), vdims=['A'])
+        curve_2B = hv.Curve(range(11), vdims=['B'])
+        curve_3A = hv.Curve(range(12), vdims=['A'])
         overlay = (curve_1A * curve_2B * curve_3A ).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay).state
         assert len(plot.yaxis) == 2
@@ -42,8 +42,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
     # Testing independent y-lims
 
     def test_multi_y_lims_left_axis(self):
-        overlay = (Curve(range(10), vdims=['A']).opts(ylim=(-10,20))
-                   * Curve(range(10), vdims=['B'])).opts(multi_y=True)
+        overlay = (hv.Curve(range(10), vdims=['A']).opts(ylim=(-10,20))
+                   * hv.Curve(range(10), vdims=['B'])).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         y_range = plot.handles['y_range']
         assert y_range.start == -10
@@ -54,8 +54,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
         assert extra_y_ranges['B'].end == 9
 
     def test_multi_y_lims_right_axis(self):
-        overlay = (Curve(range(10), vdims=['A'])
-                   * Curve(range(10), vdims=['B']).opts(ylim=(-10,20))).opts(multi_y=True)
+        overlay = (hv.Curve(range(10), vdims=['A'])
+                   * hv.Curve(range(10), vdims=['B']).opts(ylim=(-10,20))).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         y_range = plot.handles['y_range']
         assert y_range.start == 0
@@ -66,8 +66,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
         assert extra_y_ranges['B'].end == 20
 
     def test_multi_y_lims_both_axes(self):
-        overlay = (Curve(range(10), vdims=['A']).opts(ylim=(-15,25))
-                   * Curve(range(10), vdims=['B']).opts(ylim=(-10,20))).opts(multi_y=True)
+        overlay = (hv.Curve(range(10), vdims=['A']).opts(ylim=(-15,25))
+                   * hv.Curve(range(10), vdims=['B']).opts(ylim=(-10,20))).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         y_range = plot.handles['y_range']
         assert y_range.start == -15
@@ -80,8 +80,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
     # Testing independent logy
 
     def test_multi_log_left_axis(self):
-        overlay = (Curve(range(1,9), vdims=['A']).opts(logy=True)
-                   * Curve(range(10), vdims=['B'])).opts(multi_y=True)
+        overlay = (hv.Curve(range(1,9), vdims=['A']).opts(logy=True)
+                   * hv.Curve(range(10), vdims=['B'])).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         assert len(plot.state.yaxis) == 2
         assert isinstance(plot.state.yaxis[0], LogAxis)
@@ -90,8 +90,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
         assert isinstance(extra_y_ranges['B'], LinearScale)
 
     def test_multi_log_right_axis(self):
-        overlay = (Curve(range(1,9), vdims=['A'])
-                   * Curve(range(1, 9), vdims=['B']).opts(logy=True)).opts(multi_y=True)
+        overlay = (hv.Curve(range(1,9), vdims=['A'])
+                   * hv.Curve(range(1, 9), vdims=['B']).opts(logy=True)).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         assert len(plot.state.yaxis) == 2
         assert isinstance(plot.state.yaxis[0], LinearAxis)
@@ -101,8 +101,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
 
 
     def test_multi_log_both_axes(self):
-        overlay = (Curve(range(1,9), vdims=['A']).opts(logy=True)
-                   * Curve(range(1, 9), vdims=['B']).opts(logy=True)).opts(multi_y=True)
+        overlay = (hv.Curve(range(1,9), vdims=['A']).opts(logy=True)
+                   * hv.Curve(range(1, 9), vdims=['B']).opts(logy=True)).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         assert len(plot.state.yaxis) == 2
         assert isinstance(plot.state.yaxis[0], LogAxis)
@@ -113,8 +113,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
     # BUG! left_axis is not warning (main axis)
 
     def test_multi_log_right_axis_warn(self):
-        overlay = (Curve(range(10), vdims=['A'])
-                   * Curve(range(10), vdims=['B']).opts(logy=True)).opts(multi_y=True)
+        overlay = (hv.Curve(range(10), vdims=['A'])
+                   * hv.Curve(range(10), vdims=['B']).opts(logy=True)).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         assert len(plot.state.yaxis) == 2
         assert isinstance(plot.state.yaxis[0], LinearAxis)
@@ -128,8 +128,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
     # Testing invert_yaxis
 
     def test_multi_invert_left_axis(self):
-        overlay = (Curve(range(10), vdims=['A']).opts(invert_yaxis=True)
-                   * Curve(range(10), vdims=['B'])).opts(multi_y=True)
+        overlay = (hv.Curve(range(10), vdims=['A']).opts(invert_yaxis=True)
+                   * hv.Curve(range(10), vdims=['B'])).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         y_range = plot.handles['y_range']
         assert y_range.start == 9
@@ -140,8 +140,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
         assert extra_y_ranges['B'].end == 9
 
     def test_multi_invert_right_axis(self):
-        overlay = (Curve(range(10), vdims=['A'])
-                   * Curve(range(10), vdims=['B']).opts(invert_yaxis=True)).opts(multi_y=True)
+        overlay = (hv.Curve(range(10), vdims=['A'])
+                   * hv.Curve(range(10), vdims=['B']).opts(invert_yaxis=True)).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         y_range = plot.handles['y_range']
         assert y_range.start == 0
@@ -153,8 +153,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
 
 
     def test_multi_invert_both_axes(self):
-        overlay = (Curve(range(10), vdims=['A']).opts(invert_yaxis=True)
-                   * Curve(range(10), vdims=['B']).opts(invert_yaxis=True)).opts(multi_y=True)
+        overlay = (hv.Curve(range(10), vdims=['A']).opts(invert_yaxis=True)
+                   * hv.Curve(range(10), vdims=['B']).opts(invert_yaxis=True)).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         y_range = plot.handles['y_range']
         assert y_range.start == 9
@@ -168,8 +168,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
     # Combination test
 
     def test_inverted_log_ylim_right_axis(self):
-        overlay = (Curve(range(10), vdims=['A'])
-                   * Curve(range(10), vdims=['B']
+        overlay = (hv.Curve(range(10), vdims=['A'])
+                   * hv.Curve(range(10), vdims=['B']
                            ).opts(invert_yaxis=True, logy=True, ylim=(2,20))).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         y_range = plot.handles['y_range']
@@ -186,12 +186,12 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
     # Test axis sharing in layouts
 
     def test_shared_multi_axes(self):
-        curve1A = Curve([9, 8, 7, 6, 5], vdims='A')
-        curve2B = Curve([1, 2, 3], vdims='B')
+        curve1A = hv.Curve([9, 8, 7, 6, 5], vdims='A')
+        curve2B = hv.Curve([1, 2, 3], vdims='B')
         overlay1 = (curve1A * curve2B).opts(multi_y=True)
 
-        curve3A = Curve([19, 18, 17, 16, 15], vdims='A')
-        curve4B = Curve([11, 12, 13], vdims='B')
+        curve3A = hv.Curve([19, 18, 17, 16, 15], vdims='A')
+        curve4B = hv.Curve([11, 12, 13], vdims='B')
         overlay2 = (curve3A * curve4B).opts(multi_y=True)
 
         plot = bokeh_renderer.get_plot(overlay1 + overlay2)
@@ -204,8 +204,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
 
     def test_invisible_main_axis(self):
         overlay = (
-            Curve(range(10), vdims=['A']).opts(yaxis=None) *
-            Curve(range(10), vdims=['B'])
+            hv.Curve(range(10), vdims=['A']).opts(yaxis=None) *
+            hv.Curve(range(10), vdims=['B'])
         ).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         assert len(plot.state.yaxis) == 2
@@ -214,8 +214,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
 
     def test_invisible_extra_axis(self):
         overlay = (
-            Curve(range(10), vdims=['A']) *
-            Curve(range(10), vdims=['B']).opts(yaxis=None)
+            hv.Curve(range(10), vdims=['A']) *
+            hv.Curve(range(10), vdims=['B']).opts(yaxis=None)
         ).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         assert len(plot.state.yaxis) == 2
@@ -224,8 +224,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
 
     def test_axis_labels(self):
         overlay = (
-            Curve(range(10), vdims=['A']) *
-            Curve(range(10), vdims=['B'])
+            hv.Curve(range(10), vdims=['A']) *
+            hv.Curve(range(10), vdims=['B'])
         ).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
 
@@ -235,8 +235,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
 
     def test_custom_axis_labels(self):
         overlay = (
-            Curve(range(10), vdims=['A']).opts(xlabel='x-custom', ylabel='A-custom') *
-            Curve(range(10), vdims=['B']).opts(ylabel='B-custom')
+            hv.Curve(range(10), vdims=['A']).opts(xlabel='x-custom', ylabel='A-custom') *
+            hv.Curve(range(10), vdims=['B']).opts(ylabel='B-custom')
         ).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
 
@@ -246,8 +246,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
 
     def test_only_x_axis_labels(self):
         overlay = (
-            Curve(range(10), vdims=['A']) *
-            Curve(range(10), vdims=['B'])
+            hv.Curve(range(10), vdims=['A']) *
+            hv.Curve(range(10), vdims=['B'])
         ).opts(multi_y=True, labelled=['x'])
         plot = bokeh_renderer.get_plot(overlay)
 
@@ -257,8 +257,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
 
     def test_none_x_axis_labels(self):
         overlay = (
-            Curve(range(10), vdims=['A']) *
-            Curve(range(10), vdims=['B'])
+            hv.Curve(range(10), vdims=['A']) *
+            hv.Curve(range(10), vdims=['B'])
         ).opts(multi_y=True, labelled=['y'])
         plot = bokeh_renderer.get_plot(overlay)
 
@@ -268,8 +268,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
 
     def test_swapped_position_label(self):
         overlay = (
-            Curve(range(10), vdims=['A']).opts(yaxis='right') *
-            Curve(range(10), vdims=['B']).opts(yaxis='left')
+            hv.Curve(range(10), vdims=['A']).opts(yaxis='right') *
+            hv.Curve(range(10), vdims=['B']).opts(yaxis='left')
         ).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
 
@@ -277,8 +277,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
         assert plot.state.yaxis[1].axis_label == 'A'
 
     def test_swapped_position_custom_y_labels(self):
-        overlay = (Curve(range(10), vdims=['A']).opts(yaxis='right', ylabel='A-custom')
-                   * Curve(range(10), vdims=['B']).opts(yaxis='left', ylabel='B-custom')
+        overlay = (hv.Curve(range(10), vdims=['A']).opts(yaxis='right', ylabel='A-custom')
+                   * hv.Curve(range(10), vdims=['B']).opts(yaxis='left', ylabel='B-custom')
                    ).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
 
@@ -287,8 +287,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
 
     def test_position_custom_size_label(self):
         overlay = (
-            Curve(range(10), vdims='A').opts(fontsize={'ylabel': '13pt'}) *
-            Curve(range(10), vdims='B').opts(fontsize={'ylabel': '15pt'})
+            hv.Curve(range(10), vdims='A').opts(fontsize={'ylabel': '13pt'}) *
+            hv.Curve(range(10), vdims='B').opts(fontsize={'ylabel': '15pt'})
         ).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         assert plot.state.yaxis[0].axis_label == 'A'
@@ -298,8 +298,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
 
     def test_swapped_position_custom_size_label(self):
         overlay = (
-            Curve(range(10), vdims='A').opts(yaxis='right', fontsize={'ylabel': '13pt'}) *
-            Curve(range(10), vdims='B').opts(yaxis='left', fontsize={'ylabel': '15pt'})
+            hv.Curve(range(10), vdims='A').opts(yaxis='right', fontsize={'ylabel': '13pt'}) *
+            hv.Curve(range(10), vdims='B').opts(yaxis='left', fontsize={'ylabel': '15pt'})
         ).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(overlay)
         assert plot.state.yaxis[0].axis_label == 'B'
@@ -309,7 +309,7 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
 
     def test_multi_y_on_curve(self):
         # Test for https://github.com/holoviz/holoviews/issues/6322
-        overlay = Curve(range(10), vdims='A').opts(multi_y=True)
+        overlay = hv.Curve(range(10), vdims='A').opts(multi_y=True)
 
         # Should not error
         bokeh_renderer.get_plot(overlay)

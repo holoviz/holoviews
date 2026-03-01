@@ -2,15 +2,7 @@ import numpy as np
 from bokeh.layouts import Column
 from bokeh.models import Div, Toolbar
 
-from holoviews.core import (
-    Dataset,
-    DynamicMap,
-    GridMatrix,
-    GridSpace,
-    HoloMap,
-    NdOverlay,
-)
-from holoviews.element import Curve, Image, Points
+import holoviews as hv
 from holoviews.operation import gridmatrix
 from holoviews.streams import Stream
 from holoviews.testing import assert_data_equal
@@ -21,7 +13,7 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 class TestGridPlot(TestBokehPlot):
 
     def test_grid_title(self):
-        grid = GridSpace({(i, j): HoloMap({a: Image(np.random.rand(10,10))
+        grid = hv.GridSpace({(i, j): hv.HoloMap({a: hv.Image(np.random.rand(10,10))
                                            for a in range(3)}, kdims=['X'])
                           for i in range(2) for j in range(3)})
         plot = bokeh_renderer.get_plot(grid)
@@ -32,7 +24,7 @@ class TestGridPlot(TestBokehPlot):
         assert title.text == text
 
     def test_grid_title_update(self):
-        grid = GridSpace({(i, j): HoloMap({a: Image(np.random.rand(10,10))
+        grid = hv.GridSpace({(i, j): hv.HoloMap({a: hv.Image(np.random.rand(10,10))
                                            for a in range(3)}, kdims=['X'])
                           for i in range(2) for j in range(3)})
         plot = bokeh_renderer.get_plot(grid)
@@ -44,9 +36,9 @@ class TestGridPlot(TestBokehPlot):
         assert title.text == text
 
     def test_gridmatrix_overlaid_batched(self):
-        ds = Dataset((['A']*5+['B']*5, np.random.rand(10), np.random.rand(10)),
+        ds = hv.Dataset((['A']*5+['B']*5, np.random.rand(10), np.random.rand(10)),
                      kdims=['a', 'b', 'c'])
-        gmatrix = gridmatrix(ds.groupby('a', container_type=NdOverlay))
+        gmatrix = gridmatrix(ds.groupby('a', container_type=hv.NdOverlay))
         plot = bokeh_renderer.get_plot(gmatrix)
 
         sp1 = plot.subplots[('b', 'c')]
@@ -63,24 +55,24 @@ class TestGridPlot(TestBokehPlot):
         assert sp4.state.yaxis[0].visible is False
 
     def test_gridspace_sparse(self):
-        grid = GridSpace({(i, j): Curve(range(i+j)) for i in range(1, 3)
+        grid = hv.GridSpace({(i, j): hv.Curve(range(i+j)) for i in range(1, 3)
                             for j in range(2,4) if not (i==1 and j == 2)})
         plot = bokeh_renderer.get_plot(grid)
         size = bokeh_renderer.get_size(plot.state)
         assert size == (320, 311)
 
     def test_grid_shared_source_synced_update(self):
-        hmap = HoloMap({i: Dataset({chr(65+j): np.random.rand(i+2)
+        hmap = hv.HoloMap({i: hv.Dataset({chr(65+j): np.random.rand(i+2)
                                     for j in range(4)}, kdims=['A', 'B', 'C', 'D'])
                         for i in range(3)})
 
         # Create two holomaps of points sharing the same data source
-        hmap1=  hmap.map(lambda x: Points(x.clone(kdims=['A', 'B'])), Dataset)
-        hmap2 = hmap.map(lambda x: Points(x.clone(kdims=['D', 'C'])), Dataset)
+        hmap1=  hmap.map(lambda x: hv.Points(x.clone(kdims=['A', 'B'])), hv.Dataset)
+        hmap2 = hmap.map(lambda x: hv.Points(x.clone(kdims=['D', 'C'])), hv.Dataset)
 
         # Pop key (1,) for one of the HoloMaps and make GridSpace
         hmap2.pop(1)
-        grid = GridSpace({0: hmap1, 2: hmap2}, kdims=['X']).opts(shared_datasource=True)
+        grid = hv.GridSpace({0: hmap1, 2: hmap2}, kdims=['X']).opts(shared_datasource=True)
 
         # Get plot
         plot = bokeh_renderer.get_plot(grid)
@@ -107,22 +99,22 @@ class TestGridPlot(TestBokehPlot):
         assert_data_equal(data['D'], np.full_like(hmap1[1].dimension_values(0), np.nan))
 
     def test_grid_set_toolbar_location(self):
-        grid = GridSpace({0: Curve([]), 1: Points([])}, 'X').opts(toolbar='left')
+        grid = hv.GridSpace({0: hv.Curve([]), 1: hv.Points([])}, 'X').opts(toolbar='left')
         plot = bokeh_renderer.get_plot(grid)
         assert isinstance(plot.state, Column)
         assert isinstance(plot.state.children[0].toolbar, Toolbar)
 
 
     def test_grid_disable_toolbar(self):
-        grid = GridSpace({0: Curve([]), 1: Points([])}, 'X').opts(toolbar=None)
+        grid = hv.GridSpace({0: hv.Curve([]), 1: hv.Points([])}, 'X').opts(toolbar=None)
         plot = bokeh_renderer.get_plot(grid)
         assert isinstance(plot.state, Column)
         assert [p for p in plot.state.children if isinstance(p, Toolbar)] == []
 
     def test_grid_dimensioned_stream_title_update(self):
         stream = Stream.define('Test', test=0)()
-        dmap = DynamicMap(lambda test: Curve([]), kdims=['test'], streams=[stream])
-        grid = GridMatrix({0: dmap, 1: Curve([])}, 'X')
+        dmap = hv.DynamicMap(lambda test: hv.Curve([]), kdims=['test'], streams=[stream])
+        grid = hv.GridMatrix({0: dmap, 1: hv.Curve([])}, 'X')
         plot = bokeh_renderer.get_plot(grid)
         assert 'test: 0' in plot.handles['title'].text
         stream.event(test=1)

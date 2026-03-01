@@ -1,7 +1,6 @@
 import numpy as np
 
-from holoviews.core.spaces import GridSpace
-from holoviews.element import Curve, Scatter
+import holoviews as hv
 from holoviews.testing import assert_data_equal
 
 from .test_plot import TestPlotlyPlot
@@ -11,12 +10,12 @@ class TestGridPlot(TestPlotlyPlot):
 
     def test_layout_with_grid(self):
         # Create GridSpace
-        grid = GridSpace({(i, j): Curve([i, j]) for i in [0, 1]
+        grid = hv.GridSpace({(i, j): hv.Curve([i, j]) for i in [0, 1]
                           for j in [0, 1]})
         grid = grid.opts(vspacing=0, hspacing=0)
 
         # Create Scatter
-        scatter = Scatter([-10, 0])
+        scatter = hv.Scatter([-10, 0])
 
         # Create Horizontal Layout
         layout = (scatter + grid).opts(vspacing=0, hspacing=0)
@@ -78,7 +77,7 @@ class TestGridPlot(TestPlotlyPlot):
 
 
     def test_grid_state(self):
-        grid = GridSpace({(i, j): Curve([i, j]) for i in [0, 1]
+        grid = hv.GridSpace({(i, j): hv.Curve([i, j]) for i in [0, 1]
                           for j in [0, 1]})
         state = self._get_plot_state(grid)
         assert_data_equal(state['data'][0]['y'], np.array([0, 0]))

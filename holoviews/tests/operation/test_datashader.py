@@ -7,36 +7,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from holoviews import (
-    RGB,
-    Area,
-    Contours,
-    Curve,
-    Dataset,
-    Dimension,
-    DynamicMap,
-    Graph,
-    Image,
-    ImageStack,
-    NdOverlay,
-    Nodes,
-    Overlay,
-    Path,
-    Points,
-    Polygons,
-    QuadMesh,
-    Rectangles,
-    Segments,
-    Spikes,
-    Spread,
-    TriMesh,
-    renderer,
-)
+import holoviews as hv
 from holoviews.core.util.dependencies import PANDAS_GE_3_0_0
 from holoviews.operation import apply_when
 from holoviews.streams import Tap
 from holoviews.testing import assert_data_equal, assert_element_equal
-from holoviews.util import render
 
 from ..utils import optional_dependencies
 
@@ -100,7 +75,7 @@ def point_data():
 
 @pytest.fixture
 def point_plot(point_data):
-    return Points(point_data)
+    return hv.Points(point_data)
 
 
 class DatashaderAggregateTests:
@@ -109,38 +84,38 @@ class DatashaderAggregateTests:
     """
 
     def test_aggregate_points(self):
-        points = Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)])
+        points = hv.Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)])
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2)
-        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
-                         vdims=[Dimension('Count', nodata=0)])
+        expected = hv.Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
+                         vdims=[hv.Dimension('Count', nodata=0)])
         assert_element_equal(img, expected)
 
     def test_aggregate_points_empty(self):
-        points = Points([])
+        points = hv.Points([])
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2, pixel_ratio=1)
-        expected = Image(([0.25, 0.75], [0.25, 0.75], [[0, 0], [0, 0]]),
-                         vdims=[Dimension('Count', nodata=0)])
+        expected = hv.Image(([0.25, 0.75], [0.25, 0.75], [[0, 0], [0, 0]]),
+                         vdims=[hv.Dimension('Count', nodata=0)])
         assert_element_equal(img, expected)
 
     def test_aggregate_points_empty_with_pixel_ratio(self):
-        points = Points([])
+        points = hv.Points([])
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2, pixel_ratio=2)
-        expected = Image((
+        expected = hv.Image((
             [0.125, 0.375, 0.625, 0.875],
             [0.125, 0.375, 0.625, 0.875],
             [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
-        ), vdims=[Dimension('Count', nodata=0)])
+        ), vdims=[hv.Dimension('Count', nodata=0)])
         assert_element_equal(img, expected)
 
     def test_aggregate_points_count_column(self):
-        points = Points([(0.2, 0.3, np.nan), (0.4, 0.7, 22), (0, 0.99,np.nan)], vdims='z')
+        points = hv.Points([(0.2, 0.3, np.nan), (0.4, 0.7, 22), (0, 0.99,np.nan)], vdims='z')
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2, aggregator=ds.count('z'))
-        expected = Image(([0.25, 0.75], [0.25, 0.75], [[0, 0], [1, 0]]),
-                         vdims=[Dimension('z Count', nodata=0)])
+        expected = hv.Image(([0.25, 0.75], [0.25, 0.75], [[0, 0], [1, 0]]),
+                         vdims=[hv.Dimension('z Count', nodata=0)])
         assert_element_equal(img, expected)
 
     @pytest.mark.gpu
@@ -148,40 +123,40 @@ class DatashaderAggregateTests:
         import cudf
         import cupy
 
-        points = Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)], datatype=['cuDF'])
+        points = hv.Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)], datatype=['cuDF'])
         assert isinstance(points.data, cudf.DataFrame)
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2)
-        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
-                         vdims=[Dimension('Count', nodata=0)])
+        expected = hv.Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
+                         vdims=[hv.Dimension('Count', nodata=0)])
         assert isinstance(img.data.Count.data, cupy.ndarray)
         assert_element_equal(img, expected)
 
     def test_aggregate_zero_range_points(self):
-        p = Points([(0, 0), (1, 1)])
+        p = hv.Points([(0, 0), (1, 1)])
         agg = rasterize(p, x_range=(0, 0), y_range=(0, 1), expand=False, dynamic=False,
                         width=2, height=2)
-        img = Image(([], [0.25, 0.75], np.zeros((2, 0))), bounds=(0, 0, 0, 1),
-                    xdensity=1, vdims=[Dimension('Count', nodata=0)])
+        img = hv.Image(([], [0.25, 0.75], np.zeros((2, 0))), bounds=(0, 0, 0, 1),
+                    xdensity=1, vdims=[hv.Dimension('Count', nodata=0)])
         assert_element_equal(agg, img)
 
     def test_aggregate_points_target(self):
-        points = Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)])
-        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
-                         vdims=[Dimension('Count', nodata=0)])
+        points = hv.Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)])
+        expected = hv.Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
+                         vdims=[hv.Dimension('Count', nodata=0)])
         img = aggregate(points, dynamic=False,  target=expected)
         assert_element_equal(img, expected)
 
     def test_aggregate_points_sampling(self):
-        points = Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)])
-        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
-                         vdims=[Dimension('Count', nodata=0)])
+        points = hv.Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)])
+        expected = hv.Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
+                         vdims=[hv.Dimension('Count', nodata=0)])
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         x_sampling=0.5, y_sampling=0.5)
         assert_element_equal(img, expected)
 
     def test_aggregate_points_categorical(self):
-        points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
+        points = hv.Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2, aggregator=ds.count_cat('z'))
         x = np.array([0.25, 0.75])
@@ -193,43 +168,43 @@ class DatashaderAggregateTests:
             coords={"x": x, "y": y},
             data_vars={"a": (("x", "y"), a), "b": (("x", "y"), b), "c": (("x", "y"), c)},
         )
-        expected = ImageStack(xrds, kdims=["x", "y"], vdims=["a", "b", "c"])
+        expected = hv.ImageStack(xrds, kdims=["x", "y"], vdims=["a", "b", "c"])
         actual = img.data
         assert (expected.data.to_array("z").values == actual.T.values).all()
 
     def test_aggregate_points_categorical_zero_range(self):
-        points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
+        points = hv.Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
         img = aggregate(points, dynamic=False,  x_range=(0, 0), y_range=(0, 1),
                         aggregator=ds.count_cat('z'), height=2)
-        expected = ImageStack(
+        expected = hv.ImageStack(
             xr.Dataset(
                 {"z Count": (("y", "x"), [[], []])},
                 coords={"x": [], "y": [0.25, 0.75]},
             ),
-            vdims=Dimension('z Count', nodata=0),
+            vdims=hv.Dimension('z Count', nodata=0),
             bounds=(0, 0, 0, 1),
             xdensity=1
         )
         assert_element_equal(img, expected)
 
     def test_aggregate_curve(self):
-        curve = Curve([(0.2, 0.3), (0.4, 0.7), (0.8, 0.99)])
-        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [1, 1]]),
-                         vdims=[Dimension('Count', nodata=0)])
+        curve = hv.Curve([(0.2, 0.3), (0.4, 0.7), (0.8, 0.99)])
+        expected = hv.Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [1, 1]]),
+                         vdims=[hv.Dimension('Count', nodata=0)])
         img = aggregate(curve, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2)
         assert_element_equal(img, expected)
 
     def test_aggregate_curve_datetimes(self):
         dates = pd.date_range(start="2016-01-01", end="2016-01-03", freq='1D')
-        curve = Curve((dates, [1, 2, 3]))
+        curve = hv.Curve((dates, [1, 2, 3]))
         img = aggregate(curve, width=2, height=2, dynamic=False)
         bounds = (np.datetime64('2016-01-01T00:00:00.000000'), 1.0,
                   np.datetime64('2016-01-03T00:00:00.000000'), 3.0)
         dates = [np.datetime64('2016-01-01T12:00:00.000000000'),
                  np.datetime64('2016-01-02T12:00:00.000000000')]
-        expected = Image((dates, [1.5, 2.5], [[1, 0], [0, 2]]),
-                         datatype=['xarray'], bounds=bounds, vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((dates, [1.5, 2.5], [[1, 0], [0, 2]]),
+                         datatype=['xarray'], bounds=bounds, vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(img, expected)
 
     def test_aggregate_curve_datetimes_dask(self):
@@ -238,14 +213,14 @@ class DatashaderAggregateTests:
             index=pd.date_range('2019-01-01', freq='1min', periods=1000),
         )
         ddf = dd.from_pandas(df, npartitions=4)
-        curve = Curve(ddf, kdims=['index'], vdims=['a'])
+        curve = hv.Curve(ddf, kdims=['index'], vdims=['a'])
         img = aggregate(curve, width=2, height=3, dynamic=False)
         bounds = (np.datetime64('2019-01-01T00:00:00.000000'), 0.0,
                   np.datetime64('2019-01-01T16:39:00.000000'), 999.0)
         dates = [np.datetime64('2019-01-01T04:09:45.000000000'),
                  np.datetime64('2019-01-01T12:29:15.000000000')]
-        expected = Image((dates, [166.5, 499.5, 832.5], [[332, 0], [167, 166], [0, 334]]),
-                         kdims=['index', 'a'], vdims=Dimension('Count', nodata=0),
+        expected = hv.Image((dates, [166.5, 499.5, 832.5], [[332, 0], [167, 166], [0, 334]]),
+                         kdims=['index', 'a'], vdims=hv.Dimension('Count', nodata=0),
                          datatype=['xarray'], bounds=bounds)
         assert_element_equal(img, expected)
 
@@ -253,26 +228,26 @@ class DatashaderAggregateTests:
         dates = pd.date_range(start="2016-01-01", end="2016-01-03", freq='1D')
         xstart = np.datetime64('2015-12-31T23:59:59.723518000', 'us')
         xend = np.datetime64('2016-01-03T00:00:00.276482000', 'us')
-        curve = Curve((dates, [1, 2, 3]))
+        curve = hv.Curve((dates, [1, 2, 3]))
         img = aggregate(curve, width=2, height=2, x_range=(xstart, xend), dynamic=False)
         bounds = (np.datetime64('2015-12-31T23:59:59.723517952'), 1.0,
                   np.datetime64('2016-01-03T00:00:00.276482048'), 3.0)
         dates = [np.datetime64('2016-01-01T11:59:59.861758976',),
                  np.datetime64('2016-01-02T12:00:00.138241024')]
-        expected = Image((dates, [1.5, 2.5], [[1, 0], [0, 2]]),
-                         datatype=['xarray'], bounds=bounds, vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((dates, [1.5, 2.5], [[1, 0], [0, 2]]),
+                         datatype=['xarray'], bounds=bounds, vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(img, expected)
 
     def test_aggregate_ndoverlay_count_cat_datetimes_microsecond_timebase(self):
         dates = pd.date_range(start="2016-01-01", end="2016-01-03", freq='1D')
         xstart = np.datetime64('2015-12-31T23:59:59.723518000', 'us')
         xend = np.datetime64('2016-01-03T00:00:00.276482000', 'us')
-        curve = Curve((dates, [1, 2, 3]))
-        curve2 = Curve((dates, [3, 2, 1]))
-        ndoverlay = NdOverlay({0: curve, 1: curve2}, 'Cat')
+        curve = hv.Curve((dates, [1, 2, 3]))
+        curve2 = hv.Curve((dates, [3, 2, 1]))
+        ndoverlay = hv.NdOverlay({0: curve, 1: curve2}, 'Cat')
         img = aggregate(ndoverlay, aggregator=ds.count_cat('Cat'), width=2, height=2,
                          x_range=(xstart, xend), dynamic=False)
-        assert isinstance(img, ImageStack)
+        assert isinstance(img, hv.ImageStack)
         x = pd.date_range(xstart, xend, periods=4).to_numpy()
         y = np.array([1.25, 1.75, 2.25, 2.75])
         cat = np.array([0.0, 1.0])
@@ -287,97 +262,97 @@ class DatashaderAggregateTests:
             dims=('y', 'x', 'Cat'),
             coords={"y": y, "Cat": cat, "x": x}
         )
-        expected = ImageStack(xrds, kdims=["x", "y"], vdims=["0.0", "1.0"])
+        expected = hv.ImageStack(xrds, kdims=["x", "y"], vdims=["0.0", "1.0"])
         assert (expected.data == a).all()
 
     def test_aggregate_dt_xaxis_constant_yaxis(self):
         df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1min'))
-        img = rasterize(Curve(df), dynamic=False, width=3)
+        img = rasterize(hv.Curve(df), dynamic=False, width=3)
         xs = np.array(['1980-01-01T00:16:30.000000', '1980-01-01T00:49:30.000000',
                        '1980-01-01T01:22:30.000000'], dtype='datetime64[us]')
         ys = np.array([])
         bounds = (np.datetime64('1980-01-01T00:00:00.000000'), 1.0,
                   np.datetime64('1980-01-01T01:39:00.000000'), 1.0)
-        expected = Image((xs, ys, np.empty((0, 3))), ['index', 'y'],
-                         vdims=Dimension('Count', nodata=0), xdensity=1,
+        expected = hv.Image((xs, ys, np.empty((0, 3))), ['index', 'y'],
+                         vdims=hv.Dimension('Count', nodata=0), xdensity=1,
                          ydensity=1, bounds=bounds)
         assert_element_equal(img, expected)
 
     def test_aggregate_ndoverlay(self):
-        ds = Dataset([(0.2, 0.3, 0), (0.4, 0.7, 1), (0, 0.99, 2)], kdims=['x', 'y', 'z'])
-        ndoverlay = ds.to(Points, ['x', 'y'], [], 'z').overlay()
-        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
-                         vdims=[Dimension('Count', nodata=0)])
+        ds = hv.Dataset([(0.2, 0.3, 0), (0.4, 0.7, 1), (0, 0.99, 2)], kdims=['x', 'y', 'z'])
+        ndoverlay = ds.to(hv.Points, ['x', 'y'], [], 'z').overlay()
+        expected = hv.Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
+                         vdims=[hv.Dimension('Count', nodata=0)])
         img = aggregate(ndoverlay, dynamic=False, x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2)
         assert_element_equal(img, expected)
 
     def test_aggregate_path(self):
-        path = Path([[(0.2, 0.3), (0.4, 0.7)], [(0.4, 0.7), (0.8, 0.99)]])
-        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 1]]),
-                         vdims=[Dimension('Count', nodata=0)])
+        path = hv.Path([[(0.2, 0.3), (0.4, 0.7)], [(0.4, 0.7), (0.8, 0.99)]])
+        expected = hv.Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 1]]),
+                         vdims=[hv.Dimension('Count', nodata=0)])
         img = aggregate(path, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2)
         assert_element_equal(img, expected)
 
     def test_aggregate_contours_with_vdim(self):
-        contours = Contours([[(0.2, 0.3, 1), (0.4, 0.7, 1)], [(0.4, 0.7, 2), (0.8, 0.99, 2)]], vdims='z')
+        contours = hv.Contours([[(0.2, 0.3, 1), (0.4, 0.7, 1)], [(0.4, 0.7, 2), (0.8, 0.99, 2)]], vdims='z')
         img = rasterize(contours, dynamic=False)
         assert img.vdims == ['z']
 
     def test_aggregate_contours_without_vdim(self):
-        contours = Contours([[(0.2, 0.3), (0.4, 0.7)], [(0.4, 0.7), (0.8, 0.99)]])
+        contours = hv.Contours([[(0.2, 0.3), (0.4, 0.7)], [(0.4, 0.7), (0.8, 0.99)]])
         img = rasterize(contours, dynamic=False)
-        assert img.vdims == [Dimension('Any', nodata=0)]
+        assert img.vdims == [hv.Dimension('Any', nodata=0)]
 
     def test_aggregate_dframe_nan_path(self):
-        path = Path([Path([[(0.2, 0.3), (0.4, 0.7)], [(0.4, 0.7), (0.8, 0.99)]]).dframe()])
-        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 1]]),
-                         vdims=[Dimension('Count', nodata=0)])
+        path = hv.Path([hv.Path([[(0.2, 0.3), (0.4, 0.7)], [(0.4, 0.7), (0.8, 0.99)]]).dframe()])
+        expected = hv.Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 1]]),
+                         vdims=[hv.Dimension('Count', nodata=0)])
         img = aggregate(path, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2)
         assert_element_equal(img, expected)
 
     def test_spikes_aggregate_count(self):
-        spikes = Spikes([1, 2, 3])
+        spikes = hv.Spikes([1, 2, 3])
         agg = rasterize(spikes, width=5, dynamic=False, expand=False)
-        expected = Image(np.array([[1, 0, 1, 0, 1]]), vdims=Dimension('Count', nodata=0),
+        expected = hv.Image(np.array([[1, 0, 1, 0, 1]]), vdims=hv.Dimension('Count', nodata=0),
                          xdensity=2.5, ydensity=1, bounds=(1, 0, 3, 0.5))
         assert_element_equal(agg, expected)
 
     def test_spikes_aggregate_count_dask(self):
-        spikes = Spikes([1, 2, 3], datatype=['dask'])
+        spikes = hv.Spikes([1, 2, 3], datatype=['dask'])
         agg = rasterize(spikes, width=5, dynamic=False, expand=False)
-        expected = Image(np.array([[1, 0, 1, 0, 1]]), vdims=Dimension('Count', nodata=0),
+        expected = hv.Image(np.array([[1, 0, 1, 0, 1]]), vdims=hv.Dimension('Count', nodata=0),
                          xdensity=2.5, ydensity=1, bounds=(1, 0, 3, 0.5))
         assert_element_equal(agg, expected)
 
     def test_spikes_aggregate_dt_count(self):
-        spikes = Spikes([dt.datetime(2016, 1, 1),  dt.datetime(2016, 1, 2), dt.datetime(2016, 1, 3)])
+        spikes = hv.Spikes([dt.datetime(2016, 1, 1),  dt.datetime(2016, 1, 2), dt.datetime(2016, 1, 3)])
         agg = rasterize(spikes, width=5, dynamic=False, expand=False)
         bounds = (np.datetime64('2016-01-01T00:00:00.000000'), 0,
                   np.datetime64('2016-01-03T00:00:00.000000'), 0.5)
-        expected = Image(np.array([[1, 0, 1, 0, 1]]), vdims=Dimension('Count', nodata=0), bounds=bounds)
+        expected = hv.Image(np.array([[1, 0, 1, 0, 1]]), vdims=hv.Dimension('Count', nodata=0), bounds=bounds)
         assert_element_equal(agg, expected)
 
     def test_spikes_aggregate_dt_count_dask(self):
-        spikes = Spikes([dt.datetime(2016, 1, 1),  dt.datetime(2016, 1, 2), dt.datetime(2016, 1, 3)],
+        spikes = hv.Spikes([dt.datetime(2016, 1, 1),  dt.datetime(2016, 1, 2), dt.datetime(2016, 1, 3)],
                         datatype=['dask'])
         agg = rasterize(spikes, width=5, dynamic=False, expand=False)
         bounds = (np.datetime64('2016-01-01T00:00:00.000000'), 0,
                   np.datetime64('2016-01-03T00:00:00.000000'), 0.5)
-        expected = Image(np.array([[1, 0, 1, 0, 1]]), vdims=Dimension('Count', nodata=0), bounds=bounds)
+        expected = hv.Image(np.array([[1, 0, 1, 0, 1]]), vdims=hv.Dimension('Count', nodata=0), bounds=bounds)
         assert_element_equal(agg, expected)
 
     def test_spikes_aggregate_spike_length(self):
-        spikes = Spikes([1, 2, 3])
+        spikes = hv.Spikes([1, 2, 3])
         agg = rasterize(spikes, width=5, dynamic=False, expand=False, spike_length=7)
-        expected = Image(np.array([[1, 0, 1, 0, 1]]), vdims=Dimension('Count', nodata=0),
+        expected = hv.Image(np.array([[1, 0, 1, 0, 1]]), vdims=hv.Dimension('Count', nodata=0),
                          xdensity=2.5, ydensity=1, bounds=(1, 0, 3, 7.0))
         assert_element_equal(agg, expected)
 
     def test_spikes_aggregate_with_height_count(self):
-        spikes = Spikes([(1, 0.2), (2, 0.8), (3, 0.4)], vdims='y')
+        spikes = hv.Spikes([(1, 0.2), (2, 0.8), (3, 0.4)], vdims='y')
         agg = rasterize(spikes, width=5, height=5, y_range=(0, 1), dynamic=False)
         xs = [1.2, 1.6, 2.0, 2.4, 2.8]
         ys = [0.1, 0.3, 0.5, 0.7, 0.9]
@@ -388,11 +363,11 @@ class DatashaderAggregateTests:
             [0, 0, 1, 0, 0],
             [0, 0, 1, 0, 0]
         ])
-        expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
     def test_spikes_aggregate_with_height_count_override(self):
-        spikes = Spikes([(1, 0.2), (2, 0.8), (3, 0.4)], vdims='y')
+        spikes = hv.Spikes([(1, 0.2), (2, 0.8), (3, 0.4)], vdims='y')
         agg = rasterize(spikes, width=5, height=5, y_range=(0, 1),
                         spike_length=0.3, dynamic=False)
         xs = [1.2, 1.6, 2.0, 2.4, 2.8]
@@ -402,14 +377,14 @@ class DatashaderAggregateTests:
                         [0, 0, 0, 0, 0],
                         [0, 0, 0, 0, 0],
                         [0, 0, 0, 0, 0]])
-        expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
     def test_rasterize_regrid_and_spikes_overlay(self):
-        img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
-        spikes = Spikes([(0.5, 0.2), (1.5, 0.8), ], vdims='y')
+        img = hv.Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
+        spikes = hv.Spikes([(0.5, 0.2), (1.5, 0.8), ], vdims='y')
 
-        expected_regrid = Image(([0.25, 0.75, 1.25, 1.75],
+        expected_regrid = hv.Image(([0.25, 0.75, 1.25, 1.75],
                                  [0.25, 0.75, 1.25, 1.75],
                                  [[0, 0, 1, 1],
                                   [0, 0, 1, 1],
@@ -419,8 +394,8 @@ class DatashaderAggregateTests:
                                [0, 1, 0, 1],
                                [0, 0, 0, 0],
                                [0, 0, 0, 0]])
-        expected_spikes = Image(([0.25, 0.75, 1.25, 1.75],
-                                 [0.25, 0.75, 1.25, 1.75], spikes_arr), vdims=Dimension('Count', nodata=0))
+        expected_spikes = hv.Image(([0.25, 0.75, 1.25, 1.75],
+                                 [0.25, 0.75, 1.25, 1.75], spikes_arr), vdims=hv.Dimension('Count', nodata=0))
         overlay = img * spikes
         agg = rasterize(overlay, width=4, height=4, x_range=(0, 2), y_range=(0, 2),
                         spike_length=0.5, upsample=True, dynamic=False)
@@ -429,7 +404,7 @@ class DatashaderAggregateTests:
 
 
     def test_spikes_aggregate_with_height_count_dask(self):
-        spikes = Spikes([(1, 0.2), (2, 0.8), (3, 0.4)], vdims='y', datatype=['dask'])
+        spikes = hv.Spikes([(1, 0.2), (2, 0.8), (3, 0.4)], vdims='y', datatype=['dask'])
         agg = rasterize(spikes, width=5, height=5, y_range=(0, 1), dynamic=False)
         xs = [1.2, 1.6, 2.0, 2.4, 2.8]
         ys = [0.1, 0.3, 0.5, 0.7, 0.9]
@@ -440,11 +415,11 @@ class DatashaderAggregateTests:
             [0, 0, 1, 0, 0],
             [0, 0, 1, 0, 0]
         ])
-        expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
     def test_spikes_aggregate_with_negative_height_count(self):
-        spikes = Spikes([(1, -0.2), (2, -0.8), (3, -0.4)], vdims='y', datatype=['dask'])
+        spikes = hv.Spikes([(1, -0.2), (2, -0.8), (3, -0.4)], vdims='y', datatype=['dask'])
         agg = rasterize(spikes, width=5, height=5, y_range=(-1, 0), dynamic=False)
         xs = [1.2, 1.6, 2.0, 2.4, 2.8]
         ys = [-0.9, -0.7, -0.5, -0.3, -0.1]
@@ -455,11 +430,11 @@ class DatashaderAggregateTests:
             [0, 0, 1, 0, 1],
             [1, 0, 1, 0, 1]
         ])
-        expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
     def test_spikes_aggregate_with_positive_and_negative_height_count(self):
-        spikes = Spikes([(1, -0.2), (2, 0.8), (3, -0.4)], vdims='y', datatype=['dask'])
+        spikes = hv.Spikes([(1, -0.2), (2, 0.8), (3, -0.4)], vdims='y', datatype=['dask'])
         agg = rasterize(spikes, width=5, height=5, y_range=(-1, 1), dynamic=False)
         xs = [1.2, 1.6, 2.0, 2.4, 2.8]
         ys = [-0.8, -0.4, 0.0, 0.4, 0.8]
@@ -470,11 +445,11 @@ class DatashaderAggregateTests:
             [0, 0, 1, 0, 0],
             [0, 0, 1, 0, 0]
         ])
-        expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
     def test_rectangles_aggregate_count(self):
-        rects = Rectangles([(0, 0, 1, 2), (1, 1, 3, 2)])
+        rects = hv.Rectangles([(0, 0, 1, 2), (1, 1, 3, 2)])
         agg = rasterize(rects, width=4, height=4, dynamic=False)
         xs = [0.375, 1.125, 1.875, 2.625]
         ys = [0.25, 0.75, 1.25, 1.75]
@@ -484,11 +459,11 @@ class DatashaderAggregateTests:
             [1, 2, 1, 1],
             [0, 0, 0, 0]
         ])
-        expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
     def test_rectangles_aggregate_count_cat(self):
-        rects = Rectangles([(0, 0, 1, 2, 'A'), (1, 1, 3, 2, 'B')], vdims=['cat'])
+        rects = hv.Rectangles([(0, 0, 1, 2, 'A'), (1, 1, 3, 2, 'B')], vdims=['cat'])
         agg = rasterize(rects, width=4, height=4, aggregator=ds.count_cat('cat'),
                         dynamic=False)
         xs = [0.375, 1.125, 1.875, 2.625]
@@ -511,11 +486,11 @@ class DatashaderAggregateTests:
             coords={'x': xs, 'y': ys, 'cat': ['A', 'B']},
             dims=['x', 'y', 'cat']
         )
-        expected = ImageStack(xrda, kdims=['x', 'y'], vdims=['A', 'B'])
+        expected = hv.ImageStack(xrda, kdims=['x', 'y'], vdims=['A', 'B'])
         assert_element_equal(agg, expected)
 
     def test_rectangles_aggregate_sum(self):
-        rects = Rectangles([(0, 0, 1, 2, 0.5), (1, 1, 3, 2, 1.5)], vdims=['value'])
+        rects = hv.Rectangles([(0, 0, 1, 2, 0.5), (1, 1, 3, 2, 1.5)], vdims=['value'])
         agg = rasterize(rects, width=4, height=4, aggregator='sum', dynamic=False)
         xs = [0.375, 1.125, 1.875, 2.625]
         ys = [0.25, 0.75, 1.25, 1.75]
@@ -525,11 +500,11 @@ class DatashaderAggregateTests:
             [0.5, 2. , 1.5, 1.5],
             [np.nan, np.nan, np.nan, np.nan]
         ])
-        expected = Image((xs, ys, arr), vdims='value')
+        expected = hv.Image((xs, ys, arr), vdims='value')
         assert_element_equal(agg, expected)
 
     def test_rectangles_aggregate_dt_count(self):
-        rects = Rectangles([
+        rects = hv.Rectangles([
             (0, dt.datetime(2016, 1, 2), 4, dt.datetime(2016, 1, 3)),
             (1, dt.datetime(2016, 1, 1), 2, dt.datetime(2016, 1, 5))
         ])
@@ -547,11 +522,11 @@ class DatashaderAggregateTests:
         ])
         bounds = (0.0, np.datetime64('2016-01-01T00:00:00'),
                   4.0, np.datetime64('2016-01-05T00:00:00'))
-        expected = Image((xs, ys, arr), bounds=bounds, vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), bounds=bounds, vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
     def test_segments_aggregate_count(self):
-        segments = Segments([(0, 1, 4, 1), (1, 0, 1, 4)])
+        segments = hv.Segments([(0, 1, 4, 1), (1, 0, 1, 4)])
         agg = rasterize(segments, width=4, height=4, dynamic=False)
         xs = [0.5, 1.5, 2.5, 3.5]
         ys = [0.5, 1.5, 2.5, 3.5]
@@ -561,11 +536,11 @@ class DatashaderAggregateTests:
             [0, 1, 0, 0],
             [0, 1, 0, 0]
         ])
-        expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
     def test_segments_aggregate_sum(self, instance=False):
-        segments = Segments([(0, 1, 4, 1, 2), (1, 0, 1, 4, 4)], vdims=['value'])
+        segments = hv.Segments([(0, 1, 4, 1, 2), (1, 0, 1, 4, 4)], vdims=['value'])
         if instance:
             agg = rasterize.instance(
                 width=10, height=10, dynamic=False, aggregator='sum'
@@ -583,14 +558,14 @@ class DatashaderAggregateTests:
             [na, 4, na, na],
             [na, 4, na, na]
         ])
-        expected = Image((xs, ys, arr), vdims='value')
+        expected = hv.Image((xs, ys, arr), vdims='value')
         assert_element_equal(agg, expected)
 
     def test_segments_aggregate_sum_instance(self):
         self.test_segments_aggregate_sum(instance=True)
 
     def test_segments_aggregate_dt_count(self):
-        segments = Segments([
+        segments = hv.Segments([
             (0, dt.datetime(2016, 1, 2), 4, dt.datetime(2016, 1, 2)),
             (1, dt.datetime(2016, 1, 1), 1, dt.datetime(2016, 1, 5))
         ])
@@ -608,11 +583,11 @@ class DatashaderAggregateTests:
         ])
         bounds = (0.0, np.datetime64('2016-01-01T00:00:00'),
                   4.0, np.datetime64('2016-01-05T00:00:00'))
-        expected = Image((xs, ys, arr), bounds=bounds, vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), bounds=bounds, vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
     def test_area_aggregate_simple_count(self):
-        area = Area([1, 2, 1])
+        area = hv.Area([1, 2, 1])
         agg = rasterize(area, width=4, height=4, y_range=(0, 3), dynamic=False)
         xs = [0.25, 0.75, 1.25, 1.75]
         ys = [0.375, 1.125, 1.875, 2.625]
@@ -622,11 +597,11 @@ class DatashaderAggregateTests:
             [0, 1, 1, 0],
             [0, 0, 0, 0]
         ])
-        expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
     def test_area_aggregate_negative_count(self):
-        area = Area([-1, -2, -3])
+        area = hv.Area([-1, -2, -3])
         agg = rasterize(area, width=4, height=4, y_range=(-3, 0), dynamic=False)
         xs = [0.25, 0.75, 1.25, 1.75]
         ys = [-2.625, -1.875, -1.125, -0.375]
@@ -636,11 +611,11 @@ class DatashaderAggregateTests:
             [1, 1, 1, 1],
             [1, 1, 1, 1]
         ])
-        expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
     def test_area_aggregate_crossover_count(self):
-        area = Area([-1, 2, 3])
+        area = hv.Area([-1, 2, 3])
         agg = rasterize(area, width=4, height=4, y_range=(-3, 3), dynamic=False)
         xs = [0.25, 0.75, 1.25, 1.75]
         ys = [-2.25, -0.75, 0.75, 2.25]
@@ -650,11 +625,11 @@ class DatashaderAggregateTests:
             [1, 1, 1, 1],
             [0, 0, 1, 1]
         ])
-        expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
     def test_spread_aggregate_symmetric_count(self):
-        spread = Spread([(0, 1, 0.8), (1, 2, 0.3), (2, 3, 0.8)])
+        spread = hv.Spread([(0, 1, 0.8), (1, 2, 0.3), (2, 3, 0.8)])
         agg = rasterize(spread, width=4, height=4, dynamic=False)
         xs = [0.25, 0.75, 1.25, 1.75]
         ys = [0.65, 1.55, 2.45, 3.35]
@@ -664,11 +639,11 @@ class DatashaderAggregateTests:
             [0, 1, 1, 0],
             [0, 0, 0, 1]
         ])
-        expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
     def test_spread_aggregate_asymmetric_count(self):
-        spread = Spread([(0, 1, 0.4, 0.8), (1, 2, 0.8, 0.4), (2, 3, 0.5, 1)],
+        spread = hv.Spread([(0, 1, 0.4, 0.8), (1, 2, 0.8, 0.4), (2, 3, 0.5, 1)],
                         vdims=['y', 'pos', 'neg'])
         agg = rasterize(spread, width=4, height=4, dynamic=False)
         xs = [0.25, 0.75, 1.25, 1.75]
@@ -679,7 +654,7 @@ class DatashaderAggregateTests:
             [0, 1, 1, 0],
             [0, 0, 1, 1]
         ])
-        expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
     def test_rgb_regrid_packed(self):
@@ -693,7 +668,7 @@ class DatashaderAggregateTests:
              [  0, 68]],
         ]).T
         da = xr.DataArray(data=arr, dims=('x', 'y', 'band'), coords=coords)
-        im = RGB(da, ['x', 'y'])
+        im = hv.RGB(da, ['x', 'y'])
         agg = rasterize(im, width=3, height=3, dynamic=False, upsample=True)
         xs = [0.8333333, 1.5, 2.166666]
         ys = [0.8333333, 1.5, 2.166666]
@@ -708,12 +683,12 @@ class DatashaderAggregateTests:
              [127, 127,  0],
              [  0,   0, 68]],
         ]).transpose((1, 2, 0))
-        expected = RGB((xs, ys, arr))
+        expected = hv.RGB((xs, ys, arr))
         assert_element_equal(agg, expected)
 
     @spd_skip
     def test_line_rasterize(self):
-        path = Path([[(0, 0), (1, 1), (2, 0)], [(0, 0), (0, 1)]], datatype=['spatialpandas'])
+        path = hv.Path([[(0, 0), (1, 1), (2, 0)], [(0, 0), (0, 1)]], datatype=['spatialpandas'])
         agg = rasterize(path, width=4, height=4, dynamic=False)
         xs = [0.25, 0.75, 1.25, 1.75]
         ys = [0.125, 0.375, 0.625, 0.875]
@@ -723,12 +698,12 @@ class DatashaderAggregateTests:
             [1, 1, 1, 0],
             [1, 0, 1, 0]
         ])
-        expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
     @spd_skip
     def test_multi_line_rasterize(self):
-        path = Path([{'x': [0, 1, 2, np.nan, 0, 0], 'y': [0, 1, 0, np.nan, 0, 1]}],
+        path = hv.Path([{'x': [0, 1, 2, np.nan, 0, 0], 'y': [0, 1, 0, np.nan, 0, 1]}],
                     datatype=['spatialpandas'])
         agg = rasterize(path, width=4, height=4, dynamic=False)
         xs = [0.25, 0.75, 1.25, 1.75]
@@ -739,12 +714,12 @@ class DatashaderAggregateTests:
             [1, 1, 1, 0],
             [1, 0, 1, 0]
         ])
-        expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
     @spd_skip
     def test_ring_rasterize(self):
-        path = Path([{'x': [0, 1, 2], 'y': [0, 1, 0], 'geom_type': 'Ring'}], datatype=['spatialpandas'])
+        path = hv.Path([{'x': [0, 1, 2], 'y': [0, 1, 0], 'geom_type': 'Ring'}], datatype=['spatialpandas'])
         agg = rasterize(path, width=4, height=4, dynamic=False)
         xs = [0.25, 0.75, 1.25, 1.75]
         ys = [0.125, 0.375, 0.625, 0.875]
@@ -754,12 +729,12 @@ class DatashaderAggregateTests:
             [0, 1, 1, 0],
             [0, 0, 1, 0]
         ])
-        expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
     @spd_skip
     def test_polygon_rasterize(self):
-        poly = Polygons([
+        poly = hv.Polygons([
             {'x': [0, 1, 2], 'y': [0, 1, 0],
              'holes': [[[(1.6, 0.2), (1, 0.8), (0.4, 0.2)]]]}
         ])
@@ -774,12 +749,12 @@ class DatashaderAggregateTests:
             [0, 0, 1, 1, 0, 0],
             [0, 0, 0, 0, 0, 0]
         ])
-        expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
     @spd_skip
     def test_polygon_rasterize_mean_agg(self):
-        poly = Polygons([
+        poly = hv.Polygons([
             {'x': [0, 1, 2], 'y': [0, 1, 0], 'z': 2.4},
             {'x': [0, 0, 1], 'y': [0, 1, 1], 'z': 3.6}
         ], vdims='z')
@@ -791,12 +766,12 @@ class DatashaderAggregateTests:
             [ 3.6,  2.4,  2.4,    np.nan],
             [ 3.6,  2.4,  2.4,    np.nan],
             [ 3.6,  3.6,  np.nan, np.nan]])
-        expected = Image((xs, ys, arr), vdims='z')
+        expected = hv.Image((xs, ys, arr), vdims='z')
         assert_element_equal(agg, expected)
 
     @spd_skip
     def test_multi_poly_rasterize(self):
-        poly = Polygons([{'x': [0, 1, 2, np.nan, 0, 0, 1],
+        poly = hv.Polygons([{'x': [0, 1, 2, np.nan, 0, 0, 1],
                           'y': [0, 1, 0, np.nan, 0, 1, 1]}],
                         datatype=['spatialpandas'])
         agg = rasterize(poly, width=4, height=4, dynamic=False)
@@ -808,7 +783,7 @@ class DatashaderAggregateTests:
             [1, 1, 1, 0],
             [1, 1, 0, 0]
         ])
-        expected = Image((xs, ys, arr), vdims=Dimension('Count', nodata=0))
+        expected = hv.Image((xs, ys, arr), vdims=hv.Dimension('Count', nodata=0))
         assert_element_equal(agg, expected)
 
 
@@ -820,7 +795,7 @@ class DatashaderCatAggregateTests:
             pytest.skip('Regridding operations require datashader>=0.11.0')
 
     def test_aggregate_points_categorical(self):
-        points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
+        points = hv.Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2, aggregator=ds.by('z', ds.count()))
         x = np.array([0.25, 0.75])
@@ -832,12 +807,12 @@ class DatashaderCatAggregateTests:
             coords={"x": x, "y": y},
             data_vars={"a": (("x", "y"), a), "b": (("x", "y"), b), "c": (("x", "y"), c)},
         )
-        expected = ImageStack(xrds, kdims=["x", "y"], vdims=["a", "b", "c"])
+        expected = hv.ImageStack(xrds, kdims=["x", "y"], vdims=["a", "b", "c"])
         actual = img.data
         assert (expected.data.to_array("z").values == actual.T.values).all()
 
     def test_aggregate_points_categorical_one_category(self):
-        points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'A'), (0, 0.99, 'A')], vdims='z')
+        points = hv.Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'A'), (0, 0.99, 'A')], vdims='z')
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2, aggregator=ds.by('z', ds.count()))
         x = np.array([0.25, 0.75])
@@ -848,12 +823,12 @@ class DatashaderCatAggregateTests:
             dims=('x', 'y'),
             coords={"x": x, "y": y}
         )
-        expected = ImageStack(xrds, kdims=["x", "y"], vdims=["a"])
+        expected = hv.ImageStack(xrds, kdims=["x", "y"], vdims=["a"])
         actual = img.data
         assert (expected.data.to_array("z").values == actual.T.values).all()
 
     def test_aggregate_points_categorical_mean(self):
-        points = Points([(0.2, 0.3, 'A', 0.1), (0.4, 0.7, 'B', 0.2), (0, 0.99, 'C', 0.3)], vdims=['cat', 'z'])
+        points = hv.Points([(0.2, 0.3, 'A', 0.1), (0.4, 0.7, 'B', 0.2), (0, 0.99, 'C', 0.3)], vdims=['cat', 'z'])
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2, aggregator=ds.by('cat', ds.mean('z')))
         x = np.array([0.25, 0.75])
@@ -865,7 +840,7 @@ class DatashaderCatAggregateTests:
             coords={"x": x, "y": y},
             data_vars={"a": (("x", "y"), a), "b": (("x", "y"), b), "c": (("x", "y"), c)},
         )
-        expected = ImageStack(xrds, kdims=["x", "y"], vdims=["a", "b", "c"])
+        expected = hv.ImageStack(xrds, kdims=["x", "y"], vdims=["a", "b", "c"])
         actual = img.data
         np.testing.assert_equal(expected.data.to_array("z").values, actual.T.values)
 
@@ -874,49 +849,49 @@ class DatashaderShadeTests:
 
     def test_shade_categorical_images_xarray(self):
         xs, ys = [0.25, 0.75], [0.25, 0.75]
-        data = NdOverlay({'A': Image((xs, ys, np.array([[1, 0], [0, 0]], dtype='u4')),
-                                     datatype=['xarray'], vdims=Dimension('z Count', nodata=0)),
-                          'B': Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
-                                     datatype=['xarray'], vdims=Dimension('z Count', nodata=0)),
-                          'C': Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
-                                     datatype=['xarray'], vdims=Dimension('z Count', nodata=0))},
+        data = hv.NdOverlay({'A': hv.Image((xs, ys, np.array([[1, 0], [0, 0]], dtype='u4')),
+                                     datatype=['xarray'], vdims=hv.Dimension('z Count', nodata=0)),
+                          'B': hv.Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
+                                     datatype=['xarray'], vdims=hv.Dimension('z Count', nodata=0)),
+                          'C': hv.Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
+                                     datatype=['xarray'], vdims=hv.Dimension('z Count', nodata=0))},
                          kdims=['z'])
         shaded = shade(data, rescale_discrete_levels=False)
         r = [[228, 0], [66, 0]]
         g = [[26, 0], [150, 0]]
         b = [[28, 0], [129, 0]]
         a = [[40, 0], [255, 0]]
-        expected = RGB((xs, ys, r, g, b, a), datatype=['grid'],
-                       vdims=[*RGB.vdims, Dimension('A', range=(0, 1))])
+        expected = hv.RGB((xs, ys, r, g, b, a), datatype=['grid'],
+                       vdims=[*hv.RGB.vdims, hv.Dimension('A', range=(0, 1))])
         assert_element_equal(shaded, expected)
 
     def test_shade_categorical_images_grid(self):
         xs, ys = [0.25, 0.75], [0.25, 0.75]
-        data = NdOverlay({'A': Image((xs, ys, np.array([[1, 0], [0, 0]], dtype='u4')),
-                                     datatype=['grid'], vdims=Dimension('z Count', nodata=0)),
-                          'B': Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
-                                     datatype=['grid'], vdims=Dimension('z Count', nodata=0)),
-                          'C': Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
-                                     datatype=['grid'], vdims=Dimension('z Count', nodata=0))},
+        data = hv.NdOverlay({'A': hv.Image((xs, ys, np.array([[1, 0], [0, 0]], dtype='u4')),
+                                     datatype=['grid'], vdims=hv.Dimension('z Count', nodata=0)),
+                          'B': hv.Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
+                                     datatype=['grid'], vdims=hv.Dimension('z Count', nodata=0)),
+                          'C': hv.Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
+                                     datatype=['grid'], vdims=hv.Dimension('z Count', nodata=0))},
                          kdims=['z'])
         shaded = shade(data, rescale_discrete_levels=False)
         r = [[228, 0], [66, 0]]
         g = [[26, 0], [150, 0]]
         b = [[28, 0], [129, 0]]
         a = [[40, 0], [255, 0]]
-        expected = RGB((xs, ys, r, g, b, a), datatype=['grid'],
-                       vdims=[*RGB.vdims, Dimension('A', range=(0, 1))])
+        expected = hv.RGB((xs, ys, r, g, b, a), datatype=['grid'],
+                       vdims=[*hv.RGB.vdims, hv.Dimension('A', range=(0, 1))])
         assert_element_equal(shaded, expected)
 
     def test_shade_dt_xaxis_constant_yaxis(self):
         df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1min'))
-        rgb = shade(rasterize(Curve(df), dynamic=False, width=3))
+        rgb = shade(rasterize(hv.Curve(df), dynamic=False, width=3))
         xs = np.array(['1980-01-01T00:16:30.000000', '1980-01-01T00:49:30.000000',
                        '1980-01-01T01:22:30.000000'], dtype='datetime64[us]')
         ys = np.array([])
         bounds = (np.datetime64('1980-01-01T00:00:00.000000'), 1.0,
                   np.datetime64('1980-01-01T01:39:00.000000'), 1.0)
-        expected = RGB((xs, ys, np.empty((0, 3, 4))), ['index', 'y'],
+        expected = hv.RGB((xs, ys, np.empty((0, 3, 4))), ['index', 'y'],
                        xdensity=1, ydensity=1, bounds=bounds)
         assert_element_equal(rgb, expected)
 
@@ -928,37 +903,37 @@ class DatashaderRegridTests:
     """
 
     def test_regrid_mean(self):
-        img = Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
+        img = hv.Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
         regridded = regrid(img, width=2, height=2, dynamic=False)
-        expected = Image(([2., 7.], [0.75, 3.25], [[1, 5], [6, 22]]))
+        expected = hv.Image(([2., 7.], [0.75, 3.25], [[1, 5], [6, 22]]))
         assert_element_equal(regridded, expected)
 
     def test_regrid_mean_xarray_transposed(self):
-        img = Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T),
+        img = hv.Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T),
                     datatype=['xarray'])
         img.data = img.data.transpose()
         regridded = regrid(img, width=2, height=2, dynamic=False)
-        expected = Image(([2., 7.], [0.75, 3.25], [[1, 5], [6, 22]]))
+        expected = hv.Image(([2., 7.], [0.75, 3.25], [[1, 5], [6, 22]]))
         assert_element_equal(regridded, expected)
 
     def test_regrid_rgb_mean(self):
         arr = (np.arange(10) * np.arange(5)[np.newaxis].T).astype('float64')
-        rgb = RGB((range(10), range(5), arr, arr*2, arr*2))
+        rgb = hv.RGB((range(10), range(5), arr, arr*2, arr*2))
         regridded = regrid(rgb, width=2, height=2, dynamic=False)
         new_arr = np.array([[1.6, 5.6], [6.4, 22.4]])
-        expected = RGB(([2., 7.], [0.75, 3.25], new_arr, new_arr*2, new_arr*2), datatype=['xarray'])
+        expected = hv.RGB(([2., 7.], [0.75, 3.25], new_arr, new_arr*2, new_arr*2), datatype=['xarray'])
         assert_element_equal(regridded, expected)
 
     def test_regrid_max(self):
-        img = Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
+        img = hv.Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
         regridded = regrid(img, aggregator='max', width=2, height=2, dynamic=False)
-        expected = Image(([2., 7.], [0.75, 3.25], [[8, 18], [16, 36]]))
+        expected = hv.Image(([2., 7.], [0.75, 3.25], [[8, 18], [16, 36]]))
         assert_element_equal(regridded, expected)
 
     def test_regrid_upsampling(self):
-        img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
+        img = hv.Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
         regridded = regrid(img, width=4, height=4, upsample=True, dynamic=False)
-        expected = Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
+        expected = hv.Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
                           [[0, 0, 1, 1],
                            [0, 0, 1, 1],
                            [2, 2, 3, 3],
@@ -966,9 +941,9 @@ class DatashaderRegridTests:
         assert_element_equal(regridded, expected)
 
     def test_regrid_upsampling_linear(self):
-        img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
+        img = hv.Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
         regridded = regrid(img, width=4, height=4, upsample=True, interpolation='linear', dynamic=False)
-        expected = Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
+        expected = hv.Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
                           [[0, 0, 0, 1],
                            [0, 1, 1, 1],
                            [1, 1, 2, 2],
@@ -976,12 +951,12 @@ class DatashaderRegridTests:
         assert_element_equal(regridded, expected)
 
     def test_regrid_disabled_upsampling(self):
-        img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
+        img = hv.Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
         regridded = regrid(img, width=3, height=3, dynamic=False, upsample=False)
         assert_element_equal(regridded, img)
 
     def test_regrid_disabled_expand(self):
-        img = Image(([0.5, 1.5], [0.5, 1.5], [[0., 1.], [2., 3.]]))
+        img = hv.Image(([0.5, 1.5], [0.5, 1.5], [[0., 1.], [2., 3.]]))
         regridded = regrid(img, width=2, height=2, x_range=(-2, 4), y_range=(-2, 4), expand=False,
                            dynamic=False)
         assert_element_equal(regridded, img)
@@ -989,18 +964,18 @@ class DatashaderRegridTests:
     def test_regrid_zero_range(self):
         ls = np.linspace(0, 10, 200)
         xx, yy = np.meshgrid(ls, ls)
-        img = Image(np.sin(xx)*np.cos(yy), bounds=(0, 0, 1, 1))
+        img = hv.Image(np.sin(xx)*np.cos(yy), bounds=(0, 0, 1, 1))
         regridded = regrid(img, x_range=(-1, -0.5), y_range=(-1, -0.5), dynamic=False)
-        expected = Image(np.zeros((0, 0)), bounds=(0, 0, 0, 0), xdensity=1, ydensity=1)
+        expected = hv.Image(np.zeros((0, 0)), bounds=(0, 0, 0, 0), xdensity=1, ydensity=1)
         assert_element_equal(regridded, expected)
 
 
 # None, False, and 'nearest' are expected to return the same Image values
 @pytest.mark.parametrize("interpolation", [None, False, "nearest"])
 def test_regrid_interpolation_nearest(interpolation):
-    img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
+    img = hv.Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
     regridded = regrid(img, width=4, height=4, upsample=True, interpolation=interpolation, dynamic=False)
-    expected = Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
+    expected = hv.Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
                       [[0, 0, 1, 1],
                        [0, 0, 1, 1],
                        [2, 2, 3, 3],
@@ -1011,9 +986,9 @@ def test_regrid_interpolation_nearest(interpolation):
 # 'bilinear' and 'linear' expected to return the same Image values
 @pytest.mark.parametrize("interpolation", ["linear", "bilinear"])
 def test_regrid_interpolation_linear(interpolation):
-    img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
+    img = hv.Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
     regridded = regrid(img, width=4, height=4, upsample=True, interpolation=interpolation, dynamic=False)
-    expected = Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
+    expected = hv.Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
                       [[0, 0, 0, 1],
                        [0, 1, 1, 1],
                        [1, 1, 2, 2],
@@ -1023,9 +998,9 @@ def test_regrid_interpolation_linear(interpolation):
 
 @pytest.mark.parametrize("interpolation", [False, None])
 def test_datashade_interpolation(interpolation):
-    img = Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
+    img = hv.Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
     shaded = datashade(img, interpolation=interpolation, dynamic=False, width=4, height=4)
-    assert isinstance(shaded, RGB)
+    assert isinstance(shaded, hv.RGB)
 
 
 class DatashaderRasterizeTests:
@@ -1043,46 +1018,46 @@ class DatashaderRasterizeTests:
         self.vertices_vdim = [(0., 0., 1), (0., 1., 2), (1., 0, 3), (1, 1, 4)]
 
     def test_rasterize_trimesh_no_vdims(self):
-        trimesh = TriMesh((self.simplexes, self.vertices))
+        trimesh = hv.TriMesh((self.simplexes, self.vertices))
         img = rasterize(trimesh, width=3, height=3, dynamic=False)
-        image = Image(np.array([[True, True, True], [True, True, True], [True, True, True]]),
-                      bounds=(0, 0, 1, 1), vdims=Dimension('Any', nodata=0))
+        image = hv.Image(np.array([[True, True, True], [True, True, True], [True, True, True]]),
+                      bounds=(0, 0, 1, 1), vdims=hv.Dimension('Any', nodata=0))
         assert_element_equal(img, image)
 
     def test_rasterize_trimesh_no_vdims_zero_range(self):
-        trimesh = TriMesh((self.simplexes, self.vertices))
+        trimesh = hv.TriMesh((self.simplexes, self.vertices))
         img = rasterize(trimesh, height=2, x_range=(0, 0), dynamic=False)
-        image = Image(([], [0.25, 0.75], np.zeros((2, 0))),
-                      bounds=(0, 0, 0, 1), xdensity=1, vdims=Dimension('Any', nodata=0))
+        image = hv.Image(([], [0.25, 0.75], np.zeros((2, 0))),
+                      bounds=(0, 0, 0, 1), xdensity=1, vdims=hv.Dimension('Any', nodata=0))
         assert_element_equal(img, image)
 
     def test_rasterize_trimesh_with_vdims_as_wireframe(self):
-        trimesh = TriMesh((self.simplexes_vdim, self.vertices), vdims=['z'])
+        trimesh = hv.TriMesh((self.simplexes_vdim, self.vertices), vdims=['z'])
         img = rasterize(trimesh, width=3, height=3, aggregator='any', interpolation=None, dynamic=False)
         array = np.array([
             [True, True, True],
             [True, True, True],
             [True, True, True]
         ])
-        image = Image(array, bounds=(0, 0, 1, 1), vdims=Dimension('Any', nodata=0))
+        image = hv.Image(array, bounds=(0, 0, 1, 1), vdims=hv.Dimension('Any', nodata=0))
         assert_element_equal(img, image)
 
     def test_rasterize_trimesh(self):
-        trimesh = TriMesh((self.simplexes_vdim, self.vertices), vdims=['z'])
+        trimesh = hv.TriMesh((self.simplexes_vdim, self.vertices), vdims=['z'])
         img = rasterize(trimesh, width=3, height=3, dynamic=False)
         array = np.array([
             [0.5, 1.5, 1.5],
             [0.5, 0.5, 1.5],
             [0.5, 0.5, 0.5]
         ])
-        image = Image(array, bounds=(0, 0, 1, 1))
+        image = hv.Image(array, bounds=(0, 0, 1, 1))
         assert_element_equal(img, image)
 
     def test_rasterize_pandas_trimesh_implicit_nodes(self):
         simplex_df = pd.DataFrame(self.simplexes, columns=['v0', 'v1', 'v2'])
         vertex_df = pd.DataFrame(self.vertices_vdim, columns=['x', 'y', 'z'])
 
-        trimesh = TriMesh((simplex_df, vertex_df))
+        trimesh = hv.TriMesh((simplex_df, vertex_df))
         img = rasterize(trimesh, width=3, height=3, dynamic=False)
 
         array = np.array([
@@ -1090,7 +1065,7 @@ class DatashaderRasterizeTests:
             [1.833333, 2.5,      3.166667],
             [1.5,      2.166667, 2.833333]
         ])
-        image = Image(array, bounds=(0, 0, 1, 1))
+        image = hv.Image(array, bounds=(0, 0, 1, 1))
         assert_element_equal(img, image)
 
     def test_rasterize_dask_trimesh_implicit_nodes(self):
@@ -1100,7 +1075,7 @@ class DatashaderRasterizeTests:
         simplex_ddf = dd.from_pandas(simplex_df, npartitions=2)
         vertex_ddf = dd.from_pandas(vertex_df, npartitions=2)
 
-        trimesh = TriMesh((simplex_ddf, vertex_ddf))
+        trimesh = hv.TriMesh((simplex_ddf, vertex_ddf))
 
         ri = rasterize.instance()
         img = ri(trimesh, width=3, height=3, dynamic=False, precompute=True)
@@ -1115,7 +1090,7 @@ class DatashaderRasterizeTests:
             [1.833333, 2.5,      3.166667],
             [1.5,      2.166667, 2.833333]
         ])
-        image = Image(array, bounds=(0, 0, 1, 1))
+        image = hv.Image(array, bounds=(0, 0, 1, 1))
         assert_element_equal(img, image)
 
     def test_rasterize_dask_trimesh(self):
@@ -1125,8 +1100,8 @@ class DatashaderRasterizeTests:
         simplex_ddf = dd.from_pandas(simplex_df, npartitions=2)
         vertex_ddf = dd.from_pandas(vertex_df, npartitions=2)
 
-        tri_nodes = Nodes(vertex_ddf, ['x', 'y', 'index'])
-        trimesh = TriMesh((simplex_ddf, tri_nodes), vdims=['z'])
+        tri_nodes = hv.Nodes(vertex_ddf, ['x', 'y', 'index'])
+        trimesh = hv.TriMesh((simplex_ddf, tri_nodes), vdims=['z'])
 
         ri = rasterize.instance()
         img = ri(trimesh, width=3, height=3, dynamic=False, precompute=True)
@@ -1141,7 +1116,7 @@ class DatashaderRasterizeTests:
             [0.5, 0.5, 1.5],
             [0.5, 0.5, 0.5]
         ])
-        image = Image(array, bounds=(0, 0, 1, 1))
+        image = hv.Image(array, bounds=(0, 0, 1, 1))
         assert_element_equal(img, image)
 
     def test_rasterize_dask_trimesh_with_node_vdims(self):
@@ -1151,8 +1126,8 @@ class DatashaderRasterizeTests:
         simplex_ddf = dd.from_pandas(simplex_df, npartitions=2)
         vertex_ddf = dd.from_pandas(vertex_df, npartitions=2)
 
-        tri_nodes = Nodes(vertex_ddf, ['x', 'y', 'index'], ['z'])
-        trimesh = TriMesh((simplex_ddf, tri_nodes))
+        tri_nodes = hv.Nodes(vertex_ddf, ['x', 'y', 'index'], ['z'])
+        trimesh = hv.TriMesh((simplex_ddf, tri_nodes))
 
         ri = rasterize.instance()
         img = ri(trimesh, width=3, height=3, dynamic=False, precompute=True)
@@ -1167,12 +1142,12 @@ class DatashaderRasterizeTests:
             [1.833333, 2.5,      3.166667],
             [1.5,      2.166667, 2.833333]
         ])
-        image = Image(array, bounds=(0, 0, 1, 1))
+        image = hv.Image(array, bounds=(0, 0, 1, 1))
         assert_element_equal(img, image)
 
     def test_rasterize_trimesh_node_vdim_precedence(self):
-        nodes = Points(self.vertices_vdim, vdims=['node_z'])
-        trimesh = TriMesh((self.simplexes_vdim, nodes), vdims=['z'])
+        nodes = hv.Points(self.vertices_vdim, vdims=['node_z'])
+        trimesh = hv.TriMesh((self.simplexes_vdim, nodes), vdims=['z'])
         img = rasterize(trimesh, width=3, height=3, dynamic=False)
 
         array = np.array([
@@ -1180,12 +1155,12 @@ class DatashaderRasterizeTests:
             [1.833333, 2.5,      3.166667],
             [1.5,      2.166667, 2.833333]
         ])
-        image = Image(array, bounds=(0, 0, 1, 1), vdims='node_z')
+        image = hv.Image(array, bounds=(0, 0, 1, 1), vdims='node_z')
         assert_element_equal(img, image)
 
     def test_rasterize_trimesh_node_explicit_vdim(self):
-        nodes = Points(self.vertices_vdim, vdims=['node_z'])
-        trimesh = TriMesh((self.simplexes_vdim, nodes), vdims=['z'])
+        nodes = hv.Points(self.vertices_vdim, vdims=['node_z'])
+        trimesh = hv.TriMesh((self.simplexes_vdim, nodes), vdims=['z'])
         img = rasterize(trimesh, width=3, height=3, dynamic=False, aggregator=ds.mean('z'))
 
         array = np.array([
@@ -1193,20 +1168,20 @@ class DatashaderRasterizeTests:
             [0.5, 0.5, 1.5],
             [0.5, 0.5, 0.5]
         ])
-        image = Image(array, bounds=(0, 0, 1, 1))
+        image = hv.Image(array, bounds=(0, 0, 1, 1))
         assert_element_equal(img, image)
 
     def test_rasterize_trimesh_zero_range(self):
-        trimesh = TriMesh((self.simplexes_vdim, self.vertices), vdims=['z'])
+        trimesh = hv.TriMesh((self.simplexes_vdim, self.vertices), vdims=['z'])
         img = rasterize(trimesh, x_range=(0, 0), height=2, dynamic=False)
-        image = Image(([], [0.25, 0.75], np.zeros((2, 0))),
+        image = hv.Image(([], [0.25, 0.75], np.zeros((2, 0))),
                       bounds=(0, 0, 0, 1), xdensity=1)
         assert_element_equal(img, image)
 
     def test_rasterize_trimesh_vertex_vdims(self):
         simplices = [(0, 1, 2), (3, 2, 1)]
         vertices = [(0., 0., 1), (0., 1., 2), (1., 0., 3), (1., 1., 4)]
-        trimesh = TriMesh((simplices, Points(vertices, vdims='z')))
+        trimesh = hv.TriMesh((simplices, hv.Points(vertices, vdims='z')))
         img = rasterize(trimesh, width=3, height=3, dynamic=False)
 
         array = np.array([
@@ -1214,88 +1189,88 @@ class DatashaderRasterizeTests:
             [1.833333, 2.5,      3.166667],
             [1.5,      2.166667, 2.833333]
         ])
-        image = Image(array, bounds=(0, 0, 1, 1), vdims='z')
+        image = hv.Image(array, bounds=(0, 0, 1, 1), vdims='z')
         assert_element_equal(img, image)
 
     def test_rasterize_trimesh_ds_aggregator(self):
-        trimesh = TriMesh((self.simplexes_vdim, self.vertices), vdims=['z'])
+        trimesh = hv.TriMesh((self.simplexes_vdim, self.vertices), vdims=['z'])
         img = rasterize(trimesh, width=3, height=3, dynamic=False, aggregator=ds.mean('z'))
         array = np.array([
             [0.5, 1.5, 1.5],
             [0.5, 0.5, 1.5],
             [0.5, 0.5, 0.5]
         ])
-        image = Image(array, bounds=(0, 0, 1, 1))
+        image = hv.Image(array, bounds=(0, 0, 1, 1))
         assert_element_equal(img, image)
 
     def test_rasterize_trimesh_string_aggregator(self):
-        trimesh = TriMesh((self.simplexes_vdim, self.vertices), vdims=['z'])
+        trimesh = hv.TriMesh((self.simplexes_vdim, self.vertices), vdims=['z'])
         img = rasterize(trimesh, width=3, height=3, dynamic=False, aggregator='mean')
         array = np.array([
             [0.5, 1.5, 1.5],
             [0.5, 0.5, 1.5],
             [0.5, 0.5, 0.5]
         ])
-        image = Image(array, bounds=(0, 0, 1, 1))
+        image = hv.Image(array, bounds=(0, 0, 1, 1))
         assert_element_equal(img, image)
 
     def test_rasterize_quadmesh(self):
-        qmesh = QuadMesh(([0, 1], [0, 1], np.array([[0, 1], [2, 3]])))
+        qmesh = hv.QuadMesh(([0, 1], [0, 1], np.array([[0, 1], [2, 3]])))
         img = rasterize(qmesh, width=3, height=3, dynamic=False, aggregator=ds.mean('z'))
-        image = Image(np.array([[2, 3, 3], [2, 3, 3], [0, 1, 1]]),
+        image = hv.Image(np.array([[2, 3, 3], [2, 3, 3], [0, 1, 1]]),
                       bounds=(-.5, -.5, 1.5, 1.5))
         assert_element_equal(img, image)
 
     def test_rasterize_quadmesh_string_aggregator(self):
-        qmesh = QuadMesh(([0, 1], [0, 1], np.array([[0, 1], [2, 3]])))
+        qmesh = hv.QuadMesh(([0, 1], [0, 1], np.array([[0, 1], [2, 3]])))
         img = rasterize(qmesh, width=3, height=3, dynamic=False, aggregator='mean')
-        image = Image(np.array([[2, 3, 3], [2, 3, 3], [0, 1, 1]]),
+        image = hv.Image(np.array([[2, 3, 3], [2, 3, 3], [0, 1, 1]]),
                       bounds=(-.5, -.5, 1.5, 1.5))
         assert_element_equal(img, image)
 
     def test_rasterize_points(self):
-        points = Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)])
+        points = hv.Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)])
         img = rasterize(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2)
-        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
-                         vdims=[Dimension('Count', nodata=0)])
+        expected = hv.Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
+                         vdims=[hv.Dimension('Count', nodata=0)])
         assert_element_equal(img, expected)
 
     def test_rasterize_curve(self):
-        curve = Curve([(0.2, 0.3), (0.4, 0.7), (0.8, 0.99)])
-        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [1, 1]]),
-                         vdims=[Dimension('Count', nodata=0)])
+        curve = hv.Curve([(0.2, 0.3), (0.4, 0.7), (0.8, 0.99)])
+        expected = hv.Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [1, 1]]),
+                         vdims=[hv.Dimension('Count', nodata=0)])
         img = rasterize(curve, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2)
         assert_element_equal(img, expected)
 
     def test_rasterize_ndoverlay(self):
-        ds = Dataset([(0.2, 0.3, 0), (0.4, 0.7, 1), (0, 0.99, 2)], kdims=['x', 'y', 'z'])
-        ndoverlay = ds.to(Points, ['x', 'y'], [], 'z').overlay()
-        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
-                         vdims=[Dimension('Count', nodata=0)])
+        ds = hv.Dataset([(0.2, 0.3, 0), (0.4, 0.7, 1), (0, 0.99, 2)], kdims=['x', 'y', 'z'])
+        ndoverlay = ds.to(hv.Points, ['x', 'y'], [], 'z').overlay()
+        expected = hv.Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
+                         vdims=[hv.Dimension('Count', nodata=0)])
         img = rasterize(ndoverlay, dynamic=False, x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2)
         assert_element_equal(img, expected)
 
     def test_rasterize_path(self):
-        path = Path([[(0.2, 0.3), (0.4, 0.7)], [(0.4, 0.7), (0.8, 0.99)]])
-        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 1]]),
-                         vdims=[Dimension('Count', nodata=0)])
+        path = hv.Path([[(0.2, 0.3), (0.4, 0.7)], [(0.4, 0.7), (0.8, 0.99)]])
+        expected = hv.Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 1]]),
+                         vdims=[hv.Dimension('Count', nodata=0)])
         img = rasterize(path, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2)
         assert_element_equal(img, expected)
 
     def test_rasterize_image(self):
-        img = Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
+        img = hv.Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
         regridded = regrid(img, width=2, height=2, dynamic=False)
-        expected = Image(([2., 7.], [0.75, 3.25], [[1, 5], [6, 22]]))
+        expected = hv.Image(([2., 7.], [0.75, 3.25], [[1, 5], [6, 22]]))
         assert_element_equal(regridded, expected)
 
     def test_rasterize_image_string_aggregator(self):
-        img = Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
+        img = hv.Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
         regridded = regrid(img, width=2, height=2, dynamic=False, aggregator='mean')
-        expected = Image(([2., 7.], [0.75, 3.25], [[1, 5], [6, 22]]))
+        expected = hv.Image(([2., 7.], [0.75, 3.25], [[1, 5], [6, 22]]))
         assert_element_equal(regridded, expected)
 
     def test_rasterize_image_expand_default(self):
@@ -1306,14 +1281,14 @@ class DatashaderRasterizeTests:
         c = np.arange(10.0)
         da = xr.DataArray(data, coords=dict(x=c, y=c))
         rast_input = dict(x_range=(-1, 10), y_range=(-1, 10), precompute=True, dynamic=False)
-        img = rasterize(Image(da), **rast_input)
+        img = rasterize(hv.Image(da), **rast_input)
         output = img.data["z"].to_numpy()
 
         np.testing.assert_array_equal(output, data.T)
         assert not np.isnan(output).any()
 
         # Setting expand=True with the {x,y}_ranges will expand the data with nan's
-        img = rasterize(Image(da), expand=True, **rast_input)
+        img = rasterize(hv.Image(da), expand=True, **rast_input)
         output = img.data["z"].to_numpy()
         assert np.isnan(output).any()
 
@@ -1324,17 +1299,17 @@ class DatashaderRasterizeTests:
         )
         df.columns = ["a", "b"]
 
-        curve = Curve(df, kdims=["a"], vdims=["b"])
+        curve = hv.Curve(df, kdims=["a"], vdims=["b"])
         # line_width is not a parameter
         custom_rasterize = rasterize.instance(line_width=2)
         assert {'line_width': 2} == custom_rasterize._rasterize__instance_kwargs
         output = apply_when(
             curve, operation=custom_rasterize, predicate=lambda x: len(x) > 10
         )
-        render(output, "bokeh")
-        assert isinstance(output, DynamicMap)
+        hv.render(output, "bokeh")
+        assert isinstance(output, hv.DynamicMap)
         overlay = output.items()[0][1]
-        assert isinstance(overlay, Overlay)
+        assert isinstance(overlay, hv.Overlay)
         assert len(overlay) == 2
 
     def test_rasterize_path_empty_string_as_cat_sep(self):
@@ -1345,7 +1320,7 @@ class DatashaderRasterizeTests:
             # Empty strings on the sep rows.
             'cat': ['a', 'a', '', 'b', 'b', ''],
         })
-        path = Path(df, ['x', 'y'])
+        path = hv.Path(df, ['x', 'y'])
         rasterized = rasterize(
             path, aggregator=ds.count_cat('cat'), dynamic=False,
             width=4, height=4, pixel_ratio=1,
@@ -1364,9 +1339,9 @@ class DatashaderRasterizeTests:
         # Test for https://github.com/holoviz/holoviews/issues/5127
         t = pd.date_range(start='2020-01-01 10:00', end='2020-01-01 12:00', freq='h', tz='Asia/Shanghai')
         d = pd.DataFrame({'t': t, 'y': [1, 2, 3]})
-        curve = Curve(d, kdims=['t'], vdims=['y'])
+        curve = hv.Curve(d, kdims=['t'], vdims=['y'])
         img = rasterize(curve, dynamic=False)
-        assert isinstance(img, Image)
+        assert isinstance(img, hv.Image)
 
 
 @pytest.mark.parametrize(('agg_input_fn', 'index_col'),
@@ -1426,7 +1401,7 @@ def test_selector_rasterize(point_plot, sel_fn):
 
     # Count is from the aggregator
     assert list(img.data) == ["Count", "__index__", "s", "val", "cat"]
-    assert list(img.vdims) == [Dimension("Count")]  # Only the dimension send to the frontend
+    assert list(img.vdims) == [hv.Dimension("Count")]  # Only the dimension send to the frontend
 
     # The output for the selector should be equal to the output for the aggregator using
     # ds.where
@@ -1454,8 +1429,8 @@ def test_selector_rasterize_empty_selector(point_plot, sel_fn):
 @pytest.mark.usefixtures("bokeh_backend")
 def test_selector_hover_in_overlay(point_plot):
     inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
-    overlay = rasterize(point_plot, selector=ds.first("val"), **inputs).opts(tools=["hover"]) * Points([])
-    renderer("bokeh").get_plot(overlay)
+    overlay = rasterize(point_plot, selector=ds.first("val"), **inputs).opts(tools=["hover"]) * hv.Points([])
+    hv.renderer("bokeh").get_plot(overlay)
 
 @pytest.mark.parametrize("sel_fn", [ds.first, ds.last, ds.min, ds.max])
 def test_selector_datashade(point_plot, sel_fn):
@@ -1464,7 +1439,7 @@ def test_selector_datashade(point_plot, sel_fn):
 
     # RGBA is from the aggregator
     assert list(img.data) == [*"RGBA", "__index__", "s", "val", "cat"]
-    assert list(img.vdims) == [*map(Dimension, "RGBA")]  # Only the RGBA send to the frontend
+    assert list(img.vdims) == [*map(hv.Dimension, "RGBA")]  # Only the RGBA send to the frontend
 
     # The output for the selector should be equal to the output for the aggregator using
     # ds.where
@@ -1509,7 +1484,7 @@ def test_selector_rasterize_with_datetime_column():
         "Timestamp": pd.date_range(start="2023-01-01", periods=n, freq="D", unit="ns"),
         "Value": np.random.rand(n) * 100,
     })
-    point_plot = Points(df)
+    point_plot = hv.Points(df)
     rast_input = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=2, height=2)
     img_agg = rasterize(point_plot, selector=ds.first("Value"), **rast_input)
 
@@ -1520,7 +1495,7 @@ def test_selector_datashade_bad_column_name(point_data):
     point_data = point_data.rename({"cat": "R"}, axis=1)
     assert "R" in point_data.columns
 
-    point_plot = Points(point_data)
+    point_plot = hv.Points(point_data)
     inputs = dict(dynamic=False,  x_range=(-1, 1), y_range=(-1, 1), width=10, height=10)
 
     msg = "Cannot use 'R', 'G', 'B', or 'A' as columns, when using datashade with selector"
@@ -1531,15 +1506,15 @@ def test_selector_datashade_bad_column_name(point_data):
 @pytest.mark.usefixtures("bokeh_backend")
 def test_selector_single_categorical():
     # Test for https://github.com/holoviz/holoviews/issues/6595
-    plot = Points(([0, 1], [0, 1], ["A", "A"]), ["X", "Y"], "C")
+    plot = hv.Points(([0, 1], [0, 1], ["A", "A"]), ["X", "Y"], "C")
     plot = rasterize(plot, aggregator=ds.count_cat("C"), selector=ds.first("X"))
     plot = dynspread(plot)
     # Should not fail
-    renderer("bokeh").get_plot(plot)
+    hv.renderer("bokeh").get_plot(plot)
 
 
 def test_geom_aggregate_with_summary():
-    rects = Rectangles([
+    rects = hv.Rectangles([
         (0, 0, 1, 1, 128, 100, 200),
         (2, 3, 4, 6, 100, 50, 80),
         (0.5, 2, 1.5, 4, 20, 200, 120),
@@ -1557,7 +1532,7 @@ def test_geom_aggregate_with_summary():
         )
     )
 
-    assert isinstance(agg, Image)
+    assert isinstance(agg, hv.Image)
     assert isinstance(agg.data, xr.Dataset)
     assert "r" in agg.data
     assert "g" in agg.data
@@ -1565,7 +1540,7 @@ def test_geom_aggregate_with_summary():
 
 
 def test_geom_aggregate_with_selector():
-    rects = Rectangles([
+    rects = hv.Rectangles([
         (0, 0, 1, 1, 10, 0),
         (2, 3, 4, 6, 20, 1),
         (0.5, 2, 1.5, 4, 30, 2),
@@ -1579,7 +1554,7 @@ def test_geom_aggregate_with_selector():
         selector=ds.first("value")
     )
 
-    assert isinstance(agg, Image)
+    assert isinstance(agg, hv.Image)
     assert isinstance(agg.data, xr.Dataset)
     expected_columns = ['__index__', 'x0', 'y0', 'x1', 'y1', 'value', 'index_col']
     assert agg.data.attrs["selector_columns"] ==  expected_columns
@@ -1601,7 +1576,7 @@ def test_geom_aggregate_with_selector():
 
 @pytest.mark.parametrize("aggregator", [ds.count_cat("cat"), ds.by("cat", ds.count())], ids=["count_cat", "by"])
 def test_geom_aggregate_with_by_and_selector(aggregator):
-    rects = Rectangles([
+    rects = hv.Rectangles([
         (0, 0, 1, 2, 'A', 20, 0),
         (1, 1, 3, 2, 'B', 300, 1),
     ], vdims=['cat', "value", "index_col"])
@@ -1614,7 +1589,7 @@ def test_geom_aggregate_with_by_and_selector(aggregator):
         selector=ds.first("value")
     )
 
-    assert isinstance(agg, ImageStack)
+    assert isinstance(agg, hv.ImageStack)
     assert "A" in agg.vdims
     assert "B" in agg.vdims
 
@@ -1631,20 +1606,20 @@ class DatashaderSpreadTests:
         arr = np.array([[[0, 0, 0], [0, 1, 1], [0, 1, 1]],
                         [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
                         [[0, 0, 0], [0, 0, 0], [0, 0, 0]]], dtype=np.uint8).T*255
-        spreaded = spread(RGB(arr))
+        spreaded = spread(hv.RGB(arr))
         arr = np.array([[[0, 0, 1], [0, 0, 1], [0, 0, 1]],
                         [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
                         [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
                         [[1, 1, 1], [1, 1, 1], [1, 1, 1]]], dtype=np.uint8).T*255
-        assert_element_equal(spreaded, RGB(arr))
+        assert_element_equal(spreaded, hv.RGB(arr))
 
     def test_spread_img_1px(self):
         if DATASHADER_VERSION < (0, 12, 0):
             pytest.skip('Datashader does not support DataArray yet')
         arr = np.array([[0, 0, 0], [0, 0, 0], [1, 1, 1]]).T
-        spreaded = spread(Image(arr))
+        spreaded = spread(hv.Image(arr))
         arr = np.array([[0, 0, 0], [2, 3, 2], [2, 3, 2]]).T
-        assert_element_equal(spreaded, Image(arr))
+        assert_element_equal(spreaded, hv.Image(arr))
 
 
 class DatashaderStackTests:
@@ -1656,14 +1631,14 @@ class DatashaderStackTests:
         self.rgb2_arr = np.array([[[0, 0], [0, 0]],
                                   [[0, 0], [0, 0]],
                                   [[1, 0], [0, 1]]], dtype=np.uint8).T*255
-        self.rgb1 = RGB(self.rgb1_arr)
-        self.rgb2 = RGB(self.rgb2_arr)
+        self.rgb1 = hv.RGB(self.rgb1_arr)
+        self.rgb2 = hv.RGB(self.rgb2_arr)
 
 
     def test_stack_add_compositor(self):
         combined = stack(self.rgb1*self.rgb2, compositor='add')
         arr = np.array([[[0, 255, 255], [255,0, 0]], [[255, 0, 0], [0, 255, 255]]], dtype=np.uint8)
-        expected = RGB(arr)
+        expected = hv.RGB(arr)
         assert_element_equal(combined, expected)
 
     def test_stack_over_compositor(self):
@@ -1690,7 +1665,7 @@ class GraphBundlingTests:
             pytest.skip('Regridding operations require datashader>=0.7.0')
         self.source = np.arange(8)
         self.target = np.zeros(8)
-        self.graph = Graph(((self.source, self.target),))
+        self.graph = hv.Graph(((self.source, self.target),))
 
     def test_directly_connect_paths(self):
         direct = directly_connect_edges(self.graph)._split_edgepaths
@@ -1702,12 +1677,12 @@ class InspectorTests:
     Tests for inspector operations
     """
     def setup_method(self):
-        points = Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)])
+        points = hv.Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)])
         self.pntsimg = rasterize(
             points, dynamic=False, height=4, width=4,
             x_range=(0, 1), y_range=(0, 1)
         )
-        date_pts = Points([
+        date_pts = hv.Points([
             (np.datetime64('2024-09-25 11:00'), 0.3),
             (np.datetime64('2024-09-25 11:01'), 0.7),
             (np.datetime64('2024-09-25 11:04'), 0.99)])
@@ -1722,7 +1697,7 @@ class InspectorTests:
         holes = [ [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],]
         polydata = [{'x': xs1, 'y': ys1, 'holes': holes, 'z': 1},
                     {'x': xs2, 'y': ys2, 'holes': [[]], 'z': 2}]
-        self.polysrgb = datashade(Polygons(polydata, vdims=['z'],
+        self.polysrgb = datashade(hv.Polygons(polydata, vdims=['z'],
                                            datatype=['spatialpandas']),
                                   x_range=(0, 7), y_range=(0, 7), dynamic=False)
 
@@ -1733,7 +1708,7 @@ class InspectorTests:
     def test_inspect_points_or_polygons(self):
         polys = inspect(self.polysrgb,
                         max_indicators=3, dynamic=False, pixels=1, x=6, y=5)
-        assert_element_equal(polys, Polygons([{'x': [6, 3, 7], 'y': [7, 2, 5], 'z': 2}], vdims='z'))
+        assert_element_equal(polys, hv.Polygons([{'x': [6, 3, 7], 'y': [7, 2, 5], 'z': 2}], vdims='z'))
         points = inspect(self.pntsimg, max_indicators=3, dynamic=False, pixels=1, x=-0.1, y=-0.1)
         assert_data_equal(points.dimension_values('x'), np.array([]))
         assert_data_equal(points.dimension_values('y'), np.array([]))
@@ -1800,7 +1775,7 @@ class InspectorTests:
     def test_polys_inspection_1px_mask_hit(self):
         polys = inspect_polygons(self.polysrgb,
                                  max_indicators=3, dynamic=False, pixels=1, x=6, y=5)
-        assert_element_equal(polys, Polygons([{'x': [6, 3, 7], 'y': [7, 2, 5], 'z': 2}],
+        assert_element_equal(polys, hv.Polygons([{'x': [6, 3, 7], 'y': [7, 2, 5], 'z': 2}],
                                          vdims='z'))
 
     @spd_skip
@@ -1815,20 +1790,20 @@ class InspectorTests:
     def test_polys_inspection_1px_mask_miss(self):
         polys = inspect_polygons(self.polysrgb,
                                  max_indicators=3, dynamic=False, pixels=1, x=0, y=0)
-        assert_element_equal(polys, Polygons([], vdims='z'))
+        assert_element_equal(polys, hv.Polygons([], vdims='z'))
 
 
 @pytest.mark.parametrize("dtype", [np.uint8, np.uint16, np.uint32])
 def test_uint_dtype(dtype):
     df = pd.DataFrame(np.arange(2, dtype=dtype), columns=["A"])
-    curve = Curve(df)
+    curve = hv.Curve(df)
     img = rasterize(curve, dynamic=False, height=10, width=10)
     assert (np.asarray(img.data["Count"]) == np.eye(10)).all()
 
 
 def test_uint64_dtype():
     df = pd.DataFrame(np.arange(2, dtype=np.uint64), columns=["A"])
-    curve = Curve(df)
+    curve = hv.Curve(df)
     with pytest.raises(TypeError, match=r"Dtype of uint64 for column A is not supported."):
         rasterize(curve, dynamic=False, height=10, width=10)
 
@@ -1836,7 +1811,7 @@ def test_uint64_dtype():
 def test_imagestack_datashader_color_key():
     d = np.arange(23)
     df = pd.DataFrame({"x": d, "y": d, "language": list(map(str, d))})
-    points = Points(df, ["x", "y"], ["language"])
+    points = hv.Points(df, ["x", "y"], ["language"])
 
     # This will run rasterize which outputs an ImageStack
     op = datashade(
@@ -1844,29 +1819,29 @@ def test_imagestack_datashader_color_key():
         aggregator=ds.by("language", ds.count()),
         color_key=cc.glasbey_light,
     )
-    render(op)  # should not error out
+    hv.render(op)  # should not error out
 
 
 def test_imagestack_datashade_count_cat():
     # Test for https://github.com/holoviz/holoviews/issues/6154
     df = pd.DataFrame({"x": range(3), "y": range(3), "c": range(3)})
-    op = datashade(Points(df), aggregator=ds.count_cat("c"))
-    render(op)  # should not error out
+    op = datashade(hv.Points(df), aggregator=ds.count_cat("c"))
+    hv.render(op)  # should not error out
 
 
 def test_imagestack_dynspread():
     df = pd.DataFrame({'x':[-16.8, 7.3], 'y': [-0.42, 13.6], 'language':['Marathi', 'Luganda']})
-    points = Points(df, ['x','y'], ['language'])
+    points = hv.Points(df, ['x','y'], ['language'])
     op = dynspread(rasterize(points, aggregator=ds.by('language', ds.count())))
-    render(op)  # should not error out
+    hv.render(op)  # should not error out
 
 def test_datashade_count_cat_no_change_inplace():
     # Test for https://github.com/holoviz/holoviews/issues/6324
     df = pd.DataFrame({"x": range(3), "y": range(3), "c": list(map(str, range(3)))})
     expected_dtype = pd.StringDtype(na_value=np.nan) if PANDAS_GE_3_0_0 else "object"
     assert df["c"].dtype == expected_dtype
-    op = datashade(Points(df), aggregator=ds.count_cat("c"))
-    render(op)
+    op = datashade(hv.Points(df), aggregator=ds.count_cat("c"))
+    hv.render(op)
     # Should not convert to category dtype
     assert df["c"].dtype == expected_dtype
 
@@ -1888,9 +1863,9 @@ def test_points_polars(lazy, op):
     )
 
     polars_df = pl.LazyFrame(data) if lazy else pl.DataFrame(data)
-    polars_img = op(Points(polars_df), **op_kwargs)
+    polars_img = op(hv.Points(polars_df), **op_kwargs)
 
     pandas_df = pd.DataFrame(data)
-    pandas_img = op(Points(pandas_df), **op_kwargs)
+    pandas_img = op(hv.Points(pandas_df), **op_kwargs)
 
     xr.testing.assert_equal(polars_img.data, pandas_img.data)

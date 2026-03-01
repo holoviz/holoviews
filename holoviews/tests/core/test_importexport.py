@@ -4,7 +4,7 @@ Unit test of the (non-rendering) exporters and importers.
 
 import numpy as np
 
-from holoviews import Image, Layout
+import holoviews as hv
 from holoviews.core.io import Deserializer, Pickler, Serializer, Unpickler
 from holoviews.testing import assert_element_equal
 
@@ -16,8 +16,8 @@ class TestSerialization:
     """
 
     def setup_method(self):
-        self.image1 = Image(np.array([[1,2],[4,5]]))
-        self.image2 = Image(np.array([[5,4],[3,2]]))
+        self.image1 = hv.Image(np.array([[1,2],[4,5]]))
+        self.image2 = hv.Image(np.array([[5,4],[3,2]]))
 
     def test_serializer_save(self, tmp_path):
         Serializer.save(self.image1, tmp_path / 'test_serializer_save.pkl',
@@ -69,8 +69,8 @@ class TestBasicPickler:
     """
 
     def setup_method(self):
-        self.image1 = Image(np.array([[1,2],[4,5]]))
-        self.image2 = Image(np.array([[5,4],[3,2]]))
+        self.image1 = hv.Image(np.array([[1,2],[4,5]]))
+        self.image2 = hv.Image(np.array([[5,4],[3,2]]))
 
     def test_pickler_save(self, tmp_path) -> None:
         Pickler.save(self.image1, tmp_path / 'test_pickler_save.hvz',
@@ -121,8 +121,8 @@ class TestPicklerAdvanced:
     """
 
     def setup_method(self):
-        self.image1 = Image(np.array([[1,2],[4,5]]))
-        self.image2 = Image(np.array([[5,4],[3,2]]))
+        self.image1 = hv.Image(np.array([[1,2],[4,5]]))
+        self.image2 = hv.Image(np.array([[5,4],[3,2]]))
 
     def test_pickler_save_layout(self, tmp_path):
         Pickler.save(self.image1+self.image2, tmp_path / 'test_pickler_save_layout',
@@ -159,7 +159,7 @@ class TestPicklerAdvanced:
         assert_element_equal(loaded, self.image2)
 
     def test_pickler_save_load_single_layout(self, tmp_path):
-        single_layout = Layout([self.image1])
+        single_layout = hv.Layout([self.image1])
         Pickler.save(single_layout, tmp_path / 'test_pickler_save_load_single_layout',
                         info={'info':'example'}, key={1:2})
 

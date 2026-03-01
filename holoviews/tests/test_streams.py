@@ -10,9 +10,7 @@ import pytest
 from panel.widgets import IntSlider
 
 import holoviews as hv
-from holoviews.core.spaces import DynamicMap
 from holoviews.core.util import NUMPY_GE_2_0_0, PARAM_VERSION
-from holoviews.element import Curve, Histogram, Points, Polygons, Scatter
 from holoviews.streams import (
     Buffer,
     Derived,
@@ -35,8 +33,7 @@ from holoviews.streams import (
     Tap,
 )
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
-from holoviews.util import Dynamic, extension
-from holoviews.util.transform import dim
+from holoviews.util import Dynamic
 
 from .utils import LoggingComparison, optional_dependencies
 
@@ -440,7 +437,7 @@ class TestParamMethodStream:
             @param.depends('x')
             def method(self):
                 self.count += 1
-                return Points([])
+                return hv.Points([])
 
             @param.depends('action')
             def action_method(self):
@@ -449,7 +446,7 @@ class TestParamMethodStream:
             @param.depends('action', 'x')
             def action_number_method(self):
                 self.count += 1
-                return Points([])
+                return hv.Points([])
 
             @param.depends('y')
             def op_method(self, obj):
@@ -489,48 +486,48 @@ class TestParamMethodStream:
 
         @param.depends(inner.param.x)
         def test(x):
-            return Points([x])
+            return hv.Points([x])
 
-        dmap = DynamicMap(test)
+        dmap = hv.DynamicMap(test)
 
         inner.x = 10
-        assert_element_equal(dmap[()], Points([10]))
+        assert_element_equal(dmap[()], hv.Points([10]))
 
 
     def test_param_instance_steams_dict(self):
         inner = self.inner()
 
         def test(x):
-            return Points([x])
+            return hv.Points([x])
 
-        dmap = DynamicMap(test, streams=dict(x=inner.param.x))
+        dmap = hv.DynamicMap(test, streams=dict(x=inner.param.x))
 
         inner.x = 10
-        assert_element_equal(dmap[()], Points([10]))
+        assert_element_equal(dmap[()], hv.Points([10]))
 
     def test_param_class_steams_dict(self):
         class ClassParamExample(param.Parameterized):
             x = param.Number(default=1)
 
         def test(x):
-            return Points([x])
+            return hv.Points([x])
 
-        dmap = DynamicMap(test, streams=dict(x=ClassParamExample.param.x))
+        dmap = hv.DynamicMap(test, streams=dict(x=ClassParamExample.param.x))
 
         ClassParamExample.x = 10
-        assert_element_equal(dmap[()], Points([10]))
+        assert_element_equal(dmap[()], hv.Points([10]))
 
     def test_panel_param_steams_dict(self):
         import panel as pn
         widget = pn.widgets.FloatSlider(value=1)
 
         def test(x):
-            return Points([x])
+            return hv.Points([x])
 
-        dmap = DynamicMap(test, streams=dict(x=widget))
+        dmap = hv.DynamicMap(test, streams=dict(x=widget))
 
         widget.value = 10
-        assert_element_equal(dmap[()], Points([10]))
+        assert_element_equal(dmap[()], hv.Points([10]))
 
 
     def test_param_method_depends_no_deps(self):
@@ -566,7 +563,7 @@ class TestParamMethodStream:
 
     def test_dynamicmap_param_method_deps(self):
         inner = self.inner()
-        dmap = DynamicMap(inner.method)
+        dmap = hv.DynamicMap(inner.method)
         assert len(dmap.streams) == 1
         stream = dmap.streams[0]
         assert isinstance(stream, ParamMethod)
@@ -598,7 +595,7 @@ class TestParamMethodStream:
 
     def test_dynamicmap_param_method_deps_memoization(self):
         inner = self.inner()
-        dmap = DynamicMap(inner.method)
+        dmap = hv.DynamicMap(inner.method)
         stream = dmap.streams[0]
         assert set(stream.parameters) == {inner.param.x}
         assert stream.contents == {}
@@ -609,12 +606,12 @@ class TestParamMethodStream:
 
     def test_dynamicmap_param_method_no_deps(self):
         inner = self.inner()
-        dmap = DynamicMap(inner.method_no_deps)
+        dmap = hv.DynamicMap(inner.method_no_deps)
         assert dmap.streams == []
 
     def test_dynamicmap_param_method_action_param(self):
         inner = self.inner()
-        dmap = DynamicMap(inner.action_method)
+        dmap = hv.DynamicMap(inner.action_method)
         assert len(dmap.streams) == 1
         stream = dmap.streams[0]
         assert set(stream.parameters) == {inner.param.action}
@@ -632,7 +629,7 @@ class TestParamMethodStream:
 
     def test_dynamicmap_param_action_number_method_memoizes(self):
         inner = self.inner()
-        dmap = DynamicMap(inner.action_number_method)
+        dmap = hv.DynamicMap(inner.action_number_method)
         assert len(dmap.streams) == 1
         stream = dmap.streams[0]
         assert set(stream.parameters) == {inner.param.action, inner.param.x}
@@ -655,7 +652,7 @@ class TestParamMethodStream:
 
     def test_dynamicmap_param_method_dynamic_operation(self):
         inner = self.inner()
-        dmap = DynamicMap(inner.method)
+        dmap = hv.DynamicMap(inner.method)
         inner_stream = dmap.streams[0]
         op_dmap = Dynamic(dmap, operation=inner.op_method)
         assert len(op_dmap.streams) == 1
@@ -683,12 +680,12 @@ def test_dynamicmap_partial_bind_and_streams():
     # Ref: https://github.com/holoviz/holoviews/issues/6008
 
     def make_plot(z, x_range, y_range):
-        return Curve([1, 2, 3, 4, z])
+        return hv.Curve([1, 2, 3, 4, z])
 
     slider = IntSlider(name='Slider', start=0, end=10)
     range_xy = RangeXY()
 
-    dmap = DynamicMap(param.bind(make_plot, z=slider), streams=[range_xy])
+    dmap = hv.DynamicMap(param.bind(make_plot, z=slider), streams=[range_xy])
 
     bk_figure = hv.render(dmap)
 
@@ -756,10 +753,10 @@ class TestSubscribers:
     def test_pipe_memoization(self):
         def points(data):
             subscriber.call_count += 1
-            return Points([(0, data)])
+            return hv.Points([(0, data)])
 
         stream = Pipe(data=0)
-        dmap = DynamicMap(points, streams=[stream])
+        dmap = hv.DynamicMap(points, streams=[stream])
         def cb():
             dmap[()]
         subscriber = _Subscriber(cb)
@@ -780,31 +777,31 @@ class TestStreamSource:
             Stream.registry = defaultdict(list)
 
     def test_source_empty_element(self):
-        points = Points([])
+        points = hv.Points([])
         stream = PointerX(source=points)
         assert stream.source is points
 
     def test_source_empty_element_remap(self):
-        points = Points([])
+        points = hv.Points([])
         stream = PointerX(source=points)
         assert stream.source is points
-        curve = Curve([])
+        curve = hv.Curve([])
         stream.source = curve
         assert points not in Stream.registry
         assert curve in Stream.registry
 
     def test_source_empty_dmap(self):
-        points_dmap = DynamicMap(lambda x: Points([]), kdims=['X'])
+        points_dmap = hv.DynamicMap(lambda x: hv.Points([]), kdims=['X'])
         stream = PointerX(source=points_dmap)
         assert stream.source is points_dmap
 
     def test_source_registry(self):
-        points = Points([(0, 0)])
+        points = hv.Points([(0, 0)])
         PointerX(source=points)
         assert points in Stream.registry
 
     def test_source_registry_empty_element(self):
-        points = Points([])
+        points = hv.Points([])
         PointerX(source=points)
         assert points in Stream.registry
 
@@ -1216,10 +1213,10 @@ class TestHistoryStream:
 class TestExprSelectionStream:
 
     def setup_method(self):
-        extension("bokeh")
+        hv.extension("bokeh")
 
     def test_selection_expr_stream_2D_elements(self):
-        element_type_2D = [Points]
+        element_type_2D = [hv.Points]
         for element_type in element_type_2D:
             # Create SelectionExpr on element
             element = element_type(([1, 2, 3], [1, 5, 10]))
@@ -1237,11 +1234,11 @@ class TestExprSelectionStream:
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
 
             # Check SelectionExpr values
-            assert repr(expr_stream.selection_expr) == repr(((dim('x')>=1)&(dim('x')<=3))&((dim('y')>=1)&(dim('y')<=4)))
+            assert repr(expr_stream.selection_expr) == repr(((hv.dim('x')>=1)&(hv.dim('x')<=3))&((hv.dim('y')>=1)&(hv.dim('y')<=4)))
             assert expr_stream.bbox == {'x': (1, 3), 'y': (1, 4)}
 
     def test_selection_expr_stream_1D_elements(self):
-        element_type_1D = [Scatter]
+        element_type_1D = [hv.Scatter]
         for element_type in element_type_1D:
             # Create SelectionExpr on element
             element = element_type(([1, 2, 3], [1, 5, 10]))
@@ -1257,12 +1254,12 @@ class TestExprSelectionStream:
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
 
             # Check SelectionExpr values
-            assert repr(expr_stream.selection_expr) == repr((dim('x')>=1)&(dim('x')<=3))
+            assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=1)&(hv.dim('x')<=3))
             assert expr_stream.bbox == {'x': (1, 3)}
 
 
     def test_selection_expr_stream_invert_axes_2D_elements(self):
-        element_type_2D = [Points]
+        element_type_2D = [hv.Points]
         for element_type in element_type_2D:
             # Create SelectionExpr on element
             element = element_type(([1, 2, 3], [1, 5, 10])).opts(invert_axes=True)
@@ -1280,11 +1277,11 @@ class TestExprSelectionStream:
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
 
             # Check SelectionExpr values
-            assert repr(expr_stream.selection_expr) == repr(((dim('y')>=1)&(dim('y')<=3))&((dim('x')>=1)&(dim('x')<=4)))
+            assert repr(expr_stream.selection_expr) == repr(((hv.dim('y')>=1)&(hv.dim('y')<=3))&((hv.dim('x')>=1)&(hv.dim('x')<=4)))
             assert expr_stream.bbox == {'y': (1, 3), 'x': (1, 4)}
 
     def test_selection_expr_stream_invert_axes_1D_elements(self):
-        element_type_1D = [Scatter]
+        element_type_1D = [hv.Scatter]
         for element_type in element_type_1D:
             # Create SelectionExpr on element
             element = element_type(([1, 2, 3], [1, 5, 10])).opts(invert_axes=True)
@@ -1300,11 +1297,11 @@ class TestExprSelectionStream:
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
 
             # Check SelectionExpr values
-            assert repr(expr_stream.selection_expr) == repr((dim('x')>=1)&(dim('x')<=4))
+            assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=1)&(hv.dim('x')<=4))
             assert expr_stream.bbox == {'x': (1, 4)}
 
     def test_selection_expr_stream_invert_xaxis_yaxis_2D_elements(self):
-        element_type_2D = [Points]
+        element_type_2D = [hv.Points]
         for element_type in element_type_2D:
 
             # Create SelectionExpr on element
@@ -1326,11 +1323,11 @@ class TestExprSelectionStream:
             expr_stream.input_streams[0].event(bounds=(3, 4, 1, 1))
 
             # Check SelectionExpr values
-            assert repr(expr_stream.selection_expr) == repr(((dim('x')>=1)&(dim('x')<=3))&((dim('y')>=1)&(dim('y')<=4)))
+            assert repr(expr_stream.selection_expr) == repr(((hv.dim('x')>=1)&(hv.dim('x')<=3))&((hv.dim('y')>=1)&(hv.dim('y')<=4)))
             assert expr_stream.bbox == {'x': (1, 3), 'y': (1, 4)}
 
     def test_selection_expr_stream_invert_xaxis_yaxis_1D_elements(self):
-        element_type_1D = [Scatter]
+        element_type_1D = [hv.Scatter]
         for element_type in element_type_1D:
 
             # Create SelectionExpr on element
@@ -1350,12 +1347,12 @@ class TestExprSelectionStream:
             expr_stream.input_streams[0].event(bounds=(3, 4, 1, 1))
 
             # Check SelectionExpr values
-            assert repr(expr_stream.selection_expr) == repr((dim('x')>=1)&(dim('x')<=3))
+            assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=1)&(hv.dim('x')<=3))
             assert expr_stream.bbox == {'x': (1, 3)}
 
     def test_selection_expr_stream_hist(self):
         # Create SelectionExpr on element
-        hist = Histogram(([1, 2, 3, 4, 5], [1, 5, 2, 3, 7]))
+        hist = hv.Histogram(([1, 2, 3, 4, 5], [1, 5, 2, 3, 7]))
         expr_stream = SelectionExpr(hist)
 
         # Check stream properties
@@ -1367,19 +1364,19 @@ class TestExprSelectionStream:
         # Simulate interactive update by triggering source stream.
         # Select second and forth bar.
         expr_stream.input_streams[0].event(bounds=(1.5, 2.5, 4.6, 6))
-        assert repr(expr_stream.selection_expr) == repr((dim('x')>=1.5)&(dim('x')<=4.6))
+        assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=1.5)&(hv.dim('x')<=4.6))
         assert expr_stream.bbox == {'x': (1.5, 4.6)}
 
         # Select third, forth, and fifth bar.  Make sure there is special
         # handling when last bar is selected to include values exactly on the
         # upper edge in the selection
         expr_stream.input_streams[0].event(bounds=(2.5, -10, 8, 10))
-        assert repr(expr_stream.selection_expr) == repr((dim('x')>=2.5)&(dim('x')<=8))
+        assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=2.5)&(hv.dim('x')<=8))
         assert expr_stream.bbox == {'x': (2.5, 8)}
 
     def test_selection_expr_stream_hist_invert_axes(self):
         # Create SelectionExpr on element
-        hist = Histogram(([1, 2, 3, 4, 5], [1, 5, 2, 3, 7])).opts(
+        hist = hv.Histogram(([1, 2, 3, 4, 5], [1, 5, 2, 3, 7])).opts(
             invert_axes=True
         )
         expr_stream = SelectionExpr(hist)
@@ -1393,19 +1390,19 @@ class TestExprSelectionStream:
         # Simulate interactive update by triggering source stream.
         # Select second and forth bar.
         expr_stream.input_streams[0].event(bounds=(2.5, 1.5, 6, 4.6))
-        assert repr(expr_stream.selection_expr) == repr((dim('x')>=1.5)&(dim('x')<=4.6))
+        assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=1.5)&(hv.dim('x')<=4.6))
         assert expr_stream.bbox == {'x': (1.5, 4.6)}
 
         # Select third, forth, and fifth bar.  Make sure there is special
         # handling when last bar is selected to include values exactly on the
         # upper edge in the selection
         expr_stream.input_streams[0].event(bounds=(-10, 2.5, 10, 8))
-        assert repr(expr_stream.selection_expr) == repr((dim('x')>=2.5)&(dim('x')<=8))
+        assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=2.5)&(hv.dim('x')<=8))
         assert expr_stream.bbox == {'x': (2.5, 8)}
 
     def test_selection_expr_stream_hist_invert_xaxis_yaxis(self):
         # Create SelectionExpr on element
-        hist = Histogram(([1, 2, 3, 4, 5], [1, 5, 2, 3, 7])).opts(
+        hist = hv.Histogram(([1, 2, 3, 4, 5], [1, 5, 2, 3, 7])).opts(
                 invert_xaxis=True,
                 invert_yaxis=True,
         )
@@ -1420,20 +1417,20 @@ class TestExprSelectionStream:
         # Simulate interactive update by triggering source stream.
         # Select second and forth bar.
         expr_stream.input_streams[0].event(bounds=(4.6, 6, 1.5, 2.5))
-        assert repr(expr_stream.selection_expr) == repr((dim('x')>=1.5)&(dim('x')<=4.6))
+        assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=1.5)&(hv.dim('x')<=4.6))
         assert expr_stream.bbox == {'x': (1.5, 4.6)}
 
         # Select third, forth, and fifth bar.  Make sure there is special
         # handling when last bar is selected to include values exactly on the
         # upper edge in the selection
         expr_stream.input_streams[0].event(bounds=(8, 10, 2.5, -10))
-        assert repr(expr_stream.selection_expr) == repr((dim('x')>=2.5)&(dim('x')<=8))
+        assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=2.5)&(hv.dim('x')<=8))
         assert expr_stream.bbox == {'x': (2.5, 8)}
 
 
     @shapely_skip
     def test_selection_expr_stream_polygon_index_cols(self):
-        poly = Polygons([
+        poly = hv.Polygons([
             [(0, 0, 'a'), (2, 0, 'a'), (1, 1, 'a')],
             [(2, 0, 'b'), (4, 0, 'b'), (3, 1, 'b')],
             [(1, 1, 'c'), (3, 1, 'c'), (2, 2, 'c')]
@@ -1454,28 +1451,28 @@ class TestExprSelectionStream:
         fmt = lambda x: list(map(np.str_, x)) if NUMPY_GE_2_0_0 else x
 
         expr_stream.input_streams[2].event(index=[0, 1])
-        assert repr(expr_stream.selection_expr) == repr(dim('cat').isin(fmt(['a', 'b'])))
+        assert repr(expr_stream.selection_expr) == repr(hv.dim('cat').isin(fmt(['a', 'b'])))
         assert expr_stream.bbox is None
         assert len(events) == 1
 
         # Ensure bounds event does not trigger another update
         expr_stream.input_streams[0].event(bounds=(0, 0, 4, 1))
-        assert repr(expr_stream.selection_expr) == repr(dim('cat').isin(fmt(['a', 'b'])))
+        assert repr(expr_stream.selection_expr) == repr(hv.dim('cat').isin(fmt(['a', 'b'])))
         assert len(events) == 1
 
         # Ensure geometry event does trigger another update
         expr_stream.input_streams[1].event(geometry=np.array([(0, 0), (4, 0), (4, 2), (0, 2)]))
-        assert repr(expr_stream.selection_expr) == repr(dim('cat').isin(fmt(['a', 'b', 'c'])))
+        assert repr(expr_stream.selection_expr) == repr(hv.dim('cat').isin(fmt(['a', 'b', 'c'])))
         assert len(events) == 2
 
         # Ensure index event does trigger another update
         expr_stream.input_streams[2].event(index=[1, 2])
-        assert repr(expr_stream.selection_expr) == repr(dim('cat').isin(fmt(['b', 'c'])))
+        assert repr(expr_stream.selection_expr) == repr(hv.dim('cat').isin(fmt(['b', 'c'])))
         assert expr_stream.bbox is None
         assert len(events) == 3
 
     def test_selection_expr_stream_dynamic_map_2D_elements(self):
-        element_type_2D = [Points]
+        element_type_2D = [hv.Points]
         for element_type in element_type_2D: # Scatter,
             # Create SelectionExpr on element
             dmap = Dynamic(element_type(([1, 2, 3], [1, 5, 10])))
@@ -1491,11 +1488,11 @@ class TestExprSelectionStream:
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
 
             # Check SelectionExpr values
-            assert repr(expr_stream.selection_expr) == repr(((dim('x')>=1)&(dim('x')<=3))&((dim('y')>=1)&(dim('y')<=4)))
+            assert repr(expr_stream.selection_expr) == repr(((hv.dim('x')>=1)&(hv.dim('x')<=3))&((hv.dim('y')>=1)&(hv.dim('y')<=4)))
             assert expr_stream.bbox == {'x': (1, 3), 'y': (1, 4)}
 
     def test_selection_expr_stream_dynamic_map_1D_elements(self):
-        element_type_1D = [Scatter]
+        element_type_1D = [hv.Scatter]
         for element_type in element_type_1D:
             # Create SelectionExpr on element
             dmap = Dynamic(element_type(([1, 2, 3], [1, 5, 10])))
@@ -1511,5 +1508,5 @@ class TestExprSelectionStream:
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
 
             # Check SelectionExpr values
-            assert repr(expr_stream.selection_expr) == repr((dim('x')>=1)&(dim('x')<=3))
+            assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=1)&(hv.dim('x')<=3))
             assert expr_stream.bbox == {'x': (1, 3)}

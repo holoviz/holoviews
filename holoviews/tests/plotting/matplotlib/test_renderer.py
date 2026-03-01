@@ -13,7 +13,7 @@ from matplotlib import style
 from panel.widgets import DiscreteSlider, FloatSlider, Player
 from pyviz_comms import CommManager
 
-from holoviews import Curve, DynamicMap, GridSpace, HoloMap, Image, ItemTable, Table
+import holoviews as hv
 from holoviews.plotting.mpl import CurvePlot, MPLRenderer
 from holoviews.plotting.renderer import Renderer
 from holoviews.streams import Stream
@@ -27,11 +27,11 @@ class MPLRendererTest:
 
     def setup_method(self):
         self.basename = 'no-file'
-        self.image1 = Image(np.array([[0,1],[2,3]]), label='Image1')
-        self.image2 = Image(np.array([[1,0],[4,-2]]), label='Image2')
-        self.map1 = HoloMap({1:self.image1, 2:self.image2}, label='TestMap')
+        self.image1 = hv.Image(np.array([[0,1],[2,3]]), label='Image1')
+        self.image2 = hv.Image(np.array([[1,0],[4,-2]]), label='Image2')
+        self.map1 = hv.HoloMap({1:self.image1, 2:self.image2}, label='TestMap')
 
-        self.unicode_table = ItemTable([('β','Δ1'), ('°C', '3×4')],
+        self.unicode_table = hv.ItemTable([('β','Δ1'), ('°C', '3×4')],
                                        label='Poincaré', group='α Festkörperphysik')
 
         self.renderer = MPLRenderer.instance()
@@ -66,13 +66,13 @@ class MPLRendererTest:
         assert (w, h) == (288, 509) or (w, h) == (288, 511)
 
     def test_get_size_grid_plot(self):
-        grid = GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
+        grid = hv.GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
         plot = self.renderer.get_plot(grid)
         w, h = self.renderer.get_size(plot)
         assert (w, h) == (345, 345)
 
     def test_get_size_table(self):
-        table = Table(range(10), kdims=['x'])
+        table = hv.Table(range(10), kdims=['x'])
         plot = self.renderer.get_plot(table)
         w, h = self.renderer.get_size(plot)
         assert (w, h) == (288, 288)
@@ -92,12 +92,12 @@ class MPLRendererTest:
         assert "<source src='data:video/mp4" in data['text/html']
 
     def test_render_static(self):
-        curve = Curve([])
+        curve = hv.Curve([])
         obj, _ = self.renderer._validate(curve, None)
         assert isinstance(obj, CurvePlot)
 
     def test_render_holomap_individual(self):
-        hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
+        hmap = hv.HoloMap({i: hv.Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer._validate(hmap, None)
         assert isinstance(obj, pn.pane.HoloViews)
         assert obj.center is True
@@ -109,7 +109,7 @@ class MPLRendererTest:
         assert slider.options == dict([(str(i), i) for i in range(5)])
 
     def test_render_holomap_embedded(self):
-        hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
+        hmap = hv.HoloMap({i: hv.Curve([1, 2, i]) for i in range(5)})
         data, _ = self.renderer.components(hmap)
         assert 'State"' in data['text/html']
 
@@ -119,7 +119,7 @@ class MPLRendererTest:
     #     self.assertNotIn('State"', data['text/html'])
 
     def test_render_holomap_scrubber(self):
-        hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
+        hmap = hv.HoloMap({i: hv.Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer._validate(hmap, 'scrubber')
         assert isinstance(obj, pn.pane.HoloViews)
         assert obj.center is True
@@ -132,7 +132,7 @@ class MPLRendererTest:
         assert player.end == 4
 
     def test_render_holomap_scrubber_fps(self):
-        hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
+        hmap = hv.HoloMap({i: hv.Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer.instance(fps=2)._validate(hmap, 'scrubber')
         assert isinstance(obj, pn.pane.HoloViews)
         widgets = obj.layout.select(Player)
@@ -141,7 +141,7 @@ class MPLRendererTest:
         assert player.interval == 500
 
     def test_render_holomap_individual_widget_position(self):
-        hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
+        hmap = hv.HoloMap({i: hv.Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer.instance(widget_location='top')._validate(hmap, None)
         assert isinstance(obj, pn.pane.HoloViews)
         assert obj.center is True
@@ -150,7 +150,7 @@ class MPLRendererTest:
 
     @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm:UserWarning')
     def test_render_dynamicmap_with_dims(self):
-        dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
+        dmap = hv.DynamicMap(lambda y: hv.Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
         [(plot, _pane)] = obj._plots.values()
@@ -166,7 +166,7 @@ class MPLRendererTest:
     @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm:UserWarning')
     def test_render_dynamicmap_with_stream(self):
         stream = Stream.define('Custom', y=2)()
-        dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
+        dmap = hv.DynamicMap(lambda y: hv.Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
         [(plot, _pane)] = obj._plots.values()
@@ -181,7 +181,7 @@ class MPLRendererTest:
     @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm:UserWarning')
     def test_render_dynamicmap_with_stream_dims(self):
         stream = Stream.define('Custom', y=2)()
-        dmap = DynamicMap(lambda x, y: Curve([x, 1, y]), kdims=['x', 'y'],
+        dmap = hv.DynamicMap(lambda x, y: hv.Curve([x, 1, y]), kdims=['x', 'y'],
                           streams=[stream]).redim.values(x=[1, 2, 3])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)

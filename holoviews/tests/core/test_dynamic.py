@@ -6,10 +6,7 @@ import numpy as np
 import param
 import pytest
 
-from holoviews import Dimension, GridSpace, Layout, NdLayout, NdOverlay
-from holoviews.core.options import Store
-from holoviews.core.spaces import Callable, DynamicMap, HoloMap
-from holoviews.element import Curve, Image, Points, Scatter, Text
+import holoviews as hv
 from holoviews.operation import histogram
 from holoviews.plotting.util import initialize_dynamic
 from holoviews.streams import (
@@ -46,270 +43,270 @@ class ExampleParameterized(param.Parameterized):
 class TestDynamicMapConstructor:
 
     def test_simple_constructor_kdims(self):
-        DynamicMap(lambda x: x, kdims=['test'])
+        hv.DynamicMap(lambda x: x, kdims=['test'])
 
     def test_simple_constructor_invalid_no_kdims(self):
         regexp = ("Callable '<lambda>' accepts more positional arguments than there are "
                   "kdims and stream parameters")
         with pytest.raises(KeyError, match=regexp):
-            DynamicMap(lambda x: x)
+            hv.DynamicMap(lambda x: x)
 
     def test_simple_constructor_invalid(self):
         regexp = (r"Callback '<lambda>' signature over \['x'\] does not accommodate "
                   r"required kdims \['x', 'y'\]")
         with pytest.raises(KeyError, match=regexp):
-            DynamicMap(lambda x: x, kdims=['x','y'])
+            hv.DynamicMap(lambda x: x, kdims=['x','y'])
 
     def test_simple_constructor_streams(self):
-        DynamicMap(lambda x: x, streams=[PointerX()])
+        hv.DynamicMap(lambda x: x, streams=[PointerX()])
 
     def test_simple_constructor_streams_dict(self):
         pointerx = PointerX()
-        DynamicMap(lambda x: x, streams=dict(x=pointerx.param.x))
+        hv.DynamicMap(lambda x: x, streams=dict(x=pointerx.param.x))
 
     def test_simple_constructor_streams_dict_panel_widget(self):
         import panel as pn
-        DynamicMap(lambda x: x, streams=dict(x=pn.widgets.FloatSlider()))
+        hv.DynamicMap(lambda x: x, streams=dict(x=pn.widgets.FloatSlider()))
 
     def test_simple_constructor_streams_dict_parameter(self):
         test = ExampleParameterized()
-        DynamicMap(lambda x: x, streams=dict(x=test.param.example))
+        hv.DynamicMap(lambda x: x, streams=dict(x=test.param.example))
 
     def test_simple_constructor_streams_dict_class_parameter(self):
-        DynamicMap(lambda x: x, streams=dict(x=ExampleParameterized.param.example))
+        hv.DynamicMap(lambda x: x, streams=dict(x=ExampleParameterized.param.example))
 
     def test_simple_constructor_streams_dict_invalid(self):
         regexp = "Cannot handle 'x' value 3 in streams dictionary"
         with pytest.raises(TypeError, match=regexp):
-            DynamicMap(lambda x: x, streams=dict(x=3))
+            hv.DynamicMap(lambda x: x, streams=dict(x=3))
 
     def test_simple_constructor_streams_invalid_uninstantiated(self):
         regexp = ("The supplied streams list contains objects "
                   "that are not Stream instances:(.+?)")
         with pytest.raises(TypeError, match=regexp):
-            DynamicMap(lambda x: x, streams=[PointerX])
+            hv.DynamicMap(lambda x: x, streams=[PointerX])
 
     def test_simple_constructor_streams_invalid_type(self):
         regexp = ("The supplied streams list contains objects "
                   "that are not Stream instances:(.+?)")
         with pytest.raises(TypeError, match=regexp):
-            DynamicMap(lambda x: x, streams=[3])
+            hv.DynamicMap(lambda x: x, streams=[3])
 
     def test_simple_constructor_streams_invalid_mismatch(self):
         regexp = "Callable '<lambda>' missing keywords to accept stream parameters: y"
         with pytest.raises(KeyError, match=regexp):
-            DynamicMap(lambda x: x, streams=[PointerXY()])
+            hv.DynamicMap(lambda x: x, streams=[PointerXY()])
 
     def test_simple_constructor_positional_stream_args(self):
-        DynamicMap(lambda v: v, streams=[PointerXY()], positional_stream_args=True)
+        hv.DynamicMap(lambda v: v, streams=[PointerXY()], positional_stream_args=True)
 
     def test_simple_constructor_streams_invalid_mismatch_named(self):
 
         def foo(x): return x
         regexp = "Callable 'foo' missing keywords to accept stream parameters: y"
         with pytest.raises(KeyError, match=regexp):
-            DynamicMap(foo, streams=[PointerXY()])
+            hv.DynamicMap(foo, streams=[PointerXY()])
 
 
 class TestDynamicMapPositionalStreamArgs:
     def test_positional_stream_args_without_streams(self):
-        fn = lambda i: Curve([i, i])
-        dmap = DynamicMap(fn, kdims=['i'], positional_stream_args=True)
-        assert_element_equal(dmap[0], Curve([0, 0]))
+        fn = lambda i: hv.Curve([i, i])
+        dmap = hv.DynamicMap(fn, kdims=['i'], positional_stream_args=True)
+        assert_element_equal(dmap[0], hv.Curve([0, 0]))
 
     def test_positional_stream_args_with_only_stream(self):
-        fn = lambda s: Curve([s['x'], s['y']])
+        fn = lambda s: hv.Curve([s['x'], s['y']])
         xy_stream = XY(x=1, y=2)
-        dmap = DynamicMap(fn, streams=[xy_stream], positional_stream_args=True)
-        assert_element_equal(dmap[()], Curve([1, 2]))
+        dmap = hv.DynamicMap(fn, streams=[xy_stream], positional_stream_args=True)
+        assert_element_equal(dmap[()], hv.Curve([1, 2]))
 
         # Update stream values
         xy_stream.event(x=5, y=7)
-        assert_element_equal(dmap[()], Curve([5, 7]))
+        assert_element_equal(dmap[()], hv.Curve([5, 7]))
 
     def test_positional_stream_args_with_single_kdim_and_stream(self):
-        fn = lambda i, s: Points([i, i]) + Curve([s['x'], s['y']])
+        fn = lambda i, s: hv.Points([i, i]) + hv.Curve([s['x'], s['y']])
         xy_stream = XY(x=1, y=2)
-        dmap = DynamicMap(
+        dmap = hv.DynamicMap(
             fn, kdims=['i'], streams=[xy_stream], positional_stream_args=True
         )
-        assert_element_equal(dmap[6], Points([6, 6]) + Curve([1, 2]))
+        assert_element_equal(dmap[6], hv.Points([6, 6]) + hv.Curve([1, 2]))
 
         # Update stream values
         xy_stream.event(x=5, y=7)
-        assert_element_equal(dmap[3], Points([3, 3]) + Curve([5, 7]))
+        assert_element_equal(dmap[3], hv.Points([3, 3]) + hv.Curve([5, 7]))
 
     def test_positional_stream_args_with_multiple_kdims_and_stream(self):
-        fn = lambda i, j, s1, s2: Points([i, j]) + Curve([s1['x'], s2['y']])
+        fn = lambda i, j, s1, s2: hv.Points([i, j]) + hv.Curve([s1['x'], s2['y']])
         x_stream = X(x=2)
         y_stream = Y(y=3)
 
-        dmap = DynamicMap(
+        dmap = hv.DynamicMap(
             fn,
             kdims=['i', 'j'],
             streams=[x_stream, y_stream],
             positional_stream_args=True
         )
-        assert_element_equal(dmap[0, 1], Points([0, 1]) + Curve([2, 3]))
+        assert_element_equal(dmap[0, 1], hv.Points([0, 1]) + hv.Curve([2, 3]))
 
         # Update stream values
         x_stream.event(x=5)
         y_stream.event(y=6)
-        assert_element_equal(dmap[3, 4], Points([3, 4]) + Curve([5, 6]))
+        assert_element_equal(dmap[3, 4], hv.Points([3, 4]) + hv.Curve([5, 6]))
 
     def test_initialize_with_overlapping_stream_params(self):
         fn = lambda xy0, xy1: \
-             Points([xy0['x'], xy0['y']]) + Curve([xy1['x'], xy1['y']])
+             hv.Points([xy0['x'], xy0['y']]) + hv.Curve([xy1['x'], xy1['y']])
         xy_stream0 = XY(x=1, y=2)
         xy_stream1 = XY(x=3, y=4)
-        dmap = DynamicMap(
+        dmap = hv.DynamicMap(
             fn, streams=[xy_stream0, xy_stream1], positional_stream_args=True
         )
-        assert_element_equal(dmap[()], Points([1, 2]) + Curve([3, 4]))
+        assert_element_equal(dmap[()], hv.Points([1, 2]) + hv.Curve([3, 4]))
 
 
 class TestDynamicMapMethods:
 
     def test_deep_relabel_label(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn, kdims=['i']).relabel(label='Test')
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap = hv.DynamicMap(fn, kdims=['i']).relabel(label='Test')
         assert dmap[0].label == 'Test'
 
     def test_deep_relabel_group(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn, kdims=['i']).relabel(group='Test')
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap = hv.DynamicMap(fn, kdims=['i']).relabel(group='Test')
         assert dmap[0].group == 'Test'
 
     def test_redim_dimension_name(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn, kdims=['i']).redim(i='New')
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap = hv.DynamicMap(fn, kdims=['i']).redim(i='New')
         assert dmap.kdims[0].name == 'New'
 
     def test_redim_dimension_range_aux(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn, kdims=['i']).redim.range(i=(0,1))
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap = hv.DynamicMap(fn, kdims=['i']).redim.range(i=(0,1))
         assert dmap.kdims[0].range == (0,1)
 
     def test_redim_dimension_values_cache_reset_1D(self):
         # Setting the values should drop mismatching keys from the cache
-        fn = lambda i: Curve([i,i])
-        dmap = DynamicMap(fn, kdims=['i'])[{0,1,2,3,4,5}]
+        fn = lambda i: hv.Curve([i,i])
+        dmap = hv.DynamicMap(fn, kdims=['i'])[{0,1,2,3,4,5}]
         assert dmap.keys() == [0,1,2,3,4,5]
         redimmed = dmap.redim.values(i=[2,3,5,6,8])
         assert redimmed.keys() == [2,3,5]
 
     def test_redim_dimension_values_cache_reset_2D_single(self):
         # Setting the values should drop mismatching keys from the cache
-        fn = lambda i,j: Curve([i,j])
+        fn = lambda i,j: hv.Curve([i,j])
         keys = [(0,1),(1,0),(2,2),(2,5), (3,3)]
-        dmap = DynamicMap(fn, kdims=['i','j'])[keys]
+        dmap = hv.DynamicMap(fn, kdims=['i','j'])[keys]
         assert dmap.keys() == keys
         redimmed = dmap.redim.values(i=[2,10,50])
         assert redimmed.keys() == [(2,2),(2,5)]
 
     def test_redim_dimension_values_cache_reset_2D_multi(self):
         # Setting the values should drop mismatching keys from the cache
-        fn = lambda i,j: Curve([i,j])
+        fn = lambda i,j: hv.Curve([i,j])
         keys = [(0,1),(1,0),(2,2),(2,5), (3,3)]
-        dmap = DynamicMap(fn, kdims=['i','j'])[keys]
+        dmap = hv.DynamicMap(fn, kdims=['i','j'])[keys]
         assert dmap.keys() == keys
         redimmed = dmap.redim.values(i=[2,10,50], j=[5,50,100])
         assert redimmed.keys() == [(2,5)]
 
 
     def test_redim_dimension_unit_aux(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn, kdims=['i']).redim.unit(i='m/s')
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap = hv.DynamicMap(fn, kdims=['i']).redim.unit(i='m/s')
         assert dmap.kdims[0].unit == 'm/s'
 
     def test_redim_dimension_type_aux(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn, kdims=['i']).redim.type(i=int)
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap = hv.DynamicMap(fn, kdims=['i']).redim.type(i=int)
         assert dmap.kdims[0].type is int
 
     def test_deep_redim_dimension_name(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn, kdims=['i']).redim(x='X')
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap = hv.DynamicMap(fn, kdims=['i']).redim(x='X')
         assert dmap[0].kdims[0].name == 'X'
 
     def test_deep_redim_dimension_name_with_spec(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn, kdims=['i']).redim(Image, x='X')
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap = hv.DynamicMap(fn, kdims=['i']).redim(hv.Image, x='X')
         assert dmap[0].kdims[0].name == 'X'
 
     def test_deep_getitem_bounded_kdims(self):
-        fn = lambda i: Curve(np.arange(i))
-        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        fn = lambda i: hv.Curve(np.arange(i))
+        dmap = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
         assert_element_equal(dmap[:, 5:10][10], fn(10)[5:10])
 
     def test_deep_getitem_bounded_kdims_and_vdims(self):
-        fn = lambda i: Curve(np.arange(i))
-        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        fn = lambda i: hv.Curve(np.arange(i))
+        dmap = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
         assert_element_equal(dmap[:, 5:10, 0:5][10], fn(10)[5:10, 0:5])
 
     def test_deep_getitem_cross_product_and_slice(self):
-        fn = lambda i: Curve(np.arange(i))
-        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        fn = lambda i: hv.Curve(np.arange(i))
+        dmap = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
         assert_element_equal(dmap[[10, 11, 12], 5:10],
                          dmap.clone([(i, fn(i)[5:10]) for i in range(10, 13)]))
 
     def test_deep_getitem_index_and_slice(self):
-        fn = lambda i: Curve(np.arange(i))
-        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        fn = lambda i: hv.Curve(np.arange(i))
+        dmap = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
         assert_element_equal(dmap[10, 5:10], fn(10)[5:10])
 
     def test_deep_getitem_cache_sliced(self):
-        fn = lambda i: Curve(np.arange(i))
-        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        fn = lambda i: hv.Curve(np.arange(i))
+        dmap = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
         dmap[10] # Add item to cache
         assert_element_equal(dmap[:, 5:10][10], fn(10)[5:10])
 
     def test_deep_select_slice_kdim(self):
-        fn = lambda i: Curve(np.arange(i))
-        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        fn = lambda i: hv.Curve(np.arange(i))
+        dmap = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
         assert_element_equal(dmap.select(x=(5, 10))[10], fn(10)[5:10])
 
     def test_deep_select_slice_kdim_and_vdims(self):
-        fn = lambda i: Curve(np.arange(i))
-        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        fn = lambda i: hv.Curve(np.arange(i))
+        dmap = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
         assert_element_equal(dmap.select(x=(5, 10), y=(0, 5))[10], fn(10)[5:10, 0:5])
 
     def test_deep_select_slice_kdim_no_match(self):
-        fn = lambda i: Curve(np.arange(i))
-        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
-        assert_element_equal(dmap.select(DynamicMap, x=(5, 10))[10], fn(10))
+        fn = lambda i: hv.Curve(np.arange(i))
+        dmap = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
+        assert_element_equal(dmap.select(hv.DynamicMap, x=(5, 10))[10], fn(10))
 
     def test_deep_apply_element_function(self):
-        fn = lambda i: Curve(np.arange(i))
-        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        fn = lambda i: hv.Curve(np.arange(i))
+        dmap = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
         mapped = dmap.apply(lambda x: x.clone(x.data*2))
         curve = fn(10)
         assert_element_equal(mapped[10], curve.clone(curve.data*2))
 
     def test_deep_apply_element_param_function(self):
-        fn = lambda i: Curve(np.arange(i))
+        fn = lambda i: hv.Curve(np.arange(i))
         class Test(param.Parameterized):
             a = param.Integer(default=1)
         test = Test()
         @param.depends(test.param.a)
         def op(obj, a):
             return obj.clone(obj.data*2)
-        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        dmap = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
         mapped = dmap.apply(op)
         test.a = 2
         curve = fn(10)
         assert_element_equal(mapped[10], curve.clone(curve.data*2))
 
     def test_deep_apply_element_function_with_kwarg(self):
-        fn = lambda i: Curve(np.arange(i))
-        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        fn = lambda i: hv.Curve(np.arange(i))
+        dmap = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
         mapped = dmap.apply(lambda x, label: x.relabel(label), label='New label')
         assert_element_equal(mapped[10], fn(10).relabel('New label'))
 
     def test_deep_map_apply_element_function_with_stream_kwarg(self):
         stream = Stream.define('Test', label='New label')()
-        fn = lambda i: Curve(np.arange(i))
-        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        fn = lambda i: hv.Curve(np.arange(i))
+        dmap = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
         mapped = dmap.apply(lambda x, label: x.relabel(label), streams=[stream])
         assert_element_equal(mapped[10], fn(10).relabel('New label'))
 
@@ -323,8 +320,8 @@ class TestDynamicMapMethods:
                 return self.label.title()
 
         test = Test()
-        fn = lambda i: Curve(np.arange(i))
-        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        fn = lambda i: hv.Curve(np.arange(i))
+        dmap = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
         mapped = dmap.apply(lambda x, label: x.relabel(label), label=test.value)
         curve = fn(10)
         assert_element_equal(mapped[10], curve.relabel('Label'))
@@ -341,8 +338,8 @@ class TestDynamicMapMethods:
                 return obj.relabel(self.label.title())
 
         test = Test()
-        fn = lambda i: Curve(np.arange(i))
-        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        fn = lambda i: hv.Curve(np.arange(i))
+        dmap = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
         mapped = dmap.apply(test.relabel)
         curve = fn(10)
         assert_element_equal(mapped[10], curve.relabel('Label'))
@@ -359,8 +356,8 @@ class TestDynamicMapMethods:
                 return obj.relabel(self.label.title(), group)
 
         test = Test()
-        fn = lambda i: Curve(np.arange(i))
-        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        fn = lambda i: hv.Curve(np.arange(i))
+        dmap = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
         mapped = dmap.apply(test.relabel, group='Group')
         curve = fn(10)
         assert_element_equal(mapped[10], curve.relabel('Label', 'Group'))
@@ -368,53 +365,53 @@ class TestDynamicMapMethods:
         assert_element_equal(mapped[10], curve.relabel('New Label', 'Group'))
 
     def test_deep_map_transform_element_type(self):
-        fn = lambda i: Curve(np.arange(i))
-        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        fn = lambda i: hv.Curve(np.arange(i))
+        dmap = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
         dmap[10]
-        mapped = dmap.map(Scatter, Curve)
+        mapped = dmap.map(hv.Scatter, hv.Curve)
         area = mapped[11]
-        assert_element_equal(area, Scatter(fn(11)))
+        assert_element_equal(area, hv.Scatter(fn(11)))
 
     def test_deep_apply_transform_element_type(self):
-        fn = lambda i: Curve(np.arange(i))
-        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        fn = lambda i: hv.Curve(np.arange(i))
+        dmap = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
         dmap[10]
-        mapped = dmap.apply(Scatter)
+        mapped = dmap.apply(hv.Scatter)
         area = mapped[11]
-        assert_element_equal(area, Scatter(fn(11)))
+        assert_element_equal(area, hv.Scatter(fn(11)))
 
     def test_deep_map_apply_dmap_function(self):
-        fn = lambda i: Curve(np.arange(i))
-        dmap1 = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
-        dmap2 = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
-        mapped = (dmap1 + dmap2).map(lambda x: x[10], DynamicMap)
-        assert_element_equal(mapped, Layout([('DynamicMap.I', fn(10)),
+        fn = lambda i: hv.Curve(np.arange(i))
+        dmap1 = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
+        dmap2 = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
+        mapped = (dmap1 + dmap2).map(lambda x: x[10], hv.DynamicMap)
+        assert_element_equal(mapped, hv.Layout([('DynamicMap.I', fn(10)),
                                          ('DynamicMap.II', fn(10))]))
 
     def test_deep_map_apply_dmap_function_no_clone(self):
-        fn = lambda i: Curve(np.arange(i))
-        dmap1 = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
-        dmap2 = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        fn = lambda i: hv.Curve(np.arange(i))
+        dmap1 = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
+        dmap2 = hv.DynamicMap(fn, kdims=[hv.Dimension('Test', range=(10, 20))])
         layout = (dmap1 + dmap2)
-        mapped = layout.map(lambda x: x[10], DynamicMap, clone=False)
+        mapped = layout.map(lambda x: x[10], hv.DynamicMap, clone=False)
         assert mapped is layout
 
     def test_dynamic_reindex_reorder(self):
         history = deque(maxlen=10)
         def history_callback(x, y):
             history.append((x, y))
-            return Points(list(history))
-        dmap = DynamicMap(history_callback, kdims=['x', 'y'])
+            return hv.Points(list(history))
+        dmap = hv.DynamicMap(history_callback, kdims=['x', 'y'])
         reindexed = dmap.reindex(['y', 'x'])
         points = reindexed[2, 1]
-        assert_element_equal(points, Points([(1, 2)]))
+        assert_element_equal(points, hv.Points([(1, 2)]))
 
     def test_dynamic_reindex_drop_raises_exception(self):
         history = deque(maxlen=10)
         def history_callback(x, y):
             history.append((x, y))
-            return Points(list(history))
-        dmap = DynamicMap(history_callback, kdims=['x', 'y'])
+            return hv.Points(list(history))
+        dmap = hv.DynamicMap(history_callback, kdims=['x', 'y'])
         exception = ("DynamicMap does not allow dropping dimensions, "
                      "reindex may only be used to reorder dimensions.")
         with pytest.raises(ValueError, match=exception):
@@ -422,68 +419,68 @@ class TestDynamicMapMethods:
 
     def test_dynamic_groupby_kdims_and_streams(self):
         def plot_function(mydim, data):
-            return Scatter(data[data[:, 2]==mydim])
+            return hv.Scatter(data[data[:, 2]==mydim])
 
         buff = Buffer(data=np.empty((0, 3)))
-        dmap = DynamicMap(plot_function, streams=[buff], kdims='mydim').redim.values(mydim=[0, 1, 2])
-        ndlayout = dmap.groupby('mydim', container_type=NdLayout)
-        assert isinstance(ndlayout[0], DynamicMap)
+        dmap = hv.DynamicMap(plot_function, streams=[buff], kdims='mydim').redim.values(mydim=[0, 1, 2])
+        ndlayout = dmap.groupby('mydim', container_type=hv.NdLayout)
+        assert isinstance(ndlayout[0], hv.DynamicMap)
         data = np.array([(0, 0, 0), (1, 1, 1), (2, 2, 2)])
         buff.send(data)
         assert ndlayout[0].callback.inputs[0] is dmap
         assert ndlayout[1].callback.inputs[0] is dmap
         assert ndlayout[2].callback.inputs[0] is dmap
-        assert_element_equal(ndlayout[0][()], Scatter([(0, 0)]))
-        assert_element_equal(ndlayout[1][()], Scatter([(1, 1)]))
-        assert_element_equal(ndlayout[2][()], Scatter([(2, 2)]))
+        assert_element_equal(ndlayout[0][()], hv.Scatter([(0, 0)]))
+        assert_element_equal(ndlayout[1][()], hv.Scatter([(1, 1)]))
+        assert_element_equal(ndlayout[2][()], hv.Scatter([(2, 2)]))
 
     def test_dynamic_split_overlays_on_ndoverlay(self):
-        dmap = DynamicMap(lambda: NdOverlay({i: Points([i]) for i in range(3)}))
+        dmap = hv.DynamicMap(lambda: hv.NdOverlay({i: hv.Points([i]) for i in range(3)}))
         initialize_dynamic(dmap)
         keys, dmaps = dmap._split_overlays()
         assert keys == [(0,), (1,), (2,)]
-        assert_element_equal(dmaps[0][()], Points([0]))
-        assert_element_equal(dmaps[1][()], Points([1]))
-        assert_element_equal(dmaps[2][()], Points([2]))
+        assert_element_equal(dmaps[0][()], hv.Points([0]))
+        assert_element_equal(dmaps[1][()], hv.Points([1]))
+        assert_element_equal(dmaps[2][()], hv.Points([2]))
 
     def test_dynamic_split_overlays_on_overlay(self):
-        dmap1 = DynamicMap(lambda: Points([]))
-        dmap2 = DynamicMap(lambda: Curve([]))
+        dmap1 = hv.DynamicMap(lambda: hv.Points([]))
+        dmap2 = hv.DynamicMap(lambda: hv.Curve([]))
         dmap = dmap1 * dmap2
         initialize_dynamic(dmap)
         keys, dmaps = dmap._split_overlays()
         assert keys == [('Points', 'I'), ('Curve', 'I')]
-        assert_element_equal(dmaps[0][()], Points([]))
-        assert_element_equal(dmaps[1][()], Curve([]))
+        assert_element_equal(dmaps[0][()], hv.Points([]))
+        assert_element_equal(dmaps[1][()], hv.Curve([]))
 
     def test_dynamic_split_overlays_on_varying_order_overlay(self):
         def cb(i):
             if i%2 == 0:
-                return Curve([]) * Points([])
+                return hv.Curve([]) * hv.Points([])
             else:
-                return Points([]) * Curve([])
-        dmap = DynamicMap(cb, kdims='i').redim.range(i=(0, 4))
+                return hv.Points([]) * hv.Curve([])
+        dmap = hv.DynamicMap(cb, kdims='i').redim.range(i=(0, 4))
         initialize_dynamic(dmap)
         keys, dmaps = dmap._split_overlays()
         assert keys == [('Curve', 'I'), ('Points', 'I')]
-        assert_element_equal(dmaps[0][0], Curve([]))
-        assert_element_equal(dmaps[0][1], Curve([]))
-        assert_element_equal(dmaps[1][0], Points([]))
-        assert_element_equal(dmaps[1][1], Points([]))
+        assert_element_equal(dmaps[0][0], hv.Curve([]))
+        assert_element_equal(dmaps[0][1], hv.Curve([]))
+        assert_element_equal(dmaps[1][0], hv.Points([]))
+        assert_element_equal(dmaps[1][1], hv.Points([]))
 
     def test_dynamic_split_overlays_on_missing_item_in_overlay(self):
         def cb(i):
             if i%2 == 0:
-                return Curve([]) * Points([])
+                return hv.Curve([]) * hv.Points([])
             else:
-                return Scatter([]) * Curve([])
-        dmap = DynamicMap(cb, kdims='i').redim.range(i=(0, 4))
+                return hv.Scatter([]) * hv.Curve([])
+        dmap = hv.DynamicMap(cb, kdims='i').redim.range(i=(0, 4))
         initialize_dynamic(dmap)
         keys, dmaps = dmap._split_overlays()
         assert keys == [('Curve', 'I'), ('Points', 'I')]
-        assert_element_equal(dmaps[0][0], Curve([]))
-        assert_element_equal(dmaps[0][1], Curve([]))
-        assert_element_equal(dmaps[1][0], Points([]))
+        assert_element_equal(dmaps[0][0], hv.Curve([]))
+        assert_element_equal(dmaps[0][1], hv.Curve([]))
+        assert_element_equal(dmaps[1][0], hv.Points([]))
         with pytest.raises(KeyError):
             dmaps[1][1]
 
@@ -492,29 +489,29 @@ class TestDynamicMapMethods:
 class DynamicMapOptionsTests(CustomBackendTestCase):
 
     def test_dynamic_options(self):
-        dmap = DynamicMap(lambda X: ExampleElement(None), kdims=['X']).redim.range(X=(0,10))
+        dmap = hv.DynamicMap(lambda X: ExampleElement(None), kdims=['X']).redim.range(X=(0,10))
         dmap = dmap.options(plot_opt1='red')
-        opts = Store.lookup_options('backend_1', dmap[0], 'plot')
+        opts = hv.Store.lookup_options('backend_1', dmap[0], 'plot')
         assert opts.options == {'plot_opt1': 'red'}
 
     def test_dynamic_options_no_clone(self):
-        dmap = DynamicMap(lambda X: ExampleElement(None), kdims=['X']).redim.range(X=(0,10))
+        dmap = hv.DynamicMap(lambda X: ExampleElement(None), kdims=['X']).redim.range(X=(0,10))
         dmap.options(plot_opt1='red', clone=False)
-        opts = Store.lookup_options('backend_1', dmap[0], 'plot')
+        opts = hv.Store.lookup_options('backend_1', dmap[0], 'plot')
         assert opts.options == {'plot_opt1': 'red'}
 
     def test_dynamic_opts_link_inputs(self):
         stream = LinkedStream()
-        inputs = [DynamicMap(lambda: None, streams=[stream])]
-        dmap = DynamicMap(Callable(lambda X: ExampleElement(None), inputs=inputs),
+        inputs = [hv.DynamicMap(lambda: None, streams=[stream])]
+        dmap = hv.DynamicMap(hv.Callable(lambda X: ExampleElement(None), inputs=inputs),
                           kdims=['X']).redim.range(X=(0,10))
         styled_dmap = dmap.options(plot_opt1='red', clone=False)
-        opts = Store.lookup_options('backend_1', dmap[0], 'plot')
+        opts = hv.Store.lookup_options('backend_1', dmap[0], 'plot')
         assert opts.options == {'plot_opt1': 'red'}
         assert styled_dmap is dmap
         assert dmap.callback.link_inputs
         unstyled_dmap = dmap.callback.inputs[0].callback.inputs[0]
-        opts = Store.lookup_options('backend_1', unstyled_dmap[0], 'plot')
+        opts = hv.Store.lookup_options('backend_1', unstyled_dmap[0], 'plot')
         assert opts.options == {}
         original_dmap = unstyled_dmap.callback.inputs[0]
         assert stream is original_dmap.streams[0]
@@ -523,46 +520,46 @@ class DynamicMapOptionsTests(CustomBackendTestCase):
 class TestDynamicMapUnboundedProperty:
 
     def test_callable_bounded_init(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap=hv.DynamicMap(fn, kdims=[hv.Dimension('dim', range=(0,10))])
         assert dmap.unbounded == []
 
     def test_callable_bounded_clone(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap=hv.DynamicMap(fn, kdims=[hv.Dimension('dim', range=(0,10))])
         assert_element_equal(dmap, dmap.clone())
         assert dmap.unbounded == []
 
     def test_sampled_unbounded_init(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn, kdims=['i'])
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap=hv.DynamicMap(fn, kdims=['i'])
         assert dmap.unbounded == ['i']
 
     def test_sampled_unbounded_resample(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn, kdims=['i'])
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap=hv.DynamicMap(fn, kdims=['i'])
         assert dmap[{0, 1, 2}].keys() == [0, 1, 2]
         assert dmap.unbounded == ['i']
 
     def test_mixed_kdim_streams_unbounded(self):
-        dmap=DynamicMap(lambda x,y,z: x+y, kdims=['z'], streams=[XY()])
+        dmap=hv.DynamicMap(lambda x,y,z: x+y, kdims=['z'], streams=[XY()])
         assert dmap.unbounded == ['z']
 
     def test_mixed_kdim_streams_bounded_redim(self):
-        dmap=DynamicMap(lambda x,y,z: x+y, kdims=['z'], streams=[XY()])
+        dmap=hv.DynamicMap(lambda x,y,z: x+y, kdims=['z'], streams=[XY()])
         assert dmap.redim.range(z=(-0.5,0.5)).unbounded == []
 
 
 class TestDynamicMapCurrentKeyProperty:
 
     def test_current_key_None_on_init(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap = hv.DynamicMap(fn, kdims=[hv.Dimension('dim', range=(0,10))])
         assert dmap.current_key is None
 
     def test_current_key_one_dimension(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap=hv.DynamicMap(fn, kdims=[hv.Dimension('dim', range=(0,10))])
         dmap[0]
         assert dmap.current_key == 0
         dmap[1]
@@ -572,8 +569,8 @@ class TestDynamicMapCurrentKeyProperty:
         assert dmap.current_key != dmap.last_key
 
     def test_current_key_multiple_dimensions(self):
-        fn = lambda i, j: Curve([i, j])
-        dmap=DynamicMap(fn, kdims=[Dimension('i', range=(0,5)), Dimension('j', range=(0,5))])
+        fn = lambda i, j: hv.Curve([i, j])
+        dmap=hv.DynamicMap(fn, kdims=[hv.Dimension('i', range=(0,5)), hv.Dimension('j', range=(0,5))])
         dmap[0, 2]
         assert dmap.current_key == (0, 2)
         dmap[5, 5]
@@ -588,7 +585,7 @@ class TestDynamicTransferStreams:
     def setup_method(self):
         self.dimstream = PointerX(x=0)
         self.stream = PointerY(y=0)
-        self.dmap = DynamicMap(lambda x, y, z: Curve([x, y, z]),
+        self.dmap = hv.DynamicMap(lambda x, y, z: hv.Curve([x, y, z]),
                                kdims=['x', 'z'], streams=[self.stream, self.dimstream])
 
     def test_dynamic_redim_inherits_streams(self):
@@ -600,11 +597,11 @@ class TestDynamicTransferStreams:
         assert relabelled.streams == self.dmap.streams
 
     def test_dynamic_map_inherits_streams(self):
-        mapped = self.dmap.map(lambda x: x, Curve)
+        mapped = self.dmap.map(lambda x: x, hv.Curve)
         assert mapped.streams == self.dmap.streams
 
     def test_dynamic_select_inherits_streams(self):
-        selected = self.dmap.select(Curve, x=(0, 5))
+        selected = self.dmap.select(hv.Curve, x=(0, 5))
         assert selected.streams == self.dmap.streams
 
     def test_dynamic_hist_inherits_streams(self):
@@ -649,56 +646,56 @@ class TestDynamicTransferStreams:
 class DynamicTestOperation:
 
     def test_dynamic_operation(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn, kdims=['i'])
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap=hv.DynamicMap(fn, kdims=['i'])
         dmap_with_fn = Dynamic(dmap, operation=lambda x: x.clone(x.data*2))
-        assert_element_equal(dmap_with_fn[5], Image(sine_array(0,5)*2))
+        assert_element_equal(dmap_with_fn[5], hv.Image(sine_array(0,5)*2))
 
     def test_dynamic_operation_on_hmap(self):
-        hmap = HoloMap({i: Image(sine_array(0,i)) for i in range(10)})
+        hmap = hv.HoloMap({i: hv.Image(sine_array(0,i)) for i in range(10)})
         dmap = Dynamic(hmap, operation=lambda x: x)
         assert dmap.kdims[0].name == hmap.kdims[0].name
         assert dmap.kdims[0].values == hmap.keys()
 
     def test_dynamic_operation_link_inputs_not_transferred_on_clone(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn, kdims=['i'])
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap=hv.DynamicMap(fn, kdims=['i'])
         dmap_with_fn = Dynamic(dmap, link_inputs=False, operation=lambda x: x.clone(x.data*2))
         assert dmap_with_fn.clone().callback.link_inputs
 
     def test_dynamic_operation_on_element(self):
-        img = Image(sine_array(0,5))
+        img = hv.Image(sine_array(0,5))
         posxy = PointerXY(x=2, y=1)
         dmap_with_fn = Dynamic(img, operation=lambda obj, x, y: obj.clone(obj.data*x+y),
                                streams=[posxy])
         element = dmap_with_fn[()]
-        assert_element_equal(element, Image(sine_array(0,5)*2+1))
+        assert_element_equal(element, hv.Image(sine_array(0,5)*2+1))
         assert dmap_with_fn.streams == [posxy]
 
     def test_dynamic_operation_on_element_dict(self):
-        img = Image(sine_array(0,5))
+        img = hv.Image(sine_array(0,5))
         posxy = PointerXY(x=3, y=1)
         dmap_with_fn = Dynamic(img, operation=lambda obj, x, y: obj.clone(obj.data*x+y),
                                streams=dict(x=posxy.param.x, y=posxy.param.y))
         element = dmap_with_fn[()]
-        assert_element_equal(element, Image(sine_array(0,5)*3+1))
+        assert_element_equal(element, hv.Image(sine_array(0,5)*3+1))
 
     def test_dynamic_operation_with_kwargs(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn, kdims=['i'])
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap=hv.DynamicMap(fn, kdims=['i'])
         def fn(x, multiplier=2):
             return x.clone(x.data*multiplier)
         dmap_with_fn = Dynamic(dmap, operation=fn, kwargs=dict(multiplier=3))
-        assert_element_equal(dmap_with_fn[5], Image(sine_array(0,5)*3))
+        assert_element_equal(dmap_with_fn[5], hv.Image(sine_array(0,5)*3))
 
     def test_dynamic_operation_init_renamed_stream_params(self):
-        img = Image(sine_array(0,5))
+        img = hv.Image(sine_array(0,5))
         stream = RangeX(rename={'x_range': 'bin_range'})
         histogram(img, bin_range=(0, 1), streams=[stream], dynamic=True)
         assert stream.x_range == (0, 1)
 
     def test_dynamic_operation_init_stream_params(self):
-        img = Image(sine_array(0,5))
+        img = hv.Image(sine_array(0,5))
         stream = Stream.define('TestStream', bin_range=None)()
         histogram(img, bin_range=(0, 1), streams=[stream], dynamic=True)
         assert stream.bin_range == (0, 1)
@@ -707,47 +704,47 @@ class DynamicTestOperation:
 class DynamicTestOverlay:
 
     def test_dynamic_element_overlay(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn, kdims=['i'])
-        dynamic_overlay = dmap * Image(sine_array(0,10))
-        overlaid = Image(sine_array(0,5)) * Image(sine_array(0,10))
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap=hv.DynamicMap(fn, kdims=['i'])
+        dynamic_overlay = dmap * hv.Image(sine_array(0,10))
+        overlaid = hv.Image(sine_array(0,5)) * hv.Image(sine_array(0,10))
         assert_element_equal(dynamic_overlay[5], overlaid)
 
     def test_dynamic_element_underlay(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn, kdims=['i'])
-        dynamic_overlay = Image(sine_array(0,10)) * dmap
-        overlaid = Image(sine_array(0,10)) * Image(sine_array(0,5))
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap=hv.DynamicMap(fn, kdims=['i'])
+        dynamic_overlay = hv.Image(sine_array(0,10)) * dmap
+        overlaid = hv.Image(sine_array(0,10)) * hv.Image(sine_array(0,5))
         assert_element_equal(dynamic_overlay[5], overlaid)
 
     def test_dynamic_dynamicmap_overlay(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn, kdims=['i'])
-        fn2 = lambda i: Image(sine_array(0,i*2))
-        dmap2=DynamicMap(fn2, kdims=['i'])
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap=hv.DynamicMap(fn, kdims=['i'])
+        fn2 = lambda i: hv.Image(sine_array(0,i*2))
+        dmap2=hv.DynamicMap(fn2, kdims=['i'])
         dynamic_overlay = dmap * dmap2
-        overlaid = Image(sine_array(0,5)) * Image(sine_array(0,10))
+        overlaid = hv.Image(sine_array(0,5)) * hv.Image(sine_array(0,10))
         assert_element_equal(dynamic_overlay[5], overlaid)
 
     def test_dynamic_holomap_overlay(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn, kdims=['i'])
-        hmap = HoloMap({i: Image(sine_array(0,i*2)) for i in range(10)}, kdims=['i'])
+        fn = lambda i: hv.Image(sine_array(0,i))
+        dmap = hv.DynamicMap(fn, kdims=['i'])
+        hmap = hv.HoloMap({i: hv.Image(sine_array(0,i*2)) for i in range(10)}, kdims=['i'])
         dynamic_overlay = dmap * hmap
-        overlaid = Image(sine_array(0,5)) * Image(sine_array(0,10))
+        overlaid = hv.Image(sine_array(0,5)) * hv.Image(sine_array(0,10))
         assert_element_equal(dynamic_overlay[5], overlaid)
 
     def test_dynamic_overlay_memoization(self):
         """Tests that Callable memoizes unchanged callbacks"""
         def fn(x, y):
-            return Scatter([(x, y)])
-        dmap = DynamicMap(fn, kdims=[], streams=[PointerXY()])
+            return hv.Scatter([(x, y)])
+        dmap = hv.DynamicMap(fn, kdims=[], streams=[PointerXY()])
 
         counter = [0]
         def fn2(x, y):
             counter[0] += 1
-            return Image(np.random.rand(10, 10))
-        dmap2 = DynamicMap(fn2, kdims=[], streams=[PointerXY()])
+            return hv.Image(np.random.rand(10, 10))
+        dmap2 = hv.DynamicMap(fn2, kdims=[], streams=[PointerXY()])
 
         overlaid = dmap * dmap2
         overlay = overlaid[()]
@@ -763,18 +760,18 @@ class DynamicTestOverlay:
     def test_dynamic_event_renaming_valid(self):
 
         def fn(x1, y1):
-            return Scatter([(x1, y1)])
+            return hv.Scatter([(x1, y1)])
 
         xy = PointerXY(rename={'x':'x1','y':'y1'})
-        dmap = DynamicMap(fn, kdims=[], streams=[xy])
+        dmap = hv.DynamicMap(fn, kdims=[], streams=[xy])
         dmap.event(x1=1, y1=2)
 
     def test_dynamic_event_renaming_invalid(self):
         def fn(x1, y1):
-            return Scatter([(x1, y1)])
+            return hv.Scatter([(x1, y1)])
 
         xy = PointerXY(rename={'x':'x1','y':'y1'})
-        dmap = DynamicMap(fn, kdims=[], streams=[xy])
+        dmap = hv.DynamicMap(fn, kdims=[], streams=[xy])
 
         regexp = '(.+?)do not correspond to stream parameters'
         with pytest.raises(KeyError, match=regexp):
@@ -784,16 +781,16 @@ class DynamicTestOverlay:
 class TestDynamicCallableMemoize:
 
     def test_dynamic_keydim_not_memoize(self):
-        dmap = DynamicMap(lambda x: Curve([(0, x)]), kdims=['x'])
-        assert_element_equal(dmap[0], Curve([(0, 0)]))
-        assert_element_equal(dmap[1], Curve([(0, 1)]))
+        dmap = hv.DynamicMap(lambda x: hv.Curve([(0, x)]), kdims=['x'])
+        assert_element_equal(dmap[0], hv.Curve([(0, 0)]))
+        assert_element_equal(dmap[1], hv.Curve([(0, 1)]))
 
     def test_dynamic_keydim_memoize(self):
-        dmap = DynamicMap(lambda x: Curve([(0, x)]), kdims=['x'])
+        dmap = hv.DynamicMap(lambda x: hv.Curve([(0, x)]), kdims=['x'])
         assert dmap[0] is dmap[0]
 
     def test_dynamic_keydim_memoize_disable(self):
-        dmap = DynamicMap(Callable(lambda x: Curve([(0, x)]), memoize=False), kdims=['x'])
+        dmap = hv.DynamicMap(hv.Callable(lambda x: hv.Curve([(0, x)]), memoize=False), kdims=['x'])
         first = dmap[0]
         del dmap.data[(0,)]
         second = dmap[0]
@@ -804,21 +801,21 @@ class TestDynamicCallableMemoize:
         history = deque(maxlen=10)
         def history_callback(x):
             history.append(x)
-            return Curve(list(history))
+            return hv.Curve(list(history))
 
         x = PointerX()
-        dmap = DynamicMap(history_callback, kdims=[], streams=[x])
+        dmap = hv.DynamicMap(history_callback, kdims=[], streams=[x])
 
         # Add stream subscriber mocking plot
         x.add_subscriber(lambda **kwargs: dmap[()])
 
         x.event(x=1)
         x.event(x=1)
-        assert_element_equal(dmap[()], Curve([1]))
+        assert_element_equal(dmap[()], hv.Curve([1]))
 
         x.event(x=2)
         x.event(x=2)
-        assert_element_equal(dmap[()], Curve([1, 2]))
+        assert_element_equal(dmap[()], hv.Curve([1, 2]))
 
 
     def test_dynamic_callable_disable_callable_memoize(self):
@@ -827,30 +824,30 @@ class TestDynamicCallableMemoize:
         history = deque(maxlen=10)
         def history_callback(x):
             history.append(x)
-            return Curve(list(history))
+            return hv.Curve(list(history))
 
         x = PointerX()
-        callable_obj = Callable(history_callback, memoize=False)
-        dmap = DynamicMap(callable_obj, kdims=[], streams=[x])
+        callable_obj = hv.Callable(history_callback, memoize=False)
+        dmap = hv.DynamicMap(callable_obj, kdims=[], streams=[x])
 
         # Add stream subscriber mocking plot
         x.add_subscriber(lambda **kwargs: dmap[()])
 
         x.event(x=1)
         x.event(x=1)
-        assert_element_equal(dmap[()], Curve([1, 1, 1]))
+        assert_element_equal(dmap[()], hv.Curve([1, 1, 1]))
 
         x.event(x=2)
         x.event(x=2)
-        assert_element_equal(dmap[()], Curve([1, 1, 1, 2, 2, 2]))
+        assert_element_equal(dmap[()], hv.Curve([1, 1, 1, 2, 2, 2]))
 
 
 class TestDynamicMapRX:
 
     def test_dynamic_rx(self):
         freq = param.rx(1)
-        rx_curve = param.rx(sine_array)(0, freq).rx.pipe(Curve)
-        dmap = DynamicMap(rx_curve)
+        rx_curve = param.rx(sine_array)(0, freq).rx.pipe(hv.Curve)
+        dmap = hv.DynamicMap(rx_curve)
         assert len(dmap.streams) == 1
         pstream = dmap.streams[0]
         assert isinstance(pstream, Params)
@@ -858,9 +855,9 @@ class TestDynamicMapRX:
         fn_param, freq_param = pstream.parameters
         assert getattr(fn_param.owner, fn_param.name) == sine_array
         assert getattr(freq_param.owner, freq_param.name) == 1
-        assert_element_equal(dmap[()], Curve(sine_array(0, 1)))
+        assert_element_equal(dmap[()], hv.Curve(sine_array(0, 1)))
         freq.rx.value = 2
-        assert_element_equal(dmap[()], Curve(sine_array(0, 2)))
+        assert_element_equal(dmap[()], hv.Curve(sine_array(0, 2)))
 
 
 class TestStreamSubscribersAddandClear:
@@ -913,21 +910,21 @@ class TestDynamicStreamReset:
         def history_callback(x):
             if x is not None:
                 history.append(x)
-            return Curve(list(history))
+            return hv.Curve(list(history))
 
         x = PointerX(transient=True)
-        dmap = DynamicMap(history_callback, kdims=[], streams=[x])
+        dmap = hv.DynamicMap(history_callback, kdims=[], streams=[x])
 
         # Add stream subscriber mocking plot
         x.add_subscriber(lambda **kwargs: dmap[()])
 
         x.event(x=1)
         x.event(x=1)
-        assert_element_equal(dmap[()], Curve([1, 1]))
+        assert_element_equal(dmap[()], hv.Curve([1, 1]))
 
         x.event(x=2)
         x.event(x=2)
-        assert_element_equal(dmap[()], Curve([1, 1, 2, 2]))
+        assert_element_equal(dmap[()], hv.Curve([1, 1, 2, 2]))
 
     def test_dynamic_stream_transients(self):
         # Ensure Stream reset option resets streams to default value
@@ -941,14 +938,14 @@ class TestDynamicStreamReset:
             if y is None:
                 history_callback.yresets += 1
 
-            return Curve(list(history))
+            return hv.Curve(list(history))
 
         history_callback.xresets = 0
         history_callback.yresets = 0
 
         x = PointerX(transient=True)
         y = PointerY(transient=True)
-        dmap = DynamicMap(history_callback, kdims=[], streams=[x, y])
+        dmap = hv.DynamicMap(history_callback, kdims=[], streams=[x, y])
 
         # Add stream subscriber mocking plot
         x.add_subscriber(lambda **kwargs: dmap[()])
@@ -970,7 +967,7 @@ class TestDynamicStreamReset:
         def history_callback(x):
             if x is not None:
                 history.append(x)
-            return Curve(list(history))
+            return hv.Curve(list(history))
 
         class NoMemoize(PointerX):
             x = param.ClassSelector(class_=pointer_types, default=None, constant=True)
@@ -978,18 +975,18 @@ class TestDynamicStreamReset:
             def hashkey(self): return {'hash': uuid.uuid4().hex}
 
         x = NoMemoize()
-        dmap = DynamicMap(history_callback, kdims=[], streams=[x])
+        dmap = hv.DynamicMap(history_callback, kdims=[], streams=[x])
 
         # Add stream subscriber mocking plot
         x.add_subscriber(lambda **kwargs: dmap[()])
 
         x.event(x=1)
         x.event(x=1)
-        assert_element_equal(dmap[()], Curve([1, 1, 1]))
+        assert_element_equal(dmap[()], hv.Curve([1, 1, 1]))
 
         x.event(x=2)
         x.event(x=2)
-        assert_element_equal(dmap[()], Curve([1, 1, 1, 2, 2, 2]))
+        assert_element_equal(dmap[()], hv.Curve([1, 1, 1, 2, 2, 2]))
 
 
 
@@ -1001,20 +998,20 @@ class TestPeriodicStreamUpdate:
                 self.count = 0
             def __call__(self):
                 self.count += 1
-                return Curve([1,2,3])
+                return hv.Curve([1,2,3])
 
         next_stream = Stream.define('Next')()
         counter = Counter()
-        dmap = DynamicMap(counter, streams=[next_stream])
+        dmap = hv.DynamicMap(counter, streams=[next_stream])
         # Add stream subscriber mocking plot
         next_stream.add_subscriber(lambda **kwargs: dmap[()])
         dmap.periodic(0.01, 100)
         assert counter.count == 100
 
     def test_periodic_param_fn_blocking(self):
-        def callback(x): return Curve([1,2,3])
+        def callback(x): return hv.Curve([1,2,3])
         xval = Stream.define('x',x=0)()
-        dmap = DynamicMap(callback, streams=[xval])
+        dmap = hv.DynamicMap(callback, streams=[xval])
         # Add stream subscriber mocking plot
         xval.add_subscriber(lambda **kwargs: dmap[()])
         dmap.periodic(0.01, 100, param_fn=lambda i: {'x':i})
@@ -1022,9 +1019,9 @@ class TestPeriodicStreamUpdate:
 
     @pytest.mark.flaky(reruns=3)
     def test_periodic_param_fn_non_blocking(self):
-        def callback(x): return Curve([1,2,3])
+        def callback(x): return hv.Curve([1,2,3])
         xval = Stream.define('x',x=0)()
-        dmap = DynamicMap(callback, streams=[xval])
+        dmap = hv.DynamicMap(callback, streams=[xval])
         # Add stream subscriber mocking plot
         xval.add_subscriber(lambda **kwargs: dmap[()])
 
@@ -1038,9 +1035,9 @@ class TestPeriodicStreamUpdate:
 
     def test_periodic_param_fn_blocking_period(self):
         def callback(x):
-            return Curve([1,2,3])
+            return hv.Curve([1,2,3])
         xval = Stream.define('x',x=0)()
-        dmap = DynamicMap(callback, streams=[xval])
+        dmap = hv.DynamicMap(callback, streams=[xval])
         # Add stream subscriber mocking plot
         xval.add_subscriber(lambda **kwargs: dmap[()])
         start = time.time()
@@ -1051,9 +1048,9 @@ class TestPeriodicStreamUpdate:
 
     def test_periodic_param_fn_blocking_timeout(self):
         def callback(x):
-            return Curve([1,2,3])
+            return hv.Curve([1,2,3])
         xval = Stream.define('x',x=0)()
-        dmap = DynamicMap(callback, streams=[xval])
+        dmap = hv.DynamicMap(callback, streams=[xval])
         # Add stream subscriber mocking plot
         xval.add_subscriber(lambda **kwargs: dmap[()])
         start = time.time()
@@ -1066,113 +1063,113 @@ class TestDynamicCollate(LoggingComparison):
 
     def test_dynamic_collate_layout(self):
         def callback():
-            return Image(np.array([[0, 1], [2, 3]])) + Text(0, 0, 'Test')
-        dmap = DynamicMap(callback, kdims=[])
+            return hv.Image(np.array([[0, 1], [2, 3]])) + hv.Text(0, 0, 'Test')
+        dmap = hv.DynamicMap(callback, kdims=[])
         layout = dmap.collate()
         assert list(layout.keys()) == [('Image', 'I'), ('Text', 'I')]
-        assert_element_equal(layout.Image.I[()], Image(np.array([[0, 1], [2, 3]])))
+        assert_element_equal(layout.Image.I[()], hv.Image(np.array([[0, 1], [2, 3]])))
 
     def test_dynamic_collate_layout_raise_no_remapping_error(self):
         def callback(x, y):
-            return Image(np.array([[0, 1], [2, 3]])) + Text(0, 0, 'Test')
+            return hv.Image(np.array([[0, 1], [2, 3]])) + hv.Text(0, 0, 'Test')
         stream = PointerXY()
-        cb_callable = Callable(callback)
-        dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
+        cb_callable = hv.Callable(callback)
+        dmap = hv.DynamicMap(cb_callable, kdims=[], streams=[stream])
         with pytest.raises(ValueError, match='The following streams are set to be automatically linked'):
             dmap.collate()
 
     def test_dynamic_collate_layout_raise_ambiguous_remapping_error(self):
         def callback(x, y):
-            return Image(np.array([[0, 1], [2, 3]])) + Image(np.array([[0, 1], [2, 3]]))
+            return hv.Image(np.array([[0, 1], [2, 3]])) + hv.Image(np.array([[0, 1], [2, 3]]))
         stream = PointerXY()
-        cb_callable = Callable(callback, stream_mapping={'Image': [stream]})
-        dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
+        cb_callable = hv.Callable(callback, stream_mapping={'Image': [stream]})
+        dmap = hv.DynamicMap(cb_callable, kdims=[], streams=[stream])
         with pytest.raises(ValueError, match='The stream_mapping supplied on the Callable is ambiguous'):
             dmap.collate()
 
     def test_dynamic_collate_layout_with_integer_stream_mapping(self):
         def callback(x, y):
-            return Image(np.array([[0, 1], [2, 3]])) + Text(0, 0, 'Test')
+            return hv.Image(np.array([[0, 1], [2, 3]])) + hv.Text(0, 0, 'Test')
         stream = PointerXY()
-        cb_callable = Callable(callback, stream_mapping={0: [stream]})
-        dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
+        cb_callable = hv.Callable(callback, stream_mapping={0: [stream]})
+        dmap = hv.DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
         assert list(layout.keys()) == [('Image', 'I'), ('Text', 'I')]
         assert stream.source is layout.Image.I
 
     def test_dynamic_collate_layout_with_spec_stream_mapping(self):
         def callback(x, y):
-            return Image(np.array([[0, 1], [2, 3]])) + Text(0, 0, 'Test')
+            return hv.Image(np.array([[0, 1], [2, 3]])) + hv.Text(0, 0, 'Test')
         stream = PointerXY()
-        cb_callable = Callable(callback, stream_mapping={'Image': [stream]})
-        dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
+        cb_callable = hv.Callable(callback, stream_mapping={'Image': [stream]})
+        dmap = hv.DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
         assert list(layout.keys()) == [('Image', 'I'), ('Text', 'I')]
         assert stream.source is layout.Image.I
 
     def test_dynamic_collate_ndlayout(self):
         def callback():
-            return NdLayout({i: Image(np.array([[i, 1], [2, 3]])) for i in range(1, 3)})
-        dmap = DynamicMap(callback, kdims=[])
+            return hv.NdLayout({i: hv.Image(np.array([[i, 1], [2, 3]])) for i in range(1, 3)})
+        dmap = hv.DynamicMap(callback, kdims=[])
         layout = dmap.collate()
         assert list(layout.keys()) == [1, 2]
-        assert_element_equal(layout[1][()], Image(np.array([[1, 1], [2, 3]])))
+        assert_element_equal(layout[1][()], hv.Image(np.array([[1, 1], [2, 3]])))
 
     def test_dynamic_collate_ndlayout_with_integer_stream_mapping(self):
         def callback(x, y):
-            return NdLayout({i: Image(np.array([[i, 1], [2, 3]])) for i in range(1, 3)})
+            return hv.NdLayout({i: hv.Image(np.array([[i, 1], [2, 3]])) for i in range(1, 3)})
         stream = PointerXY()
-        cb_callable = Callable(callback, stream_mapping={0: [stream]})
-        dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
+        cb_callable = hv.Callable(callback, stream_mapping={0: [stream]})
+        dmap = hv.DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
         assert list(layout.keys()) == [1, 2]
         assert stream.source is layout[1]
 
     def test_dynamic_collate_ndlayout_with_key_stream_mapping(self):
         def callback(x, y):
-            return NdLayout({i: Image(np.array([[i, 1], [2, 3]])) for i in range(1, 3)})
+            return hv.NdLayout({i: hv.Image(np.array([[i, 1], [2, 3]])) for i in range(1, 3)})
         stream = PointerXY()
-        cb_callable = Callable(callback, stream_mapping={(1,): [stream]})
-        dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
+        cb_callable = hv.Callable(callback, stream_mapping={(1,): [stream]})
+        dmap = hv.DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
         assert list(layout.keys()) == [1, 2]
         assert stream.source is layout[1]
 
     def test_dynamic_collate_grid(self):
         def callback():
-            return GridSpace({(i, j): Image(np.array([[i, j], [2, 3]]))
+            return hv.GridSpace({(i, j): hv.Image(np.array([[i, j], [2, 3]]))
                               for i in range(1, 3) for j in range(1, 3)})
-        dmap = DynamicMap(callback, kdims=[])
+        dmap = hv.DynamicMap(callback, kdims=[])
         grid = dmap.collate()
         assert list(grid.keys()) == [(i, j,) for i in range(1, 3) for j in range(1, 3)]
-        assert_element_equal(grid[(0, 1)][()], Image(np.array([[1, 1], [2, 3]])))
+        assert_element_equal(grid[(0, 1)][()], hv.Image(np.array([[1, 1], [2, 3]])))
 
     def test_dynamic_collate_grid_with_integer_stream_mapping(self):
         def callback():
-            return GridSpace({(i, j): Image(np.array([[i, j], [2, 3]]))
+            return hv.GridSpace({(i, j): hv.Image(np.array([[i, j], [2, 3]]))
                               for i in range(1, 3) for j in range(1, 3)})
         stream = PointerXY()
-        cb_callable = Callable(callback, stream_mapping={1: [stream]})
-        dmap = DynamicMap(cb_callable, kdims=[])
+        cb_callable = hv.Callable(callback, stream_mapping={1: [stream]})
+        dmap = hv.DynamicMap(cb_callable, kdims=[])
         grid = dmap.collate()
         assert list(grid.keys()) == [(i, j,) for i in range(1, 3) for j in range(1, 3)]
         assert_element_equal(stream.source, grid[(1, 2)])
 
     def test_dynamic_collate_grid_with_key_stream_mapping(self):
         def callback():
-            return GridSpace({(i, j): Image(np.array([[i, j], [2, 3]]))
+            return hv.GridSpace({(i, j): hv.Image(np.array([[i, j], [2, 3]]))
                               for i in range(1, 3) for j in range(1, 3)})
         stream = PointerXY()
-        cb_callable = Callable(callback, stream_mapping={(1, 2): [stream]})
-        dmap = DynamicMap(cb_callable, kdims=[])
+        cb_callable = hv.Callable(callback, stream_mapping={(1, 2): [stream]})
+        dmap = hv.DynamicMap(cb_callable, kdims=[])
         grid = dmap.collate()
         assert list(grid.keys()) == [(i, j,) for i in range(1, 3) for j in range(1, 3)]
         assert_element_equal(stream.source, grid[(1, 2)])
 
     def test_dynamic_collate_layout_with_changing_label(self):
         def callback(i):
-            return Layout([Curve([], label=str(j)) for j in range(i, i+2)])
-        dmap = DynamicMap(callback, kdims=['i']).redim.range(i=(0, 10))
+            return hv.Layout([hv.Curve([], label=str(j)) for j in range(i, i+2)])
+        dmap = hv.DynamicMap(callback, kdims=['i']).redim.range(i=(0, 10))
         layout = dmap.collate()
         dmap1, dmap2 = layout.values()
         el1, el2 = dmap1[2], dmap2[2]
@@ -1181,8 +1178,8 @@ class TestDynamicCollate(LoggingComparison):
 
     def test_dynamic_collate_ndlayout_with_changing_keys(self):
         def callback(i):
-            return NdLayout({j: Curve([], label=str(j)) for j in range(i, i+2)})
-        dmap = DynamicMap(callback, kdims=['i']).redim.range(i=(0, 10))
+            return hv.NdLayout({j: hv.Curve([], label=str(j)) for j in range(i, i+2)})
+        dmap = hv.DynamicMap(callback, kdims=['i']).redim.range(i=(0, 10))
         layout = dmap.collate()
         dmap1, dmap2 = layout.values()
         el1, el2 = dmap1[2], dmap2[2]
@@ -1191,8 +1188,8 @@ class TestDynamicCollate(LoggingComparison):
 
     def test_dynamic_collate_gridspace_with_changing_keys(self):
         def callback(i):
-            return GridSpace({j: Curve([], label=str(j)) for j in range(i, i+2)}, 'X')
-        dmap = DynamicMap(callback, kdims=['i']).redim.range(i=(0, 10))
+            return hv.GridSpace({j: hv.Curve([], label=str(j)) for j in range(i, i+2)}, 'X')
+        dmap = hv.DynamicMap(callback, kdims=['i']).redim.range(i=(0, 10))
         layout = dmap.collate()
         dmap1, dmap2 = layout.values()
         el1, el2 = dmap1[2], dmap2[2]
@@ -1201,8 +1198,8 @@ class TestDynamicCollate(LoggingComparison):
 
     def test_dynamic_collate_gridspace_with_changing_items_raises(self):
         def callback(i):
-            return GridSpace({j: Curve([], label=str(j)) for j in range(i)}, 'X')
-        dmap = DynamicMap(callback, kdims=['i']).redim.range(i=(2, 10))
+            return hv.GridSpace({j: hv.Curve([], label=str(j)) for j in range(i)}, 'X')
+        dmap = hv.DynamicMap(callback, kdims=['i']).redim.range(i=(2, 10))
         layout = dmap.collate()
         dmap1, _dmap2 = layout.values()
         err = 'Collated DynamicMaps must return GridSpace with consistent number of items.'
@@ -1212,9 +1209,9 @@ class TestDynamicCollate(LoggingComparison):
 
     def test_dynamic_collate_gridspace_with_changing_item_types_raises(self):
         def callback(i):
-            eltype = Image if i%2 else Curve
-            return GridSpace({j: eltype([], label=str(j)) for j in range(i, i+2)}, 'X')
-        dmap = DynamicMap(callback, kdims=['i']).redim.range(i=(2, 10))
+            eltype = hv.Image if i%2 else hv.Curve
+            return hv.GridSpace({j: eltype([], label=str(j)) for j in range(i, i+2)}, 'X')
+        dmap = hv.DynamicMap(callback, kdims=['i']).redim.range(i=(2, 10))
         layout = dmap.collate()
         dmap1, _dmap2 = layout.values()
         err = ('The objects in a GridSpace returned by a DynamicMap must '

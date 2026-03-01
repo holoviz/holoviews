@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from holoviews import Curve, Dataset, Dimension, Distribution, Scatter
+import holoviews as hv
 from holoviews.core import Apply, Redim
 from holoviews.operation import function, histogram
 from holoviews.testing import assert_element_equal
@@ -29,41 +29,41 @@ class DatasetPropertyTestCase:
             'd': [-1, -2, -3, -4, -5, -6, -7, -8]
         })
 
-        self.ds = Dataset(
+        self.ds = hv.Dataset(
             self.df,
             kdims=[
-                Dimension('a', label="The a Column"),
-                Dimension('b', label="The b Column"),
-                Dimension('c', label="The c Column"),
-                Dimension('d', label="The d Column"),
+                hv.Dimension('a', label="The a Column"),
+                hv.Dimension('b', label="The b Column"),
+                hv.Dimension('c', label="The c Column"),
+                hv.Dimension('d', label="The d Column"),
             ]
         )
 
-        self.ds2 = Dataset(
+        self.ds2 = hv.Dataset(
             self.df.iloc[2:],
             kdims=[
-                Dimension('a', label="The a Column"),
-                Dimension('b', label="The b Column"),
-                Dimension('c', label="The c Column"),
-                Dimension('d', label="The d Column"),
+                hv.Dimension('a', label="The a Column"),
+                hv.Dimension('b', label="The b Column"),
+                hv.Dimension('c', label="The c Column"),
+                hv.Dimension('d', label="The d Column"),
             ]
         )
 
 
 class ConstructorTestCase(DatasetPropertyTestCase):
     def test_constructors_dataset(self):
-        ds = Dataset(self.df)
+        ds = hv.Dataset(self.df)
         assert ds is ds.dataset
 
         # Check pipeline
         ops = ds.pipeline.operations
         assert len(ops) == 1
-        assert ops[0].output_type is Dataset
+        assert ops[0].output_type is hv.Dataset
         assert_element_equal(ds, ds.pipeline(ds.dataset))
 
     def test_constructor_curve(self):
-        element = Curve(self.df)
-        expected = Dataset(
+        element = hv.Curve(self.df)
+        expected = hv.Dataset(
             self.df,
             kdims=self.df.columns[0],
             vdims=self.df.columns[1:].tolist(),
@@ -73,28 +73,28 @@ class ConstructorTestCase(DatasetPropertyTestCase):
         # Check pipeline
         pipeline = element.pipeline
         assert len(pipeline.operations) == 1
-        assert pipeline.operations[0].output_type is Curve
+        assert pipeline.operations[0].output_type is hv.Curve
         assert_element_equal(element, element.pipeline(element.dataset))
 
 
 class ToTestCase(DatasetPropertyTestCase):
 
     def test_to_element(self):
-        curve = self.ds.to(Curve, 'a', 'b', groupby=[])
-        curve2 = self.ds2.to(Curve, 'a', 'b', groupby=[])
+        curve = self.ds.to(hv.Curve, 'a', 'b', groupby=[])
+        curve2 = self.ds2.to(hv.Curve, 'a', 'b', groupby=[])
         with pytest.raises(AssertionError):
             assert_element_equal(curve, curve2)
 
         assert_element_equal(curve.dataset, self.ds)
 
-        scatter = curve.to(Scatter)
+        scatter = curve.to(hv.Scatter)
         assert_element_equal(scatter.dataset, self.ds)
 
         # Check pipeline
         ops = curve.pipeline.operations
         assert len(ops) == 2
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
 
         # Execute pipeline
         assert_element_equal(curve.pipeline(curve.dataset), curve)
@@ -103,7 +103,7 @@ class ToTestCase(DatasetPropertyTestCase):
         )
 
     def test_to_holomap(self):
-        curve_hmap = self.ds.to(Curve, 'a', 'b', groupby=['c'])
+        curve_hmap = self.ds.to(hv.Curve, 'a', 'b', groupby=['c'])
 
         # Check HoloMap element datasets
         for v in self.df.c.drop_duplicates():
@@ -121,17 +121,17 @@ class ToTestCase(DatasetPropertyTestCase):
     def test_to_holomap_dask(self):
         with dask.config.set({"dataframe.convert-string": False}):
             ddf = dd.from_pandas(self.df, npartitions=2)
-        dds = Dataset(
+        dds = hv.Dataset(
             ddf,
             kdims=[
-                Dimension('a', label="The a Column"),
-                Dimension('b', label="The b Column"),
-                Dimension('c', label="The c Column"),
-                Dimension('d', label="The d Column"),
+                hv.Dimension('a', label="The a Column"),
+                hv.Dimension('b', label="The b Column"),
+                hv.Dimension('c', label="The c Column"),
+                hv.Dimension('d', label="The d Column"),
             ]
         )
 
-        curve_hmap = dds.to(Curve, 'a', 'b', groupby=['c'])
+        curve_hmap = dds.to(hv.Curve, 'a', 'b', groupby=['c'])
 
         # Check HoloMap element datasets
         for v in self.df.c.drop_duplicates():
@@ -187,7 +187,7 @@ class ReindexTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_ab.pipeline.operations
         assert len(ops) == 2
-        assert ops[0].output_type is Dataset
+        assert ops[0].output_type is hv.Dataset
         assert ops[1].method_name == 'reindex'
         assert ops[1].args == []
         assert ops[1].kwargs == dict(kdims=['a'], vdims=['b'])
@@ -214,7 +214,7 @@ class ReindexTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_ab.pipeline.operations
         assert len(ops) == 3
-        assert ops[0].output_type is Dataset
+        assert ops[0].output_type is hv.Dataset
         assert ops[1].method_name == 'reindex'
         assert ops[1].args == []
         assert ops[1].kwargs == dict(kdims=['a'], vdims=['b', 'c'])
@@ -228,10 +228,10 @@ class ReindexTestCase(DatasetPropertyTestCase):
 
     def test_reindex_curve(self):
         curve_ba = self.ds.to(
-            Curve, 'a', 'b', groupby=[]
+            hv.Curve, 'a', 'b', groupby=[]
         ).reindex(kdims='b', vdims='a')
         curve2_ba = self.ds2.to(
-            Curve, 'a', 'b', groupby=[]
+            hv.Curve, 'a', 'b', groupby=[]
         ).reindex(kdims='b', vdims='a')
 
         with pytest.raises(AssertionError):
@@ -241,8 +241,8 @@ class ReindexTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve_ba.pipeline.operations
         assert len(ops) == 3
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
         assert ops[2].method_name == 'reindex'
         assert ops[2].args == []
         assert ops[2].kwargs == dict(kdims='b', vdims='a')
@@ -253,10 +253,10 @@ class ReindexTestCase(DatasetPropertyTestCase):
 
     def test_double_reindex_curve(self):
         curve_ba = self.ds.to(
-            Curve, 'a', ['b', 'c'], groupby=[]
+            hv.Curve, 'a', ['b', 'c'], groupby=[]
         ).reindex(kdims='a', vdims='b').reindex(kdims='b', vdims='a')
         curve2_ba = self.ds2.to(
-            Curve, 'a', ['b', 'c'], groupby=[]
+            hv.Curve, 'a', ['b', 'c'], groupby=[]
         ).reindex(kdims='a', vdims='b').reindex(kdims='b', vdims='a')
 
         with pytest.raises(AssertionError):
@@ -267,8 +267,8 @@ class ReindexTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve_ba.pipeline.operations
         assert len(ops) == 4
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
         assert ops[2].method_name == 'reindex'
         assert ops[2].args == []
         assert ops[2].kwargs == dict(kdims='a', vdims='b')
@@ -294,7 +294,7 @@ class IlocTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_iloc.pipeline.operations
         assert len(ops) == 2
-        assert ops[0].output_type is Dataset
+        assert ops[0].output_type is hv.Dataset
         assert ops[1].method_name == '_perform_getitem'
         assert ops[1].args == [[0, 2]]
         assert ops[1].kwargs == {}
@@ -316,8 +316,8 @@ class IlocTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve_iloc.pipeline.operations
         assert len(ops) == 3
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
         assert ops[2].method_name == '_perform_getitem'
         assert ops[2].args == [[0, 2]]
         assert ops[2].kwargs == {}
@@ -331,7 +331,7 @@ class NdlocTestCase(DatasetPropertyTestCase):
 
     def setup_method(self):
         super().setup_method()
-        self.ds_grid = Dataset(
+        self.ds_grid = hv.Dataset(
             (np.arange(4),
              np.arange(3),
              np.array([[1, 2, 3, 4],
@@ -341,7 +341,7 @@ class NdlocTestCase(DatasetPropertyTestCase):
             vdims='z'
         )
 
-        self.ds2_grid = Dataset(
+        self.ds2_grid = hv.Dataset(
             (np.arange(3),
              np.arange(3),
              np.array([[1, 2, 4],
@@ -367,7 +367,7 @@ class NdlocTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_grid_ndloc.pipeline.operations
         assert len(ops) == 2
-        assert ops[0].output_type is Dataset
+        assert ops[0].output_type is hv.Dataset
         assert ops[1].method_name == '_perform_getitem'
         assert ops[1].args == [(slice(0, 2, None), slice(1, 3, None),)]
         assert ops[1].kwargs == {}
@@ -395,7 +395,7 @@ class SelectTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_select.pipeline.operations
         assert len(ops) == 2
-        assert ops[0].output_type is Dataset
+        assert ops[0].output_type is hv.Dataset
         assert ops[1].method_name == 'select'
         assert ops[1].args == []
         assert ops[1].kwargs == {'b': 10}
@@ -416,8 +416,8 @@ class SelectTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve_select.pipeline.operations
         assert len(ops) == 3
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
         assert ops[2].method_name == 'select'
         assert ops[2].args == []
         assert ops[2].kwargs == {'b': 10}
@@ -445,8 +445,8 @@ class SortTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve_sorted.pipeline.operations
         assert len(ops) == 3
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
         assert ops[2].method_name == 'sort'
         assert ops[2].args == ['a']
         assert ops[2].kwargs == {}
@@ -474,8 +474,8 @@ class SampleTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve_sampled.pipeline.operations
         assert len(ops) == 3
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
         assert ops[2].method_name == 'sample'
         assert ops[2].args == [[1, 2]]
         assert ops[2].kwargs == {}
@@ -507,7 +507,7 @@ class ReduceTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_reduced.pipeline.operations
         assert len(ops) == 3
-        assert ops[0].output_type is Dataset
+        assert ops[0].output_type is hv.Dataset
         assert ops[1].method_name == 'reindex'
         assert ops[2].method_name == 'reduce'
         assert ops[2].args == ['c']
@@ -537,7 +537,7 @@ class AggregateTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_aggregated.pipeline.operations
         assert len(ops) == 3
-        assert ops[0].output_type is Dataset
+        assert ops[0].output_type is hv.Dataset
         assert ops[1].method_name == 'reindex'
         assert ops[2].method_name == 'aggregate'
         assert ops[2].args == ['b']
@@ -572,7 +572,7 @@ class GroupbyTestCase(DatasetPropertyTestCase):
             # Check pipeline
             ops = ds_group.pipeline.operations
             assert len(ops) == 4
-            assert ops[0].output_type is Dataset
+            assert ops[0].output_type is hv.Dataset
             assert ops[1].method_name == 'reindex'
             assert ops[2].method_name == 'groupby'
             assert ops[2].args == ['b']
@@ -599,7 +599,7 @@ class AddDimensionTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_dim_added.pipeline.operations
         assert len(ops) == 2
-        assert ops[0].output_type is Dataset
+        assert ops[0].output_type is hv.Dataset
         assert ops[1].method_name == 'add_dimension'
         assert ops[1].args == ['new', 1, 17]
         assert ops[1].kwargs == {}
@@ -634,7 +634,7 @@ class HistogramTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = sub_hist.pipeline.operations
         assert len(ops) == 4
-        assert ops[0].output_type is Dataset
+        assert ops[0].output_type is hv.Dataset
         assert ops[1].output_type is Apply
         assert ops[2].method_name == '__call__'
         assert isinstance(ops[2].args[0], histogram)
@@ -662,7 +662,7 @@ class HistogramTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = sub_hist.pipeline.operations
         assert len(ops) == 4
-        assert ops[0].output_type is Dataset
+        assert ops[0].output_type is hv.Dataset
         assert ops[1].output_type is Apply
         assert ops[2].method_name == '__call__'
         assert isinstance(ops[2].args[0], histogram)
@@ -680,11 +680,11 @@ class HistogramTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve.pipeline.operations
         assert len(ops) == 4
-        assert ops[0].output_type is Dataset
+        assert ops[0].output_type is hv.Dataset
         assert ops[1].output_type is Apply
         assert ops[2].method_name == '__call__'
         assert isinstance(ops[2].args[0], histogram)
-        assert ops[3].output_type is Curve
+        assert ops[3].output_type is hv.Curve
 
         # Execute pipeline
         assert_element_equal(curve.pipeline(curve.dataset), curve)
@@ -694,7 +694,7 @@ class DistributionTestCase(DatasetPropertyTestCase):
 
     def setup_method(self):
         super().setup_method()
-        self.distribution = self.ds.to(Distribution, kdims='a', groupby=[])
+        self.distribution = self.ds.to(hv.Distribution, kdims='a', groupby=[])
 
     def test_distribution_dataset(self):
         assert_element_equal(self.distribution.dataset, self.ds)
@@ -711,10 +711,10 @@ class DatashaderTestCase(DatasetPropertyTestCase):
 
     def test_rasterize_curve(self):
         img = rasterize(
-            self.ds.to(Curve, 'a', 'b', groupby=[]), dynamic=False
+            self.ds.to(hv.Curve, 'a', 'b', groupby=[]), dynamic=False
         )
         img2 = rasterize(
-            self.ds2.to(Curve, 'a', 'b', groupby=[]), dynamic=False
+            self.ds2.to(hv.Curve, 'a', 'b', groupby=[]), dynamic=False
         )
         with pytest.raises(AssertionError):
             assert_element_equal(img, img2)
@@ -725,8 +725,8 @@ class DatashaderTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = img.pipeline.operations
         assert len(ops) == 3
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
         assert isinstance(ops[2], rasterize)
 
         # Execute pipeline
@@ -735,10 +735,10 @@ class DatashaderTestCase(DatasetPropertyTestCase):
 
     def test_datashade_curve(self):
         rgb = dynspread(datashade(
-            self.ds.to(Curve, 'a', 'b', groupby=[]), dynamic=False
+            self.ds.to(hv.Curve, 'a', 'b', groupby=[]), dynamic=False
         ), dynamic=False)
         rgb2 = dynspread(datashade(
-            self.ds2.to(Curve, 'a', 'b', groupby=[]), dynamic=False
+            self.ds2.to(hv.Curve, 'a', 'b', groupby=[]), dynamic=False
         ), dynamic=False)
 
         with pytest.raises(AssertionError):
@@ -750,8 +750,8 @@ class DatashaderTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = rgb.pipeline.operations
         assert len(ops) == 4
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
         assert isinstance(ops[2], datashade)
         assert isinstance(ops[3], dynspread)
 
@@ -763,10 +763,10 @@ class DatashaderTestCase(DatasetPropertyTestCase):
 class AccessorTestCase(DatasetPropertyTestCase):
     def test_apply_curve(self):
         curve = self.ds.to.curve('a', 'b', groupby=[]).apply(
-            lambda c: Scatter(c.select(b=(20, None)).data)
+            lambda c: hv.Scatter(c.select(b=(20, None)).data)
         )
         curve2 = self.ds2.to.curve('a', 'b', groupby=[]).apply(
-            lambda c: Scatter(c.select(b=(20, None)).data)
+            lambda c: hv.Scatter(c.select(b=(20, None)).data)
         )
         with pytest.raises(AssertionError):
             assert_element_equal(curve, curve2)
@@ -774,8 +774,8 @@ class AccessorTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve.pipeline.operations
         assert len(ops) == 4
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
         assert ops[2].output_type is Apply
         assert ops[2].kwargs == {'mode': None}
         assert ops[3].method_name == '__call__'
@@ -798,8 +798,8 @@ class AccessorTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve.pipeline.operations
         assert len(ops) == 4
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
         assert ops[2].output_type is Redim
         assert ops[2].kwargs == {'mode': 'dataset'}
         assert ops[3].method_name == '__call__'

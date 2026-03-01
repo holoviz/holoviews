@@ -1,15 +1,6 @@
 import numpy as np
 
-from holoviews.element import (
-    Bounds,
-    Box,
-    HLine,
-    Path,
-    Rectangles,
-    Segments,
-    Tiles,
-    VLine,
-)
+import holoviews as hv
 from holoviews.plotting.plotly.util import PLOTLY_MAP, PLOTLY_SCATTERMAP
 from holoviews.testing import assert_data_equal
 
@@ -44,12 +35,12 @@ class TestMapboxShape(TestPlotlyPlot):
         self.x_center = sum(self.x_range) / 2.0
         self.y_range = (-3000000, 2000000)
         self.y_center = sum(self.y_range) / 2.0
-        self.lon_range, self.lat_range = Tiles.easting_northing_to_lon_lat(self.x_range, self.y_range)
-        self.lon_centers, self.lat_centers = Tiles.easting_northing_to_lon_lat(
+        self.lon_range, self.lat_range = hv.Tiles.easting_northing_to_lon_lat(self.x_range, self.y_range)
+        self.lon_centers, self.lat_centers = hv.Tiles.easting_northing_to_lon_lat(
             [self.x_center], [self.y_center]
         )
         self.lon_center, self.lat_center = self.lon_centers[0], self.lat_centers[0]
-        self.lons, self.lats = Tiles.easting_northing_to_lon_lat(self.xs, self.ys)
+        self.lons, self.lats = hv.Tiles.easting_northing_to_lon_lat(self.xs, self.ys)
 
 
 class TestVLineHLine(TestShape):
@@ -75,7 +66,7 @@ class TestVLineHLine(TestShape):
         assert shape['xref'] == 'paper'
 
     def test_single_vline(self):
-        vline = VLine(3)
+        vline = hv.VLine(3)
         state = self._get_plot_state(vline)
 
         shapes = state['layout']['shapes']
@@ -83,7 +74,7 @@ class TestVLineHLine(TestShape):
         self.assert_vline(shapes[0], 3)
 
     def test_single_hline(self):
-        hline = HLine(3)
+        hline = hv.HLine(3)
         state = self._get_plot_state(hline)
 
         shapes = state['layout']['shapes']
@@ -91,8 +82,8 @@ class TestVLineHLine(TestShape):
         self.assert_hline(shapes[0], 3)
 
     def test_vline_layout(self):
-        layout = (VLine(1) + VLine(2) +
-                  VLine(3) + VLine(4)).cols(2).opts(vspacing=0, hspacing=0)
+        layout = (hv.VLine(1) + hv.VLine(2) +
+                  hv.VLine(3) + hv.VLine(4)).cols(2).opts(vspacing=0, hspacing=0)
         state = self._get_plot_state(layout)
 
         shapes = state['layout']['shapes']
@@ -105,8 +96,8 @@ class TestVLineHLine(TestShape):
         self.assert_vline(shapes[3], 2, xref='x4', ydomain=[0.5, 1.0])
 
     def test_hline_layout(self):
-        layout = (HLine(1) + HLine(2) +
-                  HLine(3) + HLine(4)).cols(2).opts(vspacing=0, hspacing=0)
+        layout = (hv.HLine(1) + hv.HLine(2) +
+                  hv.HLine(3) + hv.HLine(4)).cols(2).opts(vspacing=0, hspacing=0)
         state = self._get_plot_state(layout)
 
         shapes = state['layout']['shapes']
@@ -119,10 +110,10 @@ class TestVLineHLine(TestShape):
         self.assert_hline(shapes[3], 2, yref='y4', xdomain=[0.5, 1.0])
 
     def test_vline_styling(self):
-        self.assert_shape_element_styling(VLine(3))
+        self.assert_shape_element_styling(hv.VLine(3))
 
     def test_hline_styling(self):
-        self.assert_shape_element_styling(HLine(3))
+        self.assert_shape_element_styling(hv.HLine(3))
 
 
 class TestPathShape(TestShape):
@@ -146,7 +137,7 @@ class TestPathShape(TestShape):
         assert shape['yref'] == yref
 
     def test_simple_path(self):
-        path = Path([(0, 0), (1, 1), (0, 1), (0, 0)])
+        path = hv.Path([(0, 0), (1, 1), (0, 1), (0, 0)])
         state = self._get_plot_state(path)
         shapes = state['layout']['shapes']
         assert len(shapes) == 1
@@ -156,7 +147,7 @@ class TestPathShape(TestShape):
 
 class TestMapboxPathShape(TestMapboxShape):
     def test_simple_path(self):
-        path = Tiles("") * Path([
+        path = hv.Tiles("") * hv.Path([
             (self.x_range[0], self.y_range[0]),
             (self.x_range[1], self.y_range[1]),
             (self.x_range[0], self.y_range[1]),
@@ -184,7 +175,7 @@ class TestMapboxPathShape(TestMapboxShape):
 class TestBounds(TestPathShape):
 
     def test_single_bounds(self):
-        bounds = Bounds((1, 2, 3, 4))
+        bounds = hv.Bounds((1, 2, 3, 4))
 
         state = self._get_plot_state(bounds)
 
@@ -193,10 +184,10 @@ class TestBounds(TestPathShape):
         self.assert_path_shape_element(shapes[0], bounds)
 
     def test_bounds_layout(self):
-        bounds1 = Bounds((0, 0, 1, 1))
-        bounds2 = Bounds((0, 0, 2, 2))
-        bounds3 = Bounds((0, 0, 3, 3))
-        bounds4 = Bounds((0, 0, 4, 4))
+        bounds1 = hv.Bounds((0, 0, 1, 1))
+        bounds2 = hv.Bounds((0, 0, 2, 2))
+        bounds3 = hv.Bounds((0, 0, 3, 3))
+        bounds4 = hv.Bounds((0, 0, 4, 4))
 
         layout = (bounds1 + bounds2 +
                   bounds3 + bounds4).cols(2)
@@ -213,12 +204,12 @@ class TestBounds(TestPathShape):
         self.assert_path_shape_element(shapes[3], bounds2, xref='x4', yref='y4')
 
     def test_bounds_styling(self):
-        self.assert_shape_element_styling(Bounds((1, 2, 3, 4)))
+        self.assert_shape_element_styling(hv.Bounds((1, 2, 3, 4)))
 
 
 class TestMapboxBounds(TestMapboxShape):
     def test_single_bounds(self):
-        bounds = Tiles("") * Bounds(
+        bounds = hv.Tiles("") * hv.Bounds(
             (self.x_range[0], self.y_range[0], self.x_range[1], self.y_range[1])
         ).redim.range(
             x=self.x_range, y=self.y_range
@@ -240,13 +231,13 @@ class TestMapboxBounds(TestMapboxShape):
             }
 
     def test_bounds_layout(self):
-        bounds1 = Bounds((0, 0, 1, 1))
-        bounds2 = Bounds((0, 0, 2, 2))
-        bounds3 = Bounds((0, 0, 3, 3))
-        bounds4 = Bounds((0, 0, 4, 4))
+        bounds1 = hv.Bounds((0, 0, 1, 1))
+        bounds2 = hv.Bounds((0, 0, 2, 2))
+        bounds3 = hv.Bounds((0, 0, 3, 3))
+        bounds4 = hv.Bounds((0, 0, 4, 4))
 
-        layout = (Tiles("") * bounds1 + Tiles("") * bounds2 +
-                  Tiles("") * bounds3 + Tiles("") * bounds4).cols(2)
+        layout = (hv.Tiles("") * bounds1 + hv.Tiles("") * bounds2 +
+                  hv.Tiles("") * bounds3 + hv.Tiles("") * bounds4).cols(2)
 
         state = self._get_plot_state(layout)
         assert state['data'][1]["subplot"] == PLOTLY_MAP
@@ -260,17 +251,17 @@ class TestMapboxBounds(TestMapboxShape):
 class TestBox(TestPathShape):
 
     def test_single_box(self):
-        box = Box(0, 0, (1, 2), orientation=1)
+        box = hv.Box(0, 0, (1, 2), orientation=1)
         state = self._get_plot_state(box)
         shapes = state['layout']['shapes']
         assert len(shapes) == 1
         self.assert_path_shape_element(shapes[0], box)
 
     def test_bounds_layout(self):
-        box1 = Box(0, 0, (1, 1), orientation=0)
-        box2 = Box(0, 0, (2, 2), orientation=0.5)
-        box3 = Box(0, 0, (3, 3), orientation=1.0)
-        box4 = Box(0, 0, (4, 4), orientation=1.5)
+        box1 = hv.Box(0, 0, (1, 1), orientation=0)
+        box2 = hv.Box(0, 0, (2, 2), orientation=0.5)
+        box3 = hv.Box(0, 0, (3, 3), orientation=1.0)
+        box4 = hv.Box(0, 0, (4, 4), orientation=1.5)
 
         layout = (box1 + box2 +
                   box3 + box4).cols(2)
@@ -287,18 +278,18 @@ class TestBox(TestPathShape):
         self.assert_path_shape_element(shapes[3], box2, xref='x4', yref='y4')
 
     def test_box_styling(self):
-        self.assert_shape_element_styling(Box(0, 0, (1, 1)))
+        self.assert_shape_element_styling(hv.Box(0, 0, (1, 1)))
 
 
 class TestMapboxBox(TestMapboxShape):
     def test_single_box(self):
-        box = Tiles("") * Box(0, 0, (1000000, 2000000)).redim.range(
+        box = hv.Tiles("") * hv.Box(0, 0, (1000000, 2000000)).redim.range(
             x=self.x_range, y=self.y_range
         )
 
         x_box_range = [-500000, 500000]
         y_box_range = [-1000000, 1000000]
-        lon_box_range, lat_box_range = Tiles.easting_northing_to_lon_lat(x_box_range, y_box_range)
+        lon_box_range, lat_box_range = hv.Tiles.easting_northing_to_lon_lat(x_box_range, y_box_range)
 
         state = self._get_plot_state(box)
         assert state["data"][1]["type"] == PLOTLY_SCATTERMAP
@@ -320,7 +311,7 @@ class TestMapboxBox(TestMapboxShape):
 class TestRectangles(TestPathShape):
 
     def test_boxes_simple(self):
-        boxes = Rectangles([(0, 0, 1, 1), (2, 2, 4, 3)])
+        boxes = hv.Rectangles([(0, 0, 1, 1), (2, 2, 4, 3)])
         state = self._get_plot_state(boxes)
         shapes = state['layout']['shapes']
         assert len(shapes) == 2
@@ -336,7 +327,7 @@ class TestRectangles(TestPathShape):
 
 class TestMapboxRectangles(TestMapboxShape):
     def test_rectangles_simple(self):
-        rectangles = Tiles("") * Rectangles([
+        rectangles = hv.Tiles("") * hv.Rectangles([
             (0, 0, self.x_range[1], self.y_range[1]),
             (self.x_range[0], self.y_range[0], 0, 0),
         ]).redim.range(
@@ -365,7 +356,7 @@ class TestMapboxRectangles(TestMapboxShape):
 class TestSegments(TestPathShape):
 
     def test_segments_simple(self):
-        boxes = Segments([(0, 0, 1, 1), (2, 2, 4, 3)])
+        boxes = hv.Segments([(0, 0, 1, 1), (2, 2, 4, 3)])
         state = self._get_plot_state(boxes)
         shapes = state['layout']['shapes']
         assert len(shapes) == 2
@@ -381,7 +372,7 @@ class TestSegments(TestPathShape):
 
 class TestMapboxSegments(TestMapboxShape):
     def test_segments_simple(self):
-        rectangles = Tiles("") * Segments([
+        rectangles = hv.Tiles("") * hv.Segments([
             (0, 0, self.x_range[1], self.y_range[1]),
             (self.x_range[0], self.y_range[0], 0, 0),
         ]).redim.range(

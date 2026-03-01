@@ -1,6 +1,6 @@
 import pytest
 
-from holoviews.element import Tiles
+import holoviews as hv
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -11,7 +11,7 @@ class TestTilePlot(TestBokehPlot):
         xyzservices = pytest.importorskip("xyzservices")
         osm = xyzservices.providers.OpenStreetMap.Mapnik
 
-        tiles = Tiles(osm)
+        tiles = hv.Tiles(osm)
         plot = bokeh_renderer.get_plot(tiles)
         glyph = plot.handles["glyph"]
         assert glyph.attribution == osm.html_attribution
