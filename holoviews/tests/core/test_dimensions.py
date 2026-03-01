@@ -79,7 +79,7 @@ class DimensionReprTest:
 
     def test_name_dimension_repr_eval_equality(self):
         dim = hv.Dimension('test')
-        assert eval(repr(dim)) == dim
+        assert eval(repr(dim), {"Dimension": hv.Dimension}) == dim
 
     def test_name_dimension_repr_tuple(self):
         dim = hv.Dimension(('test', 'Test Dimension'))
@@ -87,7 +87,7 @@ class DimensionReprTest:
 
     def test_name_dimension_repr_tuple_eval_equality(self):
         dim = hv.Dimension(('test', 'Test Dimension'))
-        assert eval(repr(dim)) == dim
+        assert eval(repr(dim), {"Dimension": hv.Dimension}) == dim
 
     def test_name_dimension_repr_params(self):
         dim = hv.Dimension('test', label='Test Dimension', unit='m')
@@ -95,7 +95,7 @@ class DimensionReprTest:
 
     def test_name_dimension_repr_params_eval_equality(self):
         dim = hv.Dimension('test', label='Test Dimension', unit='m')
-        assert eval(repr(dim)) == dim
+        assert eval(repr(dim), {"Dimension": hv.Dimension}) == dim
 
     def test_pprint_value_boolean(self):
         # https://github.com/holoviz/holoviews/issues/5378
