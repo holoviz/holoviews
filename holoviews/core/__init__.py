@@ -34,7 +34,9 @@ Dimension.type_formatters[np.float64] = "%.5g"
 Dimension.type_formatters[np.datetime64] = '%Y-%m-%d %H:%M:%S'
 Dimension.type_formatters[datetime] = '%Y-%m-%d %H:%M:%S'
 Dimension.type_formatters[date] = '%Y-%m-%d'
+# First one is for Pandas <3 and second for Pandas 3+
 Dimension.type_formatters['pandas._libs.tslibs.timestamps.Timestamp'] = "%Y-%m-%d %H:%M:%S"
+Dimension.type_formatters['pandas.Timestamp'] = "%Y-%m-%d %H:%M:%S"
 
 
 __all__ = [
