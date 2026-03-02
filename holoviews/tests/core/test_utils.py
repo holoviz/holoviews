@@ -359,6 +359,44 @@ class TestDimensionRange:
                                  (None, None), self.date_range2)
         assert drange == self.date_range2
 
+    def test_both_hard_finite_short_circuits(self):
+        result = dimension_range(0.0, 100.0, (10.0, 90.0), (None, None))
+        assert result == (10.0, 90.0)
+
+    def test_both_hard_finite_np_scalars(self):
+        """hard_range from max_range output contains numpy scalars."""
+        result = dimension_range(
+            np.float64(0.0), np.float64(100.0),
+            (np.float64(10.0), np.float64(90.0)), (None, None),
+        )
+        assert result == (np.float64(10.0), np.float64(90.0))
+
+    def test_both_hard_finite_ignores_soft_range(self):
+        result = dimension_range(0.0, 100.0, (10.0, 90.0), (0.0, 200.0))
+        assert result == (10.0, 90.0)
+
+    def test_both_hard_finite_ignores_padding(self):
+        result = dimension_range(0.0, 100.0, (10.0, 90.0), (None, None),
+                                 padding=(0.1, 0.1))
+        assert result == (10.0, 90.0)
+
+    def test_one_hard_bound_does_not_short_circuit(self):
+        result = dimension_range(0.0, 100.0, (10.0, None), (None, None))
+        assert result[0] == 10.0
+        assert result[1] == 100.0
+
+    def test_nan_hard_range_does_not_short_circuit(self):
+        result = dimension_range(0.0, 100.0, (np.nan, np.nan), (None, None))
+        assert result == (0.0, 100.0)
+
+    def test_soft_range_extends_data(self):
+        result = dimension_range(5.0, 95.0, (None, None), (0.0, 100.0))
+        assert result == (0.0, 100.0)
+
+    def test_soft_range_within_data(self):
+        result = dimension_range(0.0, 100.0, (None, None), (20.0, 80.0))
+        assert result == (0.0, 100.0)
+
 
 class TestMaxRange:
     """
@@ -381,6 +419,102 @@ class TestMaxRange:
         periods = [(pd.Period("1990", freq="M"), pd.Period("1991", freq="M"))]
         expected = (np.datetime64("1990", 'ns'), np.datetime64("1991", 'ns'))
         assert max_range(periods) == expected
+
+    # ── Numeric fast path ─────────────────────────────────────────
+
+    def test_empty(self):
+        lo, hi = max_range([])
+        assert math.isnan(lo)
+        assert math.isnan(hi)
+
+    def test_single_float_tuple(self):
+        assert max_range([(1.0, 5.0)]) == (1.0, 5.0)
+
+    def test_single_float_tuple_uncombined(self):
+        assert max_range([(1.0, 5.0)], combined=False) == (1.0, 5.0)
+
+    def test_multiple_float_tuples_combined(self):
+        assert max_range([(1.0, 5.0), (2.0, 3.0)]) == (1.0, 5.0)
+
+    def test_multiple_float_tuples_uncombined(self):
+        assert max_range([(1.0, 5.0), (2.0, 3.0)], combined=False) == (1.0, 5.0)
+
+    def test_all_none_combined(self):
+        lo, hi = max_range([(None, None)])
+        assert math.isnan(lo)
+        assert math.isnan(hi)
+
+    def test_all_none_uncombined(self):
+        lo, hi = max_range([(None, None)], combined=False)
+        assert math.isnan(lo)
+        assert math.isnan(hi)
+
+    def test_none_mixed_with_float_combined(self):
+        assert max_range([(None, 5.0), (2.0, None)]) == (2.0, 5.0)
+
+    def test_none_mixed_with_float_uncombined(self):
+        lo, hi = max_range([(None, 5.0), (2.0, None)], combined=False)
+        assert lo == 2.0
+        assert hi == 5.0
+
+    def test_nan_mixed_with_float(self):
+        assert max_range([(np.nan, np.nan), (1.0, 2.0)]) == (1.0, 2.0)
+
+    def test_all_nan(self):
+        lo, hi = max_range([(np.nan, np.nan)])
+        assert math.isnan(lo)
+        assert math.isnan(hi)
+
+    def test_inf(self):
+        assert max_range([(float("inf"), float("inf"))]) == (float("inf"), float("inf"))
+
+    def test_neg_inf(self):
+        assert max_range([(float("-inf"), float("inf"))], combined=False) == (float("-inf"), float("inf"))
+
+    def test_np_int64(self):
+        assert max_range([(np.int64(1), np.int64(5))]) == (1.0, 5.0)
+
+    def test_np_int64_uncombined(self):
+        result = max_range([(np.int64(1), np.int64(10)), (np.int64(3), np.int64(7))], combined=False)
+        assert result == (1.0, 10.0)
+
+    def test_np_float64(self):
+        assert max_range([(np.float64(1.0), np.float64(5.0))]) == (1.0, 5.0)
+
+    def test_np_scalars_mixed_with_none(self):
+        """Realistic case: find_range returns numpy scalars, Dimension defaults are None."""
+        result = max_range([(np.float64(0.3), np.float64(9.7)), (None, None)])
+        assert result == (0.3, 9.7)
+
+    def test_np_scalars_mixed_with_none_uncombined(self):
+        result = max_range(
+            [(np.float64(0.3), np.float64(9.7)), (None, None)], combined=False
+        )
+        assert result == (0.3, 9.7)
+
+    def test_mixed_np_scalar_and_python_float(self):
+        assert max_range([(np.float64(1.0), 5.0), (2.0, np.float64(10.0))]) == (1.0, 10.0)
+
+    def test_negative_floats_combined(self):
+        assert max_range([(-10.0, -1.0), (-5.0, -2.0)]) == (-10.0, -1.0)
+
+    def test_negative_floats_uncombined(self):
+        assert max_range([(-10.0, -1.0), (-5.0, -2.0)], combined=False) == (-10.0, -1.0)
+
+    def test_identical_ranges(self):
+        assert max_range([(5.0, 5.0), (5.0, 5.0)]) == (5.0, 5.0)
+
+    def test_large_values(self):
+        assert max_range([(1e15, 1e16), (1e14, 1e17)]) == (1e14, 1e17)
+
+    # ── Fallback path (non-numeric types) ─────────────────────────
+
+    def test_datetime64(self):
+        result = max_range([(np.datetime64("2021-01-01"), np.datetime64("2021-12-31"))])
+        assert result[0] <= result[1]
+
+    def test_string_ranges(self):
+        assert max_range([("a", "z"), ("b", "y")]) == ("a", "z")
 
 
 class TestWrapTupleStreams:
