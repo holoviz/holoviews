@@ -981,18 +981,25 @@ _numeric_fast_types = (int, float, np.integer, np.floating)
 
 
 def _minmax_finite(values):
-    """Return (min, max) of finite floats, or (np.nan, np.nan) if none found."""
-    lo = math.inf
-    hi = -math.inf
-    found = False
+    """Return (min, max) of finite values, or (np.nan, np.nan) if none found.
+
+    Uses float conversion for NaN checks and comparison, but preserves the
+    original types in the returned values.
+    """
+    lo_f = math.inf
+    hi_f = -math.inf
+    lo_val = hi_val = None
     for v in values:
         if v is not None:
             fv = float(v)
             if not math.isnan(fv):
-                found = True
-                lo = min(lo, fv)
-                hi = max(hi, fv)
-    return (lo, hi) if found else (np.nan, np.nan)
+                if fv <= lo_f:
+                    lo_f = fv
+                    lo_val = v
+                if fv >= hi_f:
+                    hi_f = fv
+                    hi_val = v
+    return (lo_val, hi_val) if lo_val is not None else (np.nan, np.nan)
 
 
 def _max_range_numeric(ranges, combined):
