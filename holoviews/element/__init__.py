@@ -219,4 +219,4 @@ __all__ = [
     "tile_sources"
 ]
 
-elements_list = list(set(__all__) - {"stamen_sources", "tile_sources", "circular_layout"})
+elements_list = sorted(set(__all__) - {"stamen_sources", "tile_sources", "circular_layout"})
