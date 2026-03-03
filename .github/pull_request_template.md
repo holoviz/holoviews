@@ -22,7 +22,7 @@ Fixes #{issue}
     <!-- If you used AI to generate code, please specify the tool and model used, and how you have used it. -->
     Tools: {e.g., Claude, Codex, GitHub Copilot, ChatGPT, etc.}
 
-## Checklist:
+## Checklist
 
 <!-- Remove the non relevant items. -->
 
