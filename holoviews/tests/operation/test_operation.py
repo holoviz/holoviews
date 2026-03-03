@@ -1047,9 +1047,16 @@ class TestDendrogramOperation:
         assert list(data["zvalues"]) == list(map(int, data["data"]))
 
 
+@pytest.mark.usefixtures("bokeh_backend")
 def test_compositor_operations_size():
-    # Operations are registered in the following imports
-    import holoviews.operation
-    import holoviews.plotting.bokeh  # noqa: F401
+    # Operations are registered here:
+    #  - holoviews.operations
+    #  - holoviews.plotting, when changing backend
+    #    we test the Bokeh backend here.
+
     # Update the count if more operations are added
     assert len(Compositor.operations) == 23
+
+    # To verify we don't add a string instead of class
+    for op in Compositor.operations:
+        assert not isinstance(op, str)
