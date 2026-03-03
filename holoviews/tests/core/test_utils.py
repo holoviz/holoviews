@@ -16,6 +16,7 @@ import pytest
 from holoviews import Dimension, Element
 from holoviews.core import util
 from holoviews.core.util import (
+    _minmax_finite,
     closest_match,
     compute_density,
     compute_edges,
@@ -398,6 +399,54 @@ class TestDimensionRange:
         assert result == (0.0, 100.0)
 
 
+class TestMinmaxFinite:
+    """Tests for _minmax_finite helper."""
+
+    def test_basic(self):
+        assert _minmax_finite([1.0, 3.0, 2.0]) == (1.0, 3.0)
+
+    def test_skips_none(self):
+        assert _minmax_finite([None, 2.0, None, 1.0]) == (1.0, 2.0)
+
+    def test_skips_nan(self):
+        assert _minmax_finite([float("nan"), 2.0, float("nan"), 1.0]) == (1.0, 2.0)
+
+    def test_all_none(self):
+        lo, hi = _minmax_finite([None, None])
+        assert math.isnan(lo)
+        assert math.isnan(hi)
+
+    def test_all_nan(self):
+        lo, hi = _minmax_finite([float("nan"), float("nan")])
+        assert math.isnan(lo)
+        assert math.isnan(hi)
+
+    def test_empty(self):
+        lo, hi = _minmax_finite([])
+        assert math.isnan(lo)
+        assert math.isnan(hi)
+
+    def test_preserves_numpy_scalar_type(self):
+        lo, hi = _minmax_finite([np.float64(3.0), np.int64(1)])
+        assert type(lo) is np.int64
+        assert type(hi) is np.float64
+
+    def test_preserves_python_types(self):
+        lo, hi = _minmax_finite([3.0, 1, 2.5])
+        assert type(lo) is int
+        assert type(hi) is float
+
+    def test_single_value(self):
+        lo, hi = _minmax_finite([42.0])
+        assert lo == hi == 42.0
+
+    def test_inf(self):
+        assert _minmax_finite([float("inf"), 1.0]) == (1.0, float("inf"))
+
+    def test_neg_inf(self):
+        assert _minmax_finite([float("-inf"), 1.0]) == (float("-inf"), 1.0)
+
+
 class TestMaxRange:
     """
     Tests for max_range function.
@@ -427,35 +476,23 @@ class TestMaxRange:
         assert math.isnan(lo)
         assert math.isnan(hi)
 
-    def test_single_float_tuple(self):
-        assert max_range([(1.0, 5.0)]) == (1.0, 5.0)
+    @pytest.mark.parametrize("combined", [True, False])
+    def test_single_float_tuple(self, combined):
+        assert max_range([(1.0, 5.0)], combined=combined) == (1.0, 5.0)
 
-    def test_single_float_tuple_uncombined(self):
-        assert max_range([(1.0, 5.0)], combined=False) == (1.0, 5.0)
+    @pytest.mark.parametrize("combined", [True, False])
+    def test_multiple_float_tuples(self, combined):
+        assert max_range([(1.0, 5.0), (2.0, 3.0)], combined=combined) == (1.0, 5.0)
 
-    def test_multiple_float_tuples_combined(self):
-        assert max_range([(1.0, 5.0), (2.0, 3.0)]) == (1.0, 5.0)
-
-    def test_multiple_float_tuples_uncombined(self):
-        assert max_range([(1.0, 5.0), (2.0, 3.0)], combined=False) == (1.0, 5.0)
-
-    def test_all_none_combined(self):
-        lo, hi = max_range([(None, None)])
+    @pytest.mark.parametrize("combined", [True, False])
+    def test_all_none(self, combined):
+        lo, hi = max_range([(None, None)], combined=combined)
         assert math.isnan(lo)
         assert math.isnan(hi)
 
-    def test_all_none_uncombined(self):
-        lo, hi = max_range([(None, None)], combined=False)
-        assert math.isnan(lo)
-        assert math.isnan(hi)
-
-    def test_none_mixed_with_float_combined(self):
-        assert max_range([(None, 5.0), (2.0, None)]) == (2.0, 5.0)
-
-    def test_none_mixed_with_float_uncombined(self):
-        lo, hi = max_range([(None, 5.0), (2.0, None)], combined=False)
-        assert lo == 2.0
-        assert hi == 5.0
+    @pytest.mark.parametrize("combined", [True, False])
+    def test_none_mixed_with_float(self, combined):
+        assert max_range([(None, 5.0), (2.0, None)], combined=combined) == (2.0, 5.0)
 
     def test_nan_mixed_with_float(self):
         assert max_range([(np.nan, np.nan), (1.0, 2.0)]) == (1.0, 2.0)
@@ -481,31 +518,50 @@ class TestMaxRange:
     def test_np_float64(self):
         assert max_range([(np.float64(1.0), np.float64(5.0))]) == (1.0, 5.0)
 
-    def test_np_scalars_mixed_with_none(self):
+    @pytest.mark.parametrize("combined", [True, False])
+    def test_np_scalars_mixed_with_none(self, combined):
         """Realistic case: find_range returns numpy scalars, Dimension defaults are None."""
-        result = max_range([(np.float64(0.3), np.float64(9.7)), (None, None)])
-        assert result == (0.3, 9.7)
-
-    def test_np_scalars_mixed_with_none_uncombined(self):
-        result = max_range(
-            [(np.float64(0.3), np.float64(9.7)), (None, None)], combined=False
-        )
+        result = max_range([(np.float64(0.3), np.float64(9.7)), (None, None)], combined=combined)
         assert result == (0.3, 9.7)
 
     def test_mixed_np_scalar_and_python_float(self):
         assert max_range([(np.float64(1.0), 5.0), (2.0, np.float64(10.0))]) == (1.0, 10.0)
 
-    def test_negative_floats_combined(self):
-        assert max_range([(-10.0, -1.0), (-5.0, -2.0)]) == (-10.0, -1.0)
-
-    def test_negative_floats_uncombined(self):
-        assert max_range([(-10.0, -1.0), (-5.0, -2.0)], combined=False) == (-10.0, -1.0)
+    @pytest.mark.parametrize("combined", [True, False])
+    def test_negative_floats(self, combined):
+        assert max_range([(-10.0, -1.0), (-5.0, -2.0)], combined=combined) == (-10.0, -1.0)
 
     def test_identical_ranges(self):
         assert max_range([(5.0, 5.0), (5.0, 5.0)]) == (5.0, 5.0)
 
     def test_large_values(self):
         assert max_range([(1e15, 1e16), (1e14, 1e17)]) == (1e14, 1e17)
+
+    def test_mixed_int_float_np_types(self):
+        result = max_range([(1, np.float64(10.0)), (np.int64(2), 8.0)])
+        assert result == (1, np.float64(10.0))
+
+    # ── Fast-path type preservation ───────────────────────────────
+
+    def test_fast_path_preserves_python_int(self):
+        lo, hi = max_range([(1, 5)])
+        assert type(lo) is int
+        assert type(hi) is int
+
+    def test_fast_path_preserves_python_float(self):
+        lo, hi = max_range([(1.0, 5.0)])
+        assert type(lo) is float
+        assert type(hi) is float
+
+    def test_fast_path_preserves_np_float64(self):
+        lo, hi = max_range([(np.float64(1.0), np.float64(5.0))])
+        assert type(lo) is np.float64
+        assert type(hi) is np.float64
+
+    def test_fast_path_preserves_np_int64(self):
+        lo, hi = max_range([(np.int64(1), np.int64(5))])
+        assert type(lo) is np.int64
+        assert type(hi) is np.int64
 
     # ── Fallback path (non-numeric types) ─────────────────────────
 
