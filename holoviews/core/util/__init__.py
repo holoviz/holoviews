@@ -983,21 +983,17 @@ _numeric_fast_types = (int, float, np.integer, np.floating)
 def _minmax_finite(values):
     """Return (min, max) of finite values, or (np.nan, np.nan) if none found.
 
-    Converts to Python float for fast comparison while preserving original
-    types in the return values.  NaN values are implicitly excluded because
-    IEEE 754 comparisons with NaN always return False.
+    Converts to Python float for better performance for numpy scalar type while
+    preserving original types in the return values.
+
+    NaN values are implicitly excluded because IEEE 754 comparisons with NaN
+    always return False.
     """
     lo_f = math.inf
     hi_f = -math.inf
     lo_val = hi_val = None
     for v in values:
         if v is not None:
-            # We benchmarked dropping float() entirely -- the min()/max() vs <=/>=
-            # difference is negligible in the big picture (the real win is avoiding the
-            # numpy array path). But float() conversion does help noticeably for mixed
-            # numpy scalar types (e.g., np.int64 vs np.float64), where without it the
-            # comparisons go through numpy's dispatch and are ~5x slower. Still fast
-            # compared to the old path, but a modest benefit for one line of code.
             fv = float(v)
             if fv <= lo_f:
                 lo_f = fv
