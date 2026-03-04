@@ -1,9 +1,19 @@
+import os
+import sys
+
 import param
 
 param.parameterized.docstring_signature = False
 param.parameterized.docstring_describe_params = False
 
 from nbsite.shared_conf import *  # noqa: F403
+from nbsite.shared_conf import (
+    base_version,
+    extensions,
+    html_context,
+    html_css_files,
+    html_static_path,
+)
 
 # Declare information specific to this project.
 project = 'HoloViews'

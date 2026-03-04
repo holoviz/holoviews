@@ -18,8 +18,8 @@ from ...core.util import dimension_sanitizer, dtype_kind, unique_array
 from ...util.transform import dim
 from ..mixins import ChordMixin, GraphMixin
 from ..util import get_directed_graph_paths, process_cmap
-from .chart import ColorbarPlot, PointPlot
-from .element import CompositeElementPlot, LegendPlot
+from .chart import PointPlot
+from .element import ColorbarPlot, CompositeElementPlot, LegendPlot
 from .styles import (
     base_properties,
     fill_properties,

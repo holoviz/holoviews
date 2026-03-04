@@ -30,7 +30,7 @@ from holoviews import (
 from holoviews.core.data.grid import GridInterface
 from holoviews.core.data.ibis import IBIS_VERSION
 from holoviews.core.operation import Operation
-from holoviews.core.options import SkipRendering
+from holoviews.core.options import Compositor, SkipRendering
 from holoviews.operation.element import (
     chain,
     contours,
@@ -1045,3 +1045,18 @@ class TestDendrogramOperation:
         (_, amain, _), *_ = self.get_childrens(dendro)
         data = amain.renderers[0].data_source.data
         assert list(data["zvalues"]) == list(map(int, data["data"]))
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_compositor_operations_size():
+    # Operations are registered here:
+    #  - holoviews.operations
+    #  - holoviews.plotting, when changing backend
+    #    we test the Bokeh backend here.
+
+    # Update the count if more operations are added
+    assert len(Compositor.operations) == 23
+
+    # To verify we don't add a string instead of class
+    for op in Compositor.operations:
+        assert not isinstance(op, str)

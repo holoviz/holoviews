@@ -1,32 +1,127 @@
 import os
 from contextlib import suppress
 
+import matplotlib as mpl
 from colorcet import kbc, register_cmap
-from matplotlib import rc_params_from_file
+from matplotlib import pyplot as plt, rc_params_from_file
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 from param import concrete_descendents
 
-from ...core import Collator, GridMatrix, Layout, config
-from ...core.options import Cycle, Options, Palette
+from ...core import (
+    AdjointLayout,
+    Collator,
+    GridMatrix,
+    GridSpace,
+    Layout,
+    NdLayout,
+    config,
+)
+from ...core.element import Element
+from ...core.options import Cycle, Options, Palette, Store
 from ...core.overlay import NdOverlay, Overlay
-from ...element import *
+from ...element import (
+    HSV,
+    RGB,
+    Area,
+    Arrow,
+    Bars,
+    Bivariate,
+    Bounds,
+    Box,
+    BoxWhisker,
+    Chord,
+    Contours,
+    Curve,
+    Dendrogram,
+    Distribution,
+    EdgePaths,
+    Ellipse,
+    ErrorBars,
+    Graph,
+    HeatMap,
+    HexTiles,
+    Histogram,
+    HLine,
+    HLines,
+    HSpan,
+    HSpans,
+    Image,
+    ImageStack,
+    ItemTable,
+    Labels,
+    Nodes,
+    Path,
+    Path3D,
+    Points,
+    Polygons,
+    QuadMesh,
+    Raster,
+    Rectangles,
+    Sankey,
+    Scatter,
+    Scatter3D,
+    Segments,
+    Slope,
+    Spikes,
+    Spline,
+    Spread,
+    Surface,
+    Table,
+    Text,
+    TriMesh,
+    TriSurface,
+    VectorField,
+    Violin,
+    VLine,
+    VLines,
+    VSpan,
+    VSpans,
+)
 from ..plot import PlotSelector
 from ..util import fire_colors
-from .annotation import *
-from .chart import *
-from .chart3d import *
-from .element import ElementPlot
-from .geometry import *
-from .graphs import *
-from .heatmap import *
-from .hex_tiles import *
-from .path import *
-from .plot import *
-from .raster import *
+from .annotation import (
+    AnnotationPlot,  # noqa: F401
+    ArrowPlot,
+    HLinePlot,
+    HLinesAnnotationPlot,
+    HSpanPlot,
+    HSpansAnnotationPlot,
+    LabelsPlot,
+    SlopePlot,
+    SplinePlot,
+    TextPlot,
+    VLinePlot,
+    VLinesAnnotationPlot,
+    VSpanPlot,
+    VSpansAnnotationPlot,
+)
+from .chart import (
+    AreaPlot,
+    BarPlot,
+    CurvePlot,
+    ErrorPlot,
+    HistogramPlot,
+    PointPlot,
+    SideAreaPlot,
+    SideHistogramPlot,
+    SideSpikesPlot,
+    SpikesPlot,
+    SpreadPlot,
+    VectorFieldPlot,
+)
+from .chart3d import Path3DPlot, Scatter3DPlot, SurfacePlot, TriSurfacePlot
+from .element import ElementPlot, OverlayPlot
+from .geometry import RectanglesPlot, SegmentPlot
+from .graphs import ChordPlot, GraphPlot, TriMeshPlot
+from .heatmap import HeatMapPlot, RadialHeatMapPlot
+from .hex_tiles import HexTilesPlot
+from .path import ContourPlot, PathPlot, PolygonPlot
+from .plot import AdjointLayoutPlot, GridPlot, LayoutPlot, MPLPlot
+from .raster import QuadMeshPlot, RasterGridPlot, RasterPlot, RGBPlot
 from .renderer import MPLRenderer
-from .sankey import *
-from .stats import *
-from .tabular import *
+from .sankey import SankeyPlot
+from .stats import BivariatePlot, BoxPlot, DistributionPlot, SideBoxPlot, ViolinPlot
+from .tabular import TablePlot
 from .util import MPL_VERSION
 
 with suppress(ImportError):

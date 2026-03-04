@@ -1,20 +1,53 @@
 from ..core import Overlay  # noqa (API import)
 from ..core.operation import Operation
 from ..core.options import Compositor
-from .element import *
+from .element import (
+    apply_when,
+    chain,
+    collapse,
+    contours,
+    convolve,
+    decimate,
+    dendrogram,
+    factory,
+    function,
+    gradient,
+    gridmatrix,
+    histogram,
+    image_overlay,
+    interpolate_curve,
+    method,
+    operation,
+    threshold,
+    transform,
+)
+from ..element.util import categorical_aggregate2d
+
+for _obj in list(locals().values()):
+    if isinstance(_obj, type) and issubclass(_obj, Operation) and _obj is not Operation:
+        Compositor.operations.append(_obj)
 
 
-def public(obj):
-    if not isinstance(obj, type): return False
-    baseclasses = [Operation]
-    return any([issubclass(obj, bc) for bc in baseclasses])
-
-
-_public = list({_k for _k, _v in locals().items() if public(_v)})
-
-_current_locals = [el for el in locals().items()]
-for _k, _v in _current_locals:
-    if public(_v) and issubclass(_v, Operation):
-        Compositor.operations.append(_v)
-
-__all__ = [*_public, 'Compositor']
+__all__ = [
+    "Compositor",
+    "Operation",
+    "apply_when",
+    "categorical_aggregate2d",
+    "chain",
+    "collapse",
+    "contours",
+    "convolve",
+    "decimate",
+    "dendrogram",
+    "factory",
+    "function",
+    "gradient",
+    "gridmatrix",
+    "histogram",
+    "image_overlay",
+    "interpolate_curve",
+    "method",
+    "operation",
+    "threshold",
+    "transform",
+]

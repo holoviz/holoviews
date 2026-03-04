@@ -30,9 +30,10 @@ from param.parameterized import bothmethod
 
 from .dimension import LabelledData
 from .element import Collator, Element
+from .layout import Layout
 from .ndmapping import NdMapping, UniformNdMapping
 from .options import Store
-from .overlay import Layout, Overlay
+from .overlay import Overlay
 from .util import group_sanitizer, label_sanitizer, unique_iterator
 
 
