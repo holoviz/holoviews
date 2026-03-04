@@ -75,8 +75,8 @@ class BoxPlot(MultiDistributionMixin, ChartPlot):
     style_opts = [
         "notch",
         "sym",
-        "whis",
-        "bootstrap",  # typos: ignore
+        "whis",  # typos: ignore
+        "bootstrap",
         "conf_intervals",
         "widths",
         "showmeans",

@@ -289,8 +289,8 @@ class Graph(Dataset, Element2D):
         index_dim = self.nodes.kdims[2].name
         dimensions = self.kdims + self.vdims
         node_selection = {
-            index_dim: v
-            for k, v in selection.items()  # noqa: B035
+            index_dim: v  # noqa: B035
+            for k, v in selection.items()
             if k in self.kdims
         }
         if selection_expr:

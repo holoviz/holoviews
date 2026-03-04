@@ -343,7 +343,7 @@ class Dimension(param.Parameterized):
 
     @property
     def spec(self):
-        """ "Returns the Dimensions tuple specification
+        """Returns the Dimensions tuple specification
 
         Returns
         -------

@@ -593,7 +593,7 @@ def resample_palette(palette, ncolors, categorical, cmap_categorical):
 
 
 def mplcmap_to_palette(cmap, ncolors=None, categorical=False):
-    """Converts a matplotlib colormap to palette of RGB hex strings." """
+    """Converts a matplotlib colormap to palette of RGB hex strings."""
     import matplotlib as mpl
     from matplotlib.colors import Colormap, ListedColormap
 
