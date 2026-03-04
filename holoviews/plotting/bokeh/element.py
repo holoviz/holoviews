@@ -3091,6 +3091,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
     multiple_legends = param.Boolean(default=False, doc="""
         Whether to split the legend for subplots into multiple legends.""")
 
+    _zoom_tool_types = (tools.WheelZoomTool, tools.ZoomInTool, tools.ZoomOutTool)
+
     _propagate_options = ['width', 'height', 'xaxis', 'yaxis', 'labelled',
                           'bgcolor', 'fontsize', 'invert_axes', 'show_frame',
                           'show_grid', 'logx', 'logy', 'xticks', 'toolbar',
@@ -3251,14 +3253,13 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             callbacks = []
         hover_tools = {}
         zooms_subcoordy = {}
-        zoom_types = (tools.WheelZoomTool, tools.ZoomInTool, tools.ZoomOutTool)
         init_tools, tool_ids = [], set()
 
-        def process_tool(tool, skip_subcoordy_overlay_check=False):
+        def process_tool(tool, is_overlay_tool=False):
             tool_id = get_tool_id(tool)
 
-            if (skip_subcoordy_overlay_check and self.subcoordinate_y and
-                tool_id[0] in zoom_types and isinstance(tool, str) and
+            if (is_overlay_tool and self.subcoordinate_y and
+                tool_id[0] in self._zoom_tool_types and isinstance(tool, str) and
                 not tool.startswith('x') and tool.replace('_tool', '') in zooms_subcoordy):
                 return False
 
@@ -3271,15 +3272,20 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 if tooltips in hover_tools:
                     return False
                 hover_tools[tooltips] = tool
-            elif (
-                self.subcoordinate_y and isinstance(tool, zoom_types)
+                return True
+
+            if (
+                self.subcoordinate_y and isinstance(tool, self._zoom_tool_types)
                 and 'hv_created' in tool.tags and len(tool.tags) == 2
             ):
                 if tool.tags[1] in zooms_subcoordy:
                     return False
                 zooms_subcoordy[tool.tags[1]] = tool
                 self.handles['zooms_subcoordy'] = zooms_subcoordy
-            elif tool_id in tool_ids:
+                tool_ids.add(tool_id)
+                return True
+
+            if tool_id in tool_ids:
                 return False
 
             tool_ids.add(tool_id)
@@ -3297,7 +3303,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         # Add tools specified directly on the overlay
         overlay_tools = self.default_tools + self.tools
         for tool in overlay_tools:
-            if process_tool(tool, skip_subcoordy_overlay_check=True):
+            if process_tool(tool, is_overlay_tool=True):
                 init_tools.append(tool)
 
         self.handles['hover_tools'] = hover_tools

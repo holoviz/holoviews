@@ -1265,11 +1265,52 @@ def get_ticker_axis_props(ticker):
     return axis_props
 
 
+_DIRECTIONAL_TOOL_BASES = {
+    'wheel_zoom': 'both',
+    'pan': 'both',
+    'zoom_in': 'both',
+    'zoom_out': 'both',
+    'box_zoom': 'both',
+    'wheel_pan': 'both',
+    'box_select': 'both',
+    'crosshair': 'both',
+}
+
+_TOOL_ALIAS_IDS = {
+    'tap': 'tap',
+    'click': 'inspect',
+    'doubletap': 'doubletap',
+    'auto_box_zoom': 'auto',
+}
+
+
+def _get_tool_id_from_str(
+    tool: str,
+    tool_type: type[tools.Tool],
+) -> tuple[type[tools.Tool], str | None]:
+    """Return (tool_type, identifier) for a string tool name."""
+    if tool in _DIRECTIONAL_TOOL_BASES:
+        return tool_type, _DIRECTIONAL_TOOL_BASES[tool]
+    if tool.startswith(('x', 'y')) and tool[1:] in _DIRECTIONAL_TOOL_BASES:
+        dimension = 'width' if tool.startswith('x') else 'height'
+        return tool_type, dimension
+    if tool in _TOOL_ALIAS_IDS:
+        return tool_type, _TOOL_ALIAS_IDS[tool]
+    return tool_type, None
+
+
 def get_tool_id(
     tool: str | tools.Tool,
     *,
-    properties: tuple[str, ...] = ("dimensions", "tags", "name", "description", "icon"),
-    skip_tags: set[str] | None = None
+    properties: tuple[str, ...] = (
+        'dimensions',
+        'dimension',
+        'tags',
+        'name',
+        'description',
+        'icon',
+    ),
+    skip_tags: set[str] | None = None,
 ) -> tuple[type[tools.Tool], str | tuple | None]:
     """
     Returns the tool type and an identifier for a given tool.
@@ -1283,7 +1324,8 @@ def get_tool_id(
     tool : str or Bokeh Tool class
         Tool specification as string name or Tool class instance
     properties : tuple of str, optional
-        Properties to check for disambiguation (default: dimensions, tags, name, description, icon)
+        Properties to check for disambiguation (default: dimensions, dimension,
+        tags, name, description, icon)
     skip_tags : set of str or None, optional
         Tag values to ignore during identification (default: {'hv_created'})
 
@@ -1298,37 +1340,30 @@ def get_tool_id(
     if skip_tags is None:
         skip_tags = {'hv_created'}
 
-    is_str = isinstance(tool, str)
-    tool_type = TOOL_TYPES.get(tool) if is_str else type(tool)
+    if isinstance(tool, str):
+        tool_type = TOOL_TYPES.get(tool)
+        return _get_tool_id_from_str(tool, tool_type)
 
-    if is_str:
-        directional_tools = ('wheel_zoom', 'pan', 'zoom_in', 'zoom_out', 'box_zoom')
-        if tool in directional_tools:
-            return tool_type, 'both'
-        elif tool.startswith(('x', 'y')) and tool[1:] in directional_tools:
-            dimension = 'width' if tool.startswith('x') else 'height'
-            return tool_type, dimension
-        elif tool == 'auto_box_zoom':
-            return tool_type, 'auto'
-        return tool_type, None
-
+    tool_type = type(tool)
     identifiers = {}
     for prop_name in properties:
         value = getattr(tool, prop_name, None)
-        if not value:
+        if value is None:
             continue
-        # Skip internal tags
-        if prop_name == "tags" and (value == list(skip_tags) or set(value) == skip_tags):
-            continue
+        # Filter out internal tags; skip if nothing user-visible remains
+        if prop_name == 'tags':
+            visible = [t for t in value if t not in skip_tags]
+            if not visible:
+                continue
+            value = tuple(visible)
         # Convert lists to tuples for hashability
-        if isinstance(value, list):
+        elif isinstance(value, list):
             value = tuple(value)
 
         identifiers[prop_name] = value
 
     if not identifiers:
         return tool_type, None
-    elif len(identifiers) == 1:
+    if len(identifiers) == 1:
         return tool_type, next(iter(identifiers.values()))
-    else:
-        return tool_type, tuple(identifiers.items())
+    return tool_type, tuple(identifiers.items())
