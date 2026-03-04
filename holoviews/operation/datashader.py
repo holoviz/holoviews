@@ -778,8 +778,7 @@ class spikes_aggregate(LineAggregationOperation):
 
     offset = param.Number(
         default=0.0,
-        doc="""
-      The offset of the lower end of each spike.""",
+        doc="The offset of the lower end of each spike.",
     )
 
     def _process(self, element, key=None):
@@ -953,8 +952,7 @@ class regrid(AggregationOperation):
     interpolation = param.Selector(
         default="nearest",
         objects=["linear", "nearest", "bilinear", None, False],
-        doc="""
-        Interpolation method""",
+        doc="Interpolation method",
     )
 
     upsample = param.Boolean(
@@ -1104,8 +1102,7 @@ class trimesh_rasterize(aggregate):
     interpolation = param.Selector(
         default="bilinear",
         objects=["bilinear", "linear", "nearest", None, False],
-        doc="""
-        The interpolation method to apply during rasterization.""",
+        doc="The interpolation method to apply during rasterization.",
     )
 
     def _precompute(self, element, agg):
@@ -1764,8 +1761,7 @@ class stack(Operation):
     compositor = param.Selector(
         objects=["add", "over", "saturate", "source"],
         default="over",
-        doc="""
-        Defines how the compositing operation combines the images""",
+        doc="Defines how the compositing operation combines the images",
     )
 
     def uint8_to_uint32(self, element):
@@ -1834,8 +1830,7 @@ class SpreadingOperation(LinkableOperation):
     shape = param.Selector(
         default="circle",
         objects=["circle", "square"],
-        doc="""
-        The shape to spread by. Options are 'circle' [default] or 'square'.""",
+        doc="The shape to spread by. Options are 'circle' [default] or 'square'.",
     )
 
     _per_element = True
@@ -1937,8 +1932,7 @@ class spread(SpreadingOperation):
 
     px = param.Integer(
         default=1,
-        doc="""
-        Number of pixels to spread on all sides.""",
+        doc="Number of pixels to spread on all sides.",
     )
 
     def _apply_spreading(self, array, how=None):
@@ -1960,8 +1954,7 @@ class dynspread(SpreadingOperation):
 
     max_px = param.Integer(
         default=3,
-        doc="""
-        Maximum number of pixels to spread on all sides.""",
+        doc="Maximum number of pixels to spread on all sides.",
     )
 
     threshold = param.Number(

@@ -45,20 +45,17 @@ class layout_nodes(Operation):
 
     only_nodes = param.Boolean(
         default=False,
-        doc="""
-        Whether to return Nodes or Graph.""",
+        doc="Whether to return Nodes or Graph.",
     )
 
     layout = param.Callable(
         default=None,
-        doc="""
-        A NetworkX layout function""",
+        doc="A NetworkX layout function",
     )
 
     kwargs = param.Dict(
         default={},
-        doc="""
-        Keyword arguments passed to the layout function.""",
+        doc="Keyword arguments passed to the layout function.",
     )
 
     def _process(self, element, key=None):
@@ -595,8 +592,7 @@ class TriMesh(Graph):
     kdims = param.List(
         default=["node1", "node2", "node3"],
         bounds=(3, 3),
-        doc="""
-        Dimensions declaring the node indices of each triangle.""",
+        doc="Dimensions declaring the node indices of each triangle.",
     )
 
     group = param.String(default="TriMesh", constant=True)
@@ -731,14 +727,12 @@ class layout_chords(Operation):
     chord_samples = param.Integer(
         default=50,
         bounds=(0, None),
-        doc="""
-        Number of samples per chord for the spline interpolation.""",
+        doc="Number of samples per chord for the spline interpolation.",
     )
 
     max_chords = param.Integer(
         default=500,
-        doc="""
-        Maximum number of chords to render.""",
+        doc="Maximum number of chords to render.",
     )
 
     def _process(self, element, key=None):

@@ -22,74 +22,63 @@ class Plot3D(ColorbarPlot):
     azimuth = param.Integer(
         default=-60,
         bounds=(-180, 180),
-        doc="""
-        Azimuth angle in the x,y plane.""",
+        doc="Azimuth angle in the x,y plane.",
     )
 
     elevation = param.Integer(
         default=30,
         bounds=(0, 180),
-        doc="""
-        Elevation angle in the z-axis.""",
+        doc="Elevation angle in the z-axis.",
     )
 
     distance = param.Integer(
         default=10,
         bounds=(7, 15),
-        doc="""
-        Distance from the plotted object.""",
+        doc="Distance from the plotted object.",
     )
 
     disable_axes = param.Boolean(
         default=False,
-        doc="""
-        Disable all axes.""",
+        doc="Disable all axes.",
     )
 
     bgcolor = param.String(
         default="white",
-        doc="""
-        Background color of the axis.""",
+        doc="Background color of the axis.",
     )
 
     labelled = param.List(
         default=["x", "y", "z"],
-        doc="""
-        Whether to plot the 'x', 'y' and 'z' labels.""",
+        doc="Whether to plot the 'x', 'y' and 'z' labels.",
     )
 
     projection = param.Selector(
         default="3d",
         objects=["3d"],
-        doc="""
-        The projection of the matplotlib axis.""",
+        doc="The projection of the matplotlib axis.",
     )
 
     show_grid = param.Boolean(
         default=True,
-        doc="""
-        Whether to draw a grid in the figure.""",
+        doc="Whether to draw a grid in the figure.",
     )
 
     xaxis = param.Selector(
         default="fixed",
         objects=["fixed", None],
-        doc="""
-        Whether and where to display the xaxis.""",
+        doc="Whether and where to display the xaxis.",
     )
 
     yaxis = param.Selector(
         default="fixed",
         objects=["fixed", None],
-        doc="""
-        Whether and where to display the yaxis.""",
+        doc="Whether and where to display the yaxis.",
     )
 
     zaxis = param.Selector(
         default="fixed",
         objects=["fixed", None],
-        doc="""
-        Whether and where to display the yaxis.""",
+        doc="Whether and where to display the yaxis.",
     )
 
     def _finalize_axis(self, key, **kwargs):
@@ -161,16 +150,14 @@ class Scatter3DPlot(Plot3D, PointPlot):
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-      Index of the dimension from which the color will the drawn""",
+        doc="Index of the dimension from which the color will the drawn",
     )
 
     size_index = param.ClassSelector(
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-      Index of the dimension from which the sizes will the drawn.""",
+        doc="Index of the dimension from which the sizes will the drawn.",
     )
 
     _plot_methods = dict(single="scatter")
@@ -235,8 +222,7 @@ class SurfacePlot(Plot3D):
 
     colorbar = param.Boolean(
         default=False,
-        doc="""
-        Whether to add a colorbar to the plot.""",
+        doc="Whether to add a colorbar to the plot.",
     )
 
     plot_type = param.Selector(
@@ -296,8 +282,7 @@ class TriSurfacePlot(Plot3D):
 
     colorbar = param.Boolean(
         default=False,
-        doc="""
-        Whether to add a colorbar to the plot.""",
+        doc="Whether to add a colorbar to the plot.",
     )
 
     style_opts = ["cmap", "color", "shade", "linewidth", "edgecolor", "norm"]

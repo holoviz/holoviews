@@ -34,14 +34,12 @@ class RasterBasePlot(ElementPlot):
 
     show_legend = param.Boolean(
         default=False,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     situate_axes = param.Boolean(
         default=True,
-        doc="""
-        Whether to situate the image relative to other plots. """,
+        doc="Whether to situate the image relative to other plots. ",
     )
 
     _plot_methods = dict(single="imshow")
@@ -176,8 +174,7 @@ class QuadMeshPlot(ColorbarPlot):
 
     show_legend = param.Boolean(
         default=False,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     style_opts = [
@@ -245,8 +242,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
 
     padding = param.Number(
         default=0.1,
-        doc="""
-        The amount of padding as a fraction of the total Grid size""",
+        doc="The amount of padding as a fraction of the total Grid size",
     )
 
     # Parameters inherited from OverlayPlot that are not part of the

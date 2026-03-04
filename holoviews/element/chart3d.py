@@ -39,8 +39,7 @@ class Surface(Image, Element3D):
     vdims = param.List(
         default=[Dimension("z")],
         bounds=(1, 1),
-        doc="""
-        The Surface height dimension.""",
+        doc="The Surface height dimension.",
     )
 
     def __init__(self, data, kdims=None, vdims=None, extents=None, **params):
@@ -159,8 +158,7 @@ class Path3D(Element3D, Path):
 
     vdims = param.List(
         default=[],
-        doc="""
-        Path3D can have optional value dimensions.""",
+        doc="Path3D can have optional value dimensions.",
     )
 
     group = param.String(default="Path3D", constant=True)

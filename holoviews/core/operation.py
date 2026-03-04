@@ -244,8 +244,7 @@ class OperationCallable(Callable):
 
     operation = param.ClassSelector(
         class_=Operation,
-        doc="""
-        The Operation being wrapped into an OperationCallable.""",
+        doc="The Operation being wrapped into an OperationCallable.",
     )
 
     def __init__(self, callable, **kwargs):

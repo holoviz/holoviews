@@ -11,51 +11,43 @@ from .graphs import GraphPlot
 class SankeyPlot(GraphPlot):
     labels = param.ClassSelector(
         class_=(str, dim),
-        doc="""
-        The dimension or dimension value transform used to draw labels from.""",
+        doc="The dimension or dimension value transform used to draw labels from.",
     )
 
     label_position = param.Selector(
         default="right",
         objects=["left", "right", "outer", "inner"],
-        doc="""
-        Whether node labels should be placed to the left, right, outer or inner.""",
+        doc="Whether node labels should be placed to the left, right, outer or inner.",
     )
 
     show_values = param.Boolean(
         default=True,
-        doc="""
-        Whether to show the values.""",
+        doc="Whether to show the values.",
     )
 
     show_legend = param.Boolean(
         default=False,
-        doc="""
-        Whether to show the values.""",
+        doc="Whether to show the values.",
     )
 
     node_width = param.Number(
         default=15,
-        doc="""
-        Width of the nodes.""",
+        doc="Width of the nodes.",
     )
 
     node_padding = param.Integer(
         default=None,
-        doc="""
-        Number of pixels of padding relative to the bounds.""",
+        doc="Number of pixels of padding relative to the bounds.",
     )
 
     iterations = param.Integer(
         default=32,
-        doc="""
-        Number of iterations to run the layout algorithm.""",
+        doc="Number of iterations to run the layout algorithm.",
     )
 
     node_sort = param.Boolean(
         default=True,
-        doc="""
-        Sort nodes in ascending breadth.""",
+        doc="Sort nodes in ascending breadth.",
     )
 
     width = param.Integer(
@@ -82,16 +74,14 @@ class SankeyPlot(GraphPlot):
         default=2,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Index of the dimension from which the node labels will be drawn""",
+        doc="Index of the dimension from which the node labels will be drawn",
     )
 
     label_index = param.ClassSelector(
         default=2,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Index of the dimension from which the node labels will be drawn""",
+        doc="Index of the dimension from which the node labels will be drawn",
     )
 
     _style_groups = dict(GraphPlot._style_groups, quad="node", text="label")

@@ -305,8 +305,7 @@ class Cycle(param.Parameterized):
 
     values = param.List(
         default=[],
-        doc="""
-       The values the cycle will iterate over.""",
+        doc="The values the cycle will iterate over.",
     )
 
     default_cycles = {"default_colors": []}
@@ -377,14 +376,12 @@ class Palette(Cycle):
 
     key = param.String(
         default="grayscale",
-        doc="""
-       Palettes look up the Palette values based on some key.""",
+        doc="Palettes look up the Palette values based on some key.",
     )
 
     range = param.NumericTuple(
         default=(0, 1),
-        doc="""
-        The range from which the Palette values are sampled.""",
+        doc="The range from which the Palette values are sampled.",
     )
 
     samples = param.Integer(
@@ -396,14 +393,12 @@ class Palette(Cycle):
 
     sample_fn = param.Callable(
         default=np.linspace,
-        doc="""
-        The function to generate the samples, by default linear.""",
+        doc="The function to generate the samples, by default linear.",
     )
 
     reverse = param.Boolean(
         default=False,
-        doc="""
-        Whether to reverse the palette.""",
+        doc="Whether to reverse the palette.",
     )
 
     # A list of available colormaps
@@ -900,14 +895,10 @@ class Compositor(param.Parameterized):
 
     backends = param.List(
         default=[],
-        doc="""
-      Defines which backends to apply the Compositor for.""",
+        doc="Defines which backends to apply the Compositor for.",
     )
 
-    operation = param.Parameter(
-        doc="""
-       The Operation to apply when collapsing overlays."""
-    )
+    operation = param.Parameter(doc="The Operation to apply when collapsing overlays.")
 
     pattern = param.String(
         doc="""
@@ -926,25 +917,19 @@ class Compositor(param.Parameterized):
 
     group = param.String(
         allow_None=True,
-        doc="""
-       The group identifier for the output of this particular compositor""",
+        doc="The group identifier for the output of this particular compositor",
     )
 
-    kwargs = param.Dict(
-        doc="""
-       Optional set of parameters to pass to the operation."""
-    )
+    kwargs = param.Dict(doc="Optional set of parameters to pass to the operation.")
 
     transfer_options = param.Boolean(
         default=False,
-        doc="""
-       Whether to transfer the options from the input to the output.""",
+        doc="Whether to transfer the options from the input to the output.",
     )
 
     transfer_parameters = param.Boolean(
         default=False,
-        doc="""
-       Whether to transfer plot options which match to the operation.""",
+        doc="Whether to transfer plot options which match to the operation.",
     )
 
     operations = []  # The operations that can be used to define compositors.

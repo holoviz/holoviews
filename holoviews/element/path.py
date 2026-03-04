@@ -510,8 +510,7 @@ class Bounds(BaseShape):
 
     lbrt = param.Tuple(
         default=(-0.5, -0.5, 0.5, 0.5),
-        doc="""
-          The (left, bottom, right, top) coordinates of the bounding box.""",
+        doc="The (left, bottom, right, top) coordinates of the bounding box.",
     )
 
     group = param.String(default="Bounds", constant=True, doc="The assigned group name.")

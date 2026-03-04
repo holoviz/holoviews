@@ -132,8 +132,7 @@ class HexTilesPlot(ColorbarPlot):
     orientation = param.Selector(
         default="pointy",
         objects=["flat", "pointy"],
-        doc="""
-      The orientation of hexagon bins. By default the pointy side is on top.""",
+        doc="The orientation of hexagon bins. By default the pointy side is on top.",
     )
 
     # Deprecated options
@@ -142,8 +141,7 @@ class HexTilesPlot(ColorbarPlot):
         default=2,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""",
+        doc="Deprecated in favor of color style mapping, e.g. `color=dim('color')`",
     )
 
     max_scale = param.Number(
@@ -170,8 +168,7 @@ class HexTilesPlot(ColorbarPlot):
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-      Index of the dimension from which the sizes will the drawn.""",
+        doc="Index of the dimension from which the sizes will the drawn.",
     )
 
     selection_display = BokehOverlaySelectionDisplay()

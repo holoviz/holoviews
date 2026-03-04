@@ -35,8 +35,7 @@ class ScatterPlot(ChartPlot, ColorbarPlot):
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-      Index of the dimension from which the color will the drawn""",
+        doc="Index of the dimension from which the color will the drawn",
     )
 
     style_opts = [
@@ -186,20 +185,17 @@ class ErrorBarsPlot(ChartPlot, ColorbarPlot):
 class BarPlot(BarsMixin, ElementPlot):
     multi_level = param.Boolean(
         default=True,
-        doc="""
-       Whether the Bars should be grouped into a second categorical axis level.""",
+        doc="Whether the Bars should be grouped into a second categorical axis level.",
     )
 
     stacked = param.Boolean(
         default=False,
-        doc="""
-       Whether the bars should be stacked or grouped.""",
+        doc="Whether the bars should be stacked or grouped.",
     )
 
     show_legend = param.Boolean(
         default=True,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     style_opts = ["visible", "color"]

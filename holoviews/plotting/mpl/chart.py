@@ -71,14 +71,12 @@ class CurvePlot(ChartPlot):
 
     show_grid = param.Boolean(
         default=False,
-        doc="""
-        Enable axis grid.""",
+        doc="Enable axis grid.",
     )
 
     show_legend = param.Boolean(
         default=True,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     style_opts = ["alpha", "color", "visible", "linewidth", "linestyle", "marker", "ms"]
@@ -237,8 +235,7 @@ class AreaPlot(AreaMixin, ChartPlot):
 
     show_legend = param.Boolean(
         default=False,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     style_opts = [
@@ -277,14 +274,12 @@ class AreaPlot(AreaMixin, ChartPlot):
 class SideAreaPlot(AdjoinedPlot, AreaPlot):
     bgcolor = param.Parameter(
         default=(1, 1, 1, 0),
-        doc="""
-        Make plot background invisible.""",
+        doc="Make plot background invisible.",
     )
 
     border_size = param.Number(
         default=0,
-        doc="""
-        The size of the border expressed as a fraction of the main plot.""",
+        doc="The size of the border expressed as a fraction of the main plot.",
     )
 
     xaxis = param.Selector(
@@ -313,8 +308,7 @@ class SpreadPlot(AreaPlot):
 
     show_legend = param.Boolean(
         default=False,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     def __init__(self, element, **params):
@@ -511,21 +505,18 @@ class HistogramPlot(ColorbarPlot):
 class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
     bgcolor = param.Parameter(
         default=(1, 1, 1, 0),
-        doc="""
-        Make plot background invisible.""",
+        doc="Make plot background invisible.",
     )
 
     offset = param.Number(
         default=0.2,
         bounds=(0, 1),
-        doc="""
-        Histogram value offset for a colorbar.""",
+        doc="Histogram value offset for a colorbar.",
     )
 
     show_grid = param.Boolean(
         default=False,
-        doc="""
-        Whether to overlay a grid on the axis.""",
+        doc="Whether to overlay a grid on the axis.",
     )
 
     def _process_hist(self, hist):
@@ -629,8 +620,7 @@ class PointPlot(ChartPlot, ColorbarPlot, LegendPlot):
 
     show_grid = param.Boolean(
         default=False,
-        doc="""
-      Whether to draw grid lines at the tick positions.""",
+        doc="Whether to draw grid lines at the tick positions.",
     )
 
     # Deprecated parameters
@@ -639,16 +629,14 @@ class PointPlot(ChartPlot, ColorbarPlot, LegendPlot):
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""",
+        doc="Deprecated in favor of color style mapping, e.g. `color=dim('color')`",
     )
 
     size_index = param.ClassSelector(
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Deprecated in favor of size style mapping, e.g. `size=dim('size')`""",
+        doc="Deprecated in favor of size style mapping, e.g. `size=dim('size')`",
     )
 
     scaling_method = param.Selector(
@@ -980,26 +968,22 @@ class VectorFieldPlot(ColorbarPlot):
 class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
     bar_padding = param.Number(
         default=0.2,
-        doc="""
-       Defines the padding between groups.""",
+        doc="Defines the padding between groups.",
     )
 
     multi_level = param.Boolean(
         default=True,
-        doc="""
-       Whether the Bars should be grouped into a second categorical axis level.""",
+        doc="Whether the Bars should be grouped into a second categorical axis level.",
     )
 
     stacked = param.Boolean(
         default=False,
-        doc="""
-       Whether the bars should be stacked or grouped.""",
+        doc="Whether the bars should be stacked or grouped.",
     )
 
     show_legend = param.Boolean(
         default=True,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     style_opts = [
@@ -1250,22 +1234,19 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
         default=None,
         allow_None=True,
         class_=(str, int),
-        doc="""
-      Index of the dimension from which the color will the drawn""",
+        doc="Index of the dimension from which the color will the drawn",
     )
 
     spike_length = param.Number(
         default=0.1,
-        doc="""
-      The length of each spike if Spikes object is one dimensional.""",
+        doc="The length of each spike if Spikes object is one dimensional.",
     )
 
     padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
     position = param.Number(
         default=0.0,
-        doc="""
-      The position of the lower end of each spike.""",
+        doc="The position of the lower end of each spike.",
     )
 
     style_opts = [*PathPlot.style_opts, "cmap"]
@@ -1359,26 +1340,22 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
 class SideSpikesPlot(AdjoinedPlot, SpikesPlot):
     bgcolor = param.Parameter(
         default=(1, 1, 1, 0),
-        doc="""
-        Make plot background invisible.""",
+        doc="Make plot background invisible.",
     )
 
     border_size = param.Number(
         default=0,
-        doc="""
-        The size of the border expressed as a fraction of the main plot.""",
+        doc="The size of the border expressed as a fraction of the main plot.",
     )
 
     subplot_size = param.Number(
         default=0.1,
-        doc="""
-        The size subplots as expressed as a fraction of the main plot.""",
+        doc="The size subplots as expressed as a fraction of the main plot.",
     )
 
     spike_length = param.Number(
         default=1,
-        doc="""
-      The length of each spike if Spikes object is one dimensional.""",
+        doc="The length of each spike if Spikes object is one dimensional.",
     )
 
     xaxis = param.Selector(

@@ -504,8 +504,7 @@ class Pipe(Stream):
     data = param.Parameter(
         default=None,
         constant=True,
-        doc="""
-        Arbitrary data being streamed to a DynamicMap callback.""",
+        doc="Arbitrary data being streamed to a DynamicMap callback.",
     )
 
     def __init__(self, data=None, memoize=False, **params):
@@ -549,8 +548,7 @@ class Buffer(Pipe):
     data = param.Parameter(
         default=None,
         constant=True,
-        doc="""
-        Arbitrary data being streamed to a DynamicMap callback.""",
+        doc="Arbitrary data being streamed to a DynamicMap callback.",
     )
 
     def __init__(self, data, length=1000, index=True, following=True, **params):
@@ -747,15 +745,13 @@ class Params(Stream):
         constant=True,
         allow_None=True,
         allow_refs=False,
-        doc="""
-        Parameterized instance to watch for parameter changes.""",
+        doc="Parameterized instance to watch for parameter changes.",
     )
 
     parameters = param.List(
         default=[],
         constant=True,
-        doc="""
-        Parameters on the parameterized to watch.""",
+        doc="Parameters on the parameterized to watch.",
     )
 
     def __init__(
@@ -906,15 +902,13 @@ class ParamMethod(Params):
         class_=(param.Parameterized, param.parameterized.ParameterizedMetaclass),
         constant=True,
         allow_None=True,
-        doc="""
-        Parameterized instance to watch for parameter changes.""",
+        doc="Parameterized instance to watch for parameter changes.",
     )
 
     parameters = param.List(
         default=[],
         constant=True,
-        doc="""
-        Parameters on the parameterized to watch.""",
+        doc="Parameters on the parameterized to watch.",
     )
 
     def __init__(self, parameterized, parameters=None, watch=True, **params):
@@ -1034,8 +1028,7 @@ class History(Stream):
 
     values = param.List(
         constant=True,
-        doc="""
-        List containing the historical values of the input stream""",
+        doc="List containing the historical values of the input stream",
     )
 
     def __init__(self, input_stream, **params):
@@ -1383,8 +1376,7 @@ class PointerX(LinkedStream):
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the x-axis in data coordinates""",
+        doc="Pointer position along the x-axis in data coordinates",
     )
 
 
@@ -1402,8 +1394,7 @@ class PointerY(LinkedStream):
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the y-axis in data coordinates""",
+        doc="Pointer position along the y-axis in data coordinates",
     )
 
 
@@ -1421,16 +1412,14 @@ class PointerXY(LinkedStream):
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the x-axis in data coordinates""",
+        doc="Pointer position along the x-axis in data coordinates",
     )
 
     y = param.ClassSelector(
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the y-axis in data coordinates""",
+        doc="Pointer position along the y-axis in data coordinates",
     )
 
 
@@ -1444,16 +1433,14 @@ class Draw(PointerXY):
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the x-axis in data coordinates""",
+        doc="Pointer position along the x-axis in data coordinates",
     )
 
     y = param.ClassSelector(
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the y-axis in data coordinates""",
+        doc="Pointer position along the y-axis in data coordinates",
     )
 
     stroke_count = param.Integer(
@@ -1472,16 +1459,14 @@ class SingleTap(PointerXY):
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the x-axis in data coordinates""",
+        doc="Pointer position along the x-axis in data coordinates",
     )
 
     y = param.ClassSelector(
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the y-axis in data coordinates""",
+        doc="Pointer position along the y-axis in data coordinates",
     )
 
 
@@ -1492,16 +1477,14 @@ class Tap(PointerXY):
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the x-axis in data coordinates""",
+        doc="Pointer position along the x-axis in data coordinates",
     )
 
     y = param.ClassSelector(
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the y-axis in data coordinates""",
+        doc="Pointer position along the y-axis in data coordinates",
     )
 
 
@@ -1511,15 +1494,13 @@ class MultiAxisTap(LinkedStream):
     xs = param.Dict(
         default=None,
         constant=True,
-        doc="""
-           Pointer positions along the x-axes in data coordinates""",
+        doc="Pointer positions along the x-axes in data coordinates",
     )
 
     ys = param.Dict(
         default=None,
         constant=True,
-        doc="""
-           Pointer positions along the y-axes in data coordinates""",
+        doc="Pointer positions along the y-axes in data coordinates",
     )
 
 
@@ -1530,16 +1511,14 @@ class DoubleTap(PointerXY):
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the x-axis in data coordinates""",
+        doc="Pointer position along the x-axis in data coordinates",
     )
 
     y = param.ClassSelector(
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the y-axis in data coordinates""",
+        doc="Pointer position along the y-axis in data coordinates",
     )
 
 
@@ -1550,16 +1529,14 @@ class PressUp(PointerXY):
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the x-axis in data coordinates""",
+        doc="Pointer position along the x-axis in data coordinates",
     )
 
     y = param.ClassSelector(
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the y-axis in data coordinates""",
+        doc="Pointer position along the y-axis in data coordinates",
     )
 
 
@@ -1570,16 +1547,14 @@ class PanEnd(PointerXY):
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the x-axis in data coordinates""",
+        doc="Pointer position along the x-axis in data coordinates",
     )
 
     y = param.ClassSelector(
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the y-axis in data coordinates""",
+        doc="Pointer position along the y-axis in data coordinates",
     )
 
 
@@ -1593,16 +1568,14 @@ class MouseEnter(PointerXY):
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the x-axis in data coordinates""",
+        doc="Pointer position along the x-axis in data coordinates",
     )
 
     y = param.ClassSelector(
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the y-axis in data coordinates""",
+        doc="Pointer position along the y-axis in data coordinates",
     )
 
 
@@ -1616,16 +1589,14 @@ class MouseLeave(PointerXY):
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the x-axis in data coordinates""",
+        doc="Pointer position along the x-axis in data coordinates",
     )
 
     y = param.ClassSelector(
         class_=pointer_types,
         default=None,
         constant=True,
-        doc="""
-           Pointer position along the y-axis in data coordinates""",
+        doc="Pointer position along the y-axis in data coordinates",
     )
 
 
@@ -1639,8 +1610,7 @@ class PlotSize(LinkedStream):
     scale = param.Number(
         default=1.0,
         constant=True,
-        doc="""
-       Scale factor to scale width and height values reported by the stream""",
+        doc="Scale factor to scale width and height values reported by the stream",
     )
 
     def transform(self):
@@ -1670,16 +1640,14 @@ class RangeXY(LinkedStream):
         default=None,
         length=2,
         constant=True,
-        doc="""
-      Range of the x-axis of a plot in data coordinates""",
+        doc="Range of the x-axis of a plot in data coordinates",
     )
 
     y_range = param.Tuple(
         default=None,
         length=2,
         constant=True,
-        doc="""
-      Range of the y-axis of a plot in data coordinates""",
+        doc="Range of the y-axis of a plot in data coordinates",
     )
 
 
@@ -1690,8 +1658,7 @@ class RangeX(LinkedStream):
         default=None,
         length=2,
         constant=True,
-        doc="""
-      Range of the x-axis of a plot in data coordinates""",
+        doc="Range of the x-axis of a plot in data coordinates",
     )
 
     def _set_stream_parameters(self, **kwargs):
@@ -1706,8 +1673,7 @@ class RangeY(LinkedStream):
         default=None,
         length=2,
         constant=True,
-        doc="""
-      Range of the y-axis of a plot in data coordinates""",
+        doc="Range of the y-axis of a plot in data coordinates",
     )
 
     def _set_stream_parameters(self, **kwargs):
@@ -1726,8 +1692,7 @@ class BoundsXY(LinkedStream):
         constant=True,
         length=4,
         allow_None=True,
-        doc="""
-        Bounds defined as (left, bottom, right, top) tuple.""",
+        doc="Bounds defined as (left, bottom, right, top) tuple.",
     )
 
 
@@ -1739,8 +1704,7 @@ class Lasso(LinkedStream):
 
     geometry = param.Array(
         constant=True,
-        doc="""
-        The coordinates of the lasso geometry as a two-column array.""",
+        doc="The coordinates of the lasso geometry as a two-column array.",
     )
 
 
@@ -1756,8 +1720,7 @@ class SelectionXY(BoundsXY):
         constant=True,
         length=4,
         allow_None=True,
-        doc="""
-        Bounds defined as (left, bottom, right, top) tuple.""",
+        doc="Bounds defined as (left, bottom, right, top) tuple.",
     )
 
     x_selection = param.ClassSelector(
@@ -1790,8 +1753,7 @@ class BoundsX(LinkedStream):
         constant=True,
         length=2,
         allow_None=True,
-        doc="""
-        Bounds defined as (left, right) tuple.""",
+        doc="Bounds defined as (left, right) tuple.",
     )
 
 
@@ -1806,8 +1768,7 @@ class BoundsY(LinkedStream):
         constant=True,
         length=2,
         allow_None=True,
-        doc="""
-        Bounds defined as (bottom, top) tuple.""",
+        doc="Bounds defined as (bottom, top) tuple.",
     )
 
 
@@ -1818,8 +1779,7 @@ class Selection1D(LinkedStream):
         default=[],
         allow_None=True,
         constant=True,
-        doc="""
-        Indices into a 1D datastructure.""",
+        doc="Indices into a 1D datastructure.",
     )
 
 
@@ -1829,8 +1789,7 @@ class PlotReset(LinkedStream):
     resetting = param.Boolean(
         default=False,
         constant=True,
-        doc="""
-        Whether a reset event is being signalled.""",
+        doc="Whether a reset event is being signalled.",
     )
 
     def __init__(self, *args, **params):

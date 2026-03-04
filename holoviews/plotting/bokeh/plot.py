@@ -507,8 +507,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
 
     merge_tools = param.Boolean(
         default=True,
-        doc="""
-        Whether to merge all the tools into a single toolbar""",
+        doc="Whether to merge all the tools into a single toolbar",
     )
 
     shared_xaxis = param.Boolean(
@@ -527,8 +526,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
 
     show_legend = param.Boolean(
         default=False,
-        doc="""
-        Adds a legend based on the entries of the middle-right plot""",
+        doc="Adds a legend based on the entries of the middle-right plot",
     )
 
     xaxis = param.Selector(
@@ -550,15 +548,13 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     xrotation = param.Integer(
         default=0,
         bounds=(0, 360),
-        doc="""
-        Rotation angle of the xticks.""",
+        doc="Rotation angle of the xticks.",
     )
 
     yrotation = param.Integer(
         default=0,
         bounds=(0, 360),
-        doc="""
-        Rotation angle of the yticks.""",
+        doc="Rotation angle of the yticks.",
     )
 
     plot_size = param.ClassSelector(
@@ -572,8 +568,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
 
     sync_legends = param.Boolean(
         default=True,
-        doc="""
-        Whether to sync the legend when muted/unmuted based on the name""",
+        doc="Whether to sync the legend when muted/unmuted based on the name",
     )
 
     def __init__(self, layout, ranges=None, layout_num=1, keys=None, **params):
@@ -807,8 +802,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
 class LayoutPlot(CompositePlot, GenericLayoutPlot):
     shared_axes = param.Boolean(
         default=True,
-        doc="""
-        Whether axes should be shared across plots""",
+        doc="Whether axes should be shared across plots",
     )
 
     shared_datasource = param.Boolean(
@@ -821,14 +815,12 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
     merge_tools = param.Boolean(
         default=True,
-        doc="""
-        Whether to merge all the tools into a single toolbar""",
+        doc="Whether to merge all the tools into a single toolbar",
     )
 
     sync_legends = param.Boolean(
         default=True,
-        doc="""
-        Whether to sync the legend when muted/unmuted based on the name""",
+        doc="Whether to sync the legend when muted/unmuted based on the name",
     )
 
     show_legends = param.ClassSelector(
@@ -858,8 +850,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
     tabs = param.Boolean(
         default=False,
-        doc="""
-        Whether to display overlaid plots in separate panes""",
+        doc="Whether to display overlaid plots in separate panes",
     )
 
     def __init__(self, layout, keys=None, **params):

@@ -30,14 +30,12 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
 
     radial = param.Boolean(
         default=False,
-        doc="""
-        Whether the HeatMap should be radial""",
+        doc="Whether the HeatMap should be radial",
     )
 
     show_values = param.Boolean(
         default=False,
-        doc="""
-        Whether to annotate each pixel with its value.""",
+        doc="Whether to annotate each pixel with its value.",
     )
 
     xmarks = param.Parameter(
@@ -228,27 +226,23 @@ class RadialHeatMapPlot(ColorbarPlot):
     radius_inner = param.Number(
         default=0.1,
         bounds=(0, 0.5),
-        doc="""
-        Define the radius fraction of inner, empty space.""",
+        doc="Define the radius fraction of inner, empty space.",
     )
 
     radius_outer = param.Number(
         default=0.05,
         bounds=(0, 1),
-        doc="""
-        Define the radius fraction of outer space including the labels.""",
+        doc="Define the radius fraction of outer space including the labels.",
     )
 
     radial = param.Boolean(
         default=True,
-        doc="""
-        Whether the HeatMap should be radial""",
+        doc="Whether the HeatMap should be radial",
     )
 
     show_values = param.Boolean(
         default=False,
-        doc="""
-        Whether to annotate each pixel with its value.""",
+        doc="Whether to annotate each pixel with its value.",
     )
 
     xmarks = param.Parameter(

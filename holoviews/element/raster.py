@@ -47,8 +47,7 @@ class Raster(Element2D):
     vdims = param.List(
         default=[Dimension("z")],
         bounds=(1, None),
-        doc="""
-        The dimension description of the data held in the matrix.""",
+        doc="The dimension description of the data held in the matrix.",
     )
 
     def __init__(self, data, kdims=None, vdims=None, extents=None, **params):
@@ -237,8 +236,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
     bounds = param.ClassSelector(
         class_=BoundingRegion,
         default=BoundingBox(),
-        doc="""
-        The bounding region in sheet coordinates containing the data.""",
+        doc="The bounding region in sheet coordinates containing the data.",
     )
 
     datatype = param.List(default=["grid", "xarray", "image", "cube", "dataframe", "dictionary"])
@@ -257,8 +255,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
     vdims = param.List(
         default=[Dimension("z")],
         bounds=(1, None),
-        doc="""
-        The dimension description of the data held in the matrix.""",
+        doc="The dimension description of the data held in the matrix.",
     )
 
     rtol = param.Number(
@@ -585,10 +582,7 @@ class ImageStack(Image):
 
     """
 
-    vdims = param.List(
-        doc="""
-        The dimension description of the data held in the matrix."""
-    )
+    vdims = param.List(doc="The dimension description of the data held in the matrix.")
 
     group = param.String(default="ImageStack", constant=True)
 

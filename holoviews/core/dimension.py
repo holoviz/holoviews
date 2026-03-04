@@ -252,8 +252,7 @@ class Dimension(param.Parameterized):
 
     value_format = param.Callable(
         default=None,
-        doc="""
-        Formatting function applied to each value before display.""",
+        doc="Formatting function applied to each value before display.",
     )
 
     values = param.List(
@@ -938,8 +937,7 @@ class Dimensioned(LabelledData):
     group = param.String(
         default="Dimensioned",
         constant=True,
-        doc="""
-       A string describing the data wrapped by the object.""",
+        doc="A string describing the data wrapped by the object.",
     )
 
     __abstract = True

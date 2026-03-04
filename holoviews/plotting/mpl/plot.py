@@ -91,8 +91,7 @@ class MPLPlot(DimensionedPlot):
     fig_alpha = param.Number(
         default=1.0,
         bounds=(0, 1),
-        doc="""
-        Alpha of the overall figure background.""",
+        doc="Alpha of the overall figure background.",
     )
 
     fig_bounds = param.NumericTuple(
@@ -116,21 +115,18 @@ class MPLPlot(DimensionedPlot):
 
     fig_latex = param.Boolean(
         default=False,
-        doc="""
-        Whether to use LaTeX text in the overall figure.""",
+        doc="Whether to use LaTeX text in the overall figure.",
     )
 
     fig_rcparams = param.Dict(
         default={},
-        doc="""
-        matplotlib rc parameters to apply to the overall figure.""",
+        doc="matplotlib rc parameters to apply to the overall figure.",
     )
 
     fig_size = param.Number(
         default=100.0,
         bounds=(1, None),
-        doc="""
-        Size relative to the supplied overall fig_inches in percent.""",
+        doc="Size relative to the supplied overall fig_inches in percent.",
     )
 
     gridstyle = param.Dict(
@@ -161,27 +157,23 @@ class MPLPlot(DimensionedPlot):
     sublabel_offset = param.Number(
         default=0,
         bounds=(0, None),
-        doc="""
-        Allows offsetting the sublabel index.""",
+        doc="Allows offsetting the sublabel index.",
     )
 
     sublabel_position = param.NumericTuple(
         default=(-0.35, 0.85),
-        doc="""
-         Position relative to the plot for placing the optional subfigure label.""",
+        doc="Position relative to the plot for placing the optional subfigure label.",
     )
 
     sublabel_size = param.Number(
         default=18,
-        doc="""
-         Size of optional subfigure label.""",
+        doc="Size of optional subfigure label.",
     )
 
     sublabel_skip = param.List(
         default=None,
         item_type=int,
-        doc="""
-        List of elements to skip when labeling subplots. Numbering starts at 1.""",
+        doc="List of elements to skip when labeling subplots. Numbering starts at 1.",
     )
 
     projection = param.Parameter(
@@ -195,8 +187,7 @@ class MPLPlot(DimensionedPlot):
 
     show_frame = param.Boolean(
         default=False,
-        doc="""
-        Whether or not to show a complete frame around the plot.""",
+        doc="Whether or not to show a complete frame around the plot.",
     )
 
     _close_figures = True
@@ -398,14 +389,12 @@ class GridPlot(CompositePlot):
 
     aspect = param.Parameter(
         default="equal",
-        doc="""
-        Aspect ratios on GridPlot should be automatically determined.""",
+        doc="Aspect ratios on GridPlot should be automatically determined.",
     )
 
     padding = param.Number(
         default=0.1,
-        doc="""
-        The amount of padding as a fraction of the total Grid size""",
+        doc="The amount of padding as a fraction of the total Grid size",
     )
 
     shared_xaxis = param.Boolean(
@@ -424,8 +413,7 @@ class GridPlot(CompositePlot):
 
     show_legend = param.Boolean(
         default=False,
-        doc="""
-        Legends add to much clutter in a grid and are disabled by default.""",
+        doc="Legends add to much clutter in a grid and are disabled by default.",
     )
 
     xaxis = param.Selector(
@@ -447,15 +435,13 @@ class GridPlot(CompositePlot):
     xrotation = param.Integer(
         default=0,
         bounds=(0, 360),
-        doc="""
-        Rotation angle of the xticks.""",
+        doc="Rotation angle of the xticks.",
     )
 
     yrotation = param.Integer(
         default=0,
         bounds=(0, 360),
-        doc="""
-        Rotation angle of the yticks.""",
+        doc="Rotation angle of the yticks.",
     )
 
     def __init__(
@@ -904,8 +890,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
 
     tight_padding = param.Parameter(
         default=3,
-        doc="""
-      Integer or tuple specifying the padding in inches in a tight layout.""",
+        doc="Integer or tuple specifying the padding in inches in a tight layout.",
     )
 
     hspace = param.Number(
@@ -1323,26 +1308,22 @@ class AdjoinedPlot(DimensionedPlot):
 
     bgcolor = param.Parameter(
         default=(1, 1, 1, 0),
-        doc="""
-        Make plot background invisible.""",
+        doc="Make plot background invisible.",
     )
 
     border_size = param.Number(
         default=0.25,
-        doc="""
-        The size of the border expressed as a fraction of the main plot.""",
+        doc="The size of the border expressed as a fraction of the main plot.",
     )
 
     show_title = param.Boolean(
         default=False,
-        doc="""
-        Titles should be disabled on all SidePlots to avoid clutter.""",
+        doc="Titles should be disabled on all SidePlots to avoid clutter.",
     )
 
     subplot_size = param.Number(
         default=0.25,
-        doc="""
-        The size subplots as expressed as a fraction of the main plot.""",
+        doc="The size subplots as expressed as a fraction of the main plot.",
     )
 
     show_xlabel = param.Boolean(

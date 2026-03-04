@@ -40,8 +40,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     bgcolor = param.ClassSelector(
         class_=(str, tuple),
         default=None,
-        doc="""
-        If set bgcolor overrides the background color of the axis.""",
+        doc="If set bgcolor overrides the background color of the axis.",
     )
 
     invert_axes = param.Selector(
@@ -54,44 +53,37 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
     invert_xaxis = param.Boolean(
         default=False,
-        doc="""
-        Whether to invert the plot x-axis.""",
+        doc="Whether to invert the plot x-axis.",
     )
 
     invert_yaxis = param.Boolean(
         default=False,
-        doc="""
-        Whether to invert the plot y-axis.""",
+        doc="Whether to invert the plot y-axis.",
     )
 
     invert_zaxis = param.Boolean(
         default=False,
-        doc="""
-        Whether to invert the plot z-axis.""",
+        doc="Whether to invert the plot z-axis.",
     )
 
     labelled = param.List(
         default=["x", "y", "z"],
-        doc="""
-        Whether to label the 'x' and 'y' axes.""",
+        doc="Whether to label the 'x' and 'y' axes.",
     )
 
     logx = param.Boolean(
         default=False,
-        doc="""
-         Whether to apply log scaling to the x-axis of the Chart.""",
+        doc="Whether to apply log scaling to the x-axis of the Chart.",
     )
 
     logy = param.Boolean(
         default=False,
-        doc="""
-         Whether to apply log scaling to the y-axis of the Chart.""",
+        doc="Whether to apply log scaling to the y-axis of the Chart.",
     )
 
     logz = param.Boolean(
         default=False,
-        doc="""
-         Whether to apply log scaling to the y-axis of the Chart.""",
+        doc="Whether to apply log scaling to the y-axis of the Chart.",
     )
 
     margins = param.NumericTuple(
@@ -103,14 +95,12 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
     responsive = param.Boolean(
         default=False,
-        doc="""
-         Whether the plot should stretch to fill the available space.""",
+        doc="Whether the plot should stretch to fill the available space.",
     )
 
     show_legend = param.Boolean(
         default=False,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     xaxis = param.Selector(
@@ -686,8 +676,7 @@ class ColorbarPlot(ElementPlot):
 
     colorbar = param.Boolean(
         default=False,
-        doc="""
-        Whether to display a colorbar.""",
+        doc="Whether to display a colorbar.",
     )
 
     color_levels = param.ClassSelector(
@@ -708,8 +697,7 @@ class ColorbarPlot(ElementPlot):
 
     symmetric = param.Boolean(
         default=False,
-        doc="""
-        Whether to make the colormap symmetric around zero.""",
+        doc="Whether to make the colormap symmetric around zero.",
     )
 
     def get_color_opts(self, eldim, element, ranges, style):

@@ -27,8 +27,7 @@ class RollingBase(param.Parameterized):
 
     rolling_window = param.Integer(
         default=10,
-        doc="""
-        The window size over which to operate.""",
+        doc="The window size over which to operate.",
     )
 
     def _roll_kwargs(self):
@@ -66,8 +65,7 @@ class rolling(Operation, RollingBase):
 
     function = param.Callable(
         default=np.mean,
-        doc="""
-        The function to apply over the rolling window.""",
+        doc="The function to apply over the rolling window.",
     )
 
     def _process_layer(self, element, key=None):
@@ -103,20 +101,17 @@ class resample(Operation):
 
     function = param.Callable(
         default=np.mean,
-        doc="""
-        Function for computing new values out of existing ones.""",
+        doc="Function for computing new values out of existing ones.",
     )
 
     label = param.Selector(
         default="right",
-        doc="""
-        The bin edge to label the bin with.""",
+        doc="The bin edge to label the bin with.",
     )
 
     rule = param.String(
         default="D",
-        doc="""
-        A string representing the time interval over which to apply the resampling""",
+        doc="A string representing the time interval over which to apply the resampling",
     )
 
     def _process_layer(self, element, key=None):
@@ -145,8 +140,7 @@ class rolling_outlier_std(Operation, RollingBase):
 
     sigma = param.Number(
         default=2.0,
-        doc="""
-        Minimum sigma before a value is considered an outlier.""",
+        doc="Minimum sigma before a value is considered an outlier.",
     )
 
     def _process_layer(self, element, key=None):

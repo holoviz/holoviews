@@ -52,8 +52,7 @@ class MPLRenderer(Renderer):
 
     dpi = param.Integer(
         default=72,
-        doc="""
-        The render resolution in dpi (dots per inch)""",
+        doc="The render resolution in dpi (dots per inch)",
     )
 
     fig = param.Selector(

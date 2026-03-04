@@ -397,8 +397,7 @@ class DimensionedPlot(Plot):
 
     fontscale = param.Number(
         default=None,
-        doc="""
-       Scales the size of all fonts.""",
+        doc="Scales the size of all fonts.",
     )
 
     # Allowed fontsize keys
@@ -423,8 +422,7 @@ class DimensionedPlot(Plot):
 
     show_title = param.Boolean(
         default=True,
-        doc="""
-        Whether to display the plot title.""",
+        doc="Whether to display the plot title.",
     )
 
     title = param.String(
@@ -1159,21 +1157,18 @@ class GenericElementPlot(DimensionedPlot):
 
     apply_ranges = param.Boolean(
         default=True,
-        doc="""
-        Whether to compute the plot bounds from the data itself.""",
+        doc="Whether to compute the plot bounds from the data itself.",
     )
 
     apply_extents = param.Boolean(
         default=True,
-        doc="""
-        Whether to apply extent overrides on the Elements""",
+        doc="Whether to apply extent overrides on the Elements",
     )
 
     bgcolor = param.ClassSelector(
         class_=(str, tuple),
         default=None,
-        doc="""
-        If set bgcolor overrides the background color of the axis.""",
+        doc="If set bgcolor overrides the background color of the axis.",
     )
 
     default_span = param.ClassSelector(
@@ -1197,32 +1192,27 @@ class GenericElementPlot(DimensionedPlot):
 
     invert_axes = param.Boolean(
         default=False,
-        doc="""
-        Whether to invert the x- and y-axis""",
+        doc="Whether to invert the x- and y-axis",
     )
 
     invert_xaxis = param.Boolean(
         default=False,
-        doc="""
-        Whether to invert the plot x-axis.""",
+        doc="Whether to invert the plot x-axis.",
     )
 
     invert_yaxis = param.Boolean(
         default=False,
-        doc="""
-        Whether to invert the plot y-axis.""",
+        doc="Whether to invert the plot y-axis.",
     )
 
     logx = param.Boolean(
         default=False,
-        doc="""
-        Whether the x-axis of the plot will be a log axis.""",
+        doc="Whether the x-axis of the plot will be a log axis.",
     )
 
     logy = param.Boolean(
         default=False,
-        doc="""
-        Whether the y-axis of the plot will be a log axis.""",
+        doc="Whether the y-axis of the plot will be a log axis.",
     )
 
     padding = param.ClassSelector(
@@ -1257,14 +1247,12 @@ class GenericElementPlot(DimensionedPlot):
 
     show_legend = param.Boolean(
         default=True,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     show_grid = param.Boolean(
         default=False,
-        doc="""
-        Whether to show a Cartesian grid on the plot.""",
+        doc="Whether to show a Cartesian grid on the plot.",
     )
 
     xaxis = param.Selector(
@@ -1326,15 +1314,13 @@ class GenericElementPlot(DimensionedPlot):
     xrotation = param.Integer(
         default=None,
         bounds=(0, 360),
-        doc="""
-        Rotation angle of the xticks.""",
+        doc="Rotation angle of the xticks.",
     )
 
     yrotation = param.Integer(
         default=None,
         bounds=(0, 360),
-        doc="""
-        Rotation angle of the yticks.""",
+        doc="Rotation angle of the yticks.",
     )
 
     xticks = param.ClassSelector(
@@ -1948,14 +1934,12 @@ class GenericOverlayPlot(GenericElementPlot):
 
     legend_limit = param.Integer(
         default=25,
-        doc="""
-        Number of rendered glyphs before legends are disabled.""",
+        doc="Number of rendered glyphs before legends are disabled.",
     )
 
     show_legend = param.Boolean(
         default=True,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     style_grouping = param.Integer(

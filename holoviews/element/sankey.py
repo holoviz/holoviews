@@ -30,27 +30,23 @@ class _layout_sankey(Operation):
 
     node_width = param.Number(
         default=15,
-        doc="""
-        Width of the nodes.""",
+        doc="Width of the nodes.",
     )
 
     node_padding = param.Integer(
         default=None,
         allow_None=True,
-        doc="""
-        Number of pixels of padding relative to the bounds.""",
+        doc="Number of pixels of padding relative to the bounds.",
     )
 
     iterations = param.Integer(
         default=32,
-        doc="""
-        Number of iterations to run the layout algorithm.""",
+        doc="Number of iterations to run the layout algorithm.",
     )
 
     node_sort = param.Boolean(
         default=True,
-        doc="""
-        Sort nodes in ascending breadth.""",
+        doc="Sort nodes in ascending breadth.",
     )
 
     def _process(self, element, key=None):

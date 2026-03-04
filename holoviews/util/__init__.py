@@ -928,14 +928,12 @@ class Dynamic(param.ParameterizedFunction):
 
     operation = param.Callable(
         default=lambda x: x,
-        doc="""
-        Operation or user-defined callable to apply dynamically""",
+        doc="Operation or user-defined callable to apply dynamically",
     )
 
     kwargs = param.Dict(
         default={},
-        doc="""
-        Keyword arguments passed to the function.""",
+        doc="Keyword arguments passed to the function.",
     )
 
     link_inputs = param.Boolean(
@@ -964,16 +962,14 @@ class Dynamic(param.ParameterizedFunction):
 
     shared_data = param.Boolean(
         default=False,
-        doc="""
-        Whether the cloned DynamicMap will share the same cache.""",
+        doc="Whether the cloned DynamicMap will share the same cache.",
     )
 
     streams = param.ClassSelector(
         default=[],
         class_=(list, dict),
         allow_refs=False,
-        doc="""
-        List of streams to attach to the returned DynamicMap""",
+        doc="List of streams to attach to the returned DynamicMap",
     )
 
     def __call__(self, map_obj, **params):

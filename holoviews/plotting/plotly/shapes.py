@@ -170,8 +170,7 @@ class PathsPlot(ShapePlot):
 class HVLinePlot(ShapePlot):
     apply_ranges = param.Boolean(
         default=False,
-        doc="""
-        Whether to include the annotation in axis range calculations.""",
+        doc="Whether to include the annotation in axis range calculations.",
     )
 
     _shape_type = "line"
@@ -193,8 +192,7 @@ class HVLinePlot(ShapePlot):
 class HVSpanPlot(ShapePlot):
     apply_ranges = param.Boolean(
         default=False,
-        doc="""
-        Whether to include the annotation in axis range calculations.""",
+        doc="Whether to include the annotation in axis range calculations.",
     )
 
     _shape_type = "rect"

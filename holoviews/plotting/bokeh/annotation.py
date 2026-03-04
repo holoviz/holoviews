@@ -31,8 +31,7 @@ arrow_end = {"->": NormalHead, "-[": TeeHead, "-|>": NormalHead, "-": None}
 class _SyntheticAnnotationPlot(ColorbarPlot):
     apply_ranges = param.Boolean(
         default=True,
-        doc="""
-        Whether to include the annotation in axis range calculations.""",
+        doc="Whether to include the annotation in axis range calculations.",
     )
 
     style_opts = [*line_properties, "level", "visible"]
@@ -166,20 +165,17 @@ class TextPlot(ElementPlot, AnnotationPlot):
 class LabelsPlot(ColorbarPlot, AnnotationPlot):
     show_legend = param.Boolean(
         default=False,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     xoffset = param.Number(
         default=None,
-        doc="""
-      Amount of offset to apply to labels along x-axis.""",
+        doc="Amount of offset to apply to labels along x-axis.",
     )
 
     yoffset = param.Number(
         default=None,
-        doc="""
-      Amount of offset to apply to labels along x-axis.""",
+        doc="Amount of offset to apply to labels along x-axis.",
     )
 
     # Deprecated options
@@ -188,8 +184,7 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""",
+        doc="Deprecated in favor of color style mapping, e.g. `color=dim('color')`",
     )
 
     selection_display = BokehOverlaySelectionDisplay()
@@ -249,8 +244,7 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
 
     apply_ranges = param.Boolean(
         default=False,
-        doc="""
-        Whether to include the annotation in axis range calculations.""",
+        doc="Whether to include the annotation in axis range calculations.",
     )
 
     _allow_implicit_categories = False
@@ -289,8 +283,7 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
 class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
     apply_ranges = param.Boolean(
         default=False,
-        doc="""
-        Whether to include the annotation in axis range calculations.""",
+        doc="Whether to include the annotation in axis range calculations.",
     )
 
     style_opts = line_properties + fill_properties + ["level", "visible"]

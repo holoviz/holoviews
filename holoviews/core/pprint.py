@@ -281,8 +281,7 @@ class PrettyPrinter(param.Parameterized):
 
     show_options = param.Boolean(
         default=False,
-        doc="""
-        Whether to show options as part of the repr.""",
+        doc="Whether to show options as part of the repr.",
     )
 
     tab = "   "

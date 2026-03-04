@@ -27,8 +27,7 @@ class Geometry(Dataset, Element2D):
     vdims = param.List(
         default=[],
         constant=True,
-        doc="""
-        Value dimensions can be associated with a geometry.""",
+        doc="Value dimensions can be associated with a geometry.",
     )
 
     __abstract = True

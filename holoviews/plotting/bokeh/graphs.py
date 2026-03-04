@@ -62,8 +62,7 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     tools = param.List(
         default=["hover", "tap"],
-        doc="""
-        A list of plugin tools to use on the plot.""",
+        doc="A list of plugin tools to use on the plot.",
     )
 
     # Deprecated options
@@ -72,16 +71,14 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Deprecated in favor of color style mapping, e.g. `node_color=dim('color')`""",
+        doc="Deprecated in favor of color style mapping, e.g. `node_color=dim('color')`",
     )
 
     edge_color_index = param.ClassSelector(
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Deprecated in favor of color style mapping, e.g. `edge_color=dim('color')`""",
+        doc="Deprecated in favor of color style mapping, e.g. `edge_color=dim('color')`",
     )
 
     # Map each glyph to a style group
@@ -423,14 +420,12 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
 class ChordPlot(ChordMixin, GraphPlot):
     labels = param.ClassSelector(
         class_=(str, dim),
-        doc="""
-        The dimension or dimension value transform used to draw labels from.""",
+        doc="The dimension or dimension value transform used to draw labels from.",
     )
 
     show_frame = param.Boolean(
         default=False,
-        doc="""
-        Whether or not to show a complete frame around the plot.""",
+        doc="Whether or not to show a complete frame around the plot.",
     )
 
     # Deprecated options
@@ -439,8 +434,7 @@ class ChordPlot(ChordMixin, GraphPlot):
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-      Index of the dimension from which the node labels will be drawn""",
+        doc="Index of the dimension from which the node labels will be drawn",
     )
 
     # Map each glyph to a style group
@@ -539,8 +533,7 @@ class NodePlot(PointPlot):
 class TriMeshPlot(GraphPlot):
     filled = param.Boolean(
         default=False,
-        doc="""
-        Whether the triangles should be drawn as filled.""",
+        doc="Whether the triangles should be drawn as filled.",
     )
 
     style_opts = (

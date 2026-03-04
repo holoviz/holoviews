@@ -117,8 +117,7 @@ class ErrorBars(Selection1DExpr, Chart):
 
     horizontal = param.Boolean(
         default=False,
-        doc="""
-        Whether the errors are along y-axis (vertical) or x-axis.""",
+        doc="Whether the errors are along y-axis (vertical) or x-axis.",
     )
 
     def range(self, dim, data_range=True, dimension_range=True):

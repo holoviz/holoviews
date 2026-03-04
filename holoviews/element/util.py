@@ -136,8 +136,7 @@ class categorical_aggregate2d(Operation):
 
     datatype = param.List(
         default=["xarray", "grid"],
-        doc="""
-        The grid interface types to use when constructing the gridded Dataset.""",
+        doc="The grid interface types to use when constructing the gridded Dataset.",
     )
 
     @classmethod

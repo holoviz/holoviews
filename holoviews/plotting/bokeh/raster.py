@@ -50,8 +50,7 @@ class HoverModel(DataModel):
 class ServerHoverMixin(param.Parameterized):
     selector_in_hovertool = param.Boolean(
         default=True,
-        doc="""
-        Whether to show the selector in HoverTool.""",
+        doc="Whether to show the selector in HoverTool.",
     )
 
     def _update_hover(self, element):
@@ -233,8 +232,7 @@ class RasterPlot(ServerHoverMixin, ColorbarPlot):
 
     show_legend = param.Boolean(
         default=False,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     style_opts = [*base_properties, "cmap", "alpha"]
@@ -444,8 +442,7 @@ class ImageStackPlot(RasterPlot, SyntheticLegendMixin):
     cnorm = param.Selector(
         default="eq_hist",
         objects=["linear", "log", "eq_hist"],
-        doc="""
-        Color normalization to be applied during colormapping.""",
+        doc="Color normalization to be applied during colormapping.",
     )
 
     start_alpha = param.Integer(default=0, bounds=(0, 255))
@@ -579,8 +576,7 @@ class QuadMeshPlot(ColorbarPlot):
 
     show_legend = param.Boolean(
         default=False,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     selection_display = BokehOverlaySelectionDisplay()

@@ -25,14 +25,12 @@ class PathPlot(ColorbarPlot):
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-      Index of the dimension from which the color will the drawn""",
+        doc="Index of the dimension from which the color will the drawn",
     )
 
     show_legend = param.Boolean(
         default=False,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     style_opts = ["alpha", "color", "linestyle", "linewidth", "visible", "cmap"]
@@ -145,8 +143,7 @@ class ContourPlot(PathPlot):
         default=0,
         class_=(str, int),
         allow_None=True,
-        doc="""
-      Index of the dimension from which the color will the drawn""",
+        doc="Index of the dimension from which the color will the drawn",
     )
 
     def get_data(self, element, ranges, style):
@@ -210,8 +207,7 @@ class PolygonPlot(ContourPlot):
 
     show_legend = param.Boolean(
         default=False,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     style_opts = [

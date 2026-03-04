@@ -32,20 +32,17 @@ class DistributionPlot(AreaPlot):
 
     bandwidth = param.Number(
         default=None,
-        doc="""
-        The bandwidth of the kernel for the density estimate.""",
+        doc="The bandwidth of the kernel for the density estimate.",
     )
 
     cut = param.Number(
         default=3,
-        doc="""
-        Draw the estimate to cut * bw from the extreme data points.""",
+        doc="Draw the estimate to cut * bw from the extreme data points.",
     )
 
     filled = param.Boolean(
         default=True,
-        doc="""
-        Whether the bivariate contours should be filled.""",
+        doc="Whether the bivariate contours should be filled.",
     )
 
     selection_display = BokehOverlaySelectionDisplay()
@@ -61,27 +58,23 @@ class BivariatePlot(PolygonPlot):
 
     bandwidth = param.Number(
         default=None,
-        doc="""
-        The bandwidth of the kernel for the density estimate.""",
+        doc="The bandwidth of the kernel for the density estimate.",
     )
 
     cut = param.Number(
         default=3,
-        doc="""
-        Draw the estimate to cut * bw from the extreme data points.""",
+        doc="Draw the estimate to cut * bw from the extreme data points.",
     )
 
     filled = param.Boolean(
         default=False,
-        doc="""
-        Whether the bivariate contours should be filled.""",
+        doc="Whether the bivariate contours should be filled.",
     )
 
     levels = param.ClassSelector(
         default=10,
         class_=(list, int),
-        doc="""
-        A list of scalar values used to specify the contour levels.""",
+        doc="A list of scalar values used to specify the contour levels.",
     )
 
     selection_display = BokehOverlaySelectionDisplay(color_prop="cmap", is_cmap=True)
@@ -90,14 +83,12 @@ class BivariatePlot(PolygonPlot):
 class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
     show_legend = param.Boolean(
         default=False,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     outlier_radius = param.Number(
         default=0.01,
-        doc="""
-        The radius of the circle marker for the outliers.""",
+        doc="The radius of the circle marker for the outliers.",
     )
 
     # Deprecated options
@@ -106,8 +97,7 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Deprecated in favor of color style mapping, e.g. `box_color=dim('color')`""",
+        doc="Deprecated in favor of color style mapping, e.g. `box_color=dim('color')`",
     )
 
     # X-axis is categorical
@@ -370,14 +360,12 @@ class ViolinPlot(BoxWhiskerPlot):
     clip = param.NumericTuple(
         default=None,
         length=2,
-        doc="""
-        A tuple of a lower and upper bound to clip the violin at.""",
+        doc="A tuple of a lower and upper bound to clip the violin at.",
     )
 
     cut = param.Number(
         default=5,
-        doc="""
-        Draw the estimate to cut * bw from the extreme data points.""",
+        doc="Draw the estimate to cut * bw from the extreme data points.",
     )
 
     inner = param.Selector(
@@ -395,14 +383,12 @@ class ViolinPlot(BoxWhiskerPlot):
     split = param.ClassSelector(
         default=None,
         class_=(str, dim),
-        doc="""
-       The dimension to split the Violin on.""",
+        doc="The dimension to split the Violin on.",
     )
 
     violin_width = param.Number(
         default=0.8,
-        doc="""
-       Relative width of the violin""",
+        doc="Relative width of the violin",
     )
 
     # Deprecated options
@@ -411,8 +397,7 @@ class ViolinPlot(BoxWhiskerPlot):
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Deprecated in favor of color style mapping, e.g. `violin_color=dim('color')`""",
+        doc="Deprecated in favor of color style mapping, e.g. `violin_color=dim('color')`",
     )
 
     # Map each glyph to a style group

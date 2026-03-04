@@ -30,8 +30,7 @@ from .util import BOKEH_GE_3_8_0, categorize_array
 class SizebarMixin(LegendPlot):
     sizebar = param.Boolean(
         default=False,
-        doc="""
-        Whether to display a sizebar.""",
+        doc="Whether to display a sizebar.",
     )
 
     sizebar_location = param.Selector(
@@ -133,8 +132,7 @@ class PointPlot(SizebarMixin, ColorbarPlot):
     jitter = param.Number(
         default=None,
         bounds=(0, None),
-        doc="""
-      The amount of jitter to apply to offset the points along the x-axis.""",
+        doc="The amount of jitter to apply to offset the points along the x-axis.",
     )
 
     selected = param.List(
@@ -150,16 +148,14 @@ class PointPlot(SizebarMixin, ColorbarPlot):
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""",
+        doc="Deprecated in favor of color style mapping, e.g. `color=dim('color')`",
     )
 
     size_index = param.ClassSelector(
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Deprecated in favor of size style mapping, e.g. `size=dim('size')`""",
+        doc="Deprecated in favor of size style mapping, e.g. `size=dim('size')`",
     )
 
     scaling_method = param.Selector(
@@ -328,8 +324,7 @@ class PointPlot(SizebarMixin, ColorbarPlot):
 class VectorFieldPlot(ColorbarPlot):
     arrow_heads = param.Boolean(
         default=True,
-        doc="""
-        Whether or not to draw arrow heads.""",
+        doc="Whether or not to draw arrow heads.",
     )
 
     magnitude = param.ClassSelector(
@@ -664,8 +659,7 @@ class SideHistogramPlot(HistogramPlot):
 
     show_title = param.Boolean(
         default=False,
-        doc="""
-        Whether to display the plot title.""",
+        doc="Whether to display the plot title.",
     )
 
     default_tools = param.List(
@@ -885,20 +879,17 @@ class AreaPlot(AreaMixin, SpreadPlot):
 class SpikesPlot(SpikesMixin, ColorbarPlot):
     spike_length = param.Number(
         default=0.5,
-        doc="""
-      The length of each spike if Spikes object is one dimensional.""",
+        doc="The length of each spike if Spikes object is one dimensional.",
     )
 
     position = param.Number(
         default=0.0,
-        doc="""
-      The position of the lower end of each spike.""",
+        doc="The position of the lower end of each spike.",
     )
 
     show_legend = param.Boolean(
         default=True,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     # Deprecated parameters
@@ -907,8 +898,7 @@ class SpikesPlot(SpikesMixin, ColorbarPlot):
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""",
+        doc="Deprecated in favor of color style mapping, e.g. `color=dim('color')`",
     )
 
     selection_display = BokehOverlaySelectionDisplay()
@@ -992,14 +982,12 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
     multi_level = param.Boolean(
         default=True,
-        doc="""
-       Whether the Bars should be grouped into a second categorical axis level.""",
+        doc="Whether the Bars should be grouped into a second categorical axis level.",
     )
 
     stacked = param.Boolean(
         default=False,
-        doc="""
-       Whether the bars should be stacked or grouped.""",
+        doc="Whether the bars should be stacked or grouped.",
     )
 
     # Deprecated parameters
@@ -1008,8 +996,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""",
+        doc="Deprecated in favor of color style mapping, e.g. `color=dim('color')`",
     )
 
     selection_display = BokehOverlaySelectionDisplay()

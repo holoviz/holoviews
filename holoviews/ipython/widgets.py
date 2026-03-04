@@ -33,20 +33,17 @@ class ProgressBar(ProgressIndicator):
 
     width = param.Integer(
         default=70,
-        doc="""
-        The width of the progress bar as the number of characters""",
+        doc="The width of the progress bar as the number of characters",
     )
 
     fill_char = param.String(
         default="#",
-        doc="""
-        The character used to fill the progress bar.""",
+        doc="The character used to fill the progress bar.",
     )
 
     blank_char = param.String(
         default=" ",
-        doc="""
-        The character for the blank portion of the progress bar.""",
+        doc="The character for the blank portion of the progress bar.",
     )
 
     elapsed_time = param.Boolean(
@@ -141,8 +138,7 @@ class RemoteProgress(ProgressBar):
 
     hostname = param.String(
         default="localhost",
-        doc="""
-        Hostname where progress is being broadcast.""",
+        doc="Hostname where progress is being broadcast.",
     )
 
     port = param.Integer(default=8080, doc="Target port on hostname.")
@@ -192,8 +188,7 @@ class RunProgress(ProgressBar):
 
     interval = param.Number(
         default=100,
-        doc="""
-        The run interval used to break up updates to the progress bar.""",
+        doc="The run interval used to break up updates to the progress bar.",
     )
 
     run_hook = param.Callable(

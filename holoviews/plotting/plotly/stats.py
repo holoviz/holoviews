@@ -56,20 +56,17 @@ class BivariatePlot(ChartPlot, ColorbarPlot):
 class DistributionPlot(ElementPlot):
     bandwidth = param.Number(
         default=None,
-        doc="""
-        The bandwidth of the kernel for the density estimate.""",
+        doc="The bandwidth of the kernel for the density estimate.",
     )
 
     cut = param.Number(
         default=3,
-        doc="""
-        Draw the estimate to cut * bw from the extreme data points.""",
+        doc="Draw the estimate to cut * bw from the extreme data points.",
     )
 
     filled = param.Boolean(
         default=True,
-        doc="""
-        Whether the bivariate contours should be filled.""",
+        doc="Whether the bivariate contours should be filled.",
     )
 
     style_opts = ["visible", "color", "dash", "line_width"]
@@ -152,8 +149,7 @@ class BoxWhiskerPlot(MultiDistributionPlot):
 class ViolinPlot(MultiDistributionPlot):
     box = param.Boolean(
         default=True,
-        doc="""
-        Whether to draw a boxplot inside the violin""",
+        doc="Whether to draw a boxplot inside the violin",
     )
 
     meanline = param.Boolean(

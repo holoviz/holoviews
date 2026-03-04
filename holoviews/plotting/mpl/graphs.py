@@ -35,16 +35,14 @@ class GraphPlot(GraphMixin, ColorbarPlot):
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Deprecated in favor of color style mapping, e.g. `node_color=dim('color')`""",
+        doc="Deprecated in favor of color style mapping, e.g. `node_color=dim('color')`",
     )
 
     edge_color_index = param.ClassSelector(
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Deprecated in favor of color style mapping, e.g. `edge_color=dim('color')`""",
+        doc="Deprecated in favor of color style mapping, e.g. `edge_color=dim('color')`",
     )
 
     style_opts = [
@@ -270,8 +268,7 @@ class GraphPlot(GraphMixin, ColorbarPlot):
 class TriMeshPlot(GraphPlot):
     filled = param.Boolean(
         default=False,
-        doc="""
-        Whether the triangles should be drawn as filled.""",
+        doc="Whether the triangles should be drawn as filled.",
     )
 
     style_opts = [*GraphPlot.style_opts, "edge_facecolors"]
@@ -294,8 +291,7 @@ class TriMeshPlot(GraphPlot):
 class ChordPlot(ChordMixin, GraphPlot):
     labels = param.ClassSelector(
         class_=(str, dim),
-        doc="""
-        The dimension or dimension value transform used to draw labels from.""",
+        doc="The dimension or dimension value transform used to draw labels from.",
     )
 
     # Deprecated options
@@ -304,8 +300,7 @@ class ChordPlot(ChordMixin, GraphPlot):
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-      Index of the dimension from which the node labels will be drawn""",
+        doc="Index of the dimension from which the node labels will be drawn",
     )
 
     style_opts = [*GraphPlot.style_opts, "text_font_size", "label_offset"]

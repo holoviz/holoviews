@@ -33,8 +33,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
 
     show_legend = param.Boolean(
         default=False,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     # Deprecated options
@@ -43,8 +42,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""",
+        doc="Deprecated in favor of color style mapping, e.g. `color=dim('color')`",
     )
 
     style_opts = base_properties + line_properties + ["cmap"]
@@ -268,8 +266,7 @@ class ContourPlot(PathPlot):
 
     show_legend = param.Boolean(
         default=False,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     # Deprecated options
@@ -278,8 +275,7 @@ class ContourPlot(PathPlot):
         default=0,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""",
+        doc="Deprecated in favor of color style mapping, e.g. `color=dim('color')`",
     )
 
     _color_style = "line_color"

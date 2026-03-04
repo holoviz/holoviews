@@ -34,14 +34,12 @@ class HeatMapPlot(ColorbarPlot):
 
     show_legend = param.Boolean(
         default=False,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     radial = param.Boolean(
         default=False,
-        doc="""
-        Whether the HeatMap should be radial""",
+        doc="Whether the HeatMap should be radial",
     )
 
     xmarks = param.Parameter(
@@ -375,15 +373,13 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
     radius_inner = param.Number(
         default=0.1,
         bounds=(0, 0.5),
-        doc="""
-        Define the radius fraction of inner, empty space.""",
+        doc="Define the radius fraction of inner, empty space.",
     )
 
     radius_outer = param.Number(
         default=0.05,
         bounds=(0, 1),
-        doc="""
-        Define the radius fraction of outer space including the labels.""",
+        doc="Define the radius fraction of outer space including the labels.",
     )
 
     xmarks = param.Parameter(
@@ -421,14 +417,12 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
     radial = param.Boolean(
         default=True,
-        doc="""
-        Whether the HeatMap should be radial""",
+        doc="Whether the HeatMap should be radial",
     )
 
     show_frame = param.Boolean(
         default=False,
-        doc="""
-        Whether or not to show a complete frame around the plot.""",
+        doc="Whether or not to show a complete frame around the plot.",
     )
 
     xticks = param.Parameter(

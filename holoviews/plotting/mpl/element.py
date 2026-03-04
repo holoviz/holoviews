@@ -34,8 +34,7 @@ from .util import MPL_VERSION, EqHistNormalize, validate, wrap_formatter
 class ElementPlot(GenericElementPlot, MPLPlot):
     apply_ticks = param.Boolean(
         default=True,
-        doc="""
-        Whether to apply custom ticks.""",
+        doc="Whether to apply custom ticks.",
     )
 
     aspect = param.Parameter(
@@ -61,47 +60,40 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
     invert_zaxis = param.Boolean(
         default=False,
-        doc="""
-        Whether to invert the plot z-axis.""",
+        doc="Whether to invert the plot z-axis.",
     )
 
     labelled = param.List(
         default=["x", "y"],
-        doc="""
-        Whether to plot the 'x' and 'y' labels.""",
+        doc="Whether to plot the 'x' and 'y' labels.",
     )
 
     logz = param.Boolean(
         default=False,
-        doc="""
-         Whether to apply log scaling to the y-axis of the Chart.""",
+        doc="Whether to apply log scaling to the y-axis of the Chart.",
     )
 
     xformatter = param.ClassSelector(
         default=None,
         class_=(str, ticker.Formatter, FunctionType),
-        doc="""
-        Formatter for ticks along the x-axis.""",
+        doc="Formatter for ticks along the x-axis.",
     )
 
     yformatter = param.ClassSelector(
         default=None,
         class_=(str, ticker.Formatter, FunctionType),
-        doc="""
-        Formatter for ticks along the y-axis.""",
+        doc="Formatter for ticks along the y-axis.",
     )
 
     zformatter = param.ClassSelector(
         default=None,
         class_=(str, ticker.Formatter, FunctionType),
-        doc="""
-        Formatter for ticks along the z-axis.""",
+        doc="Formatter for ticks along the z-axis.",
     )
 
     zaxis = param.Boolean(
         default=True,
-        doc="""
-        Whether to display the z-axis.""",
+        doc="Whether to display the z-axis.",
     )
 
     zlabel = param.String(
@@ -114,8 +106,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     zrotation = param.Integer(
         default=0,
         bounds=(0, 360),
-        doc="""
-        Rotation angle of the zticks.""",
+        doc="Rotation angle of the zticks.",
     )
 
     zticks = param.Parameter(
@@ -875,20 +866,17 @@ class ColorbarPlot(ElementPlot):
     cformatter = param.ClassSelector(
         default=None,
         class_=(str, ticker.Formatter, FunctionType),
-        doc="""
-        Formatter for ticks along the colorbar axis.""",
+        doc="Formatter for ticks along the colorbar axis.",
     )
 
     colorbar = param.Boolean(
         default=False,
-        doc="""
-        Whether to draw a colorbar.""",
+        doc="Whether to draw a colorbar.",
     )
 
     colorbar_opts = param.Dict(
         default={},
-        doc="""
-        Allows setting specific styling options for the colorbar.""",
+        doc="Allows setting specific styling options for the colorbar.",
     )
 
     color_levels = param.ClassSelector(
@@ -902,8 +890,7 @@ class ColorbarPlot(ElementPlot):
     cnorm = param.Selector(
         default="linear",
         objects=["linear", "log", "eq_hist"],
-        doc="""
-        Color normalization to be applied during colormapping.""",
+        doc="Color normalization to be applied during colormapping.",
     )
 
     clipping_colors = param.Dict(
@@ -919,8 +906,7 @@ class ColorbarPlot(ElementPlot):
 
     cbar_padding = param.Number(
         default=0.01,
-        doc="""
-        Padding between colorbar and other plots.""",
+        doc="Padding between colorbar and other plots.",
     )
 
     cbar_ticks = param.Parameter(
@@ -935,15 +921,13 @@ class ColorbarPlot(ElementPlot):
 
     cbar_width = param.Number(
         default=0.05,
-        doc="""
-        Width of the colorbar as a fraction of the main plot""",
+        doc="Width of the colorbar as a fraction of the main plot",
     )
 
     cbar_extend = param.Selector(
         objects=["neither", "both", "min", "max"],
         default=None,
-        doc="""
-        If not 'neither', make pointed end(s) for out-of- range values.""",
+        doc="If not 'neither', make pointed end(s) for out-of- range values.",
     )
 
     rescale_discrete_levels = param.Boolean(
@@ -960,8 +944,7 @@ class ColorbarPlot(ElementPlot):
 
     symmetric = param.Boolean(
         default=False,
-        doc="""
-        Whether to make the colormap symmetric around zero.""",
+        doc="Whether to make the colormap symmetric around zero.",
     )
 
     _colorbars = {}
@@ -1239,20 +1222,17 @@ class ColorbarPlot(ElementPlot):
 class LegendPlot(ElementPlot):
     show_legend = param.Boolean(
         default=True,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     legend_cols = param.Integer(
         default=None,
-        doc="""
-       Number of legend columns in the legend.""",
+        doc="Number of legend columns in the legend.",
     )
 
     legend_labels = param.Dict(
         default={},
-        doc="""
-        A mapping that allows overriding legend labels.""",
+        doc="A mapping that allows overriding legend labels.",
     )
 
     legend_position = param.Selector(
@@ -1279,8 +1259,7 @@ class LegendPlot(ElementPlot):
 
     legend_opts = param.Dict(
         default={},
-        doc="""
-        Allows setting specific styling options for the colorbar.""",
+        doc="Allows setting specific styling options for the colorbar.",
     )
 
     legend_specs = {

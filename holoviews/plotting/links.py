@@ -101,42 +101,36 @@ class RangeToolLink(Link):
     axes = param.ListSelector(
         default=["x"],
         objects=["x", "y"],
-        doc="""
-        Which axes to link the tool to.""",
+        doc="Which axes to link the tool to.",
     )
 
     boundsx = param.Tuple(
         default=None,
         length=2,
-        doc="""
-        (start, end) bounds for the x-axis""",
+        doc="(start, end) bounds for the x-axis",
     )
 
     boundsy = param.Tuple(
         default=None,
         length=2,
-        doc="""
-        (start, end) bounds for the y-axis""",
+        doc="(start, end) bounds for the y-axis",
     )
 
     intervalsx = param.Tuple(
         default=None,
         length=2,
-        doc="""
-        (min, max) intervals for the x-axis""",
+        doc="(min, max) intervals for the x-axis",
     )
 
     intervalsy = param.Tuple(
         default=None,
         length=2,
-        doc="""
-        (min, max) intervals for the y-axis""",
+        doc="(min, max) intervals for the y-axis",
     )
 
     use_handles = param.Boolean(
         default=True,
-        doc="""
-        Whether to display handles. Only available from Bokeh 3.5 onwards.""",
+        doc="Whether to display handles. Only available from Bokeh 3.5 onwards.",
     )
 
     start_gesture = param.Selector(

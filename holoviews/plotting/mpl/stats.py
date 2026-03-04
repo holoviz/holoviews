@@ -14,20 +14,17 @@ class DistributionPlot(AreaPlot):
 
     bandwidth = param.Number(
         default=None,
-        doc="""
-        The bandwidth of the kernel for the density estimate.""",
+        doc="The bandwidth of the kernel for the density estimate.",
     )
 
     cut = param.Number(
         default=3,
-        doc="""
-        Draw the estimate to cut * bw from the extreme data points.""",
+        doc="Draw the estimate to cut * bw from the extreme data points.",
     )
 
     filled = param.Boolean(
         default=True,
-        doc="""
-        Whether the bivariate contours should be filled.""",
+        doc="Whether the bivariate contours should be filled.",
     )
 
 
@@ -41,27 +38,23 @@ class BivariatePlot(PolygonPlot):
 
     bandwidth = param.Number(
         default=None,
-        doc="""
-        The bandwidth of the kernel for the density estimate.""",
+        doc="The bandwidth of the kernel for the density estimate.",
     )
 
     cut = param.Number(
         default=3,
-        doc="""
-        Draw the estimate to cut * bw from the extreme data points.""",
+        doc="Draw the estimate to cut * bw from the extreme data points.",
     )
 
     filled = param.Boolean(
         default=False,
-        doc="""
-        Whether the bivariate contours should be filled.""",
+        doc="Whether the bivariate contours should be filled.",
     )
 
     levels = param.ClassSelector(
         default=10,
         class_=(list, int),
-        doc="""
-        A list of scalar values used to specify the contour levels.""",
+        doc="A list of scalar values used to specify the contour levels.",
     )
 
 
@@ -139,14 +132,12 @@ class BoxPlot(MultiDistributionMixin, ChartPlot):
 class SideBoxPlot(AdjoinedPlot, BoxPlot):
     bgcolor = param.Parameter(
         default=(1, 1, 1, 0),
-        doc="""
-        Make plot background invisible.""",
+        doc="Make plot background invisible.",
     )
 
     border_size = param.Number(
         default=0,
-        doc="""
-        The size of the border expressed as a fraction of the main plot.""",
+        doc="The size of the border expressed as a fraction of the main plot.",
     )
 
     xaxis = param.Selector(

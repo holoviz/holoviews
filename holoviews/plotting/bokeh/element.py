@@ -125,8 +125,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     align = param.Selector(
         default="start",
         objects=["start", "center", "end"],
-        doc="""
-        Alignment (vertical or horizontal) of the plot in a layout.""",
+        doc="Alignment (vertical or horizontal) of the plot in a layout.",
     )
 
     apply_hard_bounds = param.Boolean(
@@ -148,8 +147,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     border = param.Number(
         default=10,
-        doc="""
-        Minimum border around plot.""",
+        doc="Minimum border around plot.",
     )
 
     aspect = param.Parameter(
@@ -222,29 +220,25 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     min_width = param.Integer(
         default=None,
         bounds=(0, None),
-        doc="""
-        Minimal width of the component (in pixels) if width is adjustable.""",
+        doc="Minimal width of the component (in pixels) if width is adjustable.",
     )
 
     min_height = param.Integer(
         default=None,
         bounds=(0, None),
-        doc="""
-        Minimal height of the component (in pixels) if height is adjustable.""",
+        doc="Minimal height of the component (in pixels) if height is adjustable.",
     )
 
     max_width = param.Integer(
         default=None,
         bounds=(0, None),
-        doc="""
-        Minimal width of the component (in pixels) if width is adjustable.""",
+        doc="Minimal width of the component (in pixels) if width is adjustable.",
     )
 
     max_height = param.Integer(
         default=None,
         bounds=(0, None),
-        doc="""
-        Minimal height of the component (in pixels) if height is adjustable.""",
+        doc="Minimal height of the component (in pixels) if height is adjustable.",
     )
 
     margin = param.Parameter(
@@ -268,15 +262,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     scalebar = param.Boolean(
         default=False,
-        doc="""
-        Whether to display a scalebar.""",
+        doc="Whether to display a scalebar.",
     )
 
     scalebar_range = param.Selector(
         default="x",
         objects=["x", "y"],
-        doc="""
-        Whether to have the scalebar on the x or y axis.""",
+        doc="Whether to have the scalebar on the x or y axis.",
     )
 
     scalebar_unit = param.ClassSelector(
@@ -366,8 +358,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         default=1,
         bounds=(0, None),
         inclusive_bounds=(False, True),
-        doc="""
-       Scale factor for subcoordinate ranges to control the level of overlap.""",
+        doc="Scale factor for subcoordinate ranges to control the level of overlap.",
     )
 
     responsive = param.Selector(default=False, objects=[False, True, "width", "height"])
@@ -394,8 +385,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     labelled = param.List(
         default=["x", "y"],
-        doc="""
-        Whether to plot the 'x' and 'y' labels.""",
+        doc="Whether to plot the 'x' and 'y' labels.",
     )
 
     lod = param.Dict(
@@ -416,8 +406,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     show_frame = param.Boolean(
         default=True,
-        doc="""
-        Whether or not to show a complete frame around the plot.""",
+        doc="Whether or not to show a complete frame around the plot.",
     )
 
     shared_axes = param.Boolean(
@@ -441,20 +430,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     hover_tooltips = param.ClassSelector(
         class_=(list, str),
-        doc="""
-        A list of dimensions to be displayed in the hover tooltip.""",
+        doc="A list of dimensions to be displayed in the hover tooltip.",
     )
 
-    hover_formatters = param.Dict(
-        doc="""
-        A dict of formatting options for the hover tooltip."""
-    )
+    hover_formatters = param.Dict(doc="A dict of formatting options for the hover tooltip.")
 
     hover_mode = param.Selector(
         default="mouse",
         objects=["mouse", "vline", "hline"],
-        doc="""
-        The hover mode determines how the hover tool is activated.""",
+        doc="The hover mode determines how the hover tool is activated.",
     )
 
     xticks = param.ClassSelector(
@@ -486,15 +470,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     xformatter = param.ClassSelector(
         default=None,
         class_=(str, TickFormatter, FunctionType),
-        doc="""
-        Formatter for ticks along the x-axis.""",
+        doc="Formatter for ticks along the x-axis.",
     )
 
     yformatter = param.ClassSelector(
         default=None,
         class_=(str, TickFormatter, FunctionType),
-        doc="""
-        Formatter for ticks along the x-axis.""",
+        doc="Formatter for ticks along the x-axis.",
     )
 
     _categorical = False
@@ -2987,8 +2969,7 @@ class ColorbarPlot(ElementPlot):
     cformatter = param.ClassSelector(
         default=None,
         class_=(str, TickFormatter, FunctionType),
-        doc="""
-        Formatter for ticks along the colorbar axis.""",
+        doc="Formatter for ticks along the colorbar axis.",
     )
 
     clabel = param.String(
@@ -3018,14 +2999,12 @@ class ColorbarPlot(ElementPlot):
     cnorm = param.Selector(
         default="linear",
         objects=["linear", "log", "eq_hist"],
-        doc="""
-        Color normalization to be applied during colormapping.""",
+        doc="Color normalization to be applied during colormapping.",
     )
 
     colorbar = param.Boolean(
         default=False,
-        doc="""
-        Whether to display a colorbar.""",
+        doc="Whether to display a colorbar.",
     )
 
     colorbar_position = param.Selector(
@@ -3068,8 +3047,7 @@ class ColorbarPlot(ElementPlot):
 
     logz = param.Boolean(
         default=False,
-        doc="""
-         Whether to apply log scaling to the z-axis.""",
+        doc="Whether to apply log scaling to the z-axis.",
     )
 
     rescale_discrete_levels = param.Boolean(
@@ -3085,8 +3063,7 @@ class ColorbarPlot(ElementPlot):
 
     symmetric = param.Boolean(
         default=False,
-        doc="""
-        Whether to make the colormap symmetric around zero.""",
+        doc="Whether to make the colormap symmetric around zero.",
     )
 
     _colorbar_defaults = dict(
@@ -3366,20 +3343,17 @@ class LegendPlot(ElementPlot):
     legend_cols = param.Integer(
         default=0,
         bounds=(0, None),
-        doc="""
-        Number of columns for legend.""",
+        doc="Number of columns for legend.",
     )
 
     legend_labels = param.Dict(
         default=None,
-        doc="""
-        Label overrides.""",
+        doc="Label overrides.",
     )
 
     legend_muted = param.Boolean(
         default=False,
-        doc="""
-        Controls whether the legend entries are muted by default.""",
+        doc="Controls whether the legend entries are muted by default.",
     )
 
     legend_offset = param.NumericTuple(
@@ -3409,8 +3383,7 @@ class LegendPlot(ElementPlot):
 
     legend_opts = param.Dict(
         default={},
-        doc="""
-        Allows setting specific styling options for the colorbar.""",
+        doc="Allows setting specific styling options for the colorbar.",
     )
 
     legend_specs = {"right": "right", "left": "left", "top": "above", "bottom": "below"}
@@ -3461,8 +3434,7 @@ class AnnotationPlot:
 class OverlayPlot(GenericOverlayPlot, LegendPlot):
     tabs = param.Boolean(
         default=False,
-        doc="""
-        Whether to display overlaid plots in separate panes""",
+        doc="Whether to display overlaid plots in separate panes",
     )
 
     style_opts = (
@@ -3474,8 +3446,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
     multiple_legends = param.Boolean(
         default=False,
-        doc="""
-        Whether to split the legend for subplots into multiple legends.""",
+        doc="Whether to split the legend for subplots into multiple legends.",
     )
 
     _propagate_options = [

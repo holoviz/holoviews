@@ -1572,8 +1572,7 @@ class flatten_stack(Operation):
 
     shade_params = param.Dict(
         default={},
-        doc="""
-        Additional parameters passed to datashader's shade operation.""",
+        doc="Additional parameters passed to datashader's shade operation.",
     )
 
     def _process(self, element, key=None):

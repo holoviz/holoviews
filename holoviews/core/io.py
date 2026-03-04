@@ -241,8 +241,7 @@ class Serializer(Exporter):
     mime_type = param.String(
         "application/python-pickle",
         allow_None=True,
-        doc="""
-       The mime-type associated with the serializer (if applicable).""",
+        doc="The mime-type associated with the serializer (if applicable).",
     )
 
     file_ext = param.String(
@@ -341,8 +340,7 @@ class Pickler(Exporter):
 
     compress = param.Boolean(
         default=True,
-        doc="""
-        Whether compression is enabled or not""",
+        doc="Whether compression is enabled or not",
     )
 
     mime_type = "application/zip"

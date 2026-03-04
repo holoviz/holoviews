@@ -96,8 +96,7 @@ class MultiDimensionalMapping(Dimensioned):
 
     sort = param.Boolean(
         default=True,
-        doc="""
-        Whether the items should be sorted in the constructor.""",
+        doc="Whether the items should be sorted in the constructor.",
     )
 
     data_type = None  # Optional type checking of elements

@@ -253,8 +253,7 @@ class downsample1d(ResampleOperation1D):
 
     parallel = param.Boolean(
         default=False,
-        doc="""
-       The number of threads to use (if tsdownsample is available).""",
+        doc="The number of threads to use (if tsdownsample is available).",
     )
 
     minmax_ratio = param.Integer(

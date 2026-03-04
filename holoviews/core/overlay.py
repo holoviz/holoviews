@@ -318,8 +318,7 @@ class NdOverlay(Overlayable, UniformNdMapping, CompositeOverlay):
     kdims = param.List(
         default=[Dimension("Element")],
         constant=True,
-        doc="""
-        List of dimensions the NdOverlay can be indexed by.""",
+        doc="List of dimensions the NdOverlay can be indexed by.",
     )
 
     _deep_indexable = True

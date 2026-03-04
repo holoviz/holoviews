@@ -126,8 +126,7 @@ class Config(param.ParameterizedFunction):
 
     no_padding = param.Boolean(
         default=False,
-        doc="""
-       Disable default padding (introduced in 1.13.0).""",
+        doc="Disable default padding (introduced in 1.13.0).",
     )
 
     default_cmap = param.String(
@@ -702,8 +701,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
 
     _lookup_table = param.Dict(
         default={},
-        doc="""
-       Cache of previously computed sanitizations""",
+        doc="Cache of previously computed sanitizations",
     )
 
     @param.parameterized.bothmethod
@@ -1502,8 +1500,7 @@ class ProgressIndicator(param.Parameterized):
     label = param.String(
         default="Progress",
         allow_None=True,
-        doc="""
-        The label of the current progress bar.""",
+        doc="The label of the current progress bar.",
     )
 
     def __call__(self, completion):

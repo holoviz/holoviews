@@ -106,8 +106,7 @@ class Renderer(Exporter):
 
     center = param.Boolean(
         default=True,
-        doc="""
-        Whether to center the plot""",
+        doc="Whether to center the plot",
     )
 
     backend = param.String(
@@ -118,8 +117,7 @@ class Renderer(Exporter):
 
     dpi = param.Integer(
         default=None,
-        doc="""
-        The render resolution in dpi (dots per inch)""",
+        doc="The render resolution in dpi (dots per inch)",
     )
 
     fig = param.Selector(
@@ -132,8 +130,7 @@ class Renderer(Exporter):
 
     fps = param.Number(
         default=20,
-        doc="""
-        Rendered fps (frames per second) for animated formats.""",
+        doc="Rendered fps (frames per second) for animated formats.",
     )
 
     holomap = param.Selector(
@@ -155,8 +152,7 @@ class Renderer(Exporter):
 
     size = param.Integer(
         default=100,
-        doc="""
-        The rendered size as a percentage size""",
+        doc="The rendered size as a percentage size",
     )
 
     widget_location = param.Selector(
@@ -176,8 +172,7 @@ class Renderer(Exporter):
             "right_top",
             "right_bottom",
         ],
-        doc="""
-        The position of the widgets relative to the plot.""",
+        doc="The position of the widgets relative to the plot.",
     )
 
     widget_mode = param.Selector(
@@ -190,24 +185,21 @@ class Renderer(Exporter):
 
     css = param.Dict(
         default={},
-        doc="""
-        Dictionary of CSS attributes and values to apply to HTML output.""",
+        doc="Dictionary of CSS attributes and values to apply to HTML output.",
     )
 
     info_fn = param.Callable(
         default=None,
         allow_None=True,
         constant=True,
-        doc="""
-        Renderers do not support the saving of object info metadata""",
+        doc="Renderers do not support the saving of object info metadata",
     )
 
     key_fn = param.Callable(
         default=None,
         allow_None=True,
         constant=True,
-        doc="""
-        Renderers do not support the saving of object key metadata""",
+        doc="Renderers do not support the saving of object key metadata",
     )
 
     post_render_hooks = param.Dict(

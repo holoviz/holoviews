@@ -28,8 +28,7 @@ class ItemTable(Element):
     vdims = param.List(
         default=[Dimension("Default")],
         bounds=(0, None),
-        doc="""
-       ItemTables should have only index Dimensions.""",
+        doc="ItemTables should have only index Dimensions.",
     )
 
     group = param.String(default="ItemTable", constant=True)
@@ -119,6 +118,5 @@ class Table(SelectionIndexExpr, Dataset, Tabular):
     group = param.String(
         default="Table",
         constant=True,
-        doc="""
-         The group is used to describe the Table.""",
+        doc="The group is used to describe the Table.",
     )

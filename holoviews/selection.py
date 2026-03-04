@@ -29,8 +29,7 @@ class _SelectionExprOverride(Stream):
     selection_expr = param.Parameter(
         default=None,
         constant=True,
-        doc="""
-            dim expression of the current selection override""",
+        doc="dim expression of the current selection override",
     )
 
 
@@ -73,14 +72,12 @@ class _base_link_selections(param.ParameterizedFunction):
 
     link_inputs = param.Boolean(
         default=False,
-        doc="""
-        Whether to link any streams on the input to the output.""",
+        doc="Whether to link any streams on the input to the output.",
     )
 
     show_regions = param.Boolean(
         default=True,
-        doc="""
-        Whether to highlight the selected regions.""",
+        doc="Whether to highlight the selected regions.",
     )
 
     @bothmethod
@@ -357,14 +354,12 @@ class link_selections(_base_link_selections):
 
     unselected_alpha = param.Magnitude(
         default=0.1,
-        doc="""
-        Alpha of unselected data.""",
+        doc="Alpha of unselected data.",
     )
 
     unselected_color = param.Color(
         default=None,
-        doc="""
-        Color of unselected data.""",
+        doc="Color of unselected data.",
     )
 
     @bothmethod

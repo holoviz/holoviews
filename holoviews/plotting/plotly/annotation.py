@@ -8,14 +8,12 @@ from .util import PLOTLY_SCATTERMAP
 class LabelPlot(ScatterPlot):
     xoffset = param.Number(
         default=None,
-        doc="""
-      Amount of offset to apply to labels along x-axis.""",
+        doc="Amount of offset to apply to labels along x-axis.",
     )
 
     yoffset = param.Number(
         default=None,
-        doc="""
-      Amount of offset to apply to labels along x-axis.""",
+        doc="Amount of offset to apply to labels along x-axis.",
     )
 
     style_opts = ["visible", "color", "family", "size"]

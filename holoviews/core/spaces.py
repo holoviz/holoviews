@@ -512,8 +512,7 @@ class Callable(param.Parameterized):
         default=None,
         constant=True,
         allow_refs=False,
-        doc="""
-         The callable function being wrapped.""",
+        doc="The callable function being wrapped.",
     )
 
     inputs = param.List(
@@ -694,8 +693,7 @@ class Generator(Callable):
         default=None,
         class_=types.GeneratorType,
         constant=True,
-        doc="""
-         The generator that is wrapped by this Generator.""",
+        doc="The generator that is wrapped by this Generator.",
     )
 
     @property

@@ -47,8 +47,7 @@ class AnnotationPlot(ElementPlot):
 
     show_legend = param.Boolean(
         default=False,
-        doc="""
-        Whether to show legend for the plot.""",
+        doc="Whether to show legend for the plot.",
     )
 
     def __init__(self, annotation, **params):
@@ -172,20 +171,17 @@ class LabelsPlot(ColorbarPlot):
         default=None,
         class_=(str, int),
         allow_None=True,
-        doc="""
-      Index of the dimension from which the color will the drawn""",
+        doc="Index of the dimension from which the color will the drawn",
     )
 
     xoffset = param.Number(
         default=None,
-        doc="""
-      Amount of offset to apply to labels along x-axis.""",
+        doc="Amount of offset to apply to labels along x-axis.",
     )
 
     yoffset = param.Number(
         default=None,
-        doc="""
-      Amount of offset to apply to labels along x-axis.""",
+        doc="Amount of offset to apply to labels along x-axis.",
     )
 
     style_opts = [
@@ -324,8 +320,7 @@ class SplinePlot(AnnotationPlot):
 class _SyntheticAnnotationPlot(AnnotationPlot):
     apply_ranges = param.Boolean(
         default=True,
-        doc="""
-        Whether to include the annotation in axis range calculations.""",
+        doc="Whether to include the annotation in axis range calculations.",
     )
 
     style_opts = ["alpha", "color", "facecolor", "edgecolor", "linewidth", "linestyle", "visible"]

@@ -53,8 +53,7 @@ class notebook_extension(extension):
     width = param.Number(
         default=None,
         bounds=(0, 100),
-        doc="""
-        Width of the notebook as a percentage of the browser screen window width.""",
+        doc="Width of the notebook as a percentage of the browser screen window width.",
     )
 
     display_formats = param.List(
@@ -72,8 +71,7 @@ class notebook_extension(extension):
 
     allow_jedi_completion = param.Boolean(
         default=True,
-        doc="""
-       Whether to allow jedi tab-completion to be enabled in IPython.""",
+        doc="Whether to allow jedi tab-completion to be enabled in IPython.",
     )
 
     case_sensitive_completion = param.Boolean(
@@ -85,8 +83,7 @@ class notebook_extension(extension):
 
     enable_mathjax = param.Boolean(
         default=False,
-        doc="""
-        Whether to load bokeh-mathjax bundle in the notebook.""",
+        doc="Whether to load bokeh-mathjax bundle in the notebook.",
     )
 
     _loaded = False

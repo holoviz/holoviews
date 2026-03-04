@@ -55,14 +55,12 @@ class annotate(param.ParameterizedFunction):
     annotations = param.ClassSelector(
         default=[],
         class_=(dict, list),
-        doc="""
-        Annotations to associate with each object.""",
+        doc="Annotations to associate with each object.",
     )
 
     edit_vertices = param.Boolean(
         default=True,
-        doc="""
-        Whether to add tool to edit vertices.""",
+        doc="Whether to add tool to edit vertices.",
     )
 
     empty_value = param.Parameter(
@@ -75,14 +73,12 @@ class annotate(param.ParameterizedFunction):
     num_objects = param.Integer(
         default=None,
         bounds=(0, None),
-        doc="""
-        The maximum number of objects to draw.""",
+        doc="The maximum number of objects to draw.",
     )
 
     show_vertices = param.Boolean(
         default=True,
-        doc="""
-        Whether to show vertices when drawing the Path.""",
+        doc="Whether to show vertices when drawing the Path.",
     )
 
     table_transforms = param.HookList(
@@ -95,21 +91,18 @@ class annotate(param.ParameterizedFunction):
 
     table_opts = param.Dict(
         default={"editable": True, "width": 400},
-        doc="""
-        Opts to apply to the editor table(s).""",
+        doc="Opts to apply to the editor table(s).",
     )
 
     vertex_annotations = param.ClassSelector(
         default=[],
         class_=(dict, list),
-        doc="""
-        Columns to annotate the Polygons with.""",
+        doc="Columns to annotate the Polygons with.",
     )
 
     vertex_style = param.Dict(
         default={"nonselection_alpha": 0.5},
-        doc="""
-        Options to apply to vertices during drawing and editing.""",
+        doc="Options to apply to vertices during drawing and editing.",
     )
 
     _annotator_types = {}
@@ -211,14 +204,12 @@ class Annotator(PaneBase):
     annotations = param.ClassSelector(
         default=[],
         class_=(dict, list),
-        doc="""
-        Annotations to associate with each object.""",
+        doc="Annotations to associate with each object.",
     )
 
     default_opts = param.Dict(
         default={"responsive": True, "min_height": 400, "padding": 0.1, "framewise": True},
-        doc="""
-        Opts to apply to the element.""",
+        doc="Opts to apply to the element.",
     )
 
     empty_value = param.Parameter(
@@ -230,15 +221,13 @@ class Annotator(PaneBase):
 
     object = param.ClassSelector(
         class_=Element,
-        doc="""
-        The Element to edit and annotate.""",
+        doc="The Element to edit and annotate.",
     )
 
     num_objects = param.Integer(
         default=None,
         bounds=(0, None),
-        doc="""
-        The maximum number of objects to draw.""",
+        doc="The maximum number of objects to draw.",
     )
 
     table_transforms = param.HookList(
@@ -251,8 +240,7 @@ class Annotator(PaneBase):
 
     table_opts = param.Dict(
         default={"editable": True, "width": 400},
-        doc="""
-        Opts to apply to the editor table(s).""",
+        doc="Opts to apply to the editor table(s).",
     )
 
     # Once generic editing tools are merged into bokeh this could
@@ -385,33 +373,28 @@ class PathAnnotator(Annotator):
 
     edit_vertices = param.Boolean(
         default=True,
-        doc="""
-        Whether to add tool to edit vertices.""",
+        doc="Whether to add tool to edit vertices.",
     )
 
     object = param.ClassSelector(
         class_=Path,
-        doc="""
-        Path object to edit and annotate.""",
+        doc="Path object to edit and annotate.",
     )
 
     show_vertices = param.Boolean(
         default=True,
-        doc="""
-        Whether to show vertices when drawing the Path.""",
+        doc="Whether to show vertices when drawing the Path.",
     )
 
     vertex_annotations = param.ClassSelector(
         default=[],
         class_=(dict, list),
-        doc="""
-        Columns to annotate the Polygons with.""",
+        doc="Columns to annotate the Polygons with.",
     )
 
     vertex_style = param.Dict(
         default={"nonselection_alpha": 0.5},
-        doc="""
-        Options to apply to vertices during drawing and editing.""",
+        doc="Options to apply to vertices during drawing and editing.",
     )
 
     _vertex_table_link = VertexTableLink
@@ -535,16 +518,14 @@ class PolyAnnotator(PathAnnotator):
 
     object = param.ClassSelector(
         class_=Polygons,
-        doc="""
-         Polygon element to edit and annotate.""",
+        doc="Polygon element to edit and annotate.",
     )
 
 
 class _GeomAnnotator(Annotator):
     default_opts = param.Dict(
         default={"responsive": True, "min_height": 400, "padding": 0.1, "framewise": True},
-        doc="""
-        Opts to apply to the element.""",
+        doc="Opts to apply to the element.",
     )
 
     _stream_type = None
@@ -595,14 +576,12 @@ class PointAnnotator(_GeomAnnotator):
             "size": 10,
             "framewise": True,
         },
-        doc="""
-        Opts to apply to the element.""",
+        doc="Opts to apply to the element.",
     )
 
     object = param.ClassSelector(
         class_=Points,
-        doc="""
-        Points element to edit and annotate.""",
+        doc="Points element to edit and annotate.",
     )
 
     _stream_type = PointDraw
@@ -616,20 +595,17 @@ class CurveAnnotator(_GeomAnnotator):
 
     default_opts = param.Dict(
         default={"responsive": True, "min_height": 400, "padding": 0.1, "framewise": True},
-        doc="""
-        Opts to apply to the element.""",
+        doc="Opts to apply to the element.",
     )
 
     object = param.ClassSelector(
         class_=Curve,
-        doc="""
-        Points element to edit and annotate.""",
+        doc="Points element to edit and annotate.",
     )
 
     vertex_style = param.Dict(
         default={"size": 10},
-        doc="""
-        Options to apply to vertices during drawing and editing.""",
+        doc="Options to apply to vertices during drawing and editing.",
     )
 
     _stream_type = CurveEdit
@@ -649,8 +625,7 @@ class RectangleAnnotator(_GeomAnnotator):
 
     object = param.ClassSelector(
         class_=Rectangles,
-        doc="""
-        Points element to edit and annotate.""",
+        doc="Points element to edit and annotate.",
     )
 
     _stream_type = BoxEdit

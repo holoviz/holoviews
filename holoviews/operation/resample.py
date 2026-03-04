@@ -30,8 +30,7 @@ class ResampleOperation1D(LinkableOperation):
 
     dynamic = param.Boolean(
         default=True,
-        doc="""
-       Enables dynamic processing by default.""",
+        doc="Enables dynamic processing by default.",
     )
 
     x_range = param.Tuple(
@@ -44,8 +43,7 @@ class ResampleOperation1D(LinkableOperation):
 
     x_sampling = param.Number(
         default=None,
-        doc="""
-        Specifies the smallest allowed sampling interval along the x axis.""",
+        doc="Specifies the smallest allowed sampling interval along the x axis.",
     )
 
     streams = param.ClassSelector(
@@ -58,14 +56,12 @@ class ResampleOperation1D(LinkableOperation):
 
     width = param.Integer(
         default=400,
-        doc="""
-       The width of the output image in pixels.""",
+        doc="The width of the output image in pixels.",
     )
 
     height = param.Integer(
         default=400,
-        doc="""
-       The height of the output image in pixels.""",
+        doc="The height of the output image in pixels.",
     )
 
     pixel_ratio = param.Number(
@@ -88,8 +84,7 @@ class ResampleOperation2D(ResampleOperation1D):
 
     dynamic = param.Boolean(
         default=True,
-        doc="""
-       Enables dynamic processing by default.""",
+        doc="Enables dynamic processing by default.",
     )
 
     expand = param.Boolean(
@@ -115,8 +110,7 @@ class ResampleOperation2D(ResampleOperation1D):
 
     y_sampling = param.Number(
         default=None,
-        doc="""
-        Specifies the smallest allowed sampling interval along the y axis.""",
+        doc="Specifies the smallest allowed sampling interval along the y axis.",
     )
 
     target = param.ClassSelector(
@@ -140,8 +134,7 @@ class ResampleOperation2D(ResampleOperation1D):
         instantiate=False,
         is_instance=False,
         default=Image,
-        doc="""
-        The type of the returned Elements, must be a 2D Dataset type.""",
+        doc="The type of the returned Elements, must be a 2D Dataset type.",
     )
 
     precompute = param.Boolean(

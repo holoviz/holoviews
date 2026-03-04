@@ -11,45 +11,38 @@ from .util import filter_styles
 class SankeyPlot(GraphPlot):
     labels = param.ClassSelector(
         class_=(str, dim),
-        doc="""
-        The dimension or dimension value transform used to draw labels from.""",
+        doc="The dimension or dimension value transform used to draw labels from.",
     )
 
     show_values = param.Boolean(
         default=True,
-        doc="""
-        Whether to show the values.""",
+        doc="Whether to show the values.",
     )
 
     label_position = param.Selector(
         default="right",
         objects=["left", "right"],
-        doc="""
-        Whether node labels should be placed to the left or right.""",
+        doc="Whether node labels should be placed to the left or right.",
     )
 
     node_width = param.Number(
         default=15,
-        doc="""
-        Width of the nodes.""",
+        doc="Width of the nodes.",
     )
 
     node_padding = param.Integer(
         default=None,
-        doc="""
-        Number of pixels of padding relative to the bounds.""",
+        doc="Number of pixels of padding relative to the bounds.",
     )
 
     iterations = param.Integer(
         default=32,
-        doc="""
-        Number of iterations to run the layout algorithm.""",
+        doc="Number of iterations to run the layout algorithm.",
     )
 
     node_sort = param.Boolean(
         default=True,
-        doc="""
-        Sort nodes in ascending breadth.""",
+        doc="Sort nodes in ascending breadth.",
     )
 
     # Deprecated options
@@ -58,16 +51,14 @@ class SankeyPlot(GraphPlot):
         default=2,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Index of the dimension from which the node labels will be drawn""",
+        doc="Index of the dimension from which the node labels will be drawn",
     )
 
     label_index = param.ClassSelector(
         default=2,
         class_=(str, int),
         allow_None=True,
-        doc="""
-        Index of the dimension from which the node labels will be drawn""",
+        doc="Index of the dimension from which the node labels will be drawn",
     )
 
     filled = True

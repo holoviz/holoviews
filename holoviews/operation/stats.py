@@ -33,52 +33,44 @@ class univariate_kde(Operation):
     bw_method = param.Selector(
         default="scott",
         objects=["scott", "silverman"],
-        doc="""
-        Method of automatically determining KDE bandwidth""",
+        doc="Method of automatically determining KDE bandwidth",
     )
 
     bandwidth = param.Number(
         default=None,
-        doc="""
-        Allows supplying explicit bandwidth value rather than relying on scott or silverman method.""",
+        doc="Allows supplying explicit bandwidth value rather than relying on scott or silverman method.",
     )
 
     cut = param.Number(
         default=3,
-        doc="""
-        Draw the estimate to cut * bw from the extreme data points.""",
+        doc="Draw the estimate to cut * bw from the extreme data points.",
     )
 
     bin_range = param.NumericTuple(
         default=None,
         length=2,
-        doc="""
-        Specifies the range within which to compute the KDE.""",
+        doc="Specifies the range within which to compute the KDE.",
     )
 
     dimension = param.String(
         default=None,
-        doc="""
-        Along which dimension of the Element to compute the KDE.""",
+        doc="Along which dimension of the Element to compute the KDE.",
     )
 
     filled = param.Boolean(
         default=True,
-        doc="""
-        Controls whether to return filled or unfilled KDE.""",
+        doc="Controls whether to return filled or unfilled KDE.",
     )
 
     n_samples = param.Integer(
         default=100,
-        doc="""
-        Number of samples to compute the KDE over.""",
+        doc="Number of samples to compute the KDE over.",
     )
 
     groupby = param.ClassSelector(
         default=None,
         class_=(str, Dimension),
-        doc="""
-      Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""",
+        doc="Defines a dimension to group the Histogram returning an NdOverlay of Histograms.",
     )
 
     _per_element = True
@@ -174,8 +166,7 @@ class bivariate_kde(Operation):
     bw_method = param.Selector(
         default="scott",
         objects=["scott", "silverman"],
-        doc="""
-        Method of automatically determining KDE bandwidth""",
+        doc="Method of automatically determining KDE bandwidth",
     )
 
     bandwidth = param.Number(
@@ -187,27 +178,23 @@ class bivariate_kde(Operation):
 
     cut = param.Number(
         default=3,
-        doc="""
-        Draw the estimate to cut * bw from the extreme data points.""",
+        doc="Draw the estimate to cut * bw from the extreme data points.",
     )
 
     filled = param.Boolean(
         default=False,
-        doc="""
-        Controls whether to return filled or unfilled contours.""",
+        doc="Controls whether to return filled or unfilled contours.",
     )
 
     levels = param.ClassSelector(
         default=10,
         class_=(list, int),
-        doc="""
-        A list of scalar values used to specify the contour levels.""",
+        doc="A list of scalar values used to specify the contour levels.",
     )
 
     n_samples = param.Integer(
         default=100,
-        doc="""
-        Number of samples to compute the KDE over.""",
+        doc="Number of samples to compute the KDE over.",
     )
 
     x_range = param.NumericTuple(

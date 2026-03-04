@@ -109,8 +109,7 @@ class VLine(Annotation):
     x = param.ClassSelector(
         default=0,
         class_=(Number, datetime_types),
-        doc="""
-       The x-position of the VLine which make be numeric or a timestamp.""",
+        doc="The x-position of the VLine which make be numeric or a timestamp.",
     )
 
     __pos_params = ["x"]
@@ -138,8 +137,7 @@ class HLine(Annotation):
     y = param.ClassSelector(
         default=0,
         class_=(Number, datetime_types),
-        doc="""
-       The y-position of the HLine which make be numeric or a timestamp.""",
+        doc="The y-position of the HLine which make be numeric or a timestamp.",
     )
 
     __pos_params = ["y"]
@@ -212,16 +210,14 @@ class VSpan(Annotation):
         default=0,
         class_=(Number, datetime_types),
         allow_None=True,
-        doc="""
-       The start x-position of the VSpan which must be numeric or a timestamp.""",
+        doc="The start x-position of the VSpan which must be numeric or a timestamp.",
     )
 
     x2 = param.ClassSelector(
         default=0,
         class_=(Number, datetime_types),
         allow_None=True,
-        doc="""
-       The end x-position of the VSpan which must be numeric or a timestamp.""",
+        doc="The end x-position of the VSpan which must be numeric or a timestamp.",
     )
 
     __pos_params = ["x1", "x2"]
@@ -248,16 +244,14 @@ class HSpan(Annotation):
         default=0,
         class_=(Number, datetime_types),
         allow_None=True,
-        doc="""
-       The start y-position of the VSpan which must be numeric or a timestamp.""",
+        doc="The start y-position of the VSpan which must be numeric or a timestamp.",
     )
 
     y2 = param.ClassSelector(
         default=0,
         class_=(Number, datetime_types),
         allow_None=True,
-        doc="""
-       The end y-position of the VSpan which must be numeric or a timestamp.""",
+        doc="The end y-position of the VSpan which must be numeric or a timestamp.",
     )
 
     __pos_params = ["y1", "y2"]
@@ -339,15 +333,13 @@ class Arrow(Annotation):
     x = param.ClassSelector(
         default=0,
         class_=(Number, datetime_types),
-        doc="""
-       The x-position of the arrow which make be numeric or a timestamp.""",
+        doc="The x-position of the arrow which make be numeric or a timestamp.",
     )
 
     y = param.ClassSelector(
         default=0,
         class_=(Number, datetime_types),
-        doc="""
-       The y-position of the arrow which make be numeric or a timestamp.""",
+        doc="The y-position of the arrow which make be numeric or a timestamp.",
     )
 
     text = param.String(default="", doc="Text associated with the arrow.")
@@ -417,15 +409,13 @@ class Text(Annotation):
     x = param.ClassSelector(
         default=0,
         class_=(Number, str, datetime_types),
-        doc="""
-       The x-position of the arrow which make be numeric or a timestamp.""",
+        doc="The x-position of the arrow which make be numeric or a timestamp.",
     )
 
     y = param.ClassSelector(
         default=0,
         class_=(Number, str, datetime_types),
-        doc="""
-       The y-position of the arrow which make be numeric or a timestamp.""",
+        doc="The y-position of the arrow which make be numeric or a timestamp.",
     )
 
     text = param.String(default="", doc="The text to be displayed.")
@@ -511,6 +501,5 @@ class Labels(Dataset, Element2D):
     vdims = param.List(
         default=[Dimension("Label")],
         bounds=(1, None),
-        doc="""
-        Defines the value dimension corresponding to the label text.""",
+        doc="Defines the value dimension corresponding to the label text.",
     )

@@ -127,14 +127,12 @@ class factory(Operation):
 
     args = param.List(
         default=[],
-        doc="""
-        The list of positional argument to pass to the factory""",
+        doc="The list of positional argument to pass to the factory",
     )
 
     kwargs = param.Dict(
         default={},
-        doc="""
-        The dict of keyword arguments to pass to the factory""",
+        doc="The dict of keyword arguments to pass to the factory",
     )
 
     def _process(self, view, key=None):
@@ -144,32 +142,27 @@ class factory(Operation):
 class function(Operation):
     output_type = param.ClassSelector(
         class_=type,
-        doc="""
-        The output type of the method operation""",
+        doc="The output type of the method operation",
     )
 
     input_type = param.ClassSelector(
         class_=type,
-        doc="""
-        The object type the method is defined on""",
+        doc="The object type the method is defined on",
     )
 
     fn = param.Callable(
         default=lambda el, *args, **kwargs: el,
-        doc="""
-        The function to apply.""",
+        doc="The function to apply.",
     )
 
     args = param.List(
         default=[],
-        doc="""
-        The list of positional argument to pass to the method""",
+        doc="The list of positional argument to pass to the method",
     )
 
     kwargs = param.Dict(
         default={},
-        doc="""
-        The dict of keyword arguments to pass to the method""",
+        doc="The dict of keyword arguments to pass to the method",
     )
 
     def _process(self, element, key=None):
@@ -181,32 +174,27 @@ class method(Operation):
 
     output_type = param.ClassSelector(
         class_=type,
-        doc="""
-        The output type of the method operation""",
+        doc="The output type of the method operation",
     )
 
     input_type = param.ClassSelector(
         class_=type,
-        doc="""
-        The object type the method is defined on""",
+        doc="The object type the method is defined on",
     )
 
     method_name = param.String(
         default="__call__",
-        doc="""
-        The method name""",
+        doc="The method name",
     )
 
     args = param.List(
         default=[],
-        doc="""
-        The list of positional argument to pass to the method""",
+        doc="The list of positional argument to pass to the method",
     )
 
     kwargs = param.Dict(
         default={},
-        doc="""
-        The dict of keyword arguments to pass to the method""",
+        doc="The dict of keyword arguments to pass to the method",
     )
 
     def _process(self, element, key=None):
@@ -420,8 +408,7 @@ class image_overlay(Operation):
 
     group = param.String(
         default="Transform",
-        doc="""
-        The group assigned to the resulting overlay.""",
+        doc="The group assigned to the resulting overlay.",
     )
 
     @classmethod
@@ -511,14 +498,12 @@ class threshold(Operation):
 
     low = param.Number(
         default=0.0,
-        doc="""
-      The value given to elements below the threshold.""",
+        doc="The value given to elements below the threshold.",
     )
 
     group = param.String(
         default="Threshold",
-        doc="""
-       The group assigned to the thresholded output.""",
+        doc="The group assigned to the thresholded output.",
     )
 
     _per_element = True
@@ -548,8 +533,7 @@ class gradient(Operation):
 
     group = param.String(
         default="Gradient",
-        doc="""
-    The group assigned to the output gradient matrix.""",
+        doc="The group assigned to the output gradient matrix.",
     )
 
     _per_element = True
@@ -603,8 +587,7 @@ class convolve(Operation):
 
     group = param.String(
         default="Convolution",
-        doc="""
-        The group assigned to the convolved output.""",
+        doc="The group assigned to the convolved output.",
     )
 
     kernel_roi = param.NumericTuple(
@@ -658,26 +641,22 @@ class contours(Operation):
     levels = param.ClassSelector(
         default=10,
         class_=(list, int),
-        doc="""
-        A list of scalar values used to specify the contour levels.""",
+        doc="A list of scalar values used to specify the contour levels.",
     )
 
     group = param.String(
         default="Level",
-        doc="""
-        The group assigned to the output contours.""",
+        doc="The group assigned to the output contours.",
     )
 
     filled = param.Boolean(
         default=False,
-        doc="""
-        Whether to generate filled contours""",
+        doc="Whether to generate filled contours",
     )
 
     overlaid = param.Boolean(
         default=False,
-        doc="""
-        Whether to overlay the contour on the supplied Element.""",
+        doc="Whether to overlay the contour on the supplied Element.",
     )
 
     _per_element = True
@@ -863,8 +842,7 @@ class histogram(Operation):
     bin_range = param.NumericTuple(
         default=None,
         length=2,
-        doc="""
-      Specifies the range within which to compute the bins.""",
+        doc="Specifies the range within which to compute the bins.",
     )
 
     bins = param.ClassSelector(
@@ -879,46 +857,39 @@ class histogram(Operation):
 
     cumulative = param.Boolean(
         default=False,
-        doc="""
-      Whether to compute the cumulative histogram""",
+        doc="Whether to compute the cumulative histogram",
     )
 
     dimension = param.String(
         default=None,
-        doc="""
-      Along which dimension of the Element to compute the histogram.""",
+        doc="Along which dimension of the Element to compute the histogram.",
     )
 
     frequency_label = param.String(
         default=None,
-        doc="""
-      Format string defining the label of the frequency dimension of the Histogram.""",
+        doc="Format string defining the label of the frequency dimension of the Histogram.",
     )
 
     groupby = param.ClassSelector(
         default=None,
         class_=(str, Dimension),
-        doc="""
-      Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""",
+        doc="Defines a dimension to group the Histogram returning an NdOverlay of Histograms.",
     )
 
     groupby_range = param.Selector(
         default="shared",
         objects=["shared", "separated"],
-        doc="""
-        Whether to group the histograms along the same range or separate them.""",
+        doc="Whether to group the histograms along the same range or separate them.",
     )
 
     log = param.Boolean(
         default=False,
-        doc="""
-      Whether to use base 10 logarithmic samples for the bin edges.""",
+        doc="Whether to use base 10 logarithmic samples for the bin edges.",
     )
 
     mean_weighted = param.Boolean(
         default=False,
-        doc="""
-      Whether the weighted frequencies are averaged.""",
+        doc="Whether the weighted frequencies are averaged.",
     )
 
     normed = param.Selector(
@@ -934,27 +905,23 @@ class histogram(Operation):
 
     nonzero = param.Boolean(
         default=False,
-        doc="""
-      Whether to use only nonzero values when computing the histogram""",
+        doc="Whether to use only nonzero values when computing the histogram",
     )
 
     num_bins = param.Integer(
         default=20,
-        doc="""
-      Number of bins in the histogram .""",
+        doc="Number of bins in the histogram .",
     )
 
     weight_dimension = param.String(
         default=None,
-        doc="""
-       Name of the dimension the weighting should be drawn from""",
+        doc="Name of the dimension the weighting should be drawn from",
     )
 
     style_prefix = param.String(
         default=None,
         allow_None=None,
-        doc="""
-      Used for setting a common style for histograms in a HoloMap or AdjointLayout.""",
+        doc="Used for setting a common style for histograms in a HoloMap or AdjointLayout.",
     )
 
     def _get_dim_and_data(self, element):
@@ -1149,8 +1116,7 @@ class decimate(Operation):
 
     dynamic = param.Boolean(
         default=True,
-        doc="""
-       Enables dynamic processing by default.""",
+        doc="Enables dynamic processing by default.",
     )
 
     link_inputs = param.Boolean(
@@ -1163,14 +1129,12 @@ class decimate(Operation):
 
     max_samples = param.Integer(
         default=5000,
-        doc="""
-        Maximum number of samples to display at the same time.""",
+        doc="Maximum number of samples to display at the same time.",
     )
 
     random_seed = param.Integer(
         default=42,
-        doc="""
-        Seed used to initialize randomization.""",
+        doc="Seed used to initialize randomization.",
     )
 
     streams = param.ClassSelector(
@@ -1236,8 +1200,7 @@ class interpolate_curve(Operation):
     interpolation = param.Selector(
         objects=["steps-pre", "steps-mid", "steps-post", "linear"],
         default="steps-mid",
-        doc="""
-       Controls the transition point of the step along the x-axis.""",
+        doc="Controls the transition point of the step along the x-axis.",
     )
 
     _per_element = True
@@ -1482,8 +1445,7 @@ class dendrogram(Operation):
         class_=Dataset,
         instantiate=False,
         is_instance=False,
-        doc="""
-        The Element type to use for the main plot if the input is a Dataset.""",
+        doc="The Element type to use for the main plot if the input is a Dataset.",
     )
 
     optimal_ordering = param.Boolean(
@@ -1540,8 +1502,7 @@ class dendrogram(Operation):
     )
     invert = param.Boolean(
         default=False,
-        doc="""
-        Whether to invert the dendrogram axis.""",
+        doc="Whether to invert the dendrogram axis.",
     )
 
     def _compute_linkage(self, dataset, dim, vdim):
