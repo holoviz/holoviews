@@ -1,6 +1,6 @@
 import numpy as np
 
-from holoviews.element import Spread
+import holoviews as hv
 from holoviews.testing import assert_data_equal
 
 from .test_plot import TestPlotlyPlot
@@ -9,7 +9,7 @@ from .test_plot import TestPlotlyPlot
 class TestSpreadPlot(TestPlotlyPlot):
 
     def test_spread_fill_between_ys(self):
-        spread = Spread([(0, 1, 0.5), (1, 2, 1), (2, 3, 2.25)], vdims=['y', 'y2'])
+        spread = hv.Spread([(0, 1, 0.5), (1, 2, 1), (2, 3, 2.25)], vdims=['y', 'y2'])
         state = self._get_plot_state(spread)
         assert_data_equal(state['data'][0]['y'], np.array([0.5, 1, 0.75]))
         assert state['data'][0]['mode'] == 'lines'
@@ -20,7 +20,7 @@ class TestSpreadPlot(TestPlotlyPlot):
         assert state['layout']['yaxis']['range'] == [0.5, 5.25]
 
     def test_spread_fill_between_xs(self):
-        spread = Spread([(0, 1, 0.5), (1, 2, 1), (2, 3, 2.25)], vdims=['y', 'y2']).options(invert_axes=True)
+        spread = hv.Spread([(0, 1, 0.5), (1, 2, 1), (2, 3, 2.25)], vdims=['y', 'y2']).options(invert_axes=True)
         state = self._get_plot_state(spread)
         assert_data_equal(state['data'][0]['x'], np.array([0.5, 1, 0.75]))
         assert state['data'][0]['mode'] == 'lines'
@@ -32,7 +32,7 @@ class TestSpreadPlot(TestPlotlyPlot):
         assert state['layout']['yaxis']['range'] == [0, 2]
 
     def test_visible(self):
-        element = Spread(
+        element = hv.Spread(
             [(0, 1, 0.5), (1, 2, 1), (2, 3, 2.25)],
             vdims=['y', 'y2']
         ).opts(visible=False)

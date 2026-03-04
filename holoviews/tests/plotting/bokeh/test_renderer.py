@@ -10,7 +10,7 @@ from bokeh.themes.theme import Theme
 from panel.widgets import DiscreteSlider, FloatSlider, Player
 from pyviz_comms import CommManager
 
-from holoviews import Curve, DynamicMap, GridSpace, HoloMap, Image, Table
+import holoviews as hv
 from holoviews.plotting import Renderer
 from holoviews.plotting.bokeh import BokehRenderer
 from holoviews.streams import Stream
@@ -20,9 +20,9 @@ from holoviews.streams import Stream
 class BokehRendererTest:
 
     def setup_method(self):
-        self.image1 = Image(np.array([[0,1],[2,3]]), label='Image1')
-        self.image2 = Image(np.array([[1,0],[4,-2]]), label='Image2')
-        self.map1 = HoloMap({1:self.image1, 2:self.image2}, label='TestMap')
+        self.image1 = hv.Image(np.array([[0,1],[2,3]]), label='Image1')
+        self.image2 = hv.Image(np.array([[1,0],[4,-2]]), label='Image2')
+        self.map1 = hv.HoloMap({1:self.image1, 2:self.image2}, label='TestMap')
         self.renderer = BokehRenderer.instance()
         self.nbcontext = Renderer.notebook_context
         self.comm_manager = Renderer.comm_manager
@@ -60,19 +60,19 @@ class BokehRendererTest:
         assert (w, h) == (300, 600)
 
     def test_get_size_grid_plot(self):
-        grid = GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
+        grid = hv.GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
         plot = self.renderer.get_plot(grid)
         w, h = self.renderer.get_size(plot)
         assert (w, h) == (446, 437)
 
     def test_get_size_table(self):
-        table = Table(range(10), kdims=['x'])
+        table = hv.Table(range(10), kdims=['x'])
         plot = self.renderer.get_plot(table)
         w, h = self.renderer.get_size(plot)
         assert (w, h) == (400, 300)
 
     def test_get_size_tables_in_layout(self):
-        table = Table(range(10), kdims=['x'])
+        table = hv.Table(range(10), kdims=['x'])
         plot = self.renderer.get_plot(table+table)
         w, h = self.renderer.get_size(plot)
         assert (w, h) == (800, 300)
@@ -81,21 +81,21 @@ class BokehRendererTest:
         attrs = {'figure': {'outline_line_color': '#444444'}}
         theme = Theme(json={'attrs' : attrs})
         self.renderer.theme = theme
-        plot = self.renderer.get_plot(Curve([]))
+        plot = self.renderer.get_plot(hv.Curve([]))
         self.renderer.components(plot, 'html')
         assert plot.state.outline_line_color == '#444444'
 
     @pytest.mark.skipif(sys.platform == "linux", reason="2025-03: Flaky test on Linux")
     def test_render_to_png(self):
         pytest.importorskip("selenium")
-        curve = Curve([])
+        curve = hv.Curve([])
         renderer = BokehRenderer.instance(fig='png')
         png, info = renderer(curve)
         assert isinstance(png, bytes)
         assert info['file-ext'] == 'png'
 
     def test_render_static(self):
-        curve = Curve([])
+        curve = hv.Curve([])
         obj, _ = self.renderer._validate(curve, None)
         assert isinstance(obj, pn.pane.HoloViews)
         assert obj.center is True
@@ -103,7 +103,7 @@ class BokehRendererTest:
         assert obj.backend == 'bokeh'
 
     def test_render_holomap_individual(self):
-        hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
+        hmap = hv.HoloMap({i: hv.Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer._validate(hmap, None)
         assert isinstance(obj, pn.pane.HoloViews)
         assert obj.center is True
@@ -115,7 +115,7 @@ class BokehRendererTest:
         assert slider.options == dict([(str(i), i) for i in range(5)])
 
     def test_render_holomap_embedded(self):
-        hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
+        hmap = hv.HoloMap({i: hv.Curve([1, 2, i]) for i in range(5)})
         data, _ = self.renderer.components(hmap)
         assert 'State"' in data['text/html']
 
@@ -125,7 +125,7 @@ class BokehRendererTest:
     #     self.assertNotIn('State"', data['text/html'])
 
     def test_render_holomap_scrubber(self):
-        hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
+        hmap = hv.HoloMap({i: hv.Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer._validate(hmap, 'scrubber')
         assert isinstance(obj, pn.pane.HoloViews)
         assert obj.center is True
@@ -138,7 +138,7 @@ class BokehRendererTest:
         assert player.end == 4
 
     def test_render_holomap_scrubber_fps(self):
-        hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
+        hmap = hv.HoloMap({i: hv.Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer.instance(fps=2)._validate(hmap, 'scrubber')
         assert isinstance(obj, pn.pane.HoloViews)
         widgets = obj.layout.select(Player)
@@ -147,7 +147,7 @@ class BokehRendererTest:
         assert player.interval == 500
 
     def test_render_holomap_individual_widget_position(self):
-        hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
+        hmap = hv.HoloMap({i: hv.Curve([1, 2, i]) for i in range(5)})
         obj, _ = self.renderer.instance(widget_location='top')._validate(hmap, None)
         assert isinstance(obj, pn.pane.HoloViews)
         assert obj.center is True
@@ -156,7 +156,7 @@ class BokehRendererTest:
 
     @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm')
     def test_render_dynamicmap_with_dims(self):
-        dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
+        dmap = hv.DynamicMap(lambda y: hv.Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
         [(plot, _pane)] = obj._plots.values()
@@ -170,7 +170,7 @@ class BokehRendererTest:
     @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm')
     def test_render_dynamicmap_with_stream(self):
         stream = Stream.define('Custom', y=2)()
-        dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
+        dmap = hv.DynamicMap(lambda y: hv.Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
         [(plot, _pane)] = obj._plots.values()
@@ -183,7 +183,7 @@ class BokehRendererTest:
     @pytest.mark.filterwarnings('ignore:Attempted to send message over Jupyter Comm')
     def test_render_dynamicmap_with_stream_dims(self):
         stream = Stream.define('Custom', y=2)()
-        dmap = DynamicMap(lambda x, y: Curve([x, 1, y]), kdims=['x', 'y'],
+        dmap = hv.DynamicMap(lambda x, y: hv.Curve([x, 1, y]), kdims=['x', 'y'],
                           streams=[stream]).redim.values(x=[1, 2, 3])
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)

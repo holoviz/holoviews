@@ -11,13 +11,10 @@ from bokeh.models import (
     Patches,
 )
 
-from holoviews.core import HoloMap, NdOverlay
-from holoviews.core.options import Cycle
-from holoviews.element import Contours, Dendrogram, Path, Polygons, Scatter
+import holoviews as hv
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.streams import PolyDraw
 from holoviews.testing import assert_data_equal
-from holoviews.util.transform import dim
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -33,8 +30,8 @@ class TestPathPlot(TestBokehPlot):
 
     def test_batched_path_line_color_and_color(self):
         opts = {'NdOverlay': dict(legend_limit=0),
-                'Path': dict(line_color=Cycle(values=['red', 'blue']))}
-        overlay = NdOverlay({i: Path([[(i, j) for j in range(2)]])
+                'Path': dict(line_color=hv.Cycle(values=['red', 'blue']))}
+        overlay = hv.NdOverlay({i: hv.Path([[(i, j) for j in range(2)]])
                              for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         line_color = ['red', 'blue']
@@ -42,8 +39,8 @@ class TestPathPlot(TestBokehPlot):
 
     def test_batched_path_alpha_and_color(self):
         opts = {'NdOverlay': dict(legend_limit=0),
-                'Path': dict(alpha=Cycle(values=[0.5, 1]))}
-        overlay = NdOverlay({i: Path([[(i, j) for j in range(2)]])
+                'Path': dict(alpha=hv.Cycle(values=[0.5, 1]))}
+        overlay = hv.NdOverlay({i: hv.Path([[(i, j) for j in range(2)]])
                              for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         alpha = [0.5, 1.]
@@ -53,8 +50,8 @@ class TestPathPlot(TestBokehPlot):
 
     def test_batched_path_line_width_and_color(self):
         opts = {'NdOverlay': dict(legend_limit=0),
-                'Path': dict(line_width=Cycle(values=[0.5, 1]))}
-        overlay = NdOverlay({i: Path([[(i, j) for j in range(2)]])
+                'Path': dict(line_width=hv.Cycle(values=[0.5, 1]))}
+        overlay = hv.NdOverlay({i: hv.Path([[(i, j) for j in range(2)]])
                              for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         line_width = [0.5, 1.]
@@ -63,7 +60,7 @@ class TestPathPlot(TestBokehPlot):
         assert plot.handles['source'].data['color'] == color
 
     def test_path_overlay_hover(self):
-        obj = NdOverlay({i: Path([np.random.rand(10,2)]) for i in range(5)},
+        obj = hv.NdOverlay({i: hv.Path([np.random.rand(10,2)]) for i in range(5)},
                         kdims=['Test'])
         opts = {'Path': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
@@ -76,7 +73,7 @@ class TestPathPlot(TestBokehPlot):
         color = [0, 0.25, 0.5, 0.75]
         other = ['A', 'B', 'C', 'D']
         data = {'x': xs, 'y': ys, 'color': color, 'other': other}
-        path = Path([data], vdims=['color','other']).opts(
+        path = hv.Path([data], vdims=['color','other']).opts(
             color_index='color', tools=['hover']
         )
         plot = bokeh_renderer.get_plot(path)
@@ -93,8 +90,8 @@ class TestPathPlot(TestBokehPlot):
         color = [0, 0.25, 0.5, 0.75]
         other = ['A', 'B', 'C', 'D']
         data = {'x': xs, 'y': ys, 'color': color, 'other': other}
-        path = Path([data], vdims=['color','other']).opts(
-            color=dim('color')*2, tools=['hover']
+        path = hv.Path([data], vdims=['color','other']).opts(
+            color=hv.dim('color')*2, tools=['hover']
         )
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
@@ -112,7 +109,7 @@ class TestPathPlot(TestBokehPlot):
         data = {'x': xs, 'y': ys, 'color': color, 'date': date}
         levels = [0, 38, 73, 95, 110, 130, 156, 999]
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
-        path = Path([data], vdims=['color', 'date']).opts(
+        path = hv.Path([data], vdims=['color', 'date']).opts(
             color_index='color', color_levels=levels, cmap=colors, tools=['hover'])
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
@@ -134,7 +131,7 @@ class TestPathPlot(TestBokehPlot):
         data = {'x': xs, 'y': ys, 'color': color, 'date': date}
         levels = [0, 38, 73, 95, 110, 130, 156, 999]
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
-        path = Path([data], vdims=['color', 'date']).opts(
+        path = hv.Path([data], vdims=['color', 'date']).opts(
             color='color', color_levels=levels, cmap=colors, tools=['hover'])
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
@@ -153,7 +150,7 @@ class TestPathPlot(TestBokehPlot):
         ys = xs[::-1]
         alpha = [0.1, 0.7, 0.3, 0.2]
         data = {'x': xs, 'y': ys, 'alpha': alpha}
-        path = Path([data], vdims='alpha').opts(alpha='alpha')
+        path = hv.Path([data], vdims='alpha').opts(alpha='alpha')
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
         np.testing.assert_array_equal(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
@@ -165,7 +162,7 @@ class TestPathPlot(TestBokehPlot):
         ys = xs[::-1]
         line_width = [1, 7, 3, 2]
         data = {'x': xs, 'y': ys, 'line_width': line_width}
-        path = Path([data], vdims='line_width').opts(line_width='line_width')
+        path = hv.Path([data], vdims='line_width').opts(line_width='line_width')
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
         np.testing.assert_array_equal(source.data['xs'], np.array([np.array([1, 2]), np.array([2, 3]), np.array([3, 4])]))
@@ -182,7 +179,7 @@ class TestPathPlot(TestBokehPlot):
         colors = ["#FF0000", "#00FF00", "#0000FF"]
         levels=[0,1,2]
 
-        path = Path(data, vdims="cat").opts(color="cat", cmap=dict(zip(levels, colors, strict=True)), line_width=4, show_legend=True)
+        path = hv.Path(data, vdims="cat").opts(color="cat", cmap=dict(zip(levels, colors, strict=True)), line_width=4, show_legend=True)
         plot = bokeh_renderer.get_plot(path)
         item = plot.state.legend[0].items[0]
         legend = {'field': 'color_str__'}
@@ -199,7 +196,7 @@ class TestPathPlot(TestBokehPlot):
         colors = ["#FF0000", "#00FF00", "#0000FF"]
         levels=[0,1,2]
 
-        path = Path(data, vdims="cat").opts(color="cat", cmap=dict(zip(levels, colors, strict=True)), line_width=4, show_legend=True, legend_labels={0: 'A', 1: 'B', 2: 'C'})
+        path = hv.Path(data, vdims="cat").opts(color="cat", cmap=dict(zip(levels, colors, strict=True)), line_width=4, show_legend=True, legend_labels={0: 'A', 1: 'B', 2: 'C'})
         plot = bokeh_renderer.get_plot(path)
         cds = plot.handles['cds']
         item = plot.state.legend[0].items[0]
@@ -221,7 +218,7 @@ class TestPathPlot(TestBokehPlot):
             'color': '#0000FF',
         }]
 
-        path = Path(data, vdims='color').opts(line_color='color')
+        path = hv.Path(data, vdims='color').opts(line_color='color')
         plot = bokeh_renderer.get_plot(path)
         cds = plot.handles['cds']
         source = plot.handles['source']
@@ -238,7 +235,7 @@ class TestPathPlot(TestBokehPlot):
              'c': x * 10}
             for x in range(5)
         ]
-        path = Path(data, vdims=['c']).opts(color='c', cmap='Turbo', colorbar=True)
+        path = hv.Path(data, vdims=['c']).opts(color='c', cmap='Turbo', colorbar=True)
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
         glyph = plot.handles['glyph']
@@ -262,7 +259,7 @@ class TestPathPlot(TestBokehPlot):
              'c': np.full(n_pts, x * 10)}
             for x in range(5)
         ]
-        path = Path(data, vdims=['c']).opts(color='c', cmap='Turbo', colorbar=True)
+        path = hv.Path(data, vdims=['c']).opts(color='c', cmap='Turbo', colorbar=True)
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
 
@@ -280,7 +277,7 @@ class TestPathPlot(TestBokehPlot):
              'c': x * 10}
             for x in range(5)
         ]
-        path = Path(data, vdims=["c"]).opts(color="c", cmap="Turbo", colorbar=True)
+        path = hv.Path(data, vdims=["c"]).opts(color="c", cmap="Turbo", colorbar=True)
 
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
@@ -298,7 +295,7 @@ class TestPathPlot(TestBokehPlot):
 class TestPolygonPlot(TestBokehPlot):
 
     def test_polygons_overlay_hover(self):
-        obj = NdOverlay({i: Polygons([{('x', 'y'): np.random.rand(10,2), 'z': 0}], vdims=['z'])
+        obj = hv.NdOverlay({i: hv.Polygons([{('x', 'y'): np.random.rand(10,2), 'z': 0}], vdims=['z'])
                          for i in range(5)}, kdims=['Test'])
         opts = {'Polygons': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
@@ -306,7 +303,7 @@ class TestPolygonPlot(TestBokehPlot):
         self._test_hover_info(obj, [('Test', '@{Test}'), ('z', '@{z}')])
 
     def test_polygons_colored(self):
-        polygons = NdOverlay({j: Polygons([[(i**j, i, j) for i in range(10)]], vdims='Value')
+        polygons = hv.NdOverlay({j: hv.Polygons([[(i**j, i, j) for i in range(10)]], vdims='Value')
                               for j in range(5)})
         plot = bokeh_renderer.get_plot(polygons)
         for i, splot in enumerate(plot.subplots.values()):
@@ -317,7 +314,7 @@ class TestPolygonPlot(TestBokehPlot):
             assert_data_equal(source.data['Value'], np.array([i]))
 
     def test_polygons_colored_batched(self):
-        polygons = NdOverlay({j: Polygons([[(i**j, i, j) for i in range(10)]], vdims='Value')
+        polygons = hv.NdOverlay({j: hv.Polygons([[(i**j, i, j) for i in range(10)]], vdims='Value')
                               for j in range(5)}).opts(legend_limit=0)
         plot = next(iter(bokeh_renderer.get_plot(polygons).subplots.values()))
         cmapper = plot.handles['color_mapper']
@@ -328,7 +325,7 @@ class TestPolygonPlot(TestBokehPlot):
         assert source.data['Value'] == list(range(5))
 
     def test_polygons_colored_batched_unsanitized(self):
-        polygons = NdOverlay({j: Polygons([[(i**j, i, j) for i in range(10)] for i in range(2)],
+        polygons = hv.NdOverlay({j: hv.Polygons([[(i**j, i, j) for i in range(10)] for i in range(2)],
                                           vdims=['some ? unescaped name'])
                               for j in range(5)}).opts(legend_limit=0)
         plot = next(iter(bokeh_renderer.get_plot(polygons).subplots.values()))
@@ -339,7 +336,7 @@ class TestPolygonPlot(TestBokehPlot):
         assert source.data['some_question_mark_unescaped_name'] == [j for i in range(5) for j in [i, i]]
 
     def test_empty_polygons_plot(self):
-        poly = Polygons([], vdims=['Intensity'])
+        poly = hv.Polygons([], vdims=['Intensity'])
         plot = bokeh_renderer.get_plot(poly)
         source = plot.handles['source']
         assert len(source.data['xs']) == 0
@@ -350,7 +347,7 @@ class TestPolygonPlot(TestBokehPlot):
         xs = [1, 2, 3]
         ys = [2, 0, 7]
         holes = [[[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]]]
-        poly = Polygons([{'x': xs, 'y': ys, 'holes': holes}])
+        poly = hv.Polygons([{'x': xs, 'y': ys, 'holes': holes}])
         plot = bokeh_renderer.get_plot(poly)
         source = plot.handles['source']
         np.testing.assert_array_equal(source.data['xs'], [[[np.array([1, 2, 3, 1]), np.array([1.5, 2, 1.6, 1.5]),
@@ -365,7 +362,7 @@ class TestPolygonPlot(TestBokehPlot):
             [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],
             []
         ]
-        poly = Polygons([{'x': xs, 'y': ys, 'holes': holes}])
+        poly = hv.Polygons([{'x': xs, 'y': ys, 'holes': holes}])
         plot = bokeh_renderer.get_plot(poly)
         source = plot.handles['source']
         expected_x = [
@@ -384,7 +381,7 @@ class TestPolygonPlot(TestBokehPlot):
         assert_inhomogeneous_array_equal(source.data['ys'], expected_y)
 
     def test_polygons_hover_color_op(self):
-        polygons = Polygons([
+        polygons = hv.Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
         ], vdims='color').opts(fill_color='color', tools=['hover'])
@@ -397,7 +394,7 @@ class TestPolygonPlot(TestBokehPlot):
         assert cds.data['fill_color'] == ['green', 'red']
 
     def test_polygons_color_op(self):
-        polygons = Polygons([
+        polygons = hv.Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
         ], vdims='color').opts(color='color')
@@ -409,7 +406,7 @@ class TestPolygonPlot(TestBokehPlot):
         assert cds.data['color'] == ['green', 'red']
 
     def test_polygons_linear_color_op(self):
-        polygons = Polygons([
+        polygons = hv.Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
         ], vdims='color').opts(color='color')
@@ -425,7 +422,7 @@ class TestPolygonPlot(TestBokehPlot):
         assert cmapper.high == 7
 
     def test_polygons_categorical_color_op(self):
-        polygons = Polygons([
+        polygons = hv.Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'b'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'a'}
         ], vdims='color').opts(color='color')
@@ -440,7 +437,7 @@ class TestPolygonPlot(TestBokehPlot):
         assert cmapper.factors == ['b', 'a']
 
     def test_polygons_alpha_op(self):
-        polygons = Polygons([
+        polygons = hv.Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'alpha': 0.7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'alpha': 0.3}
         ], vdims='alpha').opts(alpha='alpha')
@@ -452,7 +449,7 @@ class TestPolygonPlot(TestBokehPlot):
         assert_data_equal(cds.data['alpha'], np.array([0.7, 0.3]))
 
     def test_polygons_line_width_op(self):
-        polygons = Polygons([
+        polygons = hv.Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 3}
         ], vdims='line_width').opts(line_width='line_width')
@@ -469,8 +466,8 @@ class TestPolygonPlot(TestBokehPlot):
             [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],
             []
         ]
-        poly = HoloMap({0: Polygons([{'x': xs, 'y': ys, 'holes': holes}]),
-                        1: Polygons([{'x': xs, 'y': ys}])})
+        poly = hv.HoloMap({0: hv.Polygons([{'x': xs, 'y': ys, 'holes': holes}]),
+                        1: hv.Polygons([{'x': xs, 'y': ys}])})
         plot = bokeh_renderer.get_plot(poly)
         glyph = plot.handles['glyph']
         assert plot._has_holes
@@ -483,8 +480,8 @@ class TestPolygonPlot(TestBokehPlot):
             [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],
             []
         ]
-        poly = HoloMap({0: Polygons([{'x': xs, 'y': ys, 'holes': holes}]),
-                        1: Polygons([{'x': xs, 'y': ys}])})
+        poly = hv.HoloMap({0: hv.Polygons([{'x': xs, 'y': ys, 'holes': holes}]),
+                        1: hv.Polygons([{'x': xs, 'y': ys}])})
         PolyDraw(source=poly)
         plot = bokeh_renderer.get_plot(poly)
         glyph = plot.handles['glyph']
@@ -496,7 +493,7 @@ class TestPolygonPlot(TestBokehPlot):
 class TestContoursPlot(TestBokehPlot):
 
     def test_empty_contours_plot(self):
-        contours = Contours([], vdims=['Intensity'])
+        contours = hv.Contours([], vdims=['Intensity'])
         plot = bokeh_renderer.get_plot(contours)
         source = plot.handles['source']
         assert len(source.data['xs']) == 0
@@ -504,7 +501,7 @@ class TestContoursPlot(TestBokehPlot):
         assert len(source.data['Intensity']) == 0
 
     def test_contours_color_op(self):
-        contours = Contours([
+        contours = hv.Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
         ], vdims='color').opts(color='color')
@@ -515,7 +512,7 @@ class TestContoursPlot(TestBokehPlot):
         assert cds.data['color'] == ['green', 'red']
 
     def test_contours_linear_color_op(self):
-        contours = Contours([
+        contours = hv.Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
         ], vdims='color').opts(color='color')
@@ -530,7 +527,7 @@ class TestContoursPlot(TestBokehPlot):
         assert cmapper.high == 7
 
     def test_contours_empty_path(self):
-        contours = Contours([
+        contours = hv.Contours([
             pd.DataFrame([], columns=['x', 'y', 'color', 'line_width']),
             pd.DataFrame({'x': np.random.rand(10), 'y': np.random.rand(10),
                           'color': ['red']*10, 'line_width': [3]*10},
@@ -544,12 +541,12 @@ class TestContoursPlot(TestBokehPlot):
 
 
     def test_contours_linear_color_op_update(self):
-        contours = HoloMap({
-            0: Contours([
+        contours = hv.HoloMap({
+            0: hv.Contours([
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
             ], vdims='color'),
-            1: Contours([
+            1: hv.Contours([
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 5},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 2}
             ], vdims='color')}).opts(color='color', framewise=True)
@@ -568,7 +565,7 @@ class TestContoursPlot(TestBokehPlot):
         assert cmapper.high == 5
 
     def test_contours_categorical_color_op(self):
-        contours = Contours([
+        contours = hv.Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'b'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'a'}
         ], vdims='color').opts(color='color')
@@ -582,7 +579,7 @@ class TestContoursPlot(TestBokehPlot):
         assert cmapper.factors == ['b', 'a']
 
     def test_contours_alpha_op(self):
-        contours = Contours([
+        contours = hv.Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'alpha': 0.7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'alpha': 0.3}
         ], vdims='alpha').opts(alpha='alpha')
@@ -593,7 +590,7 @@ class TestContoursPlot(TestBokehPlot):
         assert list(cds.data['alpha']) == [0.7, 0.3]
 
     def test_contours_line_width_op(self):
-        contours = Contours([
+        contours = hv.Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 3}
         ], vdims='line_width').opts(line_width='line_width')
@@ -634,36 +631,36 @@ class TestDendrogramPlot(TestBokehPlot):
         return top, main, right
 
     def test_empty_plot(self):
-        dendrogram = Dendrogram([])
+        dendrogram = hv.Dendrogram([])
         plot = bokeh_renderer.get_plot(dendrogram)
         source = plot.handles['source']
         assert len(source.data['xs']) == 0
         assert len(source.data['ys']) == 0
 
     def test_empty_plot_xy(self):
-        dendrogram = Dendrogram(x=[], y=[])
+        dendrogram = hv.Dendrogram(x=[], y=[])
         plot = bokeh_renderer.get_plot(dendrogram)
         source = plot.handles['source']
         assert len(source.data['xs']) == 0
         assert len(source.data['ys']) == 0
 
     def test_plot(self):
-        dendrogram = Dendrogram(zip(self.x, self.y, strict=True))
+        dendrogram = hv.Dendrogram(zip(self.x, self.y, strict=True))
         plot = bokeh_renderer.get_plot(dendrogram)
         source = plot.handles['source']
         assert len(source.data['xs']) == 4
         assert len(source.data['ys']) == 4
 
     def test_plot_xy(self):
-        dendrogram = Dendrogram(self.x, self.y)
+        dendrogram = hv.Dendrogram(self.x, self.y)
         plot = bokeh_renderer.get_plot(dendrogram)
         source = plot.handles['source']
         assert len(source.data['xs']) == 4
         assert len(source.data['ys']) == 4
 
     def test_plot_equals_path_zip(self):
-        dendrogram = Dendrogram(self.x, self.y)
-        path = Path(zip(self.x, self.y, strict=True))
+        dendrogram = hv.Dendrogram(self.x, self.y)
+        path = hv.Path(zip(self.x, self.y, strict=True))
         dendro_plot = bokeh_renderer.get_plot(dendrogram)
         dendro_source = dendro_plot.handles['source']
         path_plot = bokeh_renderer.get_plot(path)
@@ -672,8 +669,8 @@ class TestDendrogramPlot(TestBokehPlot):
         np.testing.assert_array_equal(dendro_source.data["ys"], path_source.data["ys"])
 
     def test_1_adjoint_plot_1_kdims_empty_main(self):
-        dendrogram = Dendrogram(self.x, self.y)
-        main = Scatter([])
+        dendrogram = hv.Dendrogram(self.x, self.y)
+        main = hv.Scatter([])
         adjoint = main << dendrogram
         top, main, right = self.get_childrens(adjoint)
         assert top is None
@@ -682,8 +679,8 @@ class TestDendrogramPlot(TestBokehPlot):
         assert main.y_scale is right.y_scale
 
     def test_1_adjoint_plot_1_kdims(self):
-        dendrogram = Dendrogram(self.x, self.y)
-        main = Scatter([1, 2, 3])
+        dendrogram = hv.Dendrogram(self.x, self.y)
+        main = hv.Scatter([1, 2, 3])
         adjoint = main << dendrogram
         top, main, right = self.get_childrens(adjoint)
         assert top is None
@@ -692,9 +689,9 @@ class TestDendrogramPlot(TestBokehPlot):
         assert main.y_scale is right.y_scale
 
     def test_2_adjoint_plot_1_kdims(self):
-        dendrogram1 = Dendrogram(self.x, self.y)
-        dendrogram2 = Dendrogram(self.y, self.x)
-        main = Scatter([1, 2, 3])
+        dendrogram1 = hv.Dendrogram(self.x, self.y)
+        dendrogram2 = hv.Dendrogram(self.y, self.x)
+        main = hv.Scatter([1, 2, 3])
         adjoint = main << dendrogram1 << dendrogram2
         top, main, right = self.get_childrens(adjoint)
         assert top.height == 80
@@ -703,8 +700,8 @@ class TestDendrogramPlot(TestBokehPlot):
         assert right.width == 80
 
     def test_1_adjoint_plot_2_kdims(self):
-        dendrogram = Dendrogram(self.x, self.y)
-        main = Path(zip(self.x, self.y, strict=True))
+        dendrogram = hv.Dendrogram(self.x, self.y)
+        main = hv.Path(zip(self.x, self.y, strict=True))
         adjoint = main << dendrogram
         top, main, right = self.get_childrens(adjoint)
         assert top is None
@@ -713,7 +710,7 @@ class TestDendrogramPlot(TestBokehPlot):
         assert main.y_scale is right.y_scale
 
     def test_adjoint_plot_in_layout(self):
-        layout = (Scatter([]) << Dendrogram(self.x, self.y)) + Scatter([])
+        layout = (hv.Scatter([]) << hv.Dendrogram(self.x, self.y)) + hv.Scatter([])
         msg = "Adjoined dendrogram in a Layout, does not currently support `.opts(shared_axes=True)`"
         with pytest.raises(NotImplementedError, match=re.escape(msg)):
             bokeh_renderer(layout)

@@ -4,10 +4,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
+import holoviews as hv
 from holoviews.core.options import AbbreviatedException
-from holoviews.core.overlay import NdOverlay
-from holoviews.element import Curve
-from holoviews.util.transform import dim
 
 from .test_plot import TestMPLPlot, mpl_renderer
 
@@ -16,27 +14,27 @@ class TestCurvePlot(TestMPLPlot):
 
     def test_curve_datetime64(self):
         dates = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]
-        curve = Curve((dates, np.random.rand(10)))
+        curve = hv.Curve((dates, np.random.rand(10)))
         plot = mpl_renderer.get_plot(curve)
         assert plot.handles['axis'].get_xlim() == (16801.0, 16810.0)
 
     def test_curve_pandas_timestamps(self):
         dates = pd.date_range('2016-01-01', '2016-01-10', freq='D')
-        curve = Curve((dates, np.random.rand(10)))
+        curve = hv.Curve((dates, np.random.rand(10)))
         plot = mpl_renderer.get_plot(curve)
         assert plot.handles['axis'].get_xlim() == (16801.0, 16810.0)
 
     def test_curve_dt_datetime(self):
         dates = [dt.datetime(2016,1,i) for i in range(1, 11)]
-        curve = Curve((dates, np.random.rand(10)))
+        curve = hv.Curve((dates, np.random.rand(10)))
         plot = mpl_renderer.get_plot(curve)
         assert tuple(map(round, plot.handles['axis'].get_xlim())) == (16801.0, 16810.0)
 
     def test_curve_heterogeneous_datetime_types_overlay(self):
         dates64 = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]
         dates = [dt.datetime(2016,1,i) for i in range(2, 12)]
-        curve_dt64 = Curve((dates64, np.random.rand(10)))
-        curve_dt = Curve((dates, np.random.rand(10)))
+        curve_dt64 = hv.Curve((dates64, np.random.rand(10)))
+        curve_dt = hv.Curve((dates, np.random.rand(10)))
         plot = mpl_renderer.get_plot(curve_dt*curve_dt64)
         assert tuple(map(round, plot.handles['axis'].get_xlim())) == (16801.0, 16811.0)
 
@@ -44,14 +42,14 @@ class TestCurvePlot(TestMPLPlot):
         dates_pd = pd.date_range('2016-01-04', '2016-01-13', freq='D')
         dates64 = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]
         dates = [dt.datetime(2016,1,i) for i in range(2, 12)]
-        curve_dt64 = Curve((dates64, np.random.rand(10)))
-        curve_dt = Curve((dates, np.random.rand(10)))
-        curve_pd = Curve((dates_pd, np.random.rand(10)))
+        curve_dt64 = hv.Curve((dates64, np.random.rand(10)))
+        curve_dt = hv.Curve((dates, np.random.rand(10)))
+        curve_pd = hv.Curve((dates_pd, np.random.rand(10)))
         plot = mpl_renderer.get_plot(curve_dt*curve_dt64*curve_pd)
         assert plot.handles['axis'].get_xlim() == (16801.0, 16813.0)
 
     def test_curve_padding_square(self):
-        curve = Curve([1, 2, 3]).opts(padding=0.1)
+        curve = hv.Curve([1, 2, 3]).opts(padding=0.1)
         plot = mpl_renderer.get_plot(curve)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         assert x_range[0] == -0.2
@@ -60,7 +58,7 @@ class TestCurvePlot(TestMPLPlot):
         assert y_range[1] == 3.2
 
     def test_curve_padding_square_per_axis(self):
-        curve = Curve([1, 2, 3]).opts(padding=((0, 0.1), (0.1, 0.2)))
+        curve = hv.Curve([1, 2, 3]).opts(padding=((0, 0.1), (0.1, 0.2)))
         plot = mpl_renderer.get_plot(curve)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         assert x_range[0] == 0
@@ -69,7 +67,7 @@ class TestCurvePlot(TestMPLPlot):
         assert y_range[1] == 3.4
 
     def test_curve_padding_hard_xrange(self):
-        curve = Curve([1, 2, 3]).redim.range(x=(0, 3)).opts(padding=0.1)
+        curve = hv.Curve([1, 2, 3]).redim.range(x=(0, 3)).opts(padding=0.1)
         plot = mpl_renderer.get_plot(curve)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         assert x_range[0] == 0
@@ -78,7 +76,7 @@ class TestCurvePlot(TestMPLPlot):
         assert y_range[1] == 3.2
 
     def test_curve_padding_soft_xrange(self):
-        curve = Curve([1, 2, 3]).redim.soft_range(x=(0, 3)).opts(padding=0.1)
+        curve = hv.Curve([1, 2, 3]).redim.soft_range(x=(0, 3)).opts(padding=0.1)
         plot = mpl_renderer.get_plot(curve)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         assert x_range[0] == 0
@@ -87,7 +85,7 @@ class TestCurvePlot(TestMPLPlot):
         assert y_range[1] == 3.2
 
     def test_curve_padding_unequal(self):
-        curve = Curve([1, 2, 3]).opts(padding=(0.05, 0.1))
+        curve = hv.Curve([1, 2, 3]).opts(padding=(0.05, 0.1))
         plot = mpl_renderer.get_plot(curve)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         assert x_range[0] == -0.1
@@ -96,7 +94,7 @@ class TestCurvePlot(TestMPLPlot):
         assert y_range[1] == 3.2
 
     def test_curve_padding_nonsquare(self):
-        curve = Curve([1, 2, 3]).opts(padding=0.1, aspect=2)
+        curve = hv.Curve([1, 2, 3]).opts(padding=0.1, aspect=2)
         plot = mpl_renderer.get_plot(curve)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         assert x_range[0] == -0.1
@@ -105,7 +103,7 @@ class TestCurvePlot(TestMPLPlot):
         assert y_range[1] == 3.2
 
     def test_curve_padding_logx(self):
-        curve = Curve([(1, 1), (2, 2), (3,3)]).opts(padding=0.1, logx=True)
+        curve = hv.Curve([(1, 1), (2, 2), (3,3)]).opts(padding=0.1, logx=True)
         plot = mpl_renderer.get_plot(curve)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         assert x_range[0] == 0.89595845984076228
@@ -114,7 +112,7 @@ class TestCurvePlot(TestMPLPlot):
         assert y_range[1] == 3.2
 
     def test_curve_padding_logy(self):
-        curve = Curve([1, 2, 3]).opts(padding=0.1, logy=True)
+        curve = hv.Curve([1, 2, 3]).opts(padding=0.1, logy=True)
         plot = mpl_renderer.get_plot(curve)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         assert x_range[0] == -0.2
@@ -123,7 +121,7 @@ class TestCurvePlot(TestMPLPlot):
         assert y_range[1] == 3.3483695221017129
 
     def test_curve_padding_datetime_square(self):
-        curve = Curve([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)]).opts(
+        curve = hv.Curve([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)]).opts(
             padding=0.1
         )
         plot = mpl_renderer.get_plot(curve)
@@ -134,7 +132,7 @@ class TestCurvePlot(TestMPLPlot):
         assert y_range[1] == 3.2
 
     def test_curve_padding_datetime_nonsquare(self):
-        curve = Curve([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)]).opts(
+        curve = hv.Curve([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)]).opts(
             padding=0.1, aspect=2
         )
         plot = mpl_renderer.get_plot(curve)
@@ -149,7 +147,7 @@ class TestCurvePlot(TestMPLPlot):
     ###########################
 
     def test_curve_scalar_color_op(self):
-        curve = Curve([(0, 0, 'red'), (0, 1, 'red'), (0, 2, 'red')],
+        curve = hv.Curve([(0, 0, 'red'), (0, 1, 'red'), (0, 2, 'red')],
                        vdims=['y', 'color']).opts(color='color')
         plot = mpl_renderer.get_plot(curve)
         artist = plot.handles['artist']
@@ -157,7 +155,7 @@ class TestCurvePlot(TestMPLPlot):
 
     def test_op_ndoverlay_color_value(self):
         colors = ['blue', 'red']
-        overlay = NdOverlay({color: Curve(np.arange(i))
+        overlay = hv.NdOverlay({color: hv.Curve(np.arange(i))
                              for i, color in enumerate(colors)},
                             'color').opts('Curve', color='color')
         plot = mpl_renderer.get_plot(overlay)
@@ -167,35 +165,35 @@ class TestCurvePlot(TestMPLPlot):
             assert style['color'] == color
 
     def test_curve_color_op(self):
-        curve = Curve([(0, 0, 'red'), (0, 1, 'blue'), (0, 2, 'red')],
+        curve = hv.Curve([(0, 0, 'red'), (0, 1, 'blue'), (0, 2, 'red')],
                        vdims=['y', 'color']).opts(color='color')
         msg = 'ValueError: Mapping a dimension to the "color" style'
         with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(curve)
 
     def test_curve_alpha_op(self):
-        curve = Curve([(0, 0, 0.1), (0, 1, 0.3), (0, 2, 1)],
+        curve = hv.Curve([(0, 0, 0.1), (0, 1, 0.3), (0, 2, 1)],
                        vdims=['y', 'alpha']).opts(alpha='alpha')
         msg = 'ValueError: Mapping a dimension to the "alpha" style'
         with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(curve)
 
     def test_curve_linewidth_op(self):
-        curve = Curve([(0, 0, 0.1), (0, 1, 0.3), (0, 2, 1)],
+        curve = hv.Curve([(0, 0, 0.1), (0, 1, 0.3), (0, 2, 1)],
                        vdims=['y', 'linewidth']).opts(linewidth='linewidth')
         msg = 'ValueError: Mapping a dimension to the "linewidth" style'
         with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(curve)
 
     def test_curve_style_mapping_ndoverlay_dimensions(self):
-        ndoverlay = NdOverlay({
-            (0, 'A'): Curve([1, 2, 0]), (0, 'B'): Curve([1, 2, 1]),
-            (1, 'A'): Curve([1, 2, 2]), (1, 'B'): Curve([1, 2, 3])},
+        ndoverlay = hv.NdOverlay({
+            (0, 'A'): hv.Curve([1, 2, 0]), (0, 'B'): hv.Curve([1, 2, 1]),
+            (1, 'A'): hv.Curve([1, 2, 2]), (1, 'B'): hv.Curve([1, 2, 3])},
                               ['num', 'cat']
         ).opts({
             'Curve': dict(
-                color=dim('num').categorize({0: 'red', 1: 'blue'}),
-                linestyle=dim('cat').categorize({'A': '-.', 'B': '-'})
+                color=hv.dim('num').categorize({0: 'red', 1: 'blue'}),
+                linestyle=hv.dim('cat').categorize({'A': '-.', 'B': '-'})
             )
         })
         plot = mpl_renderer.get_plot(ndoverlay)
@@ -214,15 +212,15 @@ class TestCurvePlot(TestMPLPlot):
 
     def test_curve_style_mapping_constant_value_dimensions(self):
         vdims = ['y', 'num', 'cat']
-        ndoverlay = NdOverlay({
-            0: Curve([(0, 1, 0, 'A'), (1, 0, 0, 'A')], vdims=vdims),
-            1: Curve([(0, 1, 0, 'B'), (1, 1, 0, 'B')], vdims=vdims),
-            2: Curve([(0, 1, 1, 'A'), (1, 2, 1, 'A')], vdims=vdims),
-            3: Curve([(0, 1, 1, 'B'), (1, 3, 1, 'B')], vdims=vdims)}
+        ndoverlay = hv.NdOverlay({
+            0: hv.Curve([(0, 1, 0, 'A'), (1, 0, 0, 'A')], vdims=vdims),
+            1: hv.Curve([(0, 1, 0, 'B'), (1, 1, 0, 'B')], vdims=vdims),
+            2: hv.Curve([(0, 1, 1, 'A'), (1, 2, 1, 'A')], vdims=vdims),
+            3: hv.Curve([(0, 1, 1, 'B'), (1, 3, 1, 'B')], vdims=vdims)}
         ).opts({
             'Curve': dict(
-                color=dim('num').categorize({0: 'red', 1: 'blue'}),
-                linestyle=dim('cat').categorize({'A': '-.', 'B': '-'})
+                color=hv.dim('num').categorize({0: 'red', 1: 'blue'}),
+                linestyle=hv.dim('cat').categorize({'A': '-.', 'B': '-'})
             )
         })
         plot = mpl_renderer.get_plot(ndoverlay)

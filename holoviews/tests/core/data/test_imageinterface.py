@@ -3,7 +3,7 @@ import datetime as dt
 import numpy as np
 import pytest
 
-from holoviews import HSV, RGB, Curve, Dataset, Dimension, Image, Table
+import holoviews as hv
 from holoviews.core.data.interface import DataError
 from holoviews.core.util import date_range
 from holoviews.testing import assert_data_equal, assert_element_equal
@@ -18,7 +18,7 @@ class ImageInterfaceTests(GriddedInterfaceTests, InterfaceTests):
 
     datatype = 'image'
     data_type = np.ndarray
-    element = Image
+    element = hv.Image
 
     __test__ = True
 
@@ -28,7 +28,7 @@ class ImageInterfaceTests(GriddedInterfaceTests, InterfaceTests):
         z = np.array([[ 0.06925999,  0.05800389,  0.05620127],
                       [ 0.06240918,  0.05800931,  0.04969735],
                       [ 0.05376789,  0.04669417,  0.03880118]])
-        dataset = Image((x, y, z), kdims=['x', 'y'], vdims=['z'])
+        dataset = hv.Image((x, y, z), kdims=['x', 'y'], vdims=['z'])
         canonical = np.array([[ 0.05376789,  0.04669417,  0.03880118],
                               [ 0.06240918,  0.05800931,  0.04969735],
                               [ 0.06925999,  0.05800389,  0.05620127]])
@@ -60,7 +60,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
     Tests for ImageInterface
     """
 
-    element = Image
+    element = hv.Image
 
     __test__ = False
 
@@ -70,36 +70,36 @@ class BaseImageElementInterfaceTests(InterfaceTests):
         self.array = np.arange(10) * np.arange(10)[:, np.newaxis]
 
     def init_data(self):
-        self.image = Image(np.flipud(self.array), bounds=(-10, 0, 10, 10))
+        self.image = hv.Image(np.flipud(self.array), bounds=(-10, 0, 10, 10))
 
     def test_init_data_tuple(self):
         xs = np.arange(5)
         ys = np.arange(10)
         array = xs * ys[:, np.newaxis]
-        Image((xs, ys, array))
+        hv.Image((xs, ys, array))
 
     def test_init_data_tuple_error(self):
         xs = np.arange(5)
         ys = np.arange(10)
         array = xs * ys[:, np.newaxis]
         with pytest.raises(DataError):
-            Image((ys, xs, array))
+            hv.Image((ys, xs, array))
 
     def test_bounds_mismatch(self):
         with pytest.raises(ValueError):  # noqa: PT011
-            Image((range(10), range(10), np.random.rand(10, 10)), bounds=0.5)
+            hv.Image((range(10), range(10), np.random.rand(10, 10)), bounds=0.5)
 
     def test_init_data_datetime_xaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         xs = date_range(start, end, 10).astype("datetime64[ns]")
-        Image((xs, self.ys, self.array))
+        hv.Image((xs, self.ys, self.array))
 
     def test_init_data_datetime_yaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         ys = date_range(start, end, 10).astype("datetime64[ns]")
-        Image((self.xs, ys, self.array))
+        hv.Image((self.xs, ys, self.array))
 
     def test_init_bounds(self):
         assert self.image.bounds.lbrt() == (-10, 0, 10, 10)
@@ -109,7 +109,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
         end = start+np.timedelta64(1, 's')
         xs = date_range(start, end, 10).astype("datetime64[ns]")
         bounds = (start, 0, end, 10)
-        image = Image((xs, self.ys, self.array), bounds=bounds)
+        image = hv.Image((xs, self.ys, self.array), bounds=bounds)
         assert image.bounds.lbrt() == bounds
 
     def test_init_bounds_datetime_yaxis(self):
@@ -117,7 +117,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
         end = start+np.timedelta64(1, 's')
         ys = date_range(start, end, 10).astype("datetime64[ns]")
         bounds = (-10, start, 10, end)
-        image = Image((self.xs, ys, self.array))
+        image = hv.Image((self.xs, ys, self.array))
         assert image.bounds.lbrt() == bounds
 
     def test_init_densities(self):
@@ -128,7 +128,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         xs = date_range(start, end, 10).astype("datetime64[ns]")
-        image = Image((xs, self.ys, self.array))
+        image = hv.Image((xs, self.ys, self.array))
         assert image.xdensity == 1e-5
         assert image.ydensity == 1
 
@@ -136,7 +136,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         ys = date_range(start, end, 10).astype("datetime64[ns]")
-        image = Image((self.xs, ys, self.array))
+        image = hv.Image((self.xs, ys, self.array))
         assert image.xdensity == 0.5
         assert image.ydensity == 1e-5
 
@@ -168,7 +168,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
         end = start+np.timedelta64(1, 's')
         bounds = (start, 0, end, 10)
         xs = date_range(start, end, 10).astype("datetime64[ns]")
-        image = Image((xs, self.ys, self.array), bounds=bounds)
+        image = hv.Image((xs, self.ys, self.array), bounds=bounds)
         sliced = image[start+np.timedelta64(530, 'ms'): start+np.timedelta64(770, 'ms')]
         assert_data_equal(sliced.dimension_values(2, flat=False),
                          self.array[:, 5:8])
@@ -185,7 +185,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         ys = date_range(start, end, 10).astype("datetime64[ns]")
-        image = Image((self.xs, ys, self.array))
+        image = hv.Image((self.xs, ys, self.array))
         sliced = image[:, start+np.timedelta64(120, 'ms'): start+np.timedelta64(520, 'ms')]
         assert_data_equal(sliced.dimension_values(2, flat=False),
                          self.array[1:5, :])
@@ -221,7 +221,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         xs = date_range(start, end, 10).astype("datetime64[ns]")
-        image = Image((xs, self.ys, self.array))
+        image = hv.Image((xs, self.ys, self.array))
         assert image.range(0) == (start, end)
 
     def test_range_ydim(self):
@@ -231,7 +231,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         ys = date_range(start, end, 10).astype("datetime64[ns]")
-        image = Image((self.xs, ys, self.array))
+        image = hv.Image((self.xs, ys, self.array))
         assert image.range(1) == (start, end)
 
     def test_range_vdim(self):
@@ -245,7 +245,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         xs = date_range(start, end, 10).astype("datetime64[ns]")
-        image = Image((xs, self.ys, self.array))
+        image = hv.Image((xs, self.ys, self.array))
         assert_data_equal(image.dimension_values(0, expanded=False),
                          date_range(start, end, 10))
 
@@ -258,25 +258,25 @@ class BaseImageElementInterfaceTests(InterfaceTests):
         zs = [0, 7, 14, 21, 28, 35, 42, 49, 56, 63]
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.image):
             assert_element_equal(self.image.sample(x=5),
-                             Curve((ys, zs), kdims=['y'], vdims=['z']))
+                             hv.Curve((ys, zs), kdims=['y'], vdims=['z']))
 
     def test_sample_ycoord(self):
         xs = np.linspace(-9, 9, 10)
         zs = [0, 4, 8, 12, 16, 20, 24, 28, 32, 36]
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.image):
             assert_element_equal(self.image.sample(y=5),
-                             Curve((xs, zs), kdims=['x'], vdims=['z']))
+                             hv.Curve((xs, zs), kdims=['x'], vdims=['z']))
 
     def test_sample_coords(self):
         arr = np.arange(10)*np.arange(5)[np.newaxis].T
         xs = np.linspace(0.12, 0.81, 10)
         ys = np.linspace(0.12, 0.391, 5)
-        img = Image((xs, ys, arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype])
+        img = hv.Image((xs, ys, arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype])
         sampled = img.sample([(0.15, 0.15), (0.15, 0.4), (0.8, 0.4), (0.8, 0.15)])
-        assert isinstance(sampled, Table)
+        assert isinstance(sampled, hv.Table)
         yidx = [0, 4, 4, 0]
         xidx = [0, 0, 9, 9]
-        table = Table((xs[xidx], ys[yidx], arr[yidx, xidx]), kdims=['x', 'y'], vdims=['z'])
+        table = hv.Table((xs[xidx], ys[yidx], arr[yidx, xidx]), kdims=['x', 'y'], vdims=['z'])
         assert_element_equal(sampled, table)
 
     def test_reduce_to_scalar(self):
@@ -285,30 +285,30 @@ class BaseImageElementInterfaceTests(InterfaceTests):
     def test_reduce_x_dimension(self):
         ys = np.linspace(0.5, 9.5, 10)
         zs = [0., 4.5, 9., 13.5, 18., 22.5, 27., 31.5, 36., 40.5]
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], Image):
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], hv.Image):
             assert_element_equal(self.image.reduce(x=np.mean),
-                             Curve((ys, zs), kdims=['y'], vdims=['z']))
+                             hv.Curve((ys, zs), kdims=['y'], vdims=['z']))
 
     def test_reduce_y_dimension(self):
         xs = np.linspace(-9, 9, 10)
         zs = [0., 4.5, 9., 13.5, 18., 22.5, 27., 31.5, 36., 40.5]
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], Image):
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], hv.Image):
             assert_element_equal(self.image.reduce(y=np.mean),
-                             Curve((xs, zs), kdims=['x'], vdims=['z']))
+                             hv.Curve((xs, zs), kdims=['x'], vdims=['z']))
 
     def test_dataset_reindex_constant(self):
         with DatatypeContext([self.datatype, 'dictionary', 'dataframe', 'grid'], self.image):
-            selected = Dataset(self.image.select(x=0))
+            selected = hv.Dataset(self.image.select(x=0))
             reindexed = selected.reindex(['y'])
-        data = Dataset(selected.columns(['y', 'z']),
+        data = hv.Dataset(selected.columns(['y', 'z']),
                        kdims=['y'], vdims=['z'])
         assert_element_equal(reindexed, data)
 
     def test_dataset_reindex_non_constant(self):
         with DatatypeContext([self.datatype, 'dictionary', 'dataframe', 'grid'], self.image):
-            ds = Dataset(self.image)
+            ds = hv.Dataset(self.image)
             reindexed = ds.reindex(['y'])
-        data = Dataset(ds.columns(['y', 'z']),
+        data = hv.Dataset(ds.columns(['y', 'z']),
                        kdims=['y'], vdims=['z'])
         assert_element_equal(reindexed, data)
 
@@ -318,7 +318,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
         xs = self.image.dimension_values('x', expanded=False)
         mean = self.array.mean(axis=0)
         std = self.array.std(axis=0)
-        assert_element_equal(agg, Curve((xs, mean, std), kdims=['x'],
+        assert_element_equal(agg, hv.Curve((xs, mean, std), kdims=['x'],
                                     vdims=['z', 'z_std']))
 
 
@@ -332,7 +332,7 @@ class ImageElement_ImageInterfaceTests(BaseImageElementInterfaceTests):
 
 class BaseRGBElementInterfaceTests(InterfaceTests):
 
-    element = RGB
+    element = hv.RGB
 
     __test__ = False
 
@@ -342,7 +342,7 @@ class BaseRGBElementInterfaceTests(InterfaceTests):
         self.rgb_array = np.random.rand(10, 10, 3)
 
     def init_data(self):
-        self.rgb = RGB(self.rgb_array[::-1], bounds=(-10, 0, 10, 10))
+        self.rgb = hv.RGB(self.rgb_array[::-1], bounds=(-10, 0, 10, 10))
 
     def test_init_bounds(self):
         assert self.rgb.bounds.lbrt() == (-10, 0, 10, 10)
@@ -410,21 +410,21 @@ class BaseRGBElementInterfaceTests(InterfaceTests):
     def test_select_value_dimension_rgb(self):
 
         assert_element_equal(self.rgb[..., 'R'],
-                         Image(np.flipud(self.rgb_array[:, :, 0]), bounds=self.rgb.bounds,
-                               vdims=[Dimension('R', range=(0, 1))], datatype=['image']))
+                         hv.Image(np.flipud(self.rgb_array[:, :, 0]), bounds=self.rgb.bounds,
+                               vdims=[hv.Dimension('R', range=(0, 1))], datatype=['image']))
 
     def test_select_single_coordinate(self):
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.rgb):
             assert_element_equal(self.rgb[5.2, 3.1],
                              self.rgb.clone([tuple(self.rgb_array[3, 7])],
-                                            kdims=[], new_type=Dataset))
+                                            kdims=[], new_type=hv.Dataset))
 
 
     def test_reduce_to_single_values(self):
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.rgb):
             assert_element_equal(self.rgb.reduce(['x', 'y'], function=np.mean),
                              self.rgb.clone([tuple(np.mean(self.rgb_array, axis=(0, 1)))],
-                                            kdims=[], new_type=Dataset))
+                                            kdims=[], new_type=hv.Dataset))
 
     def test_sample_xcoord(self):
         ys = np.linspace(0.5, 9.5, 10)
@@ -432,7 +432,7 @@ class BaseRGBElementInterfaceTests(InterfaceTests):
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.rgb):
             assert_element_equal(self.rgb.sample(x=5),
                              self.rgb.clone(data, kdims=['y'],
-                                            new_type=Curve))
+                                            new_type=hv.Curve))
 
     def test_sample_ycoord(self):
         xs = np.linspace(-9, 9, 10)
@@ -440,21 +440,21 @@ class BaseRGBElementInterfaceTests(InterfaceTests):
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.rgb):
             assert_element_equal(self.rgb.sample(y=5),
                              self.rgb.clone(data, kdims=['x'],
-                                            new_type=Curve))
+                                            new_type=hv.Curve))
 
     def test_dataset_reindex_constant(self):
         with DatatypeContext([self.datatype, 'dictionary', 'dataframe', 'grid'], self.rgb):
-            ds = Dataset(self.rgb.select(x=0))
+            ds = hv.Dataset(self.rgb.select(x=0))
             reindexed = ds.reindex(['y'], ['R'])
-        data = Dataset(ds.columns(['y', 'R']),
+        data = hv.Dataset(ds.columns(['y', 'R']),
                        kdims=['y'], vdims=[ds.vdims[0]])
         assert_element_equal(reindexed, data)
 
     def test_dataset_reindex_non_constant(self):
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe', 'grid'], self.rgb):
-            ds = Dataset(self.rgb)
+            ds = hv.Dataset(self.rgb)
             reindexed = ds.reindex(['y'], ['R'])
-        data = Dataset(ds.columns(['y', 'R']),
+        data = hv.Dataset(ds.columns(['y', 'R']),
                        kdims=['y'], vdims=[ds.vdims[0]])
         assert_element_equal(reindexed, data)
 
@@ -471,7 +471,7 @@ class RGBElement_ImageInterfaceTests(BaseRGBElementInterfaceTests):
 
 class BaseHSVElementInterfaceTests(InterfaceTests):
 
-    element = HSV
+    element = hv.HSV
 
     __test__ = False
 
@@ -482,7 +482,7 @@ class BaseHSVElementInterfaceTests(InterfaceTests):
         self.hsv_array[0, 0] = 1
 
     def init_data(self):
-        self.hsv = HSV(self.hsv_array[::-1], bounds=(-10, 0, 10, 10))
+        self.hsv = hv.HSV(self.hsv_array[::-1], bounds=(-10, 0, 10, 10))
 
     def test_hsv_rgb_interface(self):
         R = self.hsv.rgb[..., 'R'].dimension_values(2, expanded=False, flat=False)

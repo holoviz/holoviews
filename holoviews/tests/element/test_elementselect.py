@@ -5,29 +5,28 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from holoviews.core import HoloMap
-from holoviews.element import Contours, Curve, Image
+import holoviews as hv
 from holoviews.testing import assert_element_equal
 
 
 class DimensionedSelectionTest:
 
     def setup_method(self):
-        self.img_fn = lambda: Image(np.random.rand(10, 10))
-        self.contour_fn = lambda: Contours([np.random.rand(10, 2)
+        self.img_fn = lambda: hv.Image(np.random.rand(10, 10))
+        self.contour_fn = lambda: hv.Contours([np.random.rand(10, 2)
                                             for i in range(2)])
-        self.datetime_fn = lambda: Curve((
+        self.datetime_fn = lambda: hv.Curve((
             [dt.datetime(2000,1,1), dt.datetime(2000,1,2),
              dt.datetime(2000,1,3)],
             np.random.rand(3)
             ), 'time', 'x')
         params = [list(range(3)) for i in range(2)]
-        self.sanitized_map = HoloMap({i: Image(i*np.random.rand(10,10))
+        self.sanitized_map = hv.HoloMap({i: hv.Image(i*np.random.rand(10,10))
                                       for i in range(1,10)}, kdims=['A B'])
-        self.img_map = HoloMap({(i, j): self.img_fn()
+        self.img_map = hv.HoloMap({(i, j): self.img_fn()
                                 for i, j in product(*params)},
                                kdims=['a', 'b'])
-        self.contour_map = HoloMap({(i, j): self.contour_fn()
+        self.contour_map = hv.HoloMap({(i, j): self.contour_fn()
                                     for i, j in product(*params)},
                                    kdims=['a', 'b'])
         self.ndoverlay_map = self.img_map.overlay('b')
@@ -35,8 +34,8 @@ class DimensionedSelectionTest:
         self.layout_map = self.ndoverlay_map + self.contour_map
         self.duplicate_map = self.img_map.clone(kdims=['x', 'y'])
 
-        self.overlap1 = HoloMap({i: self.img_fn() for i in range(5)})
-        self.overlap2 = HoloMap({i: self.img_fn() for i in range(10)})
+        self.overlap1 = hv.HoloMap({i: self.img_fn() for i in range(5)})
+        self.overlap2 = hv.HoloMap({i: self.img_fn() for i in range(10)})
         self.overlap_layout = self.overlap1 + self.overlap2
 
 
@@ -73,7 +72,7 @@ class DimensionedSelectionTest:
 
     def test_deep_holooverlay_slice(self):
         map_slc = self.overlay_map[1:3, 1:3]
-        img_slc = map_slc.map(lambda x: x[0:0.5, 0:0.5], [Image, Contours])
+        img_slc = map_slc.map(lambda x: x[0:0.5, 0:0.5], [hv.Image, hv.Contours])
         selection = self.overlay_map.select(a=(1,3), b=(1, 3), x=(0, 0.5), y=(0, 0.5))
         assert_element_equal(selection, img_slc)
 
@@ -86,7 +85,7 @@ class DimensionedSelectionTest:
 
     def test_spec_duplicate_dim_select(self):
         selection = self.duplicate_map.select(
-            selection_specs=(HoloMap,), x=(0, 1), y=(1, 3)
+            selection_specs=(hv.HoloMap,), x=(0, 1), y=(1, 3)
         )
         assert_element_equal(selection, self.duplicate_map[0:1, 1:3])
 
@@ -117,4 +116,4 @@ class DimensionedSelectionTest:
         curve = self.datetime_fn()
         with pytest.raises(ValueError, match="Use the selection_specs keyword"
         ):
-            curve.select((Curve,), time=(s, e))
+            curve.select((hv.Curve,), time=(s, e))

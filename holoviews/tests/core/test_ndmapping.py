@@ -1,27 +1,20 @@
 import numpy as np
 
-from holoviews import Dataset, HoloMap
-from holoviews.core import Dimension
-from holoviews.core.ndmapping import (
-    MultiDimensionalMapping,
-    NdMapping,
-    UniformNdMapping,
-)
-from holoviews.core.overlay import Overlay
-from holoviews.element import Curve
+import holoviews as hv
+from holoviews.core.ndmapping import MultiDimensionalMapping, UniformNdMapping
 from holoviews.testing import assert_data_equal, assert_element_equal
 
 
 class DimensionTest:
 
     def test_dimension_init(self):
-        Dimension('Test dimension')
-        Dimension('Test dimension', cyclic=True)
-        Dimension('Test dimension', cyclic=True, type=int)
-        Dimension('Test dimension', cyclic=True, type=int, unit='Twilight zones')
+        hv.Dimension('Test dimension')
+        hv.Dimension('Test dimension', cyclic=True)
+        hv.Dimension('Test dimension', cyclic=True, type=int)
+        hv.Dimension('Test dimension', cyclic=True, type=int, unit='Twilight zones')
 
     def test_dimension_clone(self):
-        dim1 = Dimension('Test dimension')
+        dim1 = hv.Dimension('Test dimension')
         dim2 = dim1.clone(cyclic=True)
         assert dim2.cyclic is True
 
@@ -30,7 +23,7 @@ class DimensionTest:
         assert dim3.unit == 'scovilles'
 
     def test_dimension_pprint(self):
-        dim = Dimension('Test dimension', cyclic=True, type=float, unit='Twilight zones')
+        dim = hv.Dimension('Test dimension', cyclic=True, type=float, unit='Twilight zones')
         assert dim.pprint_value_string(3.23451) == 'Test dimension: 3.2345 Twilight zones'
         assert dim.pprint_value_string(4.23441) == 'Test dimension: 4.2344 Twilight zones'
         assert dim.pprint_value(3.23451, print_unit=True) == '3.2345 Twilight zones'
@@ -44,9 +37,9 @@ class NdIndexableMappingTest:
         self.init_item_list = [((1, 2.0), 'a'), ((5, 3.0), 'b')]
         self.init_item_odict = dict([((1, 2.0), 'a'), ((5, 3.0), 'b')])
         self.dimension_labels = ['intdim', 'floatdim']
-        self.dim1 = Dimension('intdim', type=int)
-        self.dim2 = Dimension('floatdim', type=float)
-        self.time_dimension = Dimension
+        self.dim1 = hv.Dimension('intdim', type=int)
+        self.dim2 = hv.Dimension('floatdim', type=float)
+        self.time_dimension = hv.Dimension
 
     def test_idxmapping_init(self):
         MultiDimensionalMapping()
@@ -103,35 +96,35 @@ class NdIndexableMappingTest:
         assert list(nested_ndmap[1.5].values()) == ['e', 'f']
 
     def test_ndmapping_slice_lower_bound_inclusive_int(self):
-        ndmap = NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
+        ndmap = hv.NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
         assert ndmap[1:].keys() == [(1, 2.0), (5, 3.0)]
 
     def test_ndmapping_slice_lower_bound_inclusive2_int(self):
-        ndmap = NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
+        ndmap = hv.NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
         assert ndmap[1:6].keys() == [(1, 2.0), (5, 3.0)]
 
     def test_ndmapping_slice_upper_bound_exclusive_int(self):
-        ndmap = NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
+        ndmap = hv.NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
         assert ndmap[1:5].keys() == [(1, 2.0)]
 
     def test_ndmapping_slice_upper_bound_exclusive2_int(self):
-        ndmap = NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
+        ndmap = hv.NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
         assert ndmap[:5].keys() == [(1, 2.0)]
 
     def test_ndmapping_slice_lower_bound_inclusive_float(self):
-        ndmap = NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
+        ndmap = hv.NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
         assert ndmap[:, 2.0:].keys() == [(1, 2.0), (5, 3.0)]
 
     def test_ndmapping_slice_lower_bound_inclusive2_float(self):
-        ndmap = NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
+        ndmap = hv.NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
         assert ndmap[:, 2.0:5.0].keys() == [(1, 2.0), (5, 3.0)]
 
     def test_ndmapping_slice_upper_bound_exclusive_float(self):
-        ndmap = NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
+        ndmap = hv.NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
         assert ndmap[:, :3.0].keys() == [(1, 2.0)]
 
     def test_ndmapping_slice_upper_bound_exclusive2_float(self):
-        ndmap = NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
+        ndmap = hv.NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
         assert ndmap[:, 0.0:3.0].keys() == [(1, 2.0)]
 
     def test_idxmapping_unsorted(self):
@@ -146,7 +139,7 @@ class NdIndexableMappingTest:
 
     def test_idxmapping_groupby_unsorted(self):
         data = [(('B', 2), 1), (('C', 2), 2), (('A', 1), 3)]
-        grouped = NdMapping(data, sort=False, kdims=['X', 'Y']).groupby('Y')
+        grouped = hv.NdMapping(data, sort=False, kdims=['X', 'Y']).groupby('Y')
         assert grouped.keys() == [2, 1]
         assert grouped.values()[0].keys() == ['B', 'C']
         assert grouped.last.keys() == ['A']
@@ -164,19 +157,19 @@ class NdIndexableMappingTest:
         data = [((0, 0.5), 'a'), ((1, 0.5), 'b')]
         ndmap = MultiDimensionalMapping(data, kdims=[self.dim1, self.dim2])
         redimmed = ndmap.redim(intdim='Integer')
-        assert redimmed.kdims == [Dimension('Integer', type=int), Dimension('floatdim', type=float)]
+        assert redimmed.kdims == [hv.Dimension('Integer', type=int), hv.Dimension('floatdim', type=float)]
 
     def test_idxmapping_redim_range_aux(self):
         data = [((0, 0.5), 'a'), ((1, 0.5), 'b')]
         ndmap = MultiDimensionalMapping(data, kdims=[self.dim1, self.dim2])
         redimmed = ndmap.redim.range(intdim=(-9,9))
-        assert redimmed.kdims == [Dimension('intdim', type=int, range=(-9, 9,)), Dimension('floatdim', type=float)]
+        assert redimmed.kdims == [hv.Dimension('intdim', type=int, range=(-9, 9,)), hv.Dimension('floatdim', type=float)]
 
     def test_idxmapping_redim_type_aux(self):
         data = [((0, 0.5), 'a'), ((1, 0.5), 'b')]
         ndmap = MultiDimensionalMapping(data, kdims=[self.dim1, self.dim2])
         redimmed = ndmap.redim.type(intdim=str)
-        assert redimmed.kdims == [Dimension('intdim', type=str), Dimension('floatdim', type=float)]
+        assert redimmed.kdims == [hv.Dimension('intdim', type=str), hv.Dimension('floatdim', type=float)]
 
 
     def test_idxmapping_add_dimension(self):
@@ -212,11 +205,11 @@ class NdIndexableMappingTest:
 class UniformNdMappingTest:
 
     def test_collapse_nested(self):
-        inner1 = UniformNdMapping({1: Dataset([(1, 2)], ['x', 'y'])}, 'Y')
-        inner2 = UniformNdMapping({1: Dataset([(3, 4)], ['x', 'y'])}, 'Y')
+        inner1 = UniformNdMapping({1: hv.Dataset([(1, 2)], ['x', 'y'])}, 'Y')
+        inner2 = UniformNdMapping({1: hv.Dataset([(3, 4)], ['x', 'y'])}, 'Y')
         outer = UniformNdMapping({1: inner1, 2: inner2}, 'X')
         collapsed = outer.collapse()
-        expected = Dataset([(1, 1, 1, 2), (2, 1, 3, 4)], ['X', 'Y', 'x', 'y'])
+        expected = hv.Dataset([(1, 1, 1, 2), (2, 1, 3, 4)], ['X', 'Y', 'x', 'y'])
         assert_element_equal(collapsed, expected)
 
 
@@ -226,28 +219,28 @@ class HoloMapTest:
         self.xs = range(11)
         self.y_ints = [i*2 for i in range(11)]
         self.ys = np.linspace(0, 1, 11)
-        self.columns = Dataset(np.column_stack([self.xs, self.y_ints]),
+        self.columns = hv.Dataset(np.column_stack([self.xs, self.y_ints]),
                                kdims=['x'], vdims=['y'])
 
     def test_holomap_redim(self):
-        hmap = HoloMap({i: Dataset({'x':self.xs, 'y': self.ys * i},
+        hmap = hv.HoloMap({i: hv.Dataset({'x':self.xs, 'y': self.ys * i},
                                    kdims=['x'], vdims=['y'])
                         for i in range(10)}, kdims=['z'])
         redimmed = hmap.redim(x='Time')
         assert redimmed.dimensions('all', True) == ['z', 'Time', 'y']
 
     def test_holomap_redim_nested(self):
-        hmap = HoloMap({i: Dataset({'x':self.xs, 'y': self.ys * i},
+        hmap = hv.HoloMap({i: hv.Dataset({'x':self.xs, 'y': self.ys * i},
                                    kdims=['x'], vdims=['y'])
                         for i in range(10)}, kdims=['z'])
         redimmed = hmap.redim(x='Time', z='Magnitude')
         assert redimmed.dimensions('all', True) == ['Magnitude', 'Time', 'y']
 
     def test_columns_collapse_heterogeneous(self):
-        collapsed = HoloMap({i: Dataset({'x':self.xs, 'y': self.ys * i},
+        collapsed = hv.HoloMap({i: hv.Dataset({'x':self.xs, 'y': self.ys * i},
                                         kdims=['x'], vdims=['y'])
                              for i in range(10)}, kdims=['z']).collapse('z', np.mean)
-        expected = Dataset({'x':self.xs, 'y': self.ys * 4.5}, kdims=['x'], vdims=['y'])
+        expected = hv.Dataset({'x':self.xs, 'y': self.ys * 4.5}, kdims=['x'], vdims=['y'])
         assert_element_equal(collapsed, expected)
 
     def test_columns_sample_homogeneous(self):
@@ -255,14 +248,14 @@ class HoloMapTest:
         assert_data_equal(samples, np.array([0, 10, 20]))
 
     def test_holomap_map_with_none(self):
-        hmap = HoloMap({i: Dataset({'x':self.xs, 'y': self.ys * i},
+        hmap = hv.HoloMap({i: hv.Dataset({'x':self.xs, 'y': self.ys * i},
                                    kdims=['x'], vdims=['y'])
                         for i in range(10)}, kdims=['z'])
-        mapped = hmap.map(lambda x: x if x.range(1)[1] > 0 else None, Dataset)
+        mapped = hmap.map(lambda x: x if x.range(1)[1] > 0 else None, hv.Dataset)
         assert_element_equal(hmap[1:10], mapped)
 
     def test_holomap_hist_two_dims(self):
-        hmap = HoloMap({i: Dataset({'x':self.xs, 'y': self.ys * i},
+        hmap = hv.HoloMap({i: hv.Dataset({'x':self.xs, 'y': self.ys * i},
                                    kdims=['x'], vdims=['y'])
                         for i in range(10)}, kdims=['z'])
         hists = hmap.hist(dimension=['x', 'y'])
@@ -270,18 +263,18 @@ class HoloMapTest:
         assert hists['top'].last.kdims == ['x']
 
     def test_holomap_collapse_overlay_no_function(self):
-        hmap = HoloMap({
-            (1,0): Curve(np.arange(8)) * Curve(-np.arange(8)),
-            (2,0): Curve(np.arange(8)**2) * Curve(-np.arange(8)**3)
+        hmap = hv.HoloMap({
+            (1,0): hv.Curve(np.arange(8)) * hv.Curve(-np.arange(8)),
+            (2,0): hv.Curve(np.arange(8)**2) * hv.Curve(-np.arange(8)**3)
         }, kdims=["A","B"])
-        assert_element_equal(hmap.collapse(), Overlay([
-            (('Curve', 'I'), Dataset({
+        assert_element_equal(hmap.collapse(), hv.Overlay([
+            (('Curve', 'I'), hv.Dataset({
                 'A': np.concatenate([np.ones(8), np.ones(8)*2]),
                 'B': np.zeros(16),
                 'x': np.tile(np.arange(8), 2),
                 'y': np.concatenate([np.arange(8), np.arange(8)**2])
             }, kdims=['A', 'B', 'x'], vdims=['y'])),
-            (('Curve', 'II'), Dataset({
+            (('Curve', 'II'), hv.Dataset({
                 'A': np.concatenate([np.ones(8), np.ones(8)*2]),
                 'B': np.zeros(16),
                 'x': np.tile(np.arange(8), 2),
@@ -290,16 +283,16 @@ class HoloMapTest:
         ]))
 
     def test_holomap_collapse_overlay_max(self):
-        hmap = HoloMap({
-            (1,0): Curve(np.arange(8)) * Curve(-np.arange(8)),
-            (2,0): Curve(np.arange(8)**2) * Curve(-np.arange(8)**3)
+        hmap = hv.HoloMap({
+            (1,0): hv.Curve(np.arange(8)) * hv.Curve(-np.arange(8)),
+            (2,0): hv.Curve(np.arange(8)**2) * hv.Curve(-np.arange(8)**3)
         }, kdims=["A","B"])
-        assert_element_equal(hmap.collapse(function=np.max), Overlay([
-            (('Curve', 'I'), Curve({
+        assert_element_equal(hmap.collapse(function=np.max), hv.Overlay([
+            (('Curve', 'I'), hv.Curve({
                 'x': np.arange(8),
                 'y': np.arange(8)**2
             }, kdims=['x'], vdims=['y'])),
-            (('Curve', 'II'), Curve({
+            (('Curve', 'II'), hv.Curve({
                 'x': np.arange(8),
                 'y': -np.arange(8)
             }, kdims=['x'], vdims=['y']))

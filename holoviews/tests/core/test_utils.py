@@ -13,10 +13,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from holoviews import Dimension, Element
+import holoviews as hv
 from holoviews.core import util
 from holoviews.core.util import (
-    _minmax_finite,
+     _minmax_finite,
     closest_match,
     compute_density,
     compute_edges,
@@ -50,16 +50,16 @@ sanitize_identifier = sanitize_identifier_fn.instance()
 
 @pytest.fixture
 def with_pandas(request, monkeypatch):
-  """Fixture to control pandas availability"""
-  if request.param:
-      pytest.importorskip("pandas")
-  else:
-      monkeypatch.setattr(util, 'pd', None)
+    """Fixture to control pandas availability"""
+    if request.param:
+        pytest.importorskip("pandas")
+    else:
+        monkeypatch.setattr(util, 'pd', None)
 
 
 def with_and_without_pandas(func):
-  """Decorator to test both with and without pandas"""
-  return pytest.mark.parametrize("with_pandas", [True, False], indirect=True, ids=["with_pandas", "without_pandas"])(func)
+    """Decorator to test both with and without pandas"""
+    return pytest.mark.parametrize("with_pandas", [True, False], indirect=True, ids=["with_pandas", "without_pandas"])(func)
 
 
 class TestDeepHash:
@@ -582,25 +582,25 @@ class TestWrapTupleStreams:
 
     def test_no_streams_two_kdims(self):
         result = wrap_tuple_streams((1,2),
-                                    [Dimension('x'), Dimension('y')],
+                                    [hv.Dimension('x'), hv.Dimension('y')],
                                     [])
         assert result == (1,2)
 
     def test_no_streams_none_value(self):
         result = wrap_tuple_streams((1,None),
-                                    [Dimension('x'), Dimension('y')],
+                                    [hv.Dimension('x'), hv.Dimension('y')],
                                     [])
         assert result == (1,None)
 
     def test_no_streams_one_stream_substitution(self):
         result = wrap_tuple_streams((None,3),
-                                    [Dimension('x'), Dimension('y')],
+                                    [hv.Dimension('x'), hv.Dimension('y')],
                                     [PointerXY(x=-5,y=10)])
         assert result == (-5,3)
 
     def test_no_streams_two_stream_substitution(self):
         result = wrap_tuple_streams((None,None),
-                                    [Dimension('x'), Dimension('y')],
+                                    [hv.Dimension('x'), hv.Dimension('y')],
                                     [PointerXY(x=0,y=5)])
         assert result == (0,5)
 
@@ -608,44 +608,44 @@ class TestWrapTupleStreams:
 class TestMergeDimensions:
 
     def test_merge_dimensions(self):
-        dimensions = merge_dimensions([[Dimension('A')], [Dimension('A'), Dimension('B')]])
-        assert dimensions == [Dimension('A'), Dimension('B')]
+        dimensions = merge_dimensions([[hv.Dimension('A')], [hv.Dimension('A'), hv.Dimension('B')]])
+        assert dimensions == [hv.Dimension('A'), hv.Dimension('B')]
 
     def test_merge_dimensions_with_values(self):
-        dimensions = merge_dimensions([[Dimension('A', values=[0, 1])],
-                                       [Dimension('A', values=[1, 2]), Dimension('B')]])
-        assert dimensions == [Dimension('A'), Dimension('B')]
+        dimensions = merge_dimensions([[hv.Dimension('A', values=[0, 1])],
+                                       [hv.Dimension('A', values=[1, 2]), hv.Dimension('B')]])
+        assert dimensions == [hv.Dimension('A'), hv.Dimension('B')]
         assert dimensions[0].values == [0, 1, 2]
 
 
 class TestTreePathUtils:
 
     def test_get_path_with_label(self):
-        path = get_path(Element('Test', label='A'))
+        path = get_path(hv.Element('Test', label='A'))
         assert path == ('Element', 'A')
 
     def test_get_path_without_label(self):
-        path = get_path(Element('Test'))
+        path = get_path(hv.Element('Test'))
         assert path == ('Element',)
 
     def test_get_path_with_custom_group(self):
-        path = get_path(Element('Test', group='Custom Group'))
+        path = get_path(hv.Element('Test', group='Custom Group'))
         assert path == ('Custom_Group',)
 
     def test_get_path_with_custom_group_and_label(self):
-        path = get_path(Element('Test', group='Custom Group', label='A'))
+        path = get_path(hv.Element('Test', group='Custom Group', label='A'))
         assert path == ('Custom_Group', 'A')
 
     def test_get_path_from_item_with_custom_group(self):
-        path = get_path((('Custom',), Element('Test')))
+        path = get_path((('Custom',), hv.Element('Test')))
         assert path == ('Custom',)
 
     def test_get_path_from_item_with_custom_group_and_label(self):
-        path = get_path((('Custom', 'Path'), Element('Test')))
+        path = get_path((('Custom', 'Path'), hv.Element('Test')))
         assert path == ('Custom',)
 
     def test_get_path_from_item_with_custom_group_and_matching_label(self):
-        path = get_path((('Custom', 'Path'), Element('Test', label='Path')))
+        path = get_path((('Custom', 'Path'), hv.Element('Test', label='Path')))
         assert path == ('Custom', 'Path')
 
     def test_make_path_unique_no_clash(self):

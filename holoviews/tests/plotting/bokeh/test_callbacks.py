@@ -9,9 +9,7 @@ from bokeh.events import Tap
 from bokeh.io.doc import set_curdoc
 from bokeh.models import ColumnDataSource, Plot, PolyEditTool, Range1d, Selection
 
-from holoviews.core import DynamicMap
-from holoviews.core.options import Store
-from holoviews.element import Box, Curve, Points, Polygons, Rectangles, Table
+import holoviews as hv
 from holoviews.plotting.bokeh.callbacks import (
     BoxEditCallback,
     Callback,
@@ -46,13 +44,13 @@ bokeh_renderer = BokehRenderer.instance()
 class CallbackTestCase:
 
     def setup_method(self):
-        self.previous_backend = Store.current_backend
-        Store.current_backend = 'bokeh'
+        self.previous_backend = hv.Store.current_backend
+        hv.Store.current_backend = 'bokeh'
         self.comm_manager = bokeh_renderer.comm_manager
         bokeh_renderer.comm_manager = comms.CommManager
 
     def teardown_method(self):
-        Store.current_backend = self.previous_backend
+        hv.Store.current_backend = self.previous_backend
         bokeh_server_renderer.last_plot = None
         bokeh_renderer.last_plot = None
         Callback._callbacks = {}
@@ -62,7 +60,7 @@ class CallbackTestCase:
 class TestCallbacks(CallbackTestCase):
 
     async def test_stream_callback(self):
-        dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PointerXY()])
+        dmap = hv.DynamicMap(lambda x, y: hv.Points([(x, y)]), kdims=[], streams=[PointerXY()])
         plot = bokeh_server_renderer.get_plot(dmap)
         bokeh_server_renderer(plot)
         set_curdoc(plot.document)
@@ -72,7 +70,7 @@ class TestCallbacks(CallbackTestCase):
         assert_data_equal(data['y'], np.array([0.2]))
 
     async def test_point_stream_callback_clip(self):
-        dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PointerXY()])
+        dmap = hv.DynamicMap(lambda x, y: hv.Points([(x, y)]), kdims=[], streams=[PointerXY()])
         plot = bokeh_server_renderer.get_plot(dmap)
         bokeh_server_renderer(plot)
         set_curdoc(plot.document)
@@ -82,7 +80,7 @@ class TestCallbacks(CallbackTestCase):
         assert_data_equal(data['y'], np.array([1]))
 
     async def test_stream_callback_on_clone(self):
-        points = Points([])
+        points = hv.Points([])
         stream = PointerXY(source=points)
         plot = bokeh_server_renderer.get_plot(points.clone())
         bokeh_server_renderer(plot)
@@ -92,14 +90,14 @@ class TestCallbacks(CallbackTestCase):
         assert stream.y == 0.3
 
     def test_stream_callback_on_unlinked_clone(self):
-        points = Points([])
+        points = hv.Points([])
         PointerXY(source=points)
         plot = bokeh_server_renderer.get_plot(points.clone(link=False))
         bokeh_server_renderer(plot)
         assert len(plot.callbacks) == 0
 
     async def test_stream_callback_with_ids(self):
-        dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PointerXY()])
+        dmap = hv.DynamicMap(lambda x, y: hv.Points([(x, y)]), kdims=[], streams=[PointerXY()])
         plot = bokeh_server_renderer.get_plot(dmap)
         bokeh_server_renderer(plot)
         set_curdoc(plot.document)
@@ -114,9 +112,9 @@ class TestCallbacks(CallbackTestCase):
         history = deque(maxlen=10)
         def history_callback(x):
             history.append(x)
-            return Curve(list(history))
+            return hv.Curve(list(history))
         stream = PointerX(x=0)
-        dmap = DynamicMap(history_callback, kdims=[], streams=[stream])
+        dmap = hv.DynamicMap(history_callback, kdims=[], streams=[stream])
         plot = bokeh_server_renderer.get_plot(dmap)
         bokeh_server_renderer(plot)
         set_curdoc(plot.document)
@@ -129,7 +127,7 @@ class TestCallbacks(CallbackTestCase):
     @pytest.mark.flaky(reruns=3)
     def test_callback_cleanup(self):
         stream = PointerX(x=0)
-        dmap = DynamicMap(lambda x: Curve([x]), streams=[stream])
+        dmap = hv.DynamicMap(lambda x: hv.Curve([x]), streams=[stream])
         plot = bokeh_server_renderer.get_plot(dmap)
         assert bool(stream._subscribers)
         assert bool(Callback._callbacks)
@@ -138,7 +136,7 @@ class TestCallbacks(CallbackTestCase):
         assert not bool(Callback._callbacks)
 
     def test_selection1d_syncs_to_selected(self):
-        points = Points([(0, 0), (1, 1), (2, 2)]).opts(selected=[0, 2])
+        points = hv.Points([(0, 0), (1, 1), (2, 2)]).opts(selected=[0, 2])
         stream = Selection1D(source=points)
         bokeh_renderer.get_plot(points)
         assert stream.index == [0, 2]
@@ -150,7 +148,7 @@ class TestResetCallback(CallbackTestCase):
         resets = []
         def record(resetting):
             resets.append(resetting)
-        curve = Curve([])
+        curve = hv.Curve([])
         stream = PlotReset(source=curve)
         stream.add_subscriber(record)
         plot = bokeh_server_renderer.get_plot(curve)
@@ -163,7 +161,7 @@ class TestResetCallback(CallbackTestCase):
 class TestPointerCallbacks(CallbackTestCase):
 
     def test_pointer_x_datetime_out_of_bounds(self):
-        points = Points([(dt.datetime(2017, 1, 1), 1), (dt.datetime(2017, 1, 3), 3)]).opts(padding=0)
+        points = hv.Points([(dt.datetime(2017, 1, 1), 1), (dt.datetime(2017, 1, 3), 3)]).opts(padding=0)
         PointerX(source=points)
         plot = bokeh_server_renderer.get_plot(points)
         set_curdoc(plot.document)
@@ -175,7 +173,7 @@ class TestPointerCallbacks(CallbackTestCase):
         assert msg['x'] == np.datetime64(dt.datetime(2017, 1, 3))
 
     def test_tap_datetime_out_of_bounds(self):
-        points = Points([(dt.datetime(2017, 1, 1), 1), (dt.datetime(2017, 1, 3), 3)])
+        points = hv.Points([(dt.datetime(2017, 1, 1), 1), (dt.datetime(2017, 1, 3), 3)])
         SingleTap(source=points)
         plot = bokeh_server_renderer.get_plot(points)
         set_curdoc(plot.document)
@@ -191,29 +189,29 @@ class TestPointerCallbacks(CallbackTestCase):
 class TestEditToolCallbacks(CallbackTestCase):
 
     async def test_point_draw_callback(self):
-        points = Points([(0, 1)])
+        points = hv.Points([(0, 1)])
         point_draw = PointDraw(source=points)
         plot = bokeh_server_renderer.get_plot(points)
         assert isinstance(plot.callbacks[0], PointDrawCallback)
         callback = plot.callbacks[0]
         data = {'x': [1, 2, 3], 'y': [1, 2, 3]}
         await callback.on_msg({'data': data})
-        assert_element_equal(point_draw.element, Points(data))
+        assert_element_equal(point_draw.element, hv.Points(data))
 
     def test_point_draw_callback_initialized_server(self):
-        points = Points([(0, 1)])
+        points = hv.Points([(0, 1)])
         PointDraw(source=points)
         plot = bokeh_server_renderer.get_plot(points)
         assert 'data' in plot.handles['source']._callbacks
 
     def test_point_draw_callback_with_vdims_initialization(self):
-        points = Points([(0, 1, 'A')], vdims=['A'])
+        points = hv.Points([(0, 1, 'A')], vdims=['A'])
         stream = PointDraw(source=points)
         bokeh_server_renderer.get_plot(points)
         assert_data_equal(stream.element.dimension_values('A'), np.array(['A']))
 
     async def test_point_draw_callback_with_vdims(self):
-        points = Points([(0, 1, 'A')], vdims=['A'])
+        points = hv.Points([(0, 1, 'A')], vdims=['A'])
         point_draw = PointDraw(source=points)
         plot = bokeh_server_renderer.get_plot(points)
         assert isinstance(plot.callbacks[0], PointDrawCallback)
@@ -221,51 +219,51 @@ class TestEditToolCallbacks(CallbackTestCase):
         data = {'x': [1, 2, 3], 'y': [1, 2, 3], 'A': [None, None, 1]}
         await callback.on_msg({'data': data})
         processed = dict(data, A=[np.nan, np.nan, 1])
-        assert_element_equal(point_draw.element, Points(processed, vdims=['A']))
+        assert_element_equal(point_draw.element, hv.Points(processed, vdims=['A']))
 
     async def test_poly_draw_callback(self):
-        polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
+        polys = hv.Polygons([[(0, 0), (2, 2), (4, 0)]])
         poly_draw = PolyDraw(source=polys)
         plot = bokeh_server_renderer.get_plot(polys)
         assert isinstance(plot.callbacks[0], PolyDrawCallback)
         callback = plot.callbacks[0]
         data = {'x': [[1, 2, 3], [3, 4, 5]], 'y': [[1, 2, 3], [3, 4, 5]]}
         await callback.on_msg({'data': data})
-        element = Polygons([[(1, 1), (2, 2), (3, 3)], [(3, 3), (4, 4), (5, 5)]])
+        element = hv.Polygons([[(1, 1), (2, 2), (3, 3)], [(3, 3), (4, 4), (5, 5)]])
         assert_element_equal(poly_draw.element, element)
 
     def test_poly_draw_callback_initialized_server(self):
-        polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
+        polys = hv.Polygons([[(0, 0), (2, 2), (4, 0)]])
         PolyDraw(source=polys)
         plot = bokeh_server_renderer.get_plot(polys)
         assert 'data' in plot.handles['source']._callbacks
 
     async def test_poly_draw_callback_with_vdims(self):
-        polys = Polygons([{'x': [0, 2, 4], 'y': [0, 2, 0], 'A': 1}], vdims=['A'])
+        polys = hv.Polygons([{'x': [0, 2, 4], 'y': [0, 2, 0], 'A': 1}], vdims=['A'])
         poly_draw = PolyDraw(source=polys)
         plot = bokeh_server_renderer.get_plot(polys)
         assert isinstance(plot.callbacks[0], PolyDrawCallback)
         callback = plot.callbacks[0]
         data = {'x': [[1, 2, 3], [3, 4, 5]], 'y': [[1, 2, 3], [3, 4, 5]], 'A': [1, 2]}
         await callback.on_msg({'data': data})
-        element = Polygons([{'x': [1, 2, 3], 'y': [1, 2, 3], 'A': 1},
+        element = hv.Polygons([{'x': [1, 2, 3], 'y': [1, 2, 3], 'A': 1},
                             {'x': [3, 4, 5], 'y': [3, 4, 5], 'A': 2}], vdims=['A'])
         assert_element_equal(poly_draw.element, element)
 
     async def test_poly_draw_callback_with_vdims_no_color_index(self):
-        polys = Polygons([{'x': [0, 2, 4], 'y': [0, 2, 0], 'A': 1}], vdims=['A']).options(color_index=None)
+        polys = hv.Polygons([{'x': [0, 2, 4], 'y': [0, 2, 0], 'A': 1}], vdims=['A']).options(color_index=None)
         poly_draw = PolyDraw(source=polys)
         plot = bokeh_server_renderer.get_plot(polys)
         assert isinstance(plot.callbacks[0], PolyDrawCallback)
         callback = plot.callbacks[0]
         data = {'x': [[1, 2, 3], [3, 4, 5]], 'y': [[1, 2, 3], [3, 4, 5]], 'A': [1, 2]}
         await callback.on_msg({'data': data})
-        element = Polygons([{'x': [1, 2, 3], 'y': [1, 2, 3], 'A': 1},
+        element = hv.Polygons([{'x': [1, 2, 3], 'y': [1, 2, 3], 'A': 1},
                             {'x': [3, 4, 5], 'y': [3, 4, 5], 'A': 2}], vdims=['A'])
         assert_element_equal(poly_draw.element, element)
 
     async def test_box_edit_callback(self):
-        boxes = Rectangles([(-0.5, -0.5, 0.5, 0.5)])
+        boxes = hv.Rectangles([(-0.5, -0.5, 0.5, 0.5)])
         box_edit = BoxEdit(source=boxes)
         plot = bokeh_server_renderer.get_plot(boxes)
         assert isinstance(plot.callbacks[0], BoxEditCallback)
@@ -277,11 +275,11 @@ class TestEditToolCallbacks(CallbackTestCase):
         assert source.data['top'] == [0.5]
         data = {'left': [-0.25, 0], 'bottom': [-1, 0.75], 'right': [0.25, 2], 'top': [1, 1.25]}
         await callback.on_msg({'data': data})
-        element = Rectangles([(-0.25, -1, 0.25, 1), (0, 0.75, 2, 1.25)])
+        element = hv.Rectangles([(-0.25, -1, 0.25, 1), (0, 0.75, 2, 1.25)])
         assert_element_equal(box_edit.element, element)
 
     def test_box_edit_stream_data_initialized(self):
-        boxes = Rectangles([(-0.5, -0.5, 0.5, 0.5), (0, 0, 1, 1)])
+        boxes = hv.Rectangles([(-0.5, -0.5, 0.5, 0.5), (0, 0, 1, 1)])
         box_edit = BoxEdit(source=boxes)
         bokeh_server_renderer.get_plot(boxes)
 
@@ -291,7 +289,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         assert list(box_edit.data['y1']) == [0.5, 1]
 
     async def test_box_edit_callback_legacy(self):
-        boxes = Polygons([Box(0, 0, 1)])
+        boxes = hv.Polygons([hv.Box(0, 0, 1)])
         box_edit = BoxEdit(source=boxes)
         plot = bokeh_server_renderer.get_plot(boxes)
         assert isinstance(plot.callbacks[0], BoxEditCallback)
@@ -303,36 +301,36 @@ class TestEditToolCallbacks(CallbackTestCase):
         assert source.data['top'] == [0.5]
         data = {'left': [-0.25, 0], 'bottom': [-1, 0.75], 'right': [0.25, 2], 'top': [1, 1.25]}
         await callback.on_msg({'data': data})
-        element = Polygons([Box(0, 0, (0.5, 2)), Box(1, 1, (2, 0.5))])
+        element = hv.Polygons([hv.Box(0, 0, (0.5, 2)), hv.Box(1, 1, (2, 0.5))])
         assert_element_equal(box_edit.element, element)
 
     def test_box_edit_callback_initialized_server(self):
-        boxes = Polygons([Box(0, 0, 1)])
+        boxes = hv.Polygons([hv.Box(0, 0, 1)])
         BoxEdit(source=boxes)
         plot = bokeh_server_renderer.get_plot(boxes)
         assert 'data' in plot.handles['cds']._callbacks
 
     @pytest.mark.flaky(reruns=3)
     async def test_poly_edit_callback(self):
-        polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
+        polys = hv.Polygons([[(0, 0), (2, 2), (4, 0)]])
         poly_edit = PolyEdit(source=polys)
         plot = bokeh_server_renderer.get_plot(polys)
         assert isinstance(plot.callbacks[0], PolyEditCallback)
         callback = plot.callbacks[0]
         data = {'x': [[1, 2, 3], [3, 4, 5]], 'y': [[1, 2, 3], [3, 4, 5]]}
         await callback.on_msg({'data': data})
-        element = Polygons([[(1, 1), (2, 2), (3, 3)], [(3, 3), (4, 4), (5, 5)]])
+        element = hv.Polygons([[(1, 1), (2, 2), (3, 3)], [(3, 3), (4, 4), (5, 5)]])
         assert_element_equal(poly_edit.element, element)
 
     def test_poly_edit_callback_initialized_server(self):
-        polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
+        polys = hv.Polygons([[(0, 0), (2, 2), (4, 0)]])
         PolyEdit(source=polys)
         plot = bokeh_server_renderer.get_plot(polys)
         assert 'data' in plot.handles['source']._callbacks
 
     async def test_poly_edit_shared_callback(self):
-        polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
-        polys2 = Polygons([[(0, 0), (2, 2), (4, 0)]])
+        polys = hv.Polygons([[(0, 0), (2, 2), (4, 0)]])
+        polys2 = hv.Polygons([[(0, 0), (2, 2), (4, 0)]])
         poly_edit = PolyEdit(source=polys, shared=True)
         poly_edit2 = PolyEdit(source=polys2, shared=True)
         plot = bokeh_server_renderer.get_plot(polys*polys2)
@@ -347,13 +345,13 @@ class TestEditToolCallbacks(CallbackTestCase):
         callback = plot2.callbacks[0]
         data = {'x': [[1, 2, 3], [3, 4, 5]], 'y': [[1, 2, 3], [3, 4, 5]]}
         await callback.on_msg({'data': data})
-        element = Polygons([[(1, 1), (2, 2), (3, 3)], [(3, 3), (4, 4), (5, 5)]])
+        element = hv.Polygons([[(1, 1), (2, 2), (3, 3)], [(3, 3), (4, 4), (5, 5)]])
         assert_element_equal(poly_edit.element, element)
         assert_element_equal(poly_edit2.element, element)
 
     def test_point_draw_shared_datasource_callback(self):
-        points = Points([1, 2, 3])
-        table = Table(points.data, ['x', 'y'])
+        points = hv.Points([1, 2, 3])
+        table = hv.Table(points.data, ['x', 'y'])
         layout = (points + table).opts(shared_datasource=True, clone=False)
         PointDraw(source=points)
         assert points.data is table.data
@@ -388,7 +386,7 @@ class TestServerCallbacks(CallbackTestCase):
         assert msg == {'id': plot.ref['id'], 'value': 42}
 
     def test_selection1d_resolves(self):
-        points = Points([1, 2, 3])
+        points = hv.Points([1, 2, 3])
         Selection1D(source=points)
         plot = bokeh_server_renderer.get_plot(points)
         selected = Selection(indices=[0, 2])
@@ -398,7 +396,7 @@ class TestServerCallbacks(CallbackTestCase):
         assert resolved == {'id': selected.ref['id'], 'value': [0, 2]}
 
     def test_selection1d_resolves_table(self):
-        table = Table([1, 2, 3], 'x')
+        table = hv.Table([1, 2, 3], 'x')
         Selection1D(source=table)
         plot = bokeh_server_renderer.get_plot(table)
         selected = Selection(indices=[0, 2])
@@ -408,7 +406,7 @@ class TestServerCallbacks(CallbackTestCase):
         assert resolved == {'id': selected.ref['id'], 'value': [0, 2]}
 
     def test_plotsize_resolves(self):
-        points = Points([1, 2, 3])
+        points = hv.Points([1, 2, 3])
         PlotSize(source=points)
         plot = bokeh_server_renderer.get_plot(points)
         callback = plot.callbacks[0]
@@ -421,7 +419,7 @@ class TestServerCallbacks(CallbackTestCase):
         assert resolved == {'id': 'Test', 'value': 300}
 
     def test_cds_resolves(self):
-        points = Points([1, 2, 3])
+        points = hv.Points([1, 2, 3])
         CDSStream(source=points)
         plot = bokeh_server_renderer.get_plot(points)
         cds = plot.handles['cds']
@@ -437,7 +435,7 @@ class TestServerCallbacks(CallbackTestCase):
             columns=list('ABCD'),
             index=pd.date_range('2018-01-01', freq='D', periods=30),
         )
-        curve = Curve(df, 'index', 'C')
+        curve = hv.Curve(df, 'index', 'C')
         stream = RangeXY(source=curve)
         plot = bokeh_server_renderer.get_plot(curve)
         callback = plot.callbacks[0]
@@ -450,7 +448,7 @@ class TestServerCallbacks(CallbackTestCase):
     def test_rangexy_framewise_reset(self):
         pytest.skip('The fix for this was reverted, see #4396')
         stream = RangeXY(x_range=(0, 2), y_range=(0, 1))
-        curve = DynamicMap(lambda z, x_range, y_range: Curve([1, 2, z]),
+        curve = hv.DynamicMap(lambda z, x_range, y_range: hv.Curve([1, 2, z]),
                            kdims=['z'], streams=[stream]).redim.range(z=(0, 3))
         plot = bokeh_server_renderer.get_plot(curve.opts(framewise=True))
         plot.update((1,))
@@ -458,7 +456,7 @@ class TestServerCallbacks(CallbackTestCase):
 
     def test_rangexy_framewise_not_reset_if_triggering(self):
         stream = RangeXY(x_range=(0, 2), y_range=(0, 1))
-        curve = DynamicMap(lambda z, x_range, y_range: Curve([1, 2, z]),
+        curve = hv.DynamicMap(lambda z, x_range, y_range: hv.Curve([1, 2, z]),
                            kdims=['z'], streams=[stream]).redim.range(z=(0, 3))
         bokeh_server_renderer.get_plot(curve.opts(framewise=True
         ))
@@ -504,8 +502,8 @@ def test_msg_with_polyedit_polyline():
 
 @pytest.mark.usefixtures('bokeh_backend')
 def test_rangexy_multi_yaxes():
-    c1 = Curve(np.arange(100).cumsum(), vdims='y')
-    c2 = Curve(-np.arange(100).cumsum(), vdims='y2')
+    c1 = hv.Curve(np.arange(100).cumsum(), vdims='y')
+    c2 = hv.Curve(-np.arange(100).cumsum(), vdims='y2')
     RangeXY(source=c1)
     RangeXY(source=c2)
 
@@ -525,8 +523,8 @@ def test_rangexy_multi_yaxes():
 
 @pytest.mark.usefixtures('bokeh_backend')
 def test_rangexy_subcoordinate_y():
-    c1 = Curve(np.arange(100).cumsum(), vdims='y', label='A').opts(subcoordinate_y=True)
-    c2 = Curve(-np.arange(100).cumsum(), vdims='y2', label='B').opts(subcoordinate_y=True)
+    c1 = hv.Curve(np.arange(100).cumsum(), vdims='y', label='A').opts(subcoordinate_y=True)
+    c2 = hv.Curve(-np.arange(100).cumsum(), vdims='y2', label='B').opts(subcoordinate_y=True)
 
     overlay = (c1 * c2)
     RangeXY(source=overlay)
@@ -547,12 +545,12 @@ def test_rangexy_subcoordinate_y_dynamic():
 
     def cb(x_range, y_range):
         return (
-            Curve(np.arange(100).cumsum(), vdims='y', label='A').opts(subcoordinate_y=True) *
-            Curve(-np.arange(100).cumsum(), vdims='y2', label='B').opts(subcoordinate_y=True)
+            hv.Curve(np.arange(100).cumsum(), vdims='y', label='A').opts(subcoordinate_y=True) *
+            hv.Curve(-np.arange(100).cumsum(), vdims='y2', label='B').opts(subcoordinate_y=True)
         )
 
     stream = RangeXY()
-    dmap = DynamicMap(cb, streams=[stream])
+    dmap = hv.DynamicMap(cb, streams=[stream])
     plot = bokeh_server_renderer.get_plot(dmap)
 
     p1, p2 = plot.subplots.values()

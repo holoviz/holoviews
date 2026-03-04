@@ -2,8 +2,7 @@ from collections import deque
 
 import numpy as np
 
-from holoviews.core import DynamicMap
-from holoviews.element import Curve, Points
+import holoviews as hv
 from holoviews.streams import PointerX, PointerXY
 from holoviews.testing import assert_data_equal
 
@@ -14,7 +13,7 @@ class TestCallbackPlot(TestMPLPlot):
 
     def test_dynamic_streams_refresh(self):
         stream = PointerXY(x=0, y=0)
-        dmap = DynamicMap(lambda x, y: Points([(x, y)]),
+        dmap = hv.DynamicMap(lambda x, y: hv.Points([(x, y)]),
                              kdims=[], streams=[stream])
         plot = mpl_renderer.get_plot(dmap)
         pre = mpl_renderer(plot, fmt='png')
@@ -27,9 +26,9 @@ class TestCallbackPlot(TestMPLPlot):
         history = deque(maxlen=10)
         def history_callback(x):
             history.append(x)
-            return Curve(list(history))
+            return hv.Curve(list(history))
         stream = PointerX(x=0)
-        dmap = DynamicMap(history_callback, kdims=[], streams=[stream])
+        dmap = hv.DynamicMap(history_callback, kdims=[], streams=[stream])
         plot = mpl_renderer.get_plot(dmap)
         mpl_renderer(plot)
         for i in range(20):

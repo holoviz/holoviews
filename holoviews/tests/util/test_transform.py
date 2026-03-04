@@ -10,9 +10,7 @@ import param
 import pytest
 
 import holoviews as hv
-from holoviews.core.data import Dataset
 from holoviews.testing import assert_element_equal
-from holoviews.util.transform import dim
 
 from ..utils import optional_dependencies
 
@@ -43,7 +41,7 @@ class TestDimTransforms:
             ['A', 'B', 'C', 'A', 'B', 'C', 'A', 'B', 'C', 'A']
         )
         self.booleans = self.repeating == 'A'
-        self.dataset = Dataset(
+        self.dataset = hv.Dataset(
             (self.linear_ints, self.linear_floats,
              self.negative, self.repeating, self.booleans),
             ['int', 'float', 'negative', 'categories', 'booleans']
@@ -64,7 +62,7 @@ class TestDimTransforms:
             coords=dict([('x', x), ('y', y)]),
             dims=['y','x']
         )
-        self.dataset_xarray = Dataset(darray, vdims=['z'])
+        self.dataset_xarray = hv.Dataset(darray, vdims=['z'])
         if dask is not None:
             dask_array = da.from_array(array)
             dask_da = xr.DataArray(
@@ -72,7 +70,7 @@ class TestDimTransforms:
                 coords=dict([('x', x), ('y', y)]),
                 dims=['y','x']
             )
-            self.dataset_xarray_dask = Dataset(dask_da, vdims=['z'])
+            self.dataset_xarray_dask = hv.Dataset(dask_da, vdims=['z'])
 
     # Assertion helpers
 
@@ -203,143 +201,143 @@ class TestDimTransforms:
     # Unary operators
 
     def test_abs_transform(self):
-        expr = abs(dim('negative'))
+        expr = abs(hv.dim('negative'))
         self.assert_apply(expr, self.linear_floats)
 
     def test_neg_transform(self):
-        expr = -dim('negative')
+        expr = -hv.dim('negative')
         self.assert_apply(expr, self.linear_floats)
 
     def test_inv_transform(self):
-        expr = ~dim('booleans')
+        expr = ~hv.dim('booleans')
         self.assert_apply(expr, ~self.booleans)
 
     # Binary operators
 
     def test_add_transform(self):
-        expr = dim('float') + 1
+        expr = hv.dim('float') + 1
         self.assert_apply(expr, self.linear_floats+1)
 
     def test_div_transform(self):
-        expr = dim('int') / 10.
+        expr = hv.dim('int') / 10.
         self.assert_apply(expr, self.linear_floats)
 
     def test_floor_div_transform(self):
-        expr = dim('int') // 2
+        expr = hv.dim('int') // 2
         self.assert_apply(expr, self.linear_ints//2)
 
     def test_mod_transform(self):
-        expr = dim('int') % 2
+        expr = hv.dim('int') % 2
         self.assert_apply(expr, self.linear_ints % 2)
 
     def test_mul_transform(self):
-        expr = dim('float') * 10.
+        expr = hv.dim('float') * 10.
         self.assert_apply(expr, self.linear_ints.astype('float64'))
 
     def test_pow_transform(self):
-        expr = dim('int') ** 2
+        expr = hv.dim('int') ** 2
         self.assert_apply(expr, self.linear_ints ** 2)
 
     def test_sub_transform(self):
-        expr = dim('int') - 10
+        expr = hv.dim('int') - 10
         self.assert_apply(expr, self.linear_ints - 10)
 
     # Reverse binary operators
 
     def test_radd_transform(self):
-        expr = 1 + dim('float')
+        expr = 1 + hv.dim('float')
         self.assert_apply(expr, 1 + self.linear_floats)
 
     def test_rdiv_transform(self):
-        expr = 10. / dim('int')
+        expr = 10. / hv.dim('int')
         self.assert_apply(expr, 10. / self.linear_ints)
 
     def test_rfloor_div_transform(self):
-        expr = 2 // dim('int')
+        expr = 2 // hv.dim('int')
         self.assert_apply(expr, 2 // self.linear_ints)
 
     def test_rmod_transform(self):
-        expr = 2 % dim('int')
+        expr = 2 % hv.dim('int')
         self.assert_apply(expr, 2 % self.linear_ints)
 
     def test_rmul_transform(self):
-        expr = 10. * dim('float')
+        expr = 10. * hv.dim('float')
         self.assert_apply(expr, self.linear_ints.astype('float64'))
 
     def test_rsub_transform(self):
-        expr = 10 - dim('int')
+        expr = 10 - hv.dim('int')
         self.assert_apply(expr, 10 - self.linear_ints)
 
     # NumPy operations
 
     def test_ufunc_transform(self):
-        expr = np.sin(dim('float'))
+        expr = np.sin(hv.dim('float'))
         self.assert_apply(expr, np.sin(self.linear_floats))
 
     def test_astype_transform(self):
-        expr = dim('int').astype('float64')
+        expr = hv.dim('int').astype('float64')
         self.assert_apply(expr, self.linear_ints.astype('float64'))
 
     def test_cumsum_transform(self):
-        expr = dim('float').cumsum()
+        expr = hv.dim('float').cumsum()
         self.assert_apply(expr, self.linear_floats.cumsum())
 
     def test_max_transform(self):
-        expr = dim('float').max()
+        expr = hv.dim('float').max()
         self.assert_apply(expr, self.linear_floats.max())
 
     def test_min_transform(self):
-        expr = dim('float').min()
+        expr = hv.dim('float').min()
         self.assert_apply(expr, self.linear_floats.min())
 
     def test_round_transform(self):
-        expr = dim('float').round()
+        expr = hv.dim('float').round()
         self.assert_apply(expr, self.linear_floats.round())
 
     def test_sum_transform(self):
-        expr = dim('float').sum()
+        expr = hv.dim('float').sum()
         self.assert_apply(expr, self.linear_floats.sum())
 
     def test_std_transform(self):
-        expr = dim('float').std(ddof=0)
+        expr = hv.dim('float').std(ddof=0)
         self.assert_apply(expr, self.linear_floats.std(ddof=0))
 
     def test_var_transform(self):
-        expr = dim('float').var(ddof=0)
+        expr = hv.dim('float').var(ddof=0)
         self.assert_apply(expr, self.linear_floats.var(ddof=0))
 
     def test_log_transform(self):
-        expr = dim('float').log()
+        expr = hv.dim('float').log()
         self.assert_apply(expr, np.log(self.linear_floats))
 
     def test_log10_transform(self):
-        expr = dim('float').log10()
+        expr = hv.dim('float').log10()
         self.assert_apply(expr, np.log10(self.linear_floats))
 
     # Custom functions
 
     def test_str_astype(self):
-        expr = dim('int').str()
+        expr = hv.dim('int').str()
         self.assert_apply(expr, self.linear_ints.astype(str), skip_dask=True)
 
     def test_norm_transform(self):
-        expr = dim('int').norm()
+        expr = hv.dim('int').norm()
         self.assert_apply(expr, (self.linear_ints-1)/9.)
 
     def test_iloc_transform_int(self):
-        expr = dim('int').iloc[1]
+        expr = hv.dim('int').iloc[1]
         self.assert_apply(expr, self.linear_ints[1])
 
     def test_iloc_transform_slice(self):
-        expr = dim('int').iloc[1:3]
+        expr = hv.dim('int').iloc[1:3]
         self.assert_apply(expr, self.linear_ints[1:3], skip_dask=True)
 
     def test_iloc_transform_list(self):
-        expr = dim('int').iloc[[1, 3, 5]]
+        expr = hv.dim('int').iloc[[1, 3, 5]]
         self.assert_apply(expr, self.linear_ints[[1, 3, 5]], skip_dask=True)
 
     def test_bin_transform(self):
-        expr = dim('int').bin([0, 5, 10])
+        expr = hv.dim('int').bin([0, 5, 10])
         expected = pd.Series(
             [2.5, 2.5, 2.5, 2.5, 2.5, 7.5, 7.5, 7.5, 7.5, 7.5]
         )
@@ -347,7 +345,7 @@ class TestDimTransforms:
 
     @dask_conversion_warning
     def test_bin_transform_with_labels(self):
-        expr = dim('int').bin([0, 5, 10], ['A', 'B'])
+        expr = hv.dim('int').bin([0, 5, 10], ['A', 'B'])
         expected = pd.Series(
             ['A', 'A', 'A', 'A', 'A', 'B', 'B', 'B', 'B', 'B']
         )
@@ -355,7 +353,7 @@ class TestDimTransforms:
         self.assert_apply(expr, expected, dask_convert_string=False)
 
     def test_categorize_transform_list(self):
-        expr = dim('categories').categorize(['circle', 'square', 'triangle'])
+        expr = hv.dim('categories').categorize(['circle', 'square', 'triangle'])
         expected = pd.Series(
             (['circle', 'square', 'triangle']*3)+['circle']
         )
@@ -364,7 +362,7 @@ class TestDimTransforms:
 
     @dask_conversion_warning
     def test_categorize_transform_dict(self):
-        expr = dim('categories').categorize(
+        expr = hv.dim('categories').categorize(
             {'A': 'circle', 'B': 'square', 'C': 'triangle'}
         )
         expected = pd.Series(
@@ -376,7 +374,7 @@ class TestDimTransforms:
 
     @dask_conversion_warning
     def test_categorize_transform_dict_with_default(self):
-        expr = dim('categories').categorize(
+        expr = hv.dim('categories').categorize(
             {'A': 'circle', 'B': 'square'}, default='triangle'
         )
         expected = pd.Series(
@@ -389,12 +387,12 @@ class TestDimTransforms:
     # Numpy functions
 
     def test_digitize(self):
-        expr = dim('int').digitize([1, 5, 10])
+        expr = hv.dim('int').digitize([1, 5, 10])
         expected = pd.Series(np.array([1, 1, 1, 1, 2, 2, 2, 2, 2, 3])).astype('int64')
         self.assert_apply(expr, expected)
 
     def test_isin(self):
-        expr = dim('int').digitize([1, 5, 10]).isin([1, 3])
+        expr = hv.dim('int').digitize([1, 5, 10]).isin([1, 3])
         expected = pd.Series(
             np.array([1, 1, 1, 1, 0, 0, 0, 0, 0, 1], dtype='bool')
         )
@@ -403,60 +401,60 @@ class TestDimTransforms:
     # Complex expressions
 
     def test_multi_operator_expression(self):
-        expr = (((dim('float')-2)*3)**2)
+        expr = (((hv.dim('float')-2)*3)**2)
         self.assert_apply(expr, ((self.linear_floats-2)*3)**2)
 
     def test_multi_dim_expression(self):
-        expr = dim('int')-dim('float')
+        expr = hv.dim('int')-hv.dim('float')
         self.assert_apply(expr, self.linear_ints-self.linear_floats)
 
     # Repr method
 
     def test_dim_repr(self):
-        assert repr(dim('float')) == "dim('float')"
+        assert repr(hv.dim('float')) == "dim('float')"
 
     def test_unary_op_repr(self):
-        assert repr(-dim('float')) == "-dim('float')"
+        assert repr(-hv.dim('float')) == "-dim('float')"
 
     def test_binary_op_repr(self):
-        assert repr(dim('float')*2) == "dim('float')*2"
+        assert repr(hv.dim('float')*2) == "dim('float')*2"
 
     def test_reverse_binary_op_repr(self):
-        assert repr(1+dim('float')) == "1+dim('float')"
+        assert repr(1+hv.dim('float')) == "1+dim('float')"
 
     def test_ufunc_expression_repr(self):
-        assert repr(np.log(dim('float'))) == "dim('float').log()"
+        assert repr(np.log(hv.dim('float'))) == "dim('float').log()"
 
     def test_custom_func_repr(self):
-        assert repr(dim('float').norm()) == "dim('float').norm()"
+        assert repr(hv.dim('float').norm()) == "dim('float').norm()"
 
     def test_multi_operator_expression_repr(self):
-        assert repr(((dim('float')-2)*3)**2) == "((dim('float')-2)*3)**2"
+        assert repr(((hv.dim('float')-2)*3)**2) == "((dim('float')-2)*3)**2"
 
     # Applies method
 
     def test_multi_dim_expression_applies(self):
-        assert (dim('int')-dim('float')).applies(self.dataset) is True
+        assert (hv.dim('int')-hv.dim('float')).applies(self.dataset) is True
 
     def test_multi_dim_expression_not_applies(self):
-        assert (dim('foo')-dim('bar')).applies(self.dataset) is False
+        assert (hv.dim('foo')-hv.dim('bar')).applies(self.dataset) is False
 
     def test_multi_dim_expression_partial_applies(self):
-        assert (dim('int')-dim('bar')).applies(self.dataset) is False
+        assert (hv.dim('int')-hv.dim('bar')).applies(self.dataset) is False
 
     # Check namespaced expressions
 
     def test_pandas_namespace_accessor_repr(self):
-        assert repr(dim('date').df.dt.year) == "dim('date').pd.dt.year"
+        assert repr(hv.dim('date').df.dt.year) == "dim('date').pd.dt.year"
 
     @dask_conversion_warning
     def test_pandas_str_accessor(self):
-        expr = dim('categories').df.str.lower()
+        expr = hv.dim('categories').df.str.lower()
         # Use dask convert-string as we use the setup data
         self.assert_apply(expr, self.repeating.str.lower(), dask_convert_string=True)
 
     def test_pandas_chained_methods(self):
-        expr = dim('int').df.rolling(1).mean()
+        expr = hv.dim('int').df.rolling(1).mean()
 
         with warnings.catch_warnings():
             # The kwargs is {'axis': None} and is already handled by the code.
@@ -467,28 +465,28 @@ class TestDimTransforms:
 
     @xr_skip
     def test_xarray_namespace_method_repr(self):
-        assert repr(dim('date').xr.quantile(0.95)) == "dim('date').xr.quantile(0.95)"
+        assert repr(hv.dim('date').xr.quantile(0.95)) == "dim('date').xr.quantile(0.95)"
 
     @xr_skip
     def test_xarray_quantile_method(self):
-        expr = dim('z').xr.quantile(0.95)
+        expr = hv.dim('z').xr.quantile(0.95)
         self.assert_apply_xarray(expr, self.dataset_xarray.data.z.quantile(0.95), skip_dask=True)
 
     @xr_skip
     def test_xarray_roll_method(self):
-        expr = dim('z').xr.roll({'x': 1}, roll_coords=False)
+        expr = hv.dim('z').xr.roll({'x': 1}, roll_coords=False)
         self.assert_apply_xarray(expr, self.dataset_xarray.data.z.roll({'x': 1}, roll_coords=False))
 
     @xr_skip
     def test_xarray_coarsen_method(self):
-        expr = dim('z').xr.coarsen({'x': 4}).mean()
+        expr = hv.dim('z').xr.coarsen({'x': 4}).mean()
         self.assert_apply_xarray(expr, self.dataset_xarray.data.z.coarsen({'x': 4}).mean())
 
     # Dynamic arguments
 
     def test_dynamic_mul(self):
         p = Params(a=1)
-        expr = dim('float') * p.param.a
+        expr = hv.dim('float') * p.param.a
         assert list(expr.params.values()) == [p.param.a]
         self.assert_apply(expr, self.linear_floats)
         p.a = 2
@@ -496,7 +494,7 @@ class TestDimTransforms:
 
     def test_dynamic_arg(self):
         p = Params(a=1)
-        expr = dim('float').round(p.param.a)
+        expr = hv.dim('float').round(p.param.a)
         assert list(expr.params.values()) == [p.param.a]
         self.assert_apply(expr, np.round(self.linear_floats, 1))
         p.a = 2
@@ -504,14 +502,14 @@ class TestDimTransforms:
 
     def test_dynamic_kwarg(self):
         p = Params(a=1)
-        expr = dim('float').round(decimals=p.param.a)
+        expr = hv.dim('float').round(decimals=p.param.a)
         assert list(expr.params.values()) == [p.param.a]
         self.assert_apply(expr, np.round(self.linear_floats, 1))
         p.a = 2
         self.assert_apply(expr, np.round(self.linear_floats, 2))
 
     def test_pickle(self):
-        expr = (((dim('float')-2)*3)**2)
+        expr = (((hv.dim('float')-2)*3)**2)
         expr2 = pickle.loads(pickle.dumps(expr))
         assert repr(expr) == repr(expr2)
 

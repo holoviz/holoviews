@@ -8,7 +8,7 @@ import re
 import numpy as np
 import pytest
 
-from holoviews.core import BoundingBox
+import holoviews as hv
 from holoviews.testing import assert_data_equal, assert_element_equal
 
 
@@ -34,22 +34,22 @@ class SimpleComparisonTest:
                              np.array([[1,2],[3,5]], dtype=np.float32))
 
     def test_bounds_equal(self):
-        assert_element_equal(BoundingBox(radius=0.5), BoundingBox(radius=0.5))
+        assert_element_equal(hv.BoundingBox(radius=0.5), hv.BoundingBox(radius=0.5))
 
     def test_bounds_unequal(self):
         msg = "BoundingBox(radius=0.5) == BoundingBox(radius=0.7)"
         with pytest.raises(AssertionError, match=re.escape(msg)):
-            assert_element_equal(BoundingBox(radius=0.5), BoundingBox(radius=0.7))
+            assert_element_equal(hv.BoundingBox(radius=0.5), hv.BoundingBox(radius=0.7))
 
 
     def test_bounds_equal_lbrt(self):
-        assert_element_equal(BoundingBox(points=((-1,-1),(3,4.5))),
-                         BoundingBox(points=((-1,-1),(3,4.5))))
+        assert_element_equal(hv.BoundingBox(points=((-1,-1),(3,4.5))),
+                         hv.BoundingBox(points=((-1,-1),(3,4.5))))
 
     def test_bounds_unequal_lbrt(self):
         msg = 'BoundingBox(points=((-1,-1),(3,4.5))) == BoundingBox(points=((-1,-1),(3,5.0)))'
         with pytest.raises(AssertionError, match=re.escape(msg)):
             assert_element_equal(
-                BoundingBox(points=((-1, -1,), (3, 4.5,),)),
-                BoundingBox(points=((-1, -1,), (3, 5.0,),))
+                hv.BoundingBox(points=((-1, -1,), (3, 4.5,),)),
+                hv.BoundingBox(points=((-1, -1,), (3, 5.0,),))
             )

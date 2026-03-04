@@ -1,7 +1,6 @@
 import numpy as np
 
-from holoviews.core.data import Dataset
-from holoviews.element import Sankey
+import holoviews as hv
 from holoviews.testing import assert_data_equal
 
 from .test_plot import TestMPLPlot, mpl_renderer
@@ -10,7 +9,7 @@ from .test_plot import TestMPLPlot, mpl_renderer
 class TestSankeyPlot(TestMPLPlot):
 
     def test_sankey_simple(self):
-        sankey = Sankey([
+        sankey = hv.Sankey([
             ('A', 'X', 5), ('A', 'Y', 7), ('A', 'Z', 6),
             ('B', 'X', 2), ('B', 'Y', 9), ('B', 'Z', 4)]
         )
@@ -40,10 +39,10 @@ class TestSankeyPlot(TestMPLPlot):
 
 
     def test_sankey_label_index(self):
-        sankey = Sankey(([
+        sankey = hv.Sankey(([
             (0, 2, 5), (0, 3, 7), (0, 4, 6),
             (1, 2, 2), (1, 3, 9), (1, 4, 4)],
-            Dataset(enumerate('ABXYZ'), 'index', 'label'))
+            hv.Dataset(enumerate('ABXYZ'), 'index', 'label'))
         ).opts(label_index='label')
         plot = mpl_renderer.get_plot(sankey)
         labels = plot.handles['labels']

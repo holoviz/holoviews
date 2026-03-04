@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import plotly.graph_objs as go
 
-from holoviews import Tiles
+import holoviews as hv
 from holoviews.plotting.plotly.callbacks import (
     BoundsXCallback,
     BoundsXYCallback,
@@ -106,7 +106,7 @@ class TestCallbacks:
 
         # Precompute a pair of lat/lon, easting/northing, mapbox coord values
         self.lon_range1, self.lat_range1 = (10, 30), (20, 40)
-        self.easting_range1, self.northing_range1 = Tiles.lon_lat_to_easting_northing(
+        self.easting_range1, self.northing_range1 = hv.Tiles.lon_lat_to_easting_northing(
             self.lon_range1, self.lat_range1
         )
         self.easting_range1 = tuple(self.easting_range1)
@@ -120,7 +120,7 @@ class TestCallbacks:
         ]
 
         self.lon_range2, self.lat_range2 = (-50, -30), (-70, -40)
-        self.easting_range2, self.northing_range2 = Tiles.lon_lat_to_easting_northing(
+        self.easting_range2, self.northing_range2 = hv.Tiles.lon_lat_to_easting_northing(
             self.lon_range2, self.lat_range2
         )
         self.easting_range2 = tuple(self.easting_range2)

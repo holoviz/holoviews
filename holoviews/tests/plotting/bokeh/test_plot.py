@@ -11,15 +11,12 @@ from bokeh.models import (
 )
 from param import concrete_descendents
 
-from holoviews import Curve
-from holoviews.core.element import Element
-from holoviews.core.options import Store
-from holoviews.core.spaces import DynamicMap
+import holoviews as hv
 from holoviews.plotting.bokeh.callbacks import Callback
 from holoviews.plotting.bokeh.element import ElementPlot
 from holoviews.streams import Pipe
 
-bokeh_renderer = Store.renderers['bokeh']
+bokeh_renderer = hv.Store.renderers['bokeh']
 
 from .. import option_intersections
 
@@ -36,17 +33,17 @@ class TestPlotDefinitions:
 class TestBokehPlot:
 
     def setup_method(self):
-        self.previous_backend = Store.current_backend
+        self.previous_backend = hv.Store.current_backend
         self.comm_manager = bokeh_renderer.comm_manager
         bokeh_renderer.comm_manager = comms.CommManager
-        Store.set_current_backend('bokeh')
+        hv.Store.set_current_backend('bokeh')
         self._padding = {}
         for plot in concrete_descendents(ElementPlot).values():
             self._padding[plot] = plot.padding
             plot.padding = 0
 
     def teardown_method(self):
-        Store.current_backend = self.previous_backend
+        hv.Store.current_backend = self.previous_backend
         bokeh_renderer.comm_manager = self.comm_manager
         Callback._callbacks = {}
         for plot, padding in self._padding.items():
@@ -76,7 +73,7 @@ class TestBokehPlot:
         assert hover[0].formatters == formatters
         assert hover[0].line_policy == line_policy
 
-        if isinstance(element, Element):
+        if isinstance(element, hv.Element):
             cds = fig.select_one(dict(type=ColumnDataSource))
             for label, lookup in hover[0].tooltips:
                 if label in element.dimensions():
@@ -90,7 +87,7 @@ class TestBokehPlot:
 def test_element_plot_stream_cleanup():
     stream = Pipe()
 
-    dmap = DynamicMap(Curve, streams=[stream])
+    dmap = hv.DynamicMap(hv.Curve, streams=[stream])
 
     plot = bokeh_renderer.get_plot(dmap)
 
@@ -105,8 +102,8 @@ def test_overlay_plot_stream_cleanup():
     stream1 = Pipe()
     stream2 = Pipe()
 
-    dmap1 = DynamicMap(Curve, streams=[stream1])
-    dmap2 = DynamicMap(Curve, streams=[stream2])
+    dmap1 = hv.DynamicMap(hv.Curve, streams=[stream1])
+    dmap2 = hv.DynamicMap(hv.Curve, streams=[stream2])
 
     plot = bokeh_renderer.get_plot(dmap1 * dmap2)
 
@@ -123,8 +120,8 @@ def test_layout_plot_stream_cleanup():
     stream1 = Pipe()
     stream2 = Pipe()
 
-    dmap1 = DynamicMap(Curve, streams=[stream1])
-    dmap2 = DynamicMap(Curve, streams=[stream2])
+    dmap1 = hv.DynamicMap(hv.Curve, streams=[stream1])
+    dmap2 = hv.DynamicMap(hv.Curve, streams=[stream2])
 
     plot = bokeh_renderer.get_plot(dmap1 + dmap2)
 
@@ -138,7 +135,7 @@ def test_layout_plot_stream_cleanup():
 
 
 def test_sync_two_plots():
-    curve = lambda i: Curve(np.arange(10) * i, label="ABC"[i])
+    curve = lambda i: hv.Curve(np.arange(10) * i, label="ABC"[i])
     plot1 = curve(0) * curve(1)
     plot2 = curve(0) * curve(1) * curve(2)
     combined_plot = plot1 + plot2
@@ -157,7 +154,7 @@ def test_sync_two_plots():
 
 
 def test_sync_three_plots():
-    curve = lambda i: Curve(np.arange(10) * i, label="ABC"[i])
+    curve = lambda i: hv.Curve(np.arange(10) * i, label="ABC"[i])
     plot1 = curve(0) * curve(1)
     plot2 = curve(0) * curve(1) * curve(2)
     plot3 = curve(0) * curve(1)
@@ -183,7 +180,7 @@ def test_span_not_cloned_crosshair():
     height = Span(dimension="height")
     cht = CrosshairTool(overlay=height)
 
-    layout = Curve([]).opts(tools=[cht]) + Curve([]).opts(tools=[cht])
+    layout = hv.Curve([]).opts(tools=[cht]) + hv.Curve([]).opts(tools=[cht])
 
     (fig1, *_), (fig2, *_) = bokeh_renderer.get_plot(layout).handles["plot"].children
     tool1 = next(t for t in fig1.tools if isinstance(t, CrosshairTool))
@@ -193,7 +190,7 @@ def test_span_not_cloned_crosshair():
 
 
 def test_autohide_toolbar_single_plot():
-    curve = Curve([1, 2, 3])
+    curve = hv.Curve([1, 2, 3])
 
     # Test with autohide_toolbar=False (default)
     plot = bokeh_renderer.get_plot(curve)
@@ -207,7 +204,7 @@ def test_autohide_toolbar_single_plot():
 
 
 def test_autohide_toolbar_overlay():
-    overlay = Curve([1, 2, 3]) * Curve([2, 3, 4])
+    overlay = hv.Curve([1, 2, 3]) * hv.Curve([2, 3, 4])
 
     # Test with autohide_toolbar=False (default)
     plot = bokeh_renderer.get_plot(overlay)
@@ -221,7 +218,7 @@ def test_autohide_toolbar_overlay():
 
 
 def test_autohide_toolbar_layout():
-    layout = Curve([1, 2, 3]) + Curve([2, 3, 4])
+    layout = hv.Curve([1, 2, 3]) + hv.Curve([2, 3, 4])
 
     # Test with autohide_toolbar=False (default)
     plot = bokeh_renderer.get_plot(layout)
@@ -237,10 +234,10 @@ def test_autohide_toolbar_layout():
     assert grid.toolbar.autohide is True
 
 def test_autohide_toolbar_nested():
-    overlay = Curve([1, 2, 3]) * Curve([2, 3, 4])
+    overlay = hv.Curve([1, 2, 3]) * hv.Curve([2, 3, 4])
 
     # Test with different settings for components
-    mixed_layout = overlay.opts(autohide_toolbar=True) + Curve([3, 4, 5]).opts(autohide_toolbar=False)
+    mixed_layout = overlay.opts(autohide_toolbar=True) + hv.Curve([3, 4, 5]).opts(autohide_toolbar=False)
     plot = bokeh_renderer.get_plot(mixed_layout)
     grid = plot.handles['plot']
     child1, child2 = [child for child, *_ in grid.children]

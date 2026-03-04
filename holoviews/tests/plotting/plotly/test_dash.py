@@ -2,6 +2,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+import holoviews as hv
+
 try:
     import dash  # noqa: F401
 except ImportError:
@@ -9,7 +11,6 @@ except ImportError:
 
 from dash._callback_context import CallbackContext
 
-from holoviews import Bounds, DynamicMap, Scatter
 from holoviews.plotting.plotly.dash import (
     DashComponents,
     decode_store_data,
@@ -42,7 +43,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
 
     def test_simple_element(self):
         # Build Holoviews Elements
-        scatter = Scatter([0, 0])
+        scatter = hv.Scatter([0, 0])
 
         # Convert to Dash
         components = to_dash(self.app, [scatter])
@@ -61,10 +62,10 @@ class TestHoloViewsDash(TestPlotlyPlot):
 
     def test_boundsxy_dynamic_map(self):
         # Build Holoviews Elements
-        scatter = Scatter([0, 0])
+        scatter = hv.Scatter([0, 0])
         boundsxy = BoundsXY(source=scatter)
-        dmap = DynamicMap(
-            lambda bounds: Bounds(bounds) if bounds is not None else Bounds((0, 0, 0, 0)),
+        dmap = hv.DynamicMap(
+            lambda bounds: hv.Bounds(bounds) if bounds is not None else hv.Bounds((0, 0, 0, 0)),
             streams=[boundsxy]
         )
 
@@ -173,7 +174,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
     def test_rangexy_dynamic_map(self):
 
         # Create dynamic map that inputs rangexy, returns scatter on bounds
-        scatter = Scatter(
+        scatter = hv.Scatter(
             [[0, 1], [0, 1]], kdims=["x"], vdims=["y"]
         )
         rangexy = RangeXY(source=scatter)
@@ -181,12 +182,12 @@ class TestHoloViewsDash(TestPlotlyPlot):
         def dmap_fn(x_range, y_range):
             x_range = (0, 1) if x_range is None else x_range
             y_range = (0, 1) if y_range is None else y_range
-            return Scatter(
+            return hv.Scatter(
                 [[x_range[0], y_range[0]],
                  [x_range[1], y_range[1]]], kdims=["x1"], vdims=["y1"]
             )
 
-        dmap = DynamicMap(dmap_fn, streams=[rangexy])
+        dmap = hv.DynamicMap(dmap_fn, streams=[rangexy])
 
         # Convert to Dash
         components = to_dash(self.app, [scatter, dmap], reset_button=True)
@@ -259,9 +260,9 @@ class TestHoloViewsDash(TestPlotlyPlot):
     def test_selection1d_dynamic_map(self):
         # Create dynamic map that inputs selection1d, returns overlay of scatter on
         # selected points
-        scatter = Scatter([[0, 0], [1, 1], [2, 2]])
+        scatter = hv.Scatter([[0, 0], [1, 1], [2, 2]])
         selection1d = Selection1D(source=scatter)
-        dmap = DynamicMap(
+        dmap = hv.DynamicMap(
             lambda index: scatter.iloc[index].opts(size=len(index) + 1),
             streams=[selection1d]
         )
@@ -381,8 +382,8 @@ class TestHoloViewsDash(TestPlotlyPlot):
 
     def test_kdims_dynamic_map(self):
         # Dynamic map with two key dimensions
-        dmap = DynamicMap(
-            lambda kdim1: Scatter([kdim1, kdim1]),
+        dmap = hv.DynamicMap(
+            lambda kdim1: hv.Scatter([kdim1, kdim1]),
             kdims=["kdim1"]
         ).redim.values(kdim1=[1, 2, 3, 4])
 

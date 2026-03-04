@@ -1,7 +1,6 @@
 import numpy as np
 
 import holoviews as hv
-from holoviews.element import HLines, HSpans, VLines, VSpans
 from holoviews.plotting.mpl.util import MPL_GE_3_9_0
 
 from .test_plot import TestMPLPlot, mpl_renderer
@@ -9,7 +8,7 @@ from .test_plot import TestMPLPlot, mpl_renderer
 
 class TestHVLinesPlot(TestMPLPlot):
     def test_hlines_plot(self):
-        hlines = HLines(
+        hlines = hv.HLines(
             {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
         )
         plot = mpl_renderer.get_plot(hlines)
@@ -27,7 +26,7 @@ class TestHVLinesPlot(TestMPLPlot):
             assert source.get_data() == ([0, 1], [val, val])
 
     def test_hlines_array(self):
-        hlines = HLines(np.array([0, 1, 2, 5.5]))
+        hlines = hv.HLines(np.array([0, 1, 2, 5.5]))
         plot = mpl_renderer.get_plot(hlines)
         assert plot.handles["fig"].axes[0].get_xlabel() == "x"
         assert plot.handles["fig"].axes[0].get_ylabel() == "y"
@@ -43,7 +42,7 @@ class TestHVLinesPlot(TestMPLPlot):
             assert source.get_data() == ([0, 1], [val, val])
 
     def test_hlines_plot_invert_axes(self):
-        hlines = HLines(
+        hlines = hv.HLines(
             {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
         ).opts(invert_axes=True)
         plot = mpl_renderer.get_plot(hlines)
@@ -61,7 +60,7 @@ class TestHVLinesPlot(TestMPLPlot):
             assert source.get_data() == ([val, val], [0, 1])
 
     def test_hlines_nondefault_kdim(self):
-        hlines = HLines({"other": [0, 1, 2, 5.5]}, kdims=["other"])
+        hlines = hv.HLines({"other": [0, 1, 2, 5.5]}, kdims=["other"])
         plot = mpl_renderer.get_plot(hlines)
         assert plot.handles["fig"].axes[0].get_xlabel() == "x"
         assert plot.handles["fig"].axes[0].get_ylabel() == "y"
@@ -77,7 +76,7 @@ class TestHVLinesPlot(TestMPLPlot):
             assert source.get_data() == ([0, 1], [val, val])
 
     def test_vlines_plot(self):
-        vlines = VLines(
+        vlines = hv.VLines(
             {"x": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
         )
         plot = mpl_renderer.get_plot(vlines)
@@ -95,7 +94,7 @@ class TestHVLinesPlot(TestMPLPlot):
             assert source.get_data() == ([val, val], [0, 1])
 
     def test_vlines_plot_invert_axes(self):
-        vlines = VLines(
+        vlines = hv.VLines(
             {"x": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
         ).opts(invert_axes=True)
         plot = mpl_renderer.get_plot(vlines)
@@ -113,7 +112,7 @@ class TestHVLinesPlot(TestMPLPlot):
             assert source.get_data() == ([0, 1], [val, val])
 
     def test_vlines_nondefault_kdim(self):
-        vlines = VLines({"other": [0, 1, 2, 5.5]}, kdims=["other"])
+        vlines = hv.VLines({"other": [0, 1, 2, 5.5]}, kdims=["other"])
         plot = mpl_renderer.get_plot(vlines)
         assert plot.handles["fig"].axes[0].get_xlabel() == "x"
         assert plot.handles["fig"].axes[0].get_ylabel() == "y"
@@ -129,10 +128,10 @@ class TestHVLinesPlot(TestMPLPlot):
             assert source.get_data() == ([val, val], [0, 1])
 
     def test_vlines_hlines_overlay(self):
-        hlines = HLines(
+        hlines = hv.HLines(
             {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
         )
-        vlines = VLines(
+        vlines = hv.VLines(
             {"x": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
         )
 
@@ -174,7 +173,7 @@ class TestHVSpansPlot(TestMPLPlot):
             assert np.allclose(source.xy[:, 0], [v0, v0, v1, v1, v0])
 
     def test_hspans_plot(self):
-        hspans = HSpans(
+        hspans = hv.HSpans(
             {"y0": [0, 3, 5.5], "y1": [1, 4, 6.5], "extra": [-1, -2, -3]},
             vdims=["extra"],
         )
@@ -193,7 +192,7 @@ class TestHVSpansPlot(TestMPLPlot):
             self._hspans_check(source, v0, v1)
 
     def test_hspans_inverse_plot(self):
-        hspans = HSpans(
+        hspans = hv.HSpans(
             {"y0": [0, 3, 5.5], "y1": [1, 4, 6.5], "extra": [-1, -2, -3]},
             vdims=["extra"],
         ).opts(invert_axes=True)
@@ -212,7 +211,7 @@ class TestHVSpansPlot(TestMPLPlot):
             self._vspans_check(source, v0, v1)
 
     def test_dynamicmap_overlay_hspans(self):
-        el = HSpans(data=[[1, 3], [2, 4]])
+        el = hv.HSpans(data=[[1, 3], [2, 4]])
         dmap = hv.DynamicMap(lambda: hv.Overlay([el]))
 
         plot_el = mpl_renderer.get_plot(el)
@@ -227,7 +226,7 @@ class TestHVSpansPlot(TestMPLPlot):
         assert np.allclose(ylim_el, ylim_dmap)
 
     def test_hspans_nondefault_kdim(self):
-        hspans = HSpans(
+        hspans = hv.HSpans(
             {"other0": [0, 3, 5.5], "other1": [1, 4, 6.5]}, kdims=["other0", "other1"]
         )
         plot = mpl_renderer.get_plot(hspans)
@@ -247,7 +246,7 @@ class TestHVSpansPlot(TestMPLPlot):
             self._hspans_check(source, v0, v1)
 
     def test_vspans_plot(self):
-        vspans = VSpans(
+        vspans = hv.VSpans(
             {"x0": [0, 3, 5.5], "x1": [1, 4, 6.5], "extra": [-1, -2, -3]},
             vdims=["extra"],
         )
@@ -266,7 +265,7 @@ class TestHVSpansPlot(TestMPLPlot):
             self._vspans_check(source, v0, v1)
 
     def test_vspans_inverse_plot(self):
-        vspans = VSpans(
+        vspans = hv.VSpans(
             {"x0": [0, 3, 5.5], "x1": [1, 4, 6.5], "extra": [-1, -2, -3]},
             vdims=["extra"],
         ).opts(invert_axes=True)
@@ -285,7 +284,7 @@ class TestHVSpansPlot(TestMPLPlot):
             self._hspans_check(source, v0, v1)
 
     def test_vspans_nondefault_kdims(self):
-        vspans = VSpans(
+        vspans = hv.VSpans(
             {"other0": [0, 3, 5.5], "other1": [1, 4, 6.5]}, kdims=["other0", "other1"]
         )
         plot = mpl_renderer.get_plot(vspans)
@@ -305,11 +304,11 @@ class TestHVSpansPlot(TestMPLPlot):
             self._vspans_check(source, v0, v1)
 
     def test_vspans_hspans_overlay(self):
-        hspans = HSpans(
+        hspans = hv.HSpans(
             {"y0": [0, 3, 5.5], "y1": [1, 4, 6.5], "extra": [-1, -2, -3]},
             vdims=["extra"],
         )
-        vspans = VSpans(
+        vspans = hv.VSpans(
             {"x0": [0, 3, 5.5], "x1": [1, 4, 6.5], "extra": [-1, -2, -3]},
             vdims=["extra"],
         )
@@ -330,7 +329,7 @@ class TestHVSpansPlot(TestMPLPlot):
             self._vspans_check(source, v0, v1)
 
     def test_dynamicmap_overlay_vspans(self):
-        el = VSpans(data=[[1, 3], [2, 4]])
+        el = hv.VSpans(data=[[1, 3], [2, 4]])
         dmap = hv.DynamicMap(lambda: hv.Overlay([el]))
 
         plot_el = mpl_renderer.get_plot(el)

@@ -5,7 +5,7 @@ import narwhals.stable.v2 as nw
 import numpy as np
 import pytest
 
-from holoviews import Dataset, Dimension
+import holoviews as hv
 from holoviews.core.data import NarwhalsInterface
 from holoviews.testing import assert_data_equal
 
@@ -117,8 +117,8 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
 
     def test_dataset_range_with_dimension_range(self):
         dt64 = [datetime(2017, 1, i) for i in range(1, 4)]
-        ds = Dataset(
-            self.frame({"Date": dt64}), [Dimension("Date", range=(dt64[0], dt64[-1]))]
+        ds = hv.Dataset(
+            self.frame({"Date": dt64}), [hv.Dimension("Date", range=(dt64[0], dt64[-1]))]
         )
         assert ds.range("Date") == (dt64[0], dt64[-1])
 
@@ -152,7 +152,7 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
             "day": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
             "count": [1, 2, 3, 4, 5, 6, 7],
         }))
-        ds = Dataset(df, kdims=["day"], vdims=["count"])
+        ds = hv.Dataset(df, kdims=["day"], vdims=["count"])
         assert ds["Mon"] == 1
 
     def test_non_scalar_getitem(self):
@@ -160,7 +160,7 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
             "day": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
             "count": [1, 2, 3, 4, 5, 6, 7],
         }))
-        ds = Dataset(df, kdims=["day"], vdims=["count"])
+        ds = hv.Dataset(df, kdims=["day"], vdims=["count"])
         result = ds[["Mon"]].data
         assert isinstance(result, self.data_type)
         if isinstance(result, nw.LazyFrame):

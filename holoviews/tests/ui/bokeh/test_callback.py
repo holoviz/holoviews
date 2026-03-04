@@ -5,7 +5,6 @@ import pytest
 from bokeh.models import PolyDrawTool
 
 import holoviews as hv
-from holoviews import Curve, DynamicMap, Scatter
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0, BOKEH_GE_3_7_0
 from holoviews.streams import (
     BoundsX,
@@ -41,7 +40,7 @@ def points():
     ],
 )
 def test_box_select(serve_hv, BoundsTool, bound_slice, bound_attr):
-    hv_scatter = Scatter([1, 2, 3]).opts(
+    hv_scatter = hv.Scatter([1, 2, 3]).opts(
         tools=['box_select'], active_tools=['box_select']
     )
 
@@ -66,7 +65,7 @@ def test_box_select(serve_hv, BoundsTool, bound_slice, bound_attr):
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_lasso_select(serve_hv):
-    hv_scatter = Scatter([1, 2, 3]).opts(
+    hv_scatter = hv.Scatter([1, 2, 3]).opts(
         tools=['lasso_select'], active_tools=['lasso_select']
     )
 
@@ -124,7 +123,7 @@ def test_lasso_select(serve_hv):
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_rangexy(serve_hv):
-    hv_scatter = Scatter([1, 2, 3]).opts(active_tools=['box_zoom'])
+    hv_scatter = hv.Scatter([1, 2, 3]).opts(active_tools=['box_zoom'])
 
     rangexy = RangeXY(source=hv_scatter)
 
@@ -147,8 +146,8 @@ def test_rangexy(serve_hv):
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_multi_axis_rangexy(serve_hv):
-    c1 = Curve(np.arange(100).cumsum(), vdims='y')
-    c2 = Curve(-np.arange(100).cumsum(), vdims='y2')
+    c1 = hv.Curve(np.arange(100).cumsum(), vdims='y')
+    c2 = hv.Curve(-np.arange(100).cumsum(), vdims='y2')
     s1 = RangeXY(source=c1)
     s2 = RangeXY(source=c2)
 
@@ -179,8 +178,8 @@ def test_multi_axis_rangexy(serve_hv):
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_multi_axis_tap(serve_hv):
-    c1 = Curve(np.arange(10).cumsum(), vdims='y1')
-    c2 = Curve(np.arange(20).cumsum(), vdims='y2')
+    c1 = hv.Curve(np.arange(10).cumsum(), vdims='y1')
+    c2 = hv.Curve(np.arange(20).cumsum(), vdims='y2')
 
     overlay = (c1 * c2).opts(multi_y=True)
 
@@ -205,8 +204,8 @@ def test_multi_axis_tap(serve_hv):
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_multi_axis_tap_datetime(serve_hv):
-    c1 = Curve((pd.date_range('2024-01-01', '2024-01-10'), np.arange(10).cumsum()), vdims='y1')
-    c2 = Curve((pd.date_range('2024-01-01', '2024-01-20'), np.arange(20).cumsum()), vdims='y2')
+    c1 = hv.Curve((pd.date_range('2024-01-01', '2024-01-10'), np.arange(10).cumsum()), vdims='y1')
+    c2 = hv.Curve((pd.date_range('2024-01-01', '2024-01-20'), np.arange(20).cumsum()), vdims='y2')
 
     overlay = (c1 * c2).opts(multi_y=True)
 
@@ -242,15 +241,15 @@ def test_bind_trigger(serve_hv):
 
     def bound_function():
         BOUND_COUNT[0] += 1
-        return Curve([])
+        return hv.Curve([])
 
 
     def range_function(x_range, y_range):
         RANGE_COUNT[0] += 1
-        return Curve([])
+        return hv.Curve([])
 
-    range_dmap = DynamicMap(range_function, streams=[hv.streams.RangeXY()])
-    bind_dmap = DynamicMap(pn.bind(bound_function))
+    range_dmap = hv.DynamicMap(range_function, streams=[hv.streams.RangeXY()])
+    bind_dmap = hv.DynamicMap(pn.bind(bound_function))
 
     page = serve_hv(bind_dmap * range_dmap)
     hv_plot = page.locator('.bk-events')
@@ -273,12 +272,12 @@ def test_bind_trigger(serve_hv):
 def test_stream_subcoordinate_y_range(serve_hv, points):
     def cb(x_range, y_range):
         return (
-            Curve(np.arange(100).cumsum(), vdims='y', label='A').opts(subcoordinate_y=True) *
-            Curve(-np.arange(100).cumsum(), vdims='y2', label='B').opts(subcoordinate_y=True)
+            hv.Curve(np.arange(100).cumsum(), vdims='y', label='A').opts(subcoordinate_y=True) *
+            hv.Curve(-np.arange(100).cumsum(), vdims='y2', label='B').opts(subcoordinate_y=True)
         )
 
     stream = RangeXY()
-    dmap = DynamicMap(cb, streams=[stream]).opts(active_tools=['box_zoom'])
+    dmap = hv.DynamicMap(cb, streams=[stream]).opts(active_tools=['box_zoom'])
 
     page = serve_hv(dmap)
 
@@ -556,8 +555,8 @@ def test_poly_point_visible(serve_panel, start_value):
     def polygons_layer(value):
         return hv.Polygons([[(0.6, 0.1), (0.9, 0.1), (0.9, 0.9), (0.6, 0.9)]]).opts(visible=value == "Polygons")
 
-    dm_points = DynamicMap(points_layer)
-    dm_polys = DynamicMap(polygons_layer)
+    dm_points = hv.DynamicMap(points_layer)
+    dm_polys = hv.DynamicMap(polygons_layer)
 
     PointDraw(source=dm_points)
     PolyDraw(source=dm_polys, show_vertices=True)

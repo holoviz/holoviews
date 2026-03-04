@@ -1,6 +1,6 @@
 import numpy as np
 
-from holoviews.element import Histogram
+import holoviews as hv
 
 from .test_plot import TestPlotlyPlot
 
@@ -13,7 +13,7 @@ class TestHistogramPlot(TestPlotlyPlot):
         self.edges = [-3, -2, -1, 0, 1, 2]
 
     def test_histogram_plot(self):
-        hist = Histogram((self.edges, self.frequencies))
+        hist = hv.Histogram((self.edges, self.frequencies))
         state = self._get_plot_state(hist)
         np.testing.assert_equal(state['data'][0]['x'], self.edges)
         np.testing.assert_equal(state['data'][0]['y'], self.frequencies)
@@ -26,7 +26,7 @@ class TestHistogramPlot(TestPlotlyPlot):
         assert state['layout']['yaxis']['title']['text'] == 'Frequency'
 
     def test_histogram_plot_inverted(self):
-        hist = Histogram(
+        hist = hv.Histogram(
             (self.edges, self.frequencies)
         ).opts(invert_axes=True)
 
@@ -47,12 +47,12 @@ class TestHistogramPlot(TestPlotlyPlot):
             'line_width': 7,
             'line_color': 'green',
         }
-        hist = Histogram((self.edges, self.frequencies)).opts(**props)
+        hist = hv.Histogram((self.edges, self.frequencies)).opts(**props)
         state = self._get_plot_state(hist)
         marker = state['data'][0]['marker']
         self.assert_property_values(marker, props)
 
     def test_visible(self):
-        element = Histogram((self.edges, self.frequencies)).opts(visible=False)
+        element = hv.Histogram((self.edges, self.frequencies)).opts(visible=False)
         state = self._get_plot_state(element)
         assert state['data'][0]['visible'] is False

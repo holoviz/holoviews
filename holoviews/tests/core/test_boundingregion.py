@@ -2,7 +2,8 @@
 Test cases for boundingregion
 """
 
-from holoviews.core import AARectangle, BoundingBox
+import holoviews as hv
+from holoviews.core import AARectangle
 
 
 class TestAARectangle:
@@ -37,7 +38,7 @@ class TestBoundingBox:
         self.top     =  0.4
         self.lbrt = (self.left,self.bottom,self.right,self.top)
 
-        self.region = BoundingBox(points = ((self.left,self.bottom),(self.right,self.top)))
+        self.region = hv.BoundingBox(points = ((self.left,self.bottom),(self.right,self.top)))
         self.xc,self.yc = self.region.aarect().centroid()
 
     def test_way_inside(self):
