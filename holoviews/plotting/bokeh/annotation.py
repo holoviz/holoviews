@@ -208,9 +208,9 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
         mapping = dict(x=xdim, y=ydim, text=tdim)
         data = {d: element.dimension_values(d) for d in (xdim, ydim)}
         if self.xoffset is not None:
-            mapping['x'] = dodge(xdim, self.xoffset)
+            mapping['x'] = dodge(xdim, self.xoffset, range=self.handles.get('x_range'))
         if self.yoffset is not None:
-            mapping['y'] = dodge(ydim, self.yoffset)
+            mapping['y'] = dodge(ydim, self.yoffset, range=self.handles.get('y_range'))
         data[tdim] = [dims[2].pprint_value(v) for v in element.dimension_values(2)]
         self._categorize_data(data, (xdim, ydim), element.dimensions())
 
