@@ -2,6 +2,7 @@
 the purposes of analysis or visualization.
 
 """
+
 import param
 
 from . import Dataset, util
@@ -28,28 +29,40 @@ class Operation(param.ParameterizedFunction):
 
     """
 
-    group = param.String(default='Operation', doc="""
+    group = param.String(
+        default="Operation",
+        doc="""
        The group string used to identify the output of the
-       Operation. By default this should match the operation name.""")
+       Operation. By default this should match the operation name.""",
+    )
 
-    dynamic = param.Selector(default='default',
-                                   objects=['default', True, False], doc="""
+    dynamic = param.Selector(
+        default="default",
+        objects=["default", True, False],
+        doc="""
        Whether the operation should be applied dynamically when a
        specific frame is requested, specified as a Boolean. If set to
        'default' the mode will be determined based on the input type,
-       i.e. if the data is a DynamicMap it will stay dynamic.""")
+       i.e. if the data is a DynamicMap it will stay dynamic.""",
+    )
 
-    input_ranges = param.ClassSelector(default={}, allow_None=True,
-                                       class_=(dict, tuple), doc="""
+    input_ranges = param.ClassSelector(
+        default={},
+        allow_None=True,
+        class_=(dict, tuple),
+        doc="""
        Ranges to be used for input normalization (if applicable) in a
        format appropriate for the Normalization.ranges parameter.
 
        By default, no normalization is applied. If key-wise
        normalization is required, a 2-tuple may be supplied where the
        first component is a Normalization.ranges list and the second
-       component is Normalization.keys. """)
+       component is Normalization.keys. """,
+    )
 
-    link_inputs = param.Boolean(default=False, doc="""
+    link_inputs = param.Boolean(
+        default=False,
+        doc="""
        If the operation is dynamic, whether or not linked streams
        should be transferred from the operation inputs for backends
        that support linked streams.
@@ -57,11 +70,16 @@ class Operation(param.ParameterizedFunction):
        For example if an operation is applied to a DynamicMap with an
        RangeXY, this switch determines whether the corresponding
        visualization should update this stream with range changes
-       originating from the newly generated axes.""")
+       originating from the newly generated axes.""",
+    )
 
-    streams = param.ClassSelector(default=[], class_=(dict, list), doc="""
+    streams = param.ClassSelector(
+        default=[],
+        class_=(dict, list),
+        doc="""
         List of streams that are applied if dynamic=True, allowing
-        for dynamic interaction with the plot.""")
+        for dynamic interaction with the plot.""",
+    )
 
     # Hooks to allow external libraries to extend existing operations.
     # Preprocessor hooks should accept the operation and input element
@@ -70,7 +88,7 @@ class Operation(param.ParameterizedFunction):
     # and processed element
     _preprocess_hooks = []
     _postprocess_hooks = []
-    _allow_extra_keywords=False
+    _allow_extra_keywords = False
 
     # Whether to apply operation per element (will be enabled by default in 2.0)
     _per_element = False
@@ -98,18 +116,16 @@ class Operation(param.ParameterizedFunction):
         elif isinstance(element, Element):
             return [element] if element.matches(pattern) else []
 
-
     @classmethod
-    def get_overlay_label(cls, overlay, default_label=''):
+    def get_overlay_label(cls, overlay, default_label=""):
         """Returns a label if all the elements of an overlay agree on a
         consistent label, otherwise returns the default label.
 
         """
-        if all(el.label==overlay.get(0).label for el in overlay):
+        if all(el.label == overlay.get(0).label for el in overlay):
             return overlay.get(0).label
         else:
             return default_label
-
 
     @classmethod
     def get_overlay_bounds(cls, overlay):
@@ -117,11 +133,10 @@ class Operation(param.ParameterizedFunction):
         a consistent extents, otherwise raises an exception.
 
         """
-        if all(el.bounds==overlay.get(0).bounds for el in overlay):
+        if all(el.bounds == overlay.get(0).bounds for el in overlay):
             return overlay.get(0).bounds
         else:
             raise ValueError("Extents across the overlay are inconsistent")
-
 
     def _apply(self, element, key=None):
         """Applies the operation to the element, executing any pre- and
@@ -132,34 +147,35 @@ class Operation(param.ParameterizedFunction):
         for hook in self._preprocess_hooks:
             kwargs.update(hook(self, element))
 
-        element_pipeline = getattr(element, '_pipeline', None)
+        element_pipeline = getattr(element, "_pipeline", None)
 
-        if hasattr(element, '_in_method'):
+        if hasattr(element, "_in_method"):
             in_method = element._in_method
             if not in_method:
                 element._in_method = True
         ret = self._process(element, key)
-        if hasattr(element, '_in_method') and not in_method:
+        if hasattr(element, "_in_method") and not in_method:
             element._in_method = in_method
 
         if self._transfer_options:
             for backend in Store.loaded_backends():
-                Store.transfer_options(
-                    element, ret, backend, self._transfer_options, level=1
-                )
+                Store.transfer_options(element, ret, backend, self._transfer_options, level=1)
 
         for hook in self._postprocess_hooks:
             ret = hook(self, ret, **kwargs)
 
-        if (self._propagate_dataset and isinstance(ret, Dataset)
-            and isinstance(element, Dataset) and not in_method):
+        if (
+            self._propagate_dataset
+            and isinstance(ret, Dataset)
+            and isinstance(element, Dataset)
+            and not in_method
+        ):
             ret._dataset = element.dataset.clone()
             ret._pipeline = element_pipeline.instance(
                 operations=[*element_pipeline.operations, self.instance(**self.p)],
             )
             ret._transforms = element._transforms
         return ret
-
 
     def _process(self, element, key=None):
         """Process a single input element and outputs new single element
@@ -170,16 +186,16 @@ class Operation(param.ParameterizedFunction):
         """
         return element
 
-
     def process_element(self, element, key, **params):
         """The process_element method allows a single element to be
         operated on given an externally supplied key.
 
         """
         if self._per_element and not isinstance(element, Element):
-            return element.clone({k: self.process_element(el, key, **params)
-                                  for k, el in element.items()})
-        if hasattr(self, 'p'):
+            return element.clone(
+                {k: self.process_element(el, key, **params) for k, el in element.items()}
+            )
+        if hasattr(self, "p"):
             if self._allow_extra_keywords:
                 extras = self.p._extract_extra_keywords(params)
                 self.p._extra_keywords.update(extras)
@@ -187,10 +203,10 @@ class Operation(param.ParameterizedFunction):
             self.p.update(params)
             self.p._check_params(params)
         else:
-            self.p = param.ParamOverrides(self, params,
-                                          allow_extra_keywords=self._allow_extra_keywords)
+            self.p = param.ParamOverrides(
+                self, params, allow_extra_keywords=self._allow_extra_keywords
+            )
         return self._apply(element, key)
-
 
     def __call__(self, element, **kwargs):
         params = dict(kwargs)
@@ -199,24 +215,24 @@ class Operation(param.ParameterizedFunction):
                 params[k] = v()
             elif isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
                 params[k] = getattr(v.owner, v.name)
-        self.p = param.ParamOverrides(self, params,
-                                      allow_extra_keywords=self._allow_extra_keywords)
+        self.p = param.ParamOverrides(
+            self, params, allow_extra_keywords=self._allow_extra_keywords
+        )
         if not self.p.dynamic:
-            kwargs['dynamic'] = False
+            kwargs["dynamic"] = False
             if isinstance(element, HoloMap):
                 # Backwards compatibility for key argument
-                return element.clone([(k, self._apply(el, key=k))
-                                      for k, el in element.items()])
-            elif ((self._per_element and isinstance(element, Element)) or
-                  (not self._per_element and isinstance(element, ViewableElement))):
+                return element.clone([(k, self._apply(el, key=k)) for k, el in element.items()])
+            elif (self._per_element and isinstance(element, Element)) or (
+                not self._per_element and isinstance(element, ViewableElement)
+            ):
                 return self._apply(element)
-        elif 'streams' not in kwargs:
-            kwargs['streams'] = self.p.streams
-        kwargs['per_element'] = self._per_element
-        kwargs['link_dataset'] = self._propagate_dataset
-        kwargs['link_inputs'] = self.p.link_inputs
+        elif "streams" not in kwargs:
+            kwargs["streams"] = self.p.streams
+        kwargs["per_element"] = self._per_element
+        kwargs["link_dataset"] = self._propagate_dataset
+        kwargs["link_inputs"] = self.p.link_inputs
         return element.apply(self, **kwargs)
-
 
 
 class OperationCallable(Callable):
@@ -226,10 +242,13 @@ class OperationCallable(Callable):
 
     """
 
-    operation = param.ClassSelector(class_=Operation, doc="""
-        The Operation being wrapped into an OperationCallable.""")
+    operation = param.ClassSelector(
+        class_=Operation,
+        doc="""
+        The Operation being wrapped into an OperationCallable.""",
+    )
 
     def __init__(self, callable, **kwargs):
-        if 'operation' not in kwargs:
-            raise ValueError('An OperationCallable must have an operation specified')
+        if "operation" not in kwargs:
+            raise ValueError("An OperationCallable must have an operation specified")
         super().__init__(callable, **kwargs)

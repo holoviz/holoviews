@@ -21,168 +21,181 @@ class BasePandasInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
     frame = pd.DataFrame
 
     def test_duplicate_dimension_constructor(self):
-        ds = hv.Dataset(([1, 2, 3], [1, 2, 3]), ['A', 'B'], ['A'])
-        assert list(ds.data.columns) == ['A', 'B']
+        ds = hv.Dataset(([1, 2, 3], [1, 2, 3]), ["A", "B"], ["A"])
+        assert list(ds.data.columns) == ["A", "B"]
 
     def test_dataset_empty_list_init_dtypes(self):
-        dataset = hv.Dataset([], kdims=['x'], vdims=['y'])
-        for d in 'xy':
+        dataset = hv.Dataset([], kdims=["x"], vdims=["y"])
+        for d in "xy":
             assert dataset.dimension_values(d).dtype == np.float64
 
     def test_dataset_series_construct(self):
-        ds = hv.Scatter(pd.Series([1, 2, 3], name='A'))
-        assert_element_equal(ds, hv.Scatter(([0, 1, 2], [1, 2, 3]), 'index', 'A'))
+        ds = hv.Scatter(pd.Series([1, 2, 3], name="A"))
+        assert_element_equal(ds, hv.Scatter(([0, 1, 2], [1, 2, 3]), "index", "A"))
 
     def test_dataset_df_construct_autoindex(self):
-        ds = hv.Scatter(pd.DataFrame([1, 2, 3], columns=['A'], index=[1, 2, 3]), 'test', 'A')
-        assert_element_equal(ds, hv.Scatter(([0, 1, 2], [1, 2, 3]), 'test', 'A'))
+        ds = hv.Scatter(pd.DataFrame([1, 2, 3], columns=["A"], index=[1, 2, 3]), "test", "A")
+        assert_element_equal(ds, hv.Scatter(([0, 1, 2], [1, 2, 3]), "test", "A"))
 
     def test_dataset_df_construct_not_autoindex(self):
-        ds = hv.Scatter(pd.DataFrame([1, 2, 3], columns=['A'], index=[1, 2, 3]), 'index', 'A')
-        assert_element_equal(ds, hv.Scatter(([1, 2, 3], [1, 2, 3]), 'index', 'A'))
+        ds = hv.Scatter(pd.DataFrame([1, 2, 3], columns=["A"], index=[1, 2, 3]), "index", "A")
+        assert_element_equal(ds, hv.Scatter(([1, 2, 3], [1, 2, 3]), "index", "A"))
 
     def test_dataset_single_column_construct(self):
-        ds = hv.Scatter(pd.DataFrame([1, 2, 3], columns=['A']))
-        assert_element_equal(ds, hv.Scatter(([0, 1, 2], [1, 2, 3]), 'index', 'A'))
+        ds = hv.Scatter(pd.DataFrame([1, 2, 3], columns=["A"]))
+        assert_element_equal(ds, hv.Scatter(([0, 1, 2], [1, 2, 3]), "index", "A"))
 
     def test_dataset_df_duplicate_columns_raises(self):
-        df = pd.DataFrame(np.random.randint(-100,100, size=(100, 2)), columns=list("AB"))
+        df = pd.DataFrame(np.random.randint(-100, 100, size=(100, 2)), columns=list("AB"))
         with pytest.raises(DataError):
-            hv.Dataset(df[['A', 'A']])
+            hv.Dataset(df[["A", "A"]])
 
     def test_dataset_extract_vdims(self):
-        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
-                          columns=['x', 'y', 'z'])
-        ds = hv.Dataset(df, kdims=['x'])
-        assert ds.vdims == [hv.Dimension('y'), hv.Dimension('z')]
+        df = pd.DataFrame(
+            {"x": [1, 2, 3], "y": [1, 2, 3], "z": [1, 2, 3]}, columns=["x", "y", "z"]
+        )
+        ds = hv.Dataset(df, kdims=["x"])
+        assert ds.vdims == [hv.Dimension("y"), hv.Dimension("z")]
 
     def test_dataset_process_index(self):
-        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
-                          columns=['x', 'y', 'z'])
-        ds = hv.Dataset(df, 'index')
-        assert ds.kdims == [hv.Dimension('index')]
-        assert ds.vdims == [hv.Dimension('x'), hv.Dimension('y'), hv.Dimension('z')]
+        df = pd.DataFrame(
+            {"x": [1, 2, 3], "y": [1, 2, 3], "z": [1, 2, 3]}, columns=["x", "y", "z"]
+        )
+        ds = hv.Dataset(df, "index")
+        assert ds.kdims == [hv.Dimension("index")]
+        assert ds.vdims == [hv.Dimension("x"), hv.Dimension("y"), hv.Dimension("z")]
 
     def test_dataset_extract_kdims_and_vdims_no_bounds(self):
-        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
-                          columns=['x', 'y', 'z'])
+        df = pd.DataFrame(
+            {"x": [1, 2, 3], "y": [1, 2, 3], "z": [1, 2, 3]}, columns=["x", "y", "z"]
+        )
         ds = hv.Dataset(df)
-        assert ds.kdims == [hv.Dimension('x'), hv.Dimension('y'), hv.Dimension('z')]
+        assert ds.kdims == [hv.Dimension("x"), hv.Dimension("y"), hv.Dimension("z")]
         assert ds.vdims == []
 
     def test_dataset_extract_kdims(self):
-        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
-                          columns=['x', 'y', 'z'])
+        df = pd.DataFrame(
+            {"x": [1, 2, 3], "y": [1, 2, 3], "z": [1, 2, 3]}, columns=["x", "y", "z"]
+        )
         ds = hv.Distribution(df)
-        assert ds.kdims == [hv.Dimension('x')]
+        assert ds.kdims == [hv.Dimension("x")]
 
     def test_dataset_extract_kdims_and_vdims(self):
-        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
-                          columns=['x', 'y', 'z'])
+        df = pd.DataFrame(
+            {"x": [1, 2, 3], "y": [1, 2, 3], "z": [1, 2, 3]}, columns=["x", "y", "z"]
+        )
         ds = hv.Points(df)
-        assert ds.kdims == [hv.Dimension('x'), hv.Dimension('y')]
-        assert ds.vdims == [hv.Dimension('z')]
+        assert ds.kdims == [hv.Dimension("x"), hv.Dimension("y")]
+        assert ds.vdims == [hv.Dimension("z")]
 
     def test_dataset_element_allowing_two_kdims_with_one_default_kdim(self):
-        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
-                          columns=['x', 'y', 'z'])
+        df = pd.DataFrame(
+            {"x": [1, 2, 3], "y": [1, 2, 3], "z": [1, 2, 3]}, columns=["x", "y", "z"]
+        )
         ds = hv.Scatter(df)
-        assert ds.kdims == [hv.Dimension('x')]
-        assert ds.vdims == [hv.Dimension('y'), hv.Dimension('z')]
+        assert ds.kdims == [hv.Dimension("x")]
+        assert ds.vdims == [hv.Dimension("y"), hv.Dimension("z")]
 
     def test_dataset_extract_kdims_with_vdims_defined(self):
-        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
-                          columns=['x', 'y', 'z'])
-        ds = hv.Points(df, vdims=['x'])
-        assert ds.kdims == [hv.Dimension('y'), hv.Dimension('z')]
-        assert ds.vdims == [hv.Dimension('x')]
+        df = pd.DataFrame(
+            {"x": [1, 2, 3], "y": [1, 2, 3], "z": [1, 2, 3]}, columns=["x", "y", "z"]
+        )
+        ds = hv.Points(df, vdims=["x"])
+        assert ds.kdims == [hv.Dimension("y"), hv.Dimension("z")]
+        assert ds.vdims == [hv.Dimension("x")]
 
     def test_dataset_extract_all_kdims_with_vdims_defined(self):
-        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
-                          columns=['x', 'y', 'z'])
-        ds = hv.Dataset(df, vdims=['x'])
-        assert ds.kdims == [hv.Dimension('y'), hv.Dimension('z')]
-        assert ds.vdims == [hv.Dimension('x')]
+        df = pd.DataFrame(
+            {"x": [1, 2, 3], "y": [1, 2, 3], "z": [1, 2, 3]}, columns=["x", "y", "z"]
+        )
+        ds = hv.Dataset(df, vdims=["x"])
+        assert ds.kdims == [hv.Dimension("y"), hv.Dimension("z")]
+        assert ds.vdims == [hv.Dimension("x")]
 
     def test_dataset_extract_kdims_declare_no_vdims(self):
-        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
-                          columns=['x', 'y', 'z'])
+        df = pd.DataFrame(
+            {"x": [1, 2, 3], "y": [1, 2, 3], "z": [1, 2, 3]}, columns=["x", "y", "z"]
+        )
         ds = hv.Points(df, vdims=[])
-        assert ds.kdims == [hv.Dimension('x'), hv.Dimension('y')]
+        assert ds.kdims == [hv.Dimension("x"), hv.Dimension("y")]
         assert ds.vdims == []
 
     def test_dataset_extract_no_kdims_extract_only_vdims(self):
-        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
-                          columns=['x', 'y', 'z'])
+        df = pd.DataFrame(
+            {"x": [1, 2, 3], "y": [1, 2, 3], "z": [1, 2, 3]}, columns=["x", "y", "z"]
+        )
         ds = hv.Dataset(df, kdims=[])
         assert ds.kdims == []
-        assert ds.vdims == [hv.Dimension('x'), hv.Dimension('y'), hv.Dimension('z')]
+        assert ds.vdims == [hv.Dimension("x"), hv.Dimension("y"), hv.Dimension("z")]
 
     def test_dataset_extract_vdims_with_kdims_defined(self):
-        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
-                          columns=['x', 'y', 'z'])
-        ds = hv.Points(df, kdims=['x', 'z'])
-        assert ds.kdims == [hv.Dimension('x'), hv.Dimension('z')]
-        assert ds.vdims == [hv.Dimension('y')]
+        df = pd.DataFrame(
+            {"x": [1, 2, 3], "y": [1, 2, 3], "z": [1, 2, 3]}, columns=["x", "y", "z"]
+        )
+        ds = hv.Points(df, kdims=["x", "z"])
+        assert ds.kdims == [hv.Dimension("x"), hv.Dimension("z")]
+        assert ds.vdims == [hv.Dimension("y")]
 
     def test_multi_dimension_groupby(self):
-        x, y, z = list('AB'*10), np.arange(20)%3, np.arange(20)
-        ds = hv.Dataset((x, y, z), kdims=['x', 'y'], vdims=['z'],  datatype=[self.datatype])
-        keys = [('A', 0), ('B', 1), ('A', 2), ('B', 0), ('A', 1), ('B', 2)]
-        grouped = ds.groupby(['x', 'y'])
+        x, y, z = list("AB" * 10), np.arange(20) % 3, np.arange(20)
+        ds = hv.Dataset((x, y, z), kdims=["x", "y"], vdims=["z"], datatype=[self.datatype])
+        keys = [("A", 0), ("B", 1), ("A", 2), ("B", 0), ("A", 1), ("B", 2)]
+        grouped = ds.groupby(["x", "y"])
         assert grouped.keys() == keys
-        group = hv.Dataset({'z': [5, 11, 17]}, vdims=['z'])
+        group = hv.Dataset({"z": [5, 11, 17]}, vdims=["z"])
         assert_element_equal(grouped.last, group)
 
     def test_dataset_simple_dict_sorted(self):
-        dataset = hv.Dataset({2: 2, 1: 1, 3: 3}, kdims=['x'], vdims=['y'])
-        assert_element_equal(dataset, hv.Dataset([(i, i) for i in range(1, 4)],
-                                          kdims=['x'], vdims=['y']))
+        dataset = hv.Dataset({2: 2, 1: 1, 3: 3}, kdims=["x"], vdims=["y"])
+        assert_element_equal(
+            dataset, hv.Dataset([(i, i) for i in range(1, 4)], kdims=["x"], vdims=["y"])
+        )
 
     def test_dataset_conversion_with_index(self):
-        df = pd.DataFrame({'y': [1, 2, 3]}, index=[0, 1, 2])
-        scatter = hv.Dataset(df).to(hv.Scatter, 'index', 'y')
-        assert_element_equal(scatter, hv.Scatter(([0, 1, 2], [1, 2, 3]), 'index', 'y'))
+        df = pd.DataFrame({"y": [1, 2, 3]}, index=[0, 1, 2])
+        scatter = hv.Dataset(df).to(hv.Scatter, "index", "y")
+        assert_element_equal(scatter, hv.Scatter(([0, 1, 2], [1, 2, 3]), "index", "y"))
 
     def test_dataset_conversion_groupby_with_index(self):
-        df = pd.DataFrame({'y': [1, 2, 3], 'x': [0, 0, 1]}, index=[0, 1, 2])
-        scatters = hv.Dataset(df).to(hv.Scatter, 'index', 'y')
-        hmap = hv.HoloMap({0: hv.Scatter(([0, 1], [1, 2]), 'index', 'y'),
-                        1: hv.Scatter([(2, 3)], 'index', 'y')}, 'x')
+        df = pd.DataFrame({"y": [1, 2, 3], "x": [0, 0, 1]}, index=[0, 1, 2])
+        scatters = hv.Dataset(df).to(hv.Scatter, "index", "y")
+        hmap = hv.HoloMap(
+            {0: hv.Scatter(([0, 1], [1, 2]), "index", "y"), 1: hv.Scatter([(2, 3)], "index", "y")},
+            "x",
+        )
         assert_element_equal(scatters, hmap)
 
     def test_dataset_from_multi_index(self):
-        df = pd.DataFrame({'x': np.arange(10), 'y': np.arange(10), 'z': np.random.rand(10)})
-        ds = hv.Dataset(df.groupby(['x', 'y']).mean(), ['x', 'y'])
-        assert_element_equal(ds, hv.Dataset(df, ['x', 'y']))
+        df = pd.DataFrame({"x": np.arange(10), "y": np.arange(10), "z": np.random.rand(10)})
+        ds = hv.Dataset(df.groupby(["x", "y"]).mean(), ["x", "y"])
+        assert_element_equal(ds, hv.Dataset(df, ["x", "y"]))
 
     def test_dataset_from_multi_index_tuple_dims(self):
-        df = pd.DataFrame({'x': np.arange(10), 'y': np.arange(10), 'z': np.random.rand(10)})
-        ds = hv.Dataset(df.groupby(['x', 'y']).mean(), [('x', 'X'), ('y', 'Y')])
-        assert_element_equal(ds, hv.Dataset(df, [('x', 'X'), ('y', 'Y')]))
+        df = pd.DataFrame({"x": np.arange(10), "y": np.arange(10), "z": np.random.rand(10)})
+        ds = hv.Dataset(df.groupby(["x", "y"]).mean(), [("x", "X"), ("y", "Y")])
+        assert_element_equal(ds, hv.Dataset(df, [("x", "X"), ("y", "Y")]))
 
     def test_dataset_with_interface_column(self):
-        df = pd.DataFrame([1], columns=['interface'])
+        df = pd.DataFrame([1], columns=["interface"])
         ds = hv.Dataset(df)
-        assert list(ds.data.columns) == ['interface']
+        assert list(ds.data.columns) == ["interface"]
 
     def test_dataset_range_with_object_index(self):
         df = pd.DataFrame(range(4), columns=["values"], index=list("BADC"))
-        ds = hv.Dataset(df, kdims='index')
-        assert ds.range('index') == ('A', 'D')
+        ds = hv.Dataset(df, kdims="index")
+        assert ds.range("index") == ("A", "D")
 
     def test_dataset_dataset_ht_dtypes(self):
         ds = self.table
-        string_dtype = pd.StringDtype(na_value=np.nan) if PANDAS_GE_3_0_0 else np.dtype('object')
-        assert ds.interface.dtype(ds, 'Gender') == string_dtype
-        assert ds.interface.dtype(ds, 'Age') == np.dtype(int)
-        assert ds.interface.dtype(ds, 'Weight') == np.dtype(int)
-        assert ds.interface.dtype(ds, 'Height') == np.dtype('float64')
+        string_dtype = pd.StringDtype(na_value=np.nan) if PANDAS_GE_3_0_0 else np.dtype("object")
+        assert ds.interface.dtype(ds, "Gender") == string_dtype
+        assert ds.interface.dtype(ds, "Age") == np.dtype(int)
+        assert ds.interface.dtype(ds, "Weight") == np.dtype(int)
+        assert ds.interface.dtype(ds, "Height") == np.dtype("float64")
 
 
 class PandasInterfaceTests(BasePandasInterfaceTests):
-
-    datatype = 'dataframe'
+    datatype = "dataframe"
     data_type = pd.DataFrame
 
     __test__ = True
@@ -203,15 +216,17 @@ class PandasInterfaceTests(BasePandasInterfaceTests):
 
     @pytest.mark.xfail(reason="Breaks hvplot")
     def test_reindex(self):
-        ds = hv.Dataset(pd.DataFrame({'x': np.arange(10), 'y': np.arange(10), 'z': np.random.rand(10)}))
-        df = ds.interface.reindex(ds, ['x'])
-        assert df.index.names == ['x']
-        df = ds.interface.reindex(ds, ['y'])
-        assert df.index.names == ['y']
+        ds = hv.Dataset(
+            pd.DataFrame({"x": np.arange(10), "y": np.arange(10), "z": np.random.rand(10)})
+        )
+        df = ds.interface.reindex(ds, ["x"])
+        assert df.index.names == ["x"]
+        df = ds.interface.reindex(ds, ["y"])
+        assert df.index.names == ["y"]
 
 
 class PandasInterfaceMultiIndexTests(HeterogeneousColumnTests, InterfaceTests):
-    datatype = 'dataframe'
+    datatype = "dataframe"
     data_type = pd.DataFrame
 
     __test__ = True
@@ -241,40 +256,50 @@ class PandasInterfaceMultiIndexTests(HeterogeneousColumnTests, InterfaceTests):
 
     def test_index_aggregate(self):
         ds = hv.Dataset(self.df, kdims=["number", "color"])
-        expected = pd.DataFrame({'number': [1, 2], 'values': [0.5, 2.5], 'values_var': [0.25, 0.25]})
+        expected = pd.DataFrame(
+            {"number": [1, 2], "values": [0.5, 2.5], "values_var": [0.25, 0.25]}
+        )
         agg = ds.aggregate("number", function=np.mean, spreadfn=np.var)
         pd.testing.assert_frame_equal(agg.data, expected)
 
     def test_index_select_monotonic(self):
         ds = hv.Dataset(self.df, kdims=["number", "color"])
         selected = ds.select(number=1)
-        expected = pd.DataFrame({'color': ['red', 'blue'], 'values': [0, 1], 'number': [1, 1]}).set_index(['number', 'color'])
+        expected = pd.DataFrame(
+            {"color": ["red", "blue"], "values": [0, 1], "number": [1, 1]}
+        ).set_index(["number", "color"])
         assert isinstance(selected.data.index, pd.MultiIndex)
         pd.testing.assert_frame_equal(selected.data, expected)
 
     def test_index_select(self):
         ds = hv.Dataset(self.df, kdims=["number", "color"])
         selected = ds.select(number=1)
-        expected = pd.DataFrame({'color': ['red', 'blue'], 'values': [0, 1], 'number': [1, 1]}).set_index(['number', 'color'])
+        expected = pd.DataFrame(
+            {"color": ["red", "blue"], "values": [0, 1], "number": [1, 1]}
+        ).set_index(["number", "color"])
         assert isinstance(selected.data.index, pd.MultiIndex)
         pd.testing.assert_frame_equal(selected.data, expected)
 
     def test_index_select_all_indexes(self):
         ds = hv.Dataset(self.df, kdims=["number", "color"])
-        selected = ds.select(number=1, color='red')
+        selected = ds.select(number=1, color="red")
         assert selected == 0
 
     def test_index_select_all_indexes_lists(self):
         ds = hv.Dataset(self.df, kdims=["number", "color"])
-        selected = ds.select(number=[1], color=['red'])
-        expected = pd.DataFrame({'color': ['red'], 'values': [0], 'number': [1]}).set_index(['number', 'color'])
+        selected = ds.select(number=[1], color=["red"])
+        expected = pd.DataFrame({"color": ["red"], "values": [0], "number": [1]}).set_index(
+            ["number", "color"]
+        )
         assert isinstance(selected.data.index, pd.MultiIndex)
         pd.testing.assert_frame_equal(selected.data, expected)
 
     def test_index_select_all_indexes_slice_and_scalar(self):
         ds = hv.Dataset(self.df, kdims=["number", "color"])
-        selected = ds.select(number=(0, 1), color='red')
-        expected = pd.DataFrame({'color': ['red'], 'values': [0], 'number': [1]}).set_index(['number', 'color'])
+        selected = ds.select(number=(0, 1), color="red")
+        expected = pd.DataFrame({"color": ["red"], "values": [0], "number": [1]}).set_index(
+            ["number", "color"]
+        )
         assert isinstance(selected.data.index, pd.MultiIndex)
         pd.testing.assert_frame_equal(selected.data, expected)
 
@@ -342,7 +367,7 @@ class PandasInterfaceMultiIndexTests(HeterogeneousColumnTests, InterfaceTests):
         selected = ds.select(color="red")
         pd.testing.assert_frame_equal(selected.data, self.df.iloc[[0, 2], :])
 
-        selected = ds.select(number=1, color='red')
+        selected = ds.select(number=1, color="red")
         assert selected == 0
 
     def test_select_not_monotonic(self):
@@ -352,7 +377,9 @@ class PandasInterfaceMultiIndexTests(HeterogeneousColumnTests, InterfaceTests):
         ds = hv.Dataset(df, kdims=list(frame.columns))
 
         data = ds.select(color=slice(2, 3)).data
-        expected = pd.DataFrame({"number": [1, 2], "color": [2, 2], "values": [0, 2]}).set_index(['number', 'color'])
+        expected = pd.DataFrame({"number": [1, 2], "color": [2, 2], "values": [0, 2]}).set_index(
+            ["number", "color"]
+        )
         pd.testing.assert_frame_equal(data, expected)
 
     def test_select_not_in_index(self):
@@ -374,29 +401,29 @@ class PandasInterfaceMultiIndexTests(HeterogeneousColumnTests, InterfaceTests):
     def test_sample(self):
         ds = hv.Dataset(self.df, kdims=["number", "color"])
         sample = ds.interface.sample(ds, [1])
-        assert sample.to_dict() == {'values': {(1, 'blue'): 1}}
+        assert sample.to_dict() == {"values": {(1, "blue"): 1}}
 
         self.df.iloc[0, 0] = 1
         ds = hv.Dataset(self.df, kdims=["number", "color"])
         sample = ds.interface.sample(ds, [1])
-        assert sample.to_dict() == {'values': {(1, 'red'): 1, (1, 'blue'): 1}}
+        assert sample.to_dict() == {"values": {(1, "red"): 1, (1, "blue"): 1}}
 
     def test_values(self):
         ds = hv.Dataset(self.df, kdims=["number", "color"])
-        assert (ds.interface.values(ds, 'color') == ['red', 'blue', 'red', 'blue']).all()
-        assert (ds.interface.values(ds, 'number') == [1, 1, 2, 2]).all()
-        assert (ds.interface.values(ds, 'values') == [0, 1, 2, 3]).all()
+        assert (ds.interface.values(ds, "color") == ["red", "blue", "red", "blue"]).all()
+        assert (ds.interface.values(ds, "number") == [1, 1, 2, 2]).all()
+        assert (ds.interface.values(ds, "values") == [0, 1, 2, 3]).all()
 
     def test_reindex(self):
         ds = hv.Dataset(self.df, kdims=["number", "color"])
-        df = ds.interface.reindex(ds, ['number', 'color'])
-        assert df.index.names == ['number', 'color']
+        df = ds.interface.reindex(ds, ["number", "color"])
+        assert df.index.names == ["number", "color"]
 
-        df = ds.interface.reindex(ds, ['number'])
-        assert df.index.names == ['number']
+        df = ds.interface.reindex(ds, ["number"])
+        assert df.index.names == ["number"]
 
-        df = ds.interface.reindex(ds, ['values'])
-        assert df.index.names == ['values']
+        df = ds.interface.reindex(ds, ["values"])
+        assert df.index.names == ["values"]
 
     def test_groupby_one_index(self):
         ds = hv.Dataset(self.df, kdims=["number", "color"])
@@ -414,24 +441,26 @@ class PandasInterfaceMultiIndexTests(HeterogeneousColumnTests, InterfaceTests):
 
     def test_groupby_one_index_one_column(self):
         ds = hv.Dataset(self.df, kdims=["number", "color"])
-        grouped = ds.groupby('values')
+        grouped = ds.groupby("values")
         assert list(grouped.keys()) == [0, 1, 2, 3]
         for k, v in grouped.items():
             pd.testing.assert_frame_equal(v.data, ds.select(values=k).data)
 
     def test_dataset_dataset_ht_dtypes(self):
         ds = self.table
-        string_dtype = pd.StringDtype(na_value=np.nan) if PANDAS_GE_3_0_0 else np.dtype('object')
-        assert ds.interface.dtype(ds, 'Gender') == string_dtype
-        assert ds.interface.dtype(ds, 'Age') == np.dtype(int)
-        assert ds.interface.dtype(ds, 'Weight') == np.dtype(int)
-        assert ds.interface.dtype(ds, 'Height') == np.dtype('float64')
+        string_dtype = pd.StringDtype(na_value=np.nan) if PANDAS_GE_3_0_0 else np.dtype("object")
+        assert ds.interface.dtype(ds, "Gender") == string_dtype
+        assert ds.interface.dtype(ds, "Age") == np.dtype(int)
+        assert ds.interface.dtype(ds, "Weight") == np.dtype(int)
+        assert ds.interface.dtype(ds, "Height") == np.dtype("float64")
 
     def test_regression_no_auto_index(self):
         # https://github.com/holoviz/holoviews/issues/6298
 
         plot = hv.Scatter(self.df, kdims="number")
-        np.testing.assert_equal(plot.dimension_values('number'), self.df.index.get_level_values('number'))
+        np.testing.assert_equal(
+            plot.dimension_values("number"), self.df.index.get_level_values("number")
+        )
 
 
 def test_no_subclasse_interface_applies():

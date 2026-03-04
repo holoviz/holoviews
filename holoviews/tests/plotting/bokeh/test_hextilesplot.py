@@ -9,85 +9,93 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestHexTilesOperation(TestBokehPlot):
-
     def test_hex_tiles_count_aggregation(self):
         tiles = hv.HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)])
         binned = hex_binning(tiles, gridsize=3)
-        expected = hv.HexTiles([(0, 0, 1), (2, -1, 1), (-2, 1, 2)],
-                            kdims=[hv.Dimension('x', range=(-0.5, 0.5)),
-                                   hv.Dimension('y', range=(-0.5, 0.5))],
-                            vdims='Count')
+        expected = hv.HexTiles(
+            [(0, 0, 1), (2, -1, 1), (-2, 1, 2)],
+            kdims=[hv.Dimension("x", range=(-0.5, 0.5)), hv.Dimension("y", range=(-0.5, 0.5))],
+            vdims="Count",
+        )
         assert_element_equal(binned, expected)
-
 
     def test_hex_tiles_sum_value_aggregation(self):
-        tiles = hv.HexTiles([(0, 0, 1), (0.5, 0.5, 2), (-0.5, -0.5, 3), (-0.4, -0.4, 4)], vdims='z')
+        tiles = hv.HexTiles(
+            [(0, 0, 1), (0.5, 0.5, 2), (-0.5, -0.5, 3), (-0.4, -0.4, 4)], vdims="z"
+        )
         binned = hex_binning(tiles, gridsize=3, aggregator=np.sum)
-        expected = hv.HexTiles([(0, 0, 1), (2, -1, 2), (-2, 1, 7)],
-                            kdims=[hv.Dimension('x', range=(-0.5, 0.5)),
-                                   hv.Dimension('y', range=(-0.5, 0.5))],
-                            vdims='z')
+        expected = hv.HexTiles(
+            [(0, 0, 1), (2, -1, 2), (-2, 1, 7)],
+            kdims=[hv.Dimension("x", range=(-0.5, 0.5)), hv.Dimension("y", range=(-0.5, 0.5))],
+            vdims="z",
+        )
         assert_element_equal(binned, expected)
-
 
 
 class TestHexTilesPlot(TestBokehPlot):
-
     def test_hex_tiles_empty(self):
         tiles = hv.HexTiles([])
         plot = bokeh_renderer.get_plot(tiles)
-        assert plot.handles['source'].data == {'q': [], 'r': []}
+        assert plot.handles["source"].data == {"q": [], "r": []}
 
     def test_hex_tiles_only_nans(self):
         tiles = hv.HexTiles([(np.nan, 0), (1, np.nan)])
         plot = bokeh_renderer.get_plot(tiles)
-        assert plot.handles['source'].data == {'q': [], 'r': []}
+        assert plot.handles["source"].data == {"q": [], "r": []}
 
     def test_hex_tiles_zero_min_count(self):
         tiles = hv.HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).opts(min_count=0)
         plot = bokeh_renderer.get_plot(tiles)
-        cmapper = plot.handles['color_mapper']
+        cmapper = plot.handles["color_mapper"]
         assert cmapper.low == 0
         assert plot.state.background_fill_color == cmapper.palette[0]
 
     def test_hex_tiles_gridsize_tuple(self):
-        tiles = hv.HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).opts(gridsize=(5, 10))
+        tiles = hv.HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).opts(
+            gridsize=(5, 10)
+        )
         plot = bokeh_renderer.get_plot(tiles)
-        glyph = plot.handles['glyph']
+        glyph = plot.handles["glyph"]
         assert glyph.size == 0.066666666666666666
         assert glyph.aspect_scale == 0.5
 
     def test_hex_tiles_gridsize_tuple_flat_orientation(self):
-        tiles = hv.HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).opts(gridsize=(5, 10), orientation='flat')
+        tiles = hv.HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).opts(
+            gridsize=(5, 10), orientation="flat"
+        )
         plot = bokeh_renderer.get_plot(tiles)
-        glyph = plot.handles['glyph']
+        glyph = plot.handles["glyph"]
         assert glyph.size == 0.13333333333333333
         assert glyph.aspect_scale == 0.5
 
     def test_hex_tiles_scale(self):
-        tiles = hv.HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).opts(size_index=2, gridsize=3)
+        tiles = hv.HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).opts(
+            size_index=2, gridsize=3
+        )
         plot = bokeh_renderer.get_plot(tiles)
-        source = plot.handles['source']
-        assert_data_equal(source.data['scale'], np.array([0.45, 0.45, 0.9]))
+        source = plot.handles["source"]
+        assert_data_equal(source.data["scale"], np.array([0.45, 0.45, 0.9]))
 
     def test_hex_tiles_scale_all_equal(self):
         tiles = hv.HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).opts(size_index=2)
         plot = bokeh_renderer.get_plot(tiles)
-        source = plot.handles['source']
-        assert_data_equal(source.data['scale'], np.array([0.9, 0.9, 0.9, 0.9]))
+        source = plot.handles["source"]
+        assert_data_equal(source.data["scale"], np.array([0.9, 0.9, 0.9, 0.9]))
 
     def test_hex_tiles_hover_count(self):
-        tiles = hv.HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).opts(tools=['hover'])
+        tiles = hv.HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).opts(tools=["hover"])
         plot = bokeh_renderer.get_plot(tiles)
         dims, opts = plot._hover_opts(tiles)
-        assert dims == [hv.Dimension('Count')]
+        assert dims == [hv.Dimension("Count")]
         assert opts == {}
 
     def test_hex_tiles_hover_weighted(self):
-        tiles = hv.HexTiles([(0, 0, 0.1), (0.5, 0.5, 0.2), (-0.5, -0.5, 0.3)], vdims='z').opts(aggregator=np.mean)
+        tiles = hv.HexTiles([(0, 0, 0.1), (0.5, 0.5, 0.2), (-0.5, -0.5, 0.3)], vdims="z").opts(
+            aggregator=np.mean
+        )
         plot = bokeh_renderer.get_plot(tiles)
         dims, opts = plot._hover_opts(tiles)
-        assert dims == [hv.Dimension('z')]
+        assert dims == [hv.Dimension("z")]
         assert opts == {}
 
     ###########################
@@ -95,19 +103,19 @@ class TestHexTilesPlot(TestBokehPlot):
     ###########################
 
     def test_hex_tile_line_width_op(self):
-        hextiles = hv.HexTiles(np.random.randn(1000, 2)).opts(line_width='Count')
+        hextiles = hv.HexTiles(np.random.randn(1000, 2)).opts(line_width="Count")
         plot = bokeh_renderer.get_plot(hextiles)
-        glyph = plot.handles['glyph']
-        assert property_to_dict(glyph.line_width) == {'field': 'line_width'}
+        glyph = plot.handles["glyph"]
+        assert property_to_dict(glyph.line_width) == {"field": "line_width"}
 
     def test_hex_tile_alpha_op(self):
-        hextiles = hv.HexTiles(np.random.randn(1000, 2)).opts(alpha='Count')
+        hextiles = hv.HexTiles(np.random.randn(1000, 2)).opts(alpha="Count")
         plot = bokeh_renderer.get_plot(hextiles)
-        glyph = plot.handles['glyph']
-        assert property_to_dict(glyph.fill_alpha) == {'field': 'alpha'}
+        glyph = plot.handles["glyph"]
+        assert property_to_dict(glyph.fill_alpha) == {"field": "alpha"}
 
     def test_hex_tile_scale_op(self):
-        hextiles = hv.HexTiles(np.random.randn(1000, 2)).opts(scale='Count')
+        hextiles = hv.HexTiles(np.random.randn(1000, 2)).opts(scale="Count")
         plot = bokeh_renderer.get_plot(hextiles)
-        glyph = plot.handles['glyph']
-        assert property_to_dict(glyph.scale) == {'field': 'scale'}
+        glyph = plot.handles["glyph"]
+        assert property_to_dict(glyph.scale) == {"field": "scale"}

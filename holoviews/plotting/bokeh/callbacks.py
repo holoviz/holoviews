@@ -140,7 +140,7 @@ class Callback:
     extra_handles = []
 
     # Conditions when callback should be skipped
-    skip_events  = []
+    skip_events = []
     skip_changes = []
 
     # Callback will listen to events of the supplied type on the models
@@ -183,8 +183,7 @@ class Callback:
         self.plot = None
         self.source = None
         self.streams = []
-        Callback._callbacks = {k: cb for k, cb in Callback._callbacks.items()
-                               if cb is not self}
+        Callback._callbacks = {k: cb for k, cb in Callback._callbacks.items() if cb is not self}
 
     def reset(self):
         if self.handle_ids:
@@ -207,9 +206,9 @@ class Callback:
         """
         filtered_msg = {}
         for k, v in msg.items():
-            if isinstance(v, dict) and 'id' in v:
-                if v['id'] in ids:
-                    filtered_msg[k] = v['value']
+            if isinstance(v, dict) and "id" in v:
+                if v["id"] in ids:
+                    filtered_msg[k] = v["value"]
             else:
                 filtered_msg[k] = v
         return filtered_msg
@@ -224,17 +223,18 @@ class Callback:
             if not processed_msg:
                 continue
             stream.update(**processed_msg)
-            stream._metadata = {h: {'id': hid, 'events': self.on_events}
-                                for h, hid in handle_ids.items()}
+            stream._metadata = {
+                h: {"id": hid, "events": self.on_events} for h, hid in handle_ids.items()
+            }
             streams.append(stream)
 
         try:
             with set_curdoc(self.plot.document):
                 Stream.trigger(streams)
         except CallbackError as e:
-            if self.plot.root and self.plot.root.ref['id'] in state._handles:
-                handle, _ = state._handles[self.plot.root.ref['id']]
-                handle.update({'text/html': str(e)}, raw=True)
+            if self.plot.root and self.plot.root.ref["id"] in state._handles:
+                handle, _ = state._handles[self.plot.root.ref["id"]]
+                handle.update({"text/html": str(e)}, raw=True)
             else:
                 raise e
         except Exception as e:
@@ -259,7 +259,7 @@ class Callback:
         self.plot_handles = handles
 
         requested = {}
-        for h in self.models+self.extra_handles:
+        for h in self.models + self.extra_handles:
             if h in self.plot_handles:
                 requested[h] = handles[h]
         self.handle_ids.update(self._get_stream_handle_ids(requested))
@@ -273,9 +273,9 @@ class Callback:
         """
         stream_handle_ids = defaultdict(dict)
         for stream in self.streams:
-            for h in self.models+self.extra_handles:
+            for h in self.models + self.extra_handles:
                 if h in handles:
-                    handle_id = handles[h].ref['id']
+                    handle_id = handles[h].ref["id"]
                     stream_handle_ids[stream][h] = handle_id
         return stream_handle_ids
 
@@ -288,19 +288,19 @@ class Callback:
 
         """
         if not cb_obj:
-            raise AttributeError(f'Bokeh plot attribute {spec} could not be found')
+            raise AttributeError(f"Bokeh plot attribute {spec} could not be found")
         if model is None:
             model = cb_obj
-        spec = spec.split('.')
+        spec = spec.split(".")
         resolved = cb_obj
         for p in spec[1:]:
-            if p == 'attributes':
+            if p == "attributes":
                 continue
             if isinstance(resolved, dict):
                 resolved = resolved.get(p)
             else:
                 resolved = getattr(resolved, p, None)
-        return {'id': model.ref['id'], 'value': resolved}
+        return {"id": model.ref["id"], "value": resolved}
 
     def skip_event(self, event):
         return any(skip(event) for skip in self.skip_events)
@@ -309,13 +309,12 @@ class Callback:
         return any(skip(msg) for skip in self.skip_changes)
 
     def _set_busy(self, busy):
-        """Sets panel.state to busy if available.
-
-        """
-        if 'busy' not in state.param:
-            return # Check if busy state is supported
+        """Sets panel.state to busy if available."""
+        if "busy" not in state.param:
+            return  # Check if busy state is supported
 
         from panel.util import edit_readonly
+
         with edit_readonly(state):
             state.busy = busy
 
@@ -344,12 +343,12 @@ class Callback:
                 state.execute(self.process_on_event)
 
     async def process_on_event(self, timeout=None):
-        """Trigger callback change event and triggering corresponding streams.
-
-        """
+        """Trigger callback change event and triggering corresponding streams."""
         if self.debounce is not None:
             current = time.perf_counter()
-            while any((current-e[-1]) < (self.debounce/1000) for e in self._queue+self._event_queue):
+            while any(
+                (current - e[-1]) < (self.debounce / 1000) for e in self._queue + self._event_queue
+            ):
                 await asyncio.sleep(0.05)
                 current = time.perf_counter()
         else:
@@ -361,8 +360,9 @@ class Callback:
             return
 
         # Get unique event types in the queue
-        events = list(dict([(event.event_name, event)
-                            for event, dt in self._event_queue]).values())
+        events = list(
+            dict([(event.event_name, event) for event, dt in self._event_queue]).values()
+        )
         self._event_queue = []
 
         # Process event types
@@ -380,7 +380,9 @@ class Callback:
         # Give on_change time to process new events
         if self.debounce is not None:
             current = time.perf_counter()
-            while any((current-e[-1]) < (self.debounce/1000) for e in self._queue+self._event_queue):
+            while any(
+                (current - e[-1]) < (self.debounce / 1000) for e in self._queue + self._event_queue
+            ):
                 await asyncio.sleep(0.05)
                 current = time.perf_counter()
         else:
@@ -394,10 +396,10 @@ class Callback:
 
         msg = {}
         for attr, path in self.attributes.items():
-            attr_path = path.split('.')
-            if attr_path[0] == 'cb_obj':
+            attr_path = path.split(".")
+            if attr_path[0] == "cb_obj":
                 obj_handle = self.models[0]
-                path = '.'.join(self.models[:1]+attr_path[1:])
+                path = ".".join(self.models[:1] + attr_path[1:])
             else:
                 obj_handle = attr_path[0]
             cb_obj = self.plot_handles.get(obj_handle)
@@ -438,15 +440,13 @@ class Callback:
             self.plot.document.add_next_tick_callback(partial(self.on_change, attr, old, new))
 
     def set_callback(self, handle):
-        """Set up on_change events for bokeh server interactions.
-
-        """
+        """Set up on_change events for bokeh server interactions."""
         if self.on_events:
             for event in self.on_events:
                 handle.on_event(event, self._schedule_event)
         if self.on_changes:
             for change in self.on_changes:
-                if change in ['patching', 'streaming']:
+                if change in ["patching", "streaming"]:
                     # Patch and stream events do not need handling on server
                     continue
                 handle.on_change(change, self._schedule_change)
@@ -454,12 +454,10 @@ class Callback:
     def initialize(self, plot_id=None):
         handles = self._init_plot_handles()
         hash_handles, cb_handles = [], []
-        for handle_name in self.models+self.extra_handles:
+        for handle_name in self.models + self.extra_handles:
             if handle_name not in handles:
-                warn_args = (handle_name, type(self.plot).__name__,
-                             type(self).__name__)
-                print('{} handle not found on {}, cannot '
-                      'attach {} callback'.format(*warn_args))
+                warn_args = (handle_name, type(self.plot).__name__, type(self).__name__)
+                print("{} handle not found on {}, cannot attach {} callback".format(*warn_args))
                 continue
             handle = handles[handle_name]
             if handle_name not in self.extra_handles:
@@ -472,7 +470,7 @@ class Callback:
         if cb_hash in self._callbacks:
             # Merge callbacks if another callback has already been attached
             cb = self._callbacks[cb_hash]
-            cb.streams = list(set(cb.streams+self.streams))
+            cb.streams = list(set(cb.streams + self.streams))
             for k, v in self.handle_ids.items():
                 cb.handle_ids[k].update(v)
             self.cleanup()
@@ -484,18 +482,14 @@ class Callback:
 
 
 class PointerXYCallback(Callback):
-    """Returns the mouse x/y-position on mousemove event.
+    """Returns the mouse x/y-position on mousemove event."""
 
-    """
-
-    attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y'}
-    models = ['plot']
-    on_events = ['mousemove']
+    attributes = {"x": "cb_obj.x", "y": "cb_obj.y"}
+    models = ["plot"]
+    on_events = ["mousemove"]
 
     def _process_out_of_bounds(self, value, start, end):
-        """Clips out of bounds values
-
-        """
+        """Clips out of bounds values"""
         if isinstance(value, np.datetime64):
             v = dt64_to_dt(value)
             if isinstance(start, (int, float)):
@@ -518,80 +512,75 @@ class PointerXYCallback(Callback):
         return value
 
     def _process_msg(self, msg):
-        x_range = self.plot.handles.get('x_range')
-        y_range = self.plot.handles.get('y_range')
-        xaxis = self.plot.handles.get('xaxis')
-        yaxis = self.plot.handles.get('yaxis')
+        x_range = self.plot.handles.get("x_range")
+        y_range = self.plot.handles.get("y_range")
+        xaxis = self.plot.handles.get("xaxis")
+        yaxis = self.plot.handles.get("yaxis")
 
-        if 'x' in msg and isinstance(xaxis, DatetimeAxis):
-            msg['x'] = convert_timestamp(msg['x'])
-        if 'y' in msg and isinstance(yaxis, DatetimeAxis):
-            msg['y'] = convert_timestamp(msg['y'])
+        if "x" in msg and isinstance(xaxis, DatetimeAxis):
+            msg["x"] = convert_timestamp(msg["x"])
+        if "y" in msg and isinstance(yaxis, DatetimeAxis):
+            msg["y"] = convert_timestamp(msg["y"])
 
-        if isinstance(x_range, FactorRange) and isinstance(msg.get('x'), (int, float)):
-            with suppress(IndexError): # See: https://github.com/holoviz/holoviews/pull/6438
-                msg['x'] = x_range.factors[int(msg['x'])]
-        elif 'x' in msg and isinstance(x_range, (Range1d, DataRange1d)):
+        if isinstance(x_range, FactorRange) and isinstance(msg.get("x"), (int, float)):
+            with suppress(IndexError):  # See: https://github.com/holoviz/holoviews/pull/6438
+                msg["x"] = x_range.factors[int(msg["x"])]
+        elif "x" in msg and isinstance(x_range, (Range1d, DataRange1d)):
             xstart, xend = x_range.start, x_range.end
             if xstart > xend:
                 xstart, xend = xend, xstart
-            x = self._process_out_of_bounds(msg['x'], xstart, xend)
+            x = self._process_out_of_bounds(msg["x"], xstart, xend)
             if x is None:
                 msg = {}
             else:
-                msg['x'] = x
+                msg["x"] = x
 
-        if isinstance(y_range, FactorRange) and isinstance(msg.get('y'), (int, float)):
+        if isinstance(y_range, FactorRange) and isinstance(msg.get("y"), (int, float)):
             with suppress(IndexError):
-                msg['y'] = y_range.factors[int(msg['y'])]
-        elif 'y' in msg and isinstance(y_range, (Range1d, DataRange1d)):
+                msg["y"] = y_range.factors[int(msg["y"])]
+        elif "y" in msg and isinstance(y_range, (Range1d, DataRange1d)):
             ystart, yend = y_range.start, y_range.end
             if ystart > yend:
                 ystart, yend = yend, ystart
-            y = self._process_out_of_bounds(msg['y'], ystart, yend)
+            y = self._process_out_of_bounds(msg["y"], ystart, yend)
             if y is None:
                 msg = {}
             else:
-                msg['y'] = y
+                msg["y"] = y
 
         return self._transform(msg)
 
 
 class PointerXCallback(PointerXYCallback):
-    """Returns the mouse x-position on mousemove event.
+    """Returns the mouse x-position on mousemove event."""
 
-    """
-
-    attributes = {'x': 'cb_obj.x'}
+    attributes = {"x": "cb_obj.x"}
 
 
 class PointerYCallback(PointerXYCallback):
-    """Returns the mouse x/y-position on mousemove event.
+    """Returns the mouse x/y-position on mousemove event."""
 
-    """
-
-    attributes = {'y': 'cb_obj.y'}
+    attributes = {"y": "cb_obj.y"}
 
 
 class DrawCallback(PointerXYCallback):
-    on_events = ['pan', 'panstart', 'panend']
-    models = ['plot']
-    attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y', 'event': 'cb_obj.event_name'}
+    on_events = ["pan", "panstart", "panend"]
+    models = ["plot"]
+    attributes = {"x": "cb_obj.x", "y": "cb_obj.y", "event": "cb_obj.event_name"}
 
     def __init__(self, *args, **kwargs):
         self.stroke_count = 0
         super().__init__(*args, **kwargs)
 
     def _process_msg(self, msg):
-        event = msg.pop('event')
-        if event == 'panend':
+        event = msg.pop("event")
+        if event == "panend":
             self.stroke_count += 1
         return self._transform(dict(msg, stroke_count=self.stroke_count))
 
 
 class PopupMixin:
-
-    geom_type = 'any'
+    geom_type = "any"
 
     def initialize(self, plot_id=None):
         super().initialize(plot_id=plot_id)
@@ -603,12 +592,15 @@ class PopupMixin:
         self._skipped_partial_event = False
         self._existing_popup = None
         stream = self.streams[0]
-        if not getattr(stream, 'popup', None):
+        if not getattr(stream, "popup", None):
             return
         elif not BOKEH_GE_3_4_0:
             raise VersionError("Popup requires Bokeh >= 3.4")
 
-        close_button = Button(label="", stylesheets=[r"""
+        close_button = Button(
+            label="",
+            stylesheets=[
+                r"""
         :host(.bk-Button) {
             width: 100%;
             height: 100%;
@@ -630,8 +622,10 @@ class PopupMixin:
         .bk-btn::after {
             content: '\2715';
         }
-        """],
-        css_classes=["popup-close-btn"])
+        """
+            ],
+            css_classes=["popup-close-btn"],
+        )
         self._popup_position = stream.popup_position
         self._panel = BokehPanel(
             position=XY(x=np.nan, y=np.nan),
@@ -640,17 +634,21 @@ class PopupMixin:
             visible=False,
             styles={"zIndex": "1000"},
         )
-        close_button.js_on_click(CustomJS(args=dict(panel=self._panel), code="panel.visible = false"))
+        close_button.js_on_click(
+            CustomJS(args=dict(panel=self._panel), code="panel.visible = false")
+        )
 
         self.plot.state.elements.append(self._panel)
         self._watch_position()
 
     def _watch_position(self):
         geom_type = self.geom_type
-        self.plot.state.on_event('selectiongeometry', self._update_selection_event)
-        self.plot.state.js_on_event('selectiongeometry', CustomJS(
-            args=dict(panel=self._panel, popup_position=self._popup_position),
-            code=f"""
+        self.plot.state.on_event("selectiongeometry", self._update_selection_event)
+        self.plot.state.js_on_event(
+            "selectiongeometry",
+            CustomJS(
+                args=dict(panel=self._panel, popup_position=self._popup_position),
+                code=f"""
             export default ({{panel, popup_position}}, cb_obj, _) => {{
                 const el = panel.elements[1];
                 if ((el && !el.visible) || !cb_obj.final || ({geom_type!r} !== 'any' && cb_obj.geometry.type !== {geom_type!r})) {{
@@ -700,33 +698,38 @@ class PopupMixin:
                     panel.position.setv(pos);
                 }}
             }}""",
-        ))
+            ),
+        )
 
     def _get_position(self, event):
-        if self.geom_type not in ('any', event.geometry['type']):
+        if self.geom_type not in ("any", event.geometry["type"]):
             return
-        elif event.geometry['type'] == 'point':
-            return dict(x=event.geometry['x'], y=event.geometry['y'])
-        elif event.geometry['type'] == 'rect':
-            return dict(x=event.geometry['x1'], y=event.geometry['y1'])
-        elif event.geometry['type'] == 'poly':
-            return dict(x=np.max(event.geometry['x']), y=np.max(event.geometry['y']))
+        elif event.geometry["type"] == "point":
+            return dict(x=event.geometry["x"], y=event.geometry["y"])
+        elif event.geometry["type"] == "rect":
+            return dict(x=event.geometry["x1"], y=event.geometry["y1"])
+        elif event.geometry["type"] == "poly":
+            return dict(x=np.max(event.geometry["x"]), y=np.max(event.geometry["y"]))
 
     def _update_selection_event(self, event):
-        if (((prev:= self._selection_event) and prev.final and not self._processed_event) or
-            self.geom_type not in (event.geometry["type"], "any")):
+        if (
+            (prev := self._selection_event) and prev.final and not self._processed_event
+        ) or self.geom_type not in (event.geometry["type"], "any"):
             return
         self._selection_event = event
         self._processed_event = not event.final
         if event.final and self._skipped_partial_event:
-            if self.plot.document.session_context and self.plot.document.session_context.server_context:
+            if (
+                self.plot.document.session_context
+                and self.plot.document.session_context.server_context
+            ):
                 self.plot.document.add_next_tick_callback(self._process_selection_partial_event)
             else:
                 state.execute(self._process_selection_partial_event)
 
     async def on_msg(self, msg):
         await super().on_msg(msg)
-        if hasattr(self, '_panel'):
+        if hasattr(self, "_panel"):
             await self._process_selection_event()
 
     async def _process_selection_event(self):
@@ -792,23 +795,26 @@ class PopupMixin:
             if position:
                 self._panel.position = XY(**position)
                 if self.plot.comm:  # update Jupyter Notebooks
-                    push_on_root(self.plot.root.ref['id'])
+                    push_on_root(self.plot.root.ref["id"])
             return
 
         model = popup_pane.get_root(self.plot.document, self.plot.comm)
-        model.js_on_change('visible', CustomJS(
-            args=dict(panel=self._panel),
-            code="""
+        model.js_on_change(
+            "visible",
+            CustomJS(
+                args=dict(panel=self._panel),
+                code="""
             export default ({panel}, event, _) => {
               if (!event.visible) {
                 panel.visible = false;
               }
             }""",
-        ))
+            ),
+        )
         # the first element is the close button
         self._panel.elements = [self._panel.elements[0], model]
         if self.plot.comm:  # update Jupyter Notebook
-            push_on_root(self.plot.root.ref['id'])
+            push_on_root(self.plot.root.ref["id"])
         self._existing_popup = popup_pane
 
     async def _process_selection_partial_event(self):
@@ -817,18 +823,14 @@ class PopupMixin:
 
 
 class TapCallback(PopupMixin, PointerXYCallback):
-    """Returns the mouse x/y-position on tap event.
+    """Returns the mouse x/y-position on tap event."""
 
-    """
+    geom_type = "point"
 
-    geom_type = 'point'
-
-    on_events = ['tap', 'doubletap']
+    on_events = ["tap", "doubletap"]
 
     def _process_out_of_bounds(self, value, start, end):
-        """Sets out of bounds values to None
-
-        """
+        """Sets out of bounds values to None"""
         if isinstance(value, np.datetime64):
             v = dt64_to_dt(value)
             if isinstance(start, (int, float)):
@@ -849,22 +851,20 @@ class TapCallback(PopupMixin, PointerXYCallback):
 
 
 class MultiAxisTapCallback(TapCallback):
-    """Returns the mouse x/y-positions on tap event.
+    """Returns the mouse x/y-positions on tap event."""
 
-    """
-
-    attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y'}
+    attributes = {"x": "cb_obj.x", "y": "cb_obj.y"}
 
     def _process_msg(self, msg):
-        x_range = self.plot.handles.get('x_range')
-        y_range = self.plot.handles.get('y_range')
-        extra_x = list(self.plot.handles.get('extra_x_ranges', {}).values())
-        extra_y = list(self.plot.handles.get('extra_y_ranges', {}).values())
-        xaxis = self.plot.handles.get('xaxis')
-        yaxis = self.plot.handles.get('yaxis')
+        x_range = self.plot.handles.get("x_range")
+        y_range = self.plot.handles.get("y_range")
+        extra_x = list(self.plot.handles.get("extra_x_ranges", {}).values())
+        extra_y = list(self.plot.handles.get("extra_y_ranges", {}).values())
+        xaxis = self.plot.handles.get("xaxis")
+        yaxis = self.plot.handles.get("yaxis")
 
         # Compute x/y position relative to first axis
-        x, y = msg['x'], msg['y']
+        x, y = msg["x"], msg["y"]
         x0, x1 = x_range.start, x_range.end
         y0, y1 = y_range.start, y_range.end
         if isinstance(xaxis, DatetimeAxis):
@@ -881,52 +881,44 @@ class MultiAxisTapCallback(TapCallback):
                 y1 = convert_timestamp(y1)
         xs, ys = {x_range.name: x}, {y_range.name: y}
         xspan, yspan = x1 - x0, y1 - y0
-        xfactor, yfactor = (x-x0) / xspan, (y-y0) / yspan
+        xfactor, yfactor = (x - x0) / xspan, (y - y0) / yspan
 
         # Use computed factors to compute x/y position on other axes
         for values, factor, ranges, axis in (
             (xs, xfactor, extra_x, xaxis),
-            (ys, yfactor, extra_y, yaxis)
+            (ys, yfactor, extra_y, yaxis),
         ):
             for rng in ranges:
-                value = rng.start + (rng.end-rng.start) * factor
+                value = rng.start + (rng.end - rng.start) * factor
                 if isinstance(axis, DatetimeAxis) and isinstance(value, (float, int)):
                     value = convert_timestamp(value)
                 values[rng.name] = value
 
-        return {'xs': xs, 'ys': ys}
+        return {"xs": xs, "ys": ys}
 
 
 class SingleTapCallback(TapCallback):
-    """Returns the mouse x/y-position on tap event.
+    """Returns the mouse x/y-position on tap event."""
 
-    """
-
-    on_events = ['tap']
+    on_events = ["tap"]
 
 
 class PressUpCallback(TapCallback):
-    """Returns the mouse x/y-position of a pressup mouse event.
+    """Returns the mouse x/y-position of a pressup mouse event."""
 
-    """
-
-    on_events = ['pressup']
+    on_events = ["pressup"]
 
 
 class PanEndCallback(TapCallback):
-    """Returns the mouse x/y-position of a pan end event.
+    """Returns the mouse x/y-position of a pan end event."""
 
-    """
-
-    on_events = ['panend']
+    on_events = ["panend"]
 
 
 class DoubleTapCallback(TapCallback):
-    """Returns the mouse x/y-position on doubletap event.
+    """Returns the mouse x/y-position on doubletap event."""
 
-    """
-
-    on_events = ['doubletap']
+    on_events = ["doubletap"]
 
 
 class MouseEnterCallback(PointerXYCallback):
@@ -935,7 +927,7 @@ class MouseEnterCallback(PointerXYCallback):
 
     """
 
-    on_events = ['mouseenter']
+    on_events = ["mouseenter"]
 
 
 class MouseLeaveCallback(PointerXYCallback):
@@ -944,27 +936,25 @@ class MouseLeaveCallback(PointerXYCallback):
 
     """
 
-    on_events = ['mouseleave']
+    on_events = ["mouseleave"]
 
 
 class RangeXYCallback(Callback):
-    """Returns the x/y-axis ranges of a plot.
-
-    """
+    """Returns the x/y-axis ranges of a plot."""
 
     debounce = 100
 
-    on_events = ['rangesupdate']
+    on_events = ["rangesupdate"]
 
-    models = ['plot']
+    models = ["plot"]
 
-    extra_handles = ['x_range', 'y_range']
+    extra_handles = ["x_range", "y_range"]
 
     attributes = {
-        'x0': 'cb_obj.x0',
-        'y0': 'cb_obj.y0',
-        'x1': 'cb_obj.x1',
-        'y1': 'cb_obj.y1',
+        "x0": "cb_obj.x0",
+        "y0": "cb_obj.y0",
+        "x1": "cb_obj.x1",
+        "y1": "cb_obj.y1",
     }
 
     def initialize(self, plot_id=None):
@@ -974,64 +964,57 @@ class RangeXYCallback(Callback):
             stream.update(**msg)
 
     def _process_msg(self, msg):
-        if self.plot.state.x_range is not self.plot.handles['x_range']:
-            x_range = self.plot.handles['x_range']
-            msg['x0'], msg['x1'] = x_range.start, x_range.end
-        if self.plot.state.y_range is not self.plot.handles['y_range']:
-            y_range = self.plot.handles['y_range']
-            msg['y0'], msg['y1'] = y_range.start, y_range.end
+        if self.plot.state.x_range is not self.plot.handles["x_range"]:
+            x_range = self.plot.handles["x_range"]
+            msg["x0"], msg["x1"] = x_range.start, x_range.end
+        if self.plot.state.y_range is not self.plot.handles["y_range"]:
+            y_range = self.plot.handles["y_range"]
+            msg["y0"], msg["y1"] = y_range.start, y_range.end
         data = {}
-        if 'x0' in msg and 'x1' in msg:
-            x0, x1 = msg['x0'], msg['x1']
-            if isinstance(self.plot.handles.get('xaxis'), DatetimeAxis):
+        if "x0" in msg and "x1" in msg:
+            x0, x1 = msg["x0"], msg["x1"]
+            if isinstance(self.plot.handles.get("xaxis"), DatetimeAxis):
                 if not isinstance(x0, datetime_types):
                     x0 = convert_timestamp(x0)
                 if not isinstance(x1, datetime_types):
                     x1 = convert_timestamp(x1)
             if x0 > x1:
                 x0, x1 = x1, x0
-            data['x_range'] = (x0, x1)
-        if 'y0' in msg and 'y1' in msg:
-            y0, y1 = msg['y0'], msg['y1']
-            if isinstance(self.plot.handles.get('yaxis'), DatetimeAxis):
+            data["x_range"] = (x0, x1)
+        if "y0" in msg and "y1" in msg:
+            y0, y1 = msg["y0"], msg["y1"]
+            if isinstance(self.plot.handles.get("yaxis"), DatetimeAxis):
                 if not isinstance(y0, datetime_types):
                     y0 = convert_timestamp(y0)
                 if not isinstance(y1, datetime_types):
                     y1 = convert_timestamp(y1)
             if y0 > y1:
                 y0, y1 = y1, y0
-            data['y_range'] = (y0, y1)
+            data["y_range"] = (y0, y1)
         return self._transform(data)
 
 
 class RangeXCallback(RangeXYCallback):
-    """Returns the x-axis range of a plot.
+    """Returns the x-axis range of a plot."""
 
-    """
+    on_events = ["rangesupdate"]
 
-    on_events = ['rangesupdate']
-
-    models = ['plot']
+    models = ["plot"]
 
     attributes = {
-        'x0': 'cb_obj.x0',
-        'x1': 'cb_obj.x1',
+        "x0": "cb_obj.x0",
+        "x1": "cb_obj.x1",
     }
 
 
 class RangeYCallback(RangeXYCallback):
-    """Returns the y-axis range of a plot.
+    """Returns the y-axis range of a plot."""
 
-    """
+    on_events = ["rangesupdate"]
 
-    on_events = ['rangesupdate']
+    models = ["plot"]
 
-    models = ['plot']
-
-    attributes = {
-        'y0': 'cb_obj.y0',
-        'y1': 'cb_obj.y1'
-    }
+    attributes = {"y0": "cb_obj.y0", "y1": "cb_obj.y1"}
 
 
 class PlotSizeCallback(Callback):
@@ -1040,65 +1023,61 @@ class PlotSizeCallback(Callback):
 
     """
 
-    models = ['plot']
-    attributes = {'width': 'cb_obj.inner_width',
-                  'height': 'cb_obj.inner_height'}
-    on_changes = ['inner_width', 'inner_height']
+    models = ["plot"]
+    attributes = {"width": "cb_obj.inner_width", "height": "cb_obj.inner_height"}
+    on_changes = ["inner_width", "inner_height"]
 
     debounce = 100
 
     def _process_msg(self, msg):
-        if msg.get('width') and msg.get('height'):
+        if msg.get("width") and msg.get("height"):
             return self._transform(msg)
         else:
             return {}
 
 
 class SelectModeCallback(Callback):
-
-    attributes = {'box_mode': 'box_select.mode',
-                  'lasso_mode': 'lasso_select.mode'}
-    models = ['box_select', 'lasso_select']
-    on_changes = ['mode']
+    attributes = {"box_mode": "box_select.mode", "lasso_mode": "lasso_select.mode"}
+    models = ["box_select", "lasso_select"]
+    on_changes = ["mode"]
 
     def _process_msg(self, msg):
         stream = self.streams[0]
-        if 'box_mode' in msg:
-            mode = msg.pop('box_mode')
+        if "box_mode" in msg:
+            mode = msg.pop("box_mode")
             if mode != stream.mode:
-                msg['mode'] = mode
-        if 'lasso_mode' in msg:
-            mode = msg.pop('lasso_mode')
+                msg["mode"] = mode
+        if "lasso_mode" in msg:
+            mode = msg.pop("lasso_mode")
             if mode != stream.mode:
-                msg['mode'] = mode
+                msg["mode"] = mode
         return msg
 
 
 class BoundsCallback(PopupMixin, Callback):
-    """Returns the bounds of a box_select tool.
+    """Returns the bounds of a box_select tool."""
 
-    """
+    attributes = {
+        "x0": "cb_obj.geometry.x0",
+        "x1": "cb_obj.geometry.x1",
+        "y0": "cb_obj.geometry.y0",
+        "y1": "cb_obj.geometry.y1",
+    }
+    geom_type = "rect"
+    models = ["plot"]
+    on_events = ["selectiongeometry"]
 
-    attributes = {'x0': 'cb_obj.geometry.x0',
-                  'x1': 'cb_obj.geometry.x1',
-                  'y0': 'cb_obj.geometry.y0',
-                  'y1': 'cb_obj.geometry.y1'}
-    geom_type = 'rect'
-    models = ['plot']
-    on_events = ['selectiongeometry']
-
-    skip_events = [lambda event: event.geometry['type'] != 'rect',
-                   lambda event: not event.final]
+    skip_events = [lambda event: event.geometry["type"] != "rect", lambda event: not event.final]
 
     def _process_msg(self, msg):
-        if all(c in msg for c in ['x0', 'y0', 'x1', 'y1']):
-            if isinstance(self.plot.handles.get('xaxis'), DatetimeAxis):
-                msg['x0'] = convert_timestamp(msg['x0'])
-                msg['x1'] = convert_timestamp(msg['x1'])
-            if isinstance(self.plot.handles.get('yaxis'), DatetimeAxis):
-                msg['y0'] = convert_timestamp(msg['y0'])
-                msg['y1'] = convert_timestamp(msg['y1'])
-            msg = {'bounds': (msg['x0'], msg['y0'], msg['x1'], msg['y1'])}
+        if all(c in msg for c in ["x0", "y0", "x1", "y1"]):
+            if isinstance(self.plot.handles.get("xaxis"), DatetimeAxis):
+                msg["x0"] = convert_timestamp(msg["x0"])
+                msg["x1"] = convert_timestamp(msg["x1"])
+            if isinstance(self.plot.handles.get("yaxis"), DatetimeAxis):
+                msg["y0"] = convert_timestamp(msg["y0"])
+                msg["y1"] = convert_timestamp(msg["y1"])
+            msg = {"bounds": (msg["x0"], msg["y0"], msg["x1"], msg["y1"])}
             return self._transform(msg)
         else:
             return {}
@@ -1112,103 +1091,95 @@ class SelectionXYCallback(BoundsCallback):
 
     def _process_msg(self, msg):
         msg = super()._process_msg(msg)
-        if 'bounds' not in msg:
+        if "bounds" not in msg:
             return msg
         el = self.plot.current_frame
-        x0, y0, x1, y1 = msg['bounds']
-        x_range = self.plot.handles['x_range']
+        x0, y0, x1, y1 = msg["bounds"]
+        x_range = self.plot.handles["x_range"]
         if isinstance(x_range, FactorRange):
             x0, x1 = round(x0), round(x1)
-            xfactors = x_range.factors[x0: x1]
+            xfactors = x_range.factors[x0:x1]
             if x_range.tags and x_range.tags[0]:
                 xdim = el.get_dimension(x_range.tags[0][0][0])
-                if xdim and hasattr(el, 'interface'):
+                if xdim and hasattr(el, "interface"):
                     dtype = el.interface.dtype(el, xdim)
                     try:
                         xfactors = list(np.array(xfactors).astype(dtype))
                     except Exception:
                         pass
-            msg['x_selection'] = xfactors
+            msg["x_selection"] = xfactors
         else:
-            msg['x_selection'] = (x0, x1)
-        y_range = self.plot.handles['y_range']
+            msg["x_selection"] = (x0, x1)
+        y_range = self.plot.handles["y_range"]
         if isinstance(y_range, FactorRange):
             y0, y1 = round(y0), round(y1)
-            yfactors = y_range.factors[y0: y1]
+            yfactors = y_range.factors[y0:y1]
             if y_range.tags and y_range.tags[0]:
                 ydim = el.get_dimension(y_range.tags[0][0][0])
-                if ydim and hasattr(el, 'interface'):
+                if ydim and hasattr(el, "interface"):
                     dtype = el.interface.dtype(el, ydim)
                     try:
                         yfactors = list(np.array(yfactors).astype(dtype))
                     except Exception:
                         pass
-            msg['y_selection'] = yfactors
+            msg["y_selection"] = yfactors
         else:
-            msg['y_selection'] = (y0, y1)
+            msg["y_selection"] = (y0, y1)
         return msg
 
 
 class BoundsXCallback(Callback):
-    """Returns the bounds of a xbox_select tool.
+    """Returns the bounds of a xbox_select tool."""
 
-    """
+    attributes = {"x0": "cb_obj.geometry.x0", "x1": "cb_obj.geometry.x1"}
+    models = ["plot"]
+    on_events = ["selectiongeometry"]
 
-    attributes = {'x0': 'cb_obj.geometry.x0', 'x1': 'cb_obj.geometry.x1'}
-    models = ['plot']
-    on_events = ['selectiongeometry']
-
-    skip_events = [lambda event: event.geometry['type'] != 'rect',
-                   lambda event: not event.final]
+    skip_events = [lambda event: event.geometry["type"] != "rect", lambda event: not event.final]
 
     def _process_msg(self, msg):
-        if all(c in msg for c in ['x0', 'x1']):
-            if isinstance(self.plot.handles.get('xaxis'), DatetimeAxis):
-                msg['x0'] = convert_timestamp(msg['x0'])
-                msg['x1'] = convert_timestamp(msg['x1'])
-            msg = {'boundsx': (msg['x0'], msg['x1'])}
+        if all(c in msg for c in ["x0", "x1"]):
+            if isinstance(self.plot.handles.get("xaxis"), DatetimeAxis):
+                msg["x0"] = convert_timestamp(msg["x0"])
+                msg["x1"] = convert_timestamp(msg["x1"])
+            msg = {"boundsx": (msg["x0"], msg["x1"])}
             return self._transform(msg)
         else:
             return {}
 
 
 class BoundsYCallback(Callback):
-    """Returns the bounds of a ybox_select tool.
+    """Returns the bounds of a ybox_select tool."""
 
-    """
+    attributes = {"y0": "cb_obj.geometry.y0", "y1": "cb_obj.geometry.y1"}
+    models = ["plot"]
+    on_events = ["selectiongeometry"]
 
-    attributes = {'y0': 'cb_obj.geometry.y0', 'y1': 'cb_obj.geometry.y1'}
-    models = ['plot']
-    on_events = ['selectiongeometry']
-
-    skip_events = [lambda event: event.geometry['type'] != 'rect',
-                   lambda event: not event.final]
+    skip_events = [lambda event: event.geometry["type"] != "rect", lambda event: not event.final]
 
     def _process_msg(self, msg):
-        if all(c in msg for c in ['y0', 'y1']):
-            if isinstance(self.plot.handles.get('yaxis'), DatetimeAxis):
-                msg['y0'] = convert_timestamp(msg['y0'])
-                msg['y1'] = convert_timestamp(msg['y1'])
-            msg = {'boundsy': (msg['y0'], msg['y1'])}
+        if all(c in msg for c in ["y0", "y1"]):
+            if isinstance(self.plot.handles.get("yaxis"), DatetimeAxis):
+                msg["y0"] = convert_timestamp(msg["y0"])
+                msg["y1"] = convert_timestamp(msg["y1"])
+            msg = {"boundsy": (msg["y0"], msg["y1"])}
             return self._transform(msg)
         else:
             return {}
 
 
 class LassoCallback(PopupMixin, Callback):
+    attributes = {"xs": "cb_obj.geometry.x", "ys": "cb_obj.geometry.y"}
+    geom_type = "poly"
+    models = ["plot"]
+    on_events = ["selectiongeometry"]
 
-    attributes = {'xs': 'cb_obj.geometry.x', 'ys': 'cb_obj.geometry.y'}
-    geom_type = 'poly'
-    models = ['plot']
-    on_events = ['selectiongeometry']
-
-    skip_events = [lambda event: event.geometry['type'] != 'poly',
-                   lambda event: not event.final]
+    skip_events = [lambda event: event.geometry["type"] != "poly", lambda event: not event.final]
 
     def _process_msg(self, msg):
-        if not all(c in msg for c in ('xs', 'ys')):
+        if not all(c in msg for c in ("xs", "ys")):
             return {}
-        xs, ys = msg['xs'], msg['ys']
+        xs, ys = msg["xs"], msg["ys"]
         if isinstance(xs, dict):
             xs = ((int(i), x) for i, x in xs.items())
             xs = [x for _, x in sorted(xs)]
@@ -1217,27 +1188,33 @@ class LassoCallback(PopupMixin, Callback):
             ys = [y for _, y in sorted(ys)]
         if xs is None or ys is None:
             return {}
-        return {'geometry': np.column_stack([xs, ys])}
+        return {"geometry": np.column_stack([xs, ys])}
 
 
 class Selection1DCallback(PopupMixin, Callback):
-    """Returns the current selection on a ColumnDataSource.
+    """Returns the current selection on a ColumnDataSource."""
 
-    """
-
-    attributes = {'index': 'cb_obj.indices'}
-    models = ['selected']
-    on_changes = ['indices']
+    attributes = {"index": "cb_obj.indices"}
+    models = ["selected"]
+    on_changes = ["indices"]
 
     def _watch_position(self):
-        self.plot.state.on_event('selectiongeometry', self._update_selection_event)
-        source = self.plot.handles['source']
-        renderer = self.plot.handles['glyph_renderer']
-        selected = self.plot.handles['selected']
+        self.plot.state.on_event("selectiongeometry", self._update_selection_event)
+        source = self.plot.handles["source"]
+        renderer = self.plot.handles["glyph_renderer"]
+        selected = self.plot.handles["selected"]
 
-        self.plot.state.js_on_event('selectiongeometry', CustomJS(
-            args=dict(panel=self._panel, renderer=renderer, source=source, selected=selected, popup_position=self._popup_position),
-            code="""
+        self.plot.state.js_on_event(
+            "selectiongeometry",
+            CustomJS(
+                args=dict(
+                    panel=self._panel,
+                    renderer=renderer,
+                    source=source,
+                    selected=selected,
+                    popup_position=self._popup_position,
+                ),
+                code="""
             export default ({panel, renderer, source, selected, popup_position}, cb_obj, _) => {
                 panel.visible = false;  // Hide the popup panel so it doesn't show in previous location
                 const el = panel.elements[1];
@@ -1334,7 +1311,8 @@ class Selection1DCallback(PopupMixin, Callback):
                 panel.visible = true;
             }
             """,
-        ))
+            ),
+        )
 
     def _get_position(self, event):
         el = self.plot.current_frame
@@ -1348,13 +1326,13 @@ class Selection1DCallback(PopupMixin, Callback):
 
     def _process_msg(self, msg):
         el = self.plot.current_frame
-        if 'index' in msg:
-            msg = {'index': [int(v) for v in msg['index']]}
+        if "index" in msg:
+            msg = {"index": [int(v) for v in msg["index"]]}
             if isinstance(el, Table):
                 # Ensure that explicitly applied selection does not
                 # trigger new events
-                sel = el.opts.get('plot').kwargs.get('selected')
-                if sel is not None and list(sel) == msg['index']:
+                sel = el.opts.get("plot").kwargs.get("selected")
+                if sel is not None and list(sel) == msg["index"]:
                     return {}
             return self._transform(msg)
         else:
@@ -1362,15 +1340,13 @@ class Selection1DCallback(PopupMixin, Callback):
 
 
 class ResetCallback(Callback):
-    """Signals the Reset stream if an event has been triggered.
+    """Signals the Reset stream if an event has been triggered."""
 
-    """
-
-    models = ['plot']
-    on_events = ['reset']
+    models = ["plot"]
+    on_events = ["reset"]
 
     def _process_msg(self, msg):
-        msg = {'resetting': True}
+        msg = {"resetting": True}
         return self._transform(msg)
 
 
@@ -1380,26 +1356,26 @@ class CDSCallback(Callback):
 
     """
 
-    attributes = {'data': 'source.data'}
-    models = ['source']
-    on_changes = ['data', 'patching']
+    attributes = {"data": "source.data"}
+    models = ["source"]
+    on_changes = ["data", "patching"]
 
     def initialize(self, plot_id=None):
         super().initialize(plot_id)
         plot = self.plot
-        data = self._process_msg({'data': plot.handles['source'].data})['data']
+        data = self._process_msg({"data": plot.handles["source"].data})["data"]
         for stream in self.streams:
             stream.update(data=data)
 
     def _process_msg(self, msg):
-        if 'data' not in msg:
+        if "data" not in msg:
             return {}
-        msg['data'] = dict(msg['data'])
-        for col, values in msg['data'].items():
+        msg["data"] = dict(msg["data"])
+        for col, values in msg["data"].items():
             if isinstance(values, dict):
-                shape = values.pop('shape', None)
-                dtype = values.pop('dtype', None)
-                values.pop('dimension', None)
+                shape = values.pop("shape", None)
+                dtype = values.pop("dtype", None)
+                values.pop("dimension", None)
                 items = sorted([(int(k), v) for k, v in values.items()])
                 values = [v for k, v in items]
                 if dtype is not None:
@@ -1408,9 +1384,9 @@ class CDSCallback(Callback):
                 new_values = []
                 for vals in values:
                     if isinstance(vals, dict):
-                        shape = vals.pop('shape', None)
-                        dtype = vals.pop('dtype', None)
-                        vals.pop('dimension', None)
+                        shape = vals.pop("shape", None)
+                        dtype = vals.pop("dtype", None)
+                        vals.pop("dimension", None)
                         vals = sorted([(int(k), v) for k, v in vals.items()])
                         vals = [v for k, v in vals]
                         if dtype is not None:
@@ -1433,12 +1409,11 @@ class CDSCallback(Callback):
                 buffer = base64.decodebytes(values[0].encode())
                 dtype = np.dtype(values[1]).newbyteorder(values[2])
                 values = np.frombuffer(buffer, dtype)
-            msg['data'][col] = values
+            msg["data"][col] = values
         return self._transform(msg)
 
 
 class GlyphDrawCallback(CDSCallback):
-
     _style_callback = """
       var types = Bokeh.require("core/util/types");
       var changed = false
@@ -1465,10 +1440,10 @@ class GlyphDrawCallback(CDSCallback):
         for style, values in stream.styles.items():
             cds.data[style] = [values[i % len(values)] for i in range(length)]
             setattr(glyph, style, style)
-        cb = CustomJS(code=self._style_callback,
-                      args={'styles': stream.styles,
-                            'empty': stream.empty_value})
-        cds.js_on_change('data', cb)
+        cb = CustomJS(
+            code=self._style_callback, args={"styles": stream.styles, "empty": stream.empty_value}
+        )
+        cds.js_on_change("data", cb)
 
     def _update_cds_vdims(self, data):
         """Add any value dimensions not already in the data ensuring the
@@ -1488,26 +1463,27 @@ class GlyphDrawCallback(CDSCallback):
 
 
 class PointDrawCallback(GlyphDrawCallback):
-
     def initialize(self, plot_id=None):
         plot = self.plot
         stream = self.streams[0]
-        cds = plot.handles['source']
-        glyph = plot.handles['glyph']
-        renderers = [plot.handles['glyph_renderer']]
+        cds = plot.handles["source"]
+        glyph = plot.handles["glyph"]
+        renderers = [plot.handles["glyph_renderer"]]
         kwargs = {}
         if stream.num_objects:
-            kwargs['num_objects'] = stream.num_objects
+            kwargs["num_objects"] = stream.num_objects
         if stream.tooltip:
-            kwargs['description'] = stream.tooltip
+            kwargs["description"] = stream.tooltip
         if stream.styles:
             self._create_style_callback(cds, glyph)
         if stream.empty_value is not None:
-            kwargs['empty_value'] = stream.empty_value
+            kwargs["empty_value"] = stream.empty_value
         point_tool = PointDrawTool(
             add=all(s.add for s in self.streams),
             drag=all(s.drag for s in self.streams),
-            renderers=renderers, **kwargs)
+            renderers=renderers,
+            **kwargs,
+        )
         self.plot.state.tools.append(point_tool)
         self._update_cds_vdims(cds.data)
         # Add any value dimensions not already in the CDS data
@@ -1515,37 +1491,35 @@ class PointDrawCallback(GlyphDrawCallback):
         super().initialize(plot_id)
 
     def _process_msg(self, msg):
-        self._update_cds_vdims(msg['data'])
+        self._update_cds_vdims(msg["data"])
         return super()._process_msg(msg)
 
 
 class CurveEditCallback(GlyphDrawCallback):
-
     def initialize(self, plot_id=None):
         plot = self.plot
         stream = self.streams[0]
-        cds = plot.handles['cds']
-        glyph = plot.handles['glyph']
-        renderer = plot.state.scatter(glyph.x, glyph.y, source=cds,
-                                      visible=False, **stream.style)
+        cds = plot.handles["cds"]
+        glyph = plot.handles["glyph"]
+        renderer = plot.state.scatter(glyph.x, glyph.y, source=cds, visible=False, **stream.style)
         renderers = [renderer]
         kwargs = {}
         if stream.tooltip:
-            kwargs['description'] = stream.tooltip
-        point_tool = PointDrawTool(
-            add=False, drag=True, renderers=renderers, **kwargs
+            kwargs["description"] = stream.tooltip
+        point_tool = PointDrawTool(add=False, drag=True, renderers=renderers, **kwargs)
+        code = "renderer.visible = tool.active || (cds.selected.indices.length > 0)"
+        show_vertices = CustomJS(
+            args={"renderer": renderer, "cds": cds, "tool": point_tool}, code=code
         )
-        code="renderer.visible = tool.active || (cds.selected.indices.length > 0)"
-        show_vertices = CustomJS(args={'renderer': renderer, 'cds': cds, 'tool': point_tool}, code=code)
-        point_tool.js_on_change('change:active', show_vertices)
-        cds.selected.js_on_change('indices', show_vertices)
+        point_tool.js_on_change("change:active", show_vertices)
+        cds.selected.js_on_change("indices", show_vertices)
 
         self.plot.state.tools.append(point_tool)
         self._update_cds_vdims(cds.data)
         super().initialize(plot_id)
 
     def _process_msg(self, msg):
-        self._update_cds_vdims(msg['data'])
+        self._update_cds_vdims(msg["data"])
         return super()._process_msg(msg)
 
     def _update_cds_vdims(self, data):
@@ -1561,38 +1535,36 @@ class CurveEditCallback(GlyphDrawCallback):
 
 
 class PolyDrawCallback(GlyphDrawCallback):
-
     def initialize(self, plot_id=None):
         plot = self.plot
         stream = self.streams[0]
-        cds = self.plot.handles['cds']
-        glyph = self.plot.handles['glyph']
-        renderers = [plot.handles['glyph_renderer']]
+        cds = self.plot.handles["cds"]
+        glyph = self.plot.handles["glyph"]
+        renderers = [plot.handles["glyph_renderer"]]
         kwargs = {}
         if stream.num_objects:
-            kwargs['num_objects'] = stream.num_objects
+            kwargs["num_objects"] = stream.num_objects
         if stream.show_vertices:
-            vertex_style = dict({'size': 10}, **stream.vertex_style)
+            vertex_style = dict({"size": 10}, **stream.vertex_style)
             r1 = plot.state.scatter([], [], **vertex_style)
-            kwargs['vertex_renderer'] = r1
-            r1.visible = plot.handles['glyph_renderer'].visible
-            plot.handles['glyph_renderer'].js_link('visible', r1, 'visible')
+            kwargs["vertex_renderer"] = r1
+            r1.visible = plot.handles["glyph_renderer"].visible
+            plot.handles["glyph_renderer"].js_link("visible", r1, "visible")
         if stream.styles:
             self._create_style_callback(cds, glyph)
         if stream.tooltip:
-            kwargs['description'] = stream.tooltip
+            kwargs["description"] = stream.tooltip
         if stream.empty_value is not None:
-            kwargs['empty_value'] = stream.empty_value
+            kwargs["empty_value"] = stream.empty_value
         poly_tool = PolyDrawTool(
-            drag=all(s.drag for s in self.streams), renderers=renderers,
-            **kwargs
+            drag=all(s.drag for s in self.streams), renderers=renderers, **kwargs
         )
         plot.state.tools.append(poly_tool)
         self._update_cds_vdims(cds.data)
         super().initialize(plot_id)
 
     def _process_msg(self, msg):
-        self._update_cds_vdims(msg['data'])
+        self._update_cds_vdims(msg["data"])
         return super()._process_msg(msg)
 
     def _update_cds_vdims(self, data):
@@ -1603,7 +1575,7 @@ class PolyDrawCallback(GlyphDrawCallback):
         element = self.plot.current_frame
         stream = self.streams[0]
         interface = element.interface
-        scalar_kwargs = {'per_geom': True} if interface.multi else {}
+        scalar_kwargs = {"per_geom": True} if interface.multi else {}
         for d in element.vdims:
             scalar = element.interface.isunique(element, d, **scalar_kwargs)
             dim = dimension_sanitizer(d.name)
@@ -1611,30 +1583,29 @@ class PolyDrawCallback(GlyphDrawCallback):
                 if scalar:
                     values = element.dimension_values(d, not scalar)
                 else:
-                    values = [arr[:, 0] for arr in element.split(datatype='array', dimensions=[dim])]
-                if len(values) != len(data['xs']):
+                    values = [
+                        arr[:, 0] for arr in element.split(datatype="array", dimensions=[dim])
+                    ]
+                if len(values) != len(data["xs"]):
                     values = np.concatenate([values, [stream.empty_value]])
                 data[dim] = values
 
 
 class FreehandDrawCallback(PolyDrawCallback):
-
     def initialize(self, plot_id=None):
         plot = self.plot
-        cds = plot.handles['cds']
-        glyph = plot.handles['glyph']
+        cds = plot.handles["cds"]
+        glyph = plot.handles["glyph"]
         stream = self.streams[0]
         if stream.styles:
             self._create_style_callback(cds, glyph)
         kwargs = {}
         if stream.tooltip:
-            kwargs['description'] = stream.tooltip
+            kwargs["description"] = stream.tooltip
         if stream.empty_value is not None:
-            kwargs['empty_value'] = stream.empty_value
+            kwargs["empty_value"] = stream.empty_value
         poly_tool = FreehandDrawTool(
-            num_objects=stream.num_objects,
-            renderers=[plot.handles['glyph_renderer']],
-            **kwargs
+            num_objects=stream.num_objects, renderers=[plot.handles["glyph_renderer"]], **kwargs
         )
         plot.state.tools.append(poly_tool)
         self._update_cds_vdims(cds.data)
@@ -1642,33 +1613,36 @@ class FreehandDrawCallback(PolyDrawCallback):
 
 
 class BoxEditCallback(GlyphDrawCallback):
-
-    attributes = {'data': 'cds.data'}
-    models = ['cds']
+    attributes = {"data": "cds.data"}
+    models = ["cds"]
 
     def _path_initialize(self):
         plot = self.plot
-        cds = plot.handles['cds']
+        cds = plot.handles["cds"]
         data = cds.data
         element = self.plot.current_frame
 
-        l, b, r, t =  [], [], [], []
-        for x, y in zip(data['xs'], data['ys'], strict=None):
+        l, b, r, t = [], [], [], []
+        for x, y in zip(data["xs"], data["ys"], strict=None):
             x0, x1 = (np.nanmin(x), np.nanmax(x))
             y0, y1 = (np.nanmin(y), np.nanmax(y))
             l.append(x0)
             b.append(y0)
             r.append(x1)
             t.append(y1)
-        data = {'left': l, 'bottom': b, 'right': r, 'top': t}
-        data.update({vd.name: element.dimension_values(vd, expanded=False) for vd in element.vdims})
+        data = {"left": l, "bottom": b, "right": r, "top": t}
+        data.update(
+            {vd.name: element.dimension_values(vd, expanded=False) for vd in element.vdims}
+        )
         cds.data.update(data)
         style = self.plot.style[self.plot.cyclic_index]
-        style.pop('cmap', None)
-        r1 = plot.state.quad(left='left', bottom='bottom', right='right', top='top', source=cds, **style)
-        if plot.handles['glyph_renderer'] in self.plot.state.renderers:
-            self.plot.state.renderers.remove(plot.handles['glyph_renderer'])
-        data = self._process_msg({'data': data})['data']
+        style.pop("cmap", None)
+        r1 = plot.state.quad(
+            left="left", bottom="bottom", right="right", top="top", source=cds, **style
+        )
+        if plot.handles["glyph_renderer"] in self.plot.state.renderers:
+            self.plot.state.renderers.remove(plot.handles["glyph_renderer"])
+        data = self._process_msg({"data": data})["data"]
         for stream in self.streams:
             stream.update(data=data)
         return r1
@@ -1677,19 +1651,19 @@ class BoxEditCallback(GlyphDrawCallback):
         from .path import PathPlot
 
         stream = self.streams[0]
-        cds = self.plot.handles['cds']
+        cds = self.plot.handles["cds"]
 
         kwargs = {}
         if stream.num_objects:
-            kwargs['num_objects'] = stream.num_objects
+            kwargs["num_objects"] = stream.num_objects
         if stream.tooltip:
-            kwargs['description'] = stream.tooltip
+            kwargs["description"] = stream.tooltip
 
-        renderer = self.plot.handles['glyph_renderer']
+        renderer = self.plot.handles["glyph_renderer"]
         if isinstance(self.plot, PathPlot):
             renderer = self._path_initialize()
         else:
-            data = self._process_msg({'data': cds.data})['data']
+            data = self._process_msg({"data": cds.data})["data"]
             for stream in self.streams:
                 stream.update(data=data)
         if stream.styles:
@@ -1705,23 +1679,22 @@ class BoxEditCallback(GlyphDrawCallback):
 
     def _process_msg(self, msg):
         data = super()._process_msg(msg)
-        if 'data' not in data:
+        if "data" not in data:
             return {}
-        values = dict(data['data'])
-        values['x0'] = values.pop("left")
-        values['y0'] = values.pop("bottom")
-        values['x1'] = values.pop("right")
-        values['y1'] = values.pop("top")
-        msg = {'data': values}
-        self._update_cds_vdims(msg['data'])
+        values = dict(data["data"])
+        values["x0"] = values.pop("left")
+        values["y0"] = values.pop("bottom")
+        values["x1"] = values.pop("right")
+        values["y1"] = values.pop("top")
+        msg = {"data": values}
+        self._update_cds_vdims(msg["data"])
         return self._transform(msg)
 
 
 class PolyEditCallback(PolyDrawCallback):
-
     def initialize(self, plot_id=None):
         plot = self.plot
-        cds = plot.handles['cds']
+        cds = plot.handles["cds"]
         vertex_tool = None
         if all(s.shared for s in self.streams):
             tools = [tool for tool in plot.state.tools if isinstance(tool, PolyEditTool)]
@@ -1730,47 +1703,49 @@ class PolyEditCallback(PolyDrawCallback):
         stream = self.streams[0]
         kwargs = {}
         if stream.tooltip:
-            kwargs['description'] = stream.tooltip
+            kwargs["description"] = stream.tooltip
         if vertex_tool is None:
-            vertex_style = dict({'size': 10}, **stream.vertex_style)
+            vertex_style = dict({"size": 10}, **stream.vertex_style)
             r1 = plot.state.scatter([], [], **vertex_style)
             vertex_tool = PolyEditTool(vertex_renderer=r1, **kwargs)
             plot.state.tools.append(vertex_tool)
-        vertex_tool.renderers.append(plot.handles['glyph_renderer'])
+        vertex_tool.renderers.append(plot.handles["glyph_renderer"])
         self._update_cds_vdims(cds.data)
         CDSCallback.initialize(self, plot_id)
 
 
-Stream._callbacks['bokeh'].update({
-    PointerXY   : PointerXYCallback,
-    PointerX    : PointerXCallback,
-    PointerY    : PointerYCallback,
-    Tap         : TapCallback,
-    SingleTap   : SingleTapCallback,
-    DoubleTap   : DoubleTapCallback,
-    PressUp     : PressUpCallback,
-    PanEnd      : PanEndCallback,
-    MouseEnter  : MouseEnterCallback,
-    MouseLeave  : MouseLeaveCallback,
-    RangeXY     : RangeXYCallback,
-    RangeX      : RangeXCallback,
-    RangeY      : RangeYCallback,
-    BoundsXY    : BoundsCallback,
-    BoundsX     : BoundsXCallback,
-    BoundsY     : BoundsYCallback,
-    Lasso       : LassoCallback,
-    Selection1D : Selection1DCallback,
-    PlotSize    : PlotSizeCallback,
-    SelectionXY : SelectionXYCallback,
-    Draw        : DrawCallback,
-    PlotReset   : ResetCallback,
-    CDSStream   : CDSCallback,
-    BoxEdit     : BoxEditCallback,
-    PointDraw   : PointDrawCallback,
-    CurveEdit   : CurveEditCallback,
-    FreehandDraw: FreehandDrawCallback,
-    PolyDraw    : PolyDrawCallback,
-    PolyEdit    : PolyEditCallback,
-    SelectMode  : SelectModeCallback,
-    MultiAxisTap: MultiAxisTapCallback
-})
+Stream._callbacks["bokeh"].update(
+    {
+        PointerXY: PointerXYCallback,
+        PointerX: PointerXCallback,
+        PointerY: PointerYCallback,
+        Tap: TapCallback,
+        SingleTap: SingleTapCallback,
+        DoubleTap: DoubleTapCallback,
+        PressUp: PressUpCallback,
+        PanEnd: PanEndCallback,
+        MouseEnter: MouseEnterCallback,
+        MouseLeave: MouseLeaveCallback,
+        RangeXY: RangeXYCallback,
+        RangeX: RangeXCallback,
+        RangeY: RangeYCallback,
+        BoundsXY: BoundsCallback,
+        BoundsX: BoundsXCallback,
+        BoundsY: BoundsYCallback,
+        Lasso: LassoCallback,
+        Selection1D: Selection1DCallback,
+        PlotSize: PlotSizeCallback,
+        SelectionXY: SelectionXYCallback,
+        Draw: DrawCallback,
+        PlotReset: ResetCallback,
+        CDSStream: CDSCallback,
+        BoxEdit: BoxEditCallback,
+        PointDraw: PointDrawCallback,
+        CurveEdit: CurveEditCallback,
+        FreehandDraw: FreehandDrawCallback,
+        PolyDraw: PolyDrawCallback,
+        PolyEdit: PolyEditCallback,
+        SelectMode: SelectModeCallback,
+        MultiAxisTap: MultiAxisTapCallback,
+    }
+)

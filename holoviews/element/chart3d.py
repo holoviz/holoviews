@@ -19,19 +19,29 @@ class Surface(Image, Element3D):
 
     """
 
-    extents = param.Tuple(default=(None, None, None, None, None, None), doc="""
+    extents = param.Tuple(
+        default=(None, None, None, None, None, None),
+        doc="""
         Allows overriding the extents of the Element in 3D space
-        defined as (xmin, ymin, zmin, xmax, ymax, zmax).""")
+        defined as (xmin, ymin, zmin, xmax, ymax, zmax).""",
+    )
 
-    group = param.String(default='Surface', constant=True)
+    group = param.String(default="Surface", constant=True)
 
-    kdims = param.List(default=[Dimension('x'), Dimension('y')],
-                       bounds=(2,2), doc="""
+    kdims = param.List(
+        default=[Dimension("x"), Dimension("y")],
+        bounds=(2, 2),
+        doc="""
         The Surface x and y dimensions of the space defined
-        by the supplied extent.""")
+        by the supplied extent.""",
+    )
 
-    vdims = param.List(default=[Dimension('z')], bounds=(1,1), doc="""
-        The Surface height dimension.""")
+    vdims = param.List(
+        default=[Dimension("z")],
+        bounds=(1, 1),
+        doc="""
+        The Surface height dimension.""",
+    )
 
     def __init__(self, data, kdims=None, vdims=None, extents=None, **params):
         extents = extents if extents else (None, None, None, None, None, None)
@@ -51,16 +61,22 @@ class TriSurface(Element3D, Points):
 
     """
 
-    group = param.String(default='TriSurface', constant=True)
+    group = param.String(default="TriSurface", constant=True)
 
-    kdims = param.List(default=[
-        Dimension('x'), Dimension('y'), Dimension('z')], bounds=(3, 3), doc="""
+    kdims = param.List(
+        default=[Dimension("x"), Dimension("y"), Dimension("z")],
+        bounds=(3, 3),
+        doc="""
         The key dimensions of a TriSurface represent the 3D coordinates
-        of each point.""")
+        of each point.""",
+    )
 
-    vdims = param.List(default=[], doc="""
+    vdims = param.List(
+        default=[],
+        doc="""
         The value dimensions of a TriSurface can provide additional
-        information about each 3D coordinate.""")
+        information about each 3D coordinate.""",
+    )
 
     def __getitem__(self, slc):
         return Points.__getitem__(self, slc)
@@ -116,15 +132,16 @@ class Scatter3D(Element3D, Points):
 
     """
 
-    kdims = param.List(default=[Dimension('x'),
-                                Dimension('y'),
-                                Dimension('z')], bounds=(3, 3))
+    kdims = param.List(default=[Dimension("x"), Dimension("y"), Dimension("z")], bounds=(3, 3))
 
-    vdims = param.List(default=[], doc="""
+    vdims = param.List(
+        default=[],
+        doc="""
         Scatter3D can have optional value dimensions,
-        which may be mapped onto color and size.""")
+        which may be mapped onto color and size.""",
+    )
 
-    group = param.String(default='Scatter3D', constant=True)
+    group = param.String(default="Scatter3D", constant=True)
 
     def __getitem__(self, slc):
         return Points.__getitem__(self, slc)
@@ -138,14 +155,15 @@ class Path3D(Element3D, Path):
 
     """
 
-    kdims = param.List(default=[Dimension('x'),
-                                Dimension('y'),
-                                Dimension('z')], bounds=(3, 3))
+    kdims = param.List(default=[Dimension("x"), Dimension("y"), Dimension("z")], bounds=(3, 3))
 
-    vdims = param.List(default=[], doc="""
-        Path3D can have optional value dimensions.""")
+    vdims = param.List(
+        default=[],
+        doc="""
+        Path3D can have optional value dimensions.""",
+    )
 
-    group = param.String(default='Path3D', constant=True)
+    group = param.String(default="Path3D", constant=True)
 
     def __getitem__(self, slc):
         return Path.__getitem__(self, slc)

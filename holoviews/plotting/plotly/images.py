@@ -9,8 +9,7 @@ from .util import PLOTLY_MAP, PLOTLY_SCATTERMAP
 
 
 class RGBPlot(ElementPlot):
-
-    style_opts = ['opacity']
+    style_opts = ["opacity"]
 
     apply_ranges = True
 
@@ -22,13 +21,13 @@ class RGBPlot(ElementPlot):
         if is_geo:
             layer = dict(datum, **options)
             dummy_trace = {
-                'type': PLOTLY_SCATTERMAP,
-                'lat': [None],
-                'lon': [None],
-                'mode': 'markers',
-                'showlegend': False
+                "type": PLOTLY_SCATTERMAP,
+                "lat": [None],
+                "lon": [None],
+                "mode": "markers",
+                "showlegend": False,
             }
-            return {PLOTLY_MAP: dict(layers=[layer]), 'traces': [dummy_trace]}
+            return {PLOTLY_MAP: dict(layers=[layer]), "traces": [dummy_trace]}
         else:
             image = dict(datum, **options)
             # Create a dummy invisible scatter trace for this image.
@@ -40,15 +39,14 @@ class RGBPlot(ElementPlot):
             #     associate callbacks with the image element. This is needed, in particular
             #     to support datashader
             dummy_trace = {
-                'type': 'scatter',
-                'x': [image['x'], image['x'] + image['sizex']],
-                'y': [image['y'] - image['sizey'], image['y']],
-                'mode': 'markers',
-                'marker': {'opacity': 0},
+                "type": "scatter",
+                "x": [image["x"], image["x"] + image["sizex"]],
+                "y": [image["y"] - image["sizey"], image["y"]],
+                "mode": "markers",
+                "marker": {"opacity": 0},
                 "showlegend": False,
             }
-            return dict(images=[image],
-                        traces=[dummy_trace])
+            return dict(images=[image], traces=[dummy_trace])
 
     def get_data(self, element, ranges, style, is_geo=False, **kwargs):
         try:
@@ -58,20 +56,20 @@ class RGBPlot(ElementPlot):
 Rendering RGB elements with the plotly backend requires the Pillow package""") from None
 
         img = np.flip(
-            np.dstack([element.dimension_values(d, flat=False)
-                       for d in element.vdims]),
-            axis=0
+            np.dstack([element.dimension_values(d, flat=False) for d in element.vdims]), axis=0
         )
 
-        if dtype_kind(img) == 'f':
+        if dtype_kind(img) == "f":
             img = img * 255
         if img.size and (img.min() < 0 or img.max() > 255):
-            self.param.warning('Clipping input data to the valid '
-                               'range for RGB data ([0..1] for '
-                               'floats or [0..255] for integers).')
+            self.param.warning(
+                "Clipping input data to the valid "
+                "range for RGB data ([0..1] for "
+                "floats or [0..255] for integers)."
+            )
             img = np.clip(img, 0, 255)
 
-        if img.dtype.name != 'uint8':
+        if img.dtype.name != "uint8":
             img = img.astype(np.uint8)
 
         if 0 in img.shape:
@@ -107,16 +105,20 @@ Rendering RGB elements with the plotly backend requires the Pillow package""") f
                 "sourcetype": "image",
                 "source": source,
                 "coordinates": coordinates,
-                "below": 'traces',
+                "below": "traces",
             }
             return [layer]
         else:
-            return [dict(source=source,
-                         x=l,
-                         y=t,
-                         sizex=r - l,
-                         sizey=t - b,
-                         xref='x',
-                         yref='y',
-                         sizing='stretch',
-                         layer='above')]
+            return [
+                dict(
+                    source=source,
+                    x=l,
+                    y=t,
+                    sizex=r - l,
+                    sizey=t - b,
+                    xref="x",
+                    yref="y",
+                    sizing="stretch",
+                    layer="above",
+                )
+            ]

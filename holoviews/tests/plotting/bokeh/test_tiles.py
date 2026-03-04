@@ -6,7 +6,6 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestTilePlot(TestBokehPlot):
-
     def test_xyzservices_tileprovider(self):
         xyzservices = pytest.importorskip("xyzservices")
         osm = xyzservices.providers.OpenStreetMap.Mapnik

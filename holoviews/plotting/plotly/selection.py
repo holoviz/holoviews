@@ -4,26 +4,24 @@ from ...selection import OverlaySelectionDisplay
 
 
 class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
-    """Overlay selection display subclass for use with plotly backend
-
-    """
+    """Overlay selection display subclass for use with plotly backend"""
 
     def _build_element_layer(self, element, layer_color, layer_alpha, **opts):
-        backend_options = Store.options(backend='plotly')
-        style_options = backend_options[(type(element).name,)]['style']
+        backend_options = Store.options(backend="plotly")
+        style_options = backend_options[(type(element).name,)]["style"]
         allowed = style_options.allowed_keywords
 
-        if 'selectedpoints' in allowed:
+        if "selectedpoints" in allowed:
             shared_opts = dict(selectedpoints=False)
         else:
             shared_opts = {}
 
         merged_opts = dict(shared_opts)
 
-        if 'opacity' in allowed:
-            merged_opts['opacity'] = layer_alpha
-        elif 'alpha' in allowed:
-            merged_opts['alpha'] = layer_alpha
+        if "opacity" in allowed:
+            merged_opts["opacity"] = layer_alpha
+        elif "alpha" in allowed:
+            merged_opts["alpha"] = layer_alpha
 
         if layer_color is not None:
             # set color
@@ -35,15 +33,16 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
                 if current_color:
                     merged_opts.update({color_prop: current_color})
 
-        for opt in ('cmap', 'colorbar'):
+        for opt in ("cmap", "colorbar"):
             if opt in opts and opt in allowed:
                 merged_opts[opt] = opts[opt]
 
         filtered = {k: v for k, v in merged_opts.items() if k in allowed}
-        return element.opts(clone=True, backend='plotly', **filtered)
+        return element.opts(clone=True, backend="plotly", **filtered)
 
     def _style_region_element(self, region_element, unselected_color):
         from ..util import linear_gradient
+
         backend_options = Store.options(backend="plotly")
 
         el2_name = None
@@ -54,7 +53,7 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
             el2_name = type(region_element.get(1)).name
         else:
             el1_name = type(region_element).name
-        style_options = backend_options[(el1_name,)]['style']
+        style_options = backend_options[(el1_name,)]["style"]
         allowed_keywords = style_options.allowed_keywords
         options = {}
 
@@ -80,7 +79,7 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
         if "selectedpoints" in allowed_keywords:
             options["selectedpoints"] = False
 
-        region = region_element.opts(el1_name, clone=True, backend='plotly', **options)
-        if el2_name and el2_name == 'Path':
-            region = region.opts(el2_name, backend='plotly', line_color='black')
+        region = region_element.opts(el1_name, clone=True, backend="plotly", **options)
+        if el2_name and el2_name == "Path":
+            region = region.opts(el2_name, backend="plotly", line_color="black")
         return region

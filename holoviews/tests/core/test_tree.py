@@ -7,7 +7,7 @@ class AttrTreeTest:
     "For testing of AttrTree"
 
     def setup_method(self):
-        self.tree = AttrTree([(('A', 'I'), 1), (('B', 'II'), 2)])
+        self.tree = AttrTree([(("A", "I"), 1), (("B", "II"), 2)])
 
     def test_access_nodes(self):
         assert self.tree.A.I == 1
@@ -31,62 +31,62 @@ class AttrTreeTest:
 
     def test_number_getitem_key_error(self):
         with pytest.raises(KeyError):
-            self.tree['2']
+            self.tree["2"]
 
     def test_lowercase_getitem_key_error(self):
         with pytest.raises(KeyError):
-            self.tree['c']
+            self.tree["c"]
 
     def test_uppercase_getitem(self):
-        assert self.tree['A']['I'] == 1
-        assert self.tree['B']['II'] == 2
+        assert self.tree["A"]["I"] == 1
+        assert self.tree["B"]["II"] == 2
 
     def test_uppercase_setitem(self):
-        self.tree['C'] = 1
+        self.tree["C"] = 1
         assert self.tree.C == 1
 
     def test_deep_getitem(self):
-        assert self.tree[('A', 'I')] == 1
-        assert self.tree[('B', 'II')] == 2
+        assert self.tree[("A", "I")] == 1
+        assert self.tree[("B", "II")] == 2
 
     def test_deep_getitem_str(self):
-        assert self.tree['A.I'] == 1
-        assert self.tree['B.II'] == 2
+        assert self.tree["A.I"] == 1
+        assert self.tree["B.II"] == 2
 
     def test_deep_setitem(self):
-        self.tree[('C', 'I')] = 3
+        self.tree[("C", "I")] = 3
         assert self.tree.C.I == 3
 
     def test_deep_setitem_str(self):
-        self.tree['C.I'] = 3
+        self.tree["C.I"] = 3
         assert self.tree.C.I == 3
 
     def test_delitem(self):
         Btree = self.tree.B
-        del self.tree['B']
+        del self.tree["B"]
         assert self.tree.B is not Btree
-        assert ('B', 'II') not in self.tree.data
+        assert ("B", "II") not in self.tree.data
 
     def test_delitem_on_node(self):
-        del self.tree.B['II']
+        del self.tree.B["II"]
         assert self.tree.B.II != 2
-        assert ('B', 'II') not in self.tree.data
-        assert ('II',) not in self.tree.B
+        assert ("B", "II") not in self.tree.data
+        assert ("II",) not in self.tree.B
 
     def test_delitem_keyerror(self):
         with pytest.raises(KeyError):
-            del self.tree['C']
+            del self.tree["C"]
 
     def test_deep_delitem(self):
         BTree = self.tree.B
-        del self.tree[('B', 'II')]
+        del self.tree[("B", "II")]
         assert isinstance(self.tree.B.II, AttrTree)
         assert self.tree.B is BTree
-        assert ('B', 'II') not in self.tree.data
+        assert ("B", "II") not in self.tree.data
 
     def test_deep_delitem_str(self):
         BTree = self.tree.B
-        del self.tree['B.II']
+        del self.tree["B.II"]
         assert isinstance(self.tree.B.II, AttrTree)
         assert self.tree.B is BTree
-        assert ('B', 'II') not in self.tree.data
+        assert ("B", "II") not in self.tree.data

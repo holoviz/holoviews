@@ -6,7 +6,6 @@ from holoviews.testing import assert_element_equal
 
 
 class ExampleOperation(hv.Operation):
-
     label = param.String()
 
     def _process(self, obj, key=None):
@@ -14,16 +13,14 @@ class ExampleOperation(hv.Operation):
 
 
 class ParamClass(param.Parameterized):
+    label = param.String(default="Test")
 
-    label = param.String(default='Test')
-
-    @param.depends('label')
+    @param.depends("label")
     def dynamic_label(self):
-        return self.label + '!'
+        return self.label + "!"
 
 
 class TestOperationBroadcast:
-
     def test_element_dynamic_with_streams(self):
         curve = hv.Curve([1, 2, 3])
         applied = hv.Operation(curve, dynamic=True, streams=[Stream])
@@ -38,32 +35,32 @@ class TestOperationBroadcast:
 
     def test_element_dynamic_with_instance_param(self):
         curve = hv.Curve([1, 2, 3])
-        inst = ParamClass(label='Test')
+        inst = ParamClass(label="Test")
         applied = ExampleOperation(curve, label=inst.param.label)
         assert len(applied.streams) == 1
         assert isinstance(applied.streams[0], Params)
         assert applied.streams[0].parameters == [inst.param.label]
-        assert_element_equal(applied[()], curve.relabel('Test'))
+        assert_element_equal(applied[()], curve.relabel("Test"))
 
     def test_element_dynamic_with_param_method(self):
         curve = hv.Curve([1, 2, 3])
-        inst = ParamClass(label='Test')
+        inst = ParamClass(label="Test")
         applied = ExampleOperation(curve, label=inst.dynamic_label)
         assert len(applied.streams) == 1
         assert isinstance(applied.streams[0], Params)
         assert applied.streams[0].parameters == [inst.param.label]
-        assert_element_equal(applied[()], curve.relabel('Test!'))
-        inst.label = 'New label'
-        assert_element_equal(applied[()], curve.relabel('New label!'))
+        assert_element_equal(applied[()], curve.relabel("Test!"))
+        inst.label = "New label"
+        assert_element_equal(applied[()], curve.relabel("New label!"))
 
     def test_element_not_dynamic_with_instance_param(self):
         curve = hv.Curve([1, 2, 3])
-        inst = ParamClass(label='Test')
+        inst = ParamClass(label="Test")
         applied = ExampleOperation(curve, dynamic=False, label=inst.param.label)
-        assert_element_equal(applied, curve.relabel('Test'))
+        assert_element_equal(applied, curve.relabel("Test"))
 
     def test_element_not_dynamic_with_param_method(self):
         curve = hv.Curve([1, 2, 3])
-        inst = ParamClass(label='Test')
+        inst = ParamClass(label="Test")
         applied = ExampleOperation(curve, dynamic=False, label=inst.dynamic_label)
-        assert_element_equal(applied, curve.relabel('Test!'))
+        assert_element_equal(applied, curve.relabel("Test!"))

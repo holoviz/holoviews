@@ -37,12 +37,12 @@ def split_path(path):
     """
     path = path.split(0, 1)[0]
     values = path.dimension_values(0)
-    splits = np.concatenate([[0], np.where(np.isnan(values))[0]+1, [None]])
+    splits = np.concatenate([[0], np.where(np.isnan(values))[0] + 1, [None]])
     subpaths = []
     data = PandasInterface.as_dframe(path)
-    for i in range(len(splits)-1):
-        end = splits[i+1]
-        slc = slice(splits[i], None if end is None else end-1)
+    for i in range(len(splits) - 1):
+        end = splits[i + 1]
+        slc = slice(splits[i], None if end is None else end - 1)
         subpath = data.iloc[slc]
         if len(subpath):
             subpaths.append(subpath)
@@ -59,8 +59,8 @@ def compute_slice_bounds(slices, scs, shape):
     ys, xs = shape
     l, b, r, t = scs.bounds.lbrt()
     xdensity, ydensity = scs.xdensity, scs.ydensity
-    xunit = (1./xdensity)
-    yunit = (1./ydensity)
+    xunit = 1.0 / xdensity
+    yunit = 1.0 / ydensity
     if isinstance(l, datetime_types):
         xunit = np.timedelta64(round(xunit), scs._time_unit)
     if isinstance(b, datetime_types):
@@ -79,33 +79,34 @@ def compute_slice_bounds(slices, scs, shape):
     # Apply scalar and list indices
     l, b, r, t = slc.compute_bounds(scs).lbrt()
     if not isinstance(xidx, slice):
-        if not isinstance(xidx, (list, set)): xidx = [xidx]
+        if not isinstance(xidx, (list, set)):
+            xidx = [xidx]
         if len(xidx) > 1:
-            xdensity = xdensity*(float(len(xidx))/xs)
+            xdensity = xdensity * (float(len(xidx)) / xs)
         ls, rs = [], []
         for idx in xidx:
             xc, _ = scs.closest_cell_center(idx, b)
-            ls.append(xc-xunit/2)
-            rs.append(xc+xunit/2)
+            ls.append(xc - xunit / 2)
+            rs.append(xc + xunit / 2)
         l, r = np.min(ls), np.max(rs)
     elif not isinstance(yidx, slice):
-        if not isinstance(yidx, (set, list)): yidx = [yidx]
+        if not isinstance(yidx, (set, list)):
+            yidx = [yidx]
         if len(yidx) > 1:
-            ydensity = ydensity*(float(len(yidx))/ys)
+            ydensity = ydensity * (float(len(yidx)) / ys)
         bs, ts = [], []
         for idx in yidx:
             _, yc = scs.closest_cell_center(l, idx)
-            bs.append(yc-yunit/2)
-            ts.append(yc+yunit/2)
+            bs.append(yc - yunit / 2)
+            ts.append(yc + yunit / 2)
         b, t = np.min(bs), np.max(ts)
     return BoundingBox(points=((l, b), (r, t)))
 
 
 def reduce_fn(x):
-    """Aggregation function to get the first non-zero value.
-
-    """
+    """Aggregation function to get the first non-zero value."""
     import pandas as pd
+
     values = x.values if isinstance(x, pd.Series) else x
     for v in values:
         if not is_nan(v):
@@ -133,8 +134,11 @@ class categorical_aggregate2d(Operation):
 
     """
 
-    datatype = param.List(default=['xarray', 'grid'], doc="""
-        The grid interface types to use when constructing the gridded Dataset.""")
+    datatype = param.List(
+        default=["xarray", "grid"],
+        doc="""
+        The grid interface types to use when constructing the gridded Dataset.""",
+    )
 
     @classmethod
     def _get_coords(cls, obj: Dataset):
@@ -146,14 +150,13 @@ class categorical_aggregate2d(Operation):
         xcoords = obj.dimension_values(xdim, False)
         ycoords = obj.dimension_values(ydim, False)
 
-        if dtype_kind(xcoords) not in 'SUO':
+        if dtype_kind(xcoords) not in "SUO":
             xcoords = sort_arr(xcoords)
-        if dtype_kind(ycoords) not in 'SUO':
+        if dtype_kind(ycoords) not in "SUO":
             return xcoords, sort_arr(ycoords)
 
         # Determine global orderings of y-values using topological sort
-        grouped = obj.groupby(xdim, container_type=dict,
-                              group_type=Dataset).values()
+        grouped = obj.groupby(xdim, container_type=dict, group_type=Dataset).values()
         orderings = {}
         sort = True
         for group in grouped:
@@ -164,8 +167,8 @@ class categorical_aggregate2d(Operation):
                 for p1, p2 in itertools.pairwise(vals):
                     orderings[p1] = [p2]
             if sort:
-                if dtype_kind(vals) in ('i', 'f'):
-                    sort = (np.diff(vals)>=0).all()
+                if dtype_kind(vals) in ("i", "f"):
+                    sort = (np.diff(vals) >= 0).all()
                 else:
                     sort = np.array_equal(sort_arr(vals), vals)
         if sort or one_to_one(orderings, ycoords):
@@ -207,11 +210,11 @@ class categorical_aggregate2d(Operation):
         # Convert data to a gridded dataset
         for vdim in vdims:
             grid_data[vdim.name] = agg.dimension_values(vdim).reshape(shape)
-        return agg.clone(grid_data, kdims=[xdim, ydim], vdims=vdims,
-                         datatype=self.p.datatype)
+        return agg.clone(grid_data, kdims=[xdim, ydim], vdims=vdims, datatype=self.p.datatype)
 
     def _aggregate_dataset_pandas(self, obj):
         import pandas as pd
+
         index_cols = [d.name for d in obj.kdims]
         groupby_kwargs = {"sort": False}
         if PANDAS_GE_2_1_0:
@@ -220,7 +223,7 @@ class categorical_aggregate2d(Operation):
         if not all(c in df.index.names for c in index_cols):
             df = df.set_index(index_cols)
         df = df.groupby(index_cols, **groupby_kwargs).first()
-        label = 'unique' if len(df) == len(obj) else 'non-unique'
+        label = "unique" if len(df) == len(obj) else "non-unique"
         levels = self._get_coords(obj)
         index = pd.MultiIndex.from_product(levels, names=df.index.names)
         reindexed = df.reindex(index)
@@ -241,21 +244,21 @@ class categorical_aggregate2d(Operation):
         elif obj.ndims > 2:
             raise ValueError("Cannot aggregate more than two dimensions")
         elif len(obj.dimensions()) < 3:
-            raise ValueError("Must have at two dimensions to aggregate over"
-                             "and one value dimension to aggregate on.")
+            raise ValueError(
+                "Must have at two dimensions to aggregate over"
+                "and one value dimension to aggregate on."
+            )
 
-        obj = Dataset(obj, datatype=['dataframe'])
+        obj = Dataset(obj, datatype=["dataframe"])
         return self._aggregate_dataset_pandas(obj)
 
 
 def circular_layout(nodes):
-    """Lay out nodes on a circle and add node index.
-
-    """
+    """Lay out nodes on a circle and add node index."""
     N = len(nodes)
     if not N:
         return ([], [], [])
-    circ = np.pi/N*np.arange(N)*2
+    circ = np.pi / N * np.arange(N) * 2
     x = np.cos(circ)
     y = np.sin(circ)
     return (x, y, nodes)
@@ -271,10 +274,18 @@ def quadratic_bezier(start, end, c0=(0, 0), c1=(0, 0), steps=50):
     ex, ey = end
     cx0, cy0 = c0
     cx1, cy1 = c1
-    xs = ((1-steps)**3*sx + 3*((1-steps)**2)*steps*cx0 +
-          3*(1-steps)*steps**2*cx1 + steps**3*ex)
-    ys = ((1-steps)**3*sy + 3*((1-steps)**2)*steps*cy0 +
-          3*(1-steps)*steps**2*cy1 + steps**3*ey)
+    xs = (
+        (1 - steps) ** 3 * sx
+        + 3 * ((1 - steps) ** 2) * steps * cx0
+        + 3 * (1 - steps) * steps**2 * cx1
+        + steps**3 * ex
+    )
+    ys = (
+        (1 - steps) ** 3 * sy
+        + 3 * ((1 - steps) ** 2) * steps * cy0
+        + 3 * (1 - steps) * steps**2 * cy1
+        + steps**3 * ey
+    )
     return np.column_stack([xs, ys])
 
 
@@ -286,19 +297,20 @@ def connect_edges_pd(graph):
 
     """
     import pandas as pd
+
     edges = graph.dframe()
-    edges.index.name = 'graph_edge_index'
+    edges.index.name = "graph_edge_index"
     edges = edges.reset_index()
     nodes = graph.nodes.dframe()
     src, tgt = graph.kdims
     x, y, idx = graph.nodes.kdims[:3]
 
     df = pd.merge(edges, nodes, left_on=[src.name], right_on=[idx.name])
-    df = df.rename(columns={x.name: 'src_x', y.name: 'src_y'})
+    df = df.rename(columns={x.name: "src_x", y.name: "src_y"})
 
     df = pd.merge(df, nodes, left_on=[tgt.name], right_on=[idx.name])
-    df = df.rename(columns={x.name: 'dst_x', y.name: 'dst_y'})
-    df = df.sort_values('graph_edge_index').drop(['graph_edge_index'], axis=1)
+    df = df.rename(columns={x.name: "dst_x", y.name: "dst_y"})
+    df = df.sort_values("graph_edge_index").drop(["graph_edge_index"], axis=1)
 
     cols = ["src_x", "src_y", "dst_x", "dst_y"]
     edge_segments = list(df[cols].values.reshape(df.index.size, 2, 2))
@@ -313,23 +325,24 @@ def connect_tri_edges_pd(trimesh):
 
     """
     import pandas as pd
+
     edges = trimesh.dframe().copy()
-    edges.index.name = 'trimesh_edge_index'
+    edges.index.name = "trimesh_edge_index"
     edges = edges.drop("color", errors="ignore", axis=1).reset_index()
     nodes = trimesh.nodes.dframe().copy()
-    nodes.index.name = 'node_index'
+    nodes.index.name = "node_index"
     nodes = nodes.drop(["color", "z"], errors="ignore", axis=1)
     v1, v2, v3 = trimesh.kdims
     x, y, idx = trimesh.nodes.kdims[:3]
 
     df = pd.merge(edges, nodes, left_on=[v1.name], right_on=[idx.name])
-    df = df.rename(columns={x.name: 'x0', y.name: 'y0'})
+    df = df.rename(columns={x.name: "x0", y.name: "y0"})
     df = pd.merge(df, nodes, left_on=[v2.name], right_on=[idx.name])
-    df = df.rename(columns={x.name: 'x1', y.name: 'y1'})
+    df = df.rename(columns={x.name: "x1", y.name: "y1"})
     df = pd.merge(df, nodes, left_on=[v3.name], right_on=[idx.name])
-    df = df.rename(columns={x.name: 'x2', y.name: 'y2'})
-    df = df.sort_values('trimesh_edge_index').drop(['trimesh_edge_index'], axis=1)
-    return df[['x0', 'y0', 'x1', 'y1', 'x2', 'y2']]
+    df = df.rename(columns={x.name: "x2", y.name: "y2"})
+    df = df.sort_values("trimesh_edge_index").drop(["trimesh_edge_index"], axis=1)
+    return df[["x0", "y0", "x1", "y1", "x2", "y2"]]
 
 
 def connect_edges(graph):
@@ -344,7 +357,7 @@ def connect_edges(graph):
         start_ds = graph.nodes[:, :, start]
         end_ds = graph.nodes[:, :, end]
         if not len(start_ds) or not len(end_ds):
-            raise ValueError('Could not find node positions for all edges')
+            raise ValueError("Could not find node positions for all edges")
         start = start_ds.array(start_ds.kdims[:2])
         end = end_ds.array(end_ds.kdims[:2])
         paths.append(np.array([start[0], end[0]]))

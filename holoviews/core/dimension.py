@@ -3,6 +3,7 @@ axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 
 """
+
 from __future__ import annotations
 
 import builtins
@@ -27,12 +28,12 @@ from .util import bytes_to_unicode
 
 # Alias parameter support for pickle loading
 
-ALIASES = {'key_dimensions': 'kdims', 'value_dimensions': 'vdims',
-           'constant_dimensions': 'cdims'}
+ALIASES = {"key_dimensions": "kdims", "value_dimensions": "vdims", "constant_dimensions": "cdims"}
 
 title_format = "{name}: {val}{unit}"
 
-redim = Redim # pickle compatibility - remove in 2.0
+redim = Redim  # pickle compatibility - remove in 2.0
+
 
 def param_aliases(d):
     """Called from __setstate__ in LabelledData in order to load
@@ -43,8 +44,8 @@ def param_aliases(d):
     We want to keep pickle hacking to a minimum!
     """
     for old, new in ALIASES.items():
-        old_param = f'_{old}_param_value'
-        new_param = f'_{new}_param_value'
+        old_param = f"_{old}_param_value"
+        new_param = f"_{new}_param_value"
         if old_param in d:
             d[new_param] = d.pop(old_param)
     return d
@@ -84,13 +85,15 @@ def dimension_name(dimension):
     elif isinstance(dimension, tuple):
         return dimension[0]
     elif isinstance(dimension, dict):
-        return dimension['name']
+        return dimension["name"]
     elif dimension is None:
         return None
     else:
-        raise ValueError(f'{type(dimension).__name__} type could not be interpreted as Dimension. '
-                         'Dimensions must be declared as a string, tuple, '
-                         'dictionary or Dimension type.')
+        raise ValueError(
+            f"{type(dimension).__name__} type could not be interpreted as Dimension. "
+            "Dimensions must be declared as a string, tuple, "
+            "dictionary or Dimension type."
+        )
 
 
 def process_dimensions(kdims, vdims):
@@ -110,7 +113,7 @@ def process_dimensions(kdims, vdims):
         {'kdims': [Dimension('x')], 'vdims': [Dimension('y')]
     """
     dimensions = {}
-    for group, dims in [('kdims', kdims), ('vdims', vdims)]:
+    for group, dims in [("kdims", kdims), ("vdims", vdims)]:
         if dims is None:
             continue
         elif isinstance(dims, (tuple, str, Dimension, dict)):
@@ -124,7 +127,6 @@ def process_dimensions(kdims, vdims):
             )
         dimensions[group] = [asdim(d) for d in dims]
     return dimensions
-
 
 
 class Dimension(param.Parameterized):
@@ -172,137 +174,176 @@ class Dimension(param.Parameterized):
 
     """
 
-    name = param.String(doc="""
+    name = param.String(
+        doc="""
        Short name associated with the Dimension, such as 'height' or
        'weight'. Valid Python identifiers make good names, because they
-       can be used conveniently as a keyword in many contexts.""")
+       can be used conveniently as a keyword in many contexts."""
+    )
 
-    label = param.String(default=None, doc="""
+    label = param.String(
+        default=None,
+        doc="""
         Unrestricted label used to describe the dimension. A label
         should succinctly describe the dimension and may contain any
-        characters, including Unicode and LaTeX expression.""")
+        characters, including Unicode and LaTeX expression.""",
+    )
 
-    cyclic = param.Boolean(default=False, doc="""
+    cyclic = param.Boolean(
+        default=False,
+        doc="""
         Whether the range of this feature is cyclic such that the
         maximum allowed value (defined by the range parameter) is
-        continuous with the minimum allowed value.""")
+        continuous with the minimum allowed value.""",
+    )
 
-    default = param.Parameter(default=None, doc="""
+    default = param.Parameter(
+        default=None,
+        doc="""
         Default value of the Dimension which may be useful for widget
-        or other situations that require an initial or default value.""")
+        or other situations that require an initial or default value.""",
+    )
 
-    nodata = param.Integer(default=None, doc="""
+    nodata = param.Integer(
+        default=None,
+        doc="""
         Optional missing-data value for integer data.
-        If non-None, data with this value will be replaced with NaN.""")
+        If non-None, data with this value will be replaced with NaN.""",
+    )
 
-    range = param.Tuple(default=(None, None), doc="""
+    range = param.Tuple(
+        default=(None, None),
+        doc="""
         Specifies the minimum and maximum allowed values for a
-        Dimension. None is used to represent an unlimited bound.""")
+        Dimension. None is used to represent an unlimited bound.""",
+    )
 
-    soft_range = param.Tuple(default=(None, None), doc="""
+    soft_range = param.Tuple(
+        default=(None, None),
+        doc="""
         Specifies a minimum and maximum reference value, which
-        may be overridden by the data.""")
+        may be overridden by the data.""",
+    )
 
-    step = param.Number(default=None, doc="""
+    step = param.Number(
+        default=None,
+        doc="""
         Optional floating point step specifying how frequently the
         underlying space should be sampled. May be used to define a
-        discrete sampling over the range.""")
+        discrete sampling over the range.""",
+    )
 
-    type = param.Parameter(default=None, doc="""
+    type = param.Parameter(
+        default=None,
+        doc="""
         Optional type associated with the Dimension values. The type
         may be an inbuilt constructor (such as int, str, float) or a
-        custom class object.""")
+        custom class object.""",
+    )
 
-    unit = param.String(default=None, allow_None=True, doc="""
+    unit = param.String(
+        default=None,
+        allow_None=True,
+        doc="""
         Optional unit string associated with the Dimension. For
         instance, the string 'm' may be used represent units of meters
-        and 's' to represent units of seconds.""")
+        and 's' to represent units of seconds.""",
+    )
 
-    value_format = param.Callable(default=None, doc="""
-        Formatting function applied to each value before display.""")
+    value_format = param.Callable(
+        default=None,
+        doc="""
+        Formatting function applied to each value before display.""",
+    )
 
-    values = param.List(default=[], doc="""
+    values = param.List(
+        default=[],
+        doc="""
         Optional specification of the allowed value set for the
         dimension that may also be used to retain a categorical
-        ordering.""")
+        ordering.""",
+    )
 
     # Defines default formatting by type
     type_formatters = {}
-    unit_format = ' ({unit})'
-    presets = {} # A dictionary-like mapping name, (name,) or
-                 # (name, unit) to a preset Dimension object
+    unit_format = " ({unit})"
+    presets = {}  # A dictionary-like mapping name, (name,) or
+    # (name, unit) to a preset Dimension object
 
     def __init__(self, spec, **params):
-        """Initializes the Dimension object with the given name.
-
-        """
-        if 'name' in params:
-            raise KeyError('Dimension name must only be passed as the positional argument')
+        """Initializes the Dimension object with the given name."""
+        if "name" in params:
+            raise KeyError("Dimension name must only be passed as the positional argument")
 
         all_params = {}
         if isinstance(spec, Dimension):
             all_params.update(spec.param.values())
         elif isinstance(spec, str):
-            if (spec, params.get('unit', None)) in self.presets.keys():
-                preset = self.presets[(str(spec), str(params['unit']))]
+            if (spec, params.get("unit", None)) in self.presets.keys():
+                preset = self.presets[(str(spec), str(params["unit"]))]
                 all_params.update(preset.param.values())
             elif spec in self.presets:
                 all_params.update(self.presets[spec].param.values())
             elif (spec,) in self.presets:
                 all_params.update(self.presets[(spec,)].param.values())
-            all_params['name'] = spec
-            all_params['label'] = spec
+            all_params["name"] = spec
+            all_params["label"] = spec
         elif isinstance(spec, tuple):
             try:
-                all_params['name'], all_params['label'] = spec
+                all_params["name"], all_params["label"] = spec
             except ValueError as exc:
                 raise ValueError(
                     "Dimensions specified as a tuple must be a tuple "
                     f"consisting of the name and label not: {spec}"
                 ) from exc
-            if 'label' in params and params['label'] != all_params['label']:
+            if "label" in params and params["label"] != all_params["label"]:
                 self.param.warning(
-                    f'Using label as supplied by keyword ({params["label"]!r}), '
-                    f'ignoring tuple value {all_params["label"]!r}')
+                    f"Using label as supplied by keyword ({params['label']!r}), "
+                    f"ignoring tuple value {all_params['label']!r}"
+                )
         elif isinstance(spec, dict):
             all_params.update(spec)
             try:
-                all_params.setdefault('label', spec['name'])
+                all_params.setdefault("label", spec["name"])
             except KeyError as exc:
                 raise ValueError(
                     'Dimension specified as a dict must contain a "name" key'
                 ) from exc
         else:
             raise ValueError(
-                f'{type(spec).__name__} type could not be interpreted as Dimension.  Dimensions must be '
-                'declared as a string, tuple, dictionary or Dimension type.'
+                f"{type(spec).__name__} type could not be interpreted as Dimension.  Dimensions must be "
+                "declared as a string, tuple, dictionary or Dimension type."
             )
         all_params.update(params)
 
-        if not all_params['name']:
-            raise ValueError('Dimension name cannot be empty')
-        if not all_params['label']:
-            raise ValueError('Dimension label cannot be empty')
+        if not all_params["name"]:
+            raise ValueError("Dimension name cannot be empty")
+        if not all_params["label"]:
+            raise ValueError("Dimension label cannot be empty")
 
-        values = params.get('values', [])
-        if isinstance(values, str) and values == 'initial':
-            self.param.warning("The 'initial' string for dimension values "
-                               "is no longer supported.")
+        values = params.get("values", [])
+        if isinstance(values, str) and values == "initial":
+            self.param.warning("The 'initial' string for dimension values is no longer supported.")
             values = []
 
-        all_params['values'] = list(util.unique_array(values))
+        all_params["values"] = list(util.unique_array(values))
         super().__init__(**all_params)
         if self.default is not None:
             if self.values and self.default not in values:
-                raise ValueError(f'{self!r} default {self.default} not found in declared values: {self.values}')
-            elif (self.range != (None, None) and
-                  ((self.range[0] is not None and self.default < self.range[0]) or
-                   (self.range[0] is not None and self.default > self.range[1]))):
-                raise ValueError(f'{self!r} default {self.default} not in declared range: {self.range}')
+                raise ValueError(
+                    f"{self!r} default {self.default} not found in declared values: {self.values}"
+                )
+            elif self.range != (None, None) and (
+                (self.range[0] is not None and self.default < self.range[0])
+                or (self.range[0] is not None and self.default > self.range[1])
+            ):
+                raise ValueError(
+                    f"{self!r} default {self.default} not in declared range: {self.range}"
+                )
 
     @property
     def spec(self):
-        """"Returns the Dimensions tuple specification
+        """ "Returns the Dimensions tuple specification
 
         Returns
         -------
@@ -329,35 +370,32 @@ class Dimension(param.Parameterized):
         settings = dict(self.param.values(), **overrides)
 
         if spec is None:
-            spec = (self.name, overrides.get('label', self.label))
-        if 'label' in overrides and isinstance(spec, str) :
-            spec = (spec, overrides['label'])
-        elif 'label' in overrides and isinstance(spec, tuple) :
-            if overrides['label'] != spec[1]:
+            spec = (self.name, overrides.get("label", self.label))
+        if "label" in overrides and isinstance(spec, str):
+            spec = (spec, overrides["label"])
+        elif "label" in overrides and isinstance(spec, tuple):
+            if overrides["label"] != spec[1]:
                 self.param.warning(
-                    f'Using label as supplied by keyword ({overrides["label"]!r}), '
-                    f'ignoring tuple value {spec[1]!r}')
-            spec = (spec[0],  overrides['label'])
-        return self.__class__(spec, **{k:v for k,v in settings.items()
-                                       if k not in ['name', 'label']})
+                    f"Using label as supplied by keyword ({overrides['label']!r}), "
+                    f"ignoring tuple value {spec[1]!r}"
+                )
+            spec = (spec[0], overrides["label"])
+        return self.__class__(
+            spec, **{k: v for k, v in settings.items() if k not in ["name", "label"]}
+        )
 
     def __hash__(self):
-        """Hashes object on Dimension spec, i.e. (name, label).
-        """
+        """Hashes object on Dimension spec, i.e. (name, label)."""
         return hash(self.spec)
 
     def __setstate__(self, d):
-        """Compatibility for pickles before alias attribute was introduced.
-
-        """
+        """Compatibility for pickles before alias attribute was introduced."""
         super().__setstate__(d)
-        if '_label_param_value' not in d:
+        if "_label_param_value" not in d:
             self.label = self.name
 
     def __eq__(self, other):
-        """Implements equals operator including sanitized comparison.
-
-        """
+        """Implements equals operator including sanitized comparison."""
         if isinstance(other, Dimension):
             return self.label == other.label
 
@@ -365,15 +403,11 @@ class Dimension(param.Parameterized):
         return other in [self.name, self.label, util.dimension_sanitizer(self.name)]
 
     def __ne__(self, other):
-        """Implements not equal operator including sanitized comparison.
-
-        """
+        """Implements not equal operator including sanitized comparison."""
         return not self.__eq__(other)
 
     def __lt__(self, other):
-        """Dimensions are sorted alphanumerically by name
-
-        """
+        """Dimensions are sorted alphanumerically by name"""
         return self.name < other.name if isinstance(other, Dimension) else self.name < other
 
     def __str__(self):
@@ -384,25 +418,24 @@ class Dimension(param.Parameterized):
 
     @property
     def pprint_label(self):
-        """The pretty-printed label string for the Dimension
-
-        """
-        unit = ('' if self.unit is None
-                else type(self.unit)(self.unit_format).format(unit=self.unit))
+        """The pretty-printed label string for the Dimension"""
+        unit = (
+            "" if self.unit is None else type(self.unit)(self.unit_format).format(unit=self.unit)
+        )
         return bytes_to_unicode(self.label) + bytes_to_unicode(unit)
 
     def pprint(self):
         changed = self.param.values(onlychanged=True)
-        if len({changed.get(k, k) for k in ['name','label']}) == 1:
-            return f'Dimension({self.name!r})'
+        if len({changed.get(k, k) for k in ["name", "label"]}) == 1:
+            return f"Dimension({self.name!r})"
 
-        params = self.param.objects('existing')
+        params = self.param.objects("existing")
         ordering = sorted(
-            sorted(changed.keys()), key=lambda k: (
-                -float('inf') if params[k].precedence is None
-                else params[k].precedence))
-        kws = ", ".join(f'{k}={changed[k]!r}' for k in ordering if k != 'name')
-        return f'Dimension({self.name!r}, {kws})'
+            sorted(changed.keys()),
+            key=lambda k: -float("inf") if params[k].precedence is None else params[k].precedence,
+        )
+        kws = ", ".join(f"{k}={changed[k]!r}" for k in ordering if k != "name")
+        return f"Dimension({self.name!r}, {kws})"
 
     def _get_type_formatters(self, own_type):
         """_get_type_formatters returns the formatter for the type of the value.
@@ -431,8 +464,7 @@ class Dimension(param.Parameterized):
         Formatted dimension value
         """
         own_type = type(value) if self.type is None else self.type
-        formatter = (self.value_format if self.value_format
-                     else self._get_type_formatters(own_type))
+        formatter = self.value_format if self.value_format else self._get_type_formatters(own_type)
         if formatter:
             if callable(formatter):
                 formatted_value = formatter(value)
@@ -449,7 +481,7 @@ class Dimension(param.Parameterized):
             formatted_value = str(bytes_to_unicode(value))
 
         if print_unit and self.unit is not None:
-            formatted_value = formatted_value + ' ' + bytes_to_unicode(self.unit)
+            formatted_value = formatted_value + " " + bytes_to_unicode(self.unit)
         return formatted_value
 
     def pprint_value_string(self, value):
@@ -464,7 +496,7 @@ class Dimension(param.Parameterized):
         -------
         Formatted dimension value string with unit
         """
-        unit = '' if self.unit is None else ' ' + bytes_to_unicode(self.unit)
+        unit = "" if self.unit is None else " " + bytes_to_unicode(self.unit)
         value = self.pprint_value(value)
         return title_format.format(name=bytes_to_unicode(self.label), val=value, unit=unit)
 
@@ -503,14 +535,22 @@ class LabelledData(param.Parameterized):
 
     """
 
-    group = param.String(default='LabelledData', constant=True, doc="""
+    group = param.String(
+        default="LabelledData",
+        constant=True,
+        doc="""
        A string describing the type of data contained by the object.
-       By default this will typically mirror the class name.""")
+       By default this will typically mirror the class name.""",
+    )
 
-    label = param.String(default='', constant=True, doc="""
+    label = param.String(
+        default="",
+        constant=True,
+        doc="""
        Optional label describing the data, typically reflecting where
        or how it was measured. The label should allow a specific
-       measurement or dataset to be referenced for a given group.""")
+       measurement or dataset to be referenced for a given group.""",
+    )
 
     _deep_indexable = False
 
@@ -525,15 +565,15 @@ class LabelledData(param.Parameterized):
         self._id = None
         self.id = id
         self._plot_id = plot_id or builtins.id(self)
-        if isinstance(params.get('label',None), tuple):
-            (alias, long_name) = params['label']
-            util.label_sanitizer.add_aliases(**{alias:long_name})
-            params['label'] = long_name
+        if isinstance(params.get("label", None), tuple):
+            (alias, long_name) = params["label"]
+            util.label_sanitizer.add_aliases(**{alias: long_name})
+            params["label"] = long_name
 
-        if isinstance(params.get('group',None), tuple):
-            (alias, long_name) = params['group']
-            util.group_sanitizer.add_aliases(**{alias:long_name})
-            params['group'] = long_name
+        if isinstance(params.get("group", None), tuple):
+            (alias, long_name) = params["group"]
+            util.group_sanitizer.add_aliases(**{alias: long_name})
+            params["group"] = long_name
 
         super().__init__(**params)
         if not util.group_sanitizer.allowable(self.group):
@@ -558,9 +598,7 @@ class LabelledData(param.Parameterized):
             ref = weakref.ref(self, partial(cleanup_custom_options, opts_id))
             Store._weakrefs[opts_id].append(ref)
 
-
-    def clone(self, data=None, shared_data=True, new_type=None, link=True,
-              *args, **overrides):
+    def clone(self, data=None, shared_data=True, new_type=None, link=True, *args, **overrides):
         """Clones the object, overriding data and parameters.
 
         Parameters
@@ -589,24 +627,21 @@ class LabelledData(param.Parameterized):
             clone_type = self.__class__
         else:
             clone_type = new_type
-            new_params = new_type.param.objects('existing')
-            params = {k: v for k, v in params.items()
-                      if k in new_params}
-            if params.get('group') == self.param.objects('existing')['group'].default:
-                params.pop('group')
+            new_params = new_type.param.objects("existing")
+            params = {k: v for k, v in params.items() if k in new_params}
+            if params.get("group") == self.param.objects("existing")["group"].default:
+                params.pop("group")
         settings = dict(params, **overrides)
-        if 'id' not in settings:
-            settings['id'] = self.id
+        if "id" not in settings:
+            settings["id"] = self.id
 
         if data is None and shared_data:
             data = self.data
             if link:
-                settings['plot_id'] = self._plot_id
+                settings["plot_id"] = self._plot_id
         # Apply name mangling for __ attribute
-        pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
-        return clone_type(data, *args, **{k:v for k,v in settings.items()
-                                          if k not in pos_args})
-
+        pos_args = getattr(self, "_" + type(self).__name__ + "__pos_params", [])
+        return clone_type(data, *args, **{k: v for k, v in settings.items() if k not in pos_args})
 
     def relabel(self, label=None, group=None, depth=0):
         """Clone object and apply new group and/or label.
@@ -630,15 +665,14 @@ class LabelledData(param.Parameterized):
         Returns relabelled object
         """
         new_data = self.data
-        if (depth > 0) and getattr(self, '_deep_indexable', False):
+        if (depth > 0) and getattr(self, "_deep_indexable", False):
             new_data = []
             for k, v in self.data.items():
-                relabelled = v.relabel(group=group, label=label, depth=depth-1)
+                relabelled = v.relabel(group=group, label=label, depth=depth - 1)
                 new_data.append((k, relabelled))
-        keywords = [('label', label), ('group', group)]
+        keywords = [("label", label), ("group", group)]
         kwargs = {k: v for k, v in keywords if v is not None}
         return self.clone(new_data, **kwargs)
-
 
     def matches(self, spec):
         """Whether the spec applies to this object.
@@ -658,21 +692,28 @@ class LabelledData(param.Parameterized):
         bool
             Whether the spec matched this object.
         """
-        if callable(spec) and not isinstance(spec, type): return spec(self)
-        elif isinstance(spec, type): return isinstance(self, spec)
+        if callable(spec) and not isinstance(spec, type):
+            return spec(self)
+        elif isinstance(spec, type):
+            return isinstance(self, spec)
         specification = (self.__class__.__name__, self.group, self.label)
-        split_spec = tuple(spec.split('.')) if not isinstance(spec, tuple) else spec
-        split_spec, nocompare = zip(*((None, True) if s == '*' or s is None else (s, False)
-                                    for s in split_spec), strict=None)
-        if all(nocompare): return True
+        split_spec = tuple(spec.split(".")) if not isinstance(spec, tuple) else spec
+        split_spec, nocompare = zip(
+            *((None, True) if s == "*" or s is None else (s, False) for s in split_spec),
+            strict=None,
+        )
+        if all(nocompare):
+            return True
         match_fn = itemgetter(*(idx for idx, nc in enumerate(nocompare) if not nc))
         self_spec = match_fn(split_spec)
-        unescaped_match = match_fn(specification[:len(split_spec)]) == self_spec
-        if unescaped_match: return True
+        unescaped_match = match_fn(specification[: len(split_spec)]) == self_spec
+        if unescaped_match:
+            return True
         sanitizers = [util.sanitize_identifier, util.group_sanitizer, util.label_sanitizer]
-        identifier_specification = tuple(fn(ident, escape=False)
-                                         for ident, fn in zip(specification, sanitizers, strict=None))
-        identifier_match = match_fn(identifier_specification[:len(split_spec)]) == self_spec
+        identifier_specification = tuple(
+            fn(ident, escape=False) for ident, fn in zip(specification, sanitizers, strict=None)
+        )
+        identifier_match = match_fn(identifier_specification[: len(split_spec)]) == self_spec
         return identifier_match
 
     def traverse(self, fn=None, specs=None, full_breadth=True):
@@ -707,7 +748,8 @@ class LabelledData(param.Parameterized):
         if not matches:
             for spec in specs:
                 matches = self.matches(spec)
-                if matches: break
+                if matches:
+                    break
         if matches:
             accumulator.append(fn(self))
 
@@ -717,9 +759,9 @@ class LabelledData(param.Parameterized):
                 if el is None:
                     continue
                 accumulator += el.traverse(fn, specs, full_breadth)
-                if not full_breadth: break
+                if not full_breadth:
+                    break
         return accumulator
-
 
     def map(self, map_fn, specs=None, clone=True):
         """Map a function to all objects matching the specs
@@ -755,42 +797,39 @@ class LabelledData(param.Parameterized):
                 new_val = v.map(map_fn, specs, clone)
                 if new_val is not None:
                     deep_mapped[k] = new_val
-            if applies: deep_mapped = map_fn(deep_mapped)
+            if applies:
+                deep_mapped = map_fn(deep_mapped)
             return deep_mapped
         else:
             return map_fn(self) if applies else self
 
-
     def __getstate__(self):
-        """Ensures pickles save options applied to this objects.
-
-        """
+        """Ensures pickles save options applied to this objects."""
         obj_dict = self.__dict__.copy()
         try:
-            if Store.save_option_state and (obj_dict.get('_id', None) is not None):
-                custom_key = '_custom_option_{}'.format(obj_dict['_id'])
+            if Store.save_option_state and (obj_dict.get("_id", None) is not None):
+                custom_key = "_custom_option_{}".format(obj_dict["_id"])
                 if custom_key not in obj_dict:
-                    obj_dict[custom_key] = {backend:s[obj_dict['_id']]
-                                            for backend,s in Store._custom_options.items()
-                                            if obj_dict['_id'] in s}
+                    obj_dict[custom_key] = {
+                        backend: s[obj_dict["_id"]]
+                        for backend, s in Store._custom_options.items()
+                        if obj_dict["_id"] in s
+                    }
             else:
-                obj_dict['_id'] = None
+                obj_dict["_id"] = None
         except Exception:
             self.param.warning("Could not pickle custom style information.")
         return obj_dict
 
-
     def __setstate__(self, d):
-        """Restores options applied to this object.
-
-        """
+        """Restores options applied to this object."""
         d = param_aliases(d)
 
         load_options = Store.load_counter_offset is not None
         if load_options:
-            matches = [k for k in d if k.startswith('_custom_option')]
+            matches = [k for k in d if k.startswith("_custom_option")]
             for match in matches:
-                custom_id = int(match.split('_')[-1])+Store.load_counter_offset
+                custom_id = int(match.split("_")[-1]) + Store.load_counter_offset
                 for backend, info in d[match].items():
                     if backend not in Store._custom_options:
                         Store._custom_options[backend] = {}
@@ -863,41 +902,62 @@ class Dimensioned(LabelledData):
     by the value dimensions and ending with the deep dimensions.
     """
 
-    cdims = param.Dict(default={}, doc="""
+    cdims = param.Dict(
+        default={},
+        doc="""
        The constant dimensions defined as a dictionary of Dimension:value
        pairs providing additional dimension information about the object.
 
-       Aliased with constant_dimensions.""")
+       Aliased with constant_dimensions.""",
+    )
 
-    kdims = param.List(bounds=(0, None), constant=True, doc="""
+    kdims = param.List(
+        bounds=(0, None),
+        constant=True,
+        doc="""
        The key dimensions defined as list of dimensions that may be
        used in indexing (and potential slicing) semantics. The order
        of the dimensions listed here determines the semantics of each
        component of a multi-dimensional indexing operation.
 
-       Aliased with key_dimensions.""")
+       Aliased with key_dimensions.""",
+    )
 
-    vdims = param.List(bounds=(0, None), constant=True, doc="""
+    vdims = param.List(
+        bounds=(0, None),
+        constant=True,
+        doc="""
        The value dimensions defined as the list of dimensions used to
        describe the components of the data. If multiple value
        dimensions are supplied, a particular value dimension may be
        indexed by name after the key dimensions.
 
-       Aliased with value_dimensions.""")
+       Aliased with value_dimensions.""",
+    )
 
-    group = param.String(default='Dimensioned', constant=True, doc="""
-       A string describing the data wrapped by the object.""")
+    group = param.String(
+        default="Dimensioned",
+        constant=True,
+        doc="""
+       A string describing the data wrapped by the object.""",
+    )
 
     __abstract = True
-    _dim_groups = ['kdims', 'vdims', 'cdims', 'ddims']
-    _dim_aliases = dict(key_dimensions='kdims', value_dimensions='vdims',
-                        constant_dimensions='cdims', deep_dimensions='ddims')
+    _dim_groups = ["kdims", "vdims", "cdims", "ddims"]
+    _dim_aliases = dict(
+        key_dimensions="kdims",
+        value_dimensions="vdims",
+        constant_dimensions="cdims",
+        deep_dimensions="ddims",
+    )
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         params.update(process_dimensions(kdims, vdims))
-        if 'cdims' in params:
-            params['cdims'] = {d if isinstance(d, Dimension) else Dimension(d): val
-                               for d, val in params['cdims'].items()}
+        if "cdims" in params:
+            params["cdims"] = {
+                d if isinstance(d, Dimension) else Dimension(d): val
+                for d, val in params["cdims"].items()
+            }
         super().__init__(data, **params)
         self.ndims = len(self.kdims)
         cdims = [(d.name, val) for d, val in self.cdims.items()]
@@ -931,25 +991,22 @@ class Dimensioned(LabelledData):
 
         valid_dimensions = []
         for dim in dimensions:
-            if isinstance(dim, Dimension): dim = dim.name
+            if isinstance(dim, Dimension):
+                dim = dim.name
             if dim not in self.kdims:
                 raise Exception(f"Supplied dimensions {dim} not found.")
             valid_dimensions.append(dim)
         return valid_dimensions
 
-
     @property
     def ddims(self):
-        """The list of deep dimensions
-
-        """
+        """The list of deep dimensions"""
         if self._deep_indexable and self:
             return self.values()[0].dimensions()
         else:
             return []
 
-
-    def dimensions(self, selection='all', label=False):
+    def dimensions(self, selection="all", label=False):
         """Lists the available dimensions on the object
 
         Provides convenient access to Dimensions on nested Dimensioned
@@ -970,35 +1027,37 @@ class Dimensioned(LabelledData):
         -------
         List of Dimension objects or their names or labels
         """
-        if label in ['name', True]:
-            label = 'short'
-        elif label == 'label':
-            label = 'long'
+        if label in ["name", True]:
+            label = "short"
+        elif label == "label":
+            label = "long"
         elif label:
             raise ValueError("label needs to be one of True, False, 'name' or 'label'")
 
-        lambdas = {'k': (lambda x: x.kdims, {'full_breadth': False}),
-                   'v': (lambda x: x.vdims, {}),
-                   'c': (lambda x: x.cdims, {})}
-        aliases = {'key': 'k', 'value': 'v', 'constant': 'c'}
-        if selection in ['all', 'ranges']:
-            groups = [d for d in self._dim_groups if d != 'cdims']
-            dims = [dim for group in groups
-                    for dim in getattr(self, group)]
+        lambdas = {
+            "k": (lambda x: x.kdims, {"full_breadth": False}),
+            "v": (lambda x: x.vdims, {}),
+            "c": (lambda x: x.cdims, {}),
+        }
+        aliases = {"key": "k", "value": "v", "constant": "c"}
+        if selection in ["all", "ranges"]:
+            groups = [d for d in self._dim_groups if d != "cdims"]
+            dims = [dim for group in groups for dim in getattr(self, group)]
         elif isinstance(selection, list):
-            dims =  [dim for group in selection
-                     for dim in getattr(self, f'{aliases.get(group)}dims')]
+            dims = [
+                dim for group in selection for dim in getattr(self, f"{aliases.get(group)}dims")
+            ]
         elif aliases.get(selection) in lambdas:
             selection = aliases.get(selection, selection)
             lmbd, kwargs = lambdas[selection]
             key_traversal = self.traverse(lmbd, **kwargs)
             dims = [dim for keydims in key_traversal for dim in keydims]
         else:
-            raise KeyError(f"Invalid selection {repr(selection)!r}, valid selections include"
-                           "'all', 'value' and 'key' dimensions")
-        return [(dim.label if label == 'long' else dim.name)
-                if label else dim for dim in dims]
-
+            raise KeyError(
+                f"Invalid selection {repr(selection)!r}, valid selections include"
+                "'all', 'value' and 'key' dimensions"
+            )
+        return [(dim.label if label == "long" else dim.name) if label else dim for dim in dims]
 
     def get_dimension(self, dimension, default=None, strict=False) -> Dimension | None:
         """Get a Dimension object by name or index.
@@ -1017,9 +1076,11 @@ class Dimensioned(LabelledData):
         Dimension object for the requested dimension or default
         """
         if dimension is not None and not isinstance(dimension, (int, str, Dimension)):
-            raise TypeError('Dimension lookup supports int, string, '
-                            'and Dimension instances, cannot lookup '
-                            f'Dimensions using {type(dimension).__name__} type.')
+            raise TypeError(
+                "Dimension lookup supports int, string, "
+                "and Dimension instances, cannot lookup "
+                f"Dimensions using {type(dimension).__name__} type."
+            )
         all_dims = self.dimensions()
         if isinstance(dimension, int):
             if 0 <= dimension < len(all_dims):
@@ -1048,7 +1109,6 @@ class Dimensioned(LabelledData):
             else:
                 return name_map.get(dimension, default)
 
-
     def get_dimension_index(self, dimension):
         """Get the index of the requested dimension.
 
@@ -1062,18 +1122,16 @@ class Dimensioned(LabelledData):
         Integer index of the requested dimension
         """
         if isinstance(dimension, int):
-            if (dimension < (self.ndims + len(self.vdims)) or
-                dimension < len(self.dimensions())):
+            if dimension < (self.ndims + len(self.vdims)) or dimension < len(self.dimensions()):
                 return dimension
             else:
-                return IndexError('Dimension index out of bounds')
+                return IndexError("Dimension index out of bounds")
         dim = dimension_name(dimension)
         try:
-            dimensions = self.kdims+self.vdims
+            dimensions = self.kdims + self.vdims
             return next(i for i, d in enumerate(dimensions) if d == dim)
         except StopIteration:
             raise Exception(f"Dimension {dim} not found in {self.__class__.__name__}.") from None
-
 
     def get_dimension_type(self, dim):
         """Get the type of the requested dimension.
@@ -1099,7 +1157,6 @@ class Dimensioned(LabelledData):
         else:
             return None
 
-
     def __getitem__(self, key):
         """Multi-dimensional indexing semantics is determined by the list
         of key dimensions. For instance, the first indexing component
@@ -1111,7 +1168,6 @@ class Dimensioned(LabelledData):
         dimensions).
         """
         return self
-
 
     def select(self, selection_specs=None, **kwargs):
         """Applies selection by dimension name
@@ -1157,17 +1213,15 @@ class Dimensioned(LabelledData):
             selection_specs = [selection_specs]
 
         # Apply all indexes applying on this object
-        vdims = [*self.vdims, 'value'] if self.vdims else []
+        vdims = [*self.vdims, "value"] if self.vdims else []
         kdims = self.kdims
-        local_kwargs = {k: v for k, v in kwargs.items()
-                        if k in kdims+vdims}
+        local_kwargs = {k: v for k, v in kwargs.items() if k in kdims + vdims}
 
         # Check selection_spec applies
         if selection_specs is not None:
             if not isinstance(selection_specs, (list, tuple)):
                 selection_specs = [selection_specs]
-            matches = any(self.matches(spec)
-                          for spec in selection_specs)
+            matches = any(self.matches(spec) for spec in selection_specs)
         else:
             matches = True
 
@@ -1175,13 +1229,14 @@ class Dimensioned(LabelledData):
         if local_kwargs and matches:
             ndims = self.ndims
             if any(d in self.vdims for d in kwargs):
-                ndims = len(self.kdims+self.vdims)
+                ndims = len(self.kdims + self.vdims)
             select = [slice(None) for _ in range(ndims)]
             for dim, val in local_kwargs.items():
-                if dim == 'value':
+                if dim == "value":
                     select += [val]
                 else:
-                    if isinstance(val, tuple): val = slice(*val)
+                    if isinstance(val, tuple):
+                        val = slice(*val)
                     select[self.get_dimension_index(dim)] = val
             if self._deep_indexable:
                 selection = self.get(tuple(select), None)
@@ -1196,21 +1251,20 @@ class Dimensioned(LabelledData):
             return selection
         elif type(selection) is not type(self) and isinstance(selection, Dimensioned):
             # Apply the selection on the selected object of a different type
-            dimensions = [*selection.dimensions(), 'value']
+            dimensions = [*selection.dimensions(), "value"]
             if any(kw in dimensions for kw in kwargs):
                 selection = selection.select(selection_specs=selection_specs, **kwargs)
         elif isinstance(selection, Dimensioned) and selection._deep_indexable:
             # Apply the deep selection on each item in local selection
             items = []
             for k, v in selection.items():
-                dimensions = [*v.dimensions(), 'value']
+                dimensions = [*v.dimensions(), "value"]
                 if any(kw in dimensions for kw in kwargs):
                     items.append((k, v.select(selection_specs=selection_specs, **kwargs)))
                 else:
                     items.append((k, v))
             selection = selection.clone(items)
         return selection
-
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         """Return the values along the requested dimension.
@@ -1241,7 +1295,6 @@ class Dimensioned(LabelledData):
         else:
             raise Exception(f"Dimension {dimension} not found in {self.__class__.__name__}.")
 
-
     def range(self, dimension, data_range=True, dimension_range=True):
         """Return the lower and upper bounds of values along dimension.
 
@@ -1266,7 +1319,7 @@ class Dimensioned(LabelledData):
         elif all(util.isfinite(v) for v in dimension.range) and dimension_range:
             return dimension.range
         elif data_range:
-            if dimension in self.kdims+self.vdims:
+            if dimension in self.kdims + self.vdims:
                 dim_vals = self.dimension_values(dimension.name)
                 lower, upper = util.find_range(dim_vals)
             else:
@@ -1329,7 +1382,7 @@ class Dimensioned(LabelledData):
         -------
         Returns the cloned object with the options applied
         """
-        backend = kwargs.get('backend', None)
+        backend = kwargs.get("backend", None)
 
         if not (args or kwargs):
             options = None
@@ -1337,30 +1390,37 @@ class Dimensioned(LabelledData):
             options = {args[0]: kwargs}
         elif args and isinstance(args[0], list):
             if kwargs:
-                raise ValueError('Please specify a list of option objects, or kwargs, but not both')
+                raise ValueError(
+                    "Please specify a list of option objects, or kwargs, but not both"
+                )
             options = args[0]
-        elif args and [k for k in kwargs.keys() if k != 'backend']:
-            raise ValueError("Options must be defined in one of two formats. "
-                             "Either supply keywords defining the options for "
-                             "the current object, e.g. obj.options(cmap='viridis'), "
-                             "or explicitly define the type, e.g. "
-                             "obj.options({'Image': {'cmap': 'viridis'}}). "
-                             "Supplying both formats is not supported.")
+        elif args and [k for k in kwargs.keys() if k != "backend"]:
+            raise ValueError(
+                "Options must be defined in one of two formats. "
+                "Either supply keywords defining the options for "
+                "the current object, e.g. obj.options(cmap='viridis'), "
+                "or explicitly define the type, e.g. "
+                "obj.options({'Image': {'cmap': 'viridis'}}). "
+                "Supplying both formats is not supported."
+            )
         elif args and all(isinstance(el, dict) for el in args):
             if len(args) > 1:
-                self.param.warning('Only a single dictionary can be passed '
-                                   'as a positional argument. Only processing '
-                                   'the first dictionary')
-            options = [Options(spec, **kws) for spec,kws in args[0].items()]
+                self.param.warning(
+                    "Only a single dictionary can be passed "
+                    "as a positional argument. Only processing "
+                    "the first dictionary"
+                )
+            options = [Options(spec, **kws) for spec, kws in args[0].items()]
         elif args:
             options = list(args)
         elif kwargs:
             options = {type(self).__name__: kwargs}
 
         from ..util import opts
+
         if options is None:
             expanded_backends = [(backend, {})]
-        elif isinstance(options, list): # assuming a flat list of Options objects
+        elif isinstance(options, list):  # assuming a flat list of Options objects
             expanded_backends = opts._expand_by_backend(options, backend)
         else:
             expanded_backends = [(backend, opts._expand_options(options, backend))]
@@ -1381,7 +1441,6 @@ class Dimensioned(LabelledData):
         return Store.render(self)
 
 
-
 class ViewableElement(Dimensioned):
     """A ViewableElement is a dimensioned datastructure that may be
     associated with a corresponding atomic visualization. An atomic
@@ -1395,8 +1454,7 @@ class ViewableElement(Dimensioned):
     __abstract = True
     _auxiliary_component = False
 
-    group = param.String(default='ViewableElement', constant=True)
-
+    group = param.String(default="ViewableElement", constant=True)
 
 
 class ViewableTree(AttrTree, Dimensioned):
@@ -1407,23 +1465,21 @@ class ViewableTree(AttrTree, Dimensioned):
 
     """
 
-    group = param.String(default='ViewableTree', constant=True)
+    group = param.String(default="ViewableTree", constant=True)
 
     _deep_indexable = True
 
     def __init__(self, items=None, identifier=None, parent=None, **kwargs):
         if items and all(isinstance(item, Dimensioned) for item in items):
             items = self._process_items(items)
-        params = {p: kwargs.pop(p) for p in [*self.param, 'id', 'plot_id'] if p in kwargs}
+        params = {p: kwargs.pop(p) for p in [*self.param, "id", "plot_id"] if p in kwargs}
 
         AttrTree.__init__(self, items, identifier, parent, **kwargs)
         Dimensioned.__init__(self, self.data, **params)
 
     @classmethod
     def _process_items(cls, vals):
-        """Processes list of items assigning unique paths to each.
-
-        """
+        """Processes list of items assigning unique paths to each."""
         from .layout import AdjointLayout
 
         if type(vals) is cls:
@@ -1440,23 +1496,19 @@ class ViewableTree(AttrTree, Dimensioned):
         items = cls._deduplicate_items(items)
         return items
 
-
     def __setstate__(self, d):
         """Ensure that object does not try to reference its parent during
         unpickling.
         """
-        parent = d.pop('parent', None)
-        d['parent'] = None
+        parent = d.pop("parent", None)
+        d["parent"] = None
         super(AttrTree, self).__setstate__(d)
-        self.__dict__['parent'] = parent
-
+        self.__dict__["parent"] = parent
 
     @classmethod
     def _deduplicate_items(cls, items):
-        """Deduplicates assigned paths by incrementing numbering
-
-        """
-        counter = Counter([path[:i] for path, _ in items for i in range(1, len(path)+1)])
+        """Deduplicates assigned paths by incrementing numbering"""
+        counter = Counter([path[:i] for path, _ in items for i in range(1, len(path) + 1)])
         if sum(counter.values()) == len(counter):
             return items
 
@@ -1473,7 +1525,6 @@ class ViewableTree(AttrTree, Dimensioned):
             new_items.append((path, item))
             counts[path] += 1
         return new_items
-
 
     @classmethod
     def _unpack_paths(cls, objs, items, counts):
@@ -1492,27 +1543,26 @@ class ViewableTree(AttrTree, Dimensioned):
             new_path = util.make_path_unique(path, counts, new)
             items.append((new_path, obj))
 
-
     @property
     def uniform(self):
-        """Whether items in tree have uniform dimensions
-
-        """
+        """Whether items in tree have uniform dimensions"""
         from .traversal import uniform
-        return uniform(self)
 
+        return uniform(self)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         dimension = self.get_dimension(dimension, strict=True).name
         all_dims = self.traverse(lambda x: [d.name for d in x.dimensions()])
         if dimension in chain.from_iterable(all_dims):
-            values = [el.dimension_values(dimension) for el in self
-                      if dimension in el.dimensions(label=True)]
+            values = [
+                el.dimension_values(dimension)
+                for el in self
+                if dimension in el.dimensions(label=True)
+            ]
             vals = np.concatenate(values)
             return vals if expanded else util.unique_array(vals)
         else:
-            return super().dimension_values(
-                dimension, expanded, flat)
+            return super().dimension_values(dimension, expanded, flat)
 
     def __len__(self):
         return len(self.data)

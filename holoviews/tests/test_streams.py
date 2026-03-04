@@ -1,6 +1,7 @@
 """
 Unit test of the streams system
 """
+
 from collections import defaultdict
 
 import numpy as np
@@ -41,14 +42,19 @@ _, shapely_skip = optional_dependencies("shapely")
 
 PARAM_GE_2_0_0 = PARAM_VERSION >= (2, 0, 0)
 
+
 def test_all_stream_parameters_constant():
-    all_stream_cls = [v for v in globals().values() if
-                      isinstance(v, type) and issubclass(v, Stream)]
+    all_stream_cls = [
+        v for v in globals().values() if isinstance(v, type) and issubclass(v, Stream)
+    ]
     for stream_cls in all_stream_cls:
         for name, p in stream_cls.param.objects().items():
-            if name == 'name': continue
+            if name == "name":
+                continue
             if p.constant != True:
-                raise TypeError(f'Parameter {name} of stream {stream_cls.__name__} not declared constant')
+                raise TypeError(
+                    f"Parameter {name} of stream {stream_cls.__name__} not declared constant"
+                )
 
 
 def test_all_linked_stream_parameters_owners():
@@ -56,39 +62,35 @@ def test_all_linked_stream_parameters_owners():
     stream_classes = param.concrete_descendents(LinkedStream)
     for stream_class in stream_classes.values():
         for name, p in stream_class.param.objects().items():
-            if name != 'name' and (p.owner != stream_class):
-                msg = ("Linked stream %r has parameter %r which is "
-                       "inherited from %s. Parameter needs to be redeclared "
-                       "in the class definition of this linked stream.")
+            if name != "name" and (p.owner != stream_class):
+                msg = (
+                    "Linked stream %r has parameter %r which is "
+                    "inherited from %s. Parameter needs to be redeclared "
+                    "in the class definition of this linked stream."
+                )
                 raise Exception(msg % (stream_class, name, p.owner))
 
+
 class TestStreamsDefine:
-
     def setup_method(self):
-        self.XY = Stream.define('XY', x=0.0, y=5.0)
-        self.TypesTest = Stream.define('TypesTest',
-                                       t=True,
-                                       u=0,
-                                       v=1.2,
-                                       w= (1,'a'),
-                                       x='string',
-                                       y= [],
-                                       z = np.array([1,2,3]))
+        self.XY = Stream.define("XY", x=0.0, y=5.0)
+        self.TypesTest = Stream.define(
+            "TypesTest", t=True, u=0, v=1.2, w=(1, "a"), x="string", y=[], z=np.array([1, 2, 3])
+        )
 
-        test_param = param.Integer(default=42, doc='Test docstring')
-        self.ExplicitTest = Stream.define('ExplicitTest',
-                                          test=test_param)
+        test_param = param.Integer(default=42, doc="Test docstring")
+        self.ExplicitTest = Stream.define("ExplicitTest", test=test_param)
 
     def test_XY_types(self):
-        assert isinstance(self.XY.param['x'], param.Number) is True
-        assert isinstance(self.XY.param['y'], param.Number) is True
+        assert isinstance(self.XY.param["x"], param.Number) is True
+        assert isinstance(self.XY.param["y"], param.Number) is True
 
     def test_XY_defaults(self):
-        assert self.XY.param['x'].default == 0.0
-        assert self.XY.param['y'].default == 5.0
+        assert self.XY.param["x"].default == 0.0
+        assert self.XY.param["y"].default == 5.0
 
     def test_XY_instance(self):
-        xy = self.XY(x=1,y=2)
+        xy = self.XY(x=1, y=2)
         assert xy.x == 1
         assert xy.y == 2
 
@@ -98,7 +100,7 @@ class TestStreamsDefine:
         else:
             regexp = "Parameter 'x' only takes numeric values"
         with pytest.raises(ValueError, match=regexp):
-            self.XY.x = 'string'
+            self.XY.x = "string"
 
     def test_XY_set_invalid_class_y(self):
         if PARAM_GE_2_0_0:
@@ -106,55 +108,57 @@ class TestStreamsDefine:
         else:
             regexp = "Parameter 'y' only takes numeric values"
         with pytest.raises(ValueError, match=regexp):
-            self.XY.y = 'string'
+            self.XY.y = "string"
 
     def test_XY_set_invalid_instance_x(self):
-        xy = self.XY(x=1,y=2)
+        xy = self.XY(x=1, y=2)
         if PARAM_GE_2_0_0:
             regexp = "Number parameter 'XY.x' only takes numeric values"
         else:
             regexp = "Parameter 'x' only takes numeric values"
         with pytest.raises(ValueError, match=regexp):
-            xy.x = 'string'
+            xy.x = "string"
 
     def test_XY_set_invalid_instance_y(self):
-        xy = self.XY(x=1,y=2)
+        xy = self.XY(x=1, y=2)
         if PARAM_GE_2_0_0:
             regexp = "Number parameter 'XY.y' only takes numeric values"
         else:
             regexp = "Parameter 'y' only takes numeric values"
         with pytest.raises(ValueError, match=regexp):
-            xy.y = 'string'
+            xy.y = "string"
 
     def test_XY_subscriber_triggered(self):
 
         class Inner:
-            def __init__(self): self.state=None
-            def __call__(self, x,y): self.state=(x,y)
+            def __init__(self):
+                self.state = None
+
+            def __call__(self, x, y):
+                self.state = (x, y)
 
         inner = Inner()
-        xy = self.XY(x=1,y=2)
+        xy = self.XY(x=1, y=2)
         xy.add_subscriber(inner)
-        xy.event(x=42,y=420)
-        assert inner.state == (42,420)
+        xy.event(x=42, y=420)
+        assert inner.state == (42, 420)
 
     def test_custom_types(self):
-        assert isinstance(self.TypesTest.param['t'], param.Boolean) is True
-        assert isinstance(self.TypesTest.param['u'], param.Integer) is True
-        assert isinstance(self.TypesTest.param['v'], param.Number) is True
-        assert isinstance(self.TypesTest.param['w'], param.Tuple) is True
-        assert isinstance(self.TypesTest.param['x'], param.String) is True
-        assert isinstance(self.TypesTest.param['y'], param.List) is True
-        assert isinstance(self.TypesTest.param['z'], param.Array) is True
+        assert isinstance(self.TypesTest.param["t"], param.Boolean) is True
+        assert isinstance(self.TypesTest.param["u"], param.Integer) is True
+        assert isinstance(self.TypesTest.param["v"], param.Number) is True
+        assert isinstance(self.TypesTest.param["w"], param.Tuple) is True
+        assert isinstance(self.TypesTest.param["x"], param.String) is True
+        assert isinstance(self.TypesTest.param["y"], param.List) is True
+        assert isinstance(self.TypesTest.param["z"], param.Array) is True
 
     def test_explicit_parameter(self):
-        assert isinstance(self.ExplicitTest.param['test'], param.Integer) is True
-        assert self.ExplicitTest.param['test'].default == 42
-        assert self.ExplicitTest.param['test'].doc == 'Test docstring'
+        assert isinstance(self.ExplicitTest.param["test"], param.Integer) is True
+        assert self.ExplicitTest.param["test"].default == 42
+        assert self.ExplicitTest.param["test"].doc == "Test docstring"
 
 
 class _Subscriber:
-
     def __init__(self, cb=None):
         self.call_count = 0
         self.kwargs = None
@@ -168,7 +172,6 @@ class _Subscriber:
 
 
 class TestPointerStreams:
-
     def test_positionX_init(self):
         PointerX()
 
@@ -189,53 +192,51 @@ class TestPointerStreams:
 
 
 class TestParamsStream(LoggingComparison):
-
     def setup_method(self):
         class Inner(param.Parameterized):
-
-            x = param.Number(default = 0)
-            y = param.Number(default = 0)
+            x = param.Number(default=0)
+            y = param.Number(default=0)
 
         class InnerAction(Inner):
-
-            action = param.Action(default=lambda o: o.param.trigger('action'))
+            action = param.Action(default=lambda o: o.param.trigger("action"))
 
         self.inner = Inner
         self.inner_action = InnerAction
 
     def test_param_stream_class(self):
         stream = Params(self.inner)
-        assert set(stream.parameters) == {self.inner.param.x,
-                                                  self.inner.param.y}
-        assert stream.contents == {'x': 0, 'y': 0}
+        assert set(stream.parameters) == {self.inner.param.x, self.inner.param.y}
+        assert stream.contents == {"x": 0, "y": 0}
 
         values = []
+
         def subscriber(**kwargs):
             values.append(kwargs)
 
         stream.add_subscriber(subscriber)
         self.inner.x = 1
-        assert values == [{'x': 1, 'y': 0}]
+        assert values == [{"x": 1, "y": 0}]
 
     def test_param_stream_instance(self):
         inner = self.inner(x=2)
         stream = Params(inner)
         assert set(stream.parameters) == {inner.param.x, inner.param.y}
-        assert stream.contents == {'x': 2, 'y': 0}
+        assert stream.contents == {"x": 2, "y": 0}
 
         values = []
+
         def subscriber(**kwargs):
             values.append(kwargs)
 
         stream.add_subscriber(subscriber)
         inner.y = 2
-        assert values == [{'x': 2, 'y': 2}]
+        assert values == [{"x": 2, "y": 2}]
 
     def test_param_stream_instance_separate_parameters(self):
         inner = self.inner()
 
-        xparam = Params(inner, ['x'])
-        yparam = Params(inner, ['y'])
+        xparam = Params(inner, ["x"])
+        yparam = Params(inner, ["y"])
 
         valid, invalid = Stream._process_streams([xparam, yparam])
         assert len(valid) == 2
@@ -248,7 +249,7 @@ class TestParamsStream(LoggingComparison):
         params2 = Params(inner)
 
         Stream._process_streams([params1, params2])
-        self.log_handler.assert_contains('WARNING', "['x', 'y']")
+        self.log_handler.assert_contains("WARNING", "['x', 'y']")
 
     def test_param_parameter_instance_separate_parameters(self):
         inner = self.inner()
@@ -264,81 +265,87 @@ class TestParamsStream(LoggingComparison):
     def test_param_parameter_instance_overlapping_parameters(self):
         inner = self.inner()
         Stream._process_streams([inner.param.x, inner.param.x])
-        self.log_handler.assert_contains('WARNING', "['x']")
+        self.log_handler.assert_contains("WARNING", "['x']")
 
     def test_param_stream_parameter_override(self):
         inner = self.inner(x=2)
-        stream = Params(inner, parameters=['x'])
+        stream = Params(inner, parameters=["x"])
         assert stream.parameters == [inner.param.x]
-        assert stream.contents == {'x': 2}
+        assert stream.contents == {"x": 2}
 
         values = []
+
         def subscriber(**kwargs):
             values.append(kwargs)
 
         stream.add_subscriber(subscriber)
         inner.x = 3
-        assert values == [{'x': 3}]
+        assert values == [{"x": 3}]
 
     def test_param_stream_rename(self):
         inner = self.inner(x=2)
-        stream = Params(inner, rename={'x': 'X', 'y': 'Y'})
+        stream = Params(inner, rename={"x": "X", "y": "Y"})
         assert set(stream.parameters) == {inner.param.x, inner.param.y}
-        assert stream.contents == {'X': 2, 'Y': 0}
+        assert stream.contents == {"X": 2, "Y": 0}
 
         values = []
+
         def subscriber(**kwargs):
             values.append(kwargs)
 
         stream.add_subscriber(subscriber)
         inner.y = 2
-        assert values == [{'X': 2, 'Y': 2}]
+        assert values == [{"X": 2, "Y": 2}]
 
     def test_param_stream_action(self):
         inner = self.inner_action()
-        stream = Params(inner, ['action'])
+        stream = Params(inner, ["action"])
         assert set(stream.parameters) == {inner.param.action}
 
         values = []
+
         def subscriber(**kwargs):
             values.append(kwargs)
-            assert set(stream.hashkey) == {f'{id(inner)} action', '_memoize_key'}
+            assert set(stream.hashkey) == {f"{id(inner)} action", "_memoize_key"}
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
-        assert values == [{'action': inner.action}]
+        assert values == [{"action": inner.action}]
 
     def test_param_stream_memoization(self):
         inner = self.inner_action()
-        stream = Params(inner, ['action', 'x'])
+        stream = Params(inner, ["action", "x"])
         assert set(stream.parameters) == {inner.param.action, inner.param.x}
 
         values = []
+
         def subscriber(**kwargs):
             values.append(kwargs)
-            assert set(stream.hashkey) == {f'{id(inner)} action', f'{id(inner)} x', '_memoize_key'}
+            assert set(stream.hashkey) == {f"{id(inner)} action", f"{id(inner)} x", "_memoize_key"}
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
         inner.x = 0
-        assert values == [{'action': inner.action, 'x': 0}]
+        assert values == [{"action": inner.action, "x": 0}]
 
     def test_params_stream_batch_watch(self):
         tap = Tap(x=0, y=1)
         params = Params(parameters=[tap.param.x, tap.param.y])
 
         values = []
+
         def subscriber(**kwargs):
             values.append(kwargs)
+
         params.add_subscriber(subscriber)
 
-        tap.param.trigger('x', 'y')
+        tap.param.trigger("x", "y")
 
-        assert values == [{'x': 0, 'y': 1}]
+        assert values == [{"x": 0, "y": 1}]
 
         tap.event(x=1, y=2)
 
-        assert values == [{'x': 0, 'y': 1}, {'x': 1, 'y': 2}]
+        assert values == [{"x": 0, "y": 1}, {"x": 1, "y": 2}]
 
     def test_params_no_names(self):
         a = IntSlider()
@@ -353,54 +360,52 @@ class TestParamsStream(LoggingComparison):
         assert len(p.hashkey) == 3  # the two widgets + _memoize_key
 
 
-
 class TestParamRefsStream(LoggingComparison):
-
     def setup_method(self):
         class Inner(param.Parameterized):
-
-            x = param.Number(default = 0)
-            y = param.Number(default = 0)
+            x = param.Number(default=0)
+            y = param.Number(default=0)
 
         class InnerAction(Inner):
-
-            action = param.Action(default=lambda o: o.param.trigger('action'))
+            action = param.Action(default=lambda o: o.param.trigger("action"))
 
         self.inner = Inner
         self.inner_action = InnerAction
 
     def test_param_stream_class(self):
-        stream = ParamRefs(refs={'x': self.inner.param.x, 'y': self.inner.param.y})
-        assert stream.contents == {'x': 0, 'y': 0}
+        stream = ParamRefs(refs={"x": self.inner.param.x, "y": self.inner.param.y})
+        assert stream.contents == {"x": 0, "y": 0}
 
         values = []
+
         def subscriber(**kwargs):
             values.append(kwargs)
 
         stream.add_subscriber(subscriber)
         self.inner.x = 1
-        assert values == [{'x': 1, 'y': 0}]
+        assert values == [{"x": 1, "y": 0}]
 
     def test_param_stream_instance(self):
         inner = self.inner(x=2)
-        stream = ParamRefs(refs={'x': inner.param.x, 'y': inner.param.y})
-        assert stream.contents == {'x': 2, 'y': 0}
+        stream = ParamRefs(refs={"x": inner.param.x, "y": inner.param.y})
+        assert stream.contents == {"x": 2, "y": 0}
 
         values = []
+
         def subscriber(**kwargs):
             values.append(kwargs)
 
         stream.add_subscriber(subscriber)
         inner.y = 2
-        assert values == [{'x': 2, 'y': 2}]
+        assert values == [{"x": 2, "y": 2}]
         inner.param.update(x=3, y=3)
-        assert values == [{'x': 2, 'y': 2}, {'x': 3, 'y': 3}]
+        assert values == [{"x": 2, "y": 2}, {"x": 3, "y": 3}]
 
     def test_param_stream_instance_separate_parameters(self):
         inner = self.inner()
 
-        xparam = ParamRefs(refs={'x': inner.param.x})
-        yparam = ParamRefs(refs={'y': inner.param.y})
+        xparam = ParamRefs(refs={"x": inner.param.x})
+        yparam = ParamRefs(refs={"y": inner.param.y})
 
         valid, invalid = Stream._process_streams([xparam, yparam])
         assert len(valid) == 2
@@ -408,47 +413,46 @@ class TestParamRefsStream(LoggingComparison):
 
     def test_param_stream_memoization(self):
         inner = self.inner_action()
-        stream = ParamRefs(refs={'action': inner.param.action, 'x': inner.param.x})
+        stream = ParamRefs(refs={"action": inner.param.action, "x": inner.param.x})
 
         values = []
+
         def subscriber(**kwargs):
             values.append(kwargs)
-            assert set(stream.hashkey) == {'action', 'x', '_memoize_key'}
+            assert set(stream.hashkey) == {"action", "x", "_memoize_key"}
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
         inner.x = 0
-        assert values == [{'action': inner.action, 'x': 0}]
+        assert values == [{"action": inner.action, "x": 0}]
 
 
 class TestParamMethodStream:
-
     def setup_method(self):
         if PARAM_VERSION < (1, 8, 0):
-            pytest.skip('Params stream requires param >= 1.8.0')
+            pytest.skip("Params stream requires param >= 1.8.0")
 
         class Inner(param.Parameterized):
-
-            action = param.Action(default=lambda o: o.param.trigger('action'))
-            x = param.Number(default = 0)
-            y = param.Number(default = 0)
+            action = param.Action(default=lambda o: o.param.trigger("action"))
+            x = param.Number(default=0)
+            y = param.Number(default=0)
             count = param.Integer(default=0)
 
-            @param.depends('x')
+            @param.depends("x")
             def method(self):
                 self.count += 1
                 return hv.Points([])
 
-            @param.depends('action')
+            @param.depends("action")
             def action_method(self):
                 pass
 
-            @param.depends('action', 'x')
+            @param.depends("action", "x")
             def action_number_method(self):
                 self.count += 1
                 return hv.Points([])
 
-            @param.depends('y')
+            @param.depends("y")
             def op_method(self, obj):
                 pass
 
@@ -456,10 +460,9 @@ class TestParamMethodStream:
                 pass
 
         class InnerSubObj(Inner):
-
             sub = param.Parameter()
 
-            @param.depends('sub.x')
+            @param.depends("sub.x")
             def subobj_method(self):
                 pass
 
@@ -473,6 +476,7 @@ class TestParamMethodStream:
         assert stream.contents == {}
 
         values = []
+
         def subscriber(**kwargs):
             values.append(kwargs)
 
@@ -492,7 +496,6 @@ class TestParamMethodStream:
 
         inner.x = 10
         assert_element_equal(dmap[()], hv.Points([10]))
-
 
     def test_param_instance_steams_dict(self):
         inner = self.inner()
@@ -519,6 +522,7 @@ class TestParamMethodStream:
 
     def test_panel_param_steams_dict(self):
         import panel as pn
+
         widget = pn.widgets.FloatSlider(value=1)
 
         def test(x):
@@ -529,17 +533,20 @@ class TestParamMethodStream:
         widget.value = 10
         assert_element_equal(dmap[()], hv.Points([10]))
 
-
     def test_param_method_depends_no_deps(self):
         inner = self.inner()
         stream = ParamMethod(inner.method_no_deps)
         assert set(stream.parameters) == {
-            inner.param.x, inner.param.y, inner.param.action,
-            inner.param.name, inner.param.count
+            inner.param.x,
+            inner.param.y,
+            inner.param.action,
+            inner.param.name,
+            inner.param.count,
         }
         assert stream.contents == {}
 
         values = []
+
         def subscriber(**kwargs):
             values.append(kwargs)
 
@@ -554,6 +561,7 @@ class TestParamMethodStream:
         assert set(stream.parameters) == {inner.sub.param.x}
 
         values = []
+
         def subscriber(**kwargs):
             values.append(kwargs)
 
@@ -570,6 +578,7 @@ class TestParamMethodStream:
         assert stream.contents == {}
 
         values = []
+
         def subscriber(**kwargs):
             values.append(kwargs)
 
@@ -585,12 +594,13 @@ class TestParamMethodStream:
         assert stream.contents == {}
 
         values = []
+
         def subscriber(**kwargs):
             values.append(kwargs)
 
         stream.add_subscriber(subscriber)
         inner.x = 2
-        inner.param.trigger('x')
+        inner.param.trigger("x")
         assert values == [{}, {}]
 
     def test_dynamicmap_param_method_deps_memoization(self):
@@ -619,9 +629,10 @@ class TestParamMethodStream:
         assert stream.contents == {}
 
         values = []
+
         def subscriber(**kwargs):
             values.append(kwargs)
-            assert set(stream.hashkey) == {f'{id(inner)} action', '_memoize_key'}
+            assert set(stream.hashkey) == {f"{id(inner)} action", "_memoize_key"}
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
@@ -637,9 +648,10 @@ class TestParamMethodStream:
         assert stream.contents == {}
 
         values = []
+
         def subscriber(**kwargs):
             values.append(kwargs)
-            assert set(stream.hashkey) == {f'{id(inner)} action', f'{id(inner)} x', '_memoize_key'}
+            assert set(stream.hashkey) == {f"{id(inner)} action", f"{id(inner)} x", "_memoize_key"}
 
         stream.add_subscriber(subscriber)
         stream.add_subscriber(lambda **kwargs: dmap[()])
@@ -662,6 +674,7 @@ class TestParamMethodStream:
         assert stream.contents == {}
 
         values_x, values_y = [], []
+
         def subscriber_x(**kwargs):
             values_x.append(kwargs)
 
@@ -682,7 +695,7 @@ def test_dynamicmap_partial_bind_and_streams():
     def make_plot(z, x_range, y_range):
         return hv.Curve([1, 2, 3, 4, z])
 
-    slider = IntSlider(name='Slider', start=0, end=10)
+    slider = IntSlider(name="Slider", start=0, end=10)
     range_xy = RangeXY()
 
     dmap = hv.DynamicMap(param.bind(make_plot, z=slider), streams=[range_xy])
@@ -695,7 +708,6 @@ def test_dynamicmap_partial_bind_and_streams():
 
 
 class TestSubscribers:
-
     def test_exception_subscriber(self):
         subscriber = _Subscriber()
         position = PointerXY(subscribers=[subscriber])
@@ -757,8 +769,10 @@ class TestSubscribers:
 
         stream = Pipe(data=0)
         dmap = hv.DynamicMap(points, streams=[stream])
+
         def cb():
             dmap[()]
+
         subscriber = _Subscriber(cb)
         stream.add_subscriber(subscriber)
         dmap[()]
@@ -769,11 +783,9 @@ class TestSubscribers:
         assert subscriber.call_count == 3
 
 
-
 class TestStreamSource:
-
     def teardown_method(self):
-        with param.logging_level('ERROR'):
+        with param.logging_level("ERROR"):
             Stream.registry = defaultdict(list)
 
     def test_source_empty_element(self):
@@ -791,7 +803,7 @@ class TestStreamSource:
         assert curve in Stream.registry
 
     def test_source_empty_dmap(self):
-        points_dmap = hv.DynamicMap(lambda x: hv.Points([]), kdims=['X'])
+        points_dmap = hv.DynamicMap(lambda x: hv.Points([]), kdims=["X"])
         stream = PointerX(source=points_dmap)
         assert stream.source is points_dmap
 
@@ -807,118 +819,113 @@ class TestStreamSource:
 
 
 class TestParameterRenaming:
-
     def test_simple_rename_constructor(self):
-        xy = PointerXY(rename={'x':'xtest', 'y':'ytest'}, x=0, y=4)
-        assert xy.contents == {'xtest':0, 'ytest':4}
+        xy = PointerXY(rename={"x": "xtest", "y": "ytest"}, x=0, y=4)
+        assert xy.contents == {"xtest": 0, "ytest": 4}
 
     def test_invalid_rename_constructor(self):
-        regexp = '(.+?)is not a stream parameter'
+        regexp = "(.+?)is not a stream parameter"
         with pytest.raises(KeyError, match=regexp):
-            PointerXY(rename={'x':'xtest', 'z':'ytest'}, x=0, y=4)
+            PointerXY(rename={"x": "xtest", "z": "ytest"}, x=0, y=4)
 
     def test_clashing_rename_constructor(self):
-        regexp = '(.+?)parameter of the same name'
+        regexp = "(.+?)parameter of the same name"
         with pytest.raises(KeyError, match=regexp):
-            PointerXY(rename={'x':'xtest', 'y':'x'}, x=0, y=4)
+            PointerXY(rename={"x": "xtest", "y": "x"}, x=0, y=4)
 
     def test_simple_rename_method(self):
         xy = PointerXY(x=0, y=4)
-        renamed = xy.rename(x='xtest', y='ytest')
-        assert renamed.contents == {'xtest':0, 'ytest':4}
+        renamed = xy.rename(x="xtest", y="ytest")
+        assert renamed.contents == {"xtest": 0, "ytest": 4}
 
     def test_invalid_rename_method(self):
         xy = PointerXY(x=0, y=4)
-        regexp = '(.+?)is not a stream parameter'
+        regexp = "(.+?)is not a stream parameter"
         with pytest.raises(KeyError, match=regexp):
-            xy.rename(x='xtest', z='ytest')
-
+            xy.rename(x="xtest", z="ytest")
 
     def test_clashing_rename_method(self):
         xy = PointerXY(x=0, y=4)
-        regexp = '(.+?)parameter of the same name'
+        regexp = "(.+?)parameter of the same name"
         with pytest.raises(KeyError, match=regexp):
-            xy.rename(x='xtest', y='x')
+            xy.rename(x="xtest", y="x")
 
     def test_update_rename_valid(self):
         xy = PointerXY(x=0, y=4)
-        renamed = xy.rename(x='xtest', y='ytest')
+        renamed = xy.rename(x="xtest", y="ytest")
         renamed.event(x=4, y=8)
-        assert renamed.contents == {'xtest':4, 'ytest':8}
+        assert renamed.contents == {"xtest": 4, "ytest": 8}
 
     def test_update_rename_invalid(self):
         xy = PointerXY(x=0, y=4)
-        renamed = xy.rename(y='ytest')
+        renamed = xy.rename(y="ytest")
         regexp = "ytest' is not a parameter of(.+?)"
         with pytest.raises(ValueError, match=regexp):
             renamed.event(ytest=8)
 
     def test_rename_suppression(self):
-        renamed = PointerXY(x=0,y=0).rename(x=None)
-        assert renamed.contents == {'y':0}
+        renamed = PointerXY(x=0, y=0).rename(x=None)
+        assert renamed.contents == {"y": 0}
 
     def test_rename_suppression_reenable(self):
-        renamed = PointerXY(x=0,y=0).rename(x=None)
-        assert renamed.contents == {'y':0}
-        reenabled = renamed.rename(x='foo')
-        assert reenabled.contents == {'foo':0, 'y':0}
-
+        renamed = PointerXY(x=0, y=0).rename(x=None)
+        assert renamed.contents == {"y": 0}
+        reenabled = renamed.rename(x="foo")
+        assert reenabled.contents == {"foo": 0, "y": 0}
 
 
 class TestPlotSizeTransform:
-
     def test_plotsize_initial_contents_1(self):
         plotsize = PlotSize(width=300, height=400, scale=0.5)
-        assert plotsize.contents == {'width':300, 'height':400, 'scale':0.5}
+        assert plotsize.contents == {"width": 300, "height": 400, "scale": 0.5}
 
     def test_plotsize_update_1(self):
         plotsize = PlotSize(scale=0.5)
         plotsize.event(width=300, height=400)
-        assert plotsize.contents == {'width':150, 'height':200, 'scale':0.5}
+        assert plotsize.contents == {"width": 150, "height": 200, "scale": 0.5}
 
     def test_plotsize_initial_contents_2(self):
         plotsize = PlotSize(width=600, height=100, scale=2)
-        assert plotsize.contents == {'width':600, 'height':100, 'scale':2}
+        assert plotsize.contents == {"width": 600, "height": 100, "scale": 2}
 
     def test_plotsize_update_2(self):
         plotsize = PlotSize(scale=2)
         plotsize.event(width=600, height=100)
-        assert plotsize.contents == {'width':1200, 'height':200, 'scale':2}
+        assert plotsize.contents == {"width": 1200, "height": 200, "scale": 2}
 
 
 class TestPipeStream:
-
     def test_pipe_send(self):
         def subscriber(data):
             subscriber.test = data
+
         subscriber.test = None
 
         pipe = Pipe()
         pipe.add_subscriber(subscriber)
-        pipe.send('Test')
-        assert pipe.data == 'Test'
-        assert subscriber.test == 'Test'
+        pipe.send("Test")
+        assert pipe.data == "Test"
+        assert subscriber.test == "Test"
 
     def test_pipe_event(self):
         def subscriber(data):
             subscriber.test = data
+
         subscriber.test = None
 
         pipe = Pipe()
         pipe.add_subscriber(subscriber)
-        pipe.event(data='Test')
-        assert pipe.data == 'Test'
-        assert subscriber.test == 'Test'
+        pipe.event(data="Test")
+        assert pipe.data == "Test"
+        assert subscriber.test == "Test"
 
     def test_pipe_update(self):
         pipe = Pipe()
-        pipe.event(data='Test')
-        assert pipe.data == 'Test'
-
+        pipe.event(data="Test")
+        assert pipe.data == "Test"
 
 
 class TestBufferArrayStream:
-
     def test_init_buffer_array(self):
         arr = np.array([[0, 1]])
         buff = Buffer(arr)
@@ -946,7 +953,7 @@ class TestBufferArrayStream:
 
     def test_buffer_array_send_verify_ndim_fail(self):
         buff = Buffer(np.array([[0, 1]]))
-        error = 'Streamed array data must be two-dimensional'
+        error = "Streamed array data must be two-dimensional"
         with pytest.raises(ValueError, match=error):
             buff.send(np.array([1]))
 
@@ -964,97 +971,95 @@ class TestBufferArrayStream:
 
 
 class TestBufferDictionaryStream:
-
     def test_init_buffer_dict(self):
-        data = {'x': np.array([1]), 'y': np.array([2])}
+        data = {"x": np.array([1]), "y": np.array([2])}
         buff = Buffer(data)
         assert_dict_equal(buff.data, data)
 
     def test_buffer_dict_send(self):
-        data = {'x': np.array([0]), 'y': np.array([1])}
+        data = {"x": np.array([0]), "y": np.array([1])}
         buff = Buffer(data)
-        buff.send({'x': np.array([1]), 'y': np.array([2])})
-        assert_dict_equal(buff.data, {'x': np.array([0, 1]), 'y': np.array([1, 2])})
+        buff.send({"x": np.array([1]), "y": np.array([2])})
+        assert_dict_equal(buff.data, {"x": np.array([0, 1]), "y": np.array([1, 2])})
 
     def test_buffer_dict_larger_than_length(self):
-        data = {'x': np.array([0]), 'y': np.array([1])}
+        data = {"x": np.array([0]), "y": np.array([1])}
         buff = Buffer(data, length=1)
-        chunk = {'x': np.array([1]), 'y': np.array([2])}
+        chunk = {"x": np.array([1]), "y": np.array([2])}
         buff.send(chunk)
         assert_dict_equal(buff.data, chunk)
 
     def test_buffer_dict_patch_larger_than_length(self):
-        data = {'x': np.array([0]), 'y': np.array([1])}
+        data = {"x": np.array([0]), "y": np.array([1])}
         buff = Buffer(data, length=1)
-        chunk = {'x': np.array([1, 2]), 'y': np.array([2, 3])}
+        chunk = {"x": np.array([1, 2]), "y": np.array([2, 3])}
         buff.send(chunk)
-        assert buff.data == {'x': np.array([2]), 'y': np.array([3])}
+        assert buff.data == {"x": np.array([2]), "y": np.array([3])}
 
     def test_buffer_dict_send_verify_column_fail(self):
-        data = {'x': np.array([0]), 'y': np.array([1])}
+        data = {"x": np.array([0]), "y": np.array([1])}
         buff = Buffer(data)
         error = r"Input expected to have columns \['x', 'y'\], got \['x'\]"
         with pytest.raises(IndexError, match=error):
-            buff.send({'x': np.array([2])})
+            buff.send({"x": np.array([2])})
 
     def test_buffer_dict_send_verify_shape_fail(self):
-        data = {'x': np.array([0]), 'y': np.array([1])}
+        data = {"x": np.array([0]), "y": np.array([1])}
         buff = Buffer(data)
         error = "Input columns expected to have the same number of rows."
         with pytest.raises(ValueError, match=error):
-            buff.send({'x': np.array([2]), 'y': np.array([3, 4])})
+            buff.send({"x": np.array([2]), "y": np.array([3, 4])})
 
 
 class TestBufferDataFrameStream:
-
     def test_init_buffer_dframe(self):
-        data = pd.DataFrame({'x': np.array([1]), 'y': np.array([2])})
+        data = pd.DataFrame({"x": np.array([1]), "y": np.array([2])})
         buff = Buffer(data, index=False)
         assert_data_equal(buff.data, data)
 
     def test_init_buffer_dframe_with_index(self):
-        data = pd.DataFrame({'x': np.array([1]), 'y': np.array([2])})
+        data = pd.DataFrame({"x": np.array([1]), "y": np.array([2])})
         buff = Buffer(data)
         assert_data_equal(buff.data, data)
 
     def test_buffer_dframe_send(self):
-        data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
+        data = pd.DataFrame({"x": np.array([0]), "y": np.array([1])})
         buff = Buffer(data, index=False)
-        buff.send(pd.DataFrame({'x': np.array([1]), 'y': np.array([2])}))
-        dframe = pd.DataFrame({'x': np.array([0, 1]), 'y': np.array([1, 2])})
+        buff.send(pd.DataFrame({"x": np.array([1]), "y": np.array([2])}))
+        dframe = pd.DataFrame({"x": np.array([0, 1]), "y": np.array([1, 2])})
         assert_data_equal(buff.data.values, dframe.values)
 
     def test_buffer_dframe_send_with_index(self):
-        data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
+        data = pd.DataFrame({"x": np.array([0]), "y": np.array([1])})
         buff = Buffer(data)
-        buff.send(pd.DataFrame({'x': np.array([1]), 'y': np.array([2])}))
-        dframe = pd.DataFrame({'x': np.array([0, 1]), 'y': np.array([1, 2])}, index=[0, 0])
+        buff.send(pd.DataFrame({"x": np.array([1]), "y": np.array([2])}))
+        dframe = pd.DataFrame({"x": np.array([0, 1]), "y": np.array([1, 2])}, index=[0, 0])
         pd.testing.assert_frame_equal(buff.data, dframe)
 
     def test_buffer_dframe_larger_than_length(self):
-        data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
+        data = pd.DataFrame({"x": np.array([0]), "y": np.array([1])})
         buff = Buffer(data, length=1, index=False)
-        chunk = pd.DataFrame({'x': np.array([1]), 'y': np.array([2])})
+        chunk = pd.DataFrame({"x": np.array([1]), "y": np.array([2])})
         buff.send(chunk)
         assert_data_equal(buff.data.values, chunk.values)
 
     def test_buffer_dframe_patch_larger_than_length(self):
-        data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
+        data = pd.DataFrame({"x": np.array([0]), "y": np.array([1])})
         buff = Buffer(data, length=1, index=False)
-        chunk = pd.DataFrame({'x': np.array([1, 2]), 'y': np.array([2, 3])})
+        chunk = pd.DataFrame({"x": np.array([1, 2]), "y": np.array([2, 3])})
         buff.send(chunk)
-        dframe = pd.DataFrame({'x': np.array([2]), 'y': np.array([3])})
+        dframe = pd.DataFrame({"x": np.array([2]), "y": np.array([3])})
         assert_data_equal(buff.data.values, dframe.values)
 
     def test_buffer_dframe_send_verify_column_fail(self):
-        data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
+        data = pd.DataFrame({"x": np.array([0]), "y": np.array([1])})
         buff = Buffer(data, index=False)
         error = r"Input expected to have columns \['x', 'y'\], got \['x'\]"
         with pytest.raises(IndexError, match=error):
-            buff.send(pd.DataFrame({'x': np.array([2])}))
+            buff.send(pd.DataFrame({"x": np.array([2])}))
 
     def test_clear_buffer_dframe_with_index(self):
-        data = pd.DataFrame({'a': [1, 2, 3]})
+        data = pd.DataFrame({"a": [1, 2, 3]})
         buff = Buffer(data)
         buff.clear()
         pd.testing.assert_frame_equal(buff.data, data.iloc[:0, :])
@@ -1074,14 +1079,13 @@ class Sum(Derived):
     @classmethod
     def transform_function(cls, stream_values, constants):
         v = sum([val["v"] for val in stream_values if val["v"]])
-        return dict(v=v + constants['base'])
+        return dict(v=v + constants["base"])
 
 
 Val = Stream.define("Val", v=0.0)
 
 
 class TestDerivedStream:
-
     def test_simple_derived_stream(self):
         # Define input streams
         v0 = Val(v=1.0)
@@ -1118,7 +1122,9 @@ class TestDerivedStream:
         assert s0.v == 13.0
 
         # Update nested value
-        v1.event(v=5.0,)
+        v1.event(
+            v=5.0,
+        )
         assert s0.v == 14.0
 
     def test_derived_stream_constants(self):
@@ -1184,8 +1190,10 @@ class TestHistoryStream:
 
         # Register callback
         callback_input = []
+
         def cb(**kwargs):
             callback_input.append(kwargs)
+
         history.add_subscriber(cb)
         assert callback_input == []
 
@@ -1211,7 +1219,6 @@ class TestHistoryStream:
 
 
 class TestExprSelectionStream:
-
     def setup_method(self):
         hv.extension("bokeh")
 
@@ -1234,8 +1241,11 @@ class TestExprSelectionStream:
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
 
             # Check SelectionExpr values
-            assert repr(expr_stream.selection_expr) == repr(((hv.dim('x')>=1)&(hv.dim('x')<=3))&((hv.dim('y')>=1)&(hv.dim('y')<=4)))
-            assert expr_stream.bbox == {'x': (1, 3), 'y': (1, 4)}
+            assert repr(expr_stream.selection_expr) == repr(
+                ((hv.dim("x") >= 1) & (hv.dim("x") <= 3))
+                & ((hv.dim("y") >= 1) & (hv.dim("y") <= 4))
+            )
+            assert expr_stream.bbox == {"x": (1, 3), "y": (1, 4)}
 
     def test_selection_expr_stream_1D_elements(self):
         element_type_1D = [hv.Scatter]
@@ -1254,9 +1264,10 @@ class TestExprSelectionStream:
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
 
             # Check SelectionExpr values
-            assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=1)&(hv.dim('x')<=3))
-            assert expr_stream.bbox == {'x': (1, 3)}
-
+            assert repr(expr_stream.selection_expr) == repr(
+                (hv.dim("x") >= 1) & (hv.dim("x") <= 3)
+            )
+            assert expr_stream.bbox == {"x": (1, 3)}
 
     def test_selection_expr_stream_invert_axes_2D_elements(self):
         element_type_2D = [hv.Points]
@@ -1277,8 +1288,11 @@ class TestExprSelectionStream:
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
 
             # Check SelectionExpr values
-            assert repr(expr_stream.selection_expr) == repr(((hv.dim('y')>=1)&(hv.dim('y')<=3))&((hv.dim('x')>=1)&(hv.dim('x')<=4)))
-            assert expr_stream.bbox == {'y': (1, 3), 'x': (1, 4)}
+            assert repr(expr_stream.selection_expr) == repr(
+                ((hv.dim("y") >= 1) & (hv.dim("y") <= 3))
+                & ((hv.dim("x") >= 1) & (hv.dim("x") <= 4))
+            )
+            assert expr_stream.bbox == {"y": (1, 3), "x": (1, 4)}
 
     def test_selection_expr_stream_invert_axes_1D_elements(self):
         element_type_1D = [hv.Scatter]
@@ -1297,13 +1311,14 @@ class TestExprSelectionStream:
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
 
             # Check SelectionExpr values
-            assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=1)&(hv.dim('x')<=4))
-            assert expr_stream.bbox == {'x': (1, 4)}
+            assert repr(expr_stream.selection_expr) == repr(
+                (hv.dim("x") >= 1) & (hv.dim("x") <= 4)
+            )
+            assert expr_stream.bbox == {"x": (1, 4)}
 
     def test_selection_expr_stream_invert_xaxis_yaxis_2D_elements(self):
         element_type_2D = [hv.Points]
         for element_type in element_type_2D:
-
             # Create SelectionExpr on element
             element = element_type(([1, 2, 3], [1, 5, 10])).opts(
                 invert_xaxis=True,
@@ -1323,13 +1338,15 @@ class TestExprSelectionStream:
             expr_stream.input_streams[0].event(bounds=(3, 4, 1, 1))
 
             # Check SelectionExpr values
-            assert repr(expr_stream.selection_expr) == repr(((hv.dim('x')>=1)&(hv.dim('x')<=3))&((hv.dim('y')>=1)&(hv.dim('y')<=4)))
-            assert expr_stream.bbox == {'x': (1, 3), 'y': (1, 4)}
+            assert repr(expr_stream.selection_expr) == repr(
+                ((hv.dim("x") >= 1) & (hv.dim("x") <= 3))
+                & ((hv.dim("y") >= 1) & (hv.dim("y") <= 4))
+            )
+            assert expr_stream.bbox == {"x": (1, 3), "y": (1, 4)}
 
     def test_selection_expr_stream_invert_xaxis_yaxis_1D_elements(self):
         element_type_1D = [hv.Scatter]
         for element_type in element_type_1D:
-
             # Create SelectionExpr on element
             element = element_type(([1, 2, 3], [1, 5, 10])).opts(
                 invert_xaxis=True,
@@ -1347,8 +1364,10 @@ class TestExprSelectionStream:
             expr_stream.input_streams[0].event(bounds=(3, 4, 1, 1))
 
             # Check SelectionExpr values
-            assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=1)&(hv.dim('x')<=3))
-            assert expr_stream.bbox == {'x': (1, 3)}
+            assert repr(expr_stream.selection_expr) == repr(
+                (hv.dim("x") >= 1) & (hv.dim("x") <= 3)
+            )
+            assert expr_stream.bbox == {"x": (1, 3)}
 
     def test_selection_expr_stream_hist(self):
         # Create SelectionExpr on element
@@ -1364,21 +1383,21 @@ class TestExprSelectionStream:
         # Simulate interactive update by triggering source stream.
         # Select second and forth bar.
         expr_stream.input_streams[0].event(bounds=(1.5, 2.5, 4.6, 6))
-        assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=1.5)&(hv.dim('x')<=4.6))
-        assert expr_stream.bbox == {'x': (1.5, 4.6)}
+        assert repr(expr_stream.selection_expr) == repr(
+            (hv.dim("x") >= 1.5) & (hv.dim("x") <= 4.6)
+        )
+        assert expr_stream.bbox == {"x": (1.5, 4.6)}
 
         # Select third, forth, and fifth bar.  Make sure there is special
         # handling when last bar is selected to include values exactly on the
         # upper edge in the selection
         expr_stream.input_streams[0].event(bounds=(2.5, -10, 8, 10))
-        assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=2.5)&(hv.dim('x')<=8))
-        assert expr_stream.bbox == {'x': (2.5, 8)}
+        assert repr(expr_stream.selection_expr) == repr((hv.dim("x") >= 2.5) & (hv.dim("x") <= 8))
+        assert expr_stream.bbox == {"x": (2.5, 8)}
 
     def test_selection_expr_stream_hist_invert_axes(self):
         # Create SelectionExpr on element
-        hist = hv.Histogram(([1, 2, 3, 4, 5], [1, 5, 2, 3, 7])).opts(
-            invert_axes=True
-        )
+        hist = hv.Histogram(([1, 2, 3, 4, 5], [1, 5, 2, 3, 7])).opts(invert_axes=True)
         expr_stream = SelectionExpr(hist)
 
         # Check stream properties
@@ -1390,21 +1409,23 @@ class TestExprSelectionStream:
         # Simulate interactive update by triggering source stream.
         # Select second and forth bar.
         expr_stream.input_streams[0].event(bounds=(2.5, 1.5, 6, 4.6))
-        assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=1.5)&(hv.dim('x')<=4.6))
-        assert expr_stream.bbox == {'x': (1.5, 4.6)}
+        assert repr(expr_stream.selection_expr) == repr(
+            (hv.dim("x") >= 1.5) & (hv.dim("x") <= 4.6)
+        )
+        assert expr_stream.bbox == {"x": (1.5, 4.6)}
 
         # Select third, forth, and fifth bar.  Make sure there is special
         # handling when last bar is selected to include values exactly on the
         # upper edge in the selection
         expr_stream.input_streams[0].event(bounds=(-10, 2.5, 10, 8))
-        assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=2.5)&(hv.dim('x')<=8))
-        assert expr_stream.bbox == {'x': (2.5, 8)}
+        assert repr(expr_stream.selection_expr) == repr((hv.dim("x") >= 2.5) & (hv.dim("x") <= 8))
+        assert expr_stream.bbox == {"x": (2.5, 8)}
 
     def test_selection_expr_stream_hist_invert_xaxis_yaxis(self):
         # Create SelectionExpr on element
         hist = hv.Histogram(([1, 2, 3, 4, 5], [1, 5, 2, 3, 7])).opts(
-                invert_xaxis=True,
-                invert_yaxis=True,
+            invert_xaxis=True,
+            invert_yaxis=True,
         )
         expr_stream = SelectionExpr(hist)
 
@@ -1417,27 +1438,31 @@ class TestExprSelectionStream:
         # Simulate interactive update by triggering source stream.
         # Select second and forth bar.
         expr_stream.input_streams[0].event(bounds=(4.6, 6, 1.5, 2.5))
-        assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=1.5)&(hv.dim('x')<=4.6))
-        assert expr_stream.bbox == {'x': (1.5, 4.6)}
+        assert repr(expr_stream.selection_expr) == repr(
+            (hv.dim("x") >= 1.5) & (hv.dim("x") <= 4.6)
+        )
+        assert expr_stream.bbox == {"x": (1.5, 4.6)}
 
         # Select third, forth, and fifth bar.  Make sure there is special
         # handling when last bar is selected to include values exactly on the
         # upper edge in the selection
         expr_stream.input_streams[0].event(bounds=(8, 10, 2.5, -10))
-        assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=2.5)&(hv.dim('x')<=8))
-        assert expr_stream.bbox == {'x': (2.5, 8)}
-
+        assert repr(expr_stream.selection_expr) == repr((hv.dim("x") >= 2.5) & (hv.dim("x") <= 8))
+        assert expr_stream.bbox == {"x": (2.5, 8)}
 
     @shapely_skip
     def test_selection_expr_stream_polygon_index_cols(self):
-        poly = hv.Polygons([
-            [(0, 0, 'a'), (2, 0, 'a'), (1, 1, 'a')],
-            [(2, 0, 'b'), (4, 0, 'b'), (3, 1, 'b')],
-            [(1, 1, 'c'), (3, 1, 'c'), (2, 2, 'c')]
-        ], vdims=['cat'])
+        poly = hv.Polygons(
+            [
+                [(0, 0, "a"), (2, 0, "a"), (1, 1, "a")],
+                [(2, 0, "b"), (4, 0, "b"), (3, 1, "b")],
+                [(1, 1, "c"), (3, 1, "c"), (2, 2, "c")],
+            ],
+            vdims=["cat"],
+        )
 
         events = []
-        expr_stream = SelectionExpr(poly, index_cols=['cat'])
+        expr_stream = SelectionExpr(poly, index_cols=["cat"])
         expr_stream.add_subscriber(lambda **kwargs: events.append(kwargs))
 
         # Check stream properties
@@ -1451,29 +1476,29 @@ class TestExprSelectionStream:
         fmt = lambda x: list(map(np.str_, x)) if NUMPY_GE_2_0_0 else x
 
         expr_stream.input_streams[2].event(index=[0, 1])
-        assert repr(expr_stream.selection_expr) == repr(hv.dim('cat').isin(fmt(['a', 'b'])))
+        assert repr(expr_stream.selection_expr) == repr(hv.dim("cat").isin(fmt(["a", "b"])))
         assert expr_stream.bbox is None
         assert len(events) == 1
 
         # Ensure bounds event does not trigger another update
         expr_stream.input_streams[0].event(bounds=(0, 0, 4, 1))
-        assert repr(expr_stream.selection_expr) == repr(hv.dim('cat').isin(fmt(['a', 'b'])))
+        assert repr(expr_stream.selection_expr) == repr(hv.dim("cat").isin(fmt(["a", "b"])))
         assert len(events) == 1
 
         # Ensure geometry event does trigger another update
         expr_stream.input_streams[1].event(geometry=np.array([(0, 0), (4, 0), (4, 2), (0, 2)]))
-        assert repr(expr_stream.selection_expr) == repr(hv.dim('cat').isin(fmt(['a', 'b', 'c'])))
+        assert repr(expr_stream.selection_expr) == repr(hv.dim("cat").isin(fmt(["a", "b", "c"])))
         assert len(events) == 2
 
         # Ensure index event does trigger another update
         expr_stream.input_streams[2].event(index=[1, 2])
-        assert repr(expr_stream.selection_expr) == repr(hv.dim('cat').isin(fmt(['b', 'c'])))
+        assert repr(expr_stream.selection_expr) == repr(hv.dim("cat").isin(fmt(["b", "c"])))
         assert expr_stream.bbox is None
         assert len(events) == 3
 
     def test_selection_expr_stream_dynamic_map_2D_elements(self):
         element_type_2D = [hv.Points]
-        for element_type in element_type_2D: # Scatter,
+        for element_type in element_type_2D:  # Scatter,
             # Create SelectionExpr on element
             dmap = Dynamic(element_type(([1, 2, 3], [1, 5, 10])))
             expr_stream = SelectionExpr(dmap)
@@ -1488,8 +1513,11 @@ class TestExprSelectionStream:
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
 
             # Check SelectionExpr values
-            assert repr(expr_stream.selection_expr) == repr(((hv.dim('x')>=1)&(hv.dim('x')<=3))&((hv.dim('y')>=1)&(hv.dim('y')<=4)))
-            assert expr_stream.bbox == {'x': (1, 3), 'y': (1, 4)}
+            assert repr(expr_stream.selection_expr) == repr(
+                ((hv.dim("x") >= 1) & (hv.dim("x") <= 3))
+                & ((hv.dim("y") >= 1) & (hv.dim("y") <= 4))
+            )
+            assert expr_stream.bbox == {"x": (1, 3), "y": (1, 4)}
 
     def test_selection_expr_stream_dynamic_map_1D_elements(self):
         element_type_1D = [hv.Scatter]
@@ -1508,5 +1536,7 @@ class TestExprSelectionStream:
             expr_stream.input_streams[0].event(bounds=(1, 1, 3, 4))
 
             # Check SelectionExpr values
-            assert repr(expr_stream.selection_expr) == repr((hv.dim('x')>=1)&(hv.dim('x')<=3))
-            assert expr_stream.bbox == {'x': (1, 3)}
+            assert repr(expr_stream.selection_expr) == repr(
+                (hv.dim("x") >= 1) & (hv.dim("x") <= 3)
+            )
+            assert expr_stream.bbox == {"x": (1, 3)}

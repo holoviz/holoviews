@@ -17,7 +17,7 @@ def test_no_blocklist_imports():
         print(", ".join(mods), end="")
     """
 
-    output = check_output([sys.executable, '-c', dedent(check)])
+    output = check_output([sys.executable, "-c", dedent(check)])
     assert output == b""
 
 
@@ -35,5 +35,5 @@ def test_no_blocklist_imports_IPython():
         print(", ".join(mods), end="")
     """
 
-    output = check_output([sys.executable, '-m', 'IPython', '-c', dedent(check)])
+    output = check_output([sys.executable, "-m", "IPython", "-c", dedent(check)])
     assert output == b""

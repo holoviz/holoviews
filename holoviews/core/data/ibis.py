@@ -24,7 +24,6 @@ IBIS_GE_9_5_0 = IBIS_VERSION >= (9, 5, 0)
 
 
 class IbisInterface(Interface):
-
     types = ()
 
     datatype = "ibis"
@@ -32,7 +31,7 @@ class IbisInterface(Interface):
     default_partitions = 100
 
     zero_indexed_backend_modules = [
-        'ibis.backends.omniscidb.client',
+        "ibis.backends.omniscidb.client",
     ]
 
     # the rowid is needed until ibis updates versions
@@ -44,6 +43,7 @@ class IbisInterface(Interface):
     def is_rowid_zero_indexed(cls, data):
         try:
             from ibis.client import find_backends, validate_backends
+
             (backend,) = validate_backends(list(find_backends(data)))
         except ImportError:
             backend = data._find_backend()
@@ -58,11 +58,14 @@ class IbisInterface(Interface):
         if not cls.loaded():
             return False
         from ibis.expr.types import Expr
+
         return isinstance(obj, Expr)
 
     @classmethod
     def init(cls, eltype, data, keys, values):
-        deprecated("1.24.0", "'ibis' datatype", "'narwhals' datatype", repr_old=False, repr_new=False)
+        deprecated(
+            "1.24.0", "'ibis' datatype", "'narwhals' datatype", repr_old=False, repr_new=False
+        )
 
         params = eltype.param.objects()
         index = params["kdims"]
@@ -91,14 +94,17 @@ class IbisInterface(Interface):
 
     @classmethod
     def validate(cls, dataset, vdims=True):
-        dim_types = 'all' if vdims else 'key'
-        dimensions = dataset.dimensions(dim_types, label='name')
+        dim_types = "all" if vdims else "key"
+        dimensions = dataset.dimensions(dim_types, label="name")
         cols = list(dataset.data.columns)
         not_found = [d for d in dimensions if d not in cols]
         if not_found:
-            raise DataError("Supplied data does not contain specified "
-                            "dimensions, the following dimensions were "
-                            f"not found: {not_found!r}", cls)
+            raise DataError(
+                "Supplied data does not contain specified "
+                "dimensions, the following dimensions were "
+                f"not found: {not_found!r}",
+                cls,
+            )
 
     @classmethod
     def compute(cls, dataset):
@@ -130,14 +136,12 @@ class IbisInterface(Interface):
     @cached
     def range(cls, dataset, dimension):
         dimension = dataset.get_dimension(dimension, strict=True)
-        if cls.dtype(dataset, dimension).kind in 'SUO':
+        if cls.dtype(dataset, dimension).kind in "SUO":
             return None, None
         if dimension.nodata is not None:
             return Interface.range(dataset, dimension)
         column = dataset.data[dimension.name]
-        return tuple(
-            dataset.data.aggregate([column.min(), column.max()]).execute().values[0, :]
-        )
+        return tuple(dataset.data.aggregate([column.min(), column.max()]).execute().values[0, :])
 
     @classmethod
     @cached
@@ -165,24 +169,25 @@ class IbisInterface(Interface):
     @classmethod
     def histogram(cls, expr, bins, density=True, weights=None):
         bins = np.asarray(bins)
-        bins = [int(v) if dtype_kind(bins) in 'iu' else float(v) for v in bins]
-        binned = expr.bucket(bins).name('bucket')
-        hist = np.zeros(len(bins)-1)
+        bins = [int(v) if dtype_kind(bins) in "iu" else float(v) for v in bins]
+        binned = expr.bucket(bins).name("bucket")
+        hist = np.zeros(len(bins) - 1)
         if IBIS_GE_4_0_0:
-            hist_bins = binned.value_counts().order_by('bucket').execute()
+            hist_bins = binned.value_counts().order_by("bucket").execute()
         else:
             # sort_by will be removed in Ibis 5.0
-            hist_bins = binned.value_counts().sort_by('bucket').execute()
-        metric_name = 'bucket_count' if IBIS_GE_5_0_0 else 'count'
-        for b, v in zip(hist_bins['bucket'], hist_bins[metric_name], strict=None):
+            hist_bins = binned.value_counts().sort_by("bucket").execute()
+        metric_name = "bucket_count" if IBIS_GE_5_0_0 else "count"
+        for b, v in zip(hist_bins["bucket"], hist_bins[metric_name], strict=None):
             if np.isnan(b):
                 continue
             hist[int(b)] = v
         if weights is not None:
-            raise NotImplementedError("Weighted histograms currently "
-                                      "not implemented for IbisInterface.")
+            raise NotImplementedError(
+                "Weighted histograms currently not implemented for IbisInterface."
+            )
         if density:
-            hist = hist/expr.count().execute()/np.diff(bins)
+            hist = hist / expr.count().execute() / np.diff(bins)
         return hist, bins
 
     @classmethod
@@ -208,16 +213,16 @@ class IbisInterface(Interface):
         elif IBIS_GE_4_0_0:
             # Tuple syntax will be removed in Ibis 7.0:
             # https://github.com/ibis-project/ibis/pull/6082
-            return dataset.data.order_by([(dataset.get_dimension(x).name, not reverse) for x in by])
+            return dataset.data.order_by(
+                [(dataset.get_dimension(x).name, not reverse) for x in by]
+            )
         else:
             # sort_by will be removed in Ibis 5.0
             return dataset.data.sort_by([(dataset.get_dimension(x).name, not reverse) for x in by])
 
     @classmethod
     def redim(cls, dataset, dimensions):
-        return dataset.data.mutate(
-            **{v.name: dataset.data[k] for k, v in dimensions.items()}
-        )
+        return dataset.data.mutate(**{v.name: dataset.data[k] for k, v in dimensions.items()})
 
     @classmethod
     def reindex(cls, dataset, kdims=None, vdims=None):
@@ -255,12 +260,7 @@ class IbisInterface(Interface):
         data = cls._index_ibis_table(dataset.data[columns])
 
         if scalar:
-            return (
-                data.filter(data.hv_row_id__ == rows)[columns]
-                .head(1)
-                .execute()
-                .iloc[0, 0]
-            )
+            return data.filter(data.hv_row_id__ == rows)[columns].head(1).execute().iloc[0, 0]
 
         if isinstance(rows, slice):
             # We should use a pseudo column for the row number but i think that is still awaiting
@@ -325,10 +325,8 @@ class IbisInterface(Interface):
             (
                 tuple(s.values.tolist()),
                 group_type(
-                    dataset.data.filter(
-                        [dataset.data[k] == v for k, v in s.to_dict().items()]
-                    ),
-                    **group_kwargs
+                    dataset.data.filter([dataset.data[k] == v for k, v in s.to_dict().items()]),
+                    **group_kwargs,
                 ),
             )
             for i, s in groups.iterrows()
@@ -348,8 +346,10 @@ class IbisInterface(Interface):
         data = dataset.data
         if dimension.name not in data.columns:
             if not isinstance(values, ibis.Expr) and not np.isscalar(values):
-                raise ValueError(f"Cannot assign {type(values).__name__} type as a Ibis table column, "
-                                 "expecting either ibis.Expr or scalar.")
+                raise ValueError(
+                    f"Cannot assign {type(values).__name__} type as a Ibis table column, "
+                    "expecting either ibis.Expr or scalar."
+                )
             data = data.mutate(**{dimension.name: values})
         return data
 
@@ -357,10 +357,7 @@ class IbisInterface(Interface):
     @cached
     def isscalar(cls, dataset, dim):
         return (
-            dataset.data[dataset.get_dimension(dim, strict=True).name]
-            .distinct()
-            .count()
-            .compute()
+            dataset.data[dataset.get_dimension(dim, strict=True).name].distinct().count().compute()
             == 1
         )
 
@@ -375,9 +372,7 @@ class IbisInterface(Interface):
             data = cls._index_ibis_table(data)
             if selection_mask.dtype == np.dtype("bool"):
                 selection_mask = np.where(selection_mask)[0]
-            data = data.filter(
-                data["hv_row_id__"].isin(list(map(int, selection_mask)))
-            )
+            data = data.filter(data["hv_row_id__"].isin(list(map(int, selection_mask))))
 
             if IBIS_GE_4_0_0:
                 data = data.drop("hv_row_id__")
@@ -385,7 +380,9 @@ class IbisInterface(Interface):
                 # Passing a sequence of fields to `drop` will be removed in Ibis 5.0
                 data = data.drop(["hv_row_id__"])
 
-        elif selection_mask is not None and not (isinstance(selection_mask, list) and not selection_mask):
+        elif selection_mask is not None and not (
+            isinstance(selection_mask, list) and not selection_mask
+        ):
             data = data.filter(selection_mask)
 
         if indexed and data.count().execute() == 1 and len(dataset.vdims) == 1:
@@ -413,9 +410,7 @@ class IbisInterface(Interface):
                 condition = None
                 for id in object:
                     predicate = column == id
-                    condition = (
-                        predicate if condition is None else condition | predicate
-                    )
+                    condition = predicate if condition is None else condition | predicate
                 if condition is not None:
                     predicates.append(condition)
             elif callable(object):
@@ -493,7 +488,7 @@ class IbisInterface(Interface):
 
         if len(dimensions):
             if IBIS_GE_4_0_0:
-                 selection = new.group_by(columns)
+                selection = new.group_by(columns)
             else:
                 # groupby will be removed in Ibis 5.0
                 selection = new.groupby(columns)
@@ -508,16 +503,10 @@ class IbisInterface(Interface):
                 )
             else:
                 aggregation = selection.aggregate(
-                    **{
-                        x: function(new[x]).to_expr()
-                        for x in new.columns
-                        if x not in columns
-                    }
+                    **{x: function(new[x]).to_expr() for x in new.columns if x not in columns}
                 )
         else:
-            aggregation = new.aggregate(
-                **{x: function(new[x]).to_expr() for x in new.columns}
-            )
+            aggregation = new.aggregate(**{x: function(new[x]).to_expr() for x in new.columns})
 
         dropped = [x for x in values if x not in data.columns]
         return aggregation, dropped
@@ -525,11 +514,12 @@ class IbisInterface(Interface):
     @classmethod
     @cached
     def mask(cls, dataset, mask, mask_value=np.nan):
-        raise NotImplementedError('Mask is not implemented for IbisInterface.')
+        raise NotImplementedError("Mask is not implemented for IbisInterface.")
 
     @classmethod
     @cached
     def dframe(cls, dataset, dimensions):
         return dataset.data[dimensions].execute()
+
 
 Interface.register(IbisInterface)

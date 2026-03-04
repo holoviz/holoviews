@@ -31,26 +31,34 @@ class Chart(Dataset, Element2D):
 
     """
 
-    kdims = param.List(default=[Dimension('x')], bounds=(1,2), doc="""
+    kdims = param.List(
+        default=[Dimension("x")],
+        bounds=(1, 2),
+        doc="""
         The key dimension(s) of a Chart represent the independent
-        variable(s).""")
+        variable(s).""",
+    )
 
-    group = param.String(default='Chart', constant=True)
+    group = param.String(default="Chart", constant=True)
 
-    vdims = param.List(default=[Dimension('y')], bounds=(1, None), doc="""
+    vdims = param.List(
+        default=[Dimension("y")],
+        bounds=(1, None),
+        doc="""
         The value dimensions of the Chart, usually corresponding to a
-        number of dependent variables.""")
+        number of dependent variables.""",
+    )
 
     # Enables adding index if 1D array like data is supplied
     _auto_indexable_1d = True
 
-    _max_kdim_count = 1 # Remove once kdims has bounds=(1,1) instead of warning
+    _max_kdim_count = 1  # Remove once kdims has bounds=(1,1) instead of warning
     __abstract = True
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         params.update(process_dimensions(kdims, vdims))
-        if len(params.get('kdims', [])) == self._max_kdim_count + 1:
-            self.param.warning('Chart elements should only be supplied a single kdim')
+        if len(params.get("kdims", [])) == self._max_kdim_count + 1:
+            self.param.warning("Chart elements should only be supplied a single kdim")
         super().__init__(data, **params)
 
     def __getitem__(self, index):
@@ -65,7 +73,7 @@ class Scatter(Selection1DExpr, Chart):
 
     """
 
-    group = param.String(default='Scatter', constant=True)
+    group = param.String(default="Scatter", constant=True)
 
 
 class Curve(Selection1DExpr, Chart):
@@ -76,7 +84,7 @@ class Curve(Selection1DExpr, Chart):
 
     """
 
-    group = param.String(default='Curve', constant=True)
+    group = param.String(default="Curve", constant=True)
 
 
 class ErrorBars(Selection1DExpr, Chart):
@@ -95,15 +103,23 @@ class ErrorBars(Selection1DExpr, Chart):
 
     """
 
-    group = param.String(default='ErrorBars', constant=True, doc="""
+    group = param.String(
+        default="ErrorBars",
+        constant=True,
+        doc="""
         A string describing the quantity measured by the ErrorBars
-        object.""")
+        object.""",
+    )
 
-    vdims = param.List(default=[Dimension('y'), Dimension('yerror')],
-                       bounds=(1, None), constant=True)
+    vdims = param.List(
+        default=[Dimension("y"), Dimension("yerror")], bounds=(1, None), constant=True
+    )
 
-    horizontal = param.Boolean(default=False, doc="""
-        Whether the errors are along y-axis (vertical) or x-axis.""")
+    horizontal = param.Boolean(
+        default=False,
+        doc="""
+        Whether the errors are along y-axis (vertical) or x-axis.""",
+    )
 
     def range(self, dim, data_range=True, dimension_range=True):
         """Return the lower and upper bounds of values along dimension.
@@ -136,8 +152,8 @@ class ErrorBars(Selection1DExpr, Chart):
                 pos_error = self.dimension_values(3)
             else:
                 pos_error = neg_error
-            lower = np.nanmin(mean-neg_error)
-            upper = np.nanmax(mean+pos_error)
+            lower = np.nanmin(mean - neg_error)
+            upper = np.nanmax(mean + pos_error)
             if not dimension_range:
                 return (lower, upper)
             return util.dimension_range(lower, upper, dim.range, dim.soft_range)
@@ -153,7 +169,7 @@ class Spread(ErrorBars):
 
     """
 
-    group = param.String(default='Spread', constant=True)
+    group = param.String(default="Spread", constant=True)
 
 
 class Bars(Selection1DExpr, Chart):
@@ -165,9 +181,9 @@ class Bars(Selection1DExpr, Chart):
 
     """
 
-    group = param.String(default='Bars', constant=True)
+    group = param.String(default="Bars", constant=True)
 
-    kdims = param.List(default=[Dimension('x')], bounds=(1,3))
+    kdims = param.List(default=[Dimension("x")], bounds=(1, 3))
 
     _max_kdim_count = 3
 
@@ -181,32 +197,33 @@ class Histogram(Selection1DExpr, Chart):
 
     """
 
-    datatype = param.List(default=['grid'])
+    datatype = param.List(default=["grid"])
 
-    group = param.String(default='Histogram', constant=True)
+    group = param.String(default="Histogram", constant=True)
 
-    kdims = param.List(default=[Dimension('x')], bounds=(1,1), doc="""
+    kdims = param.List(
+        default=[Dimension("x")],
+        bounds=(1, 1),
+        doc="""
         Dimensions on Element2Ds determine the number of indexable
-        dimensions.""")
+        dimensions.""",
+    )
 
-    vdims = param.List(default=[Dimension('Frequency')], bounds=(1, None))
+    vdims = param.List(default=[Dimension("Frequency")], bounds=(1, None))
 
     _binned = True
 
     def __init__(self, data, **params):
         if data is None:
             data = []
-        if (isinstance(data, tuple) and len(data) == 2 and
-            len(data[0])+1 == len(data[1])):
+        if isinstance(data, tuple) and len(data) == 2 and len(data[0]) + 1 == len(data[1]):
             data = data[::-1]
 
         super().__init__(data, **params)
 
     @property
     def edges(self):
-        """Property to access the Histogram edges provided for backward compatibility
-
-        """
+        """Property to access the Histogram edges provided for backward compatibility"""
         return self.interface.coords(self, self.kdims[0], edges=True)
 
 
@@ -221,9 +238,9 @@ class Spikes(Selection1DExpr, Chart):
 
     """
 
-    group = param.String(default='Spikes', constant=True)
+    group = param.String(default="Spikes", constant=True)
 
-    kdims = param.List(default=[Dimension('x')], bounds=(1, 1))
+    kdims = param.List(default=[Dimension("x")], bounds=(1, 1))
 
     vdims = param.List(default=[], bounds=(0, None))
 
@@ -242,10 +259,10 @@ class Area(Curve):
 
     """
 
-    group = param.String(default='Area', constant=True)
+    group = param.String(default="Area", constant=True)
 
     @classmethod
-    def stack(cls, areas, baseline_name='Baseline'):
+    def stack(cls, areas, baseline_name="Baseline"):
         """Stacks an (Nd)Overlay of Area or Curve Elements by offsetting
         their baselines. To stack a HoloMap or DynamicMap use the map
         method.
@@ -266,7 +283,9 @@ class Area(Curve):
             #   Creating a Groupby object with a length-1 list-like level parameter
             #   will yield indexes as tuples in a future version.
             levels = levels[0]
-        for (key, sdf), element_vdims in zip(df.groupby(level=levels, sort=False), vdims, strict=None):
+        for (key, sdf), element_vdims in zip(
+            df.groupby(level=levels, sort=False), vdims, strict=None
+        ):
             vdim = element_vdims[0]
             sdf = sdf.droplevel(levels).reindex(index=df.index.unique(-1), fill_value=0)
             if baseline is None:

@@ -25,28 +25,22 @@ class TestDecollation:
         from holoviews.tests.test_streams import Sum, Val
 
         # kdims: a and b
-        self.dmap_ab = hv.DynamicMap(
-            lambda a, b: hv.Points([a, b]),
-            kdims=['a', 'b']
-        ).redim.range(a=(0.0, 10.0), b=(0.0, 10.0))
+        self.dmap_ab = hv.DynamicMap(lambda a, b: hv.Points([a, b]), kdims=["a", "b"]).redim.range(
+            a=(0.0, 10.0), b=(0.0, 10.0)
+        )
 
         # kdims: b
-        self.dmap_b = hv.DynamicMap(
-            lambda b: hv.Points([b, b]),
-            kdims=['b']
-        ).redim.range(b=(0.0, 10.0))
+        self.dmap_b = hv.DynamicMap(lambda b: hv.Points([b, b]), kdims=["b"]).redim.range(
+            b=(0.0, 10.0)
+        )
 
         # no kdims, XY stream
         self.xy_stream = XY()
-        self.dmap_xy = hv.DynamicMap(
-            lambda x, y: hv.Points([x, y]), streams=[self.xy_stream]
-        )
+        self.dmap_xy = hv.DynamicMap(lambda x, y: hv.Points([x, y]), streams=[self.xy_stream])
 
         # no kdims, Z stream
         self.z_stream = Z()
-        self.dmap_z = hv.DynamicMap(
-            lambda z: hv.Points([z, z]), streams=[self.z_stream]
-        )
+        self.dmap_z = hv.DynamicMap(lambda z: hv.Points([z, z]), streams=[self.z_stream])
 
         # DynamicMap of a derived stream
         self.stream_val1 = Val()
@@ -54,9 +48,7 @@ class TestDecollation:
         self.stream_val3 = Val()
         self.dmap_derived = hv.DynamicMap(
             lambda v: hv.Points([v, v]),
-            streams=[
-                Sum([self.stream_val1, Sum([self.stream_val2, self.stream_val3])])
-            ]
+            streams=[Sum([self.stream_val1, Sum([self.stream_val2, self.stream_val3])])],
         )
 
         if ds is None:
@@ -71,19 +63,14 @@ class TestDecollation:
         # data shaded with kdims: a, b
         self.dmap_datashade_kdim_points = datashade(self.dmap_ab)
 
-
     def test_decollate_layout_kdims(self):
         layout = self.dmap_ab + self.dmap_b
         decollated = layout.decollate()
         assert isinstance(decollated, hv.DynamicMap)
         assert decollated.kdims == self.dmap_ab.kdims
+        assert_element_equal(decollated[2, 3], hv.Points([2, 3]) + hv.Points([3, 3]))
         assert_element_equal(
-            decollated[2, 3],
-            hv.Points([2, 3]) + hv.Points([3, 3])
-        )
-        assert_element_equal(
-            decollated.callback.callable(2, 3),
-            hv.Points([2, 3]) + hv.Points([3, 3])
+            decollated.callback.callable(2, 3), hv.Points([2, 3]) + hv.Points([3, 3])
         )
 
     def test_decollate_layout_streams(self):
@@ -95,13 +82,10 @@ class TestDecollation:
         # Update streams
         decollated.streams[0].event(x=1.0, y=2.0)
         decollated.streams[1].event(z=3.0)
-        assert_element_equal(
-            decollated[()],
-            hv.Points([1.0, 2.0]) + hv.Points([3.0, 3.0])
-        )
+        assert_element_equal(decollated[()], hv.Points([1.0, 2.0]) + hv.Points([3.0, 3.0]))
         assert_element_equal(
             decollated.callback.callable(dict(x=1.0, y=2.0), dict(z=3.0)),
-            hv.Points([1.0, 2.0]) + hv.Points([3.0, 3.0])
+            hv.Points([1.0, 2.0]) + hv.Points([3.0, 3.0]),
         )
 
     def test_decollate_layout_kdims_and_streams(self):
@@ -112,14 +96,11 @@ class TestDecollation:
 
         # Update streams
         decollated.streams[0].event(x=3.0, y=4.0)
-        assert_element_equal(
-            decollated[1.0, 2.0],
-            hv.Points([1.0, 2.0]) + hv.Points([3.0, 4.0])
-        )
+        assert_element_equal(decollated[1.0, 2.0], hv.Points([1.0, 2.0]) + hv.Points([3.0, 4.0]))
 
         assert_element_equal(
             decollated.callback.callable(1.0, 2.0, dict(x=3.0, y=4.0)),
-            hv.Points([1.0, 2.0]) + hv.Points([3.0, 4.0])
+            hv.Points([1.0, 2.0]) + hv.Points([3.0, 4.0]),
         )
 
     @ds_skip
@@ -139,9 +120,7 @@ class TestDecollation:
 
         # Call decollated callback function
         result = decollated.callback.callable(
-            {"width": 250, "height": 300},
-            {"x_range": (0, 10), "y_range": (0, 15)},
-            {"px": 3}
+            {"width": 250, "height": 300}, {"x_range": (0, 10), "y_range": (0, 15)}, {"px": 3}
         )
 
         assert_element_equal(expected, result)
@@ -166,13 +145,13 @@ class TestDecollation:
 
         # Call decollated callback function
         result = decollated.callback.callable(
-            4.0, 5.0,
+            4.0,
+            5.0,
             {"width": 250, "height": 300},
             {"x_range": (0, 10), "y_range": (0, 15)},
         )
 
         assert_element_equal(expected, result)
-
 
     @ds_skip
     def test_decollate_datashade_kdims_layout(self):
@@ -195,7 +174,8 @@ class TestDecollation:
 
         # Call decollated callback function
         result = decollated.callback.callable(
-            4.0, 5.0,
+            4.0,
+            5.0,
             {"width": 250, "height": 300},
             {"x_range": (0, 10), "y_range": (0, 15)},
         )
@@ -203,19 +183,21 @@ class TestDecollation:
         assert_element_equal(expected, result)
 
     def test_decollate_overlay_of_dmaps(self):
-        overlay = hv.Overlay([
-            hv.DynamicMap(lambda z: hv.Points([z, z]), streams=[Z()]),
-            hv.DynamicMap(lambda z: hv.Points([z, z]), streams=[Z()]),
-            hv.DynamicMap(lambda z: hv.Points([z, z]), streams=[Z()]),
-        ])
+        overlay = hv.Overlay(
+            [
+                hv.DynamicMap(lambda z: hv.Points([z, z]), streams=[Z()]),
+                hv.DynamicMap(lambda z: hv.Points([z, z]), streams=[Z()]),
+                hv.DynamicMap(lambda z: hv.Points([z, z]), streams=[Z()]),
+            ]
+        )
 
         decollated = overlay.decollate()
         assert isinstance(decollated, hv.DynamicMap)
         assert len(decollated.streams) == 3
 
-        expected = hv.Overlay([
-            hv.Points([1.0, 1.0]), hv.Points([2.0, 2.0]), hv.Points([3.0, 3.0])
-        ])
+        expected = hv.Overlay(
+            [hv.Points([1.0, 1.0]), hv.Points([2.0, 2.0]), hv.Points([3.0, 3.0])]
+        )
 
         # Build result by updating streams
         decollated.streams[0].event(z=1.0)
@@ -228,7 +210,6 @@ class TestDecollation:
         result = decollated.callback.callable(dict(z=1.0), dict(z=2.0), dict(z=3.0))
         assert_element_equal(expected, result)
 
-
     def test_decollate_dmap_gridspace_kdims(self):
         self.perform_decollate_dmap_container_kdims(hv.GridSpace)
 
@@ -240,11 +221,7 @@ class TestDecollation:
 
     def perform_decollate_dmap_container_kdims(self, ContainerType):
         # Create container of DynamicMaps, each with kdims a and b.
-        data = [
-            (0, self.dmap_ab.clone()),
-            (1, self.dmap_ab.clone()),
-            (2, self.dmap_ab.clone())
-        ]
+        data = [(0, self.dmap_ab.clone()), (1, self.dmap_ab.clone()), (2, self.dmap_ab.clone())]
         container = ContainerType(data, kdims=["c"])
 
         # Decollate container
@@ -275,7 +252,7 @@ class TestDecollation:
         data = [
             (0, hv.DynamicMap(fn, streams=[xy_stream])),
             (1, hv.DynamicMap(fn, streams=[xy_stream])),
-            (2, hv.DynamicMap(fn, streams=[xy_stream]))
+            (2, hv.DynamicMap(fn, streams=[xy_stream])),
         ]
         container = ContainerType(data, kdims=["c"])
 
@@ -296,6 +273,7 @@ class TestDecollation:
 
     def test_traverse_derived_streams(self):
         from holoviews.tests.test_streams import Val
+
         decollated = self.dmap_derived.decollate()
 
         # Check decollated types

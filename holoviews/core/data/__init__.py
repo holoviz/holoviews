@@ -36,14 +36,26 @@ from .spatialpandas import SpatialPandasInterface  # noqa (API import)
 from .spatialpandas_dask import DaskSpatialPandasInterface  # noqa (API import)
 from .xarray import XArrayInterface  # noqa (API import)
 
-default_datatype = 'dataframe'
+default_datatype = "dataframe"
 
-datatypes = ['dataframe', 'dictionary', 'grid', 'xarray', 'multitabular',
-             'spatialpandas', 'dask_spatialpandas', 'dask', 'cuDF', 'array', 'narwhals',
-             'ibis']
+datatypes = [
+    "dataframe",
+    "dictionary",
+    "grid",
+    "xarray",
+    "multitabular",
+    "spatialpandas",
+    "dask_spatialpandas",
+    "dask",
+    "cuDF",
+    "array",
+    "narwhals",
+    "ibis",
+]
 
 
-_TABULAR_DATATYPE = ['dataframe', 'dask', 'ibis', 'cuDF', 'narwhals']
+_TABULAR_DATATYPE = ["dataframe", "dask", "ibis", "cuDF", "narwhals"]
+
 
 def concat(datasets, datatype=None):
     """Concatenates collection of datasets along NdMapping dimensions.
@@ -82,8 +94,7 @@ class DataConversion:
     def __init__(self, element):
         self._element = element
 
-    def __call__(self, new_type, kdims=None, vdims=None, groupby=None,
-                 sort=False, **kwargs):
+    def __call__(self, new_type, kdims=None, vdims=None, groupby=None, sort=False, **kwargs):
         """Generic conversion method for Dataset based Element
         types. Supply the Dataset Element type to convert to and
         optionally the key dimensions (kdims), value dimensions
@@ -93,8 +104,8 @@ class DataConversion:
 
         """
         element_params = new_type.param.objects()
-        kdim_param = element_params['kdims']
-        vdim_param = element_params['vdims']
+        kdim_param = element_params["kdims"]
+        vdim_param = element_params["vdims"]
         if isinstance(kdim_param.bounds[1], int):
             ndim = min([kdim_param.bounds[1], len(kdim_param.default)])
         else:
@@ -105,53 +116,59 @@ class DataConversion:
             if not isinstance(kd_filter, list):
                 kd_filter = [groupby]
             kdims = [kd for kd in self._element.kdims if kd not in kd_filter][:ndim]
-        elif kdims and not isinstance(kdims, list): kdims = [kdims]
+        elif kdims and not isinstance(kdims, list):
+            kdims = [kdims]
         if vdims is None:
             vdims = [d for d in self._element.vdims if d not in kdims][:nvdim]
-        if vdims and not isinstance(vdims, list): vdims = [vdims]
+        if vdims and not isinstance(vdims, list):
+            vdims = [vdims]
 
         # Checks Element type supports dimensionality
         type_name = new_type.__name__
-        for dim_type, dims in (('kdims', kdims), ('vdims', vdims)):
+        for dim_type, dims in (("kdims", kdims), ("vdims", vdims)):
             min_d, max_d = element_params[dim_type].bounds
-            if ((min_d is not None and len(dims) < min_d) or
-                (max_d is not None and len(dims) > max_d)):
-                raise ValueError(f"{type_name} {dim_type} must be between length {min_d} and {max_d}.")
+            if (min_d is not None and len(dims) < min_d) or (
+                max_d is not None and len(dims) > max_d
+            ):
+                raise ValueError(
+                    f"{type_name} {dim_type} must be between length {min_d} and {max_d}."
+                )
 
         if groupby is None:
-            groupby = [d for d in self._element.kdims if d not in kdims+vdims]
+            groupby = [d for d in self._element.kdims if d not in kdims + vdims]
         elif groupby and not isinstance(groupby, list):
             groupby = [groupby]
 
         if self._element.interface.gridded:
-            dropped_kdims = [kd for kd in self._element.kdims if kd not in groupby+kdims]
+            dropped_kdims = [kd for kd in self._element.kdims if kd not in groupby + kdims]
             if dropped_kdims:
-                selected = self._element.reindex(groupby+kdims, vdims)
+                selected = self._element.reindex(groupby + kdims, vdims)
             else:
                 selected = self._element
         elif issubclass(self._element.interface, PandasAPI):
             ds_dims = self._element.dimensions()
-            ds_kdims = [self._element.get_dimension(d) if d in ds_dims else d
-                        for d in groupby+kdims]
-            ds_vdims = [self._element.get_dimension(d) if d in ds_dims else d
-                        for d in vdims]
+            ds_kdims = [
+                self._element.get_dimension(d) if d in ds_dims else d for d in groupby + kdims
+            ]
+            ds_vdims = [self._element.get_dimension(d) if d in ds_dims else d for d in vdims]
             selected = self._element.clone(kdims=ds_kdims, vdims=ds_vdims)
         else:
-            selected = self._element.reindex(groupby+kdims, vdims)
-        params = {'kdims': [selected.get_dimension(kd, strict=True) for kd in kdims],
-                  'vdims': [selected.get_dimension(vd, strict=True) for vd in vdims],
-                  'label': selected.label}
-        if selected.group != selected.param.objects('existing')['group'].default:
-            params['group'] = selected.group
+            selected = self._element.reindex(groupby + kdims, vdims)
+        params = {
+            "kdims": [selected.get_dimension(kd, strict=True) for kd in kdims],
+            "vdims": [selected.get_dimension(vd, strict=True) for vd in vdims],
+            "label": selected.label,
+        }
+        if selected.group != selected.param.objects("existing")["group"].default:
+            params["group"] = selected.group
         params.update(kwargs)
         if len(kdims) == selected.ndims or not groupby:
             # Propagate dataset
-            params['dataset'] = self._element.dataset
-            params['pipeline'] = self._element._pipeline
+            params["dataset"] = self._element.dataset
+            params["pipeline"] = self._element._pipeline
             element = new_type(selected, **params)
             return element.sort() if sort else element
-        group = selected.groupby(groupby, container_type=HoloMap,
-                                 group_type=new_type, **params)
+        group = selected.groupby(groupby, container_type=HoloMap, group_type=new_type, **params)
         if sort:
             return group.map(lambda x: x.sort(), [new_type])
         else:
@@ -160,9 +177,7 @@ class DataConversion:
 
 @contextmanager
 def disable_pipeline():
-    """Disable PipelineMeta class from storing pipelines.
-
-    """
+    """Disable PipelineMeta class from storing pipelines."""
     PipelineMeta.disable = True
     try:
         yield
@@ -171,9 +186,8 @@ def disable_pipeline():
 
 
 class PipelineMeta(ParameterizedMetaclass):
-
     # Public methods that should not be wrapped
-    blacklist = ['__init__', 'clone']
+    blacklist = ["__init__", "clone"]
 
     disable = False
 
@@ -181,7 +195,7 @@ class PipelineMeta(ParameterizedMetaclass):
 
         for method_name in classdict:
             method_fn = classdict[method_name]
-            if method_name in mcs.blacklist or method_name.startswith('_'):
+            if method_name in mcs.blacklist or method_name.startswith("_"):
                 continue
             elif isinstance(method_fn, types.FunctionType):
                 classdict[method_name] = mcs.pipelined(method_fn, method_name)
@@ -194,8 +208,9 @@ class PipelineMeta(ParameterizedMetaclass):
         @wraps(method_fn)
         def pipelined_fn(*args, **kwargs):
             from ...operation.element import method as method_op
+
             inst = args[0]
-            inst_pipeline = copy.copy(getattr(inst, '_pipeline', None))
+            inst_pipeline = copy.copy(getattr(inst, "_pipeline", None))
             in_method = inst._in_method
             if not in_method:
                 inst._in_method = True
@@ -223,9 +238,7 @@ class PipelineMeta(ParameterizedMetaclass):
                         for key, element in result.items():
                             if isinstance(element, Dataset):
                                 getitem_op = method_op.instance(
-                                    input_type=type(result),
-                                    method_name='__getitem__',
-                                    args=[key]
+                                    input_type=type(result), method_name="__getitem__", args=[key]
                                 )
                                 element._pipeline = inst_pipeline.instance(
                                     operations=[*inst_pipeline.operations, op, getitem_op],
@@ -251,14 +264,17 @@ class Dataset(Element, metaclass=PipelineMeta):
 
     """
 
-    datatype = param.List(default=datatypes, doc="""
+    datatype = param.List(
+        default=datatypes,
+        doc="""
         A priority list of the data types to be used for storage
         on the .data attribute. If the input supplied to the element
         constructor cannot be put into the requested format, the next
         format listed will be used until a suitable format is found (or
-        the data fails to be understood).""")
+        the data fails to be understood).""",
+    )
 
-    group = param.String(default='Dataset', constant=True)
+    group = param.String(default="Dataset", constant=True)
 
     # In the 1D case the interfaces should not automatically add x-values
     # to supplied data
@@ -282,14 +298,14 @@ class Dataset(Element, metaclass=PipelineMeta):
         """
         if isinstance(data, DynamicMap):
             class_name = cls.__name__
-            repr_kdims = f'kdims={kdims!r}' if kdims else None
-            repr_vdims = f'vdims={vdims!r}' if vdims else None
-            repr_kwargs = (', '.join(f'{k}={v!r}' for k,v in kwargs.items())
-                           if kwargs else None)
-            extras = ', '.join([el for el in [repr_kdims, repr_vdims, repr_kwargs]
-                               if el is not None])
-            extras = ', ' + extras if extras else ''
-            apply_args= f'hv.{class_name}{extras}'
+            repr_kdims = f"kdims={kdims!r}" if kdims else None
+            repr_vdims = f"vdims={vdims!r}" if vdims else None
+            repr_kwargs = ", ".join(f"{k}={v!r}" for k, v in kwargs.items()) if kwargs else None
+            extras = ", ".join(
+                [el for el in [repr_kdims, repr_vdims, repr_kwargs] if el is not None]
+            )
+            extras = ", " + extras if extras else ""
+            apply_args = f"hv.{class_name}{extras}"
             msg = "Cannot construct a {class_name} from the supplied object of type DynamicMap. Implicitly creating a DynamicMap of {class_name} objects, but instead please explicitly call .apply({apply_args}) on the supplied DynamicMap."
             cls.param.warning(cls, msg.format(class_name=class_name, apply_args=apply_args))
             return data.apply(cls, per_element=True, kdims=kdims, vdims=vdims, **kwargs)
@@ -301,27 +317,27 @@ class Dataset(Element, metaclass=PipelineMeta):
             chain as chain_op,
             factory,
         )
+
         self._in_method = False
         input_data = data
-        dataset_provided = 'dataset' in kwargs
-        input_dataset = kwargs.pop('dataset', None)
-        input_pipeline = kwargs.pop('pipeline', None)
-        input_transforms = kwargs.pop('transforms', None)
+        dataset_provided = "dataset" in kwargs
+        input_dataset = kwargs.pop("dataset", None)
+        input_pipeline = kwargs.pop("pipeline", None)
+        input_transforms = kwargs.pop("transforms", None)
 
         if isinstance(data, Element):
-            if 'kdims' in kwargs:
-                kwargs['kdims'] = [
-                    data.get_dimension(kd) if isinstance(kd, str) else kd
-                    for kd in kwargs['kdims']
+            if "kdims" in kwargs:
+                kwargs["kdims"] = [
+                    data.get_dimension(kd) if isinstance(kd, str) else kd for kd in kwargs["kdims"]
                 ]
-            if 'kdims' in kwargs:
-                kwargs['vdims'] = [
-                    data.get_dimension(vd) if isinstance(vd, str) else vd
-                    for vd in kwargs['vdims']
+            if "kdims" in kwargs:
+                kwargs["vdims"] = [
+                    data.get_dimension(vd) if isinstance(vd, str) else vd for vd in kwargs["vdims"]
                 ]
             pvals = core_util.get_param_values(data)
-            kwargs.update([(l, pvals[l]) for l in ['group', 'label']
-                           if l in pvals and l not in kwargs])
+            kwargs.update(
+                [(l, pvals[l]) for l in ["group", "label"] if l in pvals and l not in kwargs]
+            )
         if isinstance(data, Dataset):
             if not dataset_provided and data._dataset is not None:
                 input_dataset = data._dataset
@@ -331,11 +347,12 @@ class Dataset(Element, metaclass=PipelineMeta):
                 input_transforms = data._transforms
 
         kwargs.update(process_dimensions(kdims, vdims))
-        kdims, vdims = kwargs.get('kdims'), kwargs.get('vdims')
+        kdims, vdims = kwargs.get("kdims"), kwargs.get("vdims")
 
-        validate_vdims = kwargs.pop('_validate_vdims', True)
-        initialized = Interface.initialize(type(self), data, kdims, vdims,
-                                           datatype=kwargs.get('datatype'))
+        validate_vdims = kwargs.pop("_validate_vdims", True)
+        initialized = Interface.initialize(
+            type(self), data, kdims, vdims, datatype=kwargs.get("datatype")
+        )
         (data, self.interface, dims, extra_kws) = initialized
         super().__init__(data, **dict(kwargs, **dict(dims, **extra_kws)))
         self.interface.validate(self, validate_vdims)
@@ -344,8 +361,8 @@ class Dataset(Element, metaclass=PipelineMeta):
         if input_pipeline is None:
             input_pipeline = chain_op.instance()
 
-        kwargs['kdims'] = self.kdims
-        kwargs['vdims'] = self.vdims
+        kwargs["kdims"] = self.kdims
+        kwargs["vdims"] = self.vdims
         init_op = factory.instance(
             output_type=type(self),
             args=[],
@@ -365,41 +382,44 @@ class Dataset(Element, metaclass=PipelineMeta):
         self._dataset = input_dataset
         if self._dataset is None and isinstance(input_data, Dataset) and not dataset_provided:
             if input_data.data is self.data:
-                self._dataset = {'kdims': input_data.kdims, 'vdims': input_data.vdims}
+                self._dataset = {"kdims": input_data.kdims, "vdims": input_data.vdims}
             else:
-                self._dataset = Dataset(input_data, dataset=None, pipeline=None,
-                                        transforms=None, _validate_vdims=False)
-                if hasattr(self, '_binned'):
+                self._dataset = Dataset(
+                    input_data, dataset=None, pipeline=None, transforms=None, _validate_vdims=False
+                )
+                if hasattr(self, "_binned"):
                     self._dataset._binned = self._binned
 
     def __getstate__(self):
-        """Ensures pipelines are dropped
-
-        """
+        """Ensures pipelines are dropped"""
         obj_dict = super().__getstate__()
-        if '_pipeline' in obj_dict:
-            pipeline = obj_dict['_pipeline']
-            obj_dict['_pipeline'] = pipeline.instance(operations=pipeline.operations[:1])
-        if '_transforms' in obj_dict:
-            obj_dict['_transforms'] = []
+        if "_pipeline" in obj_dict:
+            pipeline = obj_dict["_pipeline"]
+            obj_dict["_pipeline"] = pipeline.instance(operations=pipeline.operations[:1])
+        if "_transforms" in obj_dict:
+            obj_dict["_transforms"] = []
         return obj_dict
 
     @property
     def redim(self):
-        return Redim(self, mode='dataset')
+        return Redim(self, mode="dataset")
 
     @property
     def dataset(self):
-        """The Dataset that this object was created from
-
-        """
+        """The Dataset that this object was created from"""
         if self._dataset is None:
             if type(self) is Dataset:
                 return self
-            datatype = list(core_util.unique_iterator(self.datatype+Dataset.datatype))
-            dataset = Dataset(self, dataset=None, pipeline=None, transforms=None,
-                              _validate_vdims=False, datatype=datatype)
-            if hasattr(self, '_binned'):
+            datatype = list(core_util.unique_iterator(self.datatype + Dataset.datatype))
+            dataset = Dataset(
+                self,
+                dataset=None,
+                pipeline=None,
+                transforms=None,
+                _validate_vdims=False,
+                datatype=datatype,
+            )
+            if hasattr(self, "_binned"):
                 dataset._binned = self._binned
             return dataset
         elif not isinstance(self._dataset, Dataset):
@@ -465,22 +485,19 @@ class Dataset(Element, metaclass=PipelineMeta):
         if coords is None:
             coords = []
         if self.ndims > 1:
-            raise NotImplementedError("Closest method currently only "
-                                      "implemented for 1D Elements")
+            raise NotImplementedError("Closest method currently only implemented for 1D Elements")
 
         if kwargs:
             if len(kwargs) > 1:
-                raise NotImplementedError("Closest method currently only "
-                                          "supports 1D indexes")
+                raise NotImplementedError("Closest method currently only supports 1D indexes")
             samples = next(iter(kwargs.values()))
             coords = samples if isinstance(samples, list) else [samples]
 
         xs = self.dimension_values(0)
-        if core_util.dtype_kind(xs) in 'SO':
+        if core_util.dtype_kind(xs) in "SO":
             raise NotImplementedError("Closest only supported for numeric types")
-        idxs = [np.argmin(np.abs(xs-coord)) for coord in coords]
+        idxs = [np.argmin(np.abs(xs - coord)) for coord in coords]
         return [type(s)(xs[idx]) for s, idx in zip(coords, idxs, strict=None)]
-
 
     def sort(self, by=None, reverse=False):
         """Sorts the data by the values along the supplied dimensions.
@@ -502,7 +519,6 @@ class Dataset(Element, metaclass=PipelineMeta):
             by = [by]
         sorted_columns = self.interface.sort(self, by, reverse)
         return self.clone(sorted_columns)
-
 
     def range(self, dim, data_range=True, dimension_range=True):
         """Return the lower and upper bounds of values along dimension.
@@ -536,7 +552,6 @@ class Dataset(Element, metaclass=PipelineMeta):
             return lower, upper
         return core_util.dimension_range(lower, upper, dim.range, dim.soft_range)
 
-
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
         """Adds a dimension and its values to the Dataset
 
@@ -565,7 +580,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             dimension = Dimension(dimension)
 
         if dimension.name in self.kdims:
-            raise Exception(f'{dimension.name} dimension already defined')
+            raise Exception(f"{dimension.name} dimension already defined")
 
         if vdim:
             dims = self.vdims[:]
@@ -577,13 +592,15 @@ class Dataset(Element, metaclass=PipelineMeta):
             dims.insert(dim_pos, dimension)
             dimensions = dict(kdims=dims)
 
-        if issubclass(self.interface, ArrayInterface) and np.asarray(dim_val).dtype != self.data.dtype:
+        if (
+            issubclass(self.interface, ArrayInterface)
+            and np.asarray(dim_val).dtype != self.data.dtype
+        ):
             element = self.clone(datatype=[default_datatype])
             data = element.interface.add_dimension(element, dimension, dim_pos, dim_val, vdim)
         else:
             data = self.interface.add_dimension(self, dimension, dim_pos, dim_val, vdim)
         return self.clone(data, **dimensions)
-
 
     def select(self, selection_expr=None, selection_specs=None, **selection):
         """Applies selection by dimension name
@@ -639,9 +656,10 @@ class Dataset(Element, metaclass=PipelineMeta):
         or a scalar if a single value was selected
         """
         from ...util.transform import dim
+
         dimensions = self.dimensions()
         ndims = len(dimensions)
-        sel_dims = (*dimensions, 'selection_mask')
+        sel_dims = (*dimensions, "selection_mask")
         if isinstance(selection_expr, Mapping):
             if selection:
                 raise ValueError("""\
@@ -660,20 +678,24 @@ class Dataset(Element, metaclass=PipelineMeta):
             argument to specify a selection specification""")
         elif selection:
             selection = {
-                dim: sel for dim, sel in selection.items()
+                dim: sel
+                for dim, sel in selection.items()
                 if dim in sel_dims or (isinstance(dim, int) and dim < ndims)
             }
 
         if selection_specs is not None and not isinstance(selection_specs, (list, tuple)):
             selection_specs = [selection_specs]
-        if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
-            or (not selection and not selection_expr)):
+        if (
+            selection_specs
+            and not any(self.matches(sp) for sp in selection_specs)
+            or (not selection and not selection_expr)
+        ):
             return self
 
         # Handle selection dim expression
         if selection_expr is not None and selection_expr.ops:
             mask = selection_expr.apply(self, compute=False, keep_index=True)
-            selection = {'selection_mask': mask}
+            selection = {"selection_mask": mask}
 
         # Handle selection kwargs
         if selection:
@@ -685,7 +707,6 @@ class Dataset(Element, metaclass=PipelineMeta):
             return data
         else:
             return self.clone(data)
-
 
     def reindex(self, kdims=None, vdims=None):
         """Reindexes Dataset dropping static or supplied kdims
@@ -713,8 +734,9 @@ class Dataset(Element, metaclass=PipelineMeta):
         if kdims is None:
             # If no key dimensions are defined and interface is gridded
             # drop all scalar key dimensions
-            key_dims = [d for d in self.kdims if (not vdims or d not in vdims)
-                        and d not in scalars]
+            key_dims = [
+                d for d in self.kdims if (not vdims or d not in vdims) and d not in scalars
+            ]
         elif not isinstance(kdims, list):
             key_dims = [self.get_dimension(kdims, strict=True)]
         else:
@@ -732,11 +754,12 @@ class Dataset(Element, metaclass=PipelineMeta):
         datatype = self.datatype
         if gridded and dropped:
             interfaces = self.interface.interfaces
-            datatype = [dt for dt in datatype if not
-                        getattr(interfaces.get(dt, None), 'gridded', True)]
-        return self.clone(data, kdims=key_dims, vdims=val_dims,
-                          new_type=new_type, datatype=datatype)
-
+            datatype = [
+                dt for dt in datatype if not getattr(interfaces.get(dt, None), "gridded", True)
+            ]
+        return self.clone(
+            data, kdims=key_dims, vdims=val_dims, new_type=new_type, datatype=datatype
+        )
 
     def __getitem__(self, slices):
         """Allows slicing and selecting values in the Dataset object.
@@ -755,21 +778,21 @@ class Dataset(Element, metaclass=PipelineMeta):
 
         """
         slices = core_util.process_ellipses(self, slices, vdim_selection=True)
-        if getattr(getattr(slices, 'dtype', None), 'kind', None) == 'b':
+        if getattr(getattr(slices, "dtype", None), "kind", None) == "b":
             if not len(slices) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
             return self.clone(self.select(selection_mask=slices))
         elif (isinstance(slices, ()) and len(slices) == 1) or slices is Ellipsis:
             return self
-        if not isinstance(slices, tuple): slices = (slices,)
+        if not isinstance(slices, tuple):
+            slices = (slices,)
         value_select = None
         if len(slices) == 1 and slices[0] in self.dimensions():
             return self.dimension_values(slices[0])
-        elif len(slices) == self.ndims+1 and slices[self.ndims] in self.dimensions():
-            selection = dict(zip(self.dimensions('key', label=True), slices, strict=None))
+        elif len(slices) == self.ndims + 1 and slices[self.ndims] in self.dimensions():
+            selection = dict(zip(self.dimensions("key", label=True), slices, strict=None))
             value_select = slices[self.ndims]
-        elif len(slices) == self.ndims+1 and isinstance(slices[self.ndims],
-                                                        (Dimension,str)):
+        elif len(slices) == self.ndims + 1 and isinstance(slices[self.ndims], (Dimension, str)):
             raise IndexError(f"{slices[self.ndims]!r} is not an available value dimension")
         else:
             selection = dict(zip(self.dimensions(label=True), slices, strict=None))
@@ -780,7 +803,6 @@ class Dataset(Element, metaclass=PipelineMeta):
             else:
                 return data.reindex(vdims=[value_select])
         return data
-
 
     def sample(self, samples=None, bounds=None, closest=True, **kwargs):
         """Samples values at supplied coordinates.
@@ -822,7 +844,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         if samples is None:
             samples = []
         if kwargs and samples != []:
-            raise Exception('Supply explicit list of samples or kwargs, not both.')
+            raise Exception("Supply explicit list of samples or kwargs, not both.")
         elif kwargs:
             sample = [slice(None) for _ in range(self.ndims)]
             for dim, val in kwargs.items():
@@ -832,26 +854,27 @@ class Dataset(Element, metaclass=PipelineMeta):
             if self.ndims == 1:
                 xlim = self.range(0)
                 lower, upper = (xlim[0], xlim[1]) if bounds is None else bounds
-                edges = np.linspace(lower, upper, samples+1)
-                linsamples = [(l+u)/2.0 for l,u in pairwise(edges)]
+                edges = np.linspace(lower, upper, samples + 1)
+                linsamples = [(l + u) / 2.0 for l, u in pairwise(edges)]
             elif self.ndims == 2:
                 (rows, cols) = samples
                 if bounds:
-                    (l,b,r,t) = bounds
+                    (l, b, r, t) = bounds
                 else:
                     l, r = self.range(0)
                     b, t = self.range(1)
 
-                xedges = np.linspace(l, r, cols+1)
-                yedges = np.linspace(b, t, rows+1)
-                xsamples = [(lx+ux)/2.0 for lx,ux in pairwise(xedges)]
-                ysamples = [(ly+uy)/2.0 for ly,uy in pairwise(yedges)]
+                xedges = np.linspace(l, r, cols + 1)
+                yedges = np.linspace(b, t, rows + 1)
+                xsamples = [(lx + ux) / 2.0 for lx, ux in pairwise(xedges)]
+                ysamples = [(ly + uy) / 2.0 for ly, uy in pairwise(yedges)]
 
-                Y,X = np.meshgrid(ysamples, xsamples)
+                Y, X = np.meshgrid(ysamples, xsamples)
                 linsamples = list(zip(X.flat, Y.flat, strict=None))
             else:
-                raise NotImplementedError("Regular sampling not implemented "
-                                          "for elements with more than two dimensions.")
+                raise NotImplementedError(
+                    "Regular sampling not implemented for elements with more than two dimensions."
+                )
             samples = list(core_util.unique_iterator(self.closest(linsamples)))
 
         # Note: Special handling sampling of gridded 2D data as Curve
@@ -875,17 +898,16 @@ class Dataset(Element, metaclass=PipelineMeta):
                 kdims = self.kdims
 
             if np.isscalar(selection):
-                selection = [samples[0]+(selection,)]
+                selection = [samples[0] + (selection,)]
             else:
                 reindexed = selection.clone(new_type=Dataset, datatype=datatype).reindex(kdims)
-                selection = tuple(reindexed.columns(kdims+self.vdims).values())
+                selection = tuple(reindexed.columns(kdims + self.vdims).values())
 
-            return self.clone(selection, kdims=kdims, new_type=new_type,
-                              datatype=datatype)
+            return self.clone(selection, kdims=kdims, new_type=new_type, datatype=datatype)
 
         lens = {len(core_util.wrap_tuple(s)) for s in samples}
         if len(lens) > 1:
-            raise IndexError('Sample coordinates must all be of the same length.')
+            raise IndexError("Sample coordinates must all be of the same length.")
 
         if closest:
             try:
@@ -895,7 +917,6 @@ class Dataset(Element, metaclass=PipelineMeta):
         samples = [core_util.wrap_tuple(s) for s in samples]
         sampled = self.interface.sample(self, samples)
         return self.clone(sampled, new_type=Table, datatype=datatype)
-
 
     def reduce(self, dimensions=None, function=None, spreadfn=None, **reductions):
         """Applies reduction along the specified dimension(s).
@@ -939,7 +960,6 @@ class Dataset(Element, metaclass=PipelineMeta):
         dims = [d for d in self.kdims if d not in dims]
         return self.aggregate(dims, function, spreadfn)
 
-
     def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         """Aggregates data on the supplied dimensions.
 
@@ -968,8 +988,11 @@ class Dataset(Element, metaclass=PipelineMeta):
         Returns the aggregated Dataset
         """
         from ...util.transform import dim
-        if dimensions is None: dimensions = self.kdims
-        elif not isinstance(dimensions, list): dimensions = [dimensions]
+
+        if dimensions is None:
+            dimensions = self.kdims
+        elif not isinstance(dimensions, list):
+            dimensions = [dimensions]
         if isinstance(function, tuple) or any(isinstance(v, dim) for v in kwargs.values()):
             dataset = self.clone(new_type=Dataset)
             if dimensions:
@@ -981,8 +1004,10 @@ class Dataset(Element, metaclass=PipelineMeta):
             return transformed.clone(new_type=type(self))
 
         ndims = len(dimensions)
-        min_d, max_d = self.param.objects('existing')['kdims'].bounds
-        generic_type = (min_d is not None and ndims < min_d) or (max_d is not None and ndims > max_d)
+        min_d, max_d = self.param.objects("existing")["kdims"].bounds
+        generic_type = (min_d is not None and ndims < min_d) or (
+            max_d is not None and ndims > max_d
+        )
         new_type = Dataset if generic_type else None
 
         # Handle functions
@@ -990,7 +1015,9 @@ class Dataset(Element, metaclass=PipelineMeta):
         if not self:
             if spreadfn:
                 spread_name = spreadfn.__name__
-                vdims = [d for vd in self.vdims for d in [vd, vd.clone(f'{vd.name}_{spread_name}')]]
+                vdims = [
+                    d for vd in self.vdims for d in [vd, vd.clone(f"{vd.name}_{spread_name}")]
+                ]
             else:
                 vdims = self.vdims
             if not kdims and len(vdims) == 1:
@@ -1009,10 +1036,10 @@ class Dataset(Element, metaclass=PipelineMeta):
             error = self.clone(error, kdims=kdims, new_type=Dataset)
             combined = self.clone(aggregated, kdims=kdims, new_type=Dataset)
             for d in vdims:
-                dim = d.clone(f'{d.name}_{spread_name}')
+                dim = d.clone(f"{d.name}_{spread_name}")
                 dvals = error.dimension_values(d, flat=False)
                 idx = vdims.index(d)
-                combined = combined.add_dimension(dim, idx+1, dvals, True)
+                combined = combined.add_dimension(dim, idx + 1, dvals, True)
                 vdims = combined.vdims
             return combined.clone(new_type=new_type)
 
@@ -1023,13 +1050,14 @@ class Dataset(Element, metaclass=PipelineMeta):
                 # Should be checking the dimensions declared on the element are compatible
                 return self.clone(aggregated, kdims=kdims, vdims=vdims)
             except Exception:
-                datatype = self.param.objects('existing')['datatype'].default
-                return self.clone(aggregated, kdims=kdims, vdims=vdims,
-                                  new_type=new_type, datatype=datatype)
+                datatype = self.param.objects("existing")["datatype"].default
+                return self.clone(
+                    aggregated, kdims=kdims, vdims=vdims, new_type=new_type, datatype=datatype
+                )
 
-
-    def groupby(self, dimensions=None, container_type=HoloMap, group_type=None,
-                dynamic=False, **kwargs):
+    def groupby(
+        self, dimensions=None, container_type=HoloMap, group_type=None, dynamic=False, **kwargs
+    ):
         """Groups object by one or more dimensions
 
         Applies groupby operation over the specified dimensions
@@ -1056,35 +1084,42 @@ class Dataset(Element, metaclass=PipelineMeta):
         """
         if dimensions is None:
             dimensions = []
-        if not isinstance(dimensions, list): dimensions = [dimensions]
-        if not dimensions: dimensions = self.dimensions('key', True)
-        if group_type is None: group_type = type(self)
+        if not isinstance(dimensions, list):
+            dimensions = [dimensions]
+        if not dimensions:
+            dimensions = self.dimensions("key", True)
+        if group_type is None:
+            group_type = type(self)
 
         dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
         dim_names = [d.name for d in dimensions]
 
         if dynamic:
             group_dims = [kd for kd in self.kdims if kd not in dimensions]
-            kdims = [self.get_dimension(d) for d in kwargs.pop('kdims', group_dims)]
+            kdims = [self.get_dimension(d) for d in kwargs.pop("kdims", group_dims)]
             drop_dim = len(group_dims) != len(kdims)
             group_kwargs = dict(core_util.get_param_values(self), kdims=kdims)
             group_kwargs.update(kwargs)
+
             def load_subset(*args):
                 constraint = dict(zip(dim_names, args, strict=None))
                 group = self.select(**constraint)
                 if np.isscalar(group):
-                    return group_type(([group],), group=self.group,
-                                      label=self.label, vdims=self.vdims)
+                    return group_type(
+                        ([group],), group=self.group, label=self.label, vdims=self.vdims
+                    )
                 data = group.reindex(kdims)
                 if drop_dim and self.interface.gridded:
                     data = data.columns()
                 return group_type(data, **group_kwargs)
-            dynamic_dims = [d.clone(values=list(self.interface.values(self, d.name, False)))
-                            for d in dimensions]
+
+            dynamic_dims = [
+                d.clone(values=list(self.interface.values(self, d.name, False)))
+                for d in dimensions
+            ]
             return DynamicMap(load_subset, kdims=dynamic_dims)
 
-        return self.interface.groupby(self, dim_names, container_type,
-                                      group_type, **kwargs)
+        return self.interface.groupby(self, dim_names, container_type, group_type, **kwargs)
 
     def transform(self, *args, **kwargs):
         """Transforms the Dataset according to a dimension transform.
@@ -1119,17 +1154,15 @@ class Dataset(Element, metaclass=PipelineMeta):
         -------
         Transformed dataset with new dimensions
         """
-        drop = kwargs.pop('drop', False)
-        keep_index = kwargs.pop('keep_index', True)
+        drop = kwargs.pop("drop", False)
+        keep_index = kwargs.pop("keep_index", True)
         transforms = {}
-        for s, transform in list(args)+list(kwargs.items()):
+        for s, transform in list(args) + list(kwargs.items()):
             transforms[core_util.wrap_tuple(s)] = transform
 
         new_data = {}
         for signature, transform in transforms.items():
-            applied = transform.apply(
-                self, compute=False, keep_index=keep_index
-            )
+            applied = transform.apply(self, compute=False, keep_index=keep_index)
             if len(signature) == 1:
                 new_data[signature[0]] = applied
             else:
@@ -1142,7 +1175,7 @@ class Dataset(Element, metaclass=PipelineMeta):
                 new_dims.append(d)
 
         ds = self
-        if ds.interface.datatype in ('image', 'array'):
+        if ds.interface.datatype in ("image", "array"):
             ds = ds.clone(datatype=[dt for dt in ds.datatype if dt != ds.interface.datatype])
 
         if drop:
@@ -1155,34 +1188,27 @@ class Dataset(Element, metaclass=PipelineMeta):
             data = ds.interface.assign(ds, new_data)
             data, drop = data if isinstance(data, tuple) else (data, [])
             kdims = [kd for kd in self.kdims if kd.name not in drop]
-            return ds.clone(data, kdims=kdims, vdims=ds.vdims+new_dims)
+            return ds.clone(data, kdims=kdims, vdims=ds.vdims + new_dims)
 
     def __len__(self):
-        """Number of values in the Dataset.
-
-        """
+        """Number of values in the Dataset."""
         return self.interface.length(self)
 
     def __bool__(self):
-        """Whether the Dataset contains any values
-
-        """
+        """Whether the Dataset contains any values"""
         return self.interface.nonzero(self)
 
     @property
     def shape(self):
-        """Returns the shape of the data.
-
-        """
+        """Returns the shape of the data."""
         return self.interface.shape(self)
-
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         dim = self.get_dimension(dimension, strict=True)
         values = self.interface.values(self, dim, expanded, flat)
         if dim.nodata is not None:
             # Ensure nodata applies to boolean data in py2
-            values = np.where(values==dim.nodata, np.nan, values)
+            values = np.where(values == dim.nodata, np.nan, values)
         return values
 
     def get_dimension_type(self, dim):
@@ -1204,7 +1230,6 @@ class Dataset(Element, metaclass=PipelineMeta):
         if dim_obj and dim_obj.type is not None:
             return dim_obj.type
         return self.interface.dimension_type(self, dim_obj)
-
 
     def dframe(self, dimensions=None, multi_index=False):
         """Convert dimension values to DataFrame.
@@ -1232,7 +1257,6 @@ class Dataset(Element, metaclass=PipelineMeta):
             df = df.set_index([d for d in dimensions if d in self.kdims])
         return df
 
-
     def columns(self, dimensions=None):
         """Convert dimension values to a dictionary.
 
@@ -1254,17 +1278,12 @@ class Dataset(Element, metaclass=PipelineMeta):
             dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
         return dict([(d.name, self.dimension_values(d)) for d in dimensions])
 
-
     @property
     def to(self):
-        """Returns the conversion interface with methods to convert Dataset
-
-        """
+        """Returns the conversion interface with methods to convert Dataset"""
         return self._conversion_interface(self)
 
-
-    def clone(self, data=None, shared_data=True, new_type=None, link=True,
-              *args, **overrides):
+    def clone(self, data=None, shared_data=True, new_type=None, link=True, *args, **overrides):
         """Clones the object, overriding data and parameters.
 
         Parameters
@@ -1288,20 +1307,20 @@ class Dataset(Element, metaclass=PipelineMeta):
         -------
         Cloned object
         """
-        if 'datatype' not in overrides:
+        if "datatype" not in overrides:
             datatypes = [self.interface.datatype, *self.datatype]
-            overrides['datatype'] = list(core_util.unique_iterator(datatypes))
+            overrides["datatype"] = list(core_util.unique_iterator(datatypes))
 
         if data is None:
-            overrides['_validate_vdims'] = False
+            overrides["_validate_vdims"] = False
 
             # Allows datatype conversions
             if shared_data:
                 data = self
                 if link:
-                    overrides['plot_id'] = self._plot_id
-        elif self._in_method and 'dataset' not in overrides:
-            overrides['dataset'] = self.dataset
+                    overrides["plot_id"] = self._plot_id
+        elif self._in_method and "dataset" not in overrides:
+            overrides["dataset"] = self.dataset
 
         return super().clone(data, shared_data, new_type, *args, **overrides)
 
@@ -1343,7 +1362,6 @@ class Dataset(Element, metaclass=PipelineMeta):
             dataset.iloc[[0, 2, 3]]
         """
         return iloc(self)
-
 
     @property
     def ndloc(self):

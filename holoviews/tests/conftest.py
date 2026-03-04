@@ -54,7 +54,6 @@ with contextlib.suppress(ImportError):
     mpl.use("agg")
 
 
-
 @pytest.fixture
 def ibis_sqlite_backend():
     try:
@@ -122,6 +121,7 @@ def serve_hv(page, port):  # noqa: F811
 
     return serve_and_return_page
 
+
 @pytest.fixture
 def serve_panel(page, port):  # noqa: F811
     def serve_and_return_page(pn_obj):
@@ -130,6 +130,7 @@ def serve_panel(page, port):  # noqa: F811
         return page
 
     return serve_and_return_page
+
 
 @pytest.fixture(autouse=True, scope="module")
 def reset_store():

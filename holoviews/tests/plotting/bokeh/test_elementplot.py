@@ -29,82 +29,83 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestElementPlot(LoggingComparison, TestBokehPlot):
-
     def test_element_show_frame_disabled(self):
         curve = hv.Curve(range(10)).opts(show_frame=False)
         plot = bokeh_renderer.get_plot(curve).state
         assert plot.outline_line_alpha == 0
 
     def test_element_font_scaling(self):
-        curve = hv.Curve(range(10)).opts(fontscale=2, title='A title')
+        curve = hv.Curve(range(10)).opts(fontscale=2, title="A title")
         plot = bokeh_renderer.get_plot(curve)
         fig = plot.state
-        xaxis = plot.handles['xaxis']
-        yaxis = plot.handles['yaxis']
-        assert fig.title.text_font_size == '24pt'
-        assert xaxis.axis_label_text_font_size == '26px'
-        assert yaxis.axis_label_text_font_size == '26px'
-        assert xaxis.major_label_text_font_size == '22px'
-        assert yaxis.major_label_text_font_size == '22px'
+        xaxis = plot.handles["xaxis"]
+        yaxis = plot.handles["yaxis"]
+        assert fig.title.text_font_size == "24pt"
+        assert xaxis.axis_label_text_font_size == "26px"
+        assert yaxis.axis_label_text_font_size == "26px"
+        assert xaxis.major_label_text_font_size == "22px"
+        assert yaxis.major_label_text_font_size == "22px"
 
     def test_element_font_scaling_fontsize_override_common(self):
-        curve = hv.Curve(range(10)).opts(fontscale=2, fontsize='14pt', title='A title')
+        curve = hv.Curve(range(10)).opts(fontscale=2, fontsize="14pt", title="A title")
         plot = bokeh_renderer.get_plot(curve)
         fig = plot.state
-        xaxis = plot.handles['xaxis']
-        yaxis = plot.handles['yaxis']
-        assert fig.title.text_font_size == '28pt'
-        assert xaxis.axis_label_text_font_size == '28pt'
-        assert yaxis.axis_label_text_font_size == '28pt'
-        assert xaxis.major_label_text_font_size == '22px'
-        assert yaxis.major_label_text_font_size == '22px'
+        xaxis = plot.handles["xaxis"]
+        yaxis = plot.handles["yaxis"]
+        assert fig.title.text_font_size == "28pt"
+        assert xaxis.axis_label_text_font_size == "28pt"
+        assert yaxis.axis_label_text_font_size == "28pt"
+        assert xaxis.major_label_text_font_size == "22px"
+        assert yaxis.major_label_text_font_size == "22px"
 
     def test_element_font_scaling_fontsize_override_specific(self):
         curve = hv.Curve(range(10)).opts(
-            fontscale=2, fontsize={'title': '100%', 'xlabel': '12pt', 'xticks': '1.2em'},
-            title='A title')
+            fontscale=2,
+            fontsize={"title": "100%", "xlabel": "12pt", "xticks": "1.2em"},
+            title="A title",
+        )
         plot = bokeh_renderer.get_plot(curve)
         fig = plot.state
-        xaxis = plot.handles['xaxis']
-        yaxis = plot.handles['yaxis']
-        assert fig.title.text_font_size == '200%'
-        assert xaxis.axis_label_text_font_size == '24pt'
-        assert xaxis.major_label_text_font_size == '2.4em'
-        assert yaxis.axis_label_text_font_size == '26px'
-        assert yaxis.major_label_text_font_size == '22px'
+        xaxis = plot.handles["xaxis"]
+        yaxis = plot.handles["yaxis"]
+        assert fig.title.text_font_size == "200%"
+        assert xaxis.axis_label_text_font_size == "24pt"
+        assert xaxis.major_label_text_font_size == "2.4em"
+        assert yaxis.axis_label_text_font_size == "26px"
+        assert yaxis.major_label_text_font_size == "22px"
 
     def test_element_xaxis_top(self):
-        curve = hv.Curve(range(10)).opts(xaxis='top')
+        curve = hv.Curve(range(10)).opts(xaxis="top")
         plot = bokeh_renderer.get_plot(curve)
-        xaxis = plot.handles['xaxis']
+        xaxis = plot.handles["xaxis"]
         assert xaxis in plot.state.above
 
     def test_element_xaxis_bare(self):
-        curve = hv.Curve(range(10)).opts(xaxis='bare')
+        curve = hv.Curve(range(10)).opts(xaxis="bare")
         plot = bokeh_renderer.get_plot(curve)
-        xaxis = plot.handles['xaxis']
-        assert xaxis.axis_label_text_font_size == '0pt'
-        assert xaxis.major_label_text_font_size == '0pt'
+        xaxis = plot.handles["xaxis"]
+        assert xaxis.axis_label_text_font_size == "0pt"
+        assert xaxis.major_label_text_font_size == "0pt"
         assert xaxis.minor_tick_line_color is None
         assert xaxis.major_tick_line_color is None
         assert xaxis in plot.state.below
 
     def test_element_xaxis_bottom_bare(self):
-        curve = hv.Curve(range(10)).opts(xaxis='bottom-bare')
+        curve = hv.Curve(range(10)).opts(xaxis="bottom-bare")
         plot = bokeh_renderer.get_plot(curve)
-        xaxis = plot.handles['xaxis']
-        assert xaxis.axis_label_text_font_size == '0pt'
-        assert xaxis.major_label_text_font_size == '0pt'
+        xaxis = plot.handles["xaxis"]
+        assert xaxis.axis_label_text_font_size == "0pt"
+        assert xaxis.major_label_text_font_size == "0pt"
         assert xaxis.minor_tick_line_color is None
         assert xaxis.major_tick_line_color is None
         assert xaxis in plot.state.below
 
     def test_element_xaxis_top_bare(self):
-        curve = hv.Curve(range(10)).opts(xaxis='top-bare')
+        curve = hv.Curve(range(10)).opts(xaxis="top-bare")
         plot = bokeh_renderer.get_plot(curve)
-        xaxis = plot.handles['xaxis']
-        assert xaxis.axis_label_text_font_size == '0pt'
-        assert xaxis.major_label_text_font_size == '0pt'
+        xaxis = plot.handles["xaxis"]
+        assert xaxis.axis_label_text_font_size == "0pt"
+        assert xaxis.major_label_text_font_size == "0pt"
         assert xaxis.minor_tick_line_color is None
         assert xaxis.major_tick_line_color is None
         assert xaxis in plot.state.above
@@ -112,119 +113,119 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
     def test_element_yaxis_true(self):
         curve = hv.Curve(range(10)).opts(yaxis=True)
         plot = bokeh_renderer.get_plot(curve)
-        yaxis = plot.handles['yaxis']
+        yaxis = plot.handles["yaxis"]
         assert yaxis in plot.state.left
 
     def test_element_yaxis_false(self):
         curve = hv.Curve(range(10)).opts(yaxis=False)
         plot = bokeh_renderer.get_plot(curve)
-        yaxis = plot.handles['yaxis']
+        yaxis = plot.handles["yaxis"]
         assert yaxis in plot.state.left
         assert not yaxis.visible
 
     def test_element_yaxis_none(self):
         curve = hv.Curve(range(10)).opts(yaxis=None)
         plot = bokeh_renderer.get_plot(curve)
-        yaxis = plot.handles['yaxis']
+        yaxis = plot.handles["yaxis"]
         assert yaxis in plot.state.left
         assert not yaxis.visible
 
     def test_element_yaxis_right(self):
-        curve = hv.Curve(range(10)).opts(yaxis='right')
+        curve = hv.Curve(range(10)).opts(yaxis="right")
         plot = bokeh_renderer.get_plot(curve)
-        yaxis = plot.handles['yaxis']
+        yaxis = plot.handles["yaxis"]
         assert yaxis in plot.state.right
 
     def test_element_yaxis_bare(self):
-        curve = hv.Curve(range(10)).opts(yaxis='bare')
+        curve = hv.Curve(range(10)).opts(yaxis="bare")
         plot = bokeh_renderer.get_plot(curve)
-        yaxis = plot.handles['yaxis']
-        assert yaxis.axis_label_text_font_size == '0pt'
-        assert yaxis.major_label_text_font_size == '0pt'
+        yaxis = plot.handles["yaxis"]
+        assert yaxis.axis_label_text_font_size == "0pt"
+        assert yaxis.major_label_text_font_size == "0pt"
         assert yaxis.minor_tick_line_color is None
         assert yaxis.major_tick_line_color is None
         assert yaxis in plot.state.left
 
     def test_element_yaxis_left_bare(self):
-        curve = hv.Curve(range(10)).opts(yaxis='left-bare')
+        curve = hv.Curve(range(10)).opts(yaxis="left-bare")
         plot = bokeh_renderer.get_plot(curve)
-        yaxis = plot.handles['yaxis']
-        assert yaxis.axis_label_text_font_size == '0pt'
-        assert yaxis.major_label_text_font_size == '0pt'
+        yaxis = plot.handles["yaxis"]
+        assert yaxis.axis_label_text_font_size == "0pt"
+        assert yaxis.major_label_text_font_size == "0pt"
         assert yaxis.minor_tick_line_color is None
         assert yaxis.major_tick_line_color is None
         assert yaxis in plot.state.left
 
     def test_element_yaxis_right_bare(self):
-        curve = hv.Curve(range(10)).opts(yaxis='right-bare')
+        curve = hv.Curve(range(10)).opts(yaxis="right-bare")
         plot = bokeh_renderer.get_plot(curve)
-        yaxis = plot.handles['yaxis']
-        assert yaxis.axis_label_text_font_size == '0pt'
-        assert yaxis.major_label_text_font_size == '0pt'
+        yaxis = plot.handles["yaxis"]
+        assert yaxis.axis_label_text_font_size == "0pt"
+        assert yaxis.major_label_text_font_size == "0pt"
         assert yaxis.minor_tick_line_color is None
         assert yaxis.major_tick_line_color is None
         assert yaxis in plot.state.right
 
     def test_element_title_format(self):
-        title_str = ('Label: {label}, group: {group}, '
-                     'dims: {dimensions}, type: {type}')
+        title_str = "Label: {label}, group: {group}, dims: {dimensions}, type: {type}"
         e = hv.Scatter(
             [],
-            label='the_label',
-            group='the_group',
+            label="the_label",
+            group="the_group",
         ).opts(title=title_str)
-        title = 'Label: the_label, group: the_group, dims: , type: Scatter'
+        title = "Label: the_label, group: the_group, dims: , type: Scatter"
         assert hv.render(e).title.text == title
 
     def test_element_hooks(self):
         def hook(plot, element):
-            plot.handles['plot'].title.text = 'Called'
-        curve = hv.Curve(range(10), label='Not Called').opts(hooks=[hook])
+            plot.handles["plot"].title.text = "Called"
+
+        curve = hv.Curve(range(10), label="Not Called").opts(hooks=[hook])
         plot = bokeh_renderer.get_plot(curve)
-        assert plot.state.title.text == 'Called'
+        assert plot.state.title.text == "Called"
 
     def test_element_update_visible(self):
         checkbox = pn.widgets.Checkbox(value=True)
         scatter = hv.Scatter([]).apply.opts(visible=checkbox)
         plot = bokeh_renderer.get_plot(scatter)
-        assert plot.handles['glyph_renderer'].visible
+        assert plot.handles["glyph_renderer"].visible
         checkbox.value = False
-        assert not plot.handles['glyph_renderer'].visible
+        assert not plot.handles["glyph_renderer"].visible
         checkbox.value = True
-        assert plot.handles['glyph_renderer'].visible
+        assert plot.handles["glyph_renderer"].visible
 
     def test_element_xformatter_string(self):
-        curve = hv.Curve(range(10)).opts(xformatter='%d')
+        curve = hv.Curve(range(10)).opts(xformatter="%d")
         plot = bokeh_renderer.get_plot(curve)
-        xaxis = plot.handles['xaxis']
+        xaxis = plot.handles["xaxis"]
         assert isinstance(xaxis.formatter, PrintfTickFormatter)
-        assert xaxis.formatter.format == '%d'
+        assert xaxis.formatter.format == "%d"
 
     def test_element_yformatter_string(self):
-        curve = hv.Curve(range(10)).opts(yformatter='%d')
+        curve = hv.Curve(range(10)).opts(yformatter="%d")
         plot = bokeh_renderer.get_plot(curve)
-        yaxis = plot.handles['yaxis']
+        yaxis = plot.handles["yaxis"]
         assert isinstance(yaxis.formatter, PrintfTickFormatter)
-        assert yaxis.formatter.format == '%d'
+        assert yaxis.formatter.format == "%d"
 
     def test_element_xformatter_instance(self):
         formatter = NumeralTickFormatter()
         curve = hv.Curve(range(10)).opts(xformatter=formatter)
         plot = bokeh_renderer.get_plot(curve)
-        xaxis = plot.handles['xaxis']
+        xaxis = plot.handles["xaxis"]
         assert xaxis.formatter is formatter
 
     def test_element_yformatter_instance(self):
         formatter = NumeralTickFormatter()
         curve = hv.Curve(range(10)).opts(yformatter=formatter)
         plot = bokeh_renderer.get_plot(curve)
-        yaxis = plot.handles['yaxis']
+        yaxis = plot.handles["yaxis"]
         assert yaxis.formatter is formatter
 
     def test_empty_element_visibility(self):
         curve = hv.Curve([])
         plot = bokeh_renderer.get_plot(curve)
-        assert plot.handles['glyph_renderer'].visible
+        assert plot.handles["glyph_renderer"].visible
 
     def test_element_no_xaxis(self):
         curve = hv.Curve(range(10)).opts(xaxis=None)
@@ -239,40 +240,40 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
     def test_element_xrotation(self):
         curve = hv.Curve(range(10)).opts(xrotation=90)
         plot = bokeh_renderer.get_plot(curve).state
-        assert plot.xaxis[0].major_label_orientation == np.pi/2
+        assert plot.xaxis[0].major_label_orientation == np.pi / 2
 
     def test_element_yrotation(self):
         curve = hv.Curve(range(10)).opts(yrotation=90)
         plot = bokeh_renderer.get_plot(curve).state
-        assert plot.yaxis[0].major_label_orientation == np.pi/2
+        assert plot.yaxis[0].major_label_orientation == np.pi / 2
 
     def test_element_xlabel_override(self):
-        curve = hv.Curve(range(10)).opts(xlabel='custom x-label')
+        curve = hv.Curve(range(10)).opts(xlabel="custom x-label")
         plot = bokeh_renderer.get_plot(curve).state
-        assert plot.xaxis[0].axis_label == 'custom x-label'
+        assert plot.xaxis[0].axis_label == "custom x-label"
 
     def test_element_ylabel_override(self):
-        curve = hv.Curve(range(10)).opts(ylabel='custom y-label')
+        curve = hv.Curve(range(10)).opts(ylabel="custom y-label")
         plot = bokeh_renderer.get_plot(curve).state
-        assert plot.yaxis[0].axis_label == 'custom y-label'
+        assert plot.yaxis[0].axis_label == "custom y-label"
 
     def test_element_labelled_x_disabled(self):
-        curve = hv.Curve(range(10)).opts(labelled=['y'])
+        curve = hv.Curve(range(10)).opts(labelled=["y"])
         plot = bokeh_renderer.get_plot(curve).state
-        assert plot.xaxis[0].axis_label == ''
-        assert plot.yaxis[0].axis_label == 'y'
+        assert plot.xaxis[0].axis_label == ""
+        assert plot.yaxis[0].axis_label == "y"
 
     def test_element_labelled_y_disabled(self):
-        curve = hv.Curve(range(10)).opts(labelled=['x'])
+        curve = hv.Curve(range(10)).opts(labelled=["x"])
         plot = bokeh_renderer.get_plot(curve).state
-        assert plot.xaxis[0].axis_label == 'x'
-        assert plot.yaxis[0].axis_label == ''
+        assert plot.xaxis[0].axis_label == "x"
+        assert plot.yaxis[0].axis_label == ""
 
     def test_element_labelled_both_disabled(self):
         curve = hv.Curve(range(10)).opts(labelled=[])
         plot = bokeh_renderer.get_plot(curve).state
-        assert plot.xaxis[0].axis_label == ''
-        assert plot.yaxis[0].axis_label == ''
+        assert plot.xaxis[0].axis_label == ""
+        assert plot.yaxis[0].axis_label == ""
 
     def test_static_source_optimization(self):
         data = np.ones((5, 5))
@@ -284,18 +285,18 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
 
         get_img.data = data
 
-        stream = Stream.define('Test', test=1)()
+        stream = Stream.define("Test", test=1)()
         dmap = hv.DynamicMap(get_img, streams=[stream])
         plot = bokeh_renderer.get_plot(dmap, doc=Document())
-        source = plot.handles['source']
-        assert source.data['image'][0].mean() == 1
+        source = plot.handles["source"]
+        assert source.data["image"][0].mean() == 1
         stream.event(test=2)
         assert plot.static_source
-        assert source.data['image'][0].mean() == 2
+        assert source.data["image"][0].mean() == 2
         assert source not in plot.current_handles
 
     def test_stream_cleanup(self):
-        stream = Stream.define('Test', test=1)()
+        stream = Stream.define("Test", test=1)()
         dmap = hv.DynamicMap(lambda test: hv.Curve([]), streams=[stream])
         plot = bokeh_renderer.get_plot(dmap)
         assert bool(stream._subscribers)
@@ -307,15 +308,15 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         tick = dt.datetime(2016, 1, 1, 12)
         curve = hv.Curve(dates).opts(xticks=[tick])
         plot = bokeh_renderer.get_plot(curve)
-        assert plot.state.xaxis.ticker.ticks == [dt_to_int(tick, 'ms')]
+        assert plot.state.xaxis.ticker.ticks == [dt_to_int(tick, "ms")]
 
     def test_element_xticks_datetime_label_override(self):
         dates = [(dt.datetime(2016, 1, i), i) for i in range(1, 4)]
         tick = dt.datetime(2016, 1, 1, 12)
-        curve = hv.Curve(dates).opts(xticks=[(tick, 'A')])
+        curve = hv.Curve(dates).opts(xticks=[(tick, "A")])
         plot = bokeh_renderer.get_plot(curve)
-        assert plot.state.xaxis.ticker.ticks == [dt_to_int(tick, 'ms')]
-        assert plot.state.xaxis.major_label_overrides == {dt_to_int(tick, 'ms'): 'A'}
+        assert plot.state.xaxis.ticker.ticks == [dt_to_int(tick, "ms")]
+        assert plot.state.xaxis.major_label_overrides == {dt_to_int(tick, "ms"): "A"}
 
     def test_element_grid_custom_xticker(self):
         curve = hv.Curve([1, 2, 3]).opts(xticks=[0.5, 1.5], show_grid=True)
@@ -328,99 +329,111 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.ygrid[0].ticker is plot.state.yaxis[0].ticker
 
     def test_element_grid_options(self):
-        grid_style = {'grid_line_color': 'blue', 'grid_line_width': 1.5, 'ygrid_bounds': (0.3, 0.7),
-                      'minor_xgrid_line_color': 'lightgray', 'xgrid_line_dash': [4, 4]}
+        grid_style = {
+            "grid_line_color": "blue",
+            "grid_line_width": 1.5,
+            "ygrid_bounds": (0.3, 0.7),
+            "minor_xgrid_line_color": "lightgray",
+            "xgrid_line_dash": [4, 4],
+        }
         curve = hv.Curve(range(10)).opts(show_grid=True, gridstyle=grid_style)
         plot = bokeh_renderer.get_plot(curve)
-        assert plot.state.xgrid[0].grid_line_color == 'blue'
+        assert plot.state.xgrid[0].grid_line_color == "blue"
         assert plot.state.xgrid[0].grid_line_width == 1.5
         assert plot.state.xgrid[0].grid_line_dash == [4, 4]
-        assert plot.state.xgrid[0].minor_grid_line_color == 'lightgray'
-        assert plot.state.ygrid[0].grid_line_color == 'blue'
+        assert plot.state.xgrid[0].minor_grid_line_color == "lightgray"
+        assert plot.state.ygrid[0].grid_line_color == "blue"
         assert plot.state.ygrid[0].grid_line_width == 1.5
         assert plot.state.ygrid[0].bounds == (0.3, 0.7)
 
     def test_change_cds_columns(self):
-        lengths = {'a': 1, 'b': 2, 'c': 3}
-        curve = hv.DynamicMap(lambda a: hv.Curve(range(lengths[a]), a), kdims=['a']).redim.values(a=['a', 'b', 'c'])
+        lengths = {"a": 1, "b": 2, "c": 3}
+        curve = hv.DynamicMap(lambda a: hv.Curve(range(lengths[a]), a), kdims=["a"]).redim.values(
+            a=["a", "b", "c"]
+        )
         plot = bokeh_renderer.get_plot(curve)
-        assert sorted(plot.handles['source'].data.keys()) == ['a', 'y']
-        assert plot.state.xaxis[0].axis_label == 'a'
-        plot.update(('b',))
-        assert sorted(plot.handles['source'].data.keys()) == ['b', 'y']
-        assert plot.state.xaxis[0].axis_label == 'b'
+        assert sorted(plot.handles["source"].data.keys()) == ["a", "y"]
+        assert plot.state.xaxis[0].axis_label == "a"
+        plot.update(("b",))
+        assert sorted(plot.handles["source"].data.keys()) == ["b", "y"]
+        assert plot.state.xaxis[0].axis_label == "b"
 
     def test_update_cds_columns(self):
-        curve = hv.DynamicMap(lambda a: hv.Curve(range(10), a), kdims=['a']).redim.values(a=['a', 'b', 'c'])
+        curve = hv.DynamicMap(lambda a: hv.Curve(range(10), a), kdims=["a"]).redim.values(
+            a=["a", "b", "c"]
+        )
         plot = bokeh_renderer.get_plot(curve)
-        assert sorted(plot.handles['source'].data.keys()) == ['a', 'y']
-        assert plot.state.xaxis[0].axis_label == 'a'
-        plot.update(('b',))
-        assert sorted(plot.handles['source'].data.keys()) == ['a', 'b', 'y']
-        assert plot.state.xaxis[0].axis_label == 'b'
+        assert sorted(plot.handles["source"].data.keys()) == ["a", "y"]
+        assert plot.state.xaxis[0].axis_label == "a"
+        plot.update(("b",))
+        assert sorted(plot.handles["source"].data.keys()) == ["a", "b", "y"]
+        assert plot.state.xaxis[0].axis_label == "b"
 
     def test_categorical_axis_fontsize(self):
-        curve = hv.Curve([('A', 1), ('B', 2)]).opts(fontsize={'minor_xticks': '6pt', 'xticks': 18})
+        curve = hv.Curve([("A", 1), ("B", 2)]).opts(fontsize={"minor_xticks": "6pt", "xticks": 18})
         plot = bokeh_renderer.get_plot(curve)
-        xaxis = plot.handles['xaxis']
-        assert xaxis.major_label_text_font_size == '6pt'
-        assert xaxis.group_text_font_size == '18pt'
+        xaxis = plot.handles["xaxis"]
+        assert xaxis.major_label_text_font_size == "6pt"
+        assert xaxis.group_text_font_size == "18pt"
 
     def test_categorical_axis_fontsize_both(self):
-        curve = hv.Curve([('A', 1), ('B', 2)]).opts(fontsize={'xticks': 18})
+        curve = hv.Curve([("A", 1), ("B", 2)]).opts(fontsize={"xticks": 18})
         plot = bokeh_renderer.get_plot(curve)
-        xaxis = plot.handles['xaxis']
-        assert xaxis.major_label_text_font_size == '18pt'
-        assert xaxis.group_text_font_size == '18pt'
+        xaxis = plot.handles["xaxis"]
+        assert xaxis.major_label_text_font_size == "18pt"
+        assert xaxis.group_text_font_size == "18pt"
 
     def test_cftime_transform_gregorian_no_warn(self):
         cftime = pytest.importorskip("cftime")
-        gregorian_dates = [cftime.DatetimeGregorian(2000, 2, 28),
-                           cftime.DatetimeGregorian(2000, 3, 1),
-                           cftime.DatetimeGregorian(2000, 3, 2)]
+        gregorian_dates = [
+            cftime.DatetimeGregorian(2000, 2, 28),
+            cftime.DatetimeGregorian(2000, 3, 1),
+            cftime.DatetimeGregorian(2000, 3, 2),
+        ]
         curve = hv.Curve((gregorian_dates, [1, 2, 3]))
         plot = bokeh_renderer.get_plot(curve)
-        xs = plot.handles['cds'].data['x']
-        assert_data_equal(xs.astype('int64'),
-                         np.array([951696000000, 951868800000, 951955200000]))
+        xs = plot.handles["cds"].data["x"]
+        assert_data_equal(xs.astype("int64"), np.array([951696000000, 951868800000, 951955200000]))
 
     def test_cftime_transform_noleap_warn(self):
         cftime = pytest.importorskip("cftime")
-        gregorian_dates = [cftime.DatetimeNoLeap(2000, 2, 28),
-                           cftime.DatetimeNoLeap(2000, 3, 1),
-                           cftime.DatetimeNoLeap(2000, 3, 2)]
+        gregorian_dates = [
+            cftime.DatetimeNoLeap(2000, 2, 28),
+            cftime.DatetimeNoLeap(2000, 3, 1),
+            cftime.DatetimeNoLeap(2000, 3, 2),
+        ]
         curve = hv.Curve((gregorian_dates, [1, 2, 3]))
         plot = bokeh_renderer.get_plot(curve)
-        xs = plot.handles['cds'].data['x']
-        assert_data_equal(xs.astype('int64'),
-                         np.array([951696000000, 951868800000, 951955200000]))
+        xs = plot.handles["cds"].data["x"]
+        assert_data_equal(xs.astype("int64"), np.array([951696000000, 951868800000, 951955200000]))
         substr = (
             "Converting cftime.datetime from a non-standard calendar "
             "(noleap) to a standard calendar for plotting. This may "
             "lead to subtle errors in formatting dates, for accurate "
-            "tick formatting switch to the matplotlib backend.")
-        self.log_handler.assert_endswith('WARNING', substr)
+            "tick formatting switch to the matplotlib backend."
+        )
+        self.log_handler.assert_endswith("WARNING", substr)
 
     def test_active_tools_drag(self):
-        curve = hv.Curve([1, 2, 3]).opts(active_tools=['box_zoom'])
+        curve = hv.Curve([1, 2, 3]).opts(active_tools=["box_zoom"])
         plot = bokeh_renderer.get_plot(curve)
         toolbar = plot.state.toolbar
         assert isinstance(toolbar.active_drag, tools.BoxZoomTool)
 
     def test_active_tools_scroll(self):
-        curve = hv.Curve([1, 2, 3]).opts(active_tools=['wheel_zoom'])
+        curve = hv.Curve([1, 2, 3]).opts(active_tools=["wheel_zoom"])
         plot = bokeh_renderer.get_plot(curve)
         toolbar = plot.state.toolbar
         assert isinstance(toolbar.active_scroll, tools.WheelZoomTool)
 
     def test_active_tools_tap(self):
-        curve = hv.Curve([1, 2, 3]).opts(active_tools=['tap'], tools=['tap'])
+        curve = hv.Curve([1, 2, 3]).opts(active_tools=["tap"], tools=["tap"])
         plot = bokeh_renderer.get_plot(curve)
         toolbar = plot.state.toolbar
         assert isinstance(toolbar.active_tap, tools.TapTool)
 
     def test_active_tools_draw_stream(self):
-        scatter = hv.Scatter([1, 2, 3]).opts(active_tools=['point_draw'])
+        scatter = hv.Scatter([1, 2, 3]).opts(active_tools=["point_draw"])
         PointDraw(source=scatter)
         plot = bokeh_renderer.get_plot(scatter)
         toolbar = plot.state.toolbar
@@ -428,30 +441,31 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert isinstance(toolbar.active_drag, tools.PointDrawTool)
 
     def test_hover_tooltip_update(self):
-        hmap = hv.HoloMap({'a': hv.Curve([1, 2, 3], vdims='a'), 'b': hv.Curve([1, 2, 3], vdims='b')}).opts(
-            tools=['hover'])
+        hmap = hv.HoloMap(
+            {"a": hv.Curve([1, 2, 3], vdims="a"), "b": hv.Curve([1, 2, 3], vdims="b")}
+        ).opts(tools=["hover"])
         plot = bokeh_renderer.get_plot(hmap)
-        assert plot.handles['hover'].tooltips == [('x', '@{x}'), ('a', '@{a}')]
-        plot.update(('b',))
-        assert plot.handles['hover'].tooltips == [('x', '@{x}'), ('b', '@{b}')]
+        assert plot.handles["hover"].tooltips == [("x", "@{x}"), ("a", "@{a}")]
+        plot.update(("b",))
+        assert plot.handles["hover"].tooltips == [("x", "@{x}"), ("b", "@{b}")]
 
     def test_categorical_dimension_values(self):
-        curve = hv.Curve([('C', 1), ('B', 3)]).redim.values(x=['A', 'B', 'C'])
+        curve = hv.Curve([("C", 1), ("B", 3)]).redim.values(x=["A", "B", "C"])
         plot = bokeh_renderer.get_plot(curve)
-        x_range = plot.handles['x_range']
-        assert x_range.factors == ['A', 'B', 'C']
+        x_range = plot.handles["x_range"]
+        assert x_range.factors == ["A", "B", "C"]
 
     def test_categorical_dimension_type(self):
         curve = hv.Curve([]).redim.type(x=str)
         plot = bokeh_renderer.get_plot(curve)
-        x_range = plot.handles['x_range']
+        x_range = plot.handles["x_range"]
         assert x_range.factors == []
 
     def test_style_map_dimension_object(self):
-        x = hv.Dimension('x')
-        y = hv.Dimension('y')
+        x = hv.Dimension("x")
+        y = hv.Dimension("y")
         scatter = hv.Scatter([1, 2, 3], kdims=[x], vdims=[y]).opts(color=x)
-        self._test_colormapping(scatter, 'x', prefix='color_')
+        self._test_colormapping(scatter, "x", prefix="color_")
 
     #################################################################
     # Aspect tests
@@ -474,7 +488,9 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.frame_height == 200
         assert plot.state.frame_width == 400
         assert plot.state.aspect_ratio is None
-        self.log_handler.assert_contains('WARNING', "uses those values as frame_width/frame_height instead")
+        self.log_handler.assert_contains(
+            "WARNING", "uses those values as frame_width/frame_height instead"
+        )
 
     def test_element_aspect_height(self):
         curve = hv.Curve([1, 2, 3]).opts(aspect=2, height=400)
@@ -484,7 +500,9 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 800
         assert plot.state.aspect_ratio is None
-        self.log_handler.assert_contains('WARNING', "uses those values as frame_width/frame_height instead")
+        self.log_handler.assert_contains(
+            "WARNING", "uses those values as frame_width/frame_height instead"
+        )
 
     def test_element_aspect_width_height(self):
         curve = hv.Curve([1, 2, 3]).opts(aspect=2, height=400, width=400)
@@ -494,7 +512,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.frame_height is None
         assert plot.state.frame_width is None
         assert plot.state.aspect_ratio is None
-        self.log_handler.assert_contains('WARNING', "aspect value was ignored")
+        self.log_handler.assert_contains("WARNING", "aspect value was ignored")
 
     def test_element_aspect_frame_width(self):
         curve = hv.Curve([1, 2, 3]).opts(aspect=2, frame_width=400)
@@ -522,7 +540,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 400
         assert plot.state.aspect_ratio is None
-        self.log_handler.assert_contains('WARNING', "aspect value was ignored")
+        self.log_handler.assert_contains("WARNING", "aspect value was ignored")
 
     def test_element_data_aspect(self):
         curve = hv.Curve([0, 0.5, 1, 1.5]).opts(data_aspect=1.5)
@@ -541,7 +559,9 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 400
         assert plot.state.aspect_scale == 2
-        self.log_handler.assert_contains('WARNING', "uses those values as frame_width/frame_height instead")
+        self.log_handler.assert_contains(
+            "WARNING", "uses those values as frame_width/frame_height instead"
+        )
 
     def test_element_data_aspect_height(self):
         curve = hv.Curve([0, 0.5, 1, 1.5]).opts(data_aspect=2, height=400)
@@ -551,12 +571,14 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 400
         assert plot.state.aspect_scale == 2
-        self.log_handler.assert_contains('WARNING', "uses those values as frame_width/frame_height instead")
+        self.log_handler.assert_contains(
+            "WARNING", "uses those values as frame_width/frame_height instead"
+        )
 
     def test_element_data_aspect_width_height(self):
         curve = hv.Curve([0, 2, 3]).opts(data_aspect=2, height=400, width=400)
         plot = bokeh_renderer.get_plot(curve)
-        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        x_range, y_range = plot.handles["x_range"], plot.handles["y_range"]
         assert plot.state.height == 400
         assert plot.state.width == 400
         assert plot.state.aspect_scale == 2
@@ -603,7 +625,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.width is None
         assert plot.state.frame_height is None
         assert plot.state.frame_width is None
-        assert plot.state.sizing_mode == 'stretch_both'
+        assert plot.state.sizing_mode == "stretch_both"
 
     def test_element_width_responsive(self):
         curve = hv.Curve([1, 2, 3]).opts(width=400, responsive=True)
@@ -612,7 +634,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.width == 400
         assert plot.state.frame_height is None
         assert plot.state.frame_width is None
-        assert plot.state.sizing_mode == 'stretch_height'
+        assert plot.state.sizing_mode == "stretch_height"
 
     def test_element_height_responsive(self):
         curve = hv.Curve([1, 2, 3]).opts(height=400, responsive=True)
@@ -621,7 +643,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.width is None
         assert plot.state.frame_height is None
         assert plot.state.frame_width is None
-        assert plot.state.sizing_mode == 'stretch_width'
+        assert plot.state.sizing_mode == "stretch_width"
 
     def test_element_frame_width_responsive(self):
         curve = hv.Curve([1, 2, 3]).opts(frame_width=400, responsive=True)
@@ -630,7 +652,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.width is None
         assert plot.state.frame_height is None
         assert plot.state.frame_width == 400
-        assert plot.state.sizing_mode == 'stretch_height'
+        assert plot.state.sizing_mode == "stretch_height"
 
     def test_element_frame_height_responsive(self):
         curve = hv.Curve([1, 2, 3]).opts(frame_height=400, responsive=True)
@@ -639,7 +661,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.width is None
         assert plot.state.frame_height == 400
         assert plot.state.frame_width is None
-        assert plot.state.sizing_mode == 'stretch_width'
+        assert plot.state.sizing_mode == "stretch_width"
 
     def test_element_aspect_responsive(self):
         curve = hv.Curve([1, 2, 3]).opts(aspect=2, responsive=True)
@@ -648,81 +670,85 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.width is None
         assert plot.state.frame_height is None
         assert plot.state.frame_width is None
-        assert plot.state.sizing_mode == 'scale_both'
+        assert plot.state.sizing_mode == "scale_both"
 
     def test_element_aspect_width_responsive(self):
         curve = hv.Curve([1, 2, 3]).opts(aspect=2, width=400, responsive=True)
         plot = bokeh_renderer.get_plot(curve)
-        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
+        self.log_handler.assert_contains("WARNING", "responsive mode could not be enabled")
         assert plot.state.height is None
         assert plot.state.width is None
         assert plot.state.frame_height == 200
         assert plot.state.frame_width == 400
-        assert plot.state.sizing_mode == 'fixed'
-        self.log_handler.assert_contains('WARNING', "uses those values as frame_width/frame_height instead")
+        assert plot.state.sizing_mode == "fixed"
+        self.log_handler.assert_contains(
+            "WARNING", "uses those values as frame_width/frame_height instead"
+        )
 
     def test_element_aspect_height_responsive(self):
         curve = hv.Curve([1, 2, 3]).opts(aspect=2, height=400, responsive=True)
         plot = bokeh_renderer.get_plot(curve)
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 800
-        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
+        self.log_handler.assert_contains("WARNING", "responsive mode could not be enabled")
         assert plot.state.height is None
         assert plot.state.width is None
-        assert plot.state.sizing_mode == 'fixed'
-        self.log_handler.assert_contains('WARNING', "uses those values as frame_width/frame_height instead")
+        assert plot.state.sizing_mode == "fixed"
+        self.log_handler.assert_contains(
+            "WARNING", "uses those values as frame_width/frame_height instead"
+        )
 
     def test_element_width_height_responsive(self):
         curve = hv.Curve([1, 2, 3]).opts(height=400, width=400, responsive=True)
         plot = bokeh_renderer.get_plot(curve)
         assert plot.state.height == 400
         assert plot.state.width == 400
-        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
+        self.log_handler.assert_contains("WARNING", "responsive mode could not be enabled")
         assert plot.state.frame_height is None
         assert plot.state.frame_width is None
-        assert plot.state.sizing_mode == 'fixed'
+        assert plot.state.sizing_mode == "fixed"
 
     def test_element_aspect_frame_width_responsive(self):
         curve = hv.Curve([1, 2, 3]).opts(aspect=2, frame_width=400, responsive=True)
         plot = bokeh_renderer.get_plot(curve)
-        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
+        self.log_handler.assert_contains("WARNING", "responsive mode could not be enabled")
         assert plot.state.height is None
         assert plot.state.width is None
         assert plot.state.frame_height == 200
         assert plot.state.frame_width == 400
-        assert plot.state.sizing_mode == 'fixed'
+        assert plot.state.sizing_mode == "fixed"
 
     def test_element_aspect_frame_height_responsive(self):
         curve = hv.Curve([1, 2, 3]).opts(aspect=2, frame_height=400, responsive=True)
         plot = bokeh_renderer.get_plot(curve)
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 800
-        assert plot.state.sizing_mode == 'fixed'
-        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
+        assert plot.state.sizing_mode == "fixed"
+        self.log_handler.assert_contains("WARNING", "responsive mode could not be enabled")
 
     def test_element_frame_width_frame_height_responsive(self):
         curve = hv.Curve([1, 2, 3]).opts(frame_height=400, frame_width=400, responsive=True)
         plot = bokeh_renderer.get_plot(curve)
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 400
-        assert plot.state.sizing_mode == 'fixed'
-        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
+        assert plot.state.sizing_mode == "fixed"
+        self.log_handler.assert_contains("WARNING", "responsive mode could not be enabled")
 
     def test_element_data_aspect_responsive(self):
         curve = hv.Curve([0, 2]).opts(data_aspect=1, responsive=True)
         plot = bokeh_renderer.get_plot(curve)
         assert plot.state.aspect_ratio == 0.5
         assert plot.state.aspect_scale == 1
-        assert plot.state.sizing_mode == 'scale_both'
+        assert plot.state.sizing_mode == "scale_both"
 
     def test_element_data_aspect_and_aspect_responsive(self):
         curve = hv.Curve([0, 2]).opts(data_aspect=1, aspect=2, responsive=True)
         plot = bokeh_renderer.get_plot(curve)
         assert plot.state.aspect_ratio == 0.5
         assert plot.state.aspect_scale == 1
-        assert plot.state.sizing_mode == 'scale_both'
-        x_range = plot.handles['x_range']
-        y_range = plot.handles['y_range']
+        assert plot.state.sizing_mode == "scale_both"
+        x_range = plot.handles["x_range"]
+        y_range = plot.handles["y_range"]
         assert x_range.start == 0
         assert x_range.end == 1
         assert y_range.start == 0
@@ -733,34 +759,38 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         plot = bokeh_renderer.get_plot(curve)
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 400
-        assert plot.state.sizing_mode == 'fixed'
-        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
-        self.log_handler.assert_contains('WARNING', "uses those values as frame_width/frame_height instead")
+        assert plot.state.sizing_mode == "fixed"
+        self.log_handler.assert_contains("WARNING", "responsive mode could not be enabled")
+        self.log_handler.assert_contains(
+            "WARNING", "uses those values as frame_width/frame_height instead"
+        )
 
     def test_element_data_aspect_height_responsive(self):
         curve = hv.Curve([0, 0.5, 1, 1.5]).opts(data_aspect=2, height=400, responsive=True)
         plot = bokeh_renderer.get_plot(curve)
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 400
-        assert plot.state.sizing_mode == 'fixed'
-        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
-        self.log_handler.assert_contains('WARNING', "uses those values as frame_width/frame_height instead")
+        assert plot.state.sizing_mode == "fixed"
+        self.log_handler.assert_contains("WARNING", "responsive mode could not be enabled")
+        self.log_handler.assert_contains(
+            "WARNING", "uses those values as frame_width/frame_height instead"
+        )
 
     def test_element_data_aspect_frame_width_responsive(self):
         curve = hv.Curve([1, 2, 3]).opts(data_aspect=2, frame_width=400, responsive=True)
         plot = bokeh_renderer.get_plot(curve)
         assert plot.state.frame_height == 800
         assert plot.state.frame_width == 400
-        assert plot.state.sizing_mode == 'fixed'
-        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
+        assert plot.state.sizing_mode == "fixed"
+        self.log_handler.assert_contains("WARNING", "responsive mode could not be enabled")
 
     def test_element_data_aspect_frame_height_responsive(self):
         curve = hv.Curve([1, 2, 3]).opts(data_aspect=2, frame_height=400, responsive=True)
         plot = bokeh_renderer.get_plot(curve)
         assert plot.state.frame_height == 400
         assert plot.state.frame_width == 200
-        assert plot.state.sizing_mode == 'fixed'
-        self.log_handler.assert_contains('WARNING', "responsive mode could not be enabled")
+        assert plot.state.sizing_mode == "fixed"
+        self.log_handler.assert_contains("WARNING", "responsive mode could not be enabled")
 
     #################################################################
     # Custom opts tests
@@ -776,7 +806,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
             },
         )
         plot = bokeh_renderer.get_plot(heat_map)
-        colorbar = plot.handles['colorbar']
+        colorbar = plot.handles["colorbar"]
         assert colorbar.title == "Testing"
         assert colorbar.ticker.ticks == (3.5, 5)
         assert colorbar.major_label_overrides == {3.5: "A", 5: "B"}
@@ -791,14 +821,15 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
             },
         )
         plot = bokeh_renderer.get_plot(heat_map)
-        colorbar = plot.handles['colorbar']
+        colorbar = plot.handles["colorbar"]
         assert colorbar.title == "Testing"
         assert colorbar.ticker.ticks == (3.5, 5)
         assert colorbar.major_label_overrides == {3.5: "A", 5: "B"}
 
     def test_element_backend_opts_two_accessors(self):
         heat_map = hv.HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
-            colorbar=True, backend_opts={"colorbar": "Testing"},
+            colorbar=True,
+            backend_opts={"colorbar": "Testing"},
         )
         bokeh_renderer.get_plot(heat_map)
         self.log_handler.assert_contains(
@@ -807,30 +838,29 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
 
     def test_element_backend_opts_model_not_resolved(self):
         heat_map = hv.HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
-            colorbar=True, backend_opts={"cb.title": "Testing"},
+            colorbar=True,
+            backend_opts={"cb.title": "Testing"},
         )
         bokeh_renderer.get_plot(heat_map)
-        self.log_handler.assert_contains(
-            "WARNING", "cb model could not be"
-        )
+        self.log_handler.assert_contains("WARNING", "cb model could not be")
 
-    @pytest.mark.parametrize("labels", [
-        ("", "", "", "1"),
-        ("", "1", "", "2"),
-        ("", "1", "2", "1"),
-        ("", "1", "2", "3"),
-        ("1", "2", "1", "4"),
-        ("1", "2", "4", "1"),
-        ("1", "2", "3", "4"),
-    ])
+    @pytest.mark.parametrize(
+        "labels",
+        [
+            ("", "", "", "1"),
+            ("", "1", "", "2"),
+            ("", "1", "2", "1"),
+            ("", "1", "2", "3"),
+            ("1", "2", "1", "4"),
+            ("1", "2", "4", "1"),
+            ("1", "2", "3", "4"),
+        ],
+    )
     def test_dynamicmap_subcoordinate_y_enabled_labels_mismatched(self, labels):
 
         def func(data, plot_labels):
             if not data:
-                return (
-                        hv.Curve([], label=plot_labels[0]) *
-                        hv.Curve([], label=plot_labels[1])
-                )
+                return hv.Curve([], label=plot_labels[0]) * hv.Curve([], label=plot_labels[1])
             plot1 = hv.Curve([0, 1], label=plot_labels[2]).opts(subcoordinate_y=True)
             plot2 = hv.Curve([2, 1], label=plot_labels[3]).opts(subcoordinate_y=True)
             return plot1 * plot2
@@ -843,17 +873,17 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         with pytest.raises(AbbreviatedException, match=msg):
             pipe.send(True)
 
-    @pytest.mark.parametrize("labels", [
-        ("1", "2", "2", "1"),
-        ("1", "2", "1", "2"),
-    ])
+    @pytest.mark.parametrize(
+        "labels",
+        [
+            ("1", "2", "2", "1"),
+            ("1", "2", "1", "2"),
+        ],
+    )
     def test_dynamicmap_subcoordinate_y_enabled_labels_matched(self, labels):
         def func(data, plot_labels):
             if not data:
-                return (
-                        hv.Curve([], label=plot_labels[0]) *
-                        hv.Curve([], label=plot_labels[1])
-                )
+                return hv.Curve([], label=plot_labels[0]) * hv.Curve([], label=plot_labels[1])
             plot1 = hv.Curve([0, 1], label=plot_labels[2]).opts(subcoordinate_y=True)
             plot2 = hv.Curve([2, 1], label=plot_labels[3]).opts(subcoordinate_y=True)
             return plot1 * plot2
@@ -867,6 +897,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
     @pytest.mark.skipif(not BOKEH_GE_3_8_0, reason="requires Bokeh >= 3.8")
     def test_timedelta_axis_polars(self):
         from bokeh.models.axes import TimedeltaAxis
+
         pl = pytest.importorskip("polars")
         df = pl.DataFrame(
             {
@@ -880,6 +911,7 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
     @pytest.mark.skipif(not BOKEH_GE_3_8_0, reason="requires Bokeh >= 3.8")
     def test_timedelta_axis_pandas(self):
         from bokeh.models.axes import TimedeltaAxis
+
         pd = pytest.importorskip("pandas")
         df = pd.DataFrame(
             {
@@ -894,16 +926,15 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
 @pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.skipif(not BOKEH_GE_3_4_0, reason="requires Bokeh >= 3.4")
 class TestScalebarPlot:
-
     def get_scalebar(self, element):
         plot = bokeh_renderer.get_plot(element)
-        return plot.handles.get('scalebar')
+        return plot.handles.get("scalebar")
 
     def test_scalebar(self):
         curve = hv.Curve([1, 2, 3]).opts(scalebar=True)
         scalebar = self.get_scalebar(curve)
         assert scalebar.visible
-        assert scalebar.location == 'bottom_right'
+        assert scalebar.location == "bottom_right"
         assert scalebar.background_fill_alpha == 0.8
         assert scalebar.unit == "m"
 
@@ -913,7 +944,7 @@ class TestScalebarPlot:
         assert scalebar is None
 
     def test_scalebar_unit(self):
-        curve = hv.Curve([1, 2, 3]).opts(scalebar=True, scalebar_unit='cm')
+        curve = hv.Curve([1, 2, 3]).opts(scalebar=True, scalebar_unit="cm")
         scalebar = self.get_scalebar(curve)
         assert scalebar.visible
         assert scalebar.unit == "cm"
@@ -926,28 +957,28 @@ class TestScalebarPlot:
         assert scalebar.unit == "cm"
 
     def test_scalebar_custom_opts(self):
-        curve = hv.Curve([1, 2, 3]).opts(scalebar=True, scalebar_opts={'background_fill_alpha': 1})
+        curve = hv.Curve([1, 2, 3]).opts(scalebar=True, scalebar_opts={"background_fill_alpha": 1})
         scalebar = self.get_scalebar(curve)
         assert scalebar.visible
         assert scalebar.background_fill_alpha == 1
 
     def test_scalebar_label(self):
-        curve = hv.Curve([1, 2, 3]).opts(scalebar=True, scalebar_label='Test')
+        curve = hv.Curve([1, 2, 3]).opts(scalebar=True, scalebar_label="Test")
         scalebar = self.get_scalebar(curve)
         assert scalebar.visible
-        assert scalebar.label == 'Test'
+        assert scalebar.label == "Test"
 
     def test_scalebar_icon(self):
         curve = hv.Curve([1, 2, 3]).opts(scalebar=True)
         plot = bokeh_renderer.get_plot(curve)
-        toolbar = plot.handles['plot'].toolbar
+        toolbar = plot.handles["plot"].toolbar
         scalebar_icon = [tool for tool in toolbar.tools if tool.description == "Toggle ScaleBar"]
         assert len(scalebar_icon) == 1
 
     def test_scalebar_no_icon(self):
         curve = hv.Curve([1, 2, 3]).opts(scalebar=False)
         plot = bokeh_renderer.get_plot(curve)
-        toolbar = plot.handles['plot'].toolbar
+        toolbar = plot.handles["plot"].toolbar
         scalebar_icon = [tool for tool in toolbar.tools if tool.description == "Toggle ScaleBar"]
         assert len(scalebar_icon) == 0
 
@@ -955,7 +986,7 @@ class TestScalebarPlot:
         curve1 = hv.Curve([1, 2, 3]).opts(scalebar=True)
         curve2 = hv.Curve([1, 2, 3]).opts(scalebar=True)
         plot = bokeh_renderer.get_plot(curve1 * curve2)
-        toolbar = plot.handles['plot'].toolbar
+        toolbar = plot.handles["plot"].toolbar
         scalebar_icon = [tool for tool in toolbar.tools if tool.description == "Toggle ScaleBar"]
         assert len(scalebar_icon) == 1
 
@@ -967,9 +998,9 @@ class TestScalebarPlot:
         from bokeh.models import ScaleBar
 
         enabled = [enabled1, enabled2, enabled3]
-        curve1 = hv.Curve([1, 2, 3], label='c1').opts(scalebar=enabled1, subcoordinate_y=True)
-        curve2 = hv.Curve([1, 2, 3], label='c2').opts(scalebar=enabled2, subcoordinate_y=True)
-        curve3 = hv.Curve([1, 2, 3], label='c3').opts(scalebar=enabled3, subcoordinate_y=True)
+        curve1 = hv.Curve([1, 2, 3], label="c1").opts(scalebar=enabled1, subcoordinate_y=True)
+        curve2 = hv.Curve([1, 2, 3], label="c2").opts(scalebar=enabled2, subcoordinate_y=True)
+        curve3 = hv.Curve([1, 2, 3], label="c3").opts(scalebar=enabled3, subcoordinate_y=True)
         curves = curve1 * curve2 * curve3
 
         plot = bokeh_renderer.get_plot(curves).handles["plot"]
@@ -986,94 +1017,96 @@ class TestScalebarPlot:
 
 
 class TestColorbarPlot(LoggingComparison, TestBokehPlot):
-
     def test_colormapper_symmetric(self):
         img = hv.Image(np.array([[0, 1], [2, 3]])).opts(symmetric=True)
         plot = bokeh_renderer.get_plot(img)
-        cmapper = plot.handles['color_mapper']
+        cmapper = plot.handles["color_mapper"]
         assert cmapper.low == -3
         assert cmapper.high == 3
 
     def test_colormapper_logz_int_zero_bound(self):
         img = hv.Image(np.array([[0, 1], [2, 3]])).opts(logz=True)
         plot = bokeh_renderer.get_plot(img)
-        cmapper = plot.handles['color_mapper']
+        cmapper = plot.handles["color_mapper"]
         assert cmapper.low == 1
         assert cmapper.high == 3
 
     def test_colormapper_logz_float_zero_bound(self):
-        img = hv.Image(np.array([[0, 1], [2, 3.]])).opts(logz=True)
+        img = hv.Image(np.array([[0, 1], [2, 3.0]])).opts(logz=True)
         plot = bokeh_renderer.get_plot(img)
-        cmapper = plot.handles['color_mapper']
+        cmapper = plot.handles["color_mapper"]
         assert cmapper.low == 0
         assert cmapper.high == 3
-        self.log_handler.assert_contains('WARNING', "Log color mapper lower bound <= 0")
+        self.log_handler.assert_contains("WARNING", "Log color mapper lower bound <= 0")
 
     def test_colormapper_color_levels(self):
-        cmap = process_cmap('viridis', provider='bokeh')
+        cmap = process_cmap("viridis", provider="bokeh")
         img = hv.Image(np.array([[0, 1], [2, 3]])).opts(color_levels=5, cmap=cmap)
         plot = bokeh_renderer.get_plot(img)
-        cmapper = plot.handles['color_mapper']
+        cmapper = plot.handles["color_mapper"]
         assert len(cmapper.palette) == 5
-        assert cmapper.palette == ['#440154', '#440255', '#440357', '#450558', '#45065A']
+        assert cmapper.palette == ["#440154", "#440255", "#440357", "#450558", "#45065A"]
 
     def test_colormapper_transparent_nan(self):
-        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(clipping_colors={'NaN': 'transparent'})
+        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(clipping_colors={"NaN": "transparent"})
         plot = bokeh_renderer.get_plot(img)
-        cmapper = plot.handles['color_mapper']
-        assert cmapper.nan_color == 'rgba(0, 0, 0, 0)'
+        cmapper = plot.handles["color_mapper"]
+        assert cmapper.nan_color == "rgba(0, 0, 0, 0)"
 
     def test_colormapper_cnorm_linear(self):
-        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(cnorm='linear')
+        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(cnorm="linear")
         plot = bokeh_renderer.get_plot(img)
-        cmapper = plot.handles['color_mapper']
+        cmapper = plot.handles["color_mapper"]
         assert isinstance(cmapper, LinearColorMapper)
 
     def test_colormapper_cnorm_log(self):
-        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(cnorm='log')
+        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(cnorm="log")
         plot = bokeh_renderer.get_plot(img)
-        cmapper = plot.handles['color_mapper']
+        cmapper = plot.handles["color_mapper"]
         assert isinstance(cmapper, LogColorMapper)
 
     def test_colormapper_cnorm_eqhist(self):
-        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(cnorm='eq_hist')
+        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(cnorm="eq_hist")
         plot = bokeh_renderer.get_plot(img)
-        cmapper = plot.handles['color_mapper']
+        cmapper = plot.handles["color_mapper"]
         assert isinstance(cmapper, EqHistColorMapper)
 
-
     def test_colormapper_min_max_colors(self):
-        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(clipping_colors={'min': 'red', 'max': 'blue'})
+        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(
+            clipping_colors={"min": "red", "max": "blue"}
+        )
         plot = bokeh_renderer.get_plot(img)
-        cmapper = plot.handles['color_mapper']
-        assert cmapper.low_color == 'red'
-        assert cmapper.high_color == 'blue'
+        cmapper = plot.handles["color_mapper"]
+        assert cmapper.low_color == "red"
+        assert cmapper.high_color == "blue"
 
     def test_custom_colorbar_ticker(self):
         ticker = LogTicker()
-        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(colorbar=True, colorbar_opts=dict(ticker=ticker))
+        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(
+            colorbar=True, colorbar_opts=dict(ticker=ticker)
+        )
         plot = bokeh_renderer.get_plot(img)
-        colorbar = plot.handles['colorbar']
+        colorbar = plot.handles["colorbar"]
         assert colorbar.ticker is ticker
 
     def test_colorbar_fontsize_scaling(self):
         img = hv.Image(np.array([[0, 1], [2, 3]])).opts(colorbar=True, fontscale=2)
         plot = bokeh_renderer.get_plot(img)
-        colorbar = plot.handles['colorbar']
-        assert colorbar.title_text_font_size == '26px'
-        assert colorbar.major_label_text_font_size == '22px'
+        colorbar = plot.handles["colorbar"]
+        assert colorbar.title_text_font_size == "26px"
+        assert colorbar.major_label_text_font_size == "22px"
 
     def test_explicit_categorical_cmap_on_integer_data(self):
-        explicit_mapping = dict([(0, 'blue'), (1, 'red'), (2, 'green'), (3, 'purple')])
-        points = hv.Scatter(([0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3]), vdims=['y', 'Category']).opts(
-            color_index='Category', cmap=explicit_mapping
-        )
+        explicit_mapping = dict([(0, "blue"), (1, "red"), (2, "green"), (3, "purple")])
+        points = hv.Scatter(
+            ([0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3]), vdims=["y", "Category"]
+        ).opts(color_index="Category", cmap=explicit_mapping)
         plot = bokeh_renderer.get_plot(points)
-        cmapper = plot.handles['color_mapper']
-        cds = plot.handles['cds']
-        assert cds.data['Category_str__'] == ['0', '1', '2', '3']
-        assert cmapper.factors == ['0', '1', '2', '3']
-        assert cmapper.palette == ['blue', 'red', 'green', 'purple']
+        cmapper = plot.handles["color_mapper"]
+        cds = plot.handles["cds"]
+        assert cds.data["Category_str__"] == ["0", "1", "2", "3"]
+        assert cmapper.factors == ["0", "1", "2", "3"]
+        assert cmapper.palette == ["blue", "red", "green", "purple"]
 
     def test_cticks_int(self):
         img = hv.Image(np.array([[0, 1], [2, 3]])).opts(cticks=3, colorbar=True)
@@ -1122,60 +1155,64 @@ class TestColorbarPlot(LoggingComparison, TestBokehPlot):
 
 
 class TestOverlayPlot(TestBokehPlot):
-
     def test_overlay_projection_clashing(self):
-        overlay = hv.Curve([]).opts(projection='polar') * hv.Curve([]).opts(projection='custom')
+        overlay = hv.Curve([]).opts(projection="polar") * hv.Curve([]).opts(projection="custom")
         msg = "An axis may only be assigned one projection type"
         with pytest.raises(ValueError, match=msg):
             bokeh_renderer.get_plot(overlay)
 
     def test_overlay_projection_propagates(self):
-        overlay = hv.Curve([]) * hv.Curve([]).opts(projection='custom')
+        overlay = hv.Curve([]) * hv.Curve([]).opts(projection="custom")
         plot = bokeh_renderer.get_plot(overlay)
-        assert [p.projection for p in plot.subplots.values()] == ['custom', 'custom']
+        assert [p.projection for p in plot.subplots.values()] == ["custom", "custom"]
 
     def test_overlay_propagates_batched(self):
-        overlay = hv.NdOverlay({
-            i: hv.Curve([1, 2, 3]).opts(yformatter='%.1f') for i in range(10)
-        }).opts(yformatter='%.3f', legend_limit=1)
+        overlay = hv.NdOverlay(
+            {i: hv.Curve([1, 2, 3]).opts(yformatter="%.1f") for i in range(10)}
+        ).opts(yformatter="%.3f", legend_limit=1)
         plot = bokeh_renderer.get_plot(overlay)
-        assert plot.state.yaxis.formatter.format == '%.3f'
+        assert plot.state.yaxis.formatter.format == "%.3f"
 
     def test_overlay_gridstyle_applies(self):
-        grid_style = {'grid_line_color': 'blue', 'grid_line_width': 2}
-        overlay = (hv.Scatter([(10,10)]).opts(gridstyle=grid_style, show_grid=True, size=20)
-                   * hv.Labels([(10, 10, 'A')]))
+        grid_style = {"grid_line_color": "blue", "grid_line_width": 2}
+        overlay = hv.Scatter([(10, 10)]).opts(
+            gridstyle=grid_style, show_grid=True, size=20
+        ) * hv.Labels([(10, 10, "A")])
         plot = bokeh_renderer.get_plot(overlay)
-        assert plot.state.xgrid[0].grid_line_color == 'blue'
+        assert plot.state.xgrid[0].grid_line_color == "blue"
         assert plot.state.xgrid[0].grid_line_width == 2
 
     def test_ndoverlay_legend_muted(self):
-        overlay = hv.NdOverlay({i: hv.Curve(np.random.randn(10).cumsum()) for i in range(5)}).opts(legend_muted=True)
+        overlay = hv.NdOverlay({i: hv.Curve(np.random.randn(10).cumsum()) for i in range(5)}).opts(
+            legend_muted=True
+        )
         plot = bokeh_renderer.get_plot(overlay)
         for sp in plot.subplots.values():
-            assert sp.handles['glyph_renderer'].muted
+            assert sp.handles["glyph_renderer"].muted
 
     def test_overlay_legend_muted(self):
-        overlay = (hv.Curve(np.random.randn(10).cumsum(), label='A') *
-                   hv.Curve(np.random.randn(10).cumsum(), label='B')).opts(legend_muted=True)
+        overlay = (
+            hv.Curve(np.random.randn(10).cumsum(), label="A")
+            * hv.Curve(np.random.randn(10).cumsum(), label="B")
+        ).opts(legend_muted=True)
         plot = bokeh_renderer.get_plot(overlay)
         for sp in plot.subplots.values():
-            assert sp.handles['glyph_renderer'].muted
+            assert sp.handles["glyph_renderer"].muted
 
     def test_overlay_legend_opts(self):
         overlay = (
-            hv.Curve(np.random.randn(10).cumsum(), label='A') *
-            hv.Curve(np.random.randn(10).cumsum(), label='B')
-        ).opts(legend_opts={'background_fill_alpha': 0.5, 'background_fill_color': 'red'})
+            hv.Curve(np.random.randn(10).cumsum(), label="A")
+            * hv.Curve(np.random.randn(10).cumsum(), label="B")
+        ).opts(legend_opts={"background_fill_alpha": 0.5, "background_fill_color": "red"})
         plot = bokeh_renderer.get_plot(overlay)
         legend = plot.state.legend
         assert legend.background_fill_alpha == 0.5
-        assert legend.background_fill_color == 'red'
+        assert legend.background_fill_color == "red"
 
     def test_active_tools_drag(self):
         curve = hv.Curve([1, 2, 3])
         scatter = hv.Scatter([1, 2, 3])
-        overlay = (scatter * curve).opts(active_tools=['box_zoom'])
+        overlay = (scatter * curve).opts(active_tools=["box_zoom"])
         plot = bokeh_renderer.get_plot(overlay)
         toolbar = plot.state.toolbar
         assert isinstance(toolbar.active_drag, tools.BoxZoomTool)
@@ -1183,51 +1220,51 @@ class TestOverlayPlot(TestBokehPlot):
     def test_active_tools_scroll(self):
         curve = hv.Curve([1, 2, 3])
         scatter = hv.Scatter([1, 2, 3])
-        overlay = (scatter * curve).opts(active_tools=['wheel_zoom'])
+        overlay = (scatter * curve).opts(active_tools=["wheel_zoom"])
         plot = bokeh_renderer.get_plot(overlay)
         toolbar = plot.state.toolbar
         assert isinstance(toolbar.active_scroll, tools.WheelZoomTool)
 
     def test_active_tools_tap(self):
         curve = hv.Curve([1, 2, 3])
-        scatter = hv.Scatter([1, 2, 3]).opts(tools=['tap'])
-        overlay = (scatter * curve).opts(active_tools=['tap'])
+        scatter = hv.Scatter([1, 2, 3]).opts(tools=["tap"])
+        overlay = (scatter * curve).opts(active_tools=["tap"])
         plot = bokeh_renderer.get_plot(overlay)
         toolbar = plot.state.toolbar
         assert isinstance(toolbar.active_tap, tools.TapTool)
 
     def test_active_tools_draw_stream(self):
         curve = hv.Curve([1, 2, 3])
-        scatter = hv.Scatter([1, 2, 3]).opts(active_tools=['point_draw'])
+        scatter = hv.Scatter([1, 2, 3]).opts(active_tools=["point_draw"])
         PointDraw(source=scatter)
-        overlay = (scatter * curve)
+        overlay = scatter * curve
         plot = bokeh_renderer.get_plot(overlay)
         toolbar = plot.state.toolbar
         assert isinstance(toolbar.active_tap, tools.PointDrawTool)
         assert isinstance(toolbar.active_drag, tools.PointDrawTool)
 
     def test_categorical_overlay_dimension_values(self):
-        curve = hv.Curve([('C', 1), ('B', 3)]).redim.values(x=['A', 'B', 'C'])
-        scatter = hv.Scatter([('A', 2)])
-        plot = bokeh_renderer.get_plot(curve*scatter)
-        x_range = plot.handles['x_range']
-        assert x_range.factors == ['A', 'B', 'C']
+        curve = hv.Curve([("C", 1), ("B", 3)]).redim.values(x=["A", "B", "C"])
+        scatter = hv.Scatter([("A", 2)])
+        plot = bokeh_renderer.get_plot(curve * scatter)
+        x_range = plot.handles["x_range"]
+        assert x_range.factors == ["A", "B", "C"]
 
     def test_categorical_overlay_dimension_values_skip_factor(self):
-        curve = hv.Curve([('C', 1), ('B', 3)])
-        scatter = hv.Scatter([('A', 2)])
-        plot = bokeh_renderer.get_plot((curve*scatter).redim.values(x=['A', 'C']))
-        x_range = plot.handles['x_range']
-        assert x_range.factors == ['A', 'C']
+        curve = hv.Curve([("C", 1), ("B", 3)])
+        scatter = hv.Scatter([("A", 2)])
+        plot = bokeh_renderer.get_plot((curve * scatter).redim.values(x=["A", "C"]))
+        x_range = plot.handles["x_range"]
+        assert x_range.factors == ["A", "C"]
 
     def test_clim_percentile(self):
-        arr = np.random.rand(10,10)
+        arr = np.random.rand(10, 10)
         arr[0, 0] = -100
         arr[-1, -1] = 100
         im = hv.Image(arr).opts(clim_percentile=True)
 
         plot = bokeh_renderer.get_plot(im)
-        low, high = plot.ranges[('Image',)]['z']['robust']
+        low, high = plot.ranges[("Image",)]["z"]["robust"]
         assert low > 0
         assert high < 1
 
@@ -1237,6 +1274,7 @@ class TestOverlayPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay)
         assert plot.default_tools == []
 
+
 class TestApplyHardBounds(TestBokehPlot):
     def test_apply_hard_bounds(self):
         """Test `apply_hard_bounds` with a single element."""
@@ -1244,7 +1282,7 @@ class TestApplyHardBounds(TestBokehPlot):
         y_values = np.array([10, 20, 30, 40, 50])
         curve = hv.Curve((x_values, y_values)).opts(apply_hard_bounds=True)
         plot = bokeh_renderer.get_plot(curve)
-        assert plot.handles['x_range'].bounds == (10, 50)
+        assert plot.handles["x_range"].bounds == (10, 50)
 
     def test_apply_hard_bounds_overlay(self):
         """Test `apply_hard_bounds` with an overlay of curves."""
@@ -1256,7 +1294,7 @@ class TestApplyHardBounds(TestBokehPlot):
         overlay = hv.Overlay([curve1, curve2]).opts(hv.opts.Curve(apply_hard_bounds=True))
         plot = bokeh_renderer.get_plot(overlay)
         # Check if the large of the data range can be navigated to
-        assert plot.handles['x_range'].bounds == (10, 90)
+        assert plot.handles["x_range"].bounds == (10, 90)
 
     def test_apply_hard_bounds_with_xlim(self):
         """Test `apply_hard_bounds` with `xlim` set. Initial view should be within xlim but allow panning to data range."""
@@ -1264,20 +1302,22 @@ class TestApplyHardBounds(TestBokehPlot):
         y_values = np.array([10, 20, 30, 40, 50])
         curve = hv.Curve((x_values, y_values)).opts(apply_hard_bounds=True, xlim=(15, 35))
         plot = bokeh_renderer.get_plot(curve)
-        initial_view_range = (plot.handles['x_range'].start, plot.handles['x_range'].end)
+        initial_view_range = (plot.handles["x_range"].start, plot.handles["x_range"].end)
         assert initial_view_range == (15, 35)
         # Check if data beyond xlim can be navigated to
-        assert plot.handles['x_range'].bounds == (10, 50)
+        assert plot.handles["x_range"].bounds == (10, 50)
 
     def test_apply_hard_bounds_with_redim_range(self):
         """Test `apply_hard_bounds` with `.redim.range(x=...)`. Hard bounds should strictly apply."""
         x_values = np.linspace(10, 50, 5)
         y_values = np.array([10, 20, 30, 40, 50])
-        curve = hv.Curve((x_values, y_values)).redim.range(x=(25, None)).opts(apply_hard_bounds=True)
+        curve = (
+            hv.Curve((x_values, y_values)).redim.range(x=(25, None)).opts(apply_hard_bounds=True)
+        )
         plot = bokeh_renderer.get_plot(curve)
         # Expected to strictly adhere to any redim.range bounds, otherwise the data range
-        assert (plot.handles['x_range'].start, plot.handles['x_range'].end)  == (25, 50)
-        assert plot.handles['x_range'].bounds == (25, 50)
+        assert (plot.handles["x_range"].start, plot.handles["x_range"].end) == (25, 50)
+        assert plot.handles["x_range"].bounds == (25, 50)
 
     def test_apply_hard_bounds_datetime(self):
         """Test datetime axes with hard bounds."""
@@ -1286,68 +1326,78 @@ class TestApplyHardBounds(TestBokehPlot):
         dates = [dt.datetime(2020, 1, i) for i in range(1, 11)]
         values = np.linspace(0, 100, 10)
         curve = hv.Curve((dates, values)).opts(
-            apply_hard_bounds=True,
-            xlim=(target_xlim_l, target_xlim_h)
+            apply_hard_bounds=True, xlim=(target_xlim_l, target_xlim_h)
         )
         plot = bokeh_renderer.get_plot(curve)
-        initial_view_range = (dt_to_int(plot.handles['x_range'].start), dt_to_int(plot.handles['x_range'].end))
+        initial_view_range = (
+            dt_to_int(plot.handles["x_range"].start),
+            dt_to_int(plot.handles["x_range"].end),
+        )
         assert initial_view_range == (dt_to_int(target_xlim_l), dt_to_int(target_xlim_h))
         # Validate navigation bounds include entire data range
-        hard_bounds = (dt_to_int(plot.handles['x_range'].bounds[0]), dt_to_int(plot.handles['x_range'].bounds[1]))
-        assert hard_bounds == (dt_to_int(dt.datetime(2020, 1, 1)), dt_to_int(dt.datetime(2020, 1, 10)))
+        hard_bounds = (
+            dt_to_int(plot.handles["x_range"].bounds[0]),
+            dt_to_int(plot.handles["x_range"].bounds[1]),
+        )
+        assert hard_bounds == (
+            dt_to_int(dt.datetime(2020, 1, 1)),
+            dt_to_int(dt.datetime(2020, 1, 10)),
+        )
 
     def test_dynamic_map_bounds_update(self):
         """Test that `apply_hard_bounds` applies correctly when DynamicMap is updated."""
 
         def curve_data(choice):
             datasets = {
-                'set1': (np.linspace(0, 5, 100), np.random.rand(100)),
-                'set2': (np.linspace(0, 20, 100), np.random.rand(100)),
+                "set1": (np.linspace(0, 5, 100), np.random.rand(100)),
+                "set2": (np.linspace(0, 20, 100), np.random.rand(100)),
             }
             x, y = datasets[choice]
             return hv.Curve((x, y))
 
         ChoiceStream = Stream.define(
-            'Choice',
-            choice=param.Selector(default='set1', objects=['set1', 'set2'])
+            "Choice", choice=param.Selector(default="set1", objects=["set1", "set2"])
         )
         choice_stream = ChoiceStream()
         dmap = hv.DynamicMap(curve_data, kdims=[], streams=[choice_stream])
-        dmap = dmap.opts(hv.opts.Curve(apply_hard_bounds=True, xlim=(2,3), framewise=True))
-        dmap = dmap.redim.values(choice=['set1', 'set2'])
+        dmap = dmap.opts(hv.opts.Curve(apply_hard_bounds=True, xlim=(2, 3), framewise=True))
+        dmap = dmap.redim.values(choice=["set1", "set2"])
         plot = bokeh_renderer.get_plot(dmap)
 
         # Keeping the xlim consistent between updates, and change data range bounds
         # Initially select 'set1'
-        dmap.event(choice='set1')
-        assert plot.handles['x_range'].start == 2
-        assert plot.handles['x_range'].end == 3
-        assert plot.handles['x_range'].bounds == (0, 5)
+        dmap.event(choice="set1")
+        assert plot.handles["x_range"].start == 2
+        assert plot.handles["x_range"].end == 3
+        assert plot.handles["x_range"].bounds == (0, 5)
 
         # Update to 'set2'
-        dmap.event(choice='set2')
-        assert plot.handles['x_range'].start == 2
-        assert plot.handles['x_range'].end == 3
-        assert plot.handles['x_range'].bounds == (0, 20)
+        dmap.event(choice="set2")
+        assert plot.handles["x_range"].start == 2
+        assert plot.handles["x_range"].end == 3
+        assert plot.handles["x_range"].bounds == (0, 20)
+
 
 def test_rectangles_colormapping_with_polars():
     # Test for https://github.com/holoviz/holoviews/issues/6728
     pl = pytest.importorskip("polars")
 
-    df = pl.DataFrame({
-        'a': [3, 4],
-        'b': [3, 4],
-        'c': [10, 20],
-        'd': [10, 20],
-        'e': [1, 2],
-    })
-    rectangles = hv.Rectangles(df, kdims=['a', 'b', 'c', 'd']).opts(color='e')
+    df = pl.DataFrame(
+        {
+            "a": [3, 4],
+            "b": [3, 4],
+            "c": [10, 20],
+            "d": [10, 20],
+            "e": [1, 2],
+        }
+    )
+    rectangles = hv.Rectangles(df, kdims=["a", "b", "c", "d"]).opts(color="e")
     plot = bokeh_renderer.get_plot(rectangles)
-    glyph_renderer = plot.handles['glyph_renderer']
+    glyph_renderer = plot.handles["glyph_renderer"]
     fill_color = glyph_renderer.glyph.fill_color
 
-    assert fill_color['field'] == 'color'
-    assert isinstance(fill_color['transform'], LinearColorMapper)
+    assert fill_color["field"] == "color"
+    assert isinstance(fill_color["transform"], LinearColorMapper)
 
-    color = list(glyph_renderer.data_source.data['color'])
+    color = list(glyph_renderer.data_source.data["color"])
     assert color == [1, 2]

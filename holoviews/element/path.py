@@ -55,9 +55,7 @@ class Path(SelectionPolyExpr, Geometry):
 
     group = param.String(default="Path", constant=True)
 
-    datatype = param.List(default=[
-        'multitabular', 'spatialpandas', 'dask_spatialpandas']
-    )
+    datatype = param.List(default=["multitabular", "spatialpandas", "dask_spatialpandas"])
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple) and len(data) == 2:
@@ -86,10 +84,12 @@ class Path(SelectionPolyExpr, Geometry):
     def __getitem__(self, key):
         if isinstance(key, np.ndarray):
             return self.select(selection_mask=np.squeeze(key))
-        if key in self.dimensions(): return self.dimension_values(key)
+        if key in self.dimensions():
+            return self.dimension_values(key)
         if not isinstance(key, tuple) or len(key) == 1:
             key = (key, slice(None))
-        elif len(key) == 0: return self.clone()
+        elif len(key) == 0:
+            return self.clone()
         if not all(isinstance(k, slice) for k in key):
             raise KeyError(f"{self.__class__.__name__} only support slice indexing")
         xkey, ykey = key
@@ -147,8 +147,7 @@ class Path(SelectionPolyExpr, Geometry):
         xdim, ydim = self.kdims[:2]
         x_range = selection.pop(xdim.name, None)
         y_range = selection.pop(ydim.name, None)
-        sel = super().select(selection_expr, selection_specs,
-                             **selection)
+        sel = super().select(selection_expr, selection_specs, **selection)
         if x_range is None and y_range is None:
             return sel
         x_range = x_range if isinstance(x_range, slice) else slice(None)
@@ -164,11 +163,11 @@ class Path(SelectionPolyExpr, Geometry):
         if not self.interface.multi:
             if not len(self):
                 return []
-            elif datatype == 'array':
+            elif datatype == "array":
                 obj = self.array(**kwargs)
-            elif datatype == 'dataframe':
+            elif datatype == "dataframe":
                 obj = self.dframe(**kwargs)
-            elif datatype in ('columns', 'dictionary'):
+            elif datatype in ("columns", "dictionary"):
                 obj = self.columns(**kwargs)
             elif datatype is None:
                 obj = self.clone([self.data])
@@ -179,10 +178,9 @@ class Path(SelectionPolyExpr, Geometry):
 
 
 class Dendrogram(Path):
-
     group = param.String(default="Dendrogram", constant=True)
 
-    datatype = param.List(default=['multitabular'])
+    datatype = param.List(default=["multitabular"])
 
     def __new__(cls, *args, **kwargs):
         return super().__new__(cls)
@@ -224,13 +222,17 @@ class Contours(Path):
 
     """
 
-    vdims = param.List(default=[], constant=True, doc="""
+    vdims = param.List(
+        default=[],
+        constant=True,
+        doc="""
         Contours optionally accept a value dimension, corresponding
-        to the supplied values.""")
+        to the supplied values.""",
+    )
 
-    group = param.String(default='Contours', constant=True)
+    group = param.String(default="Contours", constant=True)
 
-    _level_vdim = Dimension('Level') # For backward compatibility
+    _level_vdim = Dimension("Level")  # For backward compatibility
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         data = [] if data is None else data
@@ -285,14 +287,17 @@ class Polygons(Contours):
 
     group = param.String(default="Polygons", constant=True)
 
-    vdims = param.List(default=[], doc="""
+    vdims = param.List(
+        default=[],
+        doc="""
         Polygons optionally accept a value dimension, corresponding
-        to the supplied value.""")
+        to the supplied value.""",
+    )
 
-    _level_vdim = Dimension('Value')
+    _level_vdim = Dimension("Value")
 
     # Defines which key the DictInterface uses to look for holes
-    _hole_key = 'holes'
+    _hole_key = "holes"
 
     @property
     def has_holes(self):
@@ -336,18 +341,18 @@ class BaseShape(Path):
         containing the specified args and kwargs.
 
         """
-        link = overrides.pop('link', True)
+        link = overrides.pop("link", True)
         settings = dict(self.param.values(), **overrides)
-        if 'id' not in settings:
-            settings['id'] = self.id
+        if "id" not in settings:
+            settings["id"] = self.id
         if not args and link:
-            settings['plot_id'] = self._plot_id
+            settings["plot_id"] = self._plot_id
 
-        pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
-        return self.__class__(*(settings[n] for n in pos_args),
-                              **{k:v for k,v in settings.items()
-                                 if k not in pos_args})
-
+        pos_args = getattr(self, "_" + type(self).__name__ + "__pos_params", [])
+        return self.__class__(
+            *(settings[n] for n in pos_args),
+            **{k: v for k, v in settings.items() if k not in pos_args},
+        )
 
 
 class Box(BaseShape):
@@ -364,40 +369,51 @@ class Box(BaseShape):
 
     height = param.Number(default=1, doc="The height of the box.")
 
-    orientation = param.Number(default=0, doc="""
+    orientation = param.Number(
+        default=0,
+        doc="""
        Orientation in the Cartesian coordinate system, the
        counterclockwise angle in radians between the first axis and the
-       horizontal.""")
+       horizontal.""",
+    )
 
-    aspect= param.Number(default=1.0, doc="""
+    aspect = param.Number(
+        default=1.0,
+        doc="""
        Optional multiplier applied to the box size to compute the
-       width in cases where only the length value is set.""")
+       width in cases where only the length value is set.""",
+    )
 
-    group = param.String(default='Box', constant=True, doc="The assigned group name.")
+    group = param.String(default="Box", constant=True, doc="The assigned group name.")
 
-    __pos_params = ['x','y', 'height']
+    __pos_params = ["x", "y", "height"]
 
     def __init__(self, x, y, spec, **params):
         if isinstance(spec, tuple):
-            if 'aspect' in params:
-                raise ValueError('Aspect parameter not supported when supplying '
-                                 '(width, height) specification.')
-            (width, height ) = spec
+            if "aspect" in params:
+                raise ValueError(
+                    "Aspect parameter not supported when supplying (width, height) specification."
+                )
+            (width, height) = spec
         else:
-            width, height = params.get('width', spec), spec
+            width, height = params.get("width", spec), spec
 
-        params['width']=params.get('width',width)
+        params["width"] = params.get("width", width)
         super().__init__(x=x, y=y, height=height, **params)
 
-        half_width = (self.width * self.aspect)/ 2.0
+        half_width = (self.width * self.aspect) / 2.0
         half_height = self.height / 2.0
-        (l,b,r,t) = (-half_width, -half_height, half_width, half_height)
-        box = np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])
-        rot = np.array([[np.cos(self.orientation), -np.sin(self.orientation)],
-                        [np.sin(self.orientation), np.cos(self.orientation)],])
+        (l, b, r, t) = (-half_width, -half_height, half_width, half_height)
+        box = np.array([(l, b), (l, t), (r, t), (r, b), (l, b)])
+        rot = np.array(
+            [
+                [np.cos(self.orientation), -np.sin(self.orientation)],
+                [np.sin(self.orientation), np.cos(self.orientation)],
+            ]
+        )
 
-        xs, ys = np.tensordot(rot, box.T, axes=[1,0])
-        self.data = [np.column_stack([xs+x, ys+y])]
+        xs, ys = np.tensordot(rot, box.T, axes=[1, 0])
+        self.data = [np.column_stack([xs + x, ys + y])]
 
 
 class Ellipse(BaseShape):
@@ -431,44 +447,55 @@ class Ellipse(BaseShape):
 
     height = param.Number(default=1, doc="The height of the ellipse.")
 
-    orientation = param.Number(default=0, doc="""
+    orientation = param.Number(
+        default=0,
+        doc="""
        Orientation in the Cartesian coordinate system, the
        counterclockwise angle in radians between the first axis and the
-       horizontal.""")
+       horizontal.""",
+    )
 
-    aspect= param.Number(default=1.0, doc="""
+    aspect = param.Number(
+        default=1.0,
+        doc="""
        Optional multiplier applied to the diameter to compute the width
-       in cases where only the diameter value is set.""")
+       in cases where only the diameter value is set.""",
+    )
 
     samples = param.Number(default=100, doc="The sample count used to draw the ellipse.")
 
-    group = param.String(default='Ellipse', constant=True, doc="The assigned group name.")
+    group = param.String(default="Ellipse", constant=True, doc="The assigned group name.")
 
-    __pos_params = ['x','y', 'height']
+    __pos_params = ["x", "y", "height"]
 
     def __init__(self, x, y, spec, **params):
 
         if isinstance(spec, tuple):
-            if 'aspect' in params:
-                raise ValueError('Aspect parameter not supported when supplying '
-                                 '(width, height) specification.')
+            if "aspect" in params:
+                raise ValueError(
+                    "Aspect parameter not supported when supplying (width, height) specification."
+                )
             (width, height) = spec
         else:
-            width, height = params.get('width', spec), spec
+            width, height = params.get("width", spec), spec
 
-        params['width']=params.get('width',width)
+        params["width"] = params.get("width", width)
         super().__init__(x=x, y=y, height=height, **params)
-        angles = np.linspace(0, 2*np.pi, self.samples)
-        half_width = (self.width * self.aspect)/ 2.0
+        angles = np.linspace(0, 2 * np.pi, self.samples)
+        half_width = (self.width * self.aspect) / 2.0
         half_height = self.height / 2.0
-        #create points
+        # create points
         ellipse = np.array(
-            list(zip(half_width*np.sin(angles),
-                     half_height*np.cos(angles), strict=None)))
-        #rotate ellipse and add offset
-        rot = np.array([[np.cos(self.orientation), -np.sin(self.orientation)],
-               [np.sin(self.orientation), np.cos(self.orientation)],])
-        self.data = [np.tensordot(rot, ellipse.T, axes=[1,0]).T+np.array([x,y])]
+            list(zip(half_width * np.sin(angles), half_height * np.cos(angles), strict=None))
+        )
+        # rotate ellipse and add offset
+        rot = np.array(
+            [
+                [np.cos(self.orientation), -np.sin(self.orientation)],
+                [np.sin(self.orientation), np.cos(self.orientation)],
+            ]
+        )
+        self.data = [np.tensordot(rot, ellipse.T, axes=[1, 0]).T + np.array([x, y])]
 
 
 class Bounds(BaseShape):
@@ -481,19 +508,23 @@ class Bounds(BaseShape):
 
     """
 
-    lbrt = param.Tuple(default=(-0.5, -0.5, 0.5, 0.5), doc="""
-          The (left, bottom, right, top) coordinates of the bounding box.""")
+    lbrt = param.Tuple(
+        default=(-0.5, -0.5, 0.5, 0.5),
+        doc="""
+          The (left, bottom, right, top) coordinates of the bounding box.""",
+    )
 
-    group = param.String(default='Bounds', constant=True, doc="The assigned group name.")
+    group = param.String(default="Bounds", constant=True, doc="The assigned group name.")
 
-    __pos_params = ['lbrt']
+    __pos_params = ["lbrt"]
 
     def __init__(self, lbrt, **params):
         if not isinstance(lbrt, tuple):
             lbrt = (-lbrt, -lbrt, lbrt, lbrt)
 
         super().__init__(lbrt=lbrt, **params)
-        (l,b,r,t) = self.lbrt
+        (l, b, r, t) = self.lbrt
         xdim, ydim = self.kdims
-        self.data = [dict([(xdim.name, np.array([l, l, r, r, l])),
-                                  (ydim.name, np.array([b, t, t, b, b]))])]
+        self.data = [
+            dict([(xdim.name, np.array([l, l, r, r, l])), (ydim.name, np.array([b, t, t, b, b]))])
+        ]
