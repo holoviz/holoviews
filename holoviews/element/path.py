@@ -394,7 +394,7 @@ class Box(BaseShape):
         (l,b,r,t) = (-half_width, -half_height, half_width, half_height)
         box = np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])
         rot = np.array([[np.cos(self.orientation), -np.sin(self.orientation)],
-                        [np.sin(self.orientation), np.cos(self.orientation)]])
+                        [np.sin(self.orientation), np.cos(self.orientation)],])
 
         xs, ys = np.tensordot(rot, box.T, axes=[1,0])
         self.data = [np.column_stack([xs+x, ys+y])]
@@ -467,7 +467,7 @@ class Ellipse(BaseShape):
                      half_height*np.cos(angles), strict=None)))
         #rotate ellipse and add offset
         rot = np.array([[np.cos(self.orientation), -np.sin(self.orientation)],
-               [np.sin(self.orientation), np.cos(self.orientation)]])
+               [np.sin(self.orientation), np.cos(self.orientation)],])
         self.data = [np.tensordot(rot, ellipse.T, axes=[1,0]).T+np.array([x,y])]
 
 

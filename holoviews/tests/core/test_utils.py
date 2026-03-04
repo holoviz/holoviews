@@ -613,7 +613,7 @@ class TestMergeDimensions:
 
     def test_merge_dimensions_with_values(self):
         dimensions = merge_dimensions([[hv.Dimension('A', values=[0, 1])],
-                                       [hv.Dimension('A', values=[1, 2]), hv.Dimension('B')]])
+                                       [hv.Dimension('A', values=[1, 2]), hv.Dimension('B')],])
         assert dimensions == [hv.Dimension('A'), hv.Dimension('B')]
         assert dimensions[0].values == [0, 1, 2]
 
@@ -941,7 +941,7 @@ class TestCrossIndex:
 
     def test_cross_index_large(self):
         values = [[chr(65+i) for i in range(26)], list(range(500)),
-                  [chr(97+i) for i in range(26)], [chr(48+i) for i in range(10)]]
+                  [chr(97+i) for i in range(26)], [chr(48+i) for i in range(10)],]
         assert cross_index(values, 50001) == ('A', 192, 'i', '1')
         assert cross_index(values, 500001) == ('D', 423, 'c', '1')
 

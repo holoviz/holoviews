@@ -208,10 +208,11 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
                 # number of adjoined plots
                 offset = sum(r >= ir for ir in insert_rows)
                 if len(subplots) > 2:
-                    subplot = figure_grid([[subplots[0], subplots[1]],
-                                           [subplots[2], None]],
-                                          column_spacing=self.adjoint_spacing,
-                                          row_spacing=self.adjoint_spacing)
+                    subplot = figure_grid(
+                        [[subplots[0], subplots[1]], [subplots[2], None]],
+                        column_spacing=self.adjoint_spacing,
+                        row_spacing=self.adjoint_spacing,
+                    )
                 elif len(subplots) > 1:
                     subplot = figure_grid([subplots],
                                           column_spacing=self.adjoint_spacing,

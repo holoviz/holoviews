@@ -569,7 +569,7 @@ def test_hover_heatmap_categorical_outside_plot_area(serve_hv, caplog):
         [0, "B", 20],
         [1, "A", 20],
         [1, "B", 30]
-    ], columns=["key1", "key2", "value"])
+    ], columns=["key1", "key2", "value"],)
 
     ds = hv.Dataset(df)
     heatmap = ds.to(hv.HeatMap, kdims=["key1", "key2"], vdims="value").opts(tools=["hover"])

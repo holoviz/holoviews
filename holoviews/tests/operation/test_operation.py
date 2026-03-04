@@ -311,10 +311,25 @@ class OperationTests:
                  (-0.4, 0, 0), (-0.4, -0.3333333, 0)]]
         polys = hv.Polygons(data, vdims=img.vdims[0].clone(range=(-0.5, 0.5)))
         assert_element_equal(op_contours, polys)
-        expected_holes = [[[np.array([[-0.2, -0.16666667], [-0.3, 0], [-0.2, 0.16666667], [-0.1, 0],
-                                      [-0.2, -0.16666667]]),
-                            np.array([[0.2, -0.16666667], [0.1, 0], [0.2, 0.16666667], [0.3, 0],
-                                      [0.2, -0.16666667]])]]]
+        hole1 = np.array(
+            [
+                [-0.2, -0.16666667],
+                [-0.3, 0],
+                [-0.2, 0.16666667],
+                [-0.1, 0],
+                [-0.2, -0.16666667],
+            ]
+        )
+        hole2 = np.array(
+            [
+                [0.2, -0.16666667],
+                [0.1, 0],
+                [0.2, 0.16666667],
+                [0.3, 0],
+                [0.2, -0.16666667],
+            ]
+        )
+        expected_holes = [[[hole1, hole2]]]
         np.testing.assert_array_almost_equal(op_contours.holes(), expected_holes)
 
     def test_image_contours_filled_empty(self):

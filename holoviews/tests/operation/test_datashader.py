@@ -478,7 +478,7 @@ class DatashaderAggregateTests:
             [0, 0, 0, 0],
             [0, 0, 0, 0],
             [0, 1, 1, 1],
-            [0, 0, 0, 0]
+            [0, 0, 0, 0],
         ])
         combined = np.stack([arr1.T, arr2.T], axis=2).astype(np.uint32)
         xrda = xr.DataArray(
@@ -1603,15 +1603,25 @@ def test_geom_aggregate_with_by_and_selector(aggregator):
 class DatashaderSpreadTests:
 
     def test_spread_rgb_1px(self):
-        arr = np.array([[[0, 0, 0], [0, 1, 1], [0, 1, 1]],
-                        [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
-                        [[0, 0, 0], [0, 0, 0], [0, 0, 0]]], dtype=np.uint8).T*255
-        spreaded = spread(hv.RGB(arr))
-        arr = np.array([[[0, 0, 1], [0, 0, 1], [0, 0, 1]],
-                        [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
-                        [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
-                        [[1, 1, 1], [1, 1, 1], [1, 1, 1]]], dtype=np.uint8).T*255
-        assert_element_equal(spreaded, hv.RGB(arr))
+        arr = np.array(
+            [
+                [[0, 0, 0], [0, 1, 1], [0, 1, 1]],
+                [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+                [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+            ],
+            dtype=np.uint8,
+        ).T
+        spreaded = spread(hv.RGB(arr * 255))
+        arr = np.array(
+            [
+                [[0, 0, 1], [0, 0, 1], [0, 0, 1]],
+                [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+                [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+                [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
+            ],
+            dtype=np.uint8,
+        ).T
+        assert_element_equal(spreaded, hv.RGB(arr * 255))
 
     def test_spread_img_1px(self):
         if DATASHADER_VERSION < (0, 12, 0):
@@ -1627,12 +1637,12 @@ class DatashaderStackTests:
     def setup_method(self):
         self.rgb1_arr = np.array([[[0, 1], [1, 0]],
                                   [[1, 0], [0, 1]],
-                                  [[0, 0], [0, 0]]], dtype=np.uint8).T*255
+                                  [[0, 0], [0, 0]],], dtype=np.uint8).T
         self.rgb2_arr = np.array([[[0, 0], [0, 0]],
                                   [[0, 0], [0, 0]],
-                                  [[1, 0], [0, 1]]], dtype=np.uint8).T*255
-        self.rgb1 = hv.RGB(self.rgb1_arr)
-        self.rgb2 = hv.RGB(self.rgb2_arr)
+                                  [[1, 0], [0, 1]],], dtype=np.uint8).T
+        self.rgb1 = hv.RGB(self.rgb1_arr * 255)
+        self.rgb2 = hv.RGB(self.rgb2_arr * 255)
 
 
     def test_stack_add_compositor(self):

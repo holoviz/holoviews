@@ -182,7 +182,7 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
         xs = [1, 2, 3]
         ys = [2, 0, 7]
         holes = [
-            [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]]
+            [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],
         ]
         path = hv.Polygons([{'x': xs, 'y': ys, 'holes': holes}, {'x': xs[::-1], 'y': ys[::-1]}],
                         ['x', 'y'], datatype=[self.datatype])
@@ -204,26 +204,40 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
                          {'x': xs[::-1], 'y': ys[::-1]}],
                         ['x', 'y'], datatype=[self.datatype])
         assert isinstance(path.data.geometry.dtype, sgeom.MultiPolygonDtype)
-        assert_data_equal(path.data.iloc[0, 0].buffer_values,
-                         np.array([1., 2., 2., 0., 3., 7., 1., 2., 1.5, 2., 2., 3., 1.6, 1.6,
-                                   1.5, 2., 2.1, 4.5, 2.5, 5., 2.3, 3.5, 2.1, 4.5, 6., 7., 3.,
-                                   2., 7., 5., 6., 7. ]))
-        assert_data_equal(path.data.iloc[1, 0].buffer_values,
-                         np.array([3, 2, 7, 5, 6, 7, 3, 2, 3, 7, 1, 2, 2, 0, 3, 7]))
+        # fmt: off
+        expected0 = np.array([
+            1.0, 2.0, 2.0, 0.0, 3.0, 7.0, 1.0, 2.0,
+            1.5, 2.0, 2.0, 3.0, 1.6, 1.6, 1.5, 2.0,
+            2.1, 4.5, 2.5, 5.0, 2.3, 3.5, 2.1, 4.5,
+            6.0, 7.0, 3.0, 2.0, 7.0, 5.0, 6.0, 7.0,
+        ])
+        # fmt: on
+        assert_data_equal(path.data.iloc[0, 0].buffer_values, expected0)
+        assert_data_equal(
+            path.data.iloc[1, 0].buffer_values,
+            np.array([3, 2, 7, 5, 6, 7, 3, 2, 3, 7, 1, 2, 2, 0, 3, 7]),
+        )
 
     def test_geometry_array_constructor(self):
-        polygons = sgeom.MultiPolygonArray([
-            # First Element
-            [[[0, 0, 1, 0, 2, 2, -1, 4, 0, 0],         # Filled quadrilateral (CCW order)
-              [0.5, 1,  1, 2,  1.5, 1.5,  0.5, 1],     # Triangular hole (CW order)
-              [0, 2, 0, 2.5, 0.5, 2.5, 0.5, 2, 0, 2]], # Rectangular hole (CW order)
-
-             [[-0.5, 3, 1.5, 3, 1.5, 4, -0.5, 3]],],   # Filled triangle
-
-            # Second Element
-            [[[1.25, 0, 1.25, 2, 4, 2, 4, 0, 1.25, 0],          # Filled rectangle (CCW order)
-              [1.5, 0.25, 3.75, 0.25, 3.75, 1.75, 1.5, 1.75, 1.5, 0.25]],]
-        ]) # Rectangular hole (CW order)
+        el1 = [
+            # Filled quadrilateral (CCW order)
+            [0, 0, 1, 0, 2, 2, -1, 4, 0, 0],
+            # Triangular hole (CW order)
+            [0.5, 1, 1, 2, 1.5, 1.5, 0.5, 1],
+            # Rectangular hole (CW order)
+            [0, 2, 0, 2.5, 0.5, 2.5, 0.5, 2, 0, 2],
+        ]
+        el2 = [
+            # Filled triangle
+            [-0.5, 3, 1.5, 3, 1.5, 4, -0.5, 3],
+        ]
+        el3 = [
+            # Filled rectangle (CCW order)
+            [1.25, 0, 1.25, 2, 4, 2, 4, 0, 1.25, 0],
+            # Rectangular hole (CW order)
+            [1.5, 0.25, 3.75, 0.25, 3.75, 1.75, 1.5, 1.75, 1.5, 0.25],
+        ]
+        polygons = sgeom.MultiPolygonArray([[el1, el2], [el3]])
 
         path = hv.Polygons(polygons)
         assert isinstance(path.data.geometry.dtype, sgeom.MultiPolygonDtype)
