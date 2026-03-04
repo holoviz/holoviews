@@ -1,2 +1,0 @@
-IPython Magics
-______________

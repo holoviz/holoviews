@@ -33,27 +33,19 @@ features = ["required", "py313", "optional", "test-core", "test-example", "test-
 no-default-feature = true
 
 [environments.test-314]
-features = [
-    "required",
-    "py314",
-    "optional-314",
-    "test-core",
-    "test-example",
-    "test-unit-task",
-    "pandas3",
-]
+features = ["required", "py314", "optional-314", "test-core", "test-example", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-ui]
-features = ["required", "py313", "optional", "test-core", "test-ui", "pandas3"]
+features = ["required", "py313", "optional", "test-core", "test-ui"]
 no-default-feature = true
 
 [environments.test-core]
-features = ["required", "py314", "test-core", "test-unit-task", "pandas3"]
+features = ["required", "py314", "test-core", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-gpu]
-features = ["required", "py312", "test-core", "optional", "test-gpu"]
+features = ["required", "py313", "test-core", "optional", "test-gpu"]
 no-default-feature = true
 
 [environments.docs]
@@ -71,6 +63,7 @@ no-default-feature = true
 [feature.required.dependencies]
 nomkl = "*"
 pip = "*"
+python-gil = "*"
 # Required
 bokeh = ">=3.1"
 colorcet = "*"
@@ -116,12 +109,6 @@ python = "3.14.*,!=3.14.1" # https://github.com/python/cpython/issues/142214
 [feature.py314.activation.env]
 COVERAGE_CORE = "sysmon"
 
-[feature.pandas3]
-channels = ["conda-forge/label/pandas_rc"]
-
-[feature.pandas3.dependencies]
-pandas = { version = "==3.0.0rc0", channel = "conda-forge/label/pandas_rc" }
-
 [feature.optional.dependencies]
 bokeh_sampledata = "*"
 cftime = "*"
@@ -129,7 +116,7 @@ contourpy = "*"
 dask-core = "*"
 datashader = ">=0.11.1"
 ffmpeg = "*"
-ibis-sqlite = "*"
+ibis-sqlite = ">=10.0.0" # Lower pin to not pull in old version with Pandas 3
 ipython = ">=5.4.0"
 matplotlib-base = ">=3"
 nbconvert-core = "*"
@@ -141,7 +128,6 @@ plotly = ">=4.0"
 polars = "*"
 pooch = "*"
 pyarrow = "*"
-pyparsing = "*"
 python-duckdb = "*"
 scikit-image = "*"
 scipy = "*"
@@ -161,7 +147,7 @@ contourpy = "*"
 dask-core = "*"
 datashader = ">=0.11.1"
 ffmpeg = "*"
-ibis-sqlite = "*"
+# ibis-sqlite = "*"  # Add back when they support Pandas 3
 ipython = ">=5.4.0"
 matplotlib-base = ">=3"
 nbconvert-core = "*"
@@ -173,7 +159,6 @@ plotly = ">=4.0"
 polars = "*"
 pooch = "*"
 pyarrow = "*"
-pyparsing = "*"
 python-duckdb = "*"
 scikit-image = "*"
 scipy = "*"
@@ -235,8 +220,8 @@ platforms = ["linux-64"]
 NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = "0"
 
 [feature.test-gpu.dependencies]
-cuda-version = "12.2.*"
-cudf = "25.12.*"
+cuda-version = "13.1.*"
+cudf = "26.02.*"
 cupy = "*"
 # cuspatial = "*"  # Paused development: https://docs.rapids.ai/notices/rsn0045/
 librmm = { version = "*", channel = "rapidsai" }

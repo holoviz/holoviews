@@ -24,7 +24,7 @@ from ..core.element import Element, Element3D
 from ..core.layout import Empty, Layout, NdLayout
 from ..core.options import Compositor, SkipRendering, Store, lookup_options
 from ..core.overlay import CompositeOverlay, NdOverlay, Overlay
-from ..core.spaces import DynamicMap, HoloMap
+from ..core.spaces import DynamicMap, HoloMap, get_nested_streams
 from ..core.util import dtype_kind, isfinite, stream_parameters, unique_iterator
 from ..element import Graph, Table
 from ..selection import NoOpSelectionDisplay
@@ -39,7 +39,6 @@ from .util import (
     get_dynamic_mode,
     get_minimum_span,
     get_nested_plot_frame,
-    get_nested_streams,
     get_plot_frame,
     get_range,
     initialize_unbounded,
@@ -846,7 +845,7 @@ class DimensionedPlot(Plot):
         # Merge local ranges into global range dictionary
         if prev_ranges and not (top_level or axiswise) and framewise and prev_frame is not None:
             # Partially update global ranges with local changes
-            prev_ids = prev_frame.traverse(lambda o: id(o))
+            prev_ids = prev_frame.traverse(id)
             for d, dranges in dim_ranges:
                 values = prev_ranges.get(d, {}).get('values', None)
 
@@ -2098,7 +2097,7 @@ class GenericCompositePlot(DimensionedPlot):
         self.layout = layout
         super().__init__(keys=keys, dynamic=dynamic,
                          dimensions=dimensions, **params)
-        nested_streams = layout.traverse(lambda x: get_nested_streams(x),
+        nested_streams = layout.traverse(get_nested_streams,
                                          [DynamicMap])
         self.streams = list({s for streams in nested_streams for s in streams})
         self._link_dimensioned_streams()

@@ -18,7 +18,6 @@ import param
 
 from .core import util
 from .core.ndmapping import UniformNdMapping
-from .util.warnings import deprecated
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -576,30 +575,8 @@ class Buffer(Pipe):
                 raise ValueError("Columns in dictionary must all be the same length.")
             example = data
         else:
-            try:
-                from streamz.dataframe import StreamingDataFrame, StreamingSeries
-                loaded = True
-            except ImportError:
-                try:
-                    from streamz.dataframe import (
-                        DataFrame as StreamingDataFrame,
-                        Series as StreamingSeries,
-                    )
-                    loaded = True
-                except ImportError:
-                    loaded = False
-            if loaded:
-                # NOTE: there could still be some code in these classes which handles
-                # the streaming interface.
-                deprecated("1.23.0", "Buffer's streamz interface")
-            if not loaded or not isinstance(data, (StreamingDataFrame, StreamingSeries)):
-                raise ValueError("Buffer must be initialized with pandas DataFrame, "
-                                 "streamz.StreamingDataFrame or streamz.StreamingSeries.")
-            elif isinstance(data, StreamingSeries):
-                data = data.to_frame()
-            example = data.example
-            data.stream.sink(self.send)
-            self.sdf = data
+            msg = "Buffer must be initialized with pandas DataFrame, 2D numpy array, or dict"
+            raise ValueError(msg)
 
         params['data'] = example
         super().__init__(**params)
@@ -1093,8 +1070,8 @@ class SelectionExpr(Derived):
     region_element = param.Parameter(default=None, constant=True)
 
     def __init__(self, source, include_region=True, **params):
+        from .core.element import Element
         from .core.spaces import DynamicMap
-        from .element import Element
         from .plotting.util import initialize_dynamic
 
         self._index_cols = params.pop('index_cols', None)

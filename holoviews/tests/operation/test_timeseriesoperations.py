@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 
 from holoviews import Curve, Scatter
 from holoviews.operation.timeseries import resample, rolling, rolling_outlier_std
@@ -71,3 +72,15 @@ class TimeseriesOperationTests:
     def test_rolling_outliers_std_dates(self):
         outliers = rolling_outlier_std(self.date_outliers, rolling_window=2, sigma=1)
         assert_element_equal(outliers, Scatter([(pd.Timestamp("2016-01-05"), 10)]))
+
+    def test_rolling_outliers_std_dataset(self):
+        xr = pytest.importorskip("xarray")
+        # create Dataset explicitly
+        ds = xr.Dataset(
+            data_vars={"y": ("x", self.outliers)},
+            coords={"x": self.dates}
+        )
+        curve = Curve(ds, ["x"], ["y"])
+        outliers = rolling_outlier_std(curve, rolling_window=2, sigma=1)
+        expected = Scatter([(pd.Timestamp("2016-01-05"), 10)])
+        assert_element_equal(outliers, expected)

@@ -6,7 +6,7 @@ from holoviews.core.options import Cycle
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Labels
 from holoviews.plotting.bokeh.util import property_to_dict
-from holoviews.testing import assert_data_equal
+from holoviews.testing import assert_data_equal, assert_dict_equal
 
 from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
@@ -197,3 +197,28 @@ class TestLabelsPlot(TestBokehPlot):
             ]) for i in range(3)}
         ).overlay()
         assert isinstance(hm[0].opts["text_color"], Cycle)
+
+    def test_labels_hover_with_vdims(self):
+        labels = Labels(
+            [(0, 1, 'A', 10.5, 100), (1, 0, 'B', 20.3, 200)],
+            vdims=['text', 'value', 'count']
+        ).opts(hover_tooltips=[('Text', '@text'), ('Value', '@value'), ('Count', '@count')])
+        plot = bokeh_renderer.get_plot(labels)
+        source = plot.handles['source']
+        glyph = plot.handles['glyph']
+        hover = plot.handles['hover']
+
+        expected = {
+            'x': np.array([0, 1]),
+            'y': np.array([1, 0]),
+            'text': ['A', 'B'],
+            'value': np.array([10.5, 20.3]),
+            'count': np.array([100, 200]),
+        }
+        assert_dict_equal(source.data, expected)
+
+        assert glyph.x == 'x'
+        assert glyph.y == 'y'
+        assert glyph.text == 'text'
+
+        assert hover.tooltips == [('Text', '@{text}'), ('Value', '@{value}'), ('Count', '@{count}')]

@@ -80,27 +80,6 @@ class TestOptsUtil(LoggingComparison):
         Store.current_backend = self.backend
         Store.options(val=self.store_copy)
 
-    def test_opts_builder_repr(self):
-        magic= "Bivariate [bandwidth=0.5] (cmap='jet') Points [logx=True] (size=2)"
-        expected= ["opts.Bivariate(bandwidth=0.5, cmap='jet')",
-                   "opts.Points(logx=True, size=2)"]
-        reprs = opts._builder_reprs(magic)
-        assert reprs == expected
-
-    def test_opts_builder_repr_line_magic(self):
-        magic= "%opts Bivariate [bandwidth=0.5] (cmap='jet') Points [logx=True] (size=2)"
-        expected= ["opts.Bivariate(bandwidth=0.5, cmap='jet')",
-                   "opts.Points(logx=True, size=2)"]
-        reprs = opts._builder_reprs(magic)
-        assert reprs == expected
-
-    def test_opts_builder_repr_cell_magic(self):
-        magic= "%%opts Bivariate [bandwidth=0.5] (cmap='jet') Points [logx=True] (size=2)"
-        expected= ["opts.Bivariate(bandwidth=0.5, cmap='jet')",
-                   "opts.Points(logx=True, size=2)"]
-        reprs = opts._builder_reprs(magic)
-        assert reprs == expected
-
     def test_opts_builder_repr_options_dotted(self):
         options = [Options('Bivariate.Test.Example', bandwidth=0.5, cmap='Blues'),
                    Options('Points', size=2, logx=True)]

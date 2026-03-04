@@ -2,20 +2,14 @@ from collections import namedtuple
 
 import param
 
-from .. import (
-    Callable,
-    DynamicMap,
-    Element,
-    GridSpace,
-    HoloMap,
-    Layout,
-    NdOverlay,
-    Overlay,
-)
 from ..plotting.util import initialize_dynamic
 from ..streams import Derived, Stream
 from . import AdjointLayout, ViewableTree
+from .element import Element
+from .layout import Layout
 from .operation import OperationCallable
+from .overlay import NdOverlay, Overlay
+from .spaces import Callable, DynamicMap, GridSpace, HoloMap
 
 Expr = namedtuple("HoloviewsExpr", ["fn", "args", "kwargs"])
 StreamIndex = namedtuple("StreamIndex", ["index"])

@@ -40,7 +40,6 @@ from ..core.util import (
     isdatetime,
     isfinite,
     label_sanitizer,
-    warn,
 )
 from ..element.chart import Histogram, Scatter
 from ..element.path import Contours, Dendrogram, Polygons
@@ -48,6 +47,7 @@ from ..element.raster import RGB, HeatMap, Image
 from ..element.util import categorical_aggregate2d  # noqa (API import)
 from ..streams import RangeXY
 from ..util.locator import MaxNLocator
+from ..util.warnings import warn
 
 column_interfaces = [ArrayInterface, DictInterface, PandasInterface]
 
@@ -1068,10 +1068,14 @@ class interpolate_curve(Operation):
 
     @staticmethod
     def _get_dtype(obj):
-        if dtype_kind(obj) == "O":
+        dtype = obj.dtype
+        if hasattr(dtype, "numpy_dtype"):
+            # Handle non-numpy objects like Pandas Int64Dtype
+            return dtype.numpy_dtype
+        if dtype_kind(dtype) == "O":
             # Handle non-numpy objects like Pandas 3.0 StringArray
             return "O"
-        return obj.dtype
+        return dtype
 
     @classmethod
     def pts_to_prestep(cls, x, values):

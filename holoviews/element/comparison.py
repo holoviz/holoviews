@@ -41,6 +41,7 @@ from ..core import (
     NdOverlay,
     Overlay,
 )
+from ..core.data import Dataset
 from ..core.options import Cycle, Options
 from ..core.util import (
     cast_array_to_int64,
@@ -51,7 +52,54 @@ from ..core.util import (
 )
 from ..core.util.dependencies import _is_installed
 from ..util.warnings import deprecated
-from . import *  # noqa (All Elements need to support comparison)
+from . import (
+    HSV,
+    RGB,
+    Area,
+    Arrow,
+    Bars,
+    Bivariate,
+    Bounds,
+    Box,
+    BoxWhisker,
+    Contours,
+    Curve,
+    Distribution,
+    Div,
+    EdgePaths,
+    Ellipse,
+    ErrorBars,
+    Graph,
+    HeatMap,
+    HexTiles,
+    Histogram,
+    HLine,
+    HSpan,
+    Image,
+    ImageStack,
+    ItemTable,
+    Nodes,
+    Path,
+    Points,
+    Polygons,
+    QuadMesh,
+    Raster,
+    Rectangles,
+    Scatter,
+    Scatter3D,
+    Segments,
+    Spikes,
+    Spline,
+    Spread,
+    Surface,
+    Table,
+    Text,
+    TriMesh,
+    TriSurface,
+    VectorField,
+    VLine,
+    VSpan,
+)
 
 
 def __getattr__(attr):
@@ -828,7 +876,7 @@ class IPTestCase(ComparisonTestCase):
 
         super().setUp()
         self.exits = []
-        with patch('atexit.register', lambda x: self.exits.append(x)):
+        with patch('atexit.register', self.exits.append):
             config = Config()
             config.HistoryManager.hist_file = ':memory:'
             self.ip = IPython.InteractiveShell(

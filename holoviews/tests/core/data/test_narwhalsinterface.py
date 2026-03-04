@@ -305,13 +305,13 @@ class CudfNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
         np.testing.assert_array_equal(df.to_numpy(), expected.to_numpy())
 
     def test_dataset_groupby_dynamic(self):
-        msg = "Series object is not iterable."
-        with pytest.raises(TypeError, match=re.escape(msg)):
+        msg = "Iterating over a cuDF Series, DataFrame or Index is not supported."
+        with pytest.raises(NotImplementedError, match=re.escape(msg)):
             super().test_dataset_groupby_dynamic()
 
     def test_dataset_groupby_dynamic_alias(self):
-        msg = "Series object is not iterable."
-        with pytest.raises(TypeError, match=re.escape(msg)):
+        msg = "Iterating over a cuDF Series, DataFrame or Index is not supported."
+        with pytest.raises(NotImplementedError, match=re.escape(msg)):
             super().test_dataset_groupby_dynamic()
 
     def test_dataset_sample_hm(self):

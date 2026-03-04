@@ -1575,6 +1575,8 @@ class PolyDrawCallback(GlyphDrawCallback):
             vertex_style = dict({'size': 10}, **stream.vertex_style)
             r1 = plot.state.scatter([], [], **vertex_style)
             kwargs['vertex_renderer'] = r1
+            r1.visible = plot.handles['glyph_renderer'].visible
+            plot.handles['glyph_renderer'].js_link('visible', r1, 'visible')
         if stream.styles:
             self._create_style_callback(cds, glyph)
         if stream.tooltip:
@@ -1686,6 +1688,10 @@ class BoxEditCallback(GlyphDrawCallback):
         renderer = self.plot.handles['glyph_renderer']
         if isinstance(self.plot, PathPlot):
             renderer = self._path_initialize()
+        else:
+            data = self._process_msg({'data': cds.data})['data']
+            for stream in self.streams:
+                stream.update(data=data)
         if stream.styles:
             self._create_style_callback(cds, renderer.glyph)
         if BOKEH_GE_3_3_0:

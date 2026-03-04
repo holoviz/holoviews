@@ -4,16 +4,16 @@ import uuid
 import numpy as np
 import param
 
-from ... import Tiles
 from ...core import util
 from ...core.dimension import Dimension
 from ...core.element import Element
 from ...core.spaces import DynamicMap
 from ...core.util import dtype_kind
+from ...element.tiles import Tiles
 from ...streams import Stream
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dim_range_key
+from ..util import _NAMED_CSS_COLORS, dim_range_key
 from .plot import PlotlyPlot
 from .util import (
     PLOTLY_MAP,
@@ -386,11 +386,39 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                                      'to overlay your data along the dimension.')
 
             # If color is not valid colorspec add colormapper
-            numeric = isinstance(val, np.ndarray) and dtype_kind(val) in 'uifMm'
-            if ('color' in k and isinstance(val, np.ndarray) and numeric):
-                copts = self.get_color_opts(v, element, ranges, style)
-                new_style.pop('cmap', None)
-                new_style.update(copts)
+            if 'color' in k and isinstance(val, util.arraylike_types):
+                if dtype_kind(val) in 'uifMm':  # numeric
+                    copts = self.get_color_opts(v, element, ranges, style)
+                    new_style.pop('cmap', None)
+                    new_style.update(copts)
+                else:  # categorical
+                    categories, cat_indices = np.unique(val, return_inverse=True)
+                    is_plotly_allowed_colors = all(
+                        isinstance(c, str) and (
+                            c.startswith(('#', 'rgb', 'hsl', 'hsv')) or c in _NAMED_CSS_COLORS
+                        ) for c in categories
+                    )
+
+                    if not is_plotly_allowed_colors:
+                        val = cat_indices
+
+                        copts = self.get_color_opts(v, element, ranges, style)
+                        copts.update({
+                            'cmin': 0,
+                            'cmax': len(categories) - 1,
+                            'cauto': False
+                        })
+
+                        if 'colorbar' in copts:
+                            copts['colorbar'].update({
+                                'tickmode': 'array',
+                                'tickvals': list(range(len(categories))),
+                                'ticktext': [v.dimension.pprint_value(c) for c in categories]
+                            })
+
+                        new_style.pop('cmap', None)
+                        new_style.update(copts)
+
             new_style[k] = val
         return new_style
 

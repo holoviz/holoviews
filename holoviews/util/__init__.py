@@ -26,10 +26,13 @@ from ..core.overlay import Overlay
 from ..operation.element import function
 from ..streams import Params, Stream, streams_list_from_dict
 from .settings import OutputSettings, list_backends, list_formats
-from .warnings import deprecated
 
 Store.output_settings = OutputSettings
 
+_STR_OPTIONS_ERR = (
+    "String-based options specification is no longer supported. "
+    "Use dictionary or option objects instead."
+)
 
 
 def examples(path='holoviews-examples', verbose=False, force=False, root=__file__):
@@ -237,12 +240,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         Returns the object or a clone with the options applied
         """
         if isinstance(options, str):
-            from ..util.parser import OptsSpec
-            try:
-                options = OptsSpec.parse(options)
-            except SyntaxError:
-                options = OptsSpec.parse(
-                    f'{obj.__class__.__name__} {options}')
+            raise TypeError(_STR_OPTIONS_ERR)
         if kwargs:
             options = cls._group_kwargs_to_options(obj, kwargs)
 
@@ -253,10 +251,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
     @classmethod
     def _process_magic(cls, options, strict, backends=None):
         if isinstance(options, str):
-            from .parser import OptsSpec
-            try:     ns = get_ipython().user_ns  # noqa
-            except Exception:  ns = globals()
-            options = OptsSpec.parse(options, ns=ns)
+            raise TypeError(_STR_OPTIONS_ERR)
 
         errmsg = StoreOptions.validation_error_message(options, backends=backends)
         if errmsg:
@@ -432,13 +427,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
         """
         if isinstance(options, str):
-            from .parser import OptsSpec
-            if ns is None:
-                try:     ns = get_ipython().user_ns  # noqa
-                except Exception:  ns = globals()
-            options = options.replace('%%opts','').replace('%opts','')
-            options = OptsSpec.parse_options(options, ns=ns)
-
+            raise TypeError(_STR_OPTIONS_ERR)
 
         reprs = []
         ns = f'{namespace}.' if namespace else ''
@@ -704,14 +693,11 @@ class extension(_pyviz_extension):
             if p in self._backends:
                 imports.append((p, self._backends[p]))
         if not imports:
-            deprecated(
-                "1.23.0",
-                "Calling 'hv.extension()' without arguments",
-                'hv.extension("matplotlib")',
-                repr_old=False,
+            msg = (
+                "Calling 'hv.extension()' without arguments is not supported. "
+                "Use e.g. hv.extension('bokeh')."
             )
-            args = ['matplotlib']
-            imports = [('matplotlib', 'mpl')]
+            raise TypeError(msg)
 
         args = list(args)
         selected_backend = None
@@ -1107,29 +1093,16 @@ class Dynamic(param.ParameterizedFunction):
 
 
 def _load_rc_file():
-    files = [
-        os.environ.get("HOLOVIEWSRC", ''),
-        os.path.abspath(os.path.join(os.path.split(__file__)[0], '..', '..', 'holoviews.rc')),
-        "~/.holoviews.rc",
-        "~/.config/holoviews/holoviews.rc"
-    ]
+    file = os.getenv("HOLOVIEWSRC")
+    if not file:
+        return
+    filename = os.path.expanduser(file)
+    if not os.path.isfile(filename):
+        print(f"Warning: {filename!r} does not exist")
+        return
 
-    # A single holoviews.rc file may be executed if found.
-    for idx, file in enumerate(files):
-        filename = os.path.expanduser(file)
-        if os.path.isfile(filename):
-            with open(filename, encoding='utf8') as f:
-                try:
-                    exec(compile(f.read(), filename, 'exec'))
-                except Exception as e:
-                    print(f"Warning: Could not load {filename!r} [{str(e)!r}]")
-
-            if idx != 0:
-                from .warnings import deprecated
-                deprecated(
-                    "1.23.0",
-                    "Automatic detections of HoloViews config file",
-                    extra=f"You can disable this warning by setting the environment variable 'HOLOVIEWSRC' to {filename!r}.",
-                    repr_old=False,
-                )
-            return
+    with open(filename, encoding='utf8') as f:
+        try:
+            exec(compile(f.read(), filename, 'exec'))
+        except Exception as e:
+            print(f"Warning: Could not load {filename!r} [{str(e)!r}]")

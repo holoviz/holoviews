@@ -10,8 +10,8 @@ from ..element import RGB, Area, Image, ImageStack, Polygons, QuadMesh, Raster
 from ..element.sankey import Sankey, _layout_sankey
 from ..operation.stats import bivariate_kde, univariate_kde
 from .plot import Plot
-from .renderer import HTML_TAGS, Renderer  # noqa (API import)
-from .util import apply_nodata, flatten_stack, list_cmaps  # noqa (API import)
+from .renderer import HTML_TAGS, Renderer  # noqa: F401
+from .util import apply_nodata, flatten_stack, list_cmaps  # noqa: F401
 
 Compositor.register(Compositor("Image", apply_nodata, None,
                                'data', transfer_options=True,
@@ -61,11 +61,8 @@ DEFAULT_CYCLE = ['#30a2da', '#fc4f30', '#e5ae38', '#6d904f', '#8b8b8b', '#17becf
 
 Cycle.default_cycles['default_colors'] = DEFAULT_CYCLE
 
-def public(obj):
-    if not isinstance(obj, type): return False
-    is_plot_or_cycle = any([issubclass(obj, bc) for bc in [Plot, Cycle]])
-    is_renderer = any([issubclass(obj, bc) for bc in [Renderer]])
-    return (is_plot_or_cycle or is_renderer)
-
-_public = list({_k for _k, _v in locals().items() if public(_v)})
-__all__ = _public
+__all__ = [
+   "Cycle",
+   "Plot",
+   "Renderer",
+]

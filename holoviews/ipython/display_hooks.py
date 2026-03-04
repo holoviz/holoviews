@@ -8,7 +8,6 @@ from functools import wraps
 
 import IPython
 from IPython import get_ipython
-from IPython.display import HTML
 
 import holoviews as hv
 
@@ -29,7 +28,6 @@ from ..core.options import AbbreviatedException, SkipRendering, Store, StoreOpti
 from ..core.traversal import unique_dimkeys
 from ..core.util import mimebundle_to_html
 from ..util.settings import OutputSettings
-from .magics import OptsMagic, OutputMagic
 
 # To assist with debugging of display hooks
 FULL_TRACEBACK = None
@@ -48,21 +46,8 @@ def max_frame_warning(max_frames):
         "hv.output(max_frames=<insert number>)"
     )
 
-def process_object(obj):
-    """Hook to process the object currently being displayed.
-
-    """
-    invalid_options = OptsMagic.process_element(obj)
-    if invalid_options: return invalid_options
-    OutputMagic.info(obj)
-
 
 def render(obj, **kwargs):
-    info = process_object(obj)
-    if info:
-        display(HTML(info))
-        return
-
     if render_anim is not None:
         return render_anim(obj)
 
@@ -234,11 +219,6 @@ def display_hook(fn):
 
 @display_hook
 def element_display(element, max_frames):
-    info = process_object(element)
-    if info:
-        display(HTML(info))
-        return None
-
     backend = Store.current_backend
     if type(element) not in Store.registry[backend]:
         return None
@@ -347,11 +327,6 @@ def image_display(element, max_frames, fmt):
     """
     if fmt not in Store.display_formats:
         return None
-    info = process_object(element)
-    if info:
-        display(HTML(info))
-        return
-
     backend = Store.current_backend
     if type(element) not in Store.registry[backend]:
         return None

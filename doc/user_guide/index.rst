@@ -67,7 +67,7 @@ concepts in HoloViews:
  reveal individual data points without sacrificing aggregation.
 
 `Working with Streaming Data`_
- Demonstrates how to leverage the streamz library with HoloViews to work with streaming datasets.
+ Demonstrates how to leverage streaming with HoloViews.
 
 `Creating interactive dashboards`_
  Use external widget libraries to build custom, interactive dashboards.

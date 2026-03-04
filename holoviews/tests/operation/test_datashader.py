@@ -505,9 +505,13 @@ class DatashaderAggregateTests:
             [0, 1, 1, 1],
             [0, 0, 0, 0]
         ])
-        expected1 = Image((xs, ys, arr1), vdims=Dimension('cat Count', nodata=0))
-        expected2 = Image((xs, ys, arr2), vdims=Dimension('cat Count', nodata=0))
-        expected = NdOverlay({'A': expected1, 'B': expected2}, kdims=['cat'])
+        combined = np.stack([arr1.T, arr2.T], axis=2).astype(np.uint32)
+        xrda = xr.DataArray(
+            combined,
+            coords={'x': xs, 'y': ys, 'cat': ['A', 'B']},
+            dims=['x', 'y', 'cat']
+        )
+        expected = ImageStack(xrda, kdims=['x', 'y'], vdims=['A', 'B'])
         assert_element_equal(agg, expected)
 
     def test_rectangles_aggregate_sum(self):
@@ -1532,6 +1536,93 @@ def test_selector_single_categorical():
     plot = dynspread(plot)
     # Should not fail
     renderer("bokeh").get_plot(plot)
+
+
+def test_geom_aggregate_with_summary():
+    rects = Rectangles([
+        (0, 0, 1, 1, 128, 100, 200),
+        (2, 3, 4, 6, 100, 50, 80),
+        (0.5, 2, 1.5, 4, 20, 200, 120),
+        (2, 1, 3.5, 2.5, 110, 40, 240),
+    ], vdims=["r", "g", "b"])
+    agg = rasterize(
+        rects,
+        width=4,
+        height=4,
+        dynamic=False,
+        aggregator=ds.summary(
+            r=ds.where(ds.max("x0"), "r"),
+            g=ds.where(ds.max("x0"), "g"),
+            b=ds.where(ds.max("x0"), "b"),
+        )
+    )
+
+    assert isinstance(agg, Image)
+    assert isinstance(agg.data, xr.Dataset)
+    assert "r" in agg.data
+    assert "g" in agg.data
+    assert "b" in agg.data
+
+
+def test_geom_aggregate_with_selector():
+    rects = Rectangles([
+        (0, 0, 1, 1, 10, 0),
+        (2, 3, 4, 6, 20, 1),
+        (0.5, 2, 1.5, 4, 30, 2),
+        (2, 1, 3.5, 2.5, 40,  3),
+    ], vdims=["value", "index_col"])
+    agg = rasterize(
+        rects,
+        width=4,
+        height=4,
+        dynamic=False,
+        selector=ds.first("value")
+    )
+
+    assert isinstance(agg, Image)
+    assert isinstance(agg.data, xr.Dataset)
+    expected_columns = ['__index__', 'x0', 'y0', 'x1', 'y1', 'value', 'index_col']
+    assert agg.data.attrs["selector_columns"] ==  expected_columns
+    for c in expected_columns:
+        assert c in agg.data
+
+    agg_where = rasterize(
+        rects,
+        width=4,
+        height=4,
+        dynamic=False,
+        aggregator=ds.where(ds.first("value"), "index_col")
+    )
+    np.testing.assert_array_equal(
+        agg.data["__index__"],
+        agg_where.data["index_col"].fillna(-1)
+    )
+
+
+@pytest.mark.parametrize("aggregator", [ds.count_cat("cat"), ds.by("cat", ds.count())], ids=["count_cat", "by"])
+def test_geom_aggregate_with_by_and_selector(aggregator):
+    rects = Rectangles([
+        (0, 0, 1, 2, 'A', 20, 0),
+        (1, 1, 3, 2, 'B', 300, 1),
+    ], vdims=['cat', "value", "index_col"])
+    agg = rasterize(
+        rects,
+        width=4,
+        height=4,
+        dynamic=False,
+        aggregator=aggregator,
+        selector=ds.first("value")
+    )
+
+    assert isinstance(agg, ImageStack)
+    assert "A" in agg.vdims
+    assert "B" in agg.vdims
+
+    assert isinstance(agg.data, xr.Dataset)
+    expected_columns = ['__index__', 'x0', 'y0', 'x1', 'y1', 'cat', 'value', 'index_col']
+    assert agg.data.attrs["selector_columns"] ==  expected_columns
+    for c in expected_columns:
+        assert c in agg.data
 
 
 class DatashaderSpreadTests:

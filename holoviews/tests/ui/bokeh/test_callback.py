@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import panel as pn
 import pytest
+from bokeh.models import PolyDrawTool
 
 import holoviews as hv
 from holoviews import Curve, DynamicMap, Scatter
@@ -12,6 +13,9 @@ from holoviews.streams import (
     BoundsY,
     Lasso,
     MultiAxisTap,
+    PointDraw,
+    PolyDraw,
+    PolyEdit,
     RangeXY,
     Tap,
 )
@@ -535,3 +539,56 @@ class TestPopup:
         distances = self._get_popup_distances_relative_to_bbox(popup_box, box)
 
         self._verify_popup_position(distances, popup_position)
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+@pytest.mark.parametrize("start_value", ["Points", "Polygons"])
+def test_poly_point_visible(serve_panel, start_value):
+    # Test for #6717
+    select = pn.widgets.RadioButtonGroup(value=start_value, options=["Points", "Polygons"])
+    tools = {}
+
+    @pn.depends(select)
+    def points_layer(value):
+        return hv.Points([(0, 0), (0.5, 0.5)]).opts(color="red", size=10, visible=value == "Points")
+
+    @pn.depends(select)
+    def polygons_layer(value):
+        return hv.Polygons([[(0.6, 0.1), (0.9, 0.1), (0.9, 0.9), (0.6, 0.9)]]).opts(visible=value == "Polygons")
+
+    dm_points = DynamicMap(points_layer)
+    dm_polys = DynamicMap(polygons_layer)
+
+    PointDraw(source=dm_points)
+    PolyDraw(source=dm_polys, show_vertices=True)
+    PolyEdit(source=dm_polys)
+
+    overlay = dm_points * dm_polys
+
+    def capture_tools(plot, element):
+        for tool in plot.state.tools:
+            if isinstance(tool, PolyDrawTool):
+                tools["PolyDrawTool"] = tool
+
+    overlay = overlay.opts(hooks=[capture_tools])
+    app = pn.Column(select, overlay)
+
+    page = serve_panel(app)
+    hv_plot = page.locator(".bk-events")
+    expect(hv_plot).to_have_count(1)
+
+    def check_visibility(selected):
+        page.wait_for_timeout(200)
+        if selected == "Points":
+            assert tools["PolyDrawTool"].vertex_renderer.visible is False
+        else:
+            assert tools["PolyDrawTool"].vertex_renderer.visible is True
+
+
+    wait_until(lambda: check_visibility(select.value), page)
+
+    select.value = "Polygons" if start_value == "Points" else "Points"
+    wait_until(lambda: check_visibility(select.value), page)
+
+    select.value = start_value
+    wait_until(lambda: check_visibility(select.value), page)
