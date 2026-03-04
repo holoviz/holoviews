@@ -2,8 +2,6 @@
 Test cases for computing ranges on elements which are not simply
 the (min, max) of the dimension values array.
 """
-
-
 import holoviews as hv
 
 

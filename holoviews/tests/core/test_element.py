@@ -1,5 +1,3 @@
-
-
 import holoviews as hv
 
 

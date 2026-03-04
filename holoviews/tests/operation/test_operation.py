@@ -9,7 +9,6 @@ import pytest
 import holoviews as hv
 from holoviews.core.data.grid import GridInterface
 from holoviews.core.data.ibis import IBIS_VERSION
-from holoviews.core.operation import Operation
 from holoviews.core.options import Compositor, SkipRendering
 from holoviews.operation.element import (
     chain,
@@ -1039,4 +1038,4 @@ def test_compositor_operations_size():
 
     # To verify we don't add a string instead of class
     for op in Compositor.operations:
-        ssert not isinstance(op, str)
+        assert not isinstance(op, str)

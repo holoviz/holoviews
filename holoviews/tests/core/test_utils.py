@@ -16,7 +16,7 @@ import pytest
 import holoviews as hv
 from holoviews.core import util
 from holoviews.core.util import (
-    _minmax_finite,
+     _minmax_finite,
     closest_match,
     compute_density,
     compute_edges,
@@ -50,16 +50,16 @@ sanitize_identifier = sanitize_identifier_fn.instance()
 
 @pytest.fixture
 def with_pandas(request, monkeypatch):
-  """Fixture to control pandas availability"""
-  if request.param:
-      pytest.importorskip("pandas")
-  else:
-      monkeypatch.setattr(util, 'pd', None)
+    """Fixture to control pandas availability"""
+    if request.param:
+        pytest.importorskip("pandas")
+    else:
+        monkeypatch.setattr(util, 'pd', None)
 
 
 def with_and_without_pandas(func):
-  """Decorator to test both with and without pandas"""
-  return pytest.mark.parametrize("with_pandas", [True, False], indirect=True, ids=["with_pandas", "without_pandas"])(func)
+    """Decorator to test both with and without pandas"""
+    return pytest.mark.parametrize("with_pandas", [True, False], indirect=True, ids=["with_pandas", "without_pandas"])(func)
 
 
 class TestDeepHash:

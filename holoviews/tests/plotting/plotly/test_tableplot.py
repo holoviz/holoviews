@@ -1,4 +1,3 @@
-
 import holoviews as hv
 
 from .test_plot import TestPlotlyPlot

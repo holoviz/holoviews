@@ -1,4 +1,3 @@
-
 import holoviews as hv
 
 from .utils import IPythonCase

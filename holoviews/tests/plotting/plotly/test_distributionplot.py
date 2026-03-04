@@ -1,5 +1,3 @@
-
-
 import holoviews as hv
 
 from ...utils import optional_dependencies
