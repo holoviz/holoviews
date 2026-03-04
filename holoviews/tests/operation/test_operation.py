@@ -9,6 +9,7 @@ import pytest
 from holoviews import (
     AdjointLayout,
     Area,
+    Bars,
     Contours,
     Curve,
     Dataset,
@@ -32,6 +33,7 @@ from holoviews.core.data.ibis import IBIS_VERSION
 from holoviews.core.operation import Operation
 from holoviews.core.options import SkipRendering
 from holoviews.operation.element import (
+    categorical_agg,
     chain,
     contours,
     decimate,
@@ -818,6 +820,114 @@ class OperationTests:
         output = decimated.data[()].data
         pd.testing.assert_series_equal(data["x"], output["x"])
         pd.testing.assert_series_equal(data["y"], output["y"])
+
+
+    def test_categorical_agg_count(self):
+        """Default aggregation counts rows per category."""
+        df = pd.DataFrame({
+            'x': [1, 2, 3, 4, 5],
+            'y': [10, 20, 30, 40, 50],
+            'category': ['A', 'B', 'A', 'B', 'A'],
+        })
+        points = Points(df, kdims=['x', 'y'], vdims=['category'])
+        bars = categorical_agg(points, dimension='category')
+
+        assert isinstance(bars, Bars)
+        assert bars.kdims[0].name == 'category'
+        assert bars.vdims[0].name == 'Count'
+        # A appears 3 times, B appears 2 times
+        data = dict(zip(bars.dimension_values('category'),
+                        bars.dimension_values('Count')))
+        assert data['A'] == 3
+        assert data['B'] == 2
+
+    def test_categorical_agg_sum(self):
+        """Sum aggregation on a value dimension."""
+        df = pd.DataFrame({
+            'x': [1, 2, 3, 4],
+            'y': [10, 20, 30, 40],
+            'category': ['A', 'B', 'A', 'B'],
+        })
+        points = Points(df, kdims=['x', 'y'], vdims=['category'])
+        bars = categorical_agg(
+            points, dimension='category',
+            value_dimension='y', function=np.sum,
+        )
+
+        assert isinstance(bars, Bars)
+        assert bars.vdims[0].name == 'sum(y)'
+        data = dict(zip(bars.dimension_values('category'),
+                        bars.dimension_values('sum(y)')))
+        assert data['A'] == 40  # 10 + 30
+        assert data['B'] == 60  # 20 + 40
+
+    def test_categorical_agg_mean(self):
+        """Mean aggregation on a value dimension."""
+        df = pd.DataFrame({
+            'x': [1, 2, 3, 4],
+            'y': [10, 20, 30, 40],
+            'category': ['A', 'B', 'A', 'B'],
+        })
+        points = Points(df, kdims=['x', 'y'], vdims=['category'])
+        bars = categorical_agg(
+            points, dimension='category',
+            value_dimension='y', function=np.mean,
+        )
+
+        assert isinstance(bars, Bars)
+        assert bars.vdims[0].name == 'mean(y)'
+        data = dict(zip(bars.dimension_values('category'),
+                        bars.dimension_values('mean(y)')))
+        assert data['A'] == 20.0  # (10 + 30) / 2
+        assert data['B'] == 30.0  # (20 + 40) / 2
+
+    def test_categorical_agg_custom_label(self):
+        """Custom label overrides auto-generated label."""
+        df = pd.DataFrame({
+            'x': [1, 2, 3],
+            'y': [10, 20, 30],
+            'category': ['A', 'B', 'A'],
+        })
+        points = Points(df, kdims=['x', 'y'], vdims=['category'])
+        bars = categorical_agg(
+            points, dimension='category', label='Total',
+        )
+
+        assert bars.vdims[0].name == 'Total'
+
+    def test_categorical_agg_missing_dimension_error(self):
+        """Raises ValueError when the specified dimension doesn't exist."""
+        points = Points([(1, 2), (3, 4)])
+        with pytest.raises(ValueError, match="not found"):
+            categorical_agg(points, dimension='nonexistent')
+
+    def test_categorical_agg_no_dimension_error(self):
+        """Raises ValueError when dimension param is not provided."""
+        points = Points([(1, 2), (3, 4)])
+        with pytest.raises(ValueError, match="required"):
+            categorical_agg(points)
+
+    def test_categorical_agg_empty_element(self):
+        """Returns an empty Bars element when the input is empty."""
+        df = pd.DataFrame({'x': [], 'y': [], 'category': []})
+        points = Points(df, kdims=['x', 'y'], vdims=['category'])
+        bars = categorical_agg(points, dimension='category')
+
+        assert isinstance(bars, Bars)
+        assert len(bars) == 0
+
+    def test_categorical_agg_preserves_lineage(self):
+        """Operation output has a pipeline that references the source element."""
+        df = pd.DataFrame({
+            'x': [1, 2, 3],
+            'y': [10, 20, 30],
+            'category': ['A', 'B', 'A'],
+        })
+        points = Points(df, kdims=['x', 'y'], vdims=['category'])
+        bars = categorical_agg(points, dimension='category')
+
+        assert bars.pipeline is not None
+        assert bars.dataset is not None
 
 
 @pytest.mark.usefixtures("bokeh_backend")

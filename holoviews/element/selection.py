@@ -544,3 +544,32 @@ class Selection1DExpr(Selection2DExpr):
             new = len(contiguous)
             data = contiguous
         return NdOverlay([(i, region1.last.clone(l, u)) for i, (l, u) in enumerate(data)])
+
+
+class SelectionBarsExpr(Selection1DExpr):
+    """Mixin class for Bars adding tap/click-to-select on top of box-select.
+
+    Translates Selection1D tap events (integer row indices) into an
+    isin expression over the bar's key dimension for link_selections.
+    """
+
+    _selection_streams = (SelectionXY, Selection1D)
+
+    _selection_uses_selection1d_without_index_cols = True
+
+    def _get_selection_expr_for_stream_value(self, **kwargs):
+        index = kwargs.get('index')
+        index_cols = kwargs.get('index_cols')
+
+        if 'index' in kwargs and index_cols is None:
+            if not index:
+                return None, None, None
+            kdim = self.kdims[0]
+            cat_vals = self.dimension_values(kdim, expanded=False)
+            clicked = [cat_vals[i] for i in index if 0 <= i < len(cat_vals)]
+            if clicked:
+                expr = dim(kdim).isin(list(util.unique_iterator(clicked)))
+                return expr, None, None
+            return None, None, None
+
+        return super()._get_selection_expr_for_stream_value(**kwargs)

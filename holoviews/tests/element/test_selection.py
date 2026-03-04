@@ -238,6 +238,93 @@ class TestSelection1DExpr:
         assert_element_equal(region, NdOverlay({0: HSpan(3, 7)}))
 
 
+class TestSelectionBarsExpr:
+    """Tests for SelectionBarsExpr — tap/click-to-select on Bars elements."""
+
+    def setup_method(self):
+        import holoviews.plotting.bokeh  # noqa
+        self._backend = Store.current_backend
+        Store.set_current_backend('bokeh')
+
+    def teardown_method(self):
+        Store.current_backend = self._backend
+
+    def _make_bars(self):
+        from holoviews.element import Bars
+        return Bars(
+            (['A', 'B', 'C', 'D'], [10, 20, 5, 15]),
+            kdims=['category'],
+            vdims=['count'],
+        )
+
+    def test_bars_tap_single_category(self):
+        """Clicking the second bar (index 1 → 'B') returns isin(['B'])."""
+        bars = self._make_bars()
+        expr, bbox, region = bars._get_selection_expr_for_stream_value(index=[1])
+        assert bbox is None
+        assert region is None
+        assert expr == dim('category').isin(['B'])
+        assert_data_equal(
+            expr.apply(bars),
+            np.array([False, True, False, False]),
+        )
+
+    def test_bars_tap_multiple_categories(self):
+        """Clicking bars at indices 0 and 2 returns isin(['A', 'C'])."""
+        bars = self._make_bars()
+        expr, bbox, region = bars._get_selection_expr_for_stream_value(index=[0, 2])
+        assert bbox is None
+        assert region is None
+        assert expr == dim('category').isin(['A', 'C'])
+        assert_data_equal(
+            expr.apply(bars),
+            np.array([True, False, True, False]),
+        )
+
+    def test_bars_tap_empty_index(self):
+        """An empty index list (clicked outside all bars) returns (None, None, None)."""
+        bars = self._make_bars()
+        expr, bbox, region = bars._get_selection_expr_for_stream_value(index=[])
+        assert expr is None
+        assert bbox is None
+        assert region is None
+
+    def test_bars_tap_no_index_kwarg(self):
+        """No index kwarg at all falls through to the parent (no-op for no bounds)."""
+        bars = self._make_bars()
+        expr, bbox, region = bars._get_selection_expr_for_stream_value()
+        assert expr is None
+
+    def test_bars_box_select_categorical(self):
+        """Box-select over categorical x-axis still works via Selection1DExpr."""
+        bars = self._make_bars()
+        expr, bbox, region = bars._get_selection_expr_for_stream_value(
+            bounds=(0, 0, 2, 25), x_selection=['A', 'B', 'C']
+        )
+        assert bbox == {'category': ['A', 'B', 'C']}
+        assert_data_equal(
+            expr.apply(bars),
+            np.array([True, True, True, False]),
+        )
+
+    def test_bars_selection_streams_include_selection1d(self):
+        """Bars._selection_streams must include Selection1D for tap events."""
+        from holoviews.element import Bars
+        from holoviews.streams import Selection1D, SelectionXY
+        assert Selection1D in Bars._selection_streams
+        assert SelectionXY in Bars._selection_streams
+
+    def test_barplot_default_tools_include_tap(self):
+        """BarPlot.default_tools must include 'tap' so the TapTool is present
+        in the Bokeh figure and Selection1D events actually fire on click."""
+        import holoviews.plotting.bokeh  # noqa - registers BarPlot
+        from holoviews.plotting.bokeh.chart import BarPlot
+        assert 'tap' in BarPlot.param.default_tools.default, (
+            "'tap' must be in BarPlot.default_tools so that click-to-filter "
+            "works with link_selections. Without it, Selection1D never fires."
+        )
+
+
 class TestSelection2DExpr:
 
     def setup_method(self):
