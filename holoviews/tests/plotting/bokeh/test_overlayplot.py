@@ -4,7 +4,14 @@ import numpy as np
 import pandas as pd
 import panel as pn
 import pytest
-from bokeh.models import FactorRange, FixedTicker, HoverTool, Range1d, Span
+from bokeh.models import (
+    FactorRange,
+    FixedTicker,
+    HoverTool,
+    Range1d,
+    Span,
+    tools as bk_tools,
+)
 
 from holoviews.core import DynamicMap, HoloMap, NdOverlay, Overlay
 from holoviews.element import (
@@ -432,7 +439,7 @@ def test_ndoverlay_categorical_y_ranges(order):
     ], ids=["none", "zoom_in", "zoom_in_and_zoom_out"])
 def test_overlay_opts_tools(tools, new_tools):
     overlay = Curve([1, 2, 3]) * Curve([2, 3, 4])
-    if tools:
+    if tools is not None:
         overlay.opts(tools=tools)
     plot = bokeh_renderer.get_plot(overlay)
 
@@ -536,6 +543,34 @@ def test_overlay_opts_mixed_tools_no_duplicates():
     # Should only have one xpan tool despite being specified multiple times
     xpan_tools = [tool for tool in pan_tools if tool.dimensions == 'width']
     assert len(xpan_tools) == 1
+
+
+def test_overlay_opts_xwheel_pan_ywheel_pan_distinct():
+    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=['xwheel_pan', 'ywheel_pan'])
+    plot = bokeh_renderer.get_plot(overlay)
+
+    wheel_pan_tools = [t for t in plot.state.tools if isinstance(t, bk_tools.WheelPanTool)]
+    assert len(wheel_pan_tools) == 2
+    dimensions = {t.dimension for t in wheel_pan_tools}
+    assert dimensions == {'width', 'height'}
+
+
+def test_overlay_opts_tap_doubletap_distinct():
+    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=['tap', 'doubletap'])
+    plot = bokeh_renderer.get_plot(overlay)
+
+    tap_tools = [t for t in plot.state.tools if isinstance(t, bk_tools.TapTool)]
+    assert len(tap_tools) == 2
+
+
+def test_overlay_hover_string_not_blocked_by_subplot_hover():
+    curve1 = Curve([1, 2, 3]).opts(tools=[HoverTool(tooltips=[('x', '@x')])])
+    curve2 = Curve([2, 3, 4]).opts(tools=[HoverTool(tooltips=[('y', '@y')])])
+    overlay = curve1 * curve2
+    plot = bokeh_renderer.get_plot(overlay)
+
+    hover_tools = [t for t in plot.state.tools if isinstance(t, bk_tools.HoverTool)]
+    assert len(hover_tools) == 2
 
 
 class TestLegends(TestBokehPlot):
