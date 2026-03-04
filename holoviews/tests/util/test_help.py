@@ -31,3 +31,14 @@ def test_help_pattern_no_ipython(capsys):
         hv.help(hv.Curve)
         captured = capsys.readouterr()
         assert captured.out.startswith('Help on class Curve')
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_help_after_extension_sets_store(capsys):
+    """hv.extension() should set InfoPrinter.store so hv.help works outside Jupyter."""
+    from holoviews.core.pprint import InfoPrinter
+    assert InfoPrinter.store is Store
+    hv.help(hv.Curve)
+    captured = capsys.readouterr()
+    assert 'Style Options' in captured.out
+    assert 'Plot Options' in captured.out

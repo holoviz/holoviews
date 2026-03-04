@@ -744,6 +744,9 @@ class extension(_pyviz_extension):
             raise ImportError('None of the backends could be imported')
         Store.set_current_backend(selected_backend)
 
+        from ..core.pprint import InfoPrinter
+        InfoPrinter.store = Store
+
         import panel as pn
 
         if params.get("enable_mathjax", False) and selected_backend == "bokeh":
