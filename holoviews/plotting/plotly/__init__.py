@@ -1,25 +1,86 @@
+import numpy as np
 import plotly
 from packaging.version import Version
 from param import concrete_descendents
 
-from ...core import GridMatrix, GridSpace, Layout, NdLayout, NdOverlay, Overlay, config
+from ...core import (
+    AdjointLayout,
+    GridMatrix,
+    GridSpace,
+    Layout,
+    NdLayout,
+    NdOverlay,
+    Overlay,
+    config,
+)
 from ...core.options import Cycle, Options, Store
 from ...core.util import VersionError
-from ...element import *
-from .annotation import *
-from .callbacks import *
-from .chart import *
-from .chart3d import *
-from .element import *
-from .element import ElementPlot
-from .images import *
-from .plot import *
-from .raster import *
+from ...element import (
+    RGB,
+    Area,
+    Bars,
+    Bivariate,
+    Bounds,
+    Box,
+    BoxWhisker,
+    Curve,
+    Distribution,
+    Ellipse,
+    ErrorBars,
+    HeatMap,
+    Histogram,
+    HLine,
+    HSpan,
+    Image,
+    ImageStack,
+    ItemTable,
+    Labels,
+    Path,
+    Path3D,
+    Points,
+    QuadMesh,
+    Raster,
+    Rectangles,
+    Scatter,
+    Scatter3D,
+    Segments,
+    Spread,
+    Surface,
+    Table,
+    Tiles,
+    TriSurface,
+    Violin,
+    VLine,
+    VSpan,
+)
+from . import callbacks  # noqa: F401 (side-effect: registers callbacks)
+from .annotation import LabelPlot
+from .chart import (
+    AreaPlot,
+    BarPlot,
+    CurvePlot,
+    ErrorBarsPlot,
+    HistogramPlot,
+    ScatterPlot,
+    SpreadPlot,
+)
+from .chart3d import Path3DPlot, Scatter3DPlot, SurfacePlot, TriSurfacePlot
+from .element import ElementPlot, OverlayPlot
+from .images import RGBPlot
+from .plot import AdjointLayoutPlot, GridPlot, LayoutPlot
+from .raster import HeatMapPlot, QuadMeshPlot, RasterPlot
 from .renderer import PlotlyRenderer
-from .shapes import *
-from .stats import *
-from .tabular import *
-from .tiles import *
+from .shapes import (
+    BoxShapePlot,
+    HVLinePlot,
+    HVSpanPlot,
+    PathShapePlot,
+    PathsPlot,
+    SegmentShapePlot,
+)
+from .stats import BivariatePlot, BoxWhiskerPlot, DistributionPlot, ViolinPlot
+from .tabular import TablePlot
+from .tiles import TilePlot
 
 if Version(plotly.__version__).release < (4, 0, 0):
     raise VersionError(

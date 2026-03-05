@@ -2,19 +2,10 @@ import numpy as np
 from bokeh.models import EdgesAndLinkedNodes, NodesAndLinkedEdges, NodesOnly, Patches
 from bokeh.models.mappers import CategoricalColorMapper, LinearColorMapper
 
-from holoviews.core.data import Dataset
-from holoviews.element import (
-    Chord,
-    Graph,
-    Nodes,
-    Sankey,
-    TriMesh,
-    VLine,
-    circular_layout,
-)
+import holoviews as hv
+from holoviews.element import circular_layout
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.testing import assert_data_equal
-from holoviews.util.transform import dim
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -29,12 +20,12 @@ class TestBokehGraphPlot(TestBokehPlot):
         self.source = np.arange(N, dtype=np.int32)
         self.target = np.zeros(N, dtype=np.int32)
         self.weights = np.random.rand(N)
-        self.graph = Graph(((self.source, self.target),))
-        self.node_info = Dataset(['Output']+['Input']*(N-1), vdims=['Label'])
-        self.node_info2 = Dataset(self.weights, vdims='Weight')
-        self.graph2 = Graph(((self.source, self.target), self.node_info))
-        self.graph3 = Graph(((self.source, self.target), self.node_info2))
-        self.graph4 = Graph(((self.source, self.target, self.weights),), vdims='Weight')
+        self.graph = hv.Graph(((self.source, self.target),))
+        self.node_info = hv.Dataset(['Output']+['Input']*(N-1), vdims=['Label'])
+        self.node_info2 = hv.Dataset(self.weights, vdims='Weight')
+        self.graph2 = hv.Graph(((self.source, self.target), self.node_info))
+        self.graph3 = hv.Graph(((self.source, self.target), self.node_info2))
+        self.graph4 = hv.Graph(((self.source, self.target, self.weights),), vdims='Weight')
 
     def test_plot_simple_graph(self):
         plot = bokeh_renderer.get_plot(self.graph)
@@ -49,7 +40,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         assert layout_source.graph_layout == layout
 
     def test_plot_graph_annotation_overlay(self):
-        plot = bokeh_renderer.get_plot(VLine(0) * self.graph)
+        plot = bokeh_renderer.get_plot(hv.VLine(0) * self.graph)
         x_range = plot.handles['x_range']
         y_range = plot.handles['x_range']
         assert x_range.start == -1
@@ -174,9 +165,9 @@ class TestBokehGraphPlot(TestBokehPlot):
 
     def test_graph_op_node_color(self):
         edges = [(0, 1), (0, 2)]
-        nodes = Nodes([(0, 0, 0, 'red'), (0, 1, 1, 'green'), (1, 1, 2, 'blue')],
+        nodes = hv.Nodes([(0, 0, 0, 'red'), (0, 1, 1, 'green'), (1, 1, 2, 'blue')],
                       vdims='color')
-        graph = Graph((edges, nodes)).opts(node_color='color')
+        graph = hv.Graph((edges, nodes)).opts(node_color='color')
         plot = bokeh_renderer.get_plot(graph)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
@@ -186,9 +177,9 @@ class TestBokehGraphPlot(TestBokehPlot):
 
     def test_graph_op_node_color_linear(self):
         edges = [(0, 1), (0, 2)]
-        nodes = Nodes([(0, 0, 0, 0.5), (0, 1, 1, 1.5), (1, 1, 2, 2.5)],
+        nodes = hv.Nodes([(0, 0, 0, 0.5), (0, 1, 1, 1.5), (1, 1, 2, 2.5)],
                       vdims='color')
-        graph = Graph((edges, nodes)).opts(node_color='color')
+        graph = hv.Graph((edges, nodes)).opts(node_color='color')
         plot = bokeh_renderer.get_plot(graph)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
@@ -199,18 +190,18 @@ class TestBokehGraphPlot(TestBokehPlot):
 
     def test_graph_op_node_color_colorbar(self):
         edges = [(0, 1), (0, 2)]
-        nodes = Nodes([(0, 0, 0, 0.5), (0, 1, 1, 1.5), (1, 1, 2, 2.5)],
+        nodes = hv.Nodes([(0, 0, 0, 0.5), (0, 1, 1, 1.5), (1, 1, 2, 2.5)],
                       vdims='color')
-        graph = Graph((edges, nodes)).opts(node_color='color', colorbar=True)
+        graph = hv.Graph((edges, nodes)).opts(node_color='color', colorbar=True)
         plot = bokeh_renderer.get_plot(graph)
         assert 'node_color_colorbar' in plot.handles
         assert plot.handles['node_color_colorbar'].color_mapper is plot.handles['node_color_color_mapper']
 
     def test_graph_op_node_color_categorical(self):
         edges = [(0, 1), (0, 2)]
-        nodes = Nodes([(0, 0, 0, 'A'), (0, 1, 1, 'B'), (1, 1, 2, 'C')],
+        nodes = hv.Nodes([(0, 0, 0, 'A'), (0, 1, 1, 'B'), (1, 1, 2, 'C')],
                       vdims='color')
-        graph = Graph((edges, nodes)).opts(node_color='color')
+        graph = hv.Graph((edges, nodes)).opts(node_color='color')
         plot = bokeh_renderer.get_plot(graph)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
@@ -221,9 +212,9 @@ class TestBokehGraphPlot(TestBokehPlot):
 
     def test_graph_op_node_size(self):
         edges = [(0, 1), (0, 2)]
-        nodes = Nodes([(0, 0, 0, 2), (0, 1, 1, 4), (1, 1, 2, 6)],
+        nodes = hv.Nodes([(0, 0, 0, 2), (0, 1, 1, 4), (1, 1, 2, 6)],
                       vdims='size')
-        graph = Graph((edges, nodes)).opts(node_size='size')
+        graph = hv.Graph((edges, nodes)).opts(node_size='size')
         plot = bokeh_renderer.get_plot(graph)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
@@ -232,8 +223,8 @@ class TestBokehGraphPlot(TestBokehPlot):
 
     def test_graph_op_node_alpha(self):
         edges = [(0, 1), (0, 2)]
-        nodes = Nodes([(0, 0, 0, 0.2), (0, 1, 1, 0.6), (1, 1, 2, 1)], vdims='alpha')
-        graph = Graph((edges, nodes)).opts(node_alpha='alpha')
+        nodes = hv.Nodes([(0, 0, 0, 0.2), (0, 1, 1, 0.6), (1, 1, 2, 1)], vdims='alpha')
+        graph = hv.Graph((edges, nodes)).opts(node_alpha='alpha')
         plot = bokeh_renderer.get_plot(graph)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
@@ -243,8 +234,8 @@ class TestBokehGraphPlot(TestBokehPlot):
 
     def test_graph_op_node_line_width(self):
         edges = [(0, 1), (0, 2)]
-        nodes = Nodes([(0, 0, 0, 2), (0, 1, 1, 4), (1, 1, 2, 6)], vdims='line_width')
-        graph = Graph((edges, nodes)).opts(node_line_width='line_width')
+        nodes = hv.Nodes([(0, 0, 0, 2), (0, 1, 1, 4), (1, 1, 2, 6)], vdims='line_width')
+        graph = hv.Graph((edges, nodes)).opts(node_line_width='line_width')
         plot = bokeh_renderer.get_plot(graph)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
@@ -253,7 +244,7 @@ class TestBokehGraphPlot(TestBokehPlot):
 
     def test_graph_op_edge_color(self):
         edges = [(0, 1, 'red'), (0, 2, 'green'), (1, 3, 'blue')]
-        graph = Graph(edges, vdims='color').opts(edge_color='color')
+        graph = hv.Graph(edges, vdims='color').opts(edge_color='color')
         plot = bokeh_renderer.get_plot(graph)
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
@@ -262,7 +253,7 @@ class TestBokehGraphPlot(TestBokehPlot):
 
     def test_graph_op_edge_color_linear(self):
         edges = [(0, 1, 2), (0, 2, 0.5), (1, 3, 3)]
-        graph = Graph(edges, vdims='color').opts(edge_color='color')
+        graph = hv.Graph(edges, vdims='color').opts(edge_color='color')
         plot = bokeh_renderer.get_plot(graph)
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
@@ -272,14 +263,14 @@ class TestBokehGraphPlot(TestBokehPlot):
 
     def test_graph_op_edge_color_colorbar(self):
         edges = [(0, 1, 2), (0, 2, 0.5), (1, 3, 3)]
-        graph = Graph(edges, vdims='color').opts(edge_color='color', colorbar=True)
+        graph = hv.Graph(edges, vdims='color').opts(edge_color='color', colorbar=True)
         plot = bokeh_renderer.get_plot(graph)
         assert 'edge_color_colorbar' in plot.handles
         assert plot.handles['edge_color_colorbar'].color_mapper is plot.handles['edge_color_color_mapper']
 
     def test_graph_op_edge_color_categorical(self):
         edges = [(0, 1, 'C'), (0, 2, 'B'), (1, 3, 'A')]
-        graph = Graph(edges, vdims='color').opts(edge_color='color')
+        graph = hv.Graph(edges, vdims='color').opts(edge_color='color')
         plot = bokeh_renderer.get_plot(graph)
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
@@ -289,7 +280,7 @@ class TestBokehGraphPlot(TestBokehPlot):
 
     def test_graph_op_edge_alpha(self):
         edges = [(0, 1, 0.1), (0, 2, 0.5), (1, 3, 0.3)]
-        graph = Graph(edges, vdims='alpha').opts(edge_alpha='alpha')
+        graph = hv.Graph(edges, vdims='alpha').opts(edge_alpha='alpha')
         plot = bokeh_renderer.get_plot(graph)
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
@@ -298,7 +289,7 @@ class TestBokehGraphPlot(TestBokehPlot):
 
     def test_graph_op_edge_line_width(self):
         edges = [(0, 1, 2), (0, 2, 10), (1, 3, 6)]
-        graph = Graph(edges, vdims='line_width').opts(edge_line_width='line_width')
+        graph = hv.Graph(edges, vdims='line_width').opts(edge_line_width='line_width')
         plot = bokeh_renderer.get_plot(graph)
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
@@ -313,8 +304,8 @@ class TestBokehTriMeshPlot(TestBokehPlot):
 
         self.nodes = [(0, 0, 0), (0.5, 1, 1), (1., 0, 2), (1.5, 1, 3)]
         self.simplices = [(0, 1, 2, 0), (1, 2, 3, 1)]
-        self.trimesh = TriMesh((self.simplices, self.nodes))
-        self.trimesh_weighted = TriMesh((self.simplices, self.nodes), vdims='weight')
+        self.trimesh = hv.TriMesh((self.simplices, self.nodes))
+        self.trimesh_weighted = hv.TriMesh((self.simplices, self.nodes), vdims='weight')
 
     def test_plot_simple_trimesh(self):
         plot = bokeh_renderer.get_plot(self.trimesh)
@@ -374,7 +365,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
     def test_trimesh_op_node_color(self):
         edges = [(0, 1, 2), (1, 2, 3)]
         nodes = [(-1, -1, 0, 'red'), (0, 0, 1, 'green'), (0, 1, 2, 'blue'), (1, 0, 3, 'black')]
-        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).opts(node_color='color')
+        trimesh = hv.TriMesh((edges, hv.Nodes(nodes, vdims='color'))).opts(node_color='color')
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
@@ -385,7 +376,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
     def test_trimesh_op_node_color_linear(self):
         edges = [(0, 1, 2), (1, 2, 3)]
         nodes = [(-1, -1, 0, 2), (0, 0, 1, 1), (0, 1, 2, 3), (1, 0, 3, 4)]
-        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).opts(node_color='color')
+        trimesh = hv.TriMesh((edges, hv.Nodes(nodes, vdims='color'))).opts(node_color='color')
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
@@ -399,7 +390,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
     def test_trimesh_op_node_color_categorical(self):
         edges = [(0, 1, 2), (1, 2, 3)]
         nodes = [(-1, -1, 0, 'B'), (0, 0, 1, 'C'), (0, 1, 2, 'A'), (1, 0, 3, 'B')]
-        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).opts(node_color='color')
+        trimesh = hv.TriMesh((edges, hv.Nodes(nodes, vdims='color'))).opts(node_color='color')
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
@@ -411,7 +402,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
     def test_trimesh_op_node_size(self):
         edges = [(0, 1, 2), (1, 2, 3)]
         nodes = [(-1, -1, 0, 3), (0, 0, 1, 2), (0, 1, 2, 8), (1, 0, 3, 4)]
-        trimesh = TriMesh((edges, Nodes(nodes, vdims='size'))).opts(node_size='size')
+        trimesh = hv.TriMesh((edges, hv.Nodes(nodes, vdims='size'))).opts(node_size='size')
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
@@ -421,7 +412,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
     def test_trimesh_op_node_alpha(self):
         edges = [(0, 1, 2), (1, 2, 3)]
         nodes = [(-1, -1, 0, 0.2), (0, 0, 1, 0.6), (0, 1, 2, 1), (1, 0, 3, 0.3)]
-        trimesh = TriMesh((edges, Nodes(nodes, vdims='alpha'))).opts(node_alpha='alpha')
+        trimesh = hv.TriMesh((edges, hv.Nodes(nodes, vdims='alpha'))).opts(node_alpha='alpha')
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
@@ -432,7 +423,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
     def test_trimesh_op_node_line_width(self):
         edges = [(0, 1, 2), (1, 2, 3)]
         nodes = [(-1, -1, 0, 0.2), (0, 0, 1, 0.6), (0, 1, 2, 1), (1, 0, 3, 0.3)]
-        trimesh = TriMesh((edges, Nodes(nodes, vdims='line_width'))).opts(node_line_width='line_width')
+        trimesh = hv.TriMesh((edges, hv.Nodes(nodes, vdims='line_width'))).opts(node_line_width='line_width')
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['scatter_1_source']
         glyph = plot.handles['scatter_1_glyph']
@@ -442,7 +433,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
     def test_trimesh_op_edge_color_linear_mean_node(self):
         edges = [(0, 1, 2), (1, 2, 3)]
         nodes = [(-1, -1, 0, 2), (0, 0, 1, 1), (0, 1, 2, 3), (1, 0, 3, 4)]
-        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).opts(edge_color='color')
+        trimesh = hv.TriMesh((edges, hv.Nodes(nodes, vdims='color'))).opts(edge_color='color')
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
@@ -455,7 +446,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
     def test_trimesh_op_edge_color(self):
         edges = [(0, 1, 2, 'red'), (1, 2, 3, 'blue')]
         nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
-        trimesh = TriMesh((edges, nodes), vdims='color').opts(edge_color='color')
+        trimesh = hv.TriMesh((edges, nodes), vdims='color').opts(edge_color='color')
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
@@ -465,7 +456,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
     def test_trimesh_op_edge_color_linear(self):
         edges = [(0, 1, 2, 2.4), (1, 2, 3, 3.6)]
         nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
-        trimesh = TriMesh((edges, nodes), vdims='color').opts(edge_color='color')
+        trimesh = hv.TriMesh((edges, nodes), vdims='color').opts(edge_color='color')
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
@@ -478,7 +469,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
     def test_trimesh_op_edge_color_linear_filled(self):
         edges = [(0, 1, 2, 2.4), (1, 2, 3, 3.6)]
         nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
-        trimesh = TriMesh((edges, nodes), vdims='color').opts(edge_color='color', filled=True)
+        trimesh = hv.TriMesh((edges, nodes), vdims='color').opts(edge_color='color', filled=True)
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['patches_1_source']
         glyph = plot.handles['patches_1_glyph']
@@ -492,7 +483,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
     def test_trimesh_op_edge_color_categorical(self):
         edges = [(0, 1, 2, 'A'), (1, 2, 3, 'B')]
         nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
-        trimesh = TriMesh((edges, nodes), vdims='color').opts(edge_color='color')
+        trimesh = hv.TriMesh((edges, nodes), vdims='color').opts(edge_color='color')
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
@@ -504,7 +495,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
     def test_trimesh_op_edge_alpha(self):
         edges = [(0, 1, 2, 0.7), (1, 2, 3, 0.3)]
         nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
-        trimesh = TriMesh((edges, nodes), vdims='alpha').opts(edge_alpha='alpha')
+        trimesh = hv.TriMesh((edges, nodes), vdims='alpha').opts(edge_alpha='alpha')
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
@@ -514,7 +505,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
     def test_trimesh_op_edge_line_width(self):
         edges = [(0, 1, 2, 7), (1, 2, 3, 3)]
         nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
-        trimesh = TriMesh((edges, nodes), vdims='line_width').opts(edge_line_width='line_width')
+        trimesh = hv.TriMesh((edges, nodes), vdims='line_width').opts(edge_line_width='line_width')
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
@@ -527,8 +518,8 @@ class TestBokehChordPlot(TestBokehPlot):
     def setup_method(self):
         super().setup_method()
         self.edges = [(0, 1, 1), (0, 2, 2), (1, 2, 3)]
-        self.nodes = Dataset([(0, 'A'), (1, 'B'), (2, 'C')], 'index', 'Label')
-        self.chord = Chord((self.edges, self.nodes))
+        self.nodes = hv.Dataset([(0, 'A'), (1, 'B'), (2, 'C')], 'index', 'Label')
+        self.chord = hv.Chord((self.edges, self.nodes))
 
     def test_chord_draw_order(self):
         plot = bokeh_renderer.get_plot(self.chord)
@@ -607,7 +598,7 @@ class TestBokehChordPlot(TestBokehPlot):
 
     def test_chord_edge_color_style_mapping(self):
         g = self.chord.opts(
-            edge_color=dim('start').astype(str), edge_cmap=['#FFFFFF', '#000000']
+            edge_color=hv.dim('start').astype(str), edge_cmap=['#FFFFFF', '#000000']
         )
         plot = bokeh_renderer.get_plot(g)
         cmapper = plot.handles['edge_color_color_mapper']
@@ -634,11 +625,11 @@ class TestBokehSankeyPlot(TestBokehPlot):
             'C': '#2ca02c',  # green
         }
         # Provide nodes with explicit index->label mapping
-        self.nodes = Dataset(
+        self.nodes = hv.Dataset(
             {'index': [0, 1, 2], 'Label': ['A', 'B', 'C']},
             kdims=['index'], vdims=['Label']
         )
-        self.sk = Sankey(((self.src, self.tgt, self.val), self.nodes), vdims=['Value'])
+        self.sk = hv.Sankey(((self.src, self.tgt, self.val), self.nodes), vdims=['Value'])
         self.sk = self.sk.opts(
             # Color nodes by their label using the provided palette
             node_color='Label',

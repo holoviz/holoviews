@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from holoviews.element import RGB, Bounds, Points, Tiles
+import holoviews as hv
 from holoviews.element.tiles import _ATTRIBUTIONS, StamenTerrain
 from holoviews.plotting.plotly.util import (
     PLOTLY_GE_6_0_0,
@@ -24,15 +24,15 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         self.x_center = sum(self.x_range) / 2.0
         self.y_range = (-3000000, 2000000)
         self.y_center = sum(self.y_range) / 2.0
-        self.lon_range, self.lat_range = Tiles.easting_northing_to_lon_lat(self.x_range, self.y_range)
-        self.lon_centers, self.lat_centers = Tiles.easting_northing_to_lon_lat(
+        self.lon_range, self.lat_range = hv.Tiles.easting_northing_to_lon_lat(self.x_range, self.y_range)
+        self.lon_centers, self.lat_centers = hv.Tiles.easting_northing_to_lon_lat(
             [self.x_center], [self.y_center]
         )
         self.lon_center, self.lat_center = self.lon_centers[0], self.lat_centers[0]
-        self.lons, self.lats = Tiles.easting_northing_to_lon_lat(self.xs, self.ys)
+        self.lons, self.lats = hv.Tiles.easting_northing_to_lon_lat(self.xs, self.ys)
 
     def test_mapbox_tiles_defaults(self):
-        tiles = Tiles("").redim.range(
+        tiles = hv.Tiles("").redim.range(
             x=self.x_range, y=self.y_range
         )
 
@@ -62,7 +62,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
 
     def test_styled_mapbox_tiles(self):
         opts = dict(mapstyle="dark") if PLOTLY_GE_6_0_0 else dict(mapboxstyle="dark", accesstoken="token-str")
-        tiles = Tiles().opts(**opts).redim.range(x=self.x_range, y=self.y_range)
+        tiles = hv.Tiles().opts(**opts).redim.range(x=self.x_range, y=self.y_range)
 
         fig_dict = plotly_renderer.get_plot_state(tiles)
 
@@ -108,7 +108,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
     def test_xyzservices_tileprovider(self):
         xyzservices = pytest.importorskip("xyzservices")
         osm = xyzservices.providers.OpenStreetMap.Mapnik
-        tiles = Tiles(osm, name="xyzservices").redim.range(
+        tiles = hv.Tiles(osm, name="xyzservices").redim.range(
             x=self.x_range, y=self.y_range
         )
 
@@ -124,14 +124,14 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
     def test_overlay(self):
         # Base layer is mapbox vector layer
         opts = dict(mapstyle="dark") if PLOTLY_GE_6_0_0 else dict(mapboxstyle="dark", accesstoken="token-str")
-        tiles = Tiles("").opts(**opts)
+        tiles = hv.Tiles("").opts(**opts)
 
         # Raster tile layer
         stamen_raster = StamenTerrain().opts(alpha=0.7)
 
         # RGB layer
         rgb_data = np.random.rand(10, 10, 3)
-        rgb = RGB(
+        rgb = hv.RGB(
             rgb_data,
             bounds=(self.x_range[0], self.y_range[0], self.x_range[1], self.y_range[1])
         ).opts(
@@ -139,12 +139,12 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         )
 
         # Points layer
-        points = Points([(0, 0), (self.x_range[1], self.y_range[1])]).opts(
+        points = hv.Points([(0, 0), (self.x_range[1], self.y_range[1])]).opts(
             show_legend=True
         )
 
         # Bounds
-        bounds = Bounds((self.x_range[0], self.y_range[0], 0, 0))
+        bounds = hv.Bounds((self.x_range[0], self.y_range[0], 0, 0))
 
         # Overlay
         overlay = (tiles * stamen_raster * rgb * points * bounds).redim.range(

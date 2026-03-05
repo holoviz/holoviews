@@ -4,7 +4,7 @@ Unit tests of Path types.
 import numpy as np
 import pytest
 
-from holoviews import Box, Dataset, Ellipse, Path, Polygons
+import holoviews as hv
 from holoviews.core.data.interface import DataError
 from holoviews.testing import assert_data_equal, assert_element_equal
 
@@ -12,7 +12,7 @@ from holoviews.testing import assert_data_equal, assert_element_equal
 class PathTests:
 
     def test_multi_path_list_constructor(self):
-        path = Path([[(0, 1), (1, 2)], [(2, 3), (3, 4)]])
+        path = hv.Path([[(0, 1), (1, 2)], [(2, 3), (3, 4)]])
         assert path.interface.multi
         assert_data_equal(path.dimension_values(0), np.array([
             0, 1, np.nan, 2, 3]))
@@ -20,8 +20,8 @@ class PathTests:
             1, 2, np.nan, 3, 4]))
 
     def test_multi_path_cast_path(self):
-        path = Path([[(0, 1), (1, 2)], [(2, 3), (3, 4)]])
-        path2 = Path(path)
+        path = hv.Path([[(0, 1), (1, 2)], [(2, 3), (3, 4)]])
+        path2 = hv.Path(path)
         assert path2.interface.multi
         assert_data_equal(path2.dimension_values(0), np.array([
             0, 1, np.nan, 2, 3]))
@@ -29,7 +29,7 @@ class PathTests:
             1, 2, np.nan, 3, 4]))
 
     def test_multi_path_tuple(self):
-        path = Path(([0, 1], [[1, 3], [2, 4]]))
+        path = hv.Path(([0, 1], [[1, 3], [2, 4]]))
         assert path.interface.multi
         assert_data_equal(path.dimension_values(0), np.array([
             0, 1, np.nan, 0, 1]))
@@ -37,7 +37,7 @@ class PathTests:
             1, 2, np.nan, 3, 4]))
 
     def test_multi_path_unpack_single_paths(self):
-        path = Path([Path([(0, 1), (1, 2)]), Path([(2, 3), (3, 4)])])
+        path = hv.Path([hv.Path([(0, 1), (1, 2)]), hv.Path([(2, 3), (3, 4)])])
         assert path.interface.multi
         assert_data_equal(path.dimension_values(0), np.array([
             0, 1, np.nan, 2, 3]))
@@ -45,8 +45,8 @@ class PathTests:
             1, 2, np.nan, 3, 4]))
 
     def test_multi_path_unpack_multi_paths(self):
-        path = Path([Path([[(0, 1), (1, 2)]]),
-                     Path([[(2, 3), (3, 4)], [(4, 5), (5, 6)]])])
+        path = hv.Path([hv.Path([[(0, 1), (1, 2)]]),
+                     hv.Path([[(2, 3), (3, 4)], [(4, 5), (5, 6)]])])
         assert path.interface.multi
         assert_data_equal(path.dimension_values(0), np.array([
             0, 1, np.nan, 2, 3, np.nan, 4, 5]))
@@ -54,36 +54,36 @@ class PathTests:
             1, 2, np.nan, 3, 4, np.nan, 5, 6]))
 
     def test_single_path_list_constructor(self):
-        path = Path([(0, 1), (1, 2), (2, 3), (3, 4)])
+        path = hv.Path([(0, 1), (1, 2), (2, 3), (3, 4)])
         assert_data_equal(path.dimension_values(0), np.array([
             0, 1, 2, 3]))
         assert_data_equal(path.dimension_values(1), np.array([
             1, 2, 3, 4]))
 
     def test_single_path_tuple_constructor(self):
-        path = Path(([0, 1, 2, 3], [1, 2, 3, 4]))
+        path = hv.Path(([0, 1, 2, 3], [1, 2, 3, 4]))
         assert_data_equal(path.dimension_values(0), np.array([
             0, 1, 2, 3]))
         assert_data_equal(path.dimension_values(1), np.array([
             1, 2, 3, 4]))
 
     def test_multi_path_list_split(self):
-        path = Path([[(0, 1), (1, 2)], [(2, 3), (3, 4)]])
+        path = hv.Path([[(0, 1), (1, 2)], [(2, 3), (3, 4)]])
         subpaths = path.split()
         assert len(subpaths) == 2
-        assert_element_equal(subpaths[0], Path([(0, 1), (1, 2)]))
-        assert_element_equal(subpaths[1], Path([(2, 3), (3, 4)]))
+        assert_element_equal(subpaths[0], hv.Path([(0, 1), (1, 2)]))
+        assert_element_equal(subpaths[1], hv.Path([(2, 3), (3, 4)]))
 
     def test_single_path_split(self):
-        path = Path(([0, 1, 2, 3], [1, 2, 3, 4]))
+        path = hv.Path(([0, 1, 2, 3], [1, 2, 3, 4]))
         assert_element_equal(path, path.split()[0])
 
     def test_dataset_groupby_path(self):
-        ds = Dataset([(0, 0, 1), (0, 1, 2), (1, 2, 3), (1, 3, 4)], ['group', 'x', 'y'])
-        subpaths = ds.groupby('group', group_type=Path)
+        ds = hv.Dataset([(0, 0, 1), (0, 1, 2), (1, 2, 3), (1, 3, 4)], ['group', 'x', 'y'])
+        subpaths = ds.groupby('group', group_type=hv.Path)
         assert len(subpaths) == 2
-        assert_element_equal(subpaths[0], Path([(0, 1), (1, 2)]))
-        assert_element_equal(subpaths[1], Path([(2, 3), (3, 4)]))
+        assert_element_equal(subpaths[0], hv.Path([(0, 1), (1, 2)]))
+        assert_element_equal(subpaths[1], hv.Path([(2, 3), (3, 4)]))
 
 
 class PolygonsTests:
@@ -92,7 +92,7 @@ class PolygonsTests:
         xs = [1, 2, 3]
         ys = [2, 0, 7]
         holes = [[[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]]]
-        self.single_poly = Polygons([{'x': xs, 'y': ys, 'holes': holes}])
+        self.single_poly = hv.Polygons([{'x': xs, 'y': ys, 'holes': holes}])
 
         xs = [1, 2, 3, np.nan, 6, 7, 3]
         ys = [2, 0, 7, np.nan, 7, 5, 2]
@@ -100,10 +100,10 @@ class PolygonsTests:
             [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],
             []
         ]
-        self.multi_poly = Polygons([{'x': xs, 'y': ys, 'holes': holes}])
-        self.multi_poly_no_hole = Polygons([{'x': xs, 'y': ys}])
+        self.multi_poly = hv.Polygons([{'x': xs, 'y': ys, 'holes': holes}])
+        self.multi_poly_no_hole = hv.Polygons([{'x': xs, 'y': ys}])
 
-        self.distinct_polys = Polygons([
+        self.distinct_polys = hv.Polygons([
             {'x': xs, 'y': ys, 'holes': holes, 'value': 0},
             {'x': [4, 6, 6], 'y': [0, 2, 1], 'value': 1}], vdims='value')
 
@@ -127,7 +127,7 @@ class PolygonsTests:
         assert len(holes[0][1]) == 0
 
     def test_multi_poly_empty_holes(self):
-        poly = Polygons([])
+        poly = hv.Polygons([])
         assert not poly.interface.has_holes(poly)
         assert poly.interface.holes(poly) == []
 
@@ -157,13 +157,13 @@ class PolygonsTests:
         xs = [1, 2, 3]
         ys = [2, 0, 7]
         with pytest.raises(DataError):
-            Polygons([{'x': xs, 'y': ys, 'holes': [[], []]}])
+            hv.Polygons([{'x': xs, 'y': ys, 'holes': [[], []]}])
 
     def test_multi_poly_hole_validation(self):
         xs = [1, 2, 3, np.nan, 6, 7, 3]
         ys = [2, 0, 7, np.nan, 7, 5, 2]
         with pytest.raises(DataError):
-            Polygons([{'x': xs, 'y': ys, 'holes': [[]]}])
+            hv.Polygons([{'x': xs, 'y': ys, 'holes': [[]]}])
 
 
 class EllipseTests:
@@ -185,19 +185,19 @@ class EllipseTests:
 
 
     def test_ellipse_simple_constructor(self):
-        ellipse = Ellipse(0,0,1, samples=100)
+        ellipse = hv.Ellipse(0,0,1, samples=100)
         assert len(ellipse.data[0]) == 100
 
     def test_ellipse_simple_constructor_pentagon(self):
-        ellipse = Ellipse(0,0,1, samples=6)
+        ellipse = hv.Ellipse(0,0,1, samples=6)
         assert np.allclose(ellipse.data[0], self.pentagon)
 
     def test_ellipse_tuple_constructor_squashed(self):
-        ellipse = Ellipse(0,0,(1,2), samples=6)
+        ellipse = hv.Ellipse(0,0,(1,2), samples=6)
         assert np.allclose(ellipse.data[0], self.squashed)
 
     def test_ellipse_simple_constructor_squashed_aspect(self):
-        ellipse = Ellipse(0,0,2, aspect=0.5, samples=6)
+        ellipse = hv.Ellipse(0,0,2, aspect=0.5, samples=6)
         assert np.allclose(ellipse.data[0], self.squashed)
 
 
@@ -217,13 +217,13 @@ class BoxTests:
                                       [-0.73253782, -0.8446232 ]])
 
     def test_box_simple_constructor_rotated(self):
-        box = Box(0,0,1, orientation=np.pi/8)
+        box = hv.Box(0,0,1, orientation=np.pi/8)
         assert np.allclose(box.data[0], self.rotated_square)
 
     def test_box_tuple_constructor_rotated(self):
-        box = Box(0,0,(2,1), orientation=np.pi/8)
+        box = hv.Box(0,0,(2,1), orientation=np.pi/8)
         assert np.allclose(box.data[0], self.rotated_rect)
 
     def test_box_aspect_constructor_rotated(self):
-        box = Box(0,0,1, aspect=2, orientation=np.pi/8)
+        box = hv.Box(0,0,1, aspect=2, orientation=np.pi/8)
         assert np.allclose(box.data[0], self.rotated_rect)

@@ -1,7 +1,5 @@
 import param
 
-from holoviews.plotting.util import attach_streams
-
 from ...core import AdjointLayout, Empty, GridMatrix, GridSpace, HoloMap, NdLayout
 from ...core.options import Store
 from ...core.util import wrap_tuple
@@ -14,6 +12,7 @@ from ..plot import (
     GenericElementPlot,
     GenericLayoutPlot,
 )
+from ..util import attach_streams
 from .util import configure_matching_axes_from_dims, figure_grid
 
 

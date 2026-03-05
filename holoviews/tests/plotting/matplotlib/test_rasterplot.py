@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from matplotlib.colors import ListedColormap
 
-from holoviews.element import Image, ImageStack, Raster
+import holoviews as hv
 from holoviews.plotting.mpl.raster import RGBPlot
 
 from .test_plot import TestMPLPlot, mpl_renderer
@@ -12,7 +12,7 @@ class TestRasterPlot(TestMPLPlot):
 
     def test_raster_invert_axes(self):
         arr = np.array([[0, 1, 2], [3, 4, 5]])
-        raster = Raster(arr).opts(invert_axes=True)
+        raster = hv.Raster(arr).opts(invert_axes=True)
         plot = mpl_renderer.get_plot(raster)
         artist = plot.handles['artist']
         np.testing.assert_equal(artist.get_array().data, arr.T[::-1])
@@ -23,7 +23,7 @@ class TestRasterPlot(TestMPLPlot):
         expected = np.array([[3, 4, 5],
                              [np.nan, 1, 2]])
 
-        raster = Raster(arr).opts(nodata=0)
+        raster = hv.Raster(arr).opts(nodata=0)
         plot = mpl_renderer.get_plot(raster)
         artist = plot.handles['artist']
         np.testing.assert_equal(artist.get_array().data, expected)
@@ -33,7 +33,7 @@ class TestRasterPlot(TestMPLPlot):
         expected = np.array([[3, 4, 5],
                              [np.nan, 1, 2]])
 
-        raster = Raster(arr).opts(nodata=0)
+        raster = hv.Raster(arr).opts(nodata=0)
         plot = mpl_renderer.get_plot(raster)
         artist = plot.handles['artist']
         np.testing.assert_equal(artist.get_array().data, expected)
@@ -41,7 +41,7 @@ class TestRasterPlot(TestMPLPlot):
 
     def test_image_invert_axes(self):
         arr = np.array([[0, 1, 2], [3, 4, 5]])
-        raster = Image(arr).opts(invert_axes=True)
+        raster = hv.Image(arr).opts(invert_axes=True)
         plot = mpl_renderer.get_plot(raster)
         artist = plot.handles['artist']
         np.testing.assert_equal(artist.get_array().data, arr.T[::-1, ::-1])
@@ -49,7 +49,7 @@ class TestRasterPlot(TestMPLPlot):
 
     def test_image_listed_cmap(self):
         colors = ['#ffffff','#000000']
-        img = Image(np.array([[0, 1, 2], [3, 4, 5]])).opts(cmap=colors)
+        img = hv.Image(np.array([[0, 1, 2], [3, 4, 5]])).opts(cmap=colors)
         plot = mpl_renderer.get_plot(img)
         artist = plot.handles['artist']
         cmap = artist.get_cmap()
@@ -57,22 +57,22 @@ class TestRasterPlot(TestMPLPlot):
         assert cmap.colors == colors
 
     def test_image_cbar_extend_both(self):
-        img = Image(np.array([[0, 1], [2, 3]])).redim(z=dict(range=(1,2)))
+        img = hv.Image(np.array([[0, 1], [2, 3]])).redim(z=dict(range=(1,2)))
         plot = mpl_renderer.get_plot(img.opts(colorbar=True))
         assert plot.handles['cbar'].extend == 'both'
 
     def test_image_cbar_extend_min(self):
-        img = Image(np.array([[0, 1], [2, 3]])).redim(z=dict(range=(1, None)))
+        img = hv.Image(np.array([[0, 1], [2, 3]])).redim(z=dict(range=(1, None)))
         plot = mpl_renderer.get_plot(img.opts(colorbar=True))
         assert plot.handles['cbar'].extend == 'min'
 
     def test_image_cbar_extend_max(self):
-        img = Image(np.array([[0, 1], [2, 3]])).redim(z=dict(range=(None, 2)))
+        img = hv.Image(np.array([[0, 1], [2, 3]])).redim(z=dict(range=(None, 2)))
         plot = mpl_renderer.get_plot(img.opts(colorbar=True))
         assert plot.handles['cbar'].extend == 'max'
 
     def test_image_cbar_extend_clim(self):
-        img = Image(np.array([[0, 1], [2, 3]])).opts(
+        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(
             clim=(np.nan, np.nan), colorbar=True)
         plot = mpl_renderer.get_plot(img)
         assert plot.handles['cbar'].extend == 'neither'
@@ -86,7 +86,7 @@ class TestRasterPlot(TestMPLPlot):
         b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
         c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
 
-        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
+        img_stack = hv.ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = mpl_renderer.get_plot(img_stack)
         artist = plot.handles['artist']
         array = artist.get_array().data

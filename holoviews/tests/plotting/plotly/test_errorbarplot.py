@@ -1,6 +1,6 @@
 import numpy as np
 
-from holoviews.element import ErrorBars
+import holoviews as hv
 from holoviews.testing import assert_data_equal
 
 from .test_plot import TestPlotlyPlot
@@ -9,7 +9,7 @@ from .test_plot import TestPlotlyPlot
 class TestErrorBarsPlot(TestPlotlyPlot):
 
     def test_errorbars_plot(self):
-        errorbars = ErrorBars([(0, 1, 0.5), (1, 2, 1), (2, 3, 2.25)], vdims=['y', 'y2'])
+        errorbars = hv.ErrorBars([(0, 1, 0.5), (1, 2, 1), (2, 3, 2.25)], vdims=['y', 'y2'])
         state = self._get_plot_state(errorbars)
         assert_data_equal(state['data'][0]['x'], np.array([0, 1, 2]))
         assert_data_equal(state['data'][0]['y'], np.array([1, 2, 3]))
@@ -19,7 +19,7 @@ class TestErrorBarsPlot(TestPlotlyPlot):
         assert state['layout']['yaxis']['range'] == [0.5, 5.25]
 
     def test_errorbars_plot_inverted(self):
-        errorbars = ErrorBars([(0, 1, 0.5), (1, 2, 1), (2, 3, 2.25)], vdims=['y', 'y2']).opts(invert_axes=True)
+        errorbars = hv.ErrorBars([(0, 1, 0.5), (1, 2, 1), (2, 3, 2.25)], vdims=['y', 'y2']).opts(invert_axes=True)
         state = self._get_plot_state(errorbars)
         assert_data_equal(state['data'][0]['x'], np.array([1, 2, 3]))
         assert_data_equal(state['data'][0]['y'], np.array([0, 1, 2]))
@@ -29,7 +29,7 @@ class TestErrorBarsPlot(TestPlotlyPlot):
         assert state['layout']['xaxis']['range'] == [0.5, 5.25]
 
     def test_visible(self):
-        element = ErrorBars(
+        element = hv.ErrorBars(
             [(0, 1, 0.5), (1, 2, 1), (2, 3, 2.25)],
             vdims=['y', 'y2']
         ).opts(visible=False)

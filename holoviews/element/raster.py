@@ -13,8 +13,8 @@ from ..core.data.interface import DataError
 from ..core.dimension import dimension_name
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .chart import Curve
-from .geom import Selection2DExpr
 from .graphs import TriMesh
+from .selection import Selection2DExpr
 from .tabular import Table
 from .util import categorical_aggregate2d, compute_slice_bounds
 

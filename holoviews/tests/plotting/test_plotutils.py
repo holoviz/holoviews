@@ -1,19 +1,7 @@
 import numpy as np
 import pytest
 
-from holoviews import Dimension, NdOverlay, Overlay
-from holoviews.core.options import Cycle
-from holoviews.core.spaces import DynamicMap, HoloMap
-from holoviews.element import (
-    Area,
-    Curve,
-    HLine,
-    Image,
-    Path,
-    Points,
-    Scatter,
-    VectorField,
-)
+import holoviews as hv
 from holoviews.operation import operation
 from holoviews.plotting.util import (
     _get_min_distance_numpy,
@@ -34,21 +22,21 @@ from holoviews.streams import PointerX
 class TestOverlayableZorders:
 
     def test_compute_overlayable_zorders_holomap(self):
-        hmap = HoloMap({0: Points([])})
+        hmap = hv.HoloMap({0: hv.Points([])})
         sources = compute_overlayable_zorders(hmap)
         assert sources[0] == [hmap, hmap.last]
 
     def test_compute_overlayable_zorders_with_overlaid_holomap(self):
-        points = Points([])
-        hmap = HoloMap({0: points})
-        curve = Curve([])
+        points = hv.Points([])
+        hmap = hv.HoloMap({0: points})
+        curve = hv.Curve([])
         combined = hmap*curve
         sources = compute_overlayable_zorders(combined)
         assert sources[0] == [points, combined.last, combined]
 
     def test_dynamic_compute_overlayable_zorders_two_mixed_layers(self):
-        area = Area(range(10))
-        dmap = DynamicMap(lambda: Curve(range(10)), kdims=[])
+        area = hv.Area(range(10))
+        dmap = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
         combined = area*dmap
         combined[()]
         sources = compute_overlayable_zorders(combined)
@@ -56,8 +44,8 @@ class TestOverlayableZorders:
         assert sources[1] == [dmap]
 
     def test_dynamic_compute_overlayable_zorders_two_mixed_layers_reverse(self):
-        area = Area(range(10))
-        dmap = DynamicMap(lambda: Curve(range(10)), kdims=[])
+        area = hv.Area(range(10))
+        dmap = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
         combined = dmap*area
         combined[()]
         sources = compute_overlayable_zorders(combined)
@@ -65,8 +53,8 @@ class TestOverlayableZorders:
         assert sources[1] == [area]
 
     def test_dynamic_compute_overlayable_zorders_two_dynamic_layers(self):
-        area = DynamicMap(lambda: Area(range(10)), kdims=[])
-        dmap = DynamicMap(lambda: Curve(range(10)), kdims=[])
+        area = hv.DynamicMap(lambda: hv.Area(range(10)), kdims=[])
+        dmap = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
         combined = area*dmap
         combined[()]
         sources = compute_overlayable_zorders(combined)
@@ -74,8 +62,8 @@ class TestOverlayableZorders:
         assert sources[1] == [dmap]
 
     def test_dynamic_compute_overlayable_zorders_two_deep_dynamic_layers(self):
-        area = DynamicMap(lambda: Area(range(10)), kdims=[])
-        curve = DynamicMap(lambda: Curve(range(10)), kdims=[])
+        area = hv.DynamicMap(lambda: hv.Area(range(10)), kdims=[])
+        curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
         area_redim = area.redim(x='x2')
         curve_redim = curve.redim(x='x2')
         combined = area_redim*curve_redim
@@ -91,9 +79,9 @@ class TestOverlayableZorders:
         assert area not in sources[1]
 
     def test_dynamic_compute_overlayable_zorders_three_deep_dynamic_layers(self):
-        area = DynamicMap(lambda: Area(range(10)), kdims=[])
-        curve = DynamicMap(lambda: Curve(range(10)), kdims=[])
-        curve2 = DynamicMap(lambda: Curve(range(10)), kdims=[])
+        area = hv.DynamicMap(lambda: hv.Area(range(10)), kdims=[])
+        curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
+        curve2 = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
         area_redim = area.redim(x='x2')
         curve_redim = curve.redim(x='x2')
         curve2_redim = curve2.redim(x='x3')
@@ -123,9 +111,9 @@ class TestOverlayableZorders:
         assert curve not in sources[2]
 
     def test_dynamic_compute_overlayable_zorders_three_deep_dynamic_layers_cloned(self):
-        area = DynamicMap(lambda: Area(range(10)), kdims=[])
-        curve = DynamicMap(lambda: Curve(range(10)), kdims=[])
-        curve2 = DynamicMap(lambda: Curve(range(10)), kdims=[])
+        area = hv.DynamicMap(lambda: hv.Area(range(10)), kdims=[])
+        curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
+        curve2 = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
         area_redim = area.redim(x='x2')
         curve_redim = curve.redim(x='x2')
         curve2_redim = curve2.redim(x='x3')
@@ -156,10 +144,10 @@ class TestOverlayableZorders:
         assert curve not in sources[2]
 
     def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_non_dynamic_overlays_reverse(self):
-        area1 = Area(range(10))
-        area2 = Area(range(10))
+        area1 = hv.Area(range(10))
+        area2 = hv.Area(range(10))
         overlay = area1 * area2
-        curve = DynamicMap(lambda: Curve(range(10)), kdims=[])
+        curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
         curve_redim = curve.redim(x='x2')
         combined = curve_redim*overlay
         combined[()]
@@ -180,8 +168,8 @@ class TestOverlayableZorders:
         assert curve not in sources[2]
 
     def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_non_dynamic_ndoverlays(self):
-        ndoverlay = NdOverlay({i: Area(range(10+i)) for i in range(2)})
-        curve = DynamicMap(lambda: Curve(range(10)), kdims=[])
+        ndoverlay = hv.NdOverlay({i: hv.Area(range(10+i)) for i in range(2)})
+        curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
         curve_redim = curve.redim(x='x2')
         combined = ndoverlay*curve_redim
         combined[()]
@@ -202,17 +190,17 @@ class TestOverlayableZorders:
         assert ndoverlay not in sources[2]
 
     def test_dynamic_compute_overlayable_zorders_ndoverlays_as_input(self):
-        ndoverlay1 = NdOverlay({i: Area(range(10+i)) for i in range(2)}).apply(lambda el: el.get(0), dynamic=True)
-        ndoverlay2 = NdOverlay({i: Area((range(15, 25+i), range(10+i))) for i in range(2)}).apply(lambda el: el.get(0), dynamic=True)
+        ndoverlay1 = hv.NdOverlay({i: hv.Area(range(10+i)) for i in range(2)}).apply(lambda el: el.get(0), dynamic=True)
+        ndoverlay2 = hv.NdOverlay({i: hv.Area((range(15, 25+i), range(10+i))) for i in range(2)}).apply(lambda el: el.get(0), dynamic=True)
         combined = ndoverlay1*ndoverlay2
         combined[()]
         sources = compute_overlayable_zorders(combined)
         assert len(sources) == 2
 
     def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_dynamic_ndoverlay_with_streams(self):
-        ndoverlay = DynamicMap(lambda x: NdOverlay({i: Area(range(10+i)) for i in range(2)}),
+        ndoverlay = hv.DynamicMap(lambda x: hv.NdOverlay({i: hv.Area(range(10+i)) for i in range(2)}),
                                kdims=[], streams=[PointerX()])
-        curve = DynamicMap(lambda: Curve(range(10)), kdims=[])
+        curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
         curve_redim = curve.redim(x='x2')
         combined = ndoverlay*curve_redim
         combined[()]
@@ -231,9 +219,9 @@ class TestOverlayableZorders:
         assert ndoverlay not in sources[2]
 
     def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_dynamic_ndoverlay_with_streams_cloned(self):
-        ndoverlay = DynamicMap(lambda x: NdOverlay({i: Area(range(10+i)) for i in range(2)}),
+        ndoverlay = hv.DynamicMap(lambda x: hv.NdOverlay({i: hv.Area(range(10+i)) for i in range(2)}),
                                kdims=[], streams=[PointerX()])
-        curve = DynamicMap(lambda: Curve(range(10)), kdims=[])
+        curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
         curve_redim = curve.redim(x='x2')
         combined = ndoverlay*curve_redim
         combined[()]
@@ -252,8 +240,8 @@ class TestOverlayableZorders:
         assert ndoverlay not in sources[2]
 
     def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_non_dynamic_ndoverlays_reverse(self):
-        ndoverlay = NdOverlay({i: Area(range(10+i)) for i in range(2)})
-        curve = DynamicMap(lambda: Curve(range(10)), kdims=[])
+        ndoverlay = hv.NdOverlay({i: hv.Area(range(10+i)) for i in range(2)})
+        curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
         curve_redim = curve.redim(x='x2')
         combined = curve_redim*ndoverlay
         combined[()]
@@ -274,13 +262,13 @@ class TestOverlayableZorders:
         assert curve not in sources[2]
 
     def test_dynamic_compute_overlayable_zorders_three_deep_dynamic_layers_reduced(self):
-        area = DynamicMap(lambda: Area(range(10)), kdims=[])
-        curve = DynamicMap(lambda: Curve(range(10)), kdims=[])
-        curve2 = DynamicMap(lambda: Curve(range(10)), kdims=[])
+        area = hv.DynamicMap(lambda: hv.Area(range(10)), kdims=[])
+        curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
+        curve2 = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
         area_redim = area.redim(x='x2')
         curve_redim = curve.redim(x='x2')
         curve2_redim = curve2.redim(x='x3')
-        combined = (area_redim*curve_redim).map(lambda x: x.get(0), Overlay)
+        combined = (area_redim*curve_redim).map(lambda x: x.get(0), hv.Overlay)
         combined1 = combined*curve2_redim
         combined1[()]
         sources = compute_overlayable_zorders(combined1)
@@ -301,14 +289,14 @@ class TestOverlayableZorders:
 
 
     def test_dynamic_compute_overlayable_zorders_three_deep_dynamic_layers_reduced_layers_by_one(self):
-        area = DynamicMap(lambda: Area(range(10)), kdims=[])
-        area2 = DynamicMap(lambda: Area(range(10)), kdims=[])
-        curve = DynamicMap(lambda: Curve(range(10)), kdims=[])
-        curve2 = DynamicMap(lambda: Curve(range(10)), kdims=[])
+        area = hv.DynamicMap(lambda: hv.Area(range(10)), kdims=[])
+        area2 = hv.DynamicMap(lambda: hv.Area(range(10)), kdims=[])
+        curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
+        curve2 = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
         area_redim = area.redim(x='x2')
         curve_redim = curve.redim(x='x2')
         curve2_redim = curve2.redim(x='x3')
-        combined = (area_redim*curve_redim*area2).map(lambda x: x.clone(x.items()[:2]), Overlay)
+        combined = (area_redim*curve_redim*area2).map(lambda x: x.clone(x.items()[:2]), hv.Overlay)
         combined1 = combined*curve2_redim
         combined1[()]
         sources = compute_overlayable_zorders(combined1)
@@ -339,14 +327,14 @@ class TestOverlayableZorders:
 class TestInitializeDynamic:
 
     def test_dynamicmap_default_initializes(self):
-        dims = [Dimension('N', default=5, range=(0, 10))]
-        dmap = DynamicMap(lambda N: Curve([1, N, 5]), kdims=dims)
+        dims = [hv.Dimension('N', default=5, range=(0, 10))]
+        dmap = hv.DynamicMap(lambda N: hv.Curve([1, N, 5]), kdims=dims)
         initialize_dynamic(dmap)
         assert dmap.keys() == [5]
 
     def test_dynamicmap_numeric_values_initializes(self):
-        dims = [Dimension('N', values=[10, 5, 0])]
-        dmap = DynamicMap(lambda N: Curve([1, N, 5]), kdims=dims)
+        dims = [hv.Dimension('N', values=[10, 5, 0])]
+        dmap = hv.DynamicMap(lambda N: hv.Curve([1, N, 5]), kdims=dims)
         initialize_dynamic(dmap)
         assert dmap.keys() == [0]
 
@@ -358,13 +346,13 @@ class TestSplitDynamicMapOverlay:
     """
 
     def setup_method(self):
-        self.dmap_element = DynamicMap(lambda: Image([]))
-        self.dmap_overlay = DynamicMap(lambda: Overlay([Curve([]), Points([])]))
-        self.dmap_ndoverlay = DynamicMap(lambda: NdOverlay({0: Curve([]), 1: Curve([])}))
-        self.element = Scatter([])
-        self.el1, self.el2 = Path([]), HLine(0)
-        self.overlay = Overlay([self.el1, self.el2])
-        self.ndoverlay = NdOverlay({0: VectorField([]), 1: VectorField([])})
+        self.dmap_element = hv.DynamicMap(lambda: hv.Image([]))
+        self.dmap_overlay = hv.DynamicMap(lambda: hv.Overlay([hv.Curve([]), hv.Points([])]))
+        self.dmap_ndoverlay = hv.DynamicMap(lambda: hv.NdOverlay({0: hv.Curve([]), 1: hv.Curve([])}))
+        self.element = hv.Scatter([])
+        self.el1, self.el2 = hv.Path([]), hv.HLine(0)
+        self.overlay = hv.Overlay([self.el1, self.el2])
+        self.ndoverlay = hv.NdOverlay({0: hv.VectorField([]), 1: hv.VectorField([])})
 
     def test_dmap_ndoverlay(self):
         test = self.dmap_ndoverlay
@@ -450,7 +438,7 @@ class TestSplitDynamicMapOverlay:
         assert split_dmap_overlay(test)[0] == layers
 
     def test_dmap_overlay_linked_operation_mul_dmap_element_ndoverlay(self):
-        mapped = self.dmap_overlay.map(lambda x: x.get(0), Overlay)
+        mapped = self.dmap_overlay.map(lambda x: x.get(0), hv.Overlay)
         test = mapped * self.element * self.dmap_ndoverlay
         initialize_dynamic(test)
         layers = [mapped, self.element, self.dmap_ndoverlay]
@@ -464,7 +452,7 @@ class TestPlotColorUtils:
         assert colors == ['#ffffff', '#959595', '#000000', '#ffffff']
 
     def test_process_cmap_cycle(self):
-        colors = process_cmap(Cycle(values=['#ffffff', '#959595', '#000000']), 4)
+        colors = process_cmap(hv.Cycle(values=['#ffffff', '#959595', '#000000']), 4)
         assert colors == ['#ffffff', '#959595', '#000000', '#ffffff']
 
     def test_process_cmap_invalid_str(self):
@@ -614,28 +602,28 @@ class TestPlotUtils:
         xs, ys = (np.arange(0, 2., .2, dtype='float32'),
                   np.arange(0, 2., .2, dtype='float32'))
         X, Y = np.meshgrid(xs, ys)
-        dist = get_min_distance(Points((X.flatten(), Y.flatten())))
+        dist = get_min_distance(hv.Points((X.flatten(), Y.flatten())))
         assert np.isclose(dist, 0.2)
 
     def test_get_min_distance_int32_type(self):
         xs, ys = (np.arange(0, 10, dtype='int32'),
                   np.arange(0, 10, dtype='int32'))
         X, Y = np.meshgrid(xs, ys)
-        dist = get_min_distance(Points((X.flatten(), Y.flatten())))
+        dist = get_min_distance(hv.Points((X.flatten(), Y.flatten())))
         assert dist == 1.0
 
     def test_get_min_distance_float32_type_no_scipy(self):
         xs, ys = (np.arange(0, 2., .2, dtype='float32'),
                   np.arange(0, 2., .2, dtype='float32'))
         X, Y = np.meshgrid(xs, ys)
-        dist = _get_min_distance_numpy(Points((X.flatten(), Y.flatten())))
+        dist = _get_min_distance_numpy(hv.Points((X.flatten(), Y.flatten())))
         assert np.isclose(dist,np.float32(0.2))
 
     def test_get_min_distance_int32_type_no_scipy(self):
         xs, ys = (np.arange(0, 10, dtype='int32'),
                   np.arange(0, 10, dtype='int32'))
         X, Y = np.meshgrid(xs, ys)
-        dist = _get_min_distance_numpy(Points((X.flatten(), Y.flatten())))
+        dist = _get_min_distance_numpy(hv.Points((X.flatten(), Y.flatten())))
         assert dist == 1.0
 
 
@@ -654,16 +642,16 @@ class TestRangeUtilities:
         assert padding == (0.1, 0.2, 0.3)
 
     def test_get_range_from_element(self):
-        dim = Dimension('y', soft_range=(0, 3), range=(0, 2))
-        element = Scatter([1, 2, 3], vdims=dim)
+        dim = hv.Dimension('y', soft_range=(0, 3), range=(0, 2))
+        element = hv.Scatter([1, 2, 3], vdims=dim)
         drange, srange, hrange = get_range(element, {}, dim)
         assert drange == (1, 3)
         assert srange == (0, 3)
         assert hrange == (0, 2)
 
     def test_get_range_from_ranges(self):
-        dim = Dimension('y', soft_range=(0, 3), range=(0, 2))
-        element = Scatter([1, 2, 3], vdims=dim)
+        dim = hv.Dimension('y', soft_range=(0, 3), range=(0, 2))
+        element = hv.Scatter([1, 2, 3], vdims=dim)
         ranges = {'y': {'soft': (-1, 4), 'hard': (-1, 3), 'data': (-0.5, 2.5)}}
         drange, srange, hrange = get_range(element, ranges, dim)
         assert drange == (-0.5, 2.5)

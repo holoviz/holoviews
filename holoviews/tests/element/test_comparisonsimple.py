@@ -6,7 +6,7 @@ Int, float, numpy array and BoundingBox comparisons are tested.
 
 import numpy as np
 
-from holoviews.core import BoundingBox
+import holoviews as hv
 from holoviews.element.comparison import ComparisonTestCase
 
 
@@ -87,25 +87,25 @@ class SimpleComparisonTest(ComparisonTestCase):
                             raise self.failureException("Float array mismatch error not raised.")
 
     def test_bounds_equal(self):
-        self.assertEqual(BoundingBox(radius=0.5),
-                         BoundingBox(radius=0.5))
+        self.assertEqual(hv.BoundingBox(radius=0.5),
+                         hv.BoundingBox(radius=0.5))
 
     def test_bounds_unequal(self):
         try:
-            self.assertEqual(BoundingBox(radius=0.5),
-                             BoundingBox(radius=0.7))
+            self.assertEqual(hv.BoundingBox(radius=0.5),
+                             hv.BoundingBox(radius=0.7))
         except AssertionError as e:
             self.assertEqual(str(e), "BoundingBox(radius=0.5) != BoundingBox(radius=0.7)")
 
 
     def test_bounds_equal_lbrt(self):
-        self.assertEqual(BoundingBox(points=((-1,-1),(3,4.5))),
-                         BoundingBox(points=((-1,-1),(3,4.5))))
+        self.assertEqual(hv.BoundingBox(points=((-1,-1),(3,4.5))),
+                         hv.BoundingBox(points=((-1,-1),(3,4.5))))
 
     def test_bounds_unequal_lbrt(self):
         try:
-            self.assertEqual(BoundingBox(points=((-1,-1),(3,4.5))),
-                             BoundingBox(points=((-1,-1),(3,5.0))))
+            self.assertEqual(hv.BoundingBox(points=((-1,-1),(3,4.5))),
+                             hv.BoundingBox(points=((-1,-1),(3,5.0))))
         except AssertionError as e:
             msg = 'BoundingBox(points=((-1,-1),(3,4.5))) != BoundingBox(points=((-1,-1),(3,5.0)))'
             self.assertEqual(str(e), msg)

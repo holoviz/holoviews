@@ -2,14 +2,13 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from holoviews.core.data import Dataset
+import holoviews as hv
 from holoviews.core.util.dependencies import (
     PANDAS_GE_3_0_0,
     PANDAS_VERSION,
     _no_import_version,
 )
 from holoviews.testing import assert_data_equal, assert_element_equal
-from holoviews.util.transform import dim
 
 from ...utils import optional_dependencies
 from .test_pandasinterface import BasePandasInterfaceTests
@@ -110,24 +109,24 @@ class DaskDatasetTest(BasePandasInterfaceTests):
         pytest.skip("Temporarily skipped")
         df = pd.DataFrame({'x': np.arange(10), 'y': np.arange(10), 'z': np.random.rand(10)})
         ddf = dd.from_pandas(df, 1)
-        ds = Dataset(ddf.groupby(['x', 'y']).mean(), ['x', 'y'])
-        assert_element_equal(ds, Dataset(df, ['x', 'y']))
+        ds = hv.Dataset(ddf.groupby(['x', 'y']).mean(), ['x', 'y'])
+        assert_element_equal(ds, hv.Dataset(df, ['x', 'y']))
 
     def test_dataset_from_multi_index_tuple_dims(self):
         pytest.skip("Temporarily skipped")
         df = pd.DataFrame({'x': np.arange(10), 'y': np.arange(10), 'z': np.random.rand(10)})
         ddf = dd.from_pandas(df, 1)
-        ds = Dataset(ddf.groupby(['x', 'y']).mean(), [('x', 'X'), ('y', 'Y')])
-        assert_element_equal(ds, Dataset(df, [('x', 'X'), ('y', 'Y')]))
+        ds = hv.Dataset(ddf.groupby(['x', 'y']).mean(), [('x', 'X'), ('y', 'Y')])
+        assert_element_equal(ds, hv.Dataset(df, [('x', 'X'), ('y', 'Y')]))
 
     def test_dataset_range_categorical_dimension(self):
         ddf = self.frame({'a': ['1', '2', '3']})
-        ds = Dataset(ddf)
+        ds = hv.Dataset(ddf)
         assert ds.range(0) == ('1', '3')
 
     def test_dataset_range_categorical_dimension_empty(self):
         ddf = self.frame({'a': ['1', '2', '3']})
-        ds = Dataset(ddf).iloc[:0]
+        ds = hv.Dataset(ddf).iloc[:0]
         ds_range = ds.range(0)
         assert np.isnan(ds_range[0])
         assert np.isnan(ds_range[1])
@@ -138,8 +137,8 @@ class DaskDatasetTest(BasePandasInterfaceTests):
             'b': [10, 10, 11, 11, 10],
         })
         ddf = self.frame(df)
-        ds = Dataset(ddf)
-        new_ds = ds.select(selection_expr=dim('b') == 10)
+        ds = hv.Dataset(ddf)
+        new_ds = ds.select(selection_expr=hv.dim('b') == 10)
 
         # Make sure that selecting by expression didn't cause evaluation
         assert isinstance(new_ds.data, dd.DataFrame)

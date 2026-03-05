@@ -2,20 +2,6 @@ import numpy as np
 import pytest
 
 import holoviews as hv
-from holoviews.element import (
-    Arrow,
-    HLine,
-    HLines,
-    HSpan,
-    HSpans,
-    Labels,
-    Slope,
-    Text,
-    VLine,
-    VLines,
-    VSpan,
-    VSpans,
-)
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_2_0, BOKEH_GE_3_3_0, BOKEH_GE_3_4_0
 
 from .test_plot import TestBokehPlot, bokeh_renderer
@@ -37,28 +23,28 @@ elif BOKEH_GE_3_3_0:
 class TestHVLinePlot(TestBokehPlot):
 
     def test_hline_invert_axes(self):
-        hline = HLine(1.1).opts(invert_axes=True)
+        hline = hv.HLine(1.1).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(hline)
         span = plot.handles['glyph']
         assert span.dimension == 'height'
         assert span.location == 1.1
 
     def test_hline_plot(self):
-        hline = HLine(1.1)
+        hline = hv.HLine(1.1)
         plot = bokeh_renderer.get_plot(hline)
         span = plot.handles['glyph']
         assert span.dimension == 'width'
         assert span.location == 1.1
 
     def test_vline_invert_axes(self):
-        vline = VLine(1.1).opts(invert_axes=True)
+        vline = hv.VLine(1.1).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(vline)
         span = plot.handles['glyph']
         assert span.dimension == 'width'
         assert span.location == 1.1
 
     def test_vline_plot(self):
-        vline = VLine(1.1)
+        vline = hv.VLine(1.1)
         plot = bokeh_renderer.get_plot(vline)
         span = plot.handles['glyph']
         assert span.dimension == 'height'
@@ -68,7 +54,7 @@ class TestHVLinePlot(TestBokehPlot):
 class TestHVSpanPlot(TestBokehPlot):
 
     def test_hspan_invert_axes(self):
-        hspan = HSpan(1.1, 1.5).opts(invert_axes=True)
+        hspan = hv.HSpan(1.1, 1.5).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(hspan)
         span = plot.handles['glyph']
 
@@ -83,7 +69,7 @@ class TestHVSpanPlot(TestBokehPlot):
         assert span.visible
 
     def test_hspan_plot(self):
-        hspan = HSpan(1.1, 1.5)
+        hspan = hv.HSpan(1.1, 1.5)
         plot = bokeh_renderer.get_plot(hspan)
         span = plot.handles['glyph']
         if BOKEH_GE_3_3_0:
@@ -97,13 +83,13 @@ class TestHVSpanPlot(TestBokehPlot):
         assert span.visible
 
     def test_hspan_empty(self):
-        vline = HSpan(None)
+        vline = hv.HSpan(None)
         plot = bokeh_renderer.get_plot(vline)
         span = plot.handles['glyph']
         assert span.visible is False
 
     def test_vspan_invert_axes(self):
-        vspan = VSpan(1.1, 1.5).opts(invert_axes=True)
+        vspan = hv.VSpan(1.1, 1.5).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(vspan)
         span = plot.handles['glyph']
         if BOKEH_GE_3_3_0:
@@ -117,7 +103,7 @@ class TestHVSpanPlot(TestBokehPlot):
         assert span.visible
 
     def test_vspan_plot(self):
-        vspan = VSpan(1.1, 1.5)
+        vspan = hv.VSpan(1.1, 1.5)
         plot = bokeh_renderer.get_plot(vspan)
         span = plot.handles['glyph']
         assert span.left == 1.1
@@ -131,7 +117,7 @@ class TestHVSpanPlot(TestBokehPlot):
         assert span.visible
 
     def test_vspan_empty(self):
-        vline = VSpan(None)
+        vline = hv.VSpan(None)
         plot = bokeh_renderer.get_plot(vline)
         span = plot.handles['glyph']
         assert span.visible is False
@@ -140,14 +126,14 @@ class TestHVSpanPlot(TestBokehPlot):
 class TestSlopePlot(TestBokehPlot):
 
     def test_slope(self):
-        hspan = Slope(2, 10)
+        hspan = hv.Slope(2, 10)
         plot = bokeh_renderer.get_plot(hspan)
         slope = plot.handles['glyph']
         assert slope.gradient == 2
         assert slope.y_intercept == 10
 
     def test_slope_invert_axes(self):
-        hspan = Slope(2, 10).opts(invert_axes=True)
+        hspan = hv.Slope(2, 10).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(hspan)
         slope = plot.handles['glyph']
         assert slope.gradient == 0.5
@@ -158,25 +144,25 @@ class TestSlopePlot(TestBokehPlot):
 class TestTextPlot(TestBokehPlot):
 
     def test_text_plot(self):
-        text = Text(0, 0, 'Test')
+        text = hv.Text(0, 0, 'Test')
         plot = bokeh_renderer.get_plot(text)
         source = plot.handles['source']
         assert source.data == {'x': [0], 'y': [0], 'text': ['Test']}
 
     def test_text_plot_fontsize(self):
-        text = Text(0, 0, 'Test', fontsize=18)
+        text = hv.Text(0, 0, 'Test', fontsize=18)
         plot = bokeh_renderer.get_plot(text)
         glyph = plot.handles['glyph']
         assert glyph.text_font_size == '18Pt'
 
     def test_text_plot_rotation(self):
-        text = Text(0, 0, 'Test', rotation=90)
+        text = hv.Text(0, 0, 'Test', rotation=90)
         plot = bokeh_renderer.get_plot(text)
         glyph = plot.handles['glyph']
         assert glyph.angle == np.pi/2.
 
     def test_text_plot_rotation_style(self):
-        text = Text(0, 0, 'Test').opts(angle=90)
+        text = hv.Text(0, 0, 'Test').opts(angle=90)
         plot = bokeh_renderer.get_plot(text)
         glyph = plot.handles['glyph']
         assert glyph.angle == np.pi/2.
@@ -204,22 +190,22 @@ class TestArrowPlot(TestBokehPlot):
                                           'y_start': [y0], 'y_end': [y1]}
 
     def test_arrow_plot_left(self):
-        arrow = Arrow(0, 0, 'Test')
+        arrow = hv.Arrow(0, 0, 'Test')
         plot = bokeh_renderer.get_plot(arrow)
         self._compare_arrow_plot(plot, (1/6., 0), (0, 0))
 
     def test_arrow_plot_up(self):
-        arrow = Arrow(0, 0, 'Test', '^')
+        arrow = hv.Arrow(0, 0, 'Test', '^')
         plot = bokeh_renderer.get_plot(arrow)
         self._compare_arrow_plot(plot, (0, -1/6.), (0, 0))
 
     def test_arrow_plot_right(self):
-        arrow = Arrow(0, 0, 'Test', '>')
+        arrow = hv.Arrow(0, 0, 'Test', '>')
         plot = bokeh_renderer.get_plot(arrow)
         self._compare_arrow_plot(plot, (-1/6., 0), (0, 0))
 
     def test_arrow_plot_down(self):
-        arrow = Arrow(0, 0, 'Test', 'v')
+        arrow = hv.Arrow(0, 0, 'Test', 'v')
         plot = bokeh_renderer.get_plot(arrow)
         self._compare_arrow_plot(plot, (0, 1/6.), (0, 0))
 
@@ -227,7 +213,7 @@ class TestArrowPlot(TestBokehPlot):
 class TestLabelsPlot(TestBokehPlot):
 
     def test_labels_plot(self):
-        text = Labels([(0, 0, 'Test')])
+        text = hv.Labels([(0, 0, 'Test')])
         plot = bokeh_renderer.get_plot(text)
         source = plot.handles['source']
         data = {'x': np.array([0]), 'y': np.array([0]), 'Label': ['Test']}
@@ -235,7 +221,7 @@ class TestLabelsPlot(TestBokehPlot):
             assert col == data[c]
 
     def test_labels_plot_rotation_style(self):
-        text = Labels([(0, 0, 'Test')]).opts(angle=90)
+        text = hv.Labels([(0, 0, 'Test')]).opts(angle=90)
         plot = bokeh_renderer.get_plot(text)
         glyph = plot.handles['glyph']
         assert glyph.angle == np.pi/2.
@@ -248,7 +234,7 @@ class TestHVLinesPlot(TestBokehPlot):
             pytest.skip("Bokeh 3.2 added H/VLines")
 
     def test_hlines_plot(self):
-        hlines = HLines(
+        hlines = hv.HLines(
             {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
         )
         plot = bokeh_renderer.get_plot(hlines)
@@ -267,7 +253,7 @@ class TestHVLinesPlot(TestBokehPlot):
 
     def test_hlines_plot_multi_y(self):
         hlines = (
-            HLines({"y1": [1, 2, 3]}, 'y1') * HLines({'y2': [3, 4, 5]}, 'y2')
+            hv.HLines({"y1": [1, 2, 3]}, 'y1') * hv.HLines({'y2': [3, 4, 5]}, 'y2')
         ).opts(multi_y=True)
         plot = bokeh_renderer.get_plot(hlines)
         sp1, sp2 = plot.subplots.values()
@@ -281,7 +267,7 @@ class TestHVLinesPlot(TestBokehPlot):
         assert y2_range.end == 5
 
     def test_hlines_xlabel_ylabel(self):
-        hlines = HLines(
+        hlines = hv.HLines(
             {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
         ).opts(xlabel="xlabel", ylabel="xlabel")
         plot = bokeh_renderer.get_plot(hlines)
@@ -290,7 +276,7 @@ class TestHVLinesPlot(TestBokehPlot):
         assert plot.handles["yaxis"].axis_label == "xlabel"
 
     def test_hlines_array(self):
-        hlines = HLines(np.array([0, 1, 2, 5.5]))
+        hlines = hv.HLines(np.array([0, 1, 2, 5.5]))
         plot = bokeh_renderer.get_plot(hlines)
         assert isinstance(plot.handles["glyph"], BkHSpan)
         assert plot.handles["xaxis"].axis_label == "x"
@@ -306,7 +292,7 @@ class TestHVLinesPlot(TestBokehPlot):
         assert (source.data["y"] == [0, 1, 2, 5.5]).all()
 
     def test_hlines_plot_invert_axes(self):
-        hlines = HLines(
+        hlines = hv.HLines(
             {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
         ).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(hlines)
@@ -324,7 +310,7 @@ class TestHVLinesPlot(TestBokehPlot):
         assert (source.data["y"] == [0, 1, 2, 5.5]).all()
 
     def test_hlines_nondefault_kdim(self):
-        hlines = HLines(
+        hlines = hv.HLines(
             {"extra": [0, 1, 2, 5.5]}, kdims=["extra"]
         )
         plot = bokeh_renderer.get_plot(hlines)
@@ -342,7 +328,7 @@ class TestHVLinesPlot(TestBokehPlot):
         assert (source.data["extra"] == [0, 1, 2, 5.5]).all()
 
     def test_vlines_plot(self):
-        vlines = VLines(
+        vlines = hv.VLines(
             {"x": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
         )
         plot = bokeh_renderer.get_plot(vlines)
@@ -360,7 +346,7 @@ class TestHVLinesPlot(TestBokehPlot):
         assert (source.data["x"] == [0, 1, 2, 5.5]).all()
 
     def test_vlines_plot_invert_axes(self):
-        vlines = VLines(
+        vlines = hv.VLines(
             {"x": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
         ).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(vlines)
@@ -378,7 +364,7 @@ class TestHVLinesPlot(TestBokehPlot):
         assert (source.data["x"] == [0, 1, 2, 5.5]).all()
 
     def test_vlines_nondefault_kdim(self):
-        vlines = VLines(
+        vlines = hv.VLines(
             {"extra": [0, 1, 2, 5.5]}, kdims=["extra"]
         )
         plot = bokeh_renderer.get_plot(vlines)
@@ -396,10 +382,10 @@ class TestHVLinesPlot(TestBokehPlot):
         assert (source.data["extra"] == [0, 1, 2, 5.5]).all()
 
     def test_vlines_hlines_overlay(self):
-        hlines = HLines(
+        hlines = hv.HLines(
             {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
         )
-        vlines = VLines(
+        vlines = hv.VLines(
             {"x": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
         )
         plot = bokeh_renderer.get_plot(hlines * vlines)
@@ -413,10 +399,10 @@ class TestHVLinesPlot(TestBokehPlot):
 
     def test_vlines_hlines_overlay_non_annotation(self):
         non_annotation = hv.Curve([], kdims=["time"])
-        hlines = HLines(
+        hlines = hv.HLines(
             {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
         )
-        vlines = VLines(
+        vlines = hv.VLines(
             {"x": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
         )
         plot = bokeh_renderer.get_plot(non_annotation * hlines * vlines)
@@ -424,7 +410,7 @@ class TestHVLinesPlot(TestBokehPlot):
         assert plot.handles["yaxis"].axis_label == "y"
 
     def test_coloring_hline(self):
-        hlines = HLines({"y": [1, 2, 3]})
+        hlines = hv.HLines({"y": [1, 2, 3]})
         hlines = hlines.opts(
             alpha=hv.dim("y").norm(),
             line_color="red",
@@ -446,7 +432,7 @@ class TestHVSpansPlot(TestBokehPlot):
             pytest.skip("Bokeh 3.2 added H/VSpans")
 
     def test_hspans_plot(self):
-        hspans = HSpans(
+        hspans = hv.HSpans(
             {"y0": [0, 3, 5.5], "y1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
         )
         plot = bokeh_renderer.get_plot(hspans)
@@ -465,7 +451,7 @@ class TestHVSpansPlot(TestBokehPlot):
         assert (source.data["y1"] == [1, 4, 6.5]).all()
 
     def test_hspans_plot_xlabel_ylabel(self):
-        hspans = HSpans(
+        hspans = hv.HSpans(
             {"y0": [0, 3, 5.5], "y1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
         ).opts(xlabel="xlabel", ylabel="xlabel")
         plot = bokeh_renderer.get_plot(hspans)
@@ -474,7 +460,7 @@ class TestHVSpansPlot(TestBokehPlot):
         assert plot.handles["yaxis"].axis_label == "xlabel"
 
     def test_hspans_plot_invert_axes(self):
-        hspans = HSpans(
+        hspans = hv.HSpans(
             {"y0": [0, 3, 5.5], "y1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
         ).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(hspans)
@@ -493,7 +479,7 @@ class TestHVSpansPlot(TestBokehPlot):
         assert (source.data["y1"] == [1, 4, 6.5]).all()
 
     def test_hspans_nondefault_kdims(self):
-        hspans = HSpans(
+        hspans = hv.HSpans(
             {"other0": [0, 3, 5.5], "other1": [1, 4, 6.5]}, kdims=["other0", "other1"]
         )
         plot = bokeh_renderer.get_plot(hspans)
@@ -512,7 +498,7 @@ class TestHVSpansPlot(TestBokehPlot):
         assert (source.data["other1"] == [1, 4, 6.5]).all()
 
     def test_vspans_plot(self):
-        vspans = VSpans(
+        vspans = hv.VSpans(
             {"x0": [0, 3, 5.5], "x1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
         )
         plot = bokeh_renderer.get_plot(vspans)
@@ -531,7 +517,7 @@ class TestHVSpansPlot(TestBokehPlot):
         assert (source.data["x1"] == [1, 4, 6.5]).all()
 
     def test_vspans_plot_invert_axes(self):
-        vspans = VSpans(
+        vspans = hv.VSpans(
             {"x0": [0, 3, 5.5], "x1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
         ).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(vspans)
@@ -550,7 +536,7 @@ class TestHVSpansPlot(TestBokehPlot):
         assert (source.data["x1"] == [1, 4, 6.5]).all()
 
     def test_vspans_nondefault_kdims(self):
-        vspans = VSpans(
+        vspans = hv.VSpans(
             {"other0": [0, 3, 5.5], "other1": [1, 4, 6.5]}, kdims=["other0", "other1"]
         )
         plot = bokeh_renderer.get_plot(vspans)
@@ -581,10 +567,10 @@ class TestHVSpansPlot(TestBokehPlot):
         assert plot_el.handles["y_range"].end == plot_dmap.handles["y_range"].end
 
     def test_vspans_hspans_overlay(self):
-        hspans = HSpans(
+        hspans = hv.HSpans(
             {"y0": [0, 3, 5.5], "y1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
         )
-        vspans = VSpans(
+        vspans = hv.VSpans(
             {"x0": [0, 3, 5.5], "x1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
         )
         plot = bokeh_renderer.get_plot(hspans * vspans)
@@ -598,10 +584,10 @@ class TestHVSpansPlot(TestBokehPlot):
 
     def test_vlines_hlines_overlay_non_annotation(self):
         non_annotation = hv.Curve([], kdims=["time"])
-        hspans = HSpans(
+        hspans = hv.HSpans(
             {"y0": [0, 3, 5.5], "y1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
         )
-        vspans = VSpans(
+        vspans = hv.VSpans(
             {"x0": [0, 3, 5.5], "x1": [1, 4, 6.5], "extra": [-1, -2, -3]}, vdims=["extra"]
         )
         plot = bokeh_renderer.get_plot(non_annotation * hspans * vspans)
@@ -609,7 +595,7 @@ class TestHVSpansPlot(TestBokehPlot):
         assert plot.handles["yaxis"].axis_label == "y"
 
     def test_coloring_hline(self):
-        hspans = HSpans({"y0": [1, 3, 5], "y1": [2, 4, 6]}).opts(
+        hspans = hv.HSpans({"y0": [1, 3, 5], "y1": [2, 4, 6]}).opts(
             alpha=hv.dim("y0").norm(),
             line_color="red",
             line_dash=hv.dim("y1").bin([0, 3, 6], ["dashed", "solid"]),
