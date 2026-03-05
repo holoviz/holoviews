@@ -21,10 +21,13 @@ from .streams import BoxEdit, CurveEdit, PointDraw, PolyDraw, PolyEdit, Selectio
 def preprocess(function, current=None):
     """Turns a param.depends watch call into a preprocessor method, i.e.
     skips all downstream events triggered by it.
-    NOTE : This is a temporary hack while the addition of preprocessors
-          in param is under discussion. This only works for the first
-          method which depends on a particular parameter.
-          (see https://github.com/pyviz/param/issues/332)
+
+    NOTE
+    ----
+    This is a temporary hack while the addition of preprocessors
+    in param is under discussion. This only works for the first
+    method which depends on a particular parameter.
+    See https://github.com/holoviz/param/issues/332
 
     """
     if current is None:

@@ -23,10 +23,10 @@ class cuDFInterface(PandasInterface):
     The cuDFInterface covers almost the complete API exposed
     by the PandasInterface with two notable exceptions:
 
-    1. Aggregation and groupby do not have a consistent sort order
-       (see https://github.com/rapidsai/cudf/issues/4237)
-    2. Not all functions can be easily applied to a cuDF so
-       some functions applied with aggregate and reduce will not work.
+    1) Aggregation and groupby do not have a consistent sort order, see
+    https://github.com/rapidsai/cudf/issues/4237
+    2) Not all functions can be easily applied to a cuDF so some functions
+    applied with aggregate and reduce will not work.
     """
 
     datatype = "cuDF"

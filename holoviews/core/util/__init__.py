@@ -118,10 +118,10 @@ class Config(param.ParameterizedFunction):
     image_rtol = param.Number(
         default=10e-4,
         doc="""
-      The tolerance used to enforce regular sampling for regular,
-      gridded data where regular sampling is expected. Expressed as the
-      maximal allowable sampling difference between sample
-      locations.""",
+        The tolerance used to enforce regular sampling for regular,
+        gridded data where regular sampling is expected. Expressed as the
+        maximal allowable sampling difference between sample
+        locations.""",
     )
 
     no_padding = param.Boolean(
@@ -132,24 +132,24 @@ class Config(param.ParameterizedFunction):
     default_cmap = param.String(
         default="kbc_r",
         doc="""
-       Global default colormap. Prior to HoloViews 1.14.0, the default
-       value was 'fire' which can be set for backwards compatibility.""",
+        Global default colormap. Prior to HoloViews 1.14.0, the default
+        value was 'fire' which can be set for backwards compatibility.""",
     )
 
     default_gridded_cmap = param.String(
         default="kbc_r",
         doc="""
-       Global default colormap for gridded elements (i.e. Image, Raster
-       and QuadMesh). Can be set to 'fire' to match raster defaults
-       prior to HoloViews 1.14.0 while allowing the default_cmap to be
-       the value of 'kbc_r' used in HoloViews >= 1.14.0""",
+        Global default colormap for gridded elements (i.e. Image, Raster
+        and QuadMesh). Can be set to 'fire' to match raster defaults
+        prior to HoloViews 1.14.0 while allowing the default_cmap to be
+        the value of 'kbc_r' used in HoloViews >= 1.14.0""",
     )
 
     default_heatmap_cmap = param.String(
         default="kbc_r",
         doc="""
-       Global default colormap for HeatMap elements. Prior to HoloViews
-       1.14.0, the default value was the 'RdYlBu_r' colormap.""",
+        Global default colormap for HeatMap elements. Prior to HoloViews
+        1.14.0, the default value was the 'RdYlBu_r' colormap.""",
     )
 
     def __call__(self, **params):
@@ -626,10 +626,10 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
     capitalize = param.Boolean(
         default=True,
         doc="""
-       Whether the first letter should be converted to
-       uppercase. Note, this will only be applied to ASCII characters
-       in order to make sure paths aren't confused with method
-       names.""",
+        Whether the first letter should be converted to
+        uppercase. Note, this will only be applied to ASCII characters
+        in order to make sure paths aren't confused with method
+        names.""",
     )
 
     eliminations = param.List(
@@ -647,54 +647,54 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
             "dollar",
         ],
         doc="""
-       Lowercase strings to be eliminated from the unicode names in
-       order to shorten the sanitized name ( lowercase). Redundant
-       strings should be removed but too much elimination could cause
-       two unique strings to map to the same sanitized output.""",
+        Lowercase strings to be eliminated from the unicode names in
+        order to shorten the sanitized name ( lowercase). Redundant
+        strings should be removed but too much elimination could cause
+        two unique strings to map to the same sanitized output.""",
     )
 
     substitutions = param.Dict(
         default={"circumflex": "power", "asterisk": "times", "solidus": "over"},
         doc="""
-       Lowercase substitutions of substrings in unicode names. For
-       instance the ^ character has the name 'circumflex accent' even
-       though it is more typically used for exponentiation. Note that
-       substitutions occur after filtering and that there should be no
-       ordering dependence between substitutions.""",
+        Lowercase substitutions of substrings in unicode names. For
+        instance the ^ character has the name 'circumflex accent' even
+        though it is more typically used for exponentiation. Note that
+        substitutions occur after filtering and that there should be no
+        ordering dependence between substitutions.""",
     )
 
     transforms = param.List(
         default=[capitalize_unicode_name],
         doc="""
-       List of string transformation functions to apply after
-       filtering and substitution in order to further compress the
-       unicode name. For instance, the default capitalize_unicode_name
-       function will turn the string "capital delta" into "Delta".""",
+        List of string transformation functions to apply after
+        filtering and substitution in order to further compress the
+        unicode name. For instance, the default capitalize_unicode_name
+        function will turn the string "capital delta" into "Delta".""",
     )
 
     disallowed = param.List(
         default=["trait_names", "_ipython_display_", "_getAttributeNames"],
         doc="""
-       An explicit list of name that should not be allowed as
-       attribute names on Tree objects.
+        An explicit list of name that should not be allowed as
+        attribute names on Tree objects.
 
-       By default, prevents IPython from creating an entry called
-       Trait_names due to an inconvenient getattr check (during
-       tab-completion).""",
+        By default, prevents IPython from creating an entry called
+        Trait_names due to an inconvenient getattr check (during
+        tab-completion).""",
     )
 
     disable_leading_underscore = param.Boolean(
         default=False,
         doc="""
-       Whether leading underscores should be allowed to be sanitized
-       with the leading prefix.""",
+        Whether leading underscores should be allowed to be sanitized
+        with the leading prefix.""",
     )
 
     aliases = param.Dict(
         default={},
         doc="""
-       A dictionary of aliases mapping long strings to their short,
-       sanitized equivalents""",
+        A dictionary of aliases mapping long strings to their short,
+        sanitized equivalents""",
     )
 
     prefix = "A_"
@@ -1229,14 +1229,14 @@ def find_contiguous_subarray(sub_array, full_array):
     Parameters
     ----------
     sub_array: array_like
-       The array that may or may not be a contiguous subset of `full_array`.
+        The array that may or may not be a contiguous subset of `full_array`.
     full_array: array_like
-       The array that may or may not contain `sub_array` as a contiguous subset.
+        The array that may or may not contain `sub_array` as a contiguous subset.
 
     Returns
     -------
     int | None
-       The index at which a appears in b or None.
+        The index at which a appears in b or None.
     """
     if len(sub_array) == 0:
         return 0

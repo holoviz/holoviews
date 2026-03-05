@@ -62,7 +62,8 @@ def norm(values, min=None, max=None):
 
 def lognorm(values, min=None, max=None):
     """Unity-based normalization on log scale.
-       Apply the same transformation as matplotlib.colors.LogNorm
+
+    Apply the same transformation as matplotlib.colors.LogNorm
 
     Parameters
     ----------
@@ -672,7 +673,8 @@ class dim:
 
     def lognorm(self, limits=None):
         """Unity-based normalization log scale.
-           Apply the same transformation as matplotlib.colors.LogNorm
+
+        Apply the same transformation as matplotlib.colors.LogNorm
 
         Parameters
         ----------

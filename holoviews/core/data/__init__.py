@@ -613,17 +613,17 @@ class Dataset(Element, metaclass=PipelineMeta):
         Selections may select a specific value, slice or set of values:
 
         * value: Scalar values will select rows along with an exact
-                 match, e.g.:
+        match, e.g.:
 
             ds.select(x=3)
 
         * slice: Slices may be declared as tuples of the upper and
-                 lower bound, e.g.:
+        lower bound, e.g.:
 
             ds.select(x=(0, 3))
 
         * values: A list of values may be selected using a list or
-                  set, e.g.:
+        set, e.g.:
 
             ds.select(x=[0, 1, 2])
 
@@ -765,17 +765,16 @@ class Dataset(Element, metaclass=PipelineMeta):
         """Allows slicing and selecting values in the Dataset object.
         Supports multiple indexing modes:
 
-           (1) Slicing and indexing along the values of each dimension
-               in the columns object using either scalars, slices or
-               sets of values.
-           (2) Supplying the name of a dimension as the first argument
-               will return the values along that dimension as a numpy
-               array.
-           (3) Slicing of all key dimensions and selecting a single
-               value dimension by name.
-           (4) A boolean array index matching the length of the Dataset
-               object.
+        1) Slicing and indexing along the values of each dimension in the
+        columns object using either scalars, slices or sets of values.
 
+        2) Supplying the name of a dimension as the first argument will return
+        the values along that dimension as a numpy array.
+
+        3) Slicing of all key dimensions and selecting a single value dimension
+        by name.
+
+        4) A boolean array index matching the length of the Dataset object.
         """
         slices = core_util.process_ellipses(self, slices, vdim_selection=True)
         if getattr(getattr(slices, "dtype", None), "kind", None) == "b":

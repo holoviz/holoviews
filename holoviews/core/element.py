@@ -400,8 +400,8 @@ class Collator(NdMapping):
     progress_bar = param.Parameter(
         default=None,
         doc="""
-         The progress bar instance used to report progress. Set to
-         None to disable progress bars.""",
+        The progress bar instance used to report progress. Set to
+        None to disable progress bars.""",
     )
 
     merge_type = param.ClassSelector(
@@ -420,8 +420,8 @@ class Collator(NdMapping):
     vdims = param.List(
         default=[],
         doc="""
-         Collator operates on HoloViews objects, if vdims are specified
-         a value_transform function must also be supplied.""",
+        Collator operates on HoloViews objects, if vdims are specified
+        a value_transform function must also be supplied.""",
     )
 
     _deep_indexable = False

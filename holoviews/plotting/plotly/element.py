@@ -89,8 +89,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     margins = param.NumericTuple(
         default=(50, 50, 50, 50),
         doc="""
-         Margins in pixel values specified as a tuple of the form
-         (left, bottom, right, top).""",
+        Margins in pixel values specified as a tuple of the form
+        (left, bottom, right, top).""",
     )
 
     responsive = param.Boolean(

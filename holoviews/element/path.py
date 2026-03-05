@@ -107,18 +107,17 @@ class Path(SelectionPolyExpr, Geometry):
 
         Selections may select a specific value, slice or set of values:
 
-        * value: Scalar values will select rows along with an exact
-                 match, e.g.:
+        * value: Scalar values will select rows along with an exact match,
+        e.g.:
 
             ds.select(x=3)
 
-        * slice: Slices may be declared as tuples of the upper and
-                 lower bound, e.g.:
+        * slice: Slices may be declared as tuples of the upper and lower bound,
+        e.g.:
 
             ds.select(x=(0, 3))
 
-        * values: A list of values may be selected using a list or
-                  set, e.g.:
+        * values: A list of values may be selected using a list or set, e.g.:
 
             ds.select(x=[0, 1, 2])
 
@@ -311,9 +310,9 @@ class Polygons(Contours):
         """Returns a list-of-lists-of-lists of hole arrays. The three levels
         of nesting reflects the structure of the polygons:
 
-          1. The first level of nesting corresponds to the list of geometries
-          2. The second level corresponds to each Polygon in a MultiPolygon
-          3. The third level of nesting allows for multiple holes per Polygon
+        1) The first level of nesting corresponds to the list of geometries
+        2) The second level corresponds to each Polygon in a MultiPolygon
+        3) The third level of nesting allows for multiple holes per Polygon
 
         """
         return self.interface.holes(self)
@@ -372,16 +371,16 @@ class Box(BaseShape):
     orientation = param.Number(
         default=0,
         doc="""
-       Orientation in the Cartesian coordinate system, the
-       counterclockwise angle in radians between the first axis and the
-       horizontal.""",
+        Orientation in the Cartesian coordinate system, the
+        counterclockwise angle in radians between the first axis and the
+        horizontal.""",
     )
 
     aspect = param.Number(
         default=1.0,
         doc="""
-       Optional multiplier applied to the box size to compute the
-       width in cases where only the length value is set.""",
+        Optional multiplier applied to the box size to compute the
+        width in cases where only the length value is set.""",
     )
 
     group = param.String(default="Box", constant=True, doc="The assigned group name.")
@@ -450,16 +449,16 @@ class Ellipse(BaseShape):
     orientation = param.Number(
         default=0,
         doc="""
-       Orientation in the Cartesian coordinate system, the
-       counterclockwise angle in radians between the first axis and the
-       horizontal.""",
+        Orientation in the Cartesian coordinate system, the
+        counterclockwise angle in radians between the first axis and the
+        horizontal.""",
     )
 
     aspect = param.Number(
         default=1.0,
         doc="""
-       Optional multiplier applied to the diameter to compute the width
-       in cases where only the diameter value is set.""",
+        Optional multiplier applied to the diameter to compute the width
+        in cases where only the diameter value is set.""",
     )
 
     samples = param.Number(default=100, doc="The sample count used to draw the ellipse.")

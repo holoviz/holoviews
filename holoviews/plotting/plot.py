@@ -382,17 +382,17 @@ class DimensionedPlot(Plot):
         default=None,
         allow_None=True,
         doc="""
-       Specifies various font sizes of the displayed text.
+        Specifies various font sizes of the displayed text.
 
-       Finer control is available by supplying a dictionary where any
-       unmentioned keys revert to the default sizes, e.g:
+        Finer control is available by supplying a dictionary where any
+        unmentioned keys revert to the default sizes, e.g:
 
-          {'ticks':20, 'title':15,
-           'ylabel':5, 'xlabel':5, 'zlabel':5,
-           'legend':8, 'legend_title':13}
+            {'ticks': 20, 'title': 15,
+            'ylabel': 5, 'xlabel': 5, 'zlabel': 5,
+            'legend': 8, 'legend_title': 13}
 
-       You can set the font size of 'zlabel', 'ylabel' and 'xlabel'
-       together using the 'labels' key.""",
+        You can set the font size of 'zlabel', 'ylabel' and 'xlabel'
+        together using the 'labels' key.""",
     )
 
     fontscale = param.Number(
@@ -1291,24 +1291,24 @@ class GenericElementPlot(DimensionedPlot):
         default=(np.nan, np.nan),
         length=2,
         doc="""
-       User-specified x-axis range limits for the plot, as a tuple (low,high).
-       If specified, takes precedence over data and dimension ranges.""",
+        User-specified x-axis range limits for the plot, as a tuple (low,high).
+        If specified, takes precedence over data and dimension ranges.""",
     )
 
     ylim = param.Tuple(
         default=(np.nan, np.nan),
         length=2,
         doc="""
-       User-specified y-axis range limits for the plot, as a tuple (low,high).
-       If specified, takes precedence over data and dimension ranges.""",
+        User-specified y-axis range limits for the plot, as a tuple (low,high).
+        If specified, takes precedence over data and dimension ranges.""",
     )
 
     zlim = param.Tuple(
         default=(np.nan, np.nan),
         length=2,
         doc="""
-       User-specified z-axis range limits for the plot, as a tuple (low,high).
-       If specified, takes precedence over data and dimension ranges.""",
+        User-specified z-axis range limits for the plot, as a tuple (low,high).
+        If specified, takes precedence over data and dimension ranges.""",
     )
 
     xrotation = param.Integer(

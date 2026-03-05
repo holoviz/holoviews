@@ -428,16 +428,16 @@ class Text(Annotation):
         default="center",
         objects=["left", "right", "center"],
         doc="""
-       The horizontal alignment position of the displayed text. Allowed values
-       are 'left', 'right' and 'center'.""",
+        The horizontal alignment position of the displayed text. Allowed values
+        are 'left', 'right' and 'center'.""",
     )
 
     valign = param.Selector(
         default="center",
         objects=["top", "bottom", "center"],
         doc="""
-       The vertical alignment position of the displayed text. Allowed values
-       are 'center', 'top' and 'bottom'.""",
+        The vertical alignment position of the displayed text. Allowed values
+        are 'center', 'top' and 'bottom'.""",
     )
 
     group = param.String(default="Text", constant=True)

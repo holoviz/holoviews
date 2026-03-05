@@ -2,14 +2,16 @@
 
 There are two components for input/output:
 
-Exporters : Process (composite) HoloViews objects one at a time. For
-           instance, an exporter may render a HoloViews object as a
-           svg or perhaps pickle it.
+Exporters
+---------
+Process (composite) HoloViews objects one at a time. For instance, an exporter
+may render a HoloViews object as a svg or perhaps pickle it.
 
-Archives : A collection of HoloViews objects that are first collected
-          then processed together. For instance, collecting HoloViews
-          objects for a report then generating a PDF or collecting
-          HoloViews objects to dump to HDF5.
+Archives
+--------
+A collection of HoloViews objects that are first collected then processed
+together. For instance, collecting HoloViews objects for a report then
+generating a PDF or collecting HoloViews objects to dump to HDF5.
 
 """
 
@@ -95,25 +97,25 @@ class Exporter(param.ParameterizedFunction):
 
     key_fn = param.Callable(
         doc="""
-      Function that generates the metadata key from the HoloViews
-      object being saved. The metadata key is a single
-      high-dimensional key of values associated with dimension labels.
+        Function that generates the metadata key from the HoloViews
+        object being saved. The metadata key is a single
+        high-dimensional key of values associated with dimension labels.
 
-      The returned dictionary must have string keys and simple
-      literals that may be conveniently used for dictionary-style
-      indexing. Returns an empty dictionary by default."""
+        The returned dictionary must have string keys and simple
+        literals that may be conveniently used for dictionary-style
+        indexing. Returns an empty dictionary by default."""
     )
 
     info_fn = param.Callable(
         default=lambda x: {"repr": repr(x)},
         doc="""
-      Function that generates additional metadata information from the
-      HoloViews object being saved.
+        Function that generates additional metadata information from the
+        HoloViews object being saved.
 
-      Unlike metadata keys, the information returned may be unsuitable
-      for use as a key index and may include entries such as the
-      object's repr. Regardless, the info metadata should still only
-      contain items that will be quick to load and inspect. """,
+        Unlike metadata keys, the information returned may be unsuitable
+        for use as a key index and may include entries such as the
+        object's repr. Regardless, the info metadata should still only
+        contain items that will be quick to load and inspect. """,
     )
 
     @classmethod
@@ -230,12 +232,12 @@ class Serializer(Exporter):
     serializer = param.Callable(
         default=Store.dumps,
         doc="""
-       The serializer function, set to Store.dumps by default. The
-       serializer should take an object and output a serialization as
-       a string or byte stream.
+        The serializer function, set to Store.dumps by default. The
+        serializer should take an object and output a serialization as
+        a string or byte stream.
 
-       Any suitable serializer may be used. For instance, pickle.dumps
-       may be used although this will not save customized options.""",
+        Any suitable serializer may be used. For instance, pickle.dumps
+        may be used although this will not save customized options.""",
     )
 
     mime_type = param.String(
@@ -247,8 +249,8 @@ class Serializer(Exporter):
     file_ext = param.String(
         "pkl",
         doc="""
-       The file extension associated with the corresponding file
-       format (if applicable).""",
+        The file extension associated with the corresponding file
+        format (if applicable).""",
     )
 
     def __call__(self, obj, **kwargs):
@@ -277,15 +279,15 @@ class Deserializer(Importer):
     deserializer = param.Callable(
         default=Store.load,
         doc="""
-       The deserializer function, set to Store.load by default. The
-       deserializer should take a file-like object that can be read
-       from until the first object has been deserialized. If the file
-       has not been exhausted, the deserializer should be able to
-       continue parsing and loading objects.
+        The deserializer function, set to Store.load by default. The
+        deserializer should take a file-like object that can be read
+        from until the first object has been deserialized. If the file
+        has not been exhausted, the deserializer should be able to
+        continue parsing and loading objects.
 
-       Any suitable deserializer may be used. For instance,
-       pickle.load may be used although this will not load customized
-       options.""",
+        Any suitable deserializer may be used. For instance,
+        pickle.load may be used although this will not load customized
+        options.""",
     )
 
     def __call__(self, data):
@@ -640,25 +642,23 @@ class FileArchive(Archive):
     unique_name = param.Boolean(
         default=False,
         doc="""
-       Whether the export name should be made unique with a numeric
-       suffix. If set to False, any existing export of the same name
-       will be removed and replaced.""",
+        Whether the export name should be made unique with a numeric
+        suffix. If set to False, any existing export of the same name
+        will be removed and replaced.""",
     )
 
     max_filename = param.Integer(
         default=100,
         bounds=(0, None),
         doc="""
-       Maximum length to enforce on generated filenames.  100 is the
-       practical maximum for zip and tar file generation, but you may
-       wish to use a lower value to avoid long filenames.""",
+        Maximum length to enforce on generated filenames.  100 is the
+        practical maximum for zip and tar file generation, but you may
+        wish to use a lower value to avoid long filenames.""",
     )
 
     flush_archive = param.Boolean(
         default=True,
-        doc="""
-       Flushed the contents of the archive after export.
-       """,
+        doc="Flushed the contents of the archive after export.",
     )
 
     ffields = {"type", "group", "label", "obj", "SHA", "timestamp", "dimensions"}

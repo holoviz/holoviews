@@ -1447,8 +1447,8 @@ class Draw(PointerXY):
         default=0,
         constant=True,
         doc="""
-       The current drawing stroke count. Increments every time a new
-       stroke is started.""",
+        The current drawing stroke count. Increments every time a new
+        stroke is started.""",
     )
 
 
@@ -1728,8 +1728,8 @@ class SelectionXY(BoundsXY):
         allow_None=True,
         constant=True,
         doc="""
-      The current selection along the x-axis, either a numerical range
-      defined as a tuple or a list of categories.""",
+        The current selection along the x-axis, either a numerical range
+        defined as a tuple or a list of categories.""",
     )
 
     y_selection = param.ClassSelector(
@@ -1737,8 +1737,8 @@ class SelectionXY(BoundsXY):
         allow_None=True,
         constant=True,
         doc="""
-      The current selection along the y-axis, either a numerical range
-      defined as a tuple or a list of categories.""",
+        The current selection along the y-axis, either a numerical range
+        defined as a tuple or a list of categories.""",
     )
 
 

@@ -205,12 +205,12 @@ class Renderer(Exporter):
     post_render_hooks = param.Dict(
         default={"svg": [], "png": []},
         doc="""
-       Optional dictionary of hooks that are applied to the rendered
-       data (according to the output format) before it is returned.
+        Optional dictionary of hooks that are applied to the rendered
+        data (according to the output format) before it is returned.
 
-       Each hook is passed the rendered data and the object that is
-       being rendered. These hooks allow post-processing of rendered
-       data before output is saved to file or displayed.""",
+        Each hook is passed the rendered data and the object that is
+        being rendered. These hooks allow post-processing of rendered
+        data before output is saved to file or displayed.""",
     )
 
     # Defines the valid output formats for each mode.

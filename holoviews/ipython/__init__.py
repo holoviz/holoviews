@@ -77,8 +77,8 @@ class notebook_extension(extension):
     case_sensitive_completion = param.Boolean(
         default=False,
         doc="""
-       Whether to monkey patch IPython to use the correct tab-completion
-       behavior. """,
+        Whether to monkey patch IPython to use the correct tab-completion
+        behavior. """,
     )
 
     enable_mathjax = param.Boolean(

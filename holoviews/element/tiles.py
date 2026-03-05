@@ -14,11 +14,11 @@ class Tiles(Element2D):
     These variables correspond to three different formats for specifying the spatial
     location and zoom level of the requested tiles:
 
-      * Web mapping tiles sources containing {x}, {y}, and {z} variables
+        * Web mapping tiles sources containing {x}, {y}, and {z} variables
 
-      * Bounding box tile sources containing {XMIN}, {XMAX}, {YMIN}, {YMAX} variables
+        * Bounding box tile sources containing {XMIN}, {XMAX}, {YMIN}, {YMAX} variables
 
-      * Quadkey tile sources containing a {Q} variable
+        * Quadkey tile sources containing a {Q} variable
 
     Tiles are defined in a pseudo-Mercator projection (EPSG:3857)
     defined as eastings and northings. Any data overlaid on a tile

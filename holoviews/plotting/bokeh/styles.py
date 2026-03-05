@@ -159,15 +159,15 @@ def validate(style, value, scalar=False):
     Parameters
     ----------
     style : str
-       The style to validate (e.g. 'color', 'size' or 'marker')
+        The style to validate (e.g. 'color', 'size' or 'marker')
     value :
-       The style value to validate
+        The style value to validate
     scalar : bool
 
     Returns
     -------
     valid : boolean or None
-       If validation is supported returns boolean, otherwise None
+        If validation is supported returns boolean, otherwise None
     """
     validator = get_validator(style)
     if validator is None:

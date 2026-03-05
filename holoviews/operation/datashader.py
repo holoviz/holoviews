@@ -772,8 +772,8 @@ class spikes_aggregate(LineAggregationOperation):
         default=None,
         allow_None=True,
         doc="""
-      If numeric, specifies the length of each spike, overriding the
-      vdims values (if present).""",
+        If numeric, specifies the length of each spike, overriding the
+        vdims values (if present).""",
     )
 
     offset = param.Number(
@@ -939,14 +939,14 @@ class regrid(AggregationOperation):
     expand = param.Boolean(
         default=False,
         doc="""
-       Whether the x_range and y_range should be allowed to expand
-       beyond the extent of the data.  Setting this value to True is
-       useful for the case where you want to ensure a certain size of
-       output grid, e.g. if you are doing masking or other arithmetic
-       on the grids.  A value of False ensures that the grid is only
-       just as large as it needs to be to contain the data, which will
-       be faster and use less memory if the resulting aggregate is
-       being overlaid on a much larger background.""",
+        Whether the x_range and y_range should be allowed to expand
+        beyond the extent of the data.  Setting this value to True is
+        useful for the case where you want to ensure a certain size of
+        output grid, e.g. if you are doing masking or other arithmetic
+        on the grids.  A value of False ensures that the grid is only
+        just as large as it needs to be to contain the data, which will
+        be faster and use less memory if the resulting aggregate is
+        being overlaid on a much larger background.""",
     )
 
     interpolation = param.Selector(
@@ -2003,9 +2003,9 @@ class inspect_mask(Operation):
         default=3,
         class_=(int, tuple),
         doc="""
-       Size of the mask that should match the pixels parameter used in
-       the associated inspection operation. Pixels can be provided as
-       integer or x/y-tuple to perform asymmetric masking.""",
+        Size of the mask that should match the pixels parameter used in
+        the associated inspection operation. Pixels can be provided as
+        integer or x/y-tuple to perform asymmetric masking.""",
     )
 
     streams = param.ClassSelector(default=[PointerXY], class_=(dict, list))
@@ -2054,19 +2054,19 @@ class inspect(Operation):
         default=3,
         class_=(int, tuple),
         doc="""
-       Number of pixels in data space around the cursor point to search
-       for hits in. The hit within this box mask that is closest to the
-       cursor's position is displayed. Pixels can be provided as
-       integer or x/y-tuple to perform asymmetric masking.""",
+        Number of pixels in data space around the cursor point to search
+        for hits in. The hit within this box mask that is closest to the
+        cursor's position is displayed. Pixels can be provided as
+        integer or x/y-tuple to perform asymmetric masking.""",
     )
 
     null_value = param.Number(
         default=0,
         doc="""
-       Value of raster which indicates no hits. For instance zero for
-       count aggregator (default) and commonly NaN for other (float)
-       aggregators. For RGBA images, the alpha channel is used which means
-       zero alpha acts as the null value.""",
+        Value of raster which indicates no hits. For instance zero for
+        count aggregator (default) and commonly NaN for other (float)
+        aggregators. For RGBA images, the alpha channel is used which means
+        zero alpha acts as the null value.""",
     )
 
     value_bounds = param.NumericTuple(
@@ -2074,10 +2074,10 @@ class inspect(Operation):
         length=2,
         allow_None=True,
         doc="""
-       If not None, a numeric bounds for the pixel under the cursor in
-       order for hits to be computed. Useful for count aggregators where
-       a value of (1,1000) would make sure no more than a thousand
-       samples will be searched.""",
+        If not None, a numeric bounds for the pixel under the cursor in
+        order for hits to be computed. Useful for count aggregators where
+        a value of (1,1000) would make sure no more than a thousand
+        samples will be searched.""",
     )
 
     hits = param.DataFrame(default=pd.DataFrame(), allow_None=True)
@@ -2085,19 +2085,19 @@ class inspect(Operation):
     max_indicators = param.Integer(
         default=1,
         doc="""
-       Maximum number of indicator elements to display within the mask
-       of size pixels. Points are prioritized by distance from the
-       cursor point. This means that the default value of one shows the
-       single closest sample to the cursor. Note that this limit is not
-       applies to the hits parameter.""",
+        Maximum number of indicator elements to display within the mask
+        of size pixels. Points are prioritized by distance from the
+        cursor point. This means that the default value of one shows the
+        single closest sample to the cursor. Note that this limit is not
+        applies to the hits parameter.""",
     )
 
     transform = param.Callable(
         default=identity,
         doc="""
-      Function that transforms the hits dataframe before it is passed to
-      the Points element. Can be used to customize the value dimensions
-      e.g. to implement custom hover behavior.""",
+        Function that transforms the hits dataframe before it is passed to
+        the Points element. Can be used to customize the value dimensions
+        e.g. to implement custom hover behavior.""",
     )
 
     # Stream values and overrides

@@ -519,8 +519,8 @@ class Callable(param.Parameterized):
         default=[],
         constant=True,
         doc="""
-         The list of inputs the callable function is wrapping. Used
-         to allow deep access to streams in chained Callables.""",
+        The list of inputs the callable function is wrapping. Used
+        to allow deep access to streams in chained Callables.""",
     )
 
     operation_kwargs = param.Dict(
@@ -534,38 +534,38 @@ class Callable(param.Parameterized):
     link_inputs = param.Boolean(
         default=True,
         doc="""
-         If the Callable wraps around other DynamicMaps in its inputs,
-         determines whether linked streams attached to the inputs are
-         transferred to the objects returned by the Callable.
+        If the Callable wraps around other DynamicMaps in its inputs,
+        determines whether linked streams attached to the inputs are
+        transferred to the objects returned by the Callable.
 
-         For example the Callable wraps a DynamicMap with an RangeXY
-         stream, this switch determines whether the corresponding
-         visualization should update this stream with range changes
-         originating from the newly generated axes.""",
+        For example the Callable wraps a DynamicMap with an RangeXY
+        stream, this switch determines whether the corresponding
+        visualization should update this stream with range changes
+        originating from the newly generated axes.""",
     )
 
     memoize = param.Boolean(
         default=True,
         doc="""
-         Whether the return value of the callable should be memoized
-         based on the call arguments and any streams attached to the
-         inputs.""",
+        Whether the return value of the callable should be memoized
+        based on the call arguments and any streams attached to the
+        inputs.""",
     )
 
     operation = param.Callable(
         default=None,
         doc="""
-         The function being applied by the Callable. May be used
-         to record the transform(s) being applied inside the
-         callback function.""",
+        The function being applied by the Callable. May be used
+        to record the transform(s) being applied inside the
+        callback function.""",
     )
 
     stream_mapping = param.Dict(
         default={},
         constant=True,
         doc="""
-         Defines how streams should be mapped to objects returned by
-         the Callable, e.g. when it returns a Layout.""",
+        Defines how streams should be mapped to objects returned by
+        the Callable, e.g. when it returns a Layout.""",
     )
 
     def __init__(self, callable, **params):
@@ -858,34 +858,33 @@ class DynamicMap(HoloMap):
         default=[],
         constant=True,
         doc="""
-       List of Stream instances to associate with the DynamicMap. The
-       set of parameter values across these streams will be supplied as
-       keyword arguments to the callback when the events are received,
-       updating the streams. Can also be supplied as a dictionary that
-       maps parameters or panel widgets to callback argument names that
-       will then be automatically converted to the equivalent list
-       format.""",
+        List of Stream instances to associate with the DynamicMap. The
+        set of parameter values across these streams will be supplied as
+        keyword arguments to the callback when the events are received,
+        updating the streams. Can also be supplied as a dictionary that
+        maps parameters or panel widgets to callback argument names that
+        will then be automatically converted to the equivalent list
+        format.""",
     )
 
     cache_size = param.Integer(
         default=500,
         bounds=(1, None),
         doc="""
-       The number of entries to cache for fast access. This is an LRU
-       cache where the least recently used item is overwritten once
-       the cache is full.""",
+        The number of entries to cache for fast access. This is an LRU
+        cache where the least recently used item is overwritten once
+        the cache is full.""",
     )
 
     positional_stream_args = param.Boolean(
         default=False,
         constant=True,
         doc="""
-       If False, stream parameters are passed to the callback as keyword arguments.
-       If True, stream parameters are passed to callback as positional arguments.
-       Each positional argument is a dict containing the contents of a stream.
-       The positional stream arguments follow the positional arguments for each kdim,
-       and they are ordered to match the order of the DynamicMap's streams list.
-    """,
+        If False, stream parameters are passed to the callback as keyword arguments.
+        If True, stream parameters are passed to callback as positional arguments.
+        Each positional argument is a dict containing the contents of a stream.
+        The positional stream arguments follow the positional arguments for each kdim,
+        and they are ordered to match the order of the DynamicMap's streams list.""",
     )
 
     def __init__(self, callback, initial_items=None, streams=None, **params):
@@ -1369,18 +1368,17 @@ class DynamicMap(HoloMap):
 
         Selections may select a specific value, slice or set of values:
 
-        * value: Scalar values will select rows along with an exact
-                 match, e.g.:
+        * value: Scalar values will select rows along with an exact match,
+        e.g.:
 
             ds.select(x=3)
 
-        * slice: Slices may be declared as tuples of the upper and
-                 lower bound, e.g.:
+        * slice: Slices may be declared as tuples of the upper and lower bound,
+        e.g.:
 
             ds.select(x=(0, 3))
 
-        * values: A list of values may be selected using a list or
-                  set, e.g.:
+        * values: A list of values may be selected using a list or set, e.g.:
 
             ds.select(x=[0, 1, 2])
 

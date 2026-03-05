@@ -374,10 +374,9 @@ class ViolinPlot(BoxWhiskerPlot):
         doc="""
         Inner visual indicator for distribution values:
 
-          * box - A small box plot
-          * stick - Lines indicating each sample value
-          * quartiles - Indicates first, second and third quartiles
-        """,
+        * box - A small box plot
+        * stick - Lines indicating each sample value
+        * quartiles - Indicates first, second and third quartiles""",
     )
 
     split = param.ClassSelector(

@@ -142,8 +142,8 @@ class RangeToolLink(Link):
     inverted = param.Boolean(
         default=True,
         doc="""
-         Whether to invert the highlighting of the range selection.
-         Only available from Bokeh 3.5 onwards.""",
+        Whether to invert the highlighting of the range selection.
+        Only available from Bokeh 3.5 onwards.""",
     )
 
     _requires_target = True

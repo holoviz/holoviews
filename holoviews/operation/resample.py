@@ -37,8 +37,8 @@ class ResampleOperation1D(LinkableOperation):
         default=None,
         length=2,
         doc="""
-       The x_range as a tuple of min and max x-value. Auto-ranges
-       if set to None.""",
+        The x_range as a tuple of min and max x-value. Auto-ranges
+        if set to None.""",
     )
 
     x_sampling = param.Number(
@@ -50,8 +50,8 @@ class ResampleOperation1D(LinkableOperation):
         default=[PlotSize, RangeX],
         class_=(dict, list),
         doc="""
-       List or dictionary of streams that are applied if dynamic=True,
-       allowing for dynamic interaction with the plot.""",
+        List or dictionary of streams that are applied if dynamic=True,
+        allowing for dynamic interaction with the plot.""",
     )
 
     width = param.Integer(
@@ -69,13 +69,13 @@ class ResampleOperation1D(LinkableOperation):
         bounds=(0, None),
         inclusive_bounds=(False, False),
         doc="""
-       Pixel ratio applied to the height and width. Useful for higher
-       resolution screens where the PlotSize stream reports 'nominal'
-       dimensions in pixels that do not match the physical pixels. For
-       instance, setting pixel_ratio=2 can give better results on Retina
-       displays. Also useful for using lower resolution for speed.
-       If not set explicitly, the zoom level of the browsers will be used,
-       if available.""",
+        Pixel ratio applied to the height and width. Useful for higher
+        resolution screens where the PlotSize stream reports 'nominal'
+        dimensions in pixels that do not match the physical pixels. For
+        instance, setting pixel_ratio=2 can give better results on Retina
+        displays. Also useful for using lower resolution for speed.
+        If not set explicitly, the zoom level of the browsers will be used,
+        if available.""",
     )
 
 
@@ -90,22 +90,22 @@ class ResampleOperation2D(ResampleOperation1D):
     expand = param.Boolean(
         default=True,
         doc="""
-       Whether the x_range and y_range should be allowed to expand
-       beyond the extent of the data.  Setting this value to True is
-       useful for the case where you want to ensure a certain size of
-       output grid, e.g. if you are doing masking or other arithmetic
-       on the grids.  A value of False ensures that the grid is only
-       just as large as it needs to be to contain the data, which will
-       be faster and use less memory if the resulting aggregate is
-       being overlaid on a much larger background.""",
+        Whether the x_range and y_range should be allowed to expand
+        beyond the extent of the data.  Setting this value to True is
+        useful for the case where you want to ensure a certain size of
+        output grid, e.g. if you are doing masking or other arithmetic
+        on the grids.  A value of False ensures that the grid is only
+        just as large as it needs to be to contain the data, which will
+        be faster and use less memory if the resulting aggregate is
+        being overlaid on a much larger background.""",
     )
 
     y_range = param.Tuple(
         default=None,
         length=2,
         doc="""
-       The y-axis range as a tuple of min and max y value. Auto-ranges
-       if set to None.""",
+        The y-axis range as a tuple of min and max y value. Auto-ranges
+        if set to None.""",
     )
 
     y_sampling = param.Number(
@@ -117,16 +117,15 @@ class ResampleOperation2D(ResampleOperation1D):
         class_=Dataset,
         doc="""
         A target Dataset which defines the desired x_range, y_range,
-        width and height.
-    """,
+        width and height.""",
     )
 
     streams = param.ClassSelector(
         default=[PlotSize, RangeXY],
         class_=(dict, list),
         doc="""
-       List or dictionary of streams that are applied if dynamic=True,
-       allowing for dynamic interaction with the plot.""",
+        List or dictionary of streams that are applied if dynamic=True,
+        allowing for dynamic interaction with the plot.""",
     )
 
     element_type = param.ClassSelector(

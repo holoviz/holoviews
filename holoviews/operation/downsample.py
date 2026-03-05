@@ -247,8 +247,8 @@ class downsample1d(ResampleOperation1D):
         - `minmax`: Selects the min and max value in each bin (requires tsdownsample).
         - `m4`: Selects the min, max, first and last value in each bin (requires tsdownsample).
         - `minmax-lttb`: First selects n_out * minmax_ratio min and max values,
-                         then further reduces these to n_out values using the
-                         Largest Triangle Three Buckets algorithm (requires tsdownsample).""",
+          then further reduces these to n_out values using the Largest Triangle
+          Three Buckets algorithm (requires tsdownsample).""",
     )
 
     parallel = param.Boolean(
@@ -260,9 +260,9 @@ class downsample1d(ResampleOperation1D):
         default=4,
         bounds=(0, None),
         doc="""
-       For the minmax-lttb algorithm determines the ratio of candidate
-       values to generate with the minmax algorithm before further
-       downsampling with LTTB.""",
+        For the minmax-lttb algorithm determines the ratio of candidate
+        values to generate with the minmax algorithm before further
+        downsampling with LTTB.""",
     )
 
     neighbor_points = param.Boolean(

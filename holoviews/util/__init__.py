@@ -116,9 +116,9 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
     strict = param.Boolean(
         default=False,
         doc="""
-       Whether to be strict about the options specification. If not set
-       to strict (default), any invalid keywords are simply skipped. If
-       strict, invalid keywords prevent the options being applied.""",
+        Whether to be strict about the options specification. If not set
+        to strict (default), any invalid keywords are simply skipped. If
+        strict, invalid keywords prevent the options being applied.""",
     )
 
     def __init__(self, *args, **kwargs):  # Needed for opts specific __signature__
@@ -217,14 +217,24 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         If the options are to be set directly on the object a
         simple format may be used, e.g.:
 
-            opts.apply_groups(obj, style={'cmap': 'viridis'},
-                                         plot={'show_title': False})
+            opts.apply_groups(
+                obj,
+                style={"cmap": "viridis"},
+                plot={"show_title": False}
+            )
 
         If the object is nested the options must be qualified using
         a type[.group][.label] specification, e.g.:
 
-            opts.apply_groups(obj, {'Image': {'plot':  {'show_title': False},
-                                              'style': {'cmap': 'viridis}}})
+            opts.apply_groups(
+                obj,
+                {
+                    "Image": {
+                        "plot": {"show_title": False},
+                        "style": {"cmap": "viridis"},
+                    }
+                },
+            )
 
         If no opts are supplied all options on the object will be reset.
 
@@ -939,25 +949,25 @@ class Dynamic(param.ParameterizedFunction):
     link_inputs = param.Boolean(
         default=True,
         doc="""
-         If Dynamic is applied to another DynamicMap, determines whether
-         linked streams and links attached to its Callable inputs are
-         transferred to the output of the utility.
+        If Dynamic is applied to another DynamicMap, determines whether
+        linked streams and links attached to its Callable inputs are
+        transferred to the output of the utility.
 
-         For example if the Dynamic utility is applied to a DynamicMap
-         with an RangeXY, this switch determines whether the
-         corresponding visualization should update this stream with
-         range changes originating from the newly generated axes.""",
+        For example if the Dynamic utility is applied to a DynamicMap
+        with an RangeXY, this switch determines whether the
+        corresponding visualization should update this stream with
+        range changes originating from the newly generated axes.""",
     )
 
     link_dataset = param.Boolean(
         default=True,
         doc="""
-         Determines whether the output of the operation should inherit
-         the .dataset property of the input to the operation. Helpful
-         for tracking data providence for user supplied functions,
-         which do not make use of the clone method. Should be disabled
-         for operations where the output is not derived from the input
-         and instead depends on some external state.""",
+        Determines whether the output of the operation should inherit
+        the .dataset property of the input to the operation. Helpful
+        for tracking data providence for user supplied functions,
+        which do not make use of the clone method. Should be disabled
+        for operations where the output is not derived from the input
+        and instead depends on some external state.""",
     )
 
     shared_data = param.Boolean(

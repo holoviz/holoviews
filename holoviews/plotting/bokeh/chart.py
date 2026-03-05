@@ -170,15 +170,15 @@ class PointPlot(SizebarMixin, ColorbarPlot):
         default=1,
         bounds=(0, None),
         doc="""
-      Scaling factor which is applied to either the width or area
-      of each point, depending on the value of `scaling_method`.""",
+        Scaling factor which is applied to either the width or area
+        of each point, depending on the value of `scaling_method`.""",
     )
 
     size_fn = param.Callable(
         default=np.abs,
         doc="""
-      Function applied to size values before applying scaling,
-      to remove values lower than zero.""",
+        Function applied to size values before applying scaling,
+        to remove values lower than zero.""",
     )
 
     selection_display = BokehOverlaySelectionDisplay()

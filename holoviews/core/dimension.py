@@ -176,9 +176,9 @@ class Dimension(param.Parameterized):
 
     name = param.String(
         doc="""
-       Short name associated with the Dimension, such as 'height' or
-       'weight'. Valid Python identifiers make good names, because they
-       can be used conveniently as a keyword in many contexts."""
+        Short name associated with the Dimension, such as 'height' or
+        'weight'. Valid Python identifiers make good names, because they
+        can be used conveniently as a keyword in many contexts."""
     )
 
     label = param.String(
@@ -538,17 +538,17 @@ class LabelledData(param.Parameterized):
         default="LabelledData",
         constant=True,
         doc="""
-       A string describing the type of data contained by the object.
-       By default this will typically mirror the class name.""",
+        A string describing the type of data contained by the object.
+        By default this will typically mirror the class name.""",
     )
 
     label = param.String(
         default="",
         constant=True,
         doc="""
-       Optional label describing the data, typically reflecting where
-       or how it was measured. The label should allow a specific
-       measurement or dataset to be referenced for a given group.""",
+        Optional label describing the data, typically reflecting where
+        or how it was measured. The label should allow a specific
+        measurement or dataset to be referenced for a given group.""",
     )
 
     _deep_indexable = False
@@ -904,34 +904,34 @@ class Dimensioned(LabelledData):
     cdims = param.Dict(
         default={},
         doc="""
-       The constant dimensions defined as a dictionary of Dimension:value
-       pairs providing additional dimension information about the object.
+        The constant dimensions defined as a dictionary of Dimension:value
+        pairs providing additional dimension information about the object.
 
-       Aliased with constant_dimensions.""",
+        Aliased with constant_dimensions.""",
     )
 
     kdims = param.List(
         bounds=(0, None),
         constant=True,
         doc="""
-       The key dimensions defined as list of dimensions that may be
-       used in indexing (and potential slicing) semantics. The order
-       of the dimensions listed here determines the semantics of each
-       component of a multi-dimensional indexing operation.
+        The key dimensions defined as list of dimensions that may be
+        used in indexing (and potential slicing) semantics. The order
+        of the dimensions listed here determines the semantics of each
+        component of a multi-dimensional indexing operation.
 
-       Aliased with key_dimensions.""",
+        Aliased with key_dimensions.""",
     )
 
     vdims = param.List(
         bounds=(0, None),
         constant=True,
         doc="""
-       The value dimensions defined as the list of dimensions used to
-       describe the components of the data. If multiple value
-       dimensions are supplied, a particular value dimension may be
-       indexed by name after the key dimensions.
+        The value dimensions defined as the list of dimensions used to
+        describe the components of the data. If multiple value
+        dimensions are supplied, a particular value dimension may be
+        indexed by name after the key dimensions.
 
-       Aliased with value_dimensions.""",
+        Aliased with value_dimensions.""",
     )
 
     group = param.String(

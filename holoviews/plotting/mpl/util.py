@@ -110,16 +110,16 @@ def validate(style, value, vectorized=True):
     Parameters
     ----------
     style : str
-       The style to validate (e.g. 'color', 'size' or 'marker')
+        The style to validate (e.g. 'color', 'size' or 'marker')
     value :
-       The style value to validate
+        The style value to validate
     vectorized : bool
-       Whether validator should allow vectorized setting
+        Whether validator should allow vectorized setting
 
     Returns
     -------
     valid : boolean or None
-       If validation is supported returns boolean, otherwise None
+        If validation is supported returns boolean, otherwise None
     """
     validator = get_validator(style)
     if validator is None:

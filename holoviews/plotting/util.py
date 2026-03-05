@@ -1111,20 +1111,20 @@ def color_intervals(colors, levels, clip=None, N=255):
     Parameters
     ----------
     colors : list
-      List of colors (usually hex string or named colors)
+        List of colors (usually hex string or named colors)
     levels : list or array_like
-      Levels specifying the bins to map the colors to
+        Levels specifying the bins to map the colors to
     clip : tuple, optional
-      Lower and upper limits of the color range
+        Lower and upper limits of the color range
     N : int
-      Number of discrete colors to map the range onto
+        Number of discrete colors to map the range onto
 
     Returns
     -------
     cmap : list
-      List of colors
+        List of colors
     clip : tuple
-      Lower and upper bounds of the color range
+        Lower and upper bounds of the color range
     """
     if len(colors) != len(levels) - 1:
         raise ValueError(

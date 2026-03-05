@@ -33,15 +33,15 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
     arrowhead_length = param.Number(
         default=0.025,
         doc="""
-      If directed option is enabled this determines the length of the
-      arrows as fraction of the overall extent of the graph.""",
+        If directed option is enabled this determines the length of the
+        arrows as fraction of the overall extent of the graph.""",
     )
 
     directed = param.Boolean(
         default=False,
         doc="""
-      Whether to draw arrows on the graph edges to indicate the
-      directionality of each edge.""",
+        Whether to draw arrows on the graph edges to indicate the
+        directionality of each edge.""",
     )
 
     selection_policy = param.Selector(

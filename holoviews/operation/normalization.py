@@ -38,8 +38,8 @@ class Normalization(Operation):
     data_range = param.Boolean(
         default=False,
         doc="""
-       Whether normalization is allowed to use the minimum and maximum
-       values of the existing data to infer an appropriate range""",
+        Whether normalization is allowed to use the minimum and maximum
+        values of the existing data to infer an appropriate range""",
     )
 
     ranges = param.ClassSelector(
@@ -47,50 +47,48 @@ class Normalization(Operation):
         allow_None=True,
         class_=(dict, list),
         doc="""
-       The simplest value of this parameter is None to skip all
-       normalization. The next simplest value is an empty dictionary
-       to only applies normalization to Dimensions with explicitly
-       declared ranges.
+        The simplest value of this parameter is None to skip all
+        normalization. The next simplest value is an empty dictionary
+        to only applies normalization to Dimensions with explicitly
+        declared ranges.
 
-       The next most common specification is a dictionary of values
-       and tuple ranges. The value keys are the names of the
-       dimensions to be normalized and the tuple ranges are of form
-       (lower-bound, upper-bound). For instance, you could specify:
+        The next most common specification is a dictionary of values
+        and tuple ranges. The value keys are the names of the
+        dimensions to be normalized and the tuple ranges are of form
+        (lower-bound, upper-bound). For instance, you could specify:
 
-       {'Height':(0, 200), 'z':(0,1)}
+            {'Height':(0, 200), 'z':(0,1)}
 
-       In this case, any element with a 'Height' or 'z'
-       dimension (or both) will be normalized to the supplied ranges.
+        In this case, any element with a 'Height' or 'z'
+        dimension (or both) will be normalized to the supplied ranges.
 
-       Finally, element-specific normalization may also be specified
-       by supplying a match tuple of form (<type>, <group>,
-       <label>). A 1- or 2-tuple may be supplied by omitting the
-       <group>, <label> or just the <label> components
-       respectively. This tuple key then uses the dictionary
-       value-range specification described above.
+        Finally, element-specific normalization may also be specified
+        by supplying a match tuple of form (<type>, <group>,
+        <label>). A 1- or 2-tuple may be supplied by omitting the
+        <group>, <label> or just the <label> components
+        respectively. This tuple key then uses the dictionary
+        value-range specification described above.
 
-      For instance, you could normalize only the Image elements of
-      group pattern using:
+        For instance, you could normalize only the Image elements of
+        group pattern using:
 
-      {('Image','Pattern'):{'Height':(0, 200), 'z':(0,1)}})
+            {('Image','Pattern'):{'Height':(0, 200), 'z':(0,1)}})
 
-
-      Key-wise normalization is possible for all these formats by
-      supplying a list of such dictionary specification that will then
-      be zipped with the keys parameter (if specified).
-      """,
+        Key-wise normalization is possible for all these formats by
+        supplying a list of such dictionary specification that will then
+        be zipped with the keys parameter (if specified).""",
     )
 
     keys = param.List(
         default=None,
         allow_None=True,
         doc="""
-       If supplied, this list of keys is zipped with the supplied list
-       of ranges.
+        If supplied, this list of keys is zipped with the supplied list
+        of ranges.
 
-       These keys are used to supply key specific normalization for
-       HoloMaps containing matching key values, enabling per-element
-       normalization.""",
+        These keys are used to supply key specific normalization for
+        HoloMaps containing matching key values, enabling per-element
+        normalization.""",
     )
 
     def __call__(self, element, ranges=None, keys=None, **params):

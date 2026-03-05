@@ -77,12 +77,12 @@ class operation(Operation):
     output_type = param.Parameter(
         default=None,
         doc="""
-       The output element type which may be None to disable type
-       checking.
+        The output element type which may be None to disable type
+        checking.
 
-       May be used to declare useful information to other code in
-       HoloViews, e.g. required for tab-completion support of operations
-       registered with compositors.""",
+        May be used to declare useful information to other code in
+        HoloViews, e.g. required for tab-completion support of operations
+        registered with compositors.""",
     )
 
     group = param.String(
@@ -210,7 +210,7 @@ class apply_when(param.ParameterizedFunction):
     the number of points in the current viewport exceed 1000 otherwise
     just returning the selected points element:
 
-       apply_when(points, operation=datashade, predicate=lambda x: x > 1000)
+    >>> apply_when(points, operation=datashade, predicate=lambda x: x > 1000)
 
     """
 
@@ -283,8 +283,8 @@ class chain(Operation):
         default=[],
         item_type=Operation,
         doc="""
-       A list of Operations (or Operation instances)
-       that are applied on the input from left to right.""",
+        A list of Operations (or Operation instances)
+        that are applied on the input from left to right.""",
     )
 
     def _process(self, view, key=None):
@@ -351,9 +351,9 @@ class transform(Operation):
 
     operator = param.Callable(
         doc="""
-       Function of one argument that transforms the data in the input
-       Image to the data in the output Image. By default, acts as
-       the identity function such that the output matches the input."""
+        Function of one argument that transforms the data in the input
+        Image to the data in the output Image. By default, acts as
+        the identity function such that the output matches the input."""
     )
 
     def _process(self, img, key=None):
@@ -385,16 +385,16 @@ class image_overlay(Operation):
 
     spec = param.String(
         doc="""
-       Specification of the output Overlay structure. For instance:
+        Specification of the output Overlay structure. For instance:
 
-       Image.R * Image.G * Image.B
+        Image.R * Image.G * Image.B
 
-       Will ensure an overlay of this structure is created even if
-       (for instance) only (Image.R * Image.B) is supplied.
+        Will ensure an overlay of this structure is created even if
+        (for instance) only (Image.R * Image.B) is supplied.
 
-       Elements in the input overlay that match are placed in the
-       appropriate positions and unavailable specification elements
-       are created with the specified fill group."""
+        Elements in the input overlay that match are placed in the
+        appropriate positions and unavailable specification elements
+        are created with the specified fill group."""
     )
 
     fill = param.Number(default=0)
@@ -484,16 +484,16 @@ class threshold(Operation):
     level = param.Number(
         default=0.5,
         doc="""
-       The value at which the threshold is applied. Values lower than
-       the threshold map to the 'low' value and values above map to
-       the 'high' value.""",
+        The value at which the threshold is applied. Values lower than
+        the threshold map to the 'low' value and values above map to
+        the 'high' value.""",
     )
 
     high = param.Number(
         default=1.0,
         doc="""
-      The value given to elements greater than (or equal to) the
-      threshold.""",
+        The value given to elements greater than (or equal to) the
+        threshold.""",
     )
 
     low = param.Number(
@@ -849,10 +849,10 @@ class histogram(Operation):
         default=None,
         class_=(np.ndarray, list, tuple, str),
         doc="""
-      An explicit set of bin edges or a method to find the optimal
-      set of bin edges, e.g. 'auto', 'fd', 'scott' etc. For more
-      documentation on these approaches see the np.histogram_bin_edges
-      documentation.""",
+        An explicit set of bin edges or a method to find the optimal
+        set of bin edges, e.g. 'auto', 'fd', 'scott' etc. For more
+        documentation on these approaches see the np.histogram_bin_edges
+        documentation.""",
     )
 
     cumulative = param.Boolean(
@@ -896,11 +896,11 @@ class histogram(Operation):
         default=False,
         objects=[True, False, "integral", "height"],
         doc="""
-      Controls normalization behavior.  If `True` or `'integral'`, then
-      `density=True` is passed to np.histogram, and the distribution
-      is normalized such that the integral is unity.  If `False`,
-      then the frequencies will be raw counts. If `'height'`, then the
-      frequencies are normalized such that the max bin height is unity.""",
+        Controls normalization behavior.  If `True` or `'integral'`, then
+        `density=True` is passed to np.histogram, and the distribution
+        is normalized such that the integral is unity.  If `False`,
+        then the frequencies will be raw counts. If `'height'`, then the
+        frequencies are normalized such that the max bin height is unity.""",
     )
 
     nonzero = param.Boolean(
@@ -1122,9 +1122,9 @@ class decimate(Operation):
     link_inputs = param.Boolean(
         default=True,
         doc="""
-         By default, the link_inputs parameter is set to True so that
-         when applying shade, backends that support linked streams
-         update RangeXY streams on the inputs of the shade operation.""",
+        By default, the link_inputs parameter is set to True so that
+        when applying shade, backends that support linked streams
+        update RangeXY streams on the inputs of the shade operation.""",
     )
 
     max_samples = param.Integer(
@@ -1149,16 +1149,16 @@ class decimate(Operation):
         default=None,
         length=2,
         doc="""
-       The x_range as a tuple of min and max x-value. Auto-ranges
-       if set to None.""",
+        The x_range as a tuple of min and max x-value. Auto-ranges
+        if set to None.""",
     )
 
     y_range = param.NumericTuple(
         default=None,
         length=2,
         doc="""
-       The x_range as a tuple of min and max y-value. Auto-ranges
-       if set to None.""",
+        The x_range as a tuple of min and max y-value. Auto-ranges
+        if set to None.""",
     )
 
     _per_element = True
@@ -1337,23 +1337,23 @@ class gridmatrix(param.ParameterizedFunction):
     diagonal_type = param.Parameter(
         default=None,
         doc="""
-       The Element type along the diagonal, may be a Histogram or any
-       other plot type which can visualize a univariate distribution.
-       This parameter overrides diagonal_operation.""",
+        The Element type along the diagonal, may be a Histogram or any
+        other plot type which can visualize a univariate distribution.
+        This parameter overrides diagonal_operation.""",
     )
 
     diagonal_operation = param.Parameter(
         default=histogram,
         doc="""
-       The operation applied along the diagonal, may be a histogram-operation
-       or any other function which returns a viewable element.""",
+        The operation applied along the diagonal, may be a histogram-operation
+        or any other function which returns a viewable element.""",
     )
 
     overlay_dims = param.List(
         default=[],
         doc="""
-       If a HoloMap is supplied, this will allow overlaying one or
-       more of its key dimensions.""",
+        If a HoloMap is supplied, this will allow overlaying one or
+        more of its key dimensions.""",
     )
 
     def __call__(self, data, **params):
@@ -1451,13 +1451,13 @@ class dendrogram(Operation):
     optimal_ordering = param.Boolean(
         default=False,
         doc="""
-         If True, the linkage matrix will be reordered so that the distance
-         between successive leaves is minimal. This results in a more intuitive
-         tree structure when the data are visualized. defaults to False,
-         because this algorithm can be slow, particularly on large datasets.
-         For more information:
-         https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
-         """,
+        If True, the linkage matrix will be reordered so that the distance
+        between successive leaves is minimal. This results in a more intuitive
+        tree structure when the data are visualized. defaults to False,
+        because this algorithm can be slow, particularly on large datasets.
+        For more information:
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage
+        """,
     )
 
     linkage_method = param.Selector(

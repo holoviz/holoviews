@@ -21,8 +21,8 @@ class RollingBase(param.Parameterized):
         default=None,
         allow_None=True,
         doc="""
-       Minimum number of observations in window required to have a
-       value (otherwise result is NaN).""",
+        Minimum number of observations in window required to have a
+        value (otherwise result is NaN).""",
     )
 
     rolling_window = param.Integer(

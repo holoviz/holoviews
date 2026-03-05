@@ -32,18 +32,18 @@ class Operation(param.ParameterizedFunction):
     group = param.String(
         default="Operation",
         doc="""
-       The group string used to identify the output of the
-       Operation. By default this should match the operation name.""",
+        The group string used to identify the output of the
+        Operation. By default this should match the operation name.""",
     )
 
     dynamic = param.Selector(
         default="default",
         objects=["default", True, False],
         doc="""
-       Whether the operation should be applied dynamically when a
-       specific frame is requested, specified as a Boolean. If set to
-       'default' the mode will be determined based on the input type,
-       i.e. if the data is a DynamicMap it will stay dynamic.""",
+        Whether the operation should be applied dynamically when a
+        specific frame is requested, specified as a Boolean. If set to
+        'default' the mode will be determined based on the input type,
+        i.e. if the data is a DynamicMap it will stay dynamic.""",
     )
 
     input_ranges = param.ClassSelector(
@@ -51,26 +51,26 @@ class Operation(param.ParameterizedFunction):
         allow_None=True,
         class_=(dict, tuple),
         doc="""
-       Ranges to be used for input normalization (if applicable) in a
-       format appropriate for the Normalization.ranges parameter.
+        Ranges to be used for input normalization (if applicable) in a
+        format appropriate for the Normalization.ranges parameter.
 
-       By default, no normalization is applied. If key-wise
-       normalization is required, a 2-tuple may be supplied where the
-       first component is a Normalization.ranges list and the second
-       component is Normalization.keys. """,
+        By default, no normalization is applied. If key-wise
+        normalization is required, a 2-tuple may be supplied where the
+        first component is a Normalization.ranges list and the second
+        component is Normalization.keys. """,
     )
 
     link_inputs = param.Boolean(
         default=False,
         doc="""
-       If the operation is dynamic, whether or not linked streams
-       should be transferred from the operation inputs for backends
-       that support linked streams.
+        If the operation is dynamic, whether or not linked streams
+        should be transferred from the operation inputs for backends
+        that support linked streams.
 
-       For example if an operation is applied to a DynamicMap with an
-       RangeXY, this switch determines whether the corresponding
-       visualization should update this stream with range changes
-       originating from the newly generated axes.""",
+        For example if an operation is applied to a DynamicMap with an
+        RangeXY, this switch determines whether the corresponding
+        visualization should update this stream with range changes
+        originating from the newly generated axes.""",
     )
 
     streams = param.ClassSelector(

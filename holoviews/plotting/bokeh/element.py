@@ -252,12 +252,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     multi_y = param.Boolean(
         default=False,
         doc="""
-       Enables multiple axes (one per value dimension) in
-       overlays and useful for creating twin-axis plots.
+        Enables multiple axes (one per value dimension) in
+        overlays and useful for creating twin-axis plots.
 
-       When enabled, axis options are no longer propagated between the
-       elements and the overlay container, allowing customization on a
-       per-axis basis.""",
+        When enabled, axis options are no longer propagated between the
+        elements and the overlay container, allowing customization on a
+        per-axis basis.""",
     )
 
     scalebar = param.Boolean(
@@ -349,9 +349,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         default=False,
         class_=(bool, tuple),
         doc="""
-       Enables sub-coordinate systems for this plot. Accepts also a numerical
-       two-tuple that must be a range between 0 and 1, the plot will be
-       rendered on this vertical range of the axis.""",
+        Enables sub-coordinate systems for this plot. Accepts also a numerical
+        two-tuple that must be a range between 0 and 1, the plot will be
+        rendered on this vertical range of the axis.""",
     )
 
     subcoordinate_scale = param.Number(
@@ -367,12 +367,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         default={"title": "12pt"},
         allow_None=True,
         doc="""
-       Specifies various fontsizes of the displayed text.
+        Specifies various fontsizes of the displayed text.
 
-       Finer control is available by supplying a dictionary where any
-       unmentioned keys reverts to the default sizes, e.g:
+        Finer control is available by supplying a dictionary where any
+        unmentioned keys reverts to the default sizes, e.g:
 
-          {'ticks': '20pt', 'title': '15pt', 'ylabel': '5px', 'xlabel': '5px'}""",
+            {'ticks': '20pt', 'title': '15pt', 'ylabel': '5px', 'xlabel': '5px'}""",
     )
 
     gridstyle = param.Dict(
@@ -395,13 +395,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         accommodate large (but not huge) amounts of data. The available
         options are:
 
-          * factor    : Decimation factor to use when applying
-                        decimation.
-          * interval  : Interval (in ms) downsampling will be enabled
-                        after an interactive event.
-          * threshold : Number of samples before downsampling is enabled.
-          * timeout   : Timeout (in ms) for checking whether interactive
-                        tool events are still occurring.""",
+        * factor: Decimation factor to use when applying decimation.
+        * interval: Interval (in ms) downsampling will be enabled after an
+        interactive event.
+        * threshold: Number of samples before downsampling is enabled.
+        * timeout: Timeout (in ms) for checking whether interactive tool events
+        are still occurring.""",
     )
 
     show_frame = param.Boolean(
@@ -1886,11 +1885,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             let vmax = range_limits[key][1]
 
             if (lowerlim !== null) {{
-             vmin = lowerlim
+              vmin = lowerlim
             }}
 
             if (upperlim !== null) {{
-             vmax = upperlim
+              vmax = upperlim
             }}
 
             const span = vmax-vmin
@@ -1955,9 +1954,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             let upperlim = range_tags_extras['y-upperlim'] ?? null
 
             if (range_tags_extras['autorange']) {{
-             let [start, end] = get_padded_range(key, lowerlim, upperlim, range_tags_extras['invert_yaxis'])
-             if ((start != end) && window.Number.isFinite(start) && window.Number.isFinite(end)) {{
-              extra_range.setv({{start, end}})
+              let [start, end] = get_padded_range(key, lowerlim, upperlim, range_tags_extras['invert_yaxis'])
+              if ((start != end) && window.Number.isFinite(start) && window.Number.isFinite(end)) {{
+                extra_range.setv({{start, end}})
               }}
             }}
           }}

@@ -5,30 +5,30 @@ visualization specific code.
 
 There are three classes that form the options system:
 
-Cycle:
+Cycle
+-----
+Used to define infinite cycles over a finite set of elements, using
+either an explicit list or some pre-defined collection (e.g. from
+matplotlib rcParams). For instance, a Cycle object can be used loop
+a set of display colors for multiple curves on a single axis.
 
-   Used to define infinite cycles over a finite set of elements, using
-   either an explicit list or some pre-defined collection (e.g. from
-   matplotlib rcParams). For instance, a Cycle object can be used loop
-   a set of display colors for multiple curves on a single axis.
+Options
+-------
+Containers of arbitrary keyword values, including optional keyword
+validation, support for Cycle objects and inheritance.
 
-Options:
+OptionTree
+----------
+A subclass of AttrTree that is used to define the inheritance
+relationships between a collection of Options objects. Each node
+of the tree supports a group of Options objects and the leaf nodes
+inherit their keyword values from parent nodes up to the root.
 
-   Containers of arbitrary keyword values, including optional keyword
-   validation, support for Cycle objects and inheritance.
-
-OptionTree:
-
-   A subclass of AttrTree that is used to define the inheritance
-   relationships between a collection of Options objects. Each node
-   of the tree supports a group of Options objects and the leaf nodes
-   inherit their keyword values from parent nodes up to the root.
-
-Store:
-
-   A singleton class that stores all global and custom options and
-   links HoloViews objects, the chosen plotting backend and the IPython
-   extension together.
+Store
+-----
+A singleton class that stores all global and custom options and
+links HoloViews objects, the chosen plotting backend and the IPython
+extension together.
 
 """
 
@@ -299,8 +299,8 @@ class Cycle(param.Parameterized):
         default="default_colors",
         allow_None=True,
         doc="""
-       The key in the default_cycles dictionary used to specify the
-       color cycle if values is not supplied. """,
+        The key in the default_cycles dictionary used to specify the
+        color cycle if values is not supplied. """,
     )
 
     values = param.List(
@@ -889,8 +889,8 @@ class Compositor(param.Parameterized):
         default="data",
         objects=["data", "display"],
         doc="""
-      The mode of the Compositor object which may be either 'data' or
-      'display'.""",
+        The mode of the Compositor object which may be either 'data' or
+        'display'.""",
     )
 
     backends = param.List(
@@ -902,17 +902,17 @@ class Compositor(param.Parameterized):
 
     pattern = param.String(
         doc="""
-       The overlay pattern to be processed. An overlay pattern is a
-       sequence of elements specified by dotted paths separated by * .
+        The overlay pattern to be processed. An overlay pattern is a
+        sequence of elements specified by dotted paths separated by * .
 
-       For instance the following pattern specifies three overlaid
-       matrices with values of 'RedChannel', 'GreenChannel' and
-       'BlueChannel' respectively:
+        For instance the following pattern specifies three overlaid
+        matrices with values of 'RedChannel', 'GreenChannel' and
+        'BlueChannel' respectively:
 
-      'Image.RedChannel * Image.GreenChannel * Image.BlueChannel.
+            Image.RedChannel * Image.GreenChannel * Image.BlueChannel.
 
-      This pattern specification could then be associated with the RGB
-      operation that returns a single RGB matrix for display."""
+        This pattern specification could then be associated with the RGB
+        operation that returns a single RGB matrix for display."""
     )
 
     group = param.String(
@@ -1897,12 +1897,14 @@ class StoreOptions:
         with an appropriate category ('plot', 'style' or 'norm'). For
         instance, using the keys described above, the specs could be:
 
-        {'Image:[Options('style', cmap='jet')]}
+            {'Image: [Options('style', cmap='jet')]}
 
         Or setting two types of option at once:
 
-        {'Image.Channel':[Options('plot', size=50),
-                          Options('style', cmap='Blues')]}
+            {"Image.Channel": [
+                Options("plot", size=50),
+                Options("style", cmap="Blues"),
+            ]}
 
 
         Notes

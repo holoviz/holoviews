@@ -861,31 +861,31 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
     absolute_scaling = param.Selector(
         default=False,
         doc="""
-      If aspect_weight is enabled absolute_scaling determines whether
-      axes are scaled relative to the widest plot or whether the
-      aspect scales the axes in absolute terms.""",
+        If aspect_weight is enabled absolute_scaling determines whether
+        axes are scaled relative to the widest plot or whether the
+        aspect scales the axes in absolute terms.""",
     )
 
     aspect_weight = param.Number(
         default=0,
         doc="""
-      Weighting of the individual aspects when computing the Layout
-      grid aspects and overall figure size.""",
+        Weighting of the individual aspects when computing the Layout
+        grid aspects and overall figure size.""",
     )
 
     fig_bounds = param.NumericTuple(
         default=(0.05, 0.05, 0.95, 0.95),
         doc="""
-      The bounds of the figure as a 4-tuple of the form
-      (left, bottom, right, top), defining the size of the border
-      around the subplots.""",
+        The bounds of the figure as a 4-tuple of the form
+        (left, bottom, right, top), defining the size of the border
+        around the subplots.""",
     )
 
     tight = param.Boolean(
         default=False,
         doc="""
-      Tightly fit the axes in the layout within the fig_bounds
-      and tight_padding.""",
+        Tightly fit the axes in the layout within the fig_bounds
+        and tight_padding.""",
     )
 
     tight_padding = param.Parameter(
@@ -896,15 +896,15 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
     hspace = param.Number(
         default=0.5,
         doc="""
-      Specifies the space between horizontally adjacent elements in the grid.
-      Default value is set conservatively to avoid overlap of subplots.""",
+        Specifies the space between horizontally adjacent elements in the grid.
+        Default value is set conservatively to avoid overlap of subplots.""",
     )
 
     vspace = param.Number(
         default=0.3,
         doc="""
-      Specifies the space between vertically adjacent elements in the grid.
-      Default value is set conservatively to avoid overlap of subplots.""",
+        Specifies the space between vertically adjacent elements in the grid.
+        Default value is set conservatively to avoid overlap of subplots.""",
     )
 
     fontsize = param.Parameter(default={"title": 16}, allow_None=True)

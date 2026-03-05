@@ -201,16 +201,16 @@ class bivariate_kde(Operation):
         default=None,
         length=2,
         doc="""
-       The x_range as a tuple of min and max x-value. Auto-ranges
-       if set to None.""",
+        The x_range as a tuple of min and max x-value. Auto-ranges
+        if set to None.""",
     )
 
     y_range = param.NumericTuple(
         default=None,
         length=2,
         doc="""
-       The x_range as a tuple of min and max y-value. Auto-ranges
-       if set to None.""",
+        The x_range as a tuple of min and max y-value. Auto-ranges
+        if set to None.""",
     )
 
     _per_element = True

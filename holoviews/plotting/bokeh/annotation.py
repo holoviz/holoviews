@@ -488,41 +488,39 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
             None,
         ],
         doc="""
-
         How the component should size itself.
 
-        * "fixed" :
-          Component is not responsive. It will retain its original
-          width and height regardless of any subsequent browser window
-          resize events.
-        * "stretch_width"
-          Component will responsively resize to stretch to the
-          available width, without maintaining any aspect ratio. The
-          height of the component depends on the type of the component
-          and may be fixed or fit to component's contents.
-        * "stretch_height"
-          Component will responsively resize to stretch to the
-          available height, without maintaining any aspect ratio. The
-          width of the component depends on the type of the component
-          and may be fixed or fit to component's contents.
-        * "stretch_both"
-          Component is completely responsive, independently in width
-          and height, and will occupy all the available horizontal and
-          vertical space, even if this changes the aspect ratio of the
-          component.
-        * "scale_width"
-          Component will responsively resize to stretch to the
-          available width, while maintaining the original or provided
-          aspect ratio.
-        * "scale_height"
-          Component will responsively resize to stretch to the
-          available height, while maintaining the original or provided
-          aspect ratio.
-        * "scale_both"
-          Component will responsively resize to both the available
-          width and height, while maintaining the original or provided
-          aspect ratio.
-    """,
+        * fixed
+            Component is not responsive. It will retain its original
+            width and height regardless of any subsequent browser window
+            resize events.
+        * stretch_width
+            Component will responsively resize to stretch to the
+            available width, without maintaining any aspect ratio. The
+            height of the component depends on the type of the component
+            and may be fixed or fit to component's contents.
+        * stretch_height
+            Component will responsively resize to stretch to the
+            available height, without maintaining any aspect ratio. The
+            width of the component depends on the type of the component
+            and may be fixed or fit to component's contents.
+        * stretch_both
+            Component is completely responsive, independently in width
+            and height, and will occupy all the available horizontal and
+            vertical space, even if this changes the aspect ratio of the
+            component.
+        * scale_width
+            Component will responsively resize to stretch to the
+            available width, while maintaining the original or provided
+            aspect ratio.
+        * scale_height
+            Component will responsively resize to stretch to the
+            available height, while maintaining the original or provided
+            aspect ratio.
+        * scale_both
+            Component will responsively resize to both the available
+            width and height, while maintaining the original or provided
+            aspect ratio.""",
     )
 
     hooks = param.HookList(

@@ -651,15 +651,15 @@ class PointPlot(ChartPlot, ColorbarPlot, LegendPlot):
         default=1,
         bounds=(0, None),
         doc="""
-      Scaling factor which is applied to either the width or area
-      of each point, depending on the value of `scaling_method`.""",
+        Scaling factor which is applied to either the width or area
+        of each point, depending on the value of `scaling_method`.""",
     )
 
     size_fn = param.Callable(
         default=np.abs,
         doc="""
-      Function applied to size values before applying scaling,
-      to remove values lower than zero.""",
+        Function applied to size values before applying scaling,
+        to remove values lower than zero.""",
     )
 
     style_opts = [
@@ -785,9 +785,9 @@ class VectorFieldPlot(ColorbarPlot):
     arrow_heads = param.Boolean(
         default=True,
         doc="""
-       Whether or not to draw arrow heads. If arrowheads are enabled,
-       they may be customized with the 'headlength' and
-       'headaxislength' style options.""",
+        Whether or not to draw arrow heads. If arrowheads are enabled,
+        they may be customized with the 'headlength' and
+        'headaxislength' style options.""",
     )
 
     magnitude = param.ClassSelector(
@@ -805,8 +805,8 @@ class VectorFieldPlot(ColorbarPlot):
     rescale_lengths = param.Boolean(
         default=True,
         doc="""
-       Whether the lengths will be rescaled to take into account the
-       smallest non-zero distance between two vectors.""",
+        Whether the lengths will be rescaled to take into account the
+        smallest non-zero distance between two vectors.""",
     )
 
     # Deprecated parameters
