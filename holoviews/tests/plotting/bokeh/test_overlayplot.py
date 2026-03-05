@@ -84,7 +84,7 @@ class TestOverlayPlot(LoggingComparison, TestBokehPlot):
         assert plot.handles['hover'].tooltips == tooltips
 
     # def test_hover_tool_overlay_renderers(self):
-    #     overlay = Curve(range(2)).opts(tools=['hover']) * ErrorBars([]).opts(tools=['hover'])
+    #     overlay = hv.Curve(range(2)).opts(tools=['hover']) * ErrorBars([]).opts(tools=['hover'])
     #     plot = bokeh_renderer.get_plot(overlay)
     #     assert len(plot.handles['hover'].renderers) == 1
     #     assert plot.handles['hover'].tooltips == [('x', '@{x}'), ('y', '@{y}')]
@@ -427,7 +427,7 @@ def test_ndoverlay_categorical_y_ranges(order):
         (["zoom_in", "zoom_out"], ["ZoomInTool", "ZoomOutTool"])
     ], ids=["none", "zoom_in", "zoom_in_and_zoom_out"])
 def test_overlay_opts_tools(tools, new_tools):
-    overlay = Curve([1, 2, 3]) * Curve([2, 3, 4])
+    overlay = hv.Curve([1, 2, 3]) *hv.Curve([2, 3, 4])
     if tools is not None:
         overlay.opts(tools=tools)
     plot = bokeh_renderer.get_plot(overlay)
@@ -438,7 +438,7 @@ def test_overlay_opts_tools(tools, new_tools):
 
 
 def test_overlay_opts_tools_with_element_tools():
-    overlay = Curve([1, 2, 3]).opts(tools=['zoom_out']) * Curve([2, 3, 4]).opts(tools=['zoom_in'])
+    overlay = hv.Curve([1, 2, 3]).opts(tools=['zoom_out']) *hv.Curve([2, 3, 4]).opts(tools=['zoom_in'])
     plot = bokeh_renderer.get_plot(overlay)
 
     tool_types = [type(tool).__name__ for tool in plot.state.tools]
@@ -446,7 +446,7 @@ def test_overlay_opts_tools_with_element_tools():
     assert tool_types == [defaults[0], "ZoomOutTool", "ZoomInTool", *defaults[1:]]
 
 def test_overlay_default_tools_not_duplicated():
-    overlay = Curve([1, 2, 3]) * Curve([2, 3, 4])
+    overlay = hv.Curve([1, 2, 3]) *hv.Curve([2, 3, 4])
     plot = bokeh_renderer.get_plot(overlay)
 
     # Count each tool type
@@ -471,7 +471,7 @@ def test_overlay_default_tools_not_duplicated():
     ids=["directional_only", "generic_and_directional"],
 )
 def test_overlay_opts_directional_pan_tools(tool_strings, expected_dimensions, expected_count):
-    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=tool_strings)
+    overlay = (hv.Curve([1, 2, 3]) * hv.Curve([2, 3, 4])).opts(tools=tool_strings)
     plot = bokeh_renderer.get_plot(overlay)
 
     tools = [tool for tool in plot.state.tools if type(tool).__name__ == "PanTool"]
@@ -491,7 +491,7 @@ def test_overlay_opts_directional_pan_tools(tool_strings, expected_dimensions, e
     ids=["directional_only", "generic_and_directional"],
 )
 def test_overlay_opts_directional_zoom_in_tools(tool_strings, expected_dimensions, expected_count):
-    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=tool_strings)
+    overlay = (hv.Curve([1, 2, 3]) * hv.Curve([2, 3, 4])).opts(tools=tool_strings)
     plot = bokeh_renderer.get_plot(overlay)
 
     tools = [tool for tool in plot.state.tools if type(tool).__name__ == "ZoomInTool"]
@@ -511,7 +511,7 @@ def test_overlay_opts_directional_zoom_in_tools(tool_strings, expected_dimension
     ids=["directional_only", "generic_and_directional"],
 )
 def test_overlay_opts_directional_box_zoom_tools(tool_strings, expected_dimensions, expected_count):
-    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=tool_strings)
+    overlay = (hv.Curve([1, 2, 3]) * hv.Curve([2, 3, 4])).opts(tools=tool_strings)
     plot = bokeh_renderer.get_plot(overlay)
 
     tools = [tool for tool in plot.state.tools if type(tool).__name__ == "BoxZoomTool"]
@@ -523,8 +523,8 @@ def test_overlay_opts_directional_box_zoom_tools(tool_strings, expected_dimensio
 
 def test_overlay_opts_mixed_tools_no_duplicates():
     overlay = (
-        Curve([1, 2, 3]).opts(tools=['xpan']) *
-        Curve([2, 3, 4]).opts(tools=['xpan'])
+       hv.Curve([1, 2, 3]).opts(tools=['xpan']) *
+       hv.Curve([2, 3, 4]).opts(tools=['xpan'])
     ).opts(tools=['xpan'])
     plot = bokeh_renderer.get_plot(overlay)
 
@@ -535,7 +535,7 @@ def test_overlay_opts_mixed_tools_no_duplicates():
 
 
 def test_overlay_opts_xwheel_pan_ywheel_pan_distinct():
-    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=['xwheel_pan', 'ywheel_pan'])
+    overlay = (hv.Curve([1, 2, 3]) * hv.Curve([2, 3, 4])).opts(tools=['xwheel_pan', 'ywheel_pan'])
     plot = bokeh_renderer.get_plot(overlay)
 
     wheel_pan_tools = [t for t in plot.state.tools if isinstance(t, bk_tools.WheelPanTool)]
@@ -545,7 +545,7 @@ def test_overlay_opts_xwheel_pan_ywheel_pan_distinct():
 
 
 def test_overlay_opts_tap_doubletap_distinct():
-    overlay = (Curve([1, 2, 3]) * Curve([2, 3, 4])).opts(tools=['tap', 'doubletap'])
+    overlay = (hv.Curve([1, 2, 3]) * hv.Curve([2, 3, 4])).opts(tools=['tap', 'doubletap'])
     plot = bokeh_renderer.get_plot(overlay)
 
     tap_tools = [t for t in plot.state.tools if isinstance(t, bk_tools.TapTool)]
@@ -553,8 +553,8 @@ def test_overlay_opts_tap_doubletap_distinct():
 
 
 def test_overlay_hover_string_not_blocked_by_subplot_hover():
-    curve1 = Curve([1, 2, 3]).opts(tools=[HoverTool(tooltips=[('x', '@x')])])
-    curve2 = Curve([2, 3, 4]).opts(tools=[HoverTool(tooltips=[('y', '@y')])])
+    curve1 = hv.Curve([1, 2, 3]).opts(tools=[HoverTool(tooltips=[('x', '@x')])])
+    curve2 = hv.Curve([2, 3, 4]).opts(tools=[HoverTool(tooltips=[('y', '@y')])])
     overlay = curve1 * curve2
     plot = bokeh_renderer.get_plot(overlay)
 
