@@ -5,7 +5,7 @@ Unit tests of Raster elements
 import numpy as np
 import pytest
 
-from holoviews.element import HSV, RGB, Curve, Image, QuadMesh, Raster
+import holoviews as hv
 from holoviews.testing import assert_data_equal, assert_element_equal
 
 
@@ -15,22 +15,22 @@ class TestRaster:
         self.array1 = np.array([(0, 1, 2), (3, 4, 5)])
 
     def test_raster_init(self):
-        Raster(self.array1)
+        hv.Raster(self.array1)
 
     def test_raster_index(self):
-        raster = Raster(self.array1)
+        raster = hv.Raster(self.array1)
         assert raster[0, 1] == 3
 
     def test_raster_sample(self):
-        raster = Raster(self.array1)
+        raster = hv.Raster(self.array1)
         assert_element_equal(raster.sample(y=0),
-                         Curve(np.array([(0, 0), (1, 1), (2, 2)]),
+                         hv.Curve(np.array([(0, 0), (1, 1), (2, 2)]),
                                kdims=['x'], vdims=['z']))
 
     def test_raster_range_masked(self):
         arr = np.random.rand(10,10)-0.5
         arr = np.ma.masked_where(arr<=0, arr)
-        rrange = Raster(arr).range(2)
+        rrange = hv.Raster(arr).range(2)
         assert rrange == (np.min(arr), np.max(arr))
 
 
@@ -40,11 +40,11 @@ class TestRGB:
         self.rgb_array = np.random.randint(0, 255, (3, 3, 4))
 
     def test_construct_from_array_with_alpha(self):
-        rgb = RGB(self.rgb_array)
+        rgb = hv.RGB(self.rgb_array)
         assert len(rgb.vdims) == 4
 
     def test_construct_from_tuple_with_alpha(self):
-        rgb = RGB(([0, 1, 2], [0, 1, 2], self.rgb_array))
+        rgb = hv.RGB(([0, 1, 2], [0, 1, 2], self.rgb_array))
         assert len(rgb.vdims) == 4
 
     def test_construct_from_xarray_dataset_with_alpha(self):
@@ -53,17 +53,17 @@ class TestRGB:
             data=self.rgb_array,
             coords={"y": [0, 1, 2], "x": [0, 1, 2], "band": list("RGBA")}
         ).to_dataset(dim="band")
-        rgb = RGB(xr_dataset)
+        rgb = hv.RGB(xr_dataset)
         assert str(rgb.alpha_dimension) in xr_dataset.data_vars
         assert len(rgb.vdims) == 4
 
     def test_construct_from_dict_with_alpha(self):
-        rgb = RGB({'x': [1, 2, 3], 'y': [1, 2, 3], ('R', 'G', 'B', 'A'): self.rgb_array})
+        rgb = hv.RGB({'x': [1, 2, 3], 'y': [1, 2, 3], ('R', 'G', 'B', 'A'): self.rgb_array})
         assert len(rgb.vdims) == 4
 
     def test_not_using_class_variables_vdims(self):
-        init_vdims = RGB(self.rgb_array).vdims
-        cls_vdims = RGB.vdims
+        init_vdims = hv.RGB(self.rgb_array).vdims
+        cls_vdims = hv.RGB.vdims
         assert len(init_vdims) == 4
         assert len(cls_vdims) == 3
         for i, c in zip(init_vdims, cls_vdims, strict=False):
@@ -73,7 +73,7 @@ class TestRGB:
     def test_nodata(self):
         N = 2
         rgb_d = np.linspace(0, 1, N * N * 3).reshape(N, N, 3)
-        rgb = RGB(rgb_d)
+        rgb = hv.RGB(rgb_d)
         assert sum(np.isnan(rgb["R"])) == 0
         assert sum(np.isnan(rgb["G"])) == 0
         assert sum(np.isnan(rgb["B"])) == 0
@@ -89,8 +89,8 @@ class TestHSV:
         self.hsv_array = np.random.randint(0, 255, (3, 3, 4))
 
     def test_not_using_class_variables_vdims(self):
-            init_vdims = HSV(self.hsv_array).vdims
-            cls_vdims = HSV.vdims
+            init_vdims = hv.HSV(self.hsv_array).vdims
+            cls_vdims = hv.HSV.vdims
             assert len(init_vdims) == 4
             assert len(cls_vdims) == 3
             for i, c in zip(init_vdims, cls_vdims, strict=False):
@@ -103,8 +103,8 @@ class TestQuadMesh:
         self.array1 = np.array([(0, 1, 2), (3, 4, 5)])
 
     def test_cast_image_to_quadmesh(self):
-        img = Image(self.array1, kdims=['a', 'b'], vdims=['c'], group='A', label='B')
-        qmesh = QuadMesh(img)
+        img = hv.Image(self.array1, kdims=['a', 'b'], vdims=['c'], group='A', label='B')
+        qmesh = hv.QuadMesh(img)
         assert_data_equal(qmesh.dimension_values(0, False), np.array([-0.333333, 0., 0.333333]))
         assert_data_equal(qmesh.dimension_values(1, False), np.array([-0.25, 0.25]))
         assert_data_equal(qmesh.dimension_values(2, flat=False), self.array1[::-1])
@@ -114,7 +114,7 @@ class TestQuadMesh:
         assert qmesh.label == img.label
 
     def test_quadmesh_to_trimesh(self):
-        qmesh = QuadMesh(([0, 1], [0, 1], np.array([[0, 1], [2, 3]])))
+        qmesh = hv.QuadMesh(([0, 1], [0, 1], np.array([[0, 1], [2, 3]])))
         trimesh = qmesh.trimesh()
         simplices = np.array([[0, 1, 3, 0],
                               [1, 2, 4, 2],

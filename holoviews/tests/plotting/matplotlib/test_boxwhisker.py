@@ -1,6 +1,6 @@
 import numpy as np
 
-from holoviews.element import BoxWhisker
+import holoviews as hv
 from holoviews.plotting.mpl.util import MPL_GE_3_9_0
 from holoviews.testing import assert_data_equal
 
@@ -11,7 +11,7 @@ class TestMPLBoxWhiskerPlot(TestMPLPlot):
 
     def test_boxwhisker_simple(self):
         values = np.random.rand(100)
-        boxwhisker = BoxWhisker(values)
+        boxwhisker = hv.BoxWhisker(values)
         plot = mpl_renderer.get_plot(boxwhisker)
         data, style, _axis_opts = plot.get_data(boxwhisker, {}, {})
         assert_data_equal(data[0][0], values)
@@ -22,14 +22,14 @@ class TestMPLBoxWhiskerPlot(TestMPLPlot):
 
     def test_boxwhisker_simple_overlay(self):
         values = np.random.rand(100)
-        boxwhisker = BoxWhisker(values) * BoxWhisker(values)
+        boxwhisker = hv.BoxWhisker(values) * hv.BoxWhisker(values)
         plot = mpl_renderer.get_plot(boxwhisker)
         p1, p2 = plot.subplots.values()
         assert_data_equal(p1.handles['boxes'][0].get_path().vertices,
                          p2.handles['boxes'][0].get_path().vertices)
 
     def test_box_whisker_padding_square(self):
-        curve = BoxWhisker([1, 2, 3]).opts(padding=0.1)
+        curve = hv.BoxWhisker([1, 2, 3]).opts(padding=0.1)
         plot = mpl_renderer.get_plot(curve)
         y_range = plot.handles['axis'].get_ylim()
         assert y_range[0] == 0.8

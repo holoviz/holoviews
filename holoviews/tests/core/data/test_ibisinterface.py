@@ -5,9 +5,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from holoviews.core.data import Dataset
+import holoviews as hv
 from holoviews.core.data.ibis import IBIS_VERSION, IbisInterface
-from holoviews.core.spaces import HoloMap
 from holoviews.testing import assert_element_equal
 
 from ...utils import optional_dependencies
@@ -69,7 +68,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             columns=["Gender", "Age", "Weight", "Height"],
         )
         hetero_db = create_temp_db(hetero_df, "hetero")
-        self.table = Dataset(
+        self.table = hv.Dataset(
             hetero_db.table("hetero"), kdims=self.kdims, vdims=self.vdims
         )
 
@@ -86,7 +85,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             columns=["gender", "age", "weight", "height"],
         )
         alias_db = create_temp_db(alias_df, "alias")
-        self.alias_table = Dataset(
+        self.alias_table = hv.Dataset(
             alias_db.table("alias"), kdims=self.alias_kdims, vdims=self.alias_vdims
         )
 
@@ -98,12 +97,12 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
         ht_df = pd.DataFrame({"x": self.xs, "y": self.ys}, columns=["x", "y"])
         ht_db = create_temp_db(ht_df, "ht")
-        self.dataset_ht = Dataset(ht_db.table("ht"), kdims=["x"], vdims=["y"])
+        self.dataset_ht = hv.Dataset(ht_db.table("ht"), kdims=["x"], vdims=["y"])
 
         hm_df = pd.DataFrame({"x": self.xs, "y": self.y_ints}, columns=["x", "y"])
         hm_db = create_temp_db(hm_df, "hm")
-        self.dataset_hm = Dataset(hm_db.table("hm"), kdims=["x"], vdims=["y"])
-        self.dataset_hm_alias = Dataset(
+        self.dataset_hm = hv.Dataset(hm_db.table("hm"), kdims=["x"], vdims=["y"])
+        self.dataset_hm_alias = hv.Dataset(
             hm_db.table("hm"), kdims=[("x", "X")], vdims=[("y", "Y")]
         )
 
@@ -175,7 +174,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         assert self.dataset_hm.interface.dtype(self.dataset_hm, "y") == int_dtype
 
     def test_dataset_reduce_ht(self):
-        reduced = Dataset(
+        reduced = hv.Dataset(
             {"Age": self.age, "Weight": self.weight, "Height": self.height},
             kdims=self.kdims[1:],
             vdims=self.vdims,
@@ -183,7 +182,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         assert_element_equal(self.table.reduce(["Gender"], np.mean).sort(), reduced.sort())
 
     def test_dataset_aggregate_ht(self):
-        aggregated = Dataset(
+        aggregated = hv.Dataset(
             {"Gender": ["M", "F"], "Weight": [16.5, 10], "Height": [0.7, 0.8]},
             kdims=self.kdims[:1],
             vdims=self.vdims,
@@ -193,7 +192,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         )
 
     def test_dataset_aggregate_ht_alias(self):
-        aggregated = Dataset(
+        aggregated = hv.Dataset(
             {"gender": ["M", "F"], "weight": [16.5, 10], "height": [0.7, 0.8]},
             kdims=self.alias_kdims[:1],
             vdims=self.alias_vdims,
@@ -205,10 +204,10 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
     def test_dataset_groupby(self):
         group1 = {"Age": [10, 16], "Weight": [15, 18], "Height": [0.8, 0.6]}
         group2 = {"Age": [12], "Weight": [10], "Height": [0.8]}
-        grouped = HoloMap(
+        grouped = hv.HoloMap(
             [
-                ("M", Dataset(group1, kdims=["Age"], vdims=self.vdims)),
-                ("F", Dataset(group2, kdims=["Age"], vdims=self.vdims)),
+                ("M", hv.Dataset(group1, kdims=["Age"], vdims=self.vdims)),
+                ("F", hv.Dataset(group2, kdims=["Age"], vdims=self.vdims)),
             ],
             kdims=["Gender"],
         )
@@ -219,10 +218,10 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
     def test_dataset_groupby_alias(self):
         group1 = {"age": [10, 16], "weight": [15, 18], "height": [0.8, 0.6]}
         group2 = {"age": [12], "weight": [10], "height": [0.8]}
-        grouped = HoloMap(
+        grouped = hv.HoloMap(
             [
-                ("M", Dataset(group1, kdims=[("age", "Age")], vdims=self.alias_vdims)),
-                ("F", Dataset(group2, kdims=[("age", "Age")], vdims=self.alias_vdims)),
+                ("M", hv.Dataset(group1, kdims=[("age", "Age")], vdims=self.alias_vdims)),
+                ("F", hv.Dataset(group2, kdims=[("age", "Age")], vdims=self.alias_vdims)),
             ],
             kdims=[("gender", "Gender")],
         )
@@ -232,11 +231,11 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         group1 = {"Gender": ["M"], "Weight": [15], "Height": [0.8]}
         group2 = {"Gender": ["M"], "Weight": [18], "Height": [0.6]}
         group3 = {"Gender": ["F"], "Weight": [10], "Height": [0.8]}
-        grouped = HoloMap(
+        grouped = hv.HoloMap(
             [
-                (10, Dataset(group1, kdims=["Gender"], vdims=self.vdims)),
-                (16, Dataset(group2, kdims=["Gender"], vdims=self.vdims)),
-                (12, Dataset(group3, kdims=["Gender"], vdims=self.vdims)),
+                (10, hv.Dataset(group1, kdims=["Gender"], vdims=self.vdims)),
+                (16, hv.Dataset(group2, kdims=["Gender"], vdims=self.vdims)),
+                (12, hv.Dataset(group3, kdims=["Gender"], vdims=self.vdims)),
             ],
             kdims=["Age"],
             sort=True,

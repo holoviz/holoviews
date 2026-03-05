@@ -5,12 +5,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from holoviews.core.data import Dataset
+import holoviews as hv
 from holoviews.core.data.interface import DataError
 from holoviews.core.util import date_range
-from holoviews.element import HSV, RGB, Curve, Image
 from holoviews.testing import assert_data_equal, assert_element_equal
-from holoviews.util.transform import dim
 
 from ...utils import optional_dependencies
 from .base import (
@@ -33,27 +31,27 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
 
     def test_dataset_dataframe_init_hm(self):
         with pytest.raises(DataError):
-            Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
+            hv.Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
                     kdims=['x'], vdims=['x2'])
 
     def test_dataset_dataframe_init_hm_alias(self):
         with pytest.raises(DataError):
-            Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
+            hv.Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
                     kdims=['x'], vdims=['x2'])
 
     def test_dataset_empty_constructor(self):
-        ds = Dataset([], ['x', 'y'], ['z'])
+        ds = hv.Dataset([], ['x', 'y'], ['z'])
         assert ds.interface.shape(ds, gridded=True) == (0, 0)
 
     def test_dataset_multi_vdim_empty_constructor(self):
-        ds = Dataset([], ['x', 'y'], ['z1', 'z2', 'z3'])
+        ds = hv.Dataset([], ['x', 'y'], ['z1', 'z2', 'z3'])
         assert all(ds.dimension_values(vd, flat=False).shape == (0, 0) for vd in ds.vdims)
 
     def test_irregular_grid_data_values(self):
         nx, ny = 20, 5
         xs, ys = np.meshgrid(np.arange(nx)+0.5, np.arange(ny)+0.5)
         zs = np.arange(100).reshape(5, 20)
-        ds = Dataset((xs, ys, zs), ['x', 'y'], 'z')
+        ds = hv.Dataset((xs, ys, zs), ['x', 'y'], 'z')
         assert_data_equal(ds.dimension_values(2, flat=False), zs)
         assert_data_equal(ds.interface.coords(ds, 'x'), xs)
         assert_data_equal(ds.interface.coords(ds, 'y'), ys)
@@ -62,7 +60,7 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
         nx, ny = 20, 5
         xs, ys = np.meshgrid(np.arange(nx)+0.5, np.arange(ny)*-1+0.5)
         zs = np.arange(100).reshape(5, 20)
-        ds = Dataset((xs, ys, zs), ['x', 'y'], 'z')
+        ds = hv.Dataset((xs, ys, zs), ['x', 'y'], 'z')
         assert_data_equal(ds.dimension_values(2, flat=False), zs)
         assert_data_equal(ds.interface.coords(ds, 'x'), xs)
         assert_data_equal(ds.interface.coords(ds, 'y'), ys)
@@ -110,35 +108,35 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
 
     def test_dataset_2D_columnar_shape(self):
         array = np.random.rand(11, 11)
-        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
+        dataset = hv.Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=['x', 'y'], vdims=['z'])
         assert dataset.shape == (11*11, 3)
 
     def test_dataset_2D_gridded_shape(self):
         array = np.random.rand(12, 11)
-        dataset = Dataset({'x':self.xs, 'y': range(12), 'z': array},
+        dataset = hv.Dataset({'x':self.xs, 'y': range(12), 'z': array},
                           kdims=['x', 'y'], vdims=['z'])
         assert dataset.interface.shape(dataset, gridded=True) == (12, 11)
 
     def test_dataset_2D_aggregate_partial_hm(self):
         array = np.random.rand(11, 11)
-        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
+        dataset = hv.Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=['x', 'y'], vdims=['z'])
         assert_element_equal(dataset.aggregate(['x'], np.mean),
-                         Dataset({'x':self.xs, 'z': np.mean(array, axis=0)},
+                         hv.Dataset({'x':self.xs, 'z': np.mean(array, axis=0)},
                                  kdims=['x'], vdims=['z']))
 
     def test_dataset_2D_aggregate_partial_hm_alias(self):
         array = np.random.rand(11, 11)
-        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
+        dataset = hv.Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=[('x', 'X'), ('y', 'Y')], vdims=[('z', 'Z')])
         assert_element_equal(dataset.aggregate(['X'], np.mean),
-                         Dataset({'x':self.xs, 'z': np.mean(array, axis=0)},
+                         hv.Dataset({'x':self.xs, 'z': np.mean(array, axis=0)},
                                  kdims=[('x', 'X')], vdims=[('z', 'Z')]))
 
     def test_dataset_2D_reduce_hm(self):
         array = np.random.rand(11, 11)
-        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
+        dataset = hv.Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=['x', 'y'], vdims=['z'])
         output = np.array(dataset.reduce(['x', 'y'], np.mean)),
         expected = np.mean(array)
@@ -146,7 +144,7 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
 
     def test_dataset_2D_reduce_hm_alias(self):
         array = np.random.rand(11, 11)
-        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
+        dataset = hv.Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=[('x', 'X'), ('y', 'Y')], vdims=[('z', 'Z')])
         output = np.array(dataset.reduce(['x', 'y'], np.mean)),
         expected = np.mean(array)
@@ -156,26 +154,26 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
 
     def test_dataset_groupby_dynamic(self):
         array = np.random.rand(11, 11)
-        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
+        dataset = hv.Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=['x', 'y'], vdims=['z'])
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], dataset):
             grouped = dataset.groupby('x', dynamic=True)
-        first = Dataset({'y': self.y_ints, 'z': array[:, 0]},
+        first = hv.Dataset({'y': self.y_ints, 'z': array[:, 0]},
                         kdims=['y'], vdims=['z'])
         assert_element_equal(grouped[0], first)
 
     def test_dataset_groupby_dynamic_alias(self):
         array = np.random.rand(11, 11)
-        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
+        dataset = hv.Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=[('x', 'X'), ('y', 'Y')], vdims=[('z', 'Z')])
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], dataset):
             grouped = dataset.groupby('X', dynamic=True)
-        first = Dataset({'y': self.y_ints, 'z': array[:, 0]},
+        first = hv.Dataset({'y': self.y_ints, 'z': array[:, 0]},
                         kdims=[('y', 'Y')], vdims=[('z', 'Z')])
         assert_element_equal(grouped[0], first)
 
     def test_dataset_groupby_multiple_dims(self):
-        dataset = Dataset((range(8), range(8), range(8), range(8),
+        dataset = hv.Dataset((range(8), range(8), range(8), range(8),
                            np.random.rand(8, 8, 8, 8)),
                           kdims=['a', 'b', 'c', 'd'], vdims=['Value'])
         grouped = dataset.groupby(['c', 'd'])
@@ -186,34 +184,34 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
 
     def test_dataset_groupby_drop_dims(self):
         array = np.random.rand(3, 20, 10)
-        ds = Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array},
+        ds = hv.Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array},
                      kdims=['x', 'y', 'z'], vdims=['Val'])
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], (ds, Dataset)):
-            partial = ds.to(Dataset, kdims=['x'], vdims=['Val'], groupby='y')
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], (ds, hv.Dataset)):
+            partial = ds.to(hv.Dataset, kdims=['x'], vdims=['Val'], groupby='y')
         assert_data_equal(partial.last['Val'], array[:, -1, :].T.flatten())
 
     def test_dataset_groupby_drop_dims_dynamic(self):
         array = np.random.rand(3, 20, 10)
-        ds = Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array},
+        ds = hv.Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array},
                      kdims=['x', 'y', 'z'], vdims=['Val'])
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], (ds, Dataset)):
-            partial = ds.to(Dataset, kdims=['x'], vdims=['Val'], groupby='y', dynamic=True)
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], (ds, hv.Dataset)):
+            partial = ds.to(hv.Dataset, kdims=['x'], vdims=['Val'], groupby='y', dynamic=True)
             assert_data_equal(partial[19]['Val'], array[:, -1, :].T.flatten())
 
     def test_dataset_groupby_drop_dims_with_vdim(self):
         array = np.random.rand(3, 20, 10)
-        ds = Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array, 'Val2': array*2},
+        ds = hv.Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array, 'Val2': array*2},
                      kdims=['x', 'y', 'z'], vdims=['Val', 'Val2'])
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], (ds, Dataset)):
-            partial = ds.to(Dataset, kdims=['Val'], vdims=['Val2'], groupby='y')
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], (ds, hv.Dataset)):
+            partial = ds.to(hv.Dataset, kdims=['Val'], vdims=['Val2'], groupby='y')
         assert_data_equal(partial.last['Val'], array[:, -1, :].T.flatten())
 
     def test_dataset_groupby_drop_dims_dynamic_with_vdim(self):
         array = np.random.rand(3, 20, 10)
-        ds = Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array, 'Val2': array*2},
+        ds = hv.Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array, 'Val2': array*2},
                      kdims=['x', 'y', 'z'], vdims=['Val', 'Val2'])
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], (ds, Dataset)):
-            partial = ds.to(Dataset, kdims=['Val'], vdims=['Val2'], groupby='y', dynamic=True)
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], (ds, hv.Dataset)):
+            partial = ds.to(hv.Dataset, kdims=['Val'], vdims=['Val2'], groupby='y', dynamic=True)
             assert_data_equal(partial[19]['Val'], array[:, -1, :].T.flatten())
 
     def test_dataset_ndloc_lists(self):
@@ -260,23 +258,23 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
 
     def test_reindex_drop_scalars_xs(self):
         reindexed = self.dataset_grid.ndloc[:, 0].reindex()
-        ds = Dataset((self.grid_ys, self.grid_zs[:, 0]), 'y', 'z')
+        ds = hv.Dataset((self.grid_ys, self.grid_zs[:, 0]), 'y', 'z')
         assert_element_equal(reindexed, ds)
 
     def test_reindex_drop_scalars_ys(self):
         reindexed = self.dataset_grid.ndloc[0].reindex()
-        ds = Dataset((self.grid_xs, self.grid_zs[0]), 'x', 'z')
+        ds = hv.Dataset((self.grid_xs, self.grid_zs[0]), 'x', 'z')
         assert_element_equal(reindexed, ds)
 
     def test_reindex_2d_grid_to_1d(self):
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.dataset_grid):
             ds = self.dataset_grid.reindex(kdims=['x'])
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], Dataset):
-            assert_element_equal(ds, Dataset(self.dataset_grid.columns(), 'x', 'z'))
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], hv.Dataset):
+            assert_element_equal(ds, hv.Dataset(self.dataset_grid.columns(), 'x', 'z'))
 
     def test_mask_2d_array(self):
         array = np.random.rand(4, 3)
-        ds = Dataset(([0, 1, 2], [1, 2, 3, 4], array), ['x', 'y'], 'z')
+        ds = hv.Dataset(([0, 1, 2], [1, 2, 3, 4], array), ['x', 'y'], 'z')
         mask = np.array([[1, 1, 0], [1, 0, 1], [0, 1, 1], [1, 0, 1]], dtype='bool')
         masked = ds.clone(ds.interface.mask(ds, mask))
         masked_array = masked.dimension_values(2, flat=False)
@@ -286,7 +284,7 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
 
     def test_mask_2d_array_x_reversed(self):
         array = np.random.rand(4, 3)
-        ds = Dataset(([0, 1, 2][::-1], [1, 2, 3, 4], array[:, ::-1]), ['x', 'y'], 'z')
+        ds = hv.Dataset(([0, 1, 2][::-1], [1, 2, 3, 4], array[:, ::-1]), ['x', 'y'], 'z')
         mask = np.array([[1, 1, 0], [1, 0, 1], [0, 1, 1], [1, 0, 1]], dtype='bool')
         masked = ds.clone(ds.interface.mask(ds, mask))
         masked_array = masked.dimension_values(2, flat=False)
@@ -296,7 +294,7 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
 
     def test_mask_2d_array_y_reversed(self):
         array = np.random.rand(4, 3)
-        ds = Dataset(([0, 1, 2], [1, 2, 3, 4][::-1], array[::-1]), ['x', 'y'], 'z')
+        ds = hv.Dataset(([0, 1, 2], [1, 2, 3, 4][::-1], array[::-1]), ['x', 'y'], 'z')
         mask = np.array([[1, 1, 0], [1, 0, 1], [0, 1, 1], [1, 0, 1]], dtype='bool')
         masked = ds.clone(ds.interface.mask(ds, mask))
         masked_array = masked.dimension_values(2, flat=False)
@@ -306,7 +304,7 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
 
     def test_mask_2d_array_xy_reversed(self):
         array = np.random.rand(4, 3)
-        ds = Dataset(([0, 1, 2][::-1], [1, 2, 3, 4][::-1], array[::-1, ::-1]), ['x', 'y'], 'z')
+        ds = hv.Dataset(([0, 1, 2][::-1], [1, 2, 3, 4][::-1], array[::-1, ::-1]), ['x', 'y'], 'z')
         mask = np.array([[1, 1, 0], [1, 0, 1], [0, 1, 1], [1, 0, 1]], dtype='bool')
         masked = ds.clone(ds.interface.mask(ds, mask))
         masked_array = masked.dimension_values(2, flat=False)
@@ -315,28 +313,28 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
         assert_data_equal(masked_array, expected)
 
     def test_dataset_transform_replace_kdim_on_grid(self):
-        transformed = self.dataset_grid.transform(x=dim('x')*2)
+        transformed = self.dataset_grid.transform(x=hv.dim('x')*2)
         expected = self.element(
             ([0, 2], self.grid_ys, self.grid_zs), ['x', 'y'], ['z']
         )
         assert_element_equal(transformed, expected)
 
     def test_dataset_transform_replace_vdim_on_grid(self):
-        transformed = self.dataset_grid.transform(z=dim('z')*2)
+        transformed = self.dataset_grid.transform(z=hv.dim('z')*2)
         expected = self.element(
             (self.grid_xs, self.grid_ys, self.grid_zs*2), ['x', 'y'], ['z']
         )
         assert_element_equal(transformed, expected)
 
     def test_dataset_transform_replace_kdim_on_inverted_grid(self):
-        transformed = self.dataset_grid_inv.transform(x=dim('x')*2)
+        transformed = self.dataset_grid_inv.transform(x=hv.dim('x')*2)
         expected = self.element(
             ([2, 0], self.grid_ys[::-1], self.grid_zs), ['x', 'y'], ['z']
         )
         assert_element_equal(transformed, expected)
 
     def test_dataset_transform_replace_vdim_on_inverted_grid(self):
-        transformed = self.dataset_grid_inv.transform(z=dim('z')*2)
+        transformed = self.dataset_grid_inv.transform(z=hv.dim('z')*2)
         expected = self.element(
             (self.grid_xs[::-1], self.grid_ys[::-1], self.grid_zs*2), ['x', 'y'], ['z']
         )
@@ -347,7 +345,7 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
 class GridInterfaceTests(BaseGridInterfaceTests):
     datatype = 'grid'
     data_type = (dict,)
-    element = Dataset
+    element = hv.Dataset
 
     __test__ = True
 
@@ -382,7 +380,7 @@ class DaskGridInterfaceTests(GridInterfaceTests):
 
     def test_select_lazy(self):
         arr = da.from_array(np.arange(1, 12), 3)
-        ds = Dataset({'x': range(11), 'y': arr}, 'x', 'y')
+        ds = hv.Dataset({'x': range(11), 'y': arr}, 'x', 'y')
         assert isinstance(ds.select(x=(0, 5)).data['y'], da.Array)
 
     # TODO: Some of the test below are copy/pasted
@@ -408,42 +406,42 @@ class DaskGridInterfaceTests(GridInterfaceTests):
 
     def test_dataset_2D_columnar_shape(self):
         array = da.from_array(np.random.rand(11, 11), 3)
-        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
+        dataset = hv.Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=['x', 'y'], vdims=['z'])
         assert dataset.shape == (11*11, 3)
 
     def test_dataset_2D_gridded_shape(self):
         array = da.from_array(np.random.rand(12, 11), 3)
-        dataset = Dataset({'x':self.xs, 'y': range(12), 'z': array},
+        dataset = hv.Dataset({'x':self.xs, 'y': range(12), 'z': array},
                           kdims=['x', 'y'], vdims=['z'])
         assert dataset.interface.shape(dataset, gridded=True) == (12, 11)
 
     def test_dataset_2D_aggregate_partial_hm(self):
         array = da.from_array(np.random.rand(11, 11), 3)
-        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
+        dataset = hv.Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=['x', 'y'], vdims=['z'])
         assert_element_equal(dataset.aggregate(['x'], np.mean),
-                         Dataset({'x':self.xs, 'z': np.mean(array, axis=0).compute()},
+                         hv.Dataset({'x':self.xs, 'z': np.mean(array, axis=0).compute()},
                                  kdims=['x'], vdims=['z']))
 
     def test_dataset_2D_aggregate_partial_hm_alias(self):
         array = da.from_array(np.random.rand(11, 11), 3)
-        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
+        dataset = hv.Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=[('x', 'X'), ('y', 'Y')], vdims=[('z', 'Z')])
         assert_element_equal(dataset.aggregate(['X'], np.mean),
-                         Dataset({'x':self.xs, 'z': np.mean(array, axis=0).compute()},
+                         hv.Dataset({'x':self.xs, 'z': np.mean(array, axis=0).compute()},
                                  kdims=[('x', 'X')], vdims=[('z', 'Z')]))
 
     def test_dataset_2D_reduce_hm(self):
         array = da.from_array(np.random.rand(11, 11), 3)
-        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
+        dataset = hv.Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=['x', 'y'], vdims=['z'])
         output = dataset.reduce(['x', 'y'], np.mean),
         assert np.isclose(output, np.mean(array).compute())
 
     def test_dataset_2D_reduce_hm_alias(self):
         array = np.random.rand(11, 11)
-        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
+        dataset = hv.Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=[('x', 'X'), ('y', 'Y')], vdims=[('z', 'Z')])
         output = np.array(dataset.reduce(['x', 'y'], np.mean))
         expected = np.mean(array)
@@ -453,26 +451,26 @@ class DaskGridInterfaceTests(GridInterfaceTests):
 
     def test_dataset_groupby_dynamic(self):
         array = da.from_array(np.random.rand(11, 11), 3)
-        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
+        dataset = hv.Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=['x', 'y'], vdims=['z'])
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], dataset):
             grouped = dataset.groupby('x', dynamic=True)
-        first = Dataset({'y': self.y_ints.compute(), 'z': array[:, 0]},
+        first = hv.Dataset({'y': self.y_ints.compute(), 'z': array[:, 0]},
                         kdims=['y'], vdims=['z'])
         assert_element_equal(grouped[0], first)
 
     def test_dataset_groupby_dynamic_alias(self):
         array = da.from_array(np.random.rand(11, 11), 3)
-        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
+        dataset = hv.Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=[('x', 'X'), ('y', 'Y')], vdims=[('z', 'Z')])
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], dataset):
             grouped = dataset.groupby('X', dynamic=True)
-        first = Dataset({'y': self.y_ints.compute(), 'z': array[:, 0].compute()},
+        first = hv.Dataset({'y': self.y_ints.compute(), 'z': array[:, 0].compute()},
                         kdims=[('y', 'Y')], vdims=[('z', 'Z')])
         assert_element_equal(grouped[0], first)
 
     def test_dataset_groupby_multiple_dims(self):
-        dataset = Dataset((range(8), range(8), range(8), range(8),
+        dataset = hv.Dataset((range(8), range(8), range(8), range(8),
                            da.from_array(np.random.rand(8, 8, 8, 8), 4)),
                           kdims=['a', 'b', 'c', 'd'], vdims=['Value'])
         grouped = dataset.groupby(['c', 'd'])
@@ -483,34 +481,34 @@ class DaskGridInterfaceTests(GridInterfaceTests):
 
     def test_dataset_groupby_drop_dims(self):
         array = da.from_array(np.random.rand(3, 20, 10), 3)
-        ds = Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array},
+        ds = hv.Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array},
                      kdims=['x', 'y', 'z'], vdims=['Val'])
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], (ds, Dataset)):
-            partial = ds.to(Dataset, kdims=['x'], vdims=['Val'], groupby='y')
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], (ds, hv.Dataset)):
+            partial = ds.to(hv.Dataset, kdims=['x'], vdims=['Val'], groupby='y')
         assert_data_equal(partial.last['Val'], array[:, -1, :].T.flatten().compute())
 
     def test_dataset_groupby_drop_dims_dynamic(self):
         array = da.from_array(np.random.rand(3, 20, 10), 3)
-        ds = Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array},
+        ds = hv.Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array},
                      kdims=['x', 'y', 'z'], vdims=['Val'])
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], (ds, Dataset)):
-            partial = ds.to(Dataset, kdims=['x'], vdims=['Val'], groupby='y', dynamic=True)
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], (ds, hv.Dataset)):
+            partial = ds.to(hv.Dataset, kdims=['x'], vdims=['Val'], groupby='y', dynamic=True)
             assert_data_equal(partial[19]['Val'], array[:, -1, :].T.flatten().compute())
 
     def test_dataset_groupby_drop_dims_with_vdim(self):
         array = da.from_array(np.random.rand(3, 20, 10), 3)
-        ds = Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array, 'Val2': array*2},
+        ds = hv.Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array, 'Val2': array*2},
                      kdims=['x', 'y', 'z'], vdims=['Val', 'Val2'])
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], (ds, Dataset)):
-            partial = ds.to(Dataset, kdims=['Val'], vdims=['Val2'], groupby='y')
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], (ds, hv.Dataset)):
+            partial = ds.to(hv.Dataset, kdims=['Val'], vdims=['Val2'], groupby='y')
         assert_data_equal(partial.last['Val'], array[:, -1, :].T.flatten().compute())
 
     def test_dataset_groupby_drop_dims_dynamic_with_vdim(self):
         array = da.from_array(np.random.rand(3, 20, 10), 3)
-        ds = Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array, 'Val2': array*2},
+        ds = hv.Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array, 'Val2': array*2},
                      kdims=['x', 'y', 'z'], vdims=['Val', 'Val2'])
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], (ds, Dataset)):
-            partial = ds.to(Dataset, kdims=['Val'], vdims=['Val2'], groupby='y', dynamic=True)
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], (ds, hv.Dataset)):
+            partial = ds.to(hv.Dataset, kdims=['Val'], vdims=['Val2'], groupby='y', dynamic=True)
             assert_data_equal(partial[19]['Val'], array[:, -1, :].T.flatten().compute())
 
     def test_dataset_get_dframe(self):
@@ -530,40 +528,40 @@ class ImageElement_GridInterfaceTests(BaseImageElementInterfaceTests):
     __test__ = True
 
     def init_data(self):
-        self.image = Image((self.xs, self.ys, self.array))
-        self.image_inv = Image((self.xs[::-1], self.ys[::-1], self.array[::-1, ::-1]))
+        self.image = hv.Image((self.xs, self.ys, self.array))
+        self.image_inv = hv.Image((self.xs[::-1], self.ys[::-1], self.array[::-1, ::-1]))
 
     def test_init_data_datetime_xaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         xs = date_range(start, end, 10)
-        Image((xs, self.ys, self.array))
+        hv.Image((xs, self.ys, self.array))
 
     def test_init_data_datetime_yaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         ys = date_range(start, end, 10)
-        Image((self.xs, ys, self.array))
+        hv.Image((self.xs, ys, self.array))
 
     def test_init_bounds_datetime_xaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         xs = date_range(start, end, 10)
-        image = Image((xs, self.ys, self.array))
+        image = hv.Image((xs, self.ys, self.array))
         assert image.bounds.lbrt() == (start, 0, end, 10)
 
     def test_init_bounds_datetime_yaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         ys = date_range(start, end, 10)
-        image = Image((self.xs, ys, self.array))
+        image = hv.Image((self.xs, ys, self.array))
         assert image.bounds.lbrt() == (-10, start, 10, end)
 
     def test_init_densities_datetime_xaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         xs = date_range(start, end, 10)
-        image = Image((xs, self.ys, self.array))
+        image = hv.Image((xs, self.ys, self.array))
         assert image.xdensity == 1e-5
         assert image.ydensity == 1
 
@@ -571,7 +569,7 @@ class ImageElement_GridInterfaceTests(BaseImageElementInterfaceTests):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         ys = date_range(start, end, 10)
-        image = Image((self.xs, ys, self.array))
+        image = hv.Image((self.xs, ys, self.array))
         assert image.xdensity == 0.5
         assert image.ydensity == 1e-5
 
@@ -579,51 +577,51 @@ class ImageElement_GridInterfaceTests(BaseImageElementInterfaceTests):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         xs = date_range(start, end, 10)
-        image = Image((xs, self.ys, self.array))
+        image = hv.Image((xs, self.ys, self.array))
         curve = image.sample(x=xs[3])
-        assert_element_equal(curve, Curve((self.ys, self.array[:, 3]), 'y', 'z'))
+        assert_element_equal(curve, hv.Curve((self.ys, self.array[:, 3]), 'y', 'z'))
 
     def test_sample_datetime_yaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         ys = date_range(start, end, 10)
-        image = Image((self.xs, ys, self.array))
+        image = hv.Image((self.xs, ys, self.array))
         curve = image.sample(y=ys[3])
-        assert_element_equal(curve, Curve((self.xs, self.array[3]), 'x', 'z'))
+        assert_element_equal(curve, hv.Curve((self.xs, self.array[3]), 'x', 'z'))
 
     def test_range_datetime_xdim(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         xs = date_range(start, end, 10)
-        image = Image((xs, self.ys, self.array))
+        image = hv.Image((xs, self.ys, self.array))
         assert image.range(0) == (start, end)
 
     def test_range_datetime_ydim(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         ys = date_range(start, end, 10)
-        image = Image((self.xs, ys, self.array))
+        image = hv.Image((self.xs, ys, self.array))
         assert image.range(1) == (start, end)
 
     def test_dimension_values_datetime_xcoords(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         xs = date_range(start, end, 10)
-        image = Image((xs, self.ys, self.array))
+        image = hv.Image((xs, self.ys, self.array))
         assert_data_equal(image.dimension_values(0, expanded=False), xs)
 
     def test_dimension_values_datetime_ycoords(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         ys = date_range(start, end, 10)
-        image = Image((self.xs, ys, self.array))
+        image = hv.Image((self.xs, ys, self.array))
         assert_data_equal(image.dimension_values(1, expanded=False), ys)
 
     def test_slice_datetime_xaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         xs = date_range(start, end, 10)
-        image = Image((xs, self.ys, self.array))
+        image = hv.Image((xs, self.ys, self.array))
         sliced = image[start+np.timedelta64(530, 'ms'): start+np.timedelta64(770, 'ms')]
         assert_data_equal(sliced.dimension_values(2, flat=False),
                          self.array[:, 5:8])
@@ -632,7 +630,7 @@ class ImageElement_GridInterfaceTests(BaseImageElementInterfaceTests):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         ys = date_range(start, end, 10)
-        image = Image((self.xs, ys, self.array))
+        image = hv.Image((self.xs, ys, self.array))
         sliced = image[:, start+np.timedelta64(120, 'ms'): start+np.timedelta64(520, 'ms')]
         assert_data_equal(sliced.dimension_values(2, flat=False),
                          self.array[1:5, :])
@@ -687,7 +685,7 @@ class RGBElement_GridInterfaceTests(BaseRGBElementInterfaceTests):
     __test__ = True
 
     def init_data(self):
-        self.rgb = RGB((self.xs, self.ys, self.rgb_array[:, :, 0],
+        self.rgb = hv.RGB((self.xs, self.ys, self.rgb_array[:, :, 0],
                         self.rgb_array[:, :, 1], self.rgb_array[:, :, 2]))
 
 
@@ -699,7 +697,7 @@ class RGBElement_PackedGridInterfaceTests(BaseRGBElementInterfaceTests):
     __test__ = True
 
     def init_data(self):
-        self.rgb = RGB((self.xs, self.ys, self.rgb_array))
+        self.rgb = hv.RGB((self.xs, self.ys, self.rgb_array))
 
 
 class HSVElement_GridInterfaceTests(BaseHSVElementInterfaceTests):
@@ -710,5 +708,5 @@ class HSVElement_GridInterfaceTests(BaseHSVElementInterfaceTests):
     __test__ = True
 
     def init_data(self):
-        self.hsv = HSV((self.xs, self.ys, self.hsv_array[:, :, 0],
+        self.hsv = hv.HSV((self.xs, self.ys, self.hsv_array[:, :, 0],
                         self.hsv_array[:, :, 1], self.hsv_array[:, :, 2]))

@@ -9,15 +9,15 @@ import zipfile
 
 import numpy as np
 
-from holoviews import Image
+import holoviews as hv
 from holoviews.core.io import FileArchive, Serializer
 
 
 class TestFileArchive:
 
     def setup_method(self):
-        self.image1 = Image(np.array([[1,2],[4,5]]), group='Group1', label='Im1')
-        self.image2 = Image(np.array([[5,4],[3,2]]), group='Group2', label='Im2')
+        self.image1 = hv.Image(np.array([[1,2],[4,5]]), group='Group1', label='Im1')
+        self.image2 = hv.Image(np.array([[5,4],[3,2]]), group='Group2', label='Im2')
 
     def test_filearchive_init(self):
         FileArchive()

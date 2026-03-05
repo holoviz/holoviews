@@ -1,14 +1,14 @@
 import numpy as np
 
-from holoviews.element.tiles import _ATTRIBUTIONS
-from holoviews.plotting.plotly import ElementPlot
-from holoviews.plotting.plotly.util import (
+from ...element.tiles import _ATTRIBUTIONS
+from ...util.warnings import warn
+from . import ElementPlot
+from .util import (
     PLOTLY_GE_6_0_0,
     PLOTLY_MAP,
     PLOTLY_SCATTERMAP,
     STYLE_ALIASES,
 )
-from holoviews.util.warnings import warn
 
 
 class TilePlot(ElementPlot):

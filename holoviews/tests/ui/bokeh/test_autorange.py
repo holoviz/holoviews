@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from holoviews.element import Curve
+import holoviews as hv
 from holoviews.plotting.bokeh.renderer import BokehRenderer
 
 from .. import expect, wait_until
@@ -11,7 +11,7 @@ pytestmark = pytest.mark.ui
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_autorange_single(serve_hv):
-    curve = Curve(np.arange(1000)).opts(autorange='y', active_tools=['box_zoom'])
+    curve = hv.Curve(np.arange(1000)).opts(autorange='y', active_tools=['box_zoom'])
 
     plot = BokehRenderer.get_plot(curve)
 
@@ -35,8 +35,8 @@ def test_autorange_single(serve_hv):
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_autorange_single_in_overlay(serve_hv):
-    c1 = Curve(np.arange(1000))
-    c2 = Curve(-np.arange(1000)).opts(autorange='y')
+    c1 = hv.Curve(np.arange(1000))
+    c2 = hv.Curve(-np.arange(1000)).opts(autorange='y')
 
     overlay = (c1*c2).opts(active_tools=['box_zoom'])
 
@@ -61,8 +61,8 @@ def test_autorange_single_in_overlay(serve_hv):
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_autorange_overlay(serve_hv):
-    c1 = Curve(np.arange(1000))
-    c2 = Curve(-np.arange(1000))
+    c1 = hv.Curve(np.arange(1000))
+    c2 = hv.Curve(-np.arange(1000))
 
     overlay = (c1*c2).opts(active_tools=['box_zoom'], autorange='y')
 

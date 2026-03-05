@@ -8,7 +8,7 @@ from ..core import Dataset, Dimension, Element2D
 from ..core.accessors import Redim
 from ..core.operation import Operation
 from ..core.util import dtype_kind, is_dataframe, max_range, search_indices
-from .chart import Points
+from .geom import Points
 from .path import Path
 from .util import (
     circular_layout,

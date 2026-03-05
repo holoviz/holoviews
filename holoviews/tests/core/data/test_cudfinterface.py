@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import pytest
 
-from holoviews.core.data import Dataset
+import holoviews as hv
 from holoviews.testing import assert_data_equal
 
 from .base import HeterogeneousColumnTests, InterfaceTests
@@ -47,7 +47,7 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         super().test_dataset_2D_aggregate_spread_fn_with_duplicates()
 
     def test_dataset_mixed_type_range(self):
-        ds = Dataset((['A', 'B', 'C', None],), 'A')
+        ds = hv.Dataset((['A', 'B', 'C', None],), 'A')
         vmin, vmax = ds.range(0)
         assert np.isnan(vmin)
         assert np.isnan(vmax)

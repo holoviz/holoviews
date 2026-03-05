@@ -5,11 +5,11 @@ import param
 from param.parameterized import bothmethod
 
 from .core.data import Dataset
-from .core.element import Element, Layout
-from .core.layout import AdjointLayout
+from .core.element import Element
+from .core.layout import AdjointLayout, Layout
 from .core.options import CallbackError, Store
 from .core.overlay import NdOverlay, Overlay
-from .core.spaces import GridSpace
+from .core.spaces import DynamicMap, GridSpace
 from .streams import (
     CrossFilterSet,
     Derived,
@@ -19,7 +19,6 @@ from .streams import (
     SelectMode,
     Stream,
 )
-from .util import DynamicMap
 
 
 class _Cmap(Stream):

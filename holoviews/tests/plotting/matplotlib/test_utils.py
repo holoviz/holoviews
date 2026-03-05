@@ -1,6 +1,6 @@
 import numpy as np
 
-from holoviews.element import Polygons
+import holoviews as hv
 from holoviews.plotting.mpl.util import polygons_to_path_patches
 from holoviews.testing import assert_data_equal
 
@@ -18,7 +18,7 @@ class TestUtils(TestMPLPlot):
             [],
             []
         ]
-        polys = Polygons([{'x': xs, 'y': ys, 'holes': holes}])
+        polys = hv.Polygons([{'x': xs, 'y': ys, 'holes': holes}])
         paths = polygons_to_path_patches(polys)
 
 

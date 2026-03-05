@@ -4,6 +4,7 @@ import hashlib
 import inspect
 import itertools
 import json
+import math
 import numbers
 import operator
 import pickle
@@ -976,6 +977,42 @@ def find_range(values, soft_range=None):
             return (None, None)
 
 
+_numeric_fast_types = (int, float, np.integer, np.floating)
+
+
+def _minmax_finite(values):
+    """Return (min, max) of finite values, or (np.nan, np.nan) if none found.
+
+    Converts to Python float for better performance for numpy scalar type while
+    preserving original types in the return values.
+
+    NaN values are implicitly excluded because IEEE 754 comparisons with NaN
+    always return False.
+    """
+    lo_f = math.inf
+    hi_f = -math.inf
+    lo_val = hi_val = None
+    for v in values:
+        if v is not None:
+            fv = float(v)
+            if fv <= lo_f:
+                lo_f = fv
+                lo_val = v
+            if fv >= hi_f:
+                hi_f = fv
+                hi_val = v
+    return (lo_val, hi_val) if lo_val is not None else (np.nan, np.nan)
+
+
+def _max_range_numeric(ranges, combined):
+    """Pure-Python fast path for max_range when all values are numeric or None."""
+    if combined:
+        return _minmax_finite(v for r in ranges for v in r)
+    lo, _ = _minmax_finite(r[0] for r in ranges)
+    _, hi = _minmax_finite(r[1] for r in ranges)
+    return lo, hi
+
+
 def max_range(ranges, combined=True):
     """Computes the maximal lower and upper bounds from a list bounds.
 
@@ -992,6 +1029,13 @@ def max_range(ranges, combined=True):
     -------
     The maximum range as a single tuple
     """
+    if not ranges:
+        return (np.nan, np.nan)
+
+    # Fast path: all values are plain numerics or None.
+    if all(v is None or isinstance(v, _numeric_fast_types) for r in ranges for v in r):
+        return _max_range_numeric(ranges, combined)
+
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
@@ -1022,10 +1066,7 @@ def max_range(ranges, combined=True):
                           (arr[:, 0].min(), arr[:, 1].max()))
                 return drange
 
-            if combined:
-                return (np.nanmin(arr), np.nanmax(arr))
-            else:
-                return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
+            return _max_range_numeric(ranges, combined)
     except Exception:
         return (np.nan, np.nan)
 
@@ -1065,6 +1106,10 @@ def dimension_range(lower, upper, hard_range, soft_range, padding=None, log=Fals
     with the Dimension soft_range and range.
 
     """
+    dmin, dmax = hard_range
+    if (dmin is not None and isfinite(dmin)
+            and dmax is not None and isfinite(dmax)):
+        return dmin, dmax
     plower, pupper = range_pad(lower, upper, padding, log)
     if isfinite(soft_range[0]) and soft_range[0] <= lower:
         lower = soft_range[0]
@@ -1074,7 +1119,6 @@ def dimension_range(lower, upper, hard_range, soft_range, padding=None, log=Fals
         upper = soft_range[1]
     else:
         upper = max_range([(None, pupper), (None, soft_range[1])])[1]
-    dmin, dmax = hard_range
     lower = lower if dmin is None or not isfinite(dmin) else dmin
     upper = upper if dmax is None or not isfinite(dmax) else dmax
     return lower, upper

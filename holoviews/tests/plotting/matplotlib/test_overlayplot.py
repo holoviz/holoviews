@@ -1,7 +1,6 @@
 import numpy as np
 
-from holoviews.core import DynamicMap, HoloMap, NdOverlay, Overlay
-from holoviews.element import Curve, Scatter
+import holoviews as hv
 
 from ...utils import LoggingComparison, optional_dependencies
 from .test_plot import TestMPLPlot, mpl_renderer
@@ -18,19 +17,19 @@ class TestOverlayPlot(LoggingComparison, TestMPLPlot):
         """
         Test to avoid regression after fix of https://github.com/holoviz/holoviews/issues/41
         """
-        o = Overlay([Curve(np.array([[0, 1]])) , Scatter([[1,1]]) , Curve(np.array([[0, 1]]))])
+        o = hv.Overlay([hv.Curve(np.array([[0, 1]])) , hv.Scatter([[1,1]]) , hv.Curve(np.array([[0, 1]]))])
         OverlayPlot(o)
 
     def test_overlay_empty_layers(self):
-        overlay = Curve(range(10)) * NdOverlay()
+        overlay = hv.Curve(range(10)) * hv.NdOverlay()
         plot = mpl_renderer.get_plot(overlay)
         assert len(plot.subplots) == 1
         self.log_handler.assert_contains('WARNING', 'is empty and will be skipped during plotting')
 
     def test_overlay_update_plot_opts(self):
-        hmap = HoloMap(
-            {0: (Curve([]) * Curve([])).opts(title='A'),
-             1: (Curve([]) * Curve([])).opts(title='B')}
+        hmap = hv.HoloMap(
+            {0: (hv.Curve([]) * hv.Curve([])).opts(title='A'),
+             1: (hv.Curve([]) * hv.Curve([])).opts(title='B')}
         )
         plot = mpl_renderer.get_plot(hmap)
         assert plot.handles['title'].get_text() == 'A'
@@ -38,9 +37,9 @@ class TestOverlayPlot(LoggingComparison, TestMPLPlot):
         assert plot.handles['title'].get_text() == 'B'
 
     def test_overlay_update_plot_opts_inherited(self):
-        hmap = HoloMap(
-            {0: (Curve([]).opts(title='A') * Curve([])),
-             1: (Curve([]).opts(title='B') * Curve([]))}
+        hmap = hv.HoloMap(
+            {0: (hv.Curve([]).opts(title='A') * hv.Curve([])),
+             1: (hv.Curve([]).opts(title='B') * hv.Curve([]))}
         )
         plot = mpl_renderer.get_plot(hmap)
         assert plot.handles['title'].get_text() == 'A'
@@ -48,12 +47,12 @@ class TestOverlayPlot(LoggingComparison, TestMPLPlot):
         assert plot.handles['title'].get_text() == 'B'
 
     def test_overlay_apply_ranges_disabled(self):
-        overlay = (Curve(range(10)) * Curve(range(10))).opts('Curve', apply_ranges=False)
+        overlay = (hv.Curve(range(10)) * hv.Curve(range(10))).opts('Curve', apply_ranges=False)
         plot = mpl_renderer.get_plot(overlay)
         assert all(np.isnan(e) for e in plot.get_extents(overlay, {}))
 
     def test_overlay_empty_element_extent(self):
-        overlay = Curve([]).redim.range(x=(-10, 10)) * Scatter([]).redim.range(y=(-20, 20))
+        overlay = hv.Curve([]).redim.range(x=(-10, 10)) * hv.Scatter([]).redim.range(y=(-20, 20))
         plot = mpl_renderer.get_plot(overlay)
         extents = plot.get_extents(overlay, {})
         assert extents == (-10, -20, 10, 20)
@@ -61,8 +60,8 @@ class TestOverlayPlot(LoggingComparison, TestMPLPlot):
     def test_dynamic_subplot_remapping(self):
         # Checks that a plot is appropriately updated when reused
         def cb(X):
-            return NdOverlay({i: Curve(np.arange(10)+i) for i in range(X-2, X)})
-        dmap = DynamicMap(cb, kdims=['X']).redim.range(X=(1, 10))
+            return hv.NdOverlay({i: hv.Curve(np.arange(10)+i) for i in range(X-2, X)})
+        dmap = hv.DynamicMap(cb, kdims=['X']).redim.range(X=(1, 10))
         plot = mpl_renderer.get_plot(dmap)
         plot.update((3,))
         for i, subplot in enumerate(plot.subplots.values()):
@@ -71,8 +70,8 @@ class TestOverlayPlot(LoggingComparison, TestMPLPlot):
 
     def test_dynamic_subplot_creation(self):
         def cb(X):
-            return NdOverlay({i: Curve(np.arange(10)+i) for i in range(X)})
-        dmap = DynamicMap(cb, kdims=['X']).redim.range(X=(1, 10))
+            return hv.NdOverlay({i: hv.Curve(np.arange(10)+i) for i in range(X)})
+        dmap = hv.DynamicMap(cb, kdims=['X']).redim.range(X=(1, 10))
         plot = mpl_renderer.get_plot(dmap)
         assert len(plot.subplots) == 1
         plot.update((3,))
@@ -81,22 +80,22 @@ class TestOverlayPlot(LoggingComparison, TestMPLPlot):
             assert subplot.cyclic_index == i
 
     def test_overlay_xlabel(self):
-        overlay = (Curve(range(10)) * Curve(range(10))).opts(xlabel='custom x-label')
+        overlay = (hv.Curve(range(10)) * hv.Curve(range(10))).opts(xlabel='custom x-label')
         axes = mpl_renderer.get_plot(overlay).handles['axis']
         assert axes.get_xlabel() == 'custom x-label'
 
     def test_overlay_ylabel(self):
-        overlay = (Curve(range(10)) * Curve(range(10))).opts(ylabel='custom y-label')
+        overlay = (hv.Curve(range(10)) * hv.Curve(range(10))).opts(ylabel='custom y-label')
         axes = mpl_renderer.get_plot(overlay).handles['axis']
         assert axes.get_ylabel() == 'custom y-label'
 
     def test_overlay_xlabel_override_propagated(self):
-        overlay = (Curve(range(10)).opts(xlabel='custom x-label') * Curve(range(10)))
+        overlay = (hv.Curve(range(10)).opts(xlabel='custom x-label') * hv.Curve(range(10)))
         axes = mpl_renderer.get_plot(overlay).handles['axis']
         assert axes.get_xlabel() == 'custom x-label'
 
     def test_overlay_ylabel_override(self):
-        overlay = (Curve(range(10)).opts(ylabel='custom y-label') * Curve(range(10)))
+        overlay = (hv.Curve(range(10)).opts(ylabel='custom y-label') * hv.Curve(range(10)))
         axes = mpl_renderer.get_plot(overlay).handles['axis']
         assert axes.get_ylabel() == 'custom y-label'
 
@@ -105,14 +104,14 @@ class TestOverlayPlot(LoggingComparison, TestMPLPlot):
 class TestLegends(TestMPLPlot):
 
     def test_overlay_legend(self):
-        overlay = Curve(range(10), label='A') * Curve(range(10), label='B')
+        overlay = hv.Curve(range(10), label='A') * hv.Curve(range(10), label='B')
         plot = mpl_renderer.get_plot(overlay)
         legend = plot.handles['legend']
         legend_labels = [l.get_text() for l in legend.texts]
         assert legend_labels == ['A', 'B']
 
     def test_overlay_legend_with_labels(self):
-        overlay = (Curve(range(10), label='A') * Curve(range(10), label='B')).opts(
+        overlay = (hv.Curve(range(10), label='A') * hv.Curve(range(10), label='B')).opts(
             legend_labels={'A': 'A Curve', 'B': 'B Curve'})
         plot = mpl_renderer.get_plot(overlay)
         legend = plot.handles['legend']

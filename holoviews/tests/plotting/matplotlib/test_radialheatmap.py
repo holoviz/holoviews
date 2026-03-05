@@ -2,8 +2,7 @@ from itertools import product
 
 import numpy as np
 
-from holoviews.core.spaces import HoloMap
-from holoviews.element.raster import HeatMap
+import holoviews as hv
 from holoviews.testing import assert_data_equal
 
 from ...utils import optional_dependencies
@@ -43,7 +42,7 @@ class RadialHeatMapPlotTests(TestMPLPlot):
         opts = dict(HeatMap=plot_opts)
 
         # provide element and plot instances for tests
-        self.element = HeatMap((self.x, self.y, self.z)).opts(opts)
+        self.element = hv.HeatMap((self.x, self.y, self.z)).opts(opts)
 
     def test_get_data(self):
         plot = mpl_renderer.get_plot(self.element)
@@ -74,7 +73,7 @@ class RadialHeatMapPlotTests(TestMPLPlot):
 
     @mpl_skip
     def test_heatmap_holomap(self):
-        hm = HoloMap({'A': HeatMap(np.random.randint(0, 10, (100, 3))),
-                      'B': HeatMap(np.random.randint(0, 10, (100, 3)))})
+        hm = hv.HoloMap({'A': hv.HeatMap(np.random.randint(0, 10, (100, 3))),
+                      'B': hv.HeatMap(np.random.randint(0, 10, (100, 3)))})
         plot = mpl_renderer.get_plot(hm.opts(radial=True))
         assert isinstance(plot, RadialHeatMapPlot)

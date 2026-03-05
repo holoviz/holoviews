@@ -1,7 +1,6 @@
 import numpy as np
 
-from holoviews.core import DynamicMap
-from holoviews.element import Curve
+import holoviews as hv
 from holoviews.streams import Buffer
 
 from .test_plot import TestBokehPlot, bokeh_renderer
@@ -11,7 +10,7 @@ class TestBufferStreamPlot(TestBokehPlot):
 
     def test_buffer_stream_following(self):
         stream = Buffer(data={'x': np.array([1]), 'y': np.array([1])}, following=True)
-        dmap = DynamicMap(Curve, streams=[stream])
+        dmap = hv.DynamicMap(hv.Curve, streams=[stream])
 
         plot = bokeh_renderer.get_plot(dmap)
 

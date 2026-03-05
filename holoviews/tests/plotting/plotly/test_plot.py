@@ -2,21 +2,20 @@ import plotly.graph_objs as go
 import pyviz_comms as comms
 from param import concrete_descendents
 
-from holoviews.core import DynamicMap, Store
-from holoviews.element import Curve
+import holoviews as hv
 from holoviews.plotting.plotly.element import ElementPlot
 from holoviews.plotting.plotly.util import figure_grid
 from holoviews.streams import Pipe
 
 from .. import option_intersections
 
-plotly_renderer = Store.renderers['plotly']
+plotly_renderer = hv.Store.renderers['plotly']
 
 
 def test_element_plot_stream_cleanup():
     stream = Pipe()
 
-    dmap = DynamicMap(Curve, streams=[stream])
+    dmap = hv.DynamicMap(hv.Curve, streams=[stream])
 
     plot = plotly_renderer.get_plot(dmap)
 
@@ -31,8 +30,8 @@ def test_overlay_plot_stream_cleanup():
     stream1 = Pipe()
     stream2 = Pipe()
 
-    dmap1 = DynamicMap(Curve, streams=[stream1])
-    dmap2 = DynamicMap(Curve, streams=[stream2])
+    dmap1 = hv.DynamicMap(hv.Curve, streams=[stream1])
+    dmap2 = hv.DynamicMap(hv.Curve, streams=[stream2])
 
     plot = plotly_renderer.get_plot(dmap1 * dmap2)
 
@@ -49,8 +48,8 @@ def test_layout_plot_stream_cleanup():
     stream1 = Pipe()
     stream2 = Pipe()
 
-    dmap1 = DynamicMap(Curve, streams=[stream1])
-    dmap2 = DynamicMap(Curve, streams=[stream2])
+    dmap1 = hv.DynamicMap(hv.Curve, streams=[stream1])
+    dmap2 = hv.DynamicMap(hv.Curve, streams=[stream2])
 
     plot = plotly_renderer.get_plot(dmap1 + dmap2)
 
@@ -66,8 +65,8 @@ def test_layout_plot_stream_cleanup():
 class TestPlotlyPlot:
 
     def setup_method(self):
-        self.previous_backend = Store.current_backend
-        Store.set_current_backend('plotly')
+        self.previous_backend = hv.Store.current_backend
+        hv.Store.set_current_backend('plotly')
         self.comm_manager = plotly_renderer.comm_manager
         plotly_renderer.comm_manager = comms.CommManager
         self._padding = {}
@@ -76,7 +75,7 @@ class TestPlotlyPlot:
             plot.padding = 0
 
     def teardown_method(self):
-        Store.current_backend = self.previous_backend
+        hv.Store.current_backend = self.previous_backend
         plotly_renderer.comm_manager = self.comm_manager
         for plot, padding in self._padding.items():
             plot.padding = padding

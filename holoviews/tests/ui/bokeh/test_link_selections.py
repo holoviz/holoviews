@@ -3,7 +3,6 @@ import pytest
 
 import holoviews as hv
 from holoviews.plotting.bokeh.renderer import BokehRenderer
-from holoviews.selection import link_selections
 
 from .. import expect
 
@@ -24,7 +23,7 @@ def test_link_selections_programmatic_clear_removes_region(serve_hv):
                 continue
         return cnt
 
-    ls = link_selections.instance()
+    ls = hv.link_selections.instance()
     linked = ls(points).opts(active_tools=["box_select"])
 
     page = serve_hv(linked)

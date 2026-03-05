@@ -2,36 +2,36 @@
 Test cases for the Comparisons class over the Path elements
 """
 
-from holoviews import Bounds, Box, Contours, Ellipse, Path
+import holoviews as hv
 from holoviews.element.comparison import ComparisonTestCase
 
 
 class PathComparisonTest(ComparisonTestCase):
 
     def setUp(self):
-        self.path1 = Path([(-0.3, 0.4), (-0.3, 0.3), (-0.2, 0.3),
+        self.path1 = hv.Path([(-0.3, 0.4), (-0.3, 0.3), (-0.2, 0.3),
                            (-0.2, 0.4),(-0.3, 0.4)])
 
-        self.path2 = Path([(-0.3, 0.4), (-0.3, 0.3), (-0.2, 0.3),
+        self.path2 = hv.Path([(-0.3, 0.4), (-0.3, 0.3), (-0.2, 0.3),
                            (-0.2, 0.4),(-3, 4)])
 
-        self.contours1 = Contours([(-0.3, 0.4, 1), (-0.3, 0.3, 1), (-0.2, 0.3, 1),
+        self.contours1 = hv.Contours([(-0.3, 0.4, 1), (-0.3, 0.3, 1), (-0.2, 0.3, 1),
                                    (-0.2, 0.4, 1),(-0.3, 0.4, 1)], vdims='Level')
 
-        self.contours2 = Contours([(-0.3, 0.4, 1), (-0.3, 0.3, 1), (-0.2, 0.3, 1),
+        self.contours2 = hv.Contours([(-0.3, 0.4, 1), (-0.3, 0.3, 1), (-0.2, 0.3, 1),
                                    (-0.2, 0.4, 1), (-3, 4, 1)], vdims='Level')
 
-        self.contours3 = Contours([(-0.3, 0.4, 2), (-0.3, 0.3, 2), (-0.2, 0.3, 2),
+        self.contours3 = hv.Contours([(-0.3, 0.4, 2), (-0.3, 0.3, 2), (-0.2, 0.3, 2),
                                    (-0.2, 0.4, 2), (-0.3, 0.4, 2)], vdims='Level')
 
-        self.bounds1 = Bounds(0.3)
-        self.bounds2 = Bounds(0.4)
+        self.bounds1 = hv.Bounds(0.3)
+        self.bounds2 = hv.Bounds(0.4)
 
-        self.box1 = Box(-0.25, 0.3, 0.3)
-        self.box2 = Box(-0.25, 0.3, 0.4)
+        self.box1 = hv.Box(-0.25, 0.3, 0.3)
+        self.box2 = hv.Box(-0.25, 0.3, 0.4)
 
-        self.ellipse1 = Ellipse(-0.25, 0.3, 0.3)
-        self.ellipse2 = Ellipse(-0.25, 0.3, 0.4)
+        self.ellipse1 = hv.Ellipse(-0.25, 0.3, 0.3)
+        self.ellipse2 = hv.Ellipse(-0.25, 0.3, 0.4)
 
     def test_paths_equal(self):
         self.assertEqual(self.path1, self.path1)

@@ -1,10 +1,8 @@
 import numpy as np
 import pytest
 
-from holoviews.core import NdOverlay
+import holoviews as hv
 from holoviews.core.options import AbbreviatedException
-from holoviews.core.spaces import HoloMap
-from holoviews.element import Contours, Path, Polygons
 from holoviews.testing import assert_data_equal
 
 from .test_plot import TestMPLPlot, mpl_renderer
@@ -19,7 +17,7 @@ class TestPathPlot(TestMPLPlot):
         data = {'x': xs, 'y': ys, 'color': color}
         levels = [0, 38, 73, 95, 110, 130, 156, 999]
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
-        path = Path([data], vdims='color').opts(
+        path = hv.Path([data], vdims='color').opts(
             color='color', color_levels=levels, cmap=colors)
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
@@ -31,7 +29,7 @@ class TestPathPlot(TestMPLPlot):
         ys = xs[::-1]
         alpha = [0.1, 0.7, 0.3, 0.2]
         data = {'x': xs, 'y': ys, 'alpha': alpha}
-        path = Path([data], vdims='alpha').opts(alpha='alpha')
+        path = hv.Path([data], vdims='alpha').opts(alpha='alpha')
         msg = 'ValueError: Mapping a dimension to the "alpha" style'
         with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(path)
@@ -41,7 +39,7 @@ class TestPathPlot(TestMPLPlot):
         ys = xs[::-1]
         line_width = [1, 7, 3, 2]
         data = {'x': xs, 'y': ys, 'line_width': line_width}
-        path = Path([data], vdims='line_width').opts(linewidth='line_width')
+        path = hv.Path([data], vdims='line_width').opts(linewidth='line_width')
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
         assert artist.get_linewidths() == line_width
@@ -49,9 +47,9 @@ class TestPathPlot(TestMPLPlot):
     def test_path_continuously_varying_line_width_op_update(self):
         xs = [1, 2, 3, 4]
         ys = xs[::-1]
-        path = HoloMap({
-            0: Path([{'x': xs, 'y': ys, 'line_width': [1, 7, 3, 2]}], vdims='line_width'),
-            1: Path([{'x': xs, 'y': ys, 'line_width': [3, 8, 2, 3]}], vdims='line_width')
+        path = hv.HoloMap({
+            0: hv.Path([{'x': xs, 'y': ys, 'line_width': [1, 7, 3, 2]}], vdims='line_width'),
+            1: hv.Path([{'x': xs, 'y': ys, 'line_width': [3, 8, 2, 3]}], vdims='line_width')
         }).opts(linewidth='line_width')
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
@@ -68,7 +66,7 @@ class TestPathPlot(TestMPLPlot):
              'c': x * 10}
             for x in range(5)
         ]
-        path = Path(data, vdims=['c']).opts(color='c', cmap='viridis', colorbar=True)
+        path = hv.Path(data, vdims=['c']).opts(color='c', cmap='viridis', colorbar=True)
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
 
@@ -91,7 +89,7 @@ class TestPathPlot(TestMPLPlot):
              'c': np.full(n_pts, x * 10)}  # per-vertex constant per geometry
             for x in range(5)
         ]
-        path = Path(data, vdims=['c']).opts(color='c', cmap='viridis', colorbar=True)
+        path = hv.Path(data, vdims=['c']).opts(color='c', cmap='viridis', colorbar=True)
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
 
@@ -110,7 +108,7 @@ class TestPathPlot(TestMPLPlot):
              'c': x * 10}
             for x in range(5)
         ]
-        path = Path(data, vdims=["c"]).opts(color="c", cmap="viridis", colorbar=True)
+        path = hv.Path(data, vdims=["c"]).opts(color="c", cmap="viridis", colorbar=True)
 
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
@@ -129,7 +127,7 @@ class TestPathPlot(TestMPLPlot):
 class TestPolygonPlot(TestMPLPlot):
 
     def test_polygons_colored(self):
-        polygons = NdOverlay({j: Polygons([[(i**j, i, j) for i in range(10)]], vdims='Value')
+        polygons = hv.NdOverlay({j: hv.Polygons([[(i**j, i, j) for i in range(10)]], vdims='Value')
                               for j in range(5)})
         plot = mpl_renderer.get_plot(polygons)
         for j, splot in enumerate(plot.subplots.values()):
@@ -141,7 +139,7 @@ class TestPolygonPlot(TestMPLPlot):
         xs = [1, 2, 3]
         ys = [2, 0, 7]
         holes = [[[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]]]
-        poly = Polygons([{'x': xs, 'y': ys, 'holes': holes}])
+        poly = hv.Polygons([{'x': xs, 'y': ys, 'holes': holes}])
         plot = mpl_renderer.get_plot(poly)
         artist = plot.handles['artist']
         paths = artist.get_paths()
@@ -160,7 +158,7 @@ class TestPolygonPlot(TestMPLPlot):
             [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],
             []
         ]
-        poly = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'value': 1}], vdims=['value'])
+        poly = hv.Polygons([{'x': xs, 'y': ys, 'holes': holes, 'value': 1}], vdims=['value'])
         plot = mpl_renderer.get_plot(poly)
         artist = plot.handles['artist']
         assert_data_equal(np.asarray(artist.get_array()), np.array([1, 1]))
@@ -177,7 +175,7 @@ class TestPolygonPlot(TestMPLPlot):
         assert_data_equal(path2.codes, np.array([1, 2, 2, 79]))
 
     def test_polygons_color_op(self):
-        polygons = Polygons([
+        polygons = hv.Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
         ], vdims='color').opts(color='color')
@@ -188,12 +186,12 @@ class TestPolygonPlot(TestMPLPlot):
         assert_data_equal(artist.get_facecolors(), colors)
 
     def test_polygons_color_op_update(self):
-        polygons = HoloMap({
-            0: Polygons([
+        polygons = hv.HoloMap({
+            0: hv.Polygons([
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
             ], vdims='color'),
-            1: Polygons([
+            1: hv.Polygons([
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'blue'},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'green'}
             ], vdims='color'),
@@ -209,7 +207,7 @@ class TestPolygonPlot(TestMPLPlot):
         assert_data_equal(artist.get_facecolors(), colors)
 
     def test_polygons_linear_color_op(self):
-        polygons = Polygons([
+        polygons = hv.Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
         ], vdims='color').opts(color='color')
@@ -219,12 +217,12 @@ class TestPolygonPlot(TestMPLPlot):
         assert artist.get_clim() == (3, 7)
 
     def test_polygons_linear_color_op_update(self):
-        polygons = HoloMap({
-            0: Polygons([
+        polygons = hv.HoloMap({
+            0: hv.Polygons([
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
             ], vdims='color'),
-            1: Polygons([
+            1: hv.Polygons([
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 2},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 5}
             ], vdims='color'),
@@ -238,7 +236,7 @@ class TestPolygonPlot(TestMPLPlot):
         assert artist.get_clim() == (2, 5)
 
     def test_polygons_categorical_color_op(self):
-        polygons = Polygons([
+        polygons = hv.Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'b'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'a'}
         ], vdims='color').opts(color='color')
@@ -248,7 +246,7 @@ class TestPolygonPlot(TestMPLPlot):
         assert artist.get_clim() == (0, 1)
 
     def test_polygons_alpha_op(self):
-        polygons = Polygons([
+        polygons = hv.Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'alpha': 0.7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'alpha': 0.3}
         ], vdims='alpha').opts(alpha='alpha')
@@ -257,7 +255,7 @@ class TestPolygonPlot(TestMPLPlot):
             mpl_renderer.get_plot(polygons)
 
     def test_polygons_line_width_op(self):
-        polygons = Polygons([
+        polygons = hv.Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 3}
         ], vdims='line_width').opts(linewidth='line_width')
@@ -270,7 +268,7 @@ class TestPolygonPlot(TestMPLPlot):
 class TestContoursPlot(TestMPLPlot):
 
     def test_contours_categorical_color(self):
-        path = Contours([{('x', 'y'): np.random.rand(10, 2), 'z': cat}
+        path = hv.Contours([{('x', 'y'): np.random.rand(10, 2), 'z': cat}
                      for cat in ('B', 'A', 'B')],
                     vdims='z').opts(color_index='z')
         plot = mpl_renderer.get_plot(path)
@@ -279,7 +277,7 @@ class TestContoursPlot(TestMPLPlot):
         assert artist.get_clim() == (0, 1)
 
     def test_contours_color_op(self):
-        contours = Contours([
+        contours = hv.Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
         ], vdims='color').opts(color='color')
@@ -290,12 +288,12 @@ class TestContoursPlot(TestMPLPlot):
         assert_data_equal(artist.get_edgecolors(), colors)
 
     def test_contours_color_op_update(self):
-        contours = HoloMap({
-            0: Contours([
+        contours = hv.HoloMap({
+            0: hv.Contours([
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
             ], vdims='color'),
-            1: Contours([
+            1: hv.Contours([
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'blue'},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'green'}
             ], vdims='color'),
@@ -311,7 +309,7 @@ class TestContoursPlot(TestMPLPlot):
         assert_data_equal(artist.get_edgecolors(), colors)
 
     def test_contours_linear_color_op(self):
-        contours = Contours([
+        contours = hv.Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
         ], vdims='color').opts(color='color')
@@ -321,12 +319,12 @@ class TestContoursPlot(TestMPLPlot):
         assert artist.get_clim() == (3, 7)
 
     def test_contours_linear_color_op_update(self):
-        contours = HoloMap({
-            0: Contours([
+        contours = hv.HoloMap({
+            0: hv.Contours([
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
             ], vdims='color'),
-            1: Contours([
+            1: hv.Contours([
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 2},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 5}
             ], vdims='color'),
@@ -340,7 +338,7 @@ class TestContoursPlot(TestMPLPlot):
         assert artist.get_clim() == (2, 5)
 
     def test_contours_categorical_color_op(self):
-        contours = Contours([
+        contours = hv.Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'b'},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'a'}
         ], vdims='color').opts(color='color')
@@ -350,7 +348,7 @@ class TestContoursPlot(TestMPLPlot):
         assert artist.get_clim() == (0, 1)
 
     def test_contours_alpha_op(self):
-        contours = Contours([
+        contours = hv.Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'alpha': 0.7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'alpha': 0.3}
         ], vdims='alpha').opts(alpha='alpha')
@@ -359,7 +357,7 @@ class TestContoursPlot(TestMPLPlot):
             mpl_renderer.get_plot(contours)
 
     def test_contours_line_width_op(self):
-        contours = Contours([
+        contours = hv.Contours([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 7},
             {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 3}
         ], vdims='line_width').opts(linewidth='line_width')
@@ -368,12 +366,12 @@ class TestContoursPlot(TestMPLPlot):
         assert artist.get_linewidths() == [7, 3]
 
     def test_contours_line_width_op_update(self):
-        contours = HoloMap({
-            0: Contours([
+        contours = hv.HoloMap({
+            0: hv.Contours([
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 7},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 3}
             ], vdims='line_width'),
-            1: Contours([
+            1: hv.Contours([
                 {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 2},
                 {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 5}
             ], vdims='line_width'),

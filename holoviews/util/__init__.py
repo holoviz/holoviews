@@ -29,6 +29,10 @@ from .settings import OutputSettings, list_backends, list_formats
 
 Store.output_settings = OutputSettings
 
+_STR_OPTIONS_ERR = (
+    "String-based options specification is no longer supported. "
+    "Use dictionary or option objects instead."
+)
 
 
 def examples(path='holoviews-examples', verbose=False, force=False, root=__file__):
@@ -236,12 +240,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         Returns the object or a clone with the options applied
         """
         if isinstance(options, str):
-            from ..util.parser import OptsSpec
-            try:
-                options = OptsSpec.parse(options)
-            except SyntaxError:
-                options = OptsSpec.parse(
-                    f'{obj.__class__.__name__} {options}')
+            raise TypeError(_STR_OPTIONS_ERR)
         if kwargs:
             options = cls._group_kwargs_to_options(obj, kwargs)
 
@@ -252,10 +251,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
     @classmethod
     def _process_magic(cls, options, strict, backends=None):
         if isinstance(options, str):
-            from .parser import OptsSpec
-            try:     ns = get_ipython().user_ns  # noqa
-            except Exception:  ns = globals()
-            options = OptsSpec.parse(options, ns=ns)
+            raise TypeError(_STR_OPTIONS_ERR)
 
         errmsg = StoreOptions.validation_error_message(options, backends=backends)
         if errmsg:
@@ -431,13 +427,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
 
         """
         if isinstance(options, str):
-            from .parser import OptsSpec
-            if ns is None:
-                try:     ns = get_ipython().user_ns  # noqa
-                except Exception:  ns = globals()
-            options = options.replace('%%opts','').replace('%opts','')
-            options = OptsSpec.parse_options(options, ns=ns)
-
+            raise TypeError(_STR_OPTIONS_ERR)
 
         reprs = []
         ns = f'{namespace}.' if namespace else ''

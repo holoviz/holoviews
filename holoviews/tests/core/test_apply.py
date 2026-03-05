@@ -4,9 +4,7 @@ import param
 import pytest
 from panel.widgets import IntSlider, RadioButtonGroup, TextInput
 
-from holoviews import Dataset, util
-from holoviews.core.spaces import DynamicMap, HoloMap
-from holoviews.element import Curve, Image
+import holoviews as hv
 from holoviews.streams import ParamMethod, Params
 from holoviews.testing import assert_element_equal
 
@@ -31,7 +29,7 @@ class ParamClass(param.Parameterized):
 class TestApplyElement:
 
     def setup_method(self):
-        self.element = Curve([1, 2, 3])
+        self.element = hv.Curve([1, 2, 3])
 
     def test_element_apply_simple(self):
         applied = self.element.apply(lambda x: x.relabel('Test'))
@@ -176,10 +174,10 @@ class TestApplyElement:
         assert_element_equal(applied[()], self.element.relabel('Another label!'))
 
     def test_holomap_apply_with_method(self):
-        hmap = HoloMap({i: Image(np.array([[i, 2], [3, 4]])) for i in range(3)})
+        hmap = hv.HoloMap({i: hv.Image(np.array([[i, 2], [3, 4]])) for i in range(3)})
         reduced = hmap.apply.reduce(x=np.min)
 
-        expected = HoloMap({i: Curve([(-0.25, 3), (0.25, i)], 'y', 'z') for i in range(3)})
+        expected = hv.HoloMap({i: hv.Curve([(-0.25, 3), (0.25, i)], 'y', 'z') for i in range(3)})
         assert_element_equal(reduced, expected)
 
 
@@ -187,8 +185,8 @@ class TestApplyElement:
 class TestApplyDynamicMap:
 
     def setup_method(self):
-        self.element = Curve([1, 2, 3])
-        self.dmap_unsampled = DynamicMap(lambda i: Curve([0, 1, i]), kdims='Y')
+        self.element = hv.Curve([1, 2, 3])
+        self.dmap_unsampled = hv.DynamicMap(lambda i: hv.Curve([0, 1, i]), kdims='Y')
         self.dmap = self.dmap_unsampled.redim.values(Y=[0, 1, 2])
 
     def test_dmap_apply_not_dynamic_unsampled(self):
@@ -197,21 +195,21 @@ class TestApplyDynamicMap:
 
     def test_dmap_apply_not_dynamic(self):
         applied = self.dmap.apply(lambda x: x.relabel('Test'), dynamic=False)
-        assert_element_equal(applied, HoloMap(self.dmap[[0, 1, 2]]).relabel('Test'))
+        assert_element_equal(applied, hv.HoloMap(self.dmap[[0, 1, 2]]).relabel('Test'))
 
     def test_dmap_apply_not_dynamic_with_kwarg(self):
         applied = self.dmap.apply(lambda x, label: x.relabel(label), dynamic=False, label='Test')
-        assert_element_equal(applied, HoloMap(self.dmap[[0, 1, 2]]).relabel('Test'))
+        assert_element_equal(applied, hv.HoloMap(self.dmap[[0, 1, 2]]).relabel('Test'))
 
     def test_dmap_apply_not_dynamic_with_instance_param(self):
         pinst = ParamClass()
         applied = self.dmap.apply(lambda x, label: x.relabel(label), label=pinst.param.label, dynamic=False)
-        assert_element_equal(applied, HoloMap(self.dmap[[0, 1, 2]]).relabel('Test'))
+        assert_element_equal(applied, hv.HoloMap(self.dmap[[0, 1, 2]]).relabel('Test'))
 
     def test_dmap_apply_not_dynamic_with_param_method(self):
         pinst = ParamClass()
         applied = self.dmap.apply(lambda x, label: x.relabel(label), label=pinst.dynamic_label, dynamic=False)
-        assert_element_equal(applied, HoloMap(self.dmap[[0, 1, 2]]).relabel('Test!'))
+        assert_element_equal(applied, hv.HoloMap(self.dmap[[0, 1, 2]]).relabel('Test!'))
 
     def test_dmap_apply_dynamic(self):
         applied = self.dmap.apply(lambda x: x.relabel('Test'))
@@ -286,8 +284,8 @@ class TestApplyDynamicMap:
 def test_nested_widgets():
     df = makeDataFrame()
     column = RadioButtonGroup(value="A", options=list("ABC"))
-    ds = Dataset(df)
-    transform = util.transform.df_dim("*").groupby(["D", column]).mean()
+    ds = hv.Dataset(df)
+    transform = hv.util.transform.df_dim("*").groupby(["D", column]).mean()
 
     params = list(transform.params.values())
     assert len(params) == 1
@@ -301,8 +299,8 @@ def test_nested_widgets():
 def test_slice_iloc():
     df = makeDataFrame()
     column = IntSlider(start=10, end=40)
-    ds = Dataset(df)
-    transform = util.transform.df_dim("*").iloc[:column].mean(axis=0)
+    ds = hv.Dataset(df)
+    transform = hv.util.transform.df_dim("*").iloc[:column].mean(axis=0)
 
     params = list(transform.params.values())
     assert len(params) == 1
@@ -317,8 +315,8 @@ def test_slice_loc():
     df = makeDataFrame()
     df.index = np.arange(5, len(df) + 5)
     column = IntSlider(start=10, end=40)
-    ds = Dataset(df)
-    transform = util.transform.df_dim("*").loc[:column].mean(axis=0)
+    ds = hv.Dataset(df)
+    transform = hv.util.transform.df_dim("*").loc[:column].mean(axis=0)
 
     params = list(transform.params.values())
     assert len(params) == 1
@@ -336,8 +334,8 @@ def test_slice_loc():
 def test_int_iloc():
     df = makeDataFrame()
     column = IntSlider(start=10, end=40)
-    ds = Dataset(df)
-    transform = util.transform.df_dim("*").iloc[column]
+    ds = hv.Dataset(df)
+    transform = hv.util.transform.df_dim("*").iloc[column]
 
     params = list(transform.params.values())
     assert len(params) == 1
@@ -352,8 +350,8 @@ def test_int_loc():
     df = makeDataFrame()
     df.index = np.arange(5, len(df) + 5)
     column = IntSlider(start=10, end=40)
-    ds = Dataset(df)
-    transform = util.transform.df_dim("*").loc[column]
+    ds = hv.Dataset(df)
+    transform = hv.util.transform.df_dim("*").loc[column]
 
     params = list(transform.params.values())
     assert len(params) == 1

@@ -43,7 +43,7 @@ class StatisticsElement(Dataset, Element2D):
         """The Dataset that this object was created from
 
         """
-        from . import Dataset
+        from ..core.data import Dataset
         if self._dataset is None:
             datatype = list(unique_iterator(self.datatype+Dataset.datatype))
             dataset = Dataset(self, dataset=None, pipeline=None, transforms=None,

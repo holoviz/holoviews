@@ -2,11 +2,8 @@ import numpy as np
 import PIL.Image
 import plotly.graph_objs as go
 
-from holoviews.element import RGB, Tiles
-from holoviews.plotting.plotly.util import (
-    PLOTLY_MAP,
-    PLOTLY_SCATTERMAP,
-)
+import holoviews as hv
+from holoviews.plotting.plotly.util import PLOTLY_MAP, PLOTLY_SCATTERMAP
 
 from .test_plot import TestPlotlyPlot, plotly_renderer
 
@@ -30,7 +27,7 @@ class TestRGBPlot(TestPlotlyPlot):
 
     def test_rgb(self):
         rgb_data = np.random.rand(10, 10, 3)
-        rgb = RGB(rgb_data)
+        rgb = hv.RGB(rgb_data)
         fig_dict = plotly_renderer.get_plot_state(rgb)
         x_range = fig_dict['layout']['xaxis']['range']
         assert x_range[0] == -0.5
@@ -64,7 +61,7 @@ class TestRGBPlot(TestPlotlyPlot):
 
     def test_rgb_invert_xaxis(self):
         rgb_data = np.random.rand(10, 10, 3)
-        rgb = RGB(rgb_data).opts(invert_xaxis=True)
+        rgb = hv.RGB(rgb_data).opts(invert_xaxis=True)
 
         fig_dict = plotly_renderer.get_plot_state(rgb)
         x_range = fig_dict['layout']['xaxis']['range']
@@ -104,7 +101,7 @@ class TestRGBPlot(TestPlotlyPlot):
 
     def test_rgb_invert_xaxis_and_yaxis(self):
         rgb_data = np.random.rand(10, 10, 3)
-        rgb = RGB(rgb_data).opts(invert_xaxis=True, invert_yaxis=True)
+        rgb = hv.RGB(rgb_data).opts(invert_xaxis=True, invert_yaxis=True)
 
         fig_dict = plotly_renderer.get_plot_state(rgb)
         x_range = fig_dict['layout']['xaxis']['range']
@@ -144,7 +141,7 @@ class TestRGBPlot(TestPlotlyPlot):
 
     def test_rgb_invert_axes(self):
         rgb_data = np.random.rand(10, 10, 3)
-        rgb = RGB(rgb_data).opts(invert_axes=True)
+        rgb = hv.RGB(rgb_data).opts(invert_axes=True)
 
         fig_dict = plotly_renderer.get_plot_state(rgb)
         x_range = fig_dict['layout']['xaxis']['range']
@@ -184,7 +181,7 @@ class TestRGBPlot(TestPlotlyPlot):
 
     def test_rgb_invert_xaxis_and_yaxis_and_axes(self):
         rgb_data = np.random.rand(10, 10, 3)
-        rgb = RGB(rgb_data).opts(invert_xaxis=True, invert_yaxis=True, invert_axes=True)
+        rgb = hv.RGB(rgb_data).opts(invert_xaxis=True, invert_yaxis=True, invert_axes=True)
 
         fig_dict = plotly_renderer.get_plot_state(rgb)
         x_range = fig_dict['layout']['xaxis']['range']
@@ -224,7 +221,7 @@ class TestRGBPlot(TestPlotlyPlot):
 
     def test_rgb_opacity(self):
         rgb_data = np.random.rand(10, 10, 3)
-        rgb = RGB(rgb_data).opts(opacity=0.5)
+        rgb = hv.RGB(rgb_data).opts(opacity=0.5)
         fig_dict = plotly_renderer.get_plot_state(rgb)
 
         # Check layout.image object
@@ -262,16 +259,16 @@ class TestMapboxRGBPlot(TestPlotlyPlot):
         self.x_center = sum(self.x_range) / 2.0
         self.y_range = (-3000000, 2000000)
         self.y_center = sum(self.y_range) / 2.0
-        self.lon_range, self.lat_range = Tiles.easting_northing_to_lon_lat(self.x_range, self.y_range)
-        self.lon_centers, self.lat_centers = Tiles.easting_northing_to_lon_lat(
+        self.lon_range, self.lat_range = hv.Tiles.easting_northing_to_lon_lat(self.x_range, self.y_range)
+        self.lon_centers, self.lat_centers = hv.Tiles.easting_northing_to_lon_lat(
             [self.x_center], [self.y_center]
         )
         self.lon_center, self.lat_center = self.lon_centers[0], self.lat_centers[0]
-        self.lons, self.lats = Tiles.easting_northing_to_lon_lat(self.xs, self.ys)
+        self.lons, self.lats = hv.Tiles.easting_northing_to_lon_lat(self.xs, self.ys)
 
     def test_rgb(self):
         rgb_data = np.random.rand(10, 10, 3)
-        rgb = Tiles("") * RGB(
+        rgb = hv.Tiles("") * hv.RGB(
             rgb_data,
             bounds=(self.x_range[0], self.y_range[0], self.x_range[1], self.y_range[1])
         ).opts(
