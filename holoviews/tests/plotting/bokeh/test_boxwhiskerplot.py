@@ -102,7 +102,7 @@ class TestBoxWhiskerPlot(TestBokehPlot):
         """Regression test for #6486: legend entries should not be duplicated."""
         values = np.random.uniform(10, 20, size=100)
         names = np.random.choice(['Name_A', 'Name_B', 'Name_C'], size=100, replace=True)
-        box = BoxWhisker((names, values), 'name', 'value').opts(
+        box = hv.BoxWhisker((names, values), 'name', 'value').opts(
             box_color='name', cmap='Set1', show_legend=True)
         plot = bokeh_renderer.get_plot(box)
         legend_items = plot.state.legend[0].items
