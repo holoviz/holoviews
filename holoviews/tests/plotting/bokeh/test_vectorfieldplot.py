@@ -1,7 +1,7 @@
 import numpy as np
 from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
-from holoviews.element import VectorField
+import holoviews as hv
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.testing import assert_data_equal
 
@@ -16,7 +16,7 @@ class TestVectorFieldPlot(TestBokehPlot):
     ###########################
 
     def test_vectorfield_color_op(self):
-        vectorfield = VectorField([(0, 0, 0, 1, '#000'), (0, 1, 0, 1,'#F00'), (0, 2, 0, 1,'#0F0')],
+        vectorfield = hv.VectorField([(0, 0, 0, 1, '#000'), (0, 1, 0, 1,'#F00'), (0, 2, 0, 1,'#0F0')],
                                   vdims=['A', 'M', 'color']).opts(color='color')
         plot = bokeh_renderer.get_plot(vectorfield)
         cds = plot.handles['cds']
@@ -25,7 +25,7 @@ class TestVectorFieldPlot(TestBokehPlot):
         assert property_to_dict(glyph.line_color) == {'field': 'color'}
 
     def test_vectorfield_linear_color_op(self):
-        vectorfield = VectorField([(0, 0, 0, 1, 0), (0, 1, 0, 1, 1), (0, 2, 0, 1, 2)],
+        vectorfield = hv.VectorField([(0, 0, 0, 1, 0), (0, 1, 0, 1, 1), (0, 2, 0, 1, 2)],
                                   vdims=['A', 'M', 'color']).opts(color='color')
         plot = bokeh_renderer.get_plot(vectorfield)
         cds = plot.handles['cds']
@@ -38,7 +38,7 @@ class TestVectorFieldPlot(TestBokehPlot):
         assert property_to_dict(glyph.line_color) == {'field': 'color', 'transform': cmapper}
 
     def test_vectorfield_categorical_color_op(self):
-        vectorfield = VectorField([(0, 0, 0, 1, 'A'), (0, 1, 0, 1, 'B'), (0, 2, 0, 1, 'C')],
+        vectorfield = hv.VectorField([(0, 0, 0, 1, 'A'), (0, 1, 0, 1, 'B'), (0, 2, 0, 1, 'C')],
                                   vdims=['A', 'M', 'color']).opts(color='color')
         plot = bokeh_renderer.get_plot(vectorfield)
         cds = plot.handles['cds']
@@ -50,7 +50,7 @@ class TestVectorFieldPlot(TestBokehPlot):
         assert property_to_dict(glyph.line_color) == {'field': 'color', 'transform': cmapper}
 
     def test_vectorfield_alpha_op(self):
-        vectorfield = VectorField([(0, 0, 0, 1, 0), (0, 1, 0, 1, 0.2), (0, 2, 0, 1, 0.7)],
+        vectorfield = hv.VectorField([(0, 0, 0, 1, 0), (0, 1, 0, 1, 0.2), (0, 2, 0, 1, 0.7)],
                                   vdims=['A', 'M', 'alpha']).opts(alpha='alpha')
         plot = bokeh_renderer.get_plot(vectorfield)
         cds = plot.handles['cds']
@@ -59,7 +59,7 @@ class TestVectorFieldPlot(TestBokehPlot):
         assert property_to_dict(glyph.line_alpha) == {'field': 'alpha'}
 
     def test_vectorfield_line_width_op(self):
-        vectorfield = VectorField([(0, 0, 0, 1, 1), (0, 1, 0, 1, 4), (0, 2, 0, 1, 8)],
+        vectorfield = hv.VectorField([(0, 0, 0, 1, 1), (0, 1, 0, 1, 4), (0, 2, 0, 1, 8)],
                                   vdims=['A', 'M', 'line_width']).opts(line_width='line_width')
         plot = bokeh_renderer.get_plot(vectorfield)
         cds = plot.handles['cds']
@@ -68,7 +68,7 @@ class TestVectorFieldPlot(TestBokehPlot):
         assert property_to_dict(glyph.line_width) == {'field': 'line_width'}
 
     def test_vectorfield_color_index_color_clash(self):
-        vectorfield = VectorField([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+        vectorfield = hv.VectorField([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                         vdims='color').opts(line_color='color', color_index='color')
         with ParamLogStream() as log:
             bokeh_renderer.get_plot(vectorfield)
@@ -81,14 +81,14 @@ class TestVectorFieldPlot(TestBokehPlot):
         assert log_msg == warning
 
     def test_vectorfield_no_hover_columns(self):
-        vectorfield = VectorField([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+        vectorfield = hv.VectorField([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                         vdims='color').opts(tools=[])
         plot = bokeh_renderer.get_plot(vectorfield)
         keys = sorted(plot.handles["cds"].data)
         assert keys == ["x0", "x1", "y0", "y1"]
 
     def test_vectorfield_hover_columns(self):
-        vectorfield = VectorField([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+        vectorfield = hv.VectorField([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                         vdims='color').opts(tools=["hover"])
         plot = bokeh_renderer.get_plot(vectorfield)
         keys = sorted(plot.handles["cds"].data)

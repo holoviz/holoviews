@@ -9,18 +9,18 @@ HoloMaps are not tested in this file.
 
 import pytest
 
-from holoviews import Element
+import holoviews as hv
 from holoviews.testing import assert_element_equal
 
 
 class CompositeComparisonTestCase:
 
     def setup_method(self):
-        self.el1 = Element('data1')
-        self.el2 = Element('data2')
-        self.el3 = Element('data3')
-        self.el4 = Element('data5', group='ValB')
-        self.el5 = Element('data6', label='LabelA')
+        self.el1 = hv.Element('data1')
+        self.el2 = hv.Element('data2')
+        self.el3 = hv.Element('data3')
+        self.el4 = hv.Element('data5', group='ValB')
+        self.el5 = hv.Element('data6', label='LabelA')
 
     #========================#
     # Tests for layout trees #

@@ -11,9 +11,7 @@ from panel import serve
 from panel.io.state import state
 from panel.widgets import DiscreteSlider, FloatSlider
 
-from holoviews.core.options import Store
-from holoviews.core.spaces import DynamicMap
-from holoviews.element import Curve, HLine, Path, Polygons
+import holoviews as hv
 from holoviews.plotting import Renderer
 from holoviews.plotting.bokeh.callbacks import Callback, RangeXYCallback, ResetCallback
 from holoviews.plotting.bokeh.renderer import BokehRenderer
@@ -26,8 +24,8 @@ bokeh_renderer = BokehRenderer.instance(mode='server')
 class TestBokehServerSetup:
 
     def setup_method(self):
-        self.previous_backend = Store.current_backend
-        Store.current_backend = 'bokeh'
+        self.previous_backend = hv.Store.current_backend
+        hv.Store.current_backend = 'bokeh'
         self.doc = curdoc()
         set_curdoc(Document())
         self.nbcontext = Renderer.notebook_context
@@ -35,7 +33,7 @@ class TestBokehServerSetup:
             Renderer.notebook_context = False
 
     def teardown_method(self):
-        Store.current_backend = self.previous_backend
+        hv.Store.current_backend = self.previous_backend
         bokeh_renderer.last_plot = None
         Callback._callbacks = {}
         with param.logging_level('ERROR'):
@@ -46,7 +44,7 @@ class TestBokehServerSetup:
         time.sleep(1)
 
     def test_render_server_doc_element(self):
-        obj = Curve([])
+        obj = hv.Curve([])
         doc = bokeh_renderer.server_doc(obj)
         if not BOKEH_GE_3_8_0:
             # Updating the config which is introduced in Bokeh 3.8 changes the curdoc()
@@ -56,14 +54,14 @@ class TestBokehServerSetup:
         assert bokeh_renderer.last_plot.document == doc
 
     def test_render_explicit_server_doc_element(self):
-        obj = Curve([])
+        obj = hv.Curve([])
         doc = Document()
         server_doc = bokeh_renderer.server_doc(obj, doc)
         assert server_doc is doc
         assert bokeh_renderer.last_plot.document is doc
 
     def test_set_up_linked_change_stream_on_server_doc(self):
-        obj = Curve([])
+        obj = hv.Curve([])
         stream = RangeXY(source=obj)
         server_doc = bokeh_renderer.server_doc(obj)
         assert isinstance(server_doc, Document)
@@ -74,7 +72,7 @@ class TestBokehServerSetup:
         assert 'rangesupdate' in bokeh_renderer.last_plot.state._event_callbacks
 
     def test_set_up_linked_event_stream_on_server_doc(self):
-        obj = Curve([])
+        obj = hv.Curve([])
         stream = PlotReset(source=obj)
         server_doc = bokeh_renderer.server_doc(obj)
         assert isinstance(server_doc, Document)
@@ -88,12 +86,12 @@ class TestBokehServerSetup:
 class TestBokehServer:
 
     def setup_method(self):
-        self.previous_backend = Store.current_backend
-        Store.current_backend = 'bokeh'
+        self.previous_backend = hv.Store.current_backend
+        hv.Store.current_backend = 'bokeh'
         self._port = None
 
     def teardown_method(self):
-        Store.current_backend = self.previous_backend
+        hv.Store.current_backend = self.previous_backend
         Callback._callbacks = {}
         state.kill_all_servers()
         time.sleep(1)
@@ -117,11 +115,11 @@ class TestBokehServer:
         return pull_session(session_id='Test', url=url)
 
     def test_launch_simple_server(self):
-        obj = Curve([])
+        obj = hv.Curve([])
         self._launcher(obj, port=6001)
 
     def test_launch_server_with_stream(self):
-        el = Curve([])
+        el = hv.Curve([])
         stream = RangeXY(source=el)
 
         obj, _ = bokeh_renderer._validate(el, None)
@@ -134,15 +132,15 @@ class TestBokehServer:
         assert 'rangesupdate' in plot.state._event_callbacks
 
     def test_launch_server_with_complex_plot(self):
-        dmap = DynamicMap(lambda x_range, y_range: Curve([]), streams=[RangeXY()])
-        overlay = dmap * HLine(0)
-        static = Polygons([]) * Path([]) * Curve([])
+        dmap = hv.DynamicMap(lambda x_range, y_range: hv.Curve([]), streams=[RangeXY()])
+        overlay = dmap * hv.HLine(0)
+        static = hv.Polygons([]) * hv.Path([]) * hv.Curve([])
         layout = overlay + static
 
         self._launcher(layout, port=6003)
 
     def test_server_dynamicmap_with_dims(self):
-        dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
+        dmap = hv.DynamicMap(lambda y: hv.Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
         obj, _ = bokeh_renderer._validate(dmap, None)
         _, session = self._launcher(obj, port=6004)
         [(_plot, _)] = obj._plots.values()
@@ -160,7 +158,7 @@ class TestBokehServer:
 
     def test_server_dynamicmap_with_stream(self):
         stream = Stream.define('Custom', y=2)()
-        dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
+        dmap = hv.DynamicMap(lambda y: hv.Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = bokeh_renderer._validate(dmap, None)
         _, session = self._launcher(obj, port=6005)
         [(doc, _)] = obj._documents.items()
@@ -179,7 +177,7 @@ class TestBokehServer:
 
     def test_server_dynamicmap_with_stream_dims(self):
         stream = Stream.define('Custom', y=2)()
-        dmap = DynamicMap(lambda x, y: Curve([x, 1, y]), kdims=['x', 'y'],
+        dmap = hv.DynamicMap(lambda x, y: hv.Curve([x, 1, y]), kdims=['x', 'y'],
                           streams=[stream]).redim.values(x=[1, 2, 3])
         obj, _ = bokeh_renderer._validate(dmap, None)
         _, session = self._launcher(obj, port=6006)

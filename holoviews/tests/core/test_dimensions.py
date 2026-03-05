@@ -5,7 +5,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from holoviews.core import Dimension, Dimensioned
+import holoviews as hv
+from holoviews.core import Dimensioned
 from holoviews.core.util import NUMPY_GE_2_0_0
 from holoviews.testing import assert_element_equal
 
@@ -15,46 +16,46 @@ from ..utils import LoggingComparison
 class DimensionNameLabelTest(LoggingComparison):
 
     def test_dimension_name(self):
-        dim = Dimension('test')
+        dim = hv.Dimension('test')
         assert dim.name == 'test'
 
     def test_dimension_name_and_label(self):
-        dim = Dimension('test')
+        dim = hv.Dimension('test')
         assert dim.name == 'test'
         assert dim.label == 'test'
 
     def test_dimension_name_tuple(self):
-        dim = Dimension(('test', 'A test'))
+        dim = hv.Dimension(('test', 'A test'))
         assert dim.name == 'test'
 
     def test_dimension_label_tuple(self):
-        dim = Dimension(('test', 'A test'))
+        dim = hv.Dimension(('test', 'A test'))
         assert dim.label == 'A test'
 
     def test_dimension_label_kwarg(self):
-        dim = Dimension('test', label='A test')
+        dim = hv.Dimension('test', label='A test')
         assert dim.label == 'A test'
 
     def test_dimension_dict_empty(self):
         with pytest.raises(ValueError, match='must contain a "name" key'):
-            Dimension({})
+            hv.Dimension({})
 
     def test_dimension_dict_label(self):
         with pytest.raises(ValueError, match='must contain a "name" key'):
-            Dimension(dict(label='A test'))
+            hv.Dimension(dict(label='A test'))
 
     def test_dimension_dict_name(self):
-        dim = Dimension(dict(name='test'))
+        dim = hv.Dimension(dict(name='test'))
         assert dim.name == 'test'
         assert dim.label == 'test'
 
     def test_dimension_dict_name_and_label(self):
-        dim = Dimension(dict(name='test', label='A test'))
+        dim = hv.Dimension(dict(name='test', label='A test'))
         assert dim.name == 'test'
         assert dim.label == 'A test'
 
     def test_dimension_label_kwarg_and_tuple(self):
-        dim = Dimension(('test', 'A test'), label='Another test')
+        dim = hv.Dimension(('test', 'A test'), label='Another test')
         substr = "Using label as supplied by keyword ('Another test'), ignoring tuple value 'A test'"
         self.log_handler.assert_endswith('WARNING', substr)
         assert dim.label == 'Another test'
@@ -62,86 +63,86 @@ class DimensionNameLabelTest(LoggingComparison):
     def test_dimension_invalid_name(self):
         regexp = 'Dimension name must only be passed as the positional argument'
         with pytest.raises(KeyError, match=regexp):
-            Dimension('test', name='something else')
+            hv.Dimension('test', name='something else')
 
     def test_dimension_invalid_name_tuple(self):
         regexp = 'Dimension name must only be passed as the positional argument'
         with pytest.raises(KeyError, match=regexp):
-            Dimension(('test', 'test dimension'), name='something else')
+            hv.Dimension(('test', 'test dimension'), name='something else')
 
 
 class DimensionReprTest:
 
     def test_name_dimension_repr(self):
-        dim = Dimension('test')
+        dim = hv.Dimension('test')
         assert repr(dim) == "Dimension('test')"
 
     def test_name_dimension_repr_eval_equality(self):
-        dim = Dimension('test')
-        assert eval(repr(dim)) == dim
+        dim = hv.Dimension('test')
+        assert eval(repr(dim), {"Dimension": hv.Dimension}) == dim
 
     def test_name_dimension_repr_tuple(self):
-        dim = Dimension(('test', 'Test Dimension'))
+        dim = hv.Dimension(('test', 'Test Dimension'))
         assert repr(dim) == "Dimension('test', label='Test Dimension')"
 
     def test_name_dimension_repr_tuple_eval_equality(self):
-        dim = Dimension(('test', 'Test Dimension'))
-        assert eval(repr(dim)) == dim
+        dim = hv.Dimension(('test', 'Test Dimension'))
+        assert eval(repr(dim), {"Dimension": hv.Dimension}) == dim
 
     def test_name_dimension_repr_params(self):
-        dim = Dimension('test', label='Test Dimension', unit='m')
+        dim = hv.Dimension('test', label='Test Dimension', unit='m')
         assert repr(dim) == "Dimension('test', label='Test Dimension', unit='m')"
 
     def test_name_dimension_repr_params_eval_equality(self):
-        dim = Dimension('test', label='Test Dimension', unit='m')
-        assert eval(repr(dim)) == dim
+        dim = hv.Dimension('test', label='Test Dimension', unit='m')
+        assert eval(repr(dim), {"Dimension": hv.Dimension}) == dim
 
     def test_pprint_value_boolean(self):
         # https://github.com/holoviz/holoviews/issues/5378
-        dim = Dimension('test')
+        dim = hv.Dimension('test')
         assert dim.pprint_value(True) == 'True'
         assert dim.pprint_value(False) == 'False'
 
 
 class DimensionEqualityTest:
     def test_simple_dim_equality(self):
-        dim1 = Dimension('test')
-        dim2 = Dimension('test')
+        dim1 = hv.Dimension('test')
+        dim2 = hv.Dimension('test')
         assert dim1==dim2
 
     def test_simple_str_equality(self):
-        dim1 = Dimension('test')
-        dim2 = Dimension('test')
+        dim1 = hv.Dimension('test')
+        dim2 = hv.Dimension('test')
         assert dim1==str(dim2)
 
     def test_simple_dim_inequality(self):
-        dim1 = Dimension('test1')
-        dim2 = Dimension('test2')
+        dim1 = hv.Dimension('test1')
+        dim2 = hv.Dimension('test2')
         assert not dim1==dim2
 
     def test_simple_str_inequality(self):
-        dim1 = Dimension('test1')
-        dim2 = Dimension('test2')
+        dim1 = hv.Dimension('test1')
+        dim2 = hv.Dimension('test2')
         assert not dim1==str(dim2)
 
     def test_label_dim_inequality(self):
-        dim1 = Dimension(('test', 'label1'))
-        dim2 = Dimension(('test', 'label2'))
+        dim1 = hv.Dimension(('test', 'label1'))
+        dim2 = hv.Dimension(('test', 'label2'))
         assert not dim1==dim2
 
     def test_label_str_equality(self):
-        dim1 = Dimension(('test', 'label1'))
-        dim2 = Dimension(('test', 'label2'))
+        dim1 = hv.Dimension(('test', 'label1'))
+        dim2 = hv.Dimension(('test', 'label2'))
         assert dim1==str(dim2)
 
     def test_weak_dim_equality(self):
-        dim1 = Dimension('test', cyclic=True, unit='m', type=float)
-        dim2 = Dimension('test', cyclic=False, unit='km', type=int)
+        dim1 = hv.Dimension('test', cyclic=True, unit='m', type=float)
+        dim2 = hv.Dimension('test', cyclic=False, unit='km', type=int)
         assert dim1==dim2
 
     def test_weak_str_equality(self):
-        dim1 = Dimension('test', cyclic=True, unit='m', type=float)
-        dim2 = Dimension('test', cyclic=False, unit='km', type=int)
+        dim1 = hv.Dimension('test', cyclic=True, unit='m', type=float)
+        dim2 = hv.Dimension('test', cyclic=False, unit='km', type=int)
         assert dim1==str(dim2)
 
 
@@ -155,82 +156,82 @@ class DimensionValuesTest:
         self.duplicates2 = ['a','b','b','a','c','a','c','d','d']
 
     def test_dimension_values_list1(self):
-        dim = Dimension('test', values=self.values1)
+        dim = hv.Dimension('test', values=self.values1)
         assert dim.values == self.values1
 
     def test_dimension_values_list2(self):
-        dim = Dimension('test', values=self.values2)
+        dim = hv.Dimension('test', values=self.values2)
         assert dim.values == self.values2
 
     def test_dimension_values_list_duplicates1(self):
-        dim = Dimension('test', values=self.duplicates1)
+        dim = hv.Dimension('test', values=self.duplicates1)
         assert dim.values == self.values1
 
     def test_dimension_values_list_duplicates2(self):
-        dim = Dimension('test', values=self.duplicates2)
+        dim = hv.Dimension('test', values=self.duplicates2)
         assert dim.values == self.values2
 
     def test_dimension_values_array1(self):
-        dim = Dimension('test', values=np.array(self.values1))
+        dim = hv.Dimension('test', values=np.array(self.values1))
         assert dim.values == self.values1
 
     def test_dimension_values_array2(self):
-        dim = Dimension('test', values=np.array(self.values2))
+        dim = hv.Dimension('test', values=np.array(self.values2))
         assert dim.values == self.values2
 
     def test_dimension_values_array_duplicates1(self):
-        dim = Dimension('test', values=np.array(self.duplicates1))
+        dim = hv.Dimension('test', values=np.array(self.duplicates1))
         assert dim.values == self.values1
 
     def test_dimension_values_array_duplicates2(self):
-        dim = Dimension('test', values=np.array(self.duplicates2))
+        dim = hv.Dimension('test', values=np.array(self.duplicates2))
         assert dim.values == self.values2
 
     def test_dimension_values_series1(self):
         df = pd.DataFrame({'col':self.values1})
-        dim = Dimension('test', values=df['col'])
+        dim = hv.Dimension('test', values=df['col'])
         assert dim.values == self.values1
 
     def test_dimension_values_series2(self):
         df = pd.DataFrame({'col':self.values2})
-        dim = Dimension('test', values=df['col'])
+        dim = hv.Dimension('test', values=df['col'])
         assert dim.values == self.values2
 
 
     def test_dimension_values_series_duplicates1(self):
         df = pd.DataFrame({'col':self.duplicates1})
-        dim = Dimension('test', values=df['col'])
+        dim = hv.Dimension('test', values=df['col'])
         assert dim.values == self.values1
 
     def test_dimension_values_series_duplicates2(self):
         df = pd.DataFrame({'col':self.duplicates2})
-        dim = Dimension('test', values=df['col'])
+        dim = hv.Dimension('test', values=df['col'])
         assert dim.values == self.values2
 
 
 class DimensionCloneTest:
 
     def test_simple_clone(self):
-        dim = Dimension('test')
+        dim = hv.Dimension('test')
         assert dim.name == 'test'
         assert dim.clone('bar').name == 'bar'
 
     def test_simple_label_clone(self):
-        dim = Dimension('test')
+        dim = hv.Dimension('test')
         assert dim.name == 'test'
         clone = dim.clone(label='label')
         assert clone.name == 'test'
         assert clone.label == 'label'
 
     def test_simple_values_clone(self):
-        dim = Dimension('test', values=[1,2,3])
+        dim = hv.Dimension('test', values=[1,2,3])
         assert dim.values == [1,2,3]
         clone = dim.clone(values=[4,5,6])
         assert clone.name == 'test'
         assert clone.values == [4,5,6]
 
     def test_tuple_clone(self):
-        dim = Dimension('test')
+        dim = hv.Dimension('test')
         assert dim.name == 'test'
         clone = dim.clone(('test', 'A test'))
         assert clone.name == 'test'
@@ -245,12 +246,12 @@ class DimensionDefaultTest:
         else:
             msg = r"Dimension\('A'\) default 1\.1 not found in declared values: \[0, 1\]"
         with pytest.raises(ValueError, match=msg):
-            Dimension('A', values=[0, 1], default=1.1)
+            hv.Dimension('A', values=[0, 1], default=1.1)
 
     def test_validate_default_against_range(self):
         msg = r"Dimension\('A'\) default 1\.1 not in declared range: \(0, 1\)"
         with pytest.raises(ValueError, match=msg):
-            Dimension('A', range=(0, 1), default=1.1)
+            hv.Dimension('A', range=(0, 1), default=1.1)
 
 
 class DimensionedTest:
@@ -285,7 +286,7 @@ class DimensionedTest:
     def test_dimensioned_redim_dimension(self):
         dimensioned = Dimensioned('Arbitrary Data', kdims=['x'])
         redimensioned = dimensioned.clone(kdims=['Test'])
-        assert_element_equal(redimensioned, dimensioned.redim(x=Dimension('Test')))
+        assert_element_equal(redimensioned, dimensioned.redim(x=hv.Dimension('Test')))
 
     def test_dimensioned_redim_dict(self):
         dimensioned = Dimensioned('Arbitrary Data', kdims=['x'])

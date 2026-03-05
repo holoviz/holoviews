@@ -1,6 +1,6 @@
 import numpy as np
 
-from holoviews.element import HexTiles
+import holoviews as hv
 from holoviews.testing import assert_data_equal
 
 from .test_plot import TestMPLPlot, mpl_renderer
@@ -9,12 +9,12 @@ from .test_plot import TestMPLPlot, mpl_renderer
 class TestHexTilesPlot(TestMPLPlot):
 
     def test_hex_tiles_empty(self):
-        tiles = HexTiles([])
+        tiles = hv.HexTiles([])
         mpl_renderer.get_plot(tiles)
 
     def test_hex_tiles_opts(self):
         from holoviews.plotting.util import process_cmap
-        tiles = HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)])
+        tiles = hv.HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)])
         plot = mpl_renderer.get_plot(tiles)
         args, style, _ = plot.get_data(tiles, {}, {})
         assert_data_equal(args[0], tiles['x'])

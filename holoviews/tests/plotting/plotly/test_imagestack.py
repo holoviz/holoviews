@@ -1,6 +1,6 @@
 import numpy as np
 
-from holoviews.element import ImageStack
+import holoviews as hv
 from holoviews.plotting.plotly import RGBPlot
 
 from ...utils import optional_dependencies
@@ -17,7 +17,7 @@ class TestImageStackPlot(TestPlotlyPlot):
         a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])
         b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
         c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
-        image_stack = ImageStack(
+        image_stack = hv.ImageStack(
             (x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"]
         )
         assert isinstance(plotly_renderer.get_plot(image_stack), RGBPlot)

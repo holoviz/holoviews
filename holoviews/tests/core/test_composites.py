@@ -6,24 +6,24 @@ import re
 
 import pytest
 
-from holoviews import Element, HoloMap, Layout, Overlay
+import holoviews as hv
 from holoviews.testing import assert_element_equal
 
 
 class ElementTestCase:
 
     def setup_method(self):
-        self.el1 = Element('data1')
-        self.el2 = Element('data2')
-        self.el3 = Element('data3')
-        self.el4 = Element('data4', group='ValA')
-        self.el5 = Element('data5', group='ValB')
-        self.el6 = Element('data6', label='LabelA')
-        self.el7 = Element('data7', group='ValA', label='LabelA')
-        self.el8 = Element('data8', group='ValA', label='LabelB')
+        self.el1 = hv.Element('data1')
+        self.el2 = hv.Element('data2')
+        self.el3 = hv.Element('data3')
+        self.el4 = hv.Element('data4', group='ValA')
+        self.el5 = hv.Element('data5', group='ValB')
+        self.el6 = hv.Element('data6', label='LabelA')
+        self.el7 = hv.Element('data7', group='ValA', label='LabelA')
+        self.el8 = hv.Element('data8', group='ValA', label='LabelB')
 
     def test_element_init(self):
-        Element('data1')
+        hv.Element('data1')
 
 
 class LayoutTestCase(ElementTestCase):
@@ -33,12 +33,12 @@ class LayoutTestCase(ElementTestCase):
         assert t.keys() == [('Element', 'I',), ('Element', 'II',)]
 
     def test_layouttree_keys_2(self):
-        t = Layout([self.el1, self.el2])
+        t = hv.Layout([self.el1, self.el2])
         assert t.keys() == [('Element', 'I',), ('Element', 'II',)]
 
     def test_layouttree_deduplicate(self):
         for i in range(2, 10):
-            l = Layout([Element([], label='0') for _ in range(i)])
+            l = hv.Layout([hv.Element([], label='0') for _ in range(i)])
             assert len(l) == i
 
     def test_layouttree_values_1(self):
@@ -46,7 +46,7 @@ class LayoutTestCase(ElementTestCase):
         assert t.values() == [self.el1, self.el2]
 
     def test_layouttree_values_2(self):
-        t = Layout([self.el1, self.el2])
+        t = hv.Layout([self.el1, self.el2])
         assert t.values() == [self.el1, self.el2]
 
     def test_triple_layouttree_keys(self):
@@ -105,16 +105,16 @@ class LayoutTestCase(ElementTestCase):
         assert t2.keys() == t3.keys()
 
     def test_layouttree_constructor1(self):
-        t = Layout([self.el1])
+        t = hv.Layout([self.el1])
         assert t.keys() == [('Element', 'I')]
 
     def test_layouttree_constructor2(self):
-        t = Layout([self.el8])
+        t = hv.Layout([self.el8])
         assert t.keys() == [('ValA', 'LabelB')]
 
     def test_layouttree_group(self):
         t1 = (self.el1 + self.el2)
-        t2 = Layout(list(t1.relabel(group='NewValue')))
+        t2 = hv.Layout(list(t1.relabel(group='NewValue')))
         assert t2.keys() == [('NewValue', 'I'), ('NewValue', 'II')]
 
     def test_layouttree_quadruple_1(self):
@@ -129,13 +129,13 @@ class LayoutTestCase(ElementTestCase):
     def test_layout_constructor_with_layouts(self):
         layout1 = self.el1 + self.el4
         layout2 = self.el2 + self.el5
-        paths = Layout([layout1, layout2]).keys()
+        paths = hv.Layout([layout1, layout2]).keys()
         assert paths == [('Element', 'I',), ('ValA', 'I',), ('Element', 'II',), ('ValB', 'I',)]
 
     def test_layout_constructor_with_mixed_types(self):
         layout1 = self.el1 + self.el4 + self.el7
         layout2 = self.el2 + self.el5 + self.el8
-        paths = Layout([layout1, layout2, self.el3]).keys()
+        paths = hv.Layout([layout1, layout2, self.el3]).keys()
         expected = [
             ('Element', 'I',), ('ValA', 'I'),
             ('ValA', 'LabelA'), ('Element', 'II'),
@@ -145,13 +145,13 @@ class LayoutTestCase(ElementTestCase):
         assert paths == expected
 
     def test_layout_constructor_retains_custom_path(self):
-        layout = Layout([('Custom', self.el1)])
-        paths = Layout([layout, self.el2]).keys()
+        layout = hv.Layout([('Custom', self.el1)])
+        paths = hv.Layout([layout, self.el2]).keys()
         assert paths == [('Custom', 'I'), ('Element', 'I')]
 
     def test_layout_constructor_retains_custom_path_with_label(self):
-        layout = Layout([('Custom', self.el6)])
-        paths = Layout([layout, self.el2]).keys()
+        layout = hv.Layout([('Custom', self.el6)])
+        paths = hv.Layout([layout, self.el2]).keys()
         assert paths == [('Custom', 'LabelA'), ('Element', 'I')]
 
     def test_layout_integer_index(self):
@@ -161,30 +161,30 @@ class LayoutTestCase(ElementTestCase):
 
     def test_layout_overlay_element(self):
         t = (self.el1 + self.el2) * self.el3
-        assert_element_equal(t, Layout([self.el1*self.el3, self.el2*self.el3]))
+        assert_element_equal(t, hv.Layout([self.el1*self.el3, self.el2*self.el3]))
 
     def test_layout_overlay_element_reverse(self):
         t = self.el3 * (self.el1 + self.el2)
-        assert_element_equal(t, Layout([self.el3*self.el1, self.el3*self.el2]))
+        assert_element_equal(t, hv.Layout([self.el3*self.el1, self.el3*self.el2]))
 
     def test_layout_overlay_overlay(self):
         t = (self.el1 + self.el2) * (self.el3 * self.el4)
-        assert_element_equal(t, Layout([self.el1*self.el3*self.el4, self.el2*self.el3*self.el4]))
+        assert_element_equal(t, hv.Layout([self.el1*self.el3*self.el4, self.el2*self.el3*self.el4]))
 
     def test_layout_overlay_overlay_reverse(self):
         t = (self.el3 * self.el4) * (self.el1 + self.el2)
-        assert_element_equal(t, Layout([self.el3*self.el4*self.el1,
+        assert_element_equal(t, hv.Layout([self.el3*self.el4*self.el1,
                                     self.el3*self.el4*self.el2]))
 
     def test_layout_overlay_holomap(self):
-        t = (self.el1 + self.el2) * HoloMap({0: self.el3})
-        assert_element_equal(t, Layout([HoloMap({0: self.el1*self.el3}),
-                                    HoloMap({0: self.el2*self.el3})]))
+        t = (self.el1 + self.el2) * hv.HoloMap({0: self.el3})
+        assert_element_equal(t, hv.Layout([hv.HoloMap({0: self.el1*self.el3}),
+                                    hv.HoloMap({0: self.el2*self.el3})]))
 
     def test_layout_overlay_holomap_reverse(self):
-        t = HoloMap({0: self.el3}) * (self.el1 + self.el2)
-        assert_element_equal(t, Layout([HoloMap({0: self.el3*self.el1}),
-                                    HoloMap({0: self.el3*self.el2})]))
+        t = hv.HoloMap({0: self.el3}) * (self.el1 + self.el2)
+        assert_element_equal(t, hv.Layout([hv.HoloMap({0: self.el3*self.el1}),
+                                    hv.HoloMap({0: self.el3*self.el2})]))
 
 
 
@@ -200,7 +200,7 @@ class OverlayTestCase(ElementTestCase):
         assert t.keys() == [('Element', 'I'), ('Element', 'II')]
 
     def test_overlay_keys_2(self):
-        t = Overlay([self.el1, self.el2])
+        t = hv.Overlay([self.el1, self.el2])
         assert t.keys() == [('Element', 'I',), ('Element', 'II',)]
 
     def test_overlay_values(self):
@@ -208,7 +208,7 @@ class OverlayTestCase(ElementTestCase):
         assert t.values() == [self.el1, self.el2]
 
     def test_overlay_values_2(self):
-        t = Overlay([self.el1, self.el2])
+        t = hv.Overlay([self.el1, self.el2])
         assert t.values() == [self.el1, self.el2]
 
     def test_triple_overlay_keys(self):
@@ -286,16 +286,16 @@ class OverlayTestCase(ElementTestCase):
         assert o2.keys() == o3.keys()
 
     def test_overlay_constructor1(self):
-        t = Overlay([self.el1])
+        t = hv.Overlay([self.el1])
         assert t.keys() ==  [('Element', 'I')]
 
     def test_overlay_constructor2(self):
-        t = Overlay([self.el8])
+        t = hv.Overlay([self.el8])
         assert t.keys() ==  [('ValA', 'LabelB')]
 
     def test_overlay_group(self):
         t1 = (self.el1 * self.el2)
-        t2 = Overlay(list(t1.relabel(group='NewValue', depth=1)))
+        t2 = hv.Overlay(list(t1.relabel(group='NewValue', depth=1)))
         assert t2.keys() == [('NewValue', 'I'), ('NewValue', 'II')]
 
     def test_overlay_quadruple_1(self):
@@ -316,13 +316,13 @@ class OverlayTestCase(ElementTestCase):
     def test_overlay_constructor_with_layouts(self):
         layout1 = self.el1 + self.el4
         layout2 = self.el2 + self.el5
-        paths = Layout([layout1, layout2]).keys()
+        paths = hv.Layout([layout1, layout2]).keys()
         assert paths == [('Element', 'I'), ('ValA', 'I'),  ('Element', 'II'), ('ValB', 'I')]
 
     def test_overlay_constructor_with_mixed_types(self):
         overlay1 = self.el1 + self.el4 + self.el7
         overlay2 = self.el2 + self.el5 + self.el8
-        paths = Layout([overlay1, overlay2, self.el3]).keys()
+        paths = hv.Layout([overlay1, overlay2, self.el3]).keys()
         expected = [
             ('Element', 'I'), ('ValA', 'I'),
             ('ValA', 'LabelA'), ('Element', 'II'),
@@ -332,22 +332,22 @@ class OverlayTestCase(ElementTestCase):
         assert paths == expected
 
     def test_overlay_constructor_retains_custom_path(self):
-        overlay = Overlay([('Custom', self.el1)])
-        paths = Overlay([overlay, self.el2]).keys()
+        overlay = hv.Overlay([('Custom', self.el1)])
+        paths = hv.Overlay([overlay, self.el2]).keys()
         assert paths == [('Custom', 'I'), ('Element', 'I')]
 
     def test_overlay_constructor_retains_custom_path_with_label(self):
-        overlay = Overlay([('Custom', self.el6)])
-        paths = Overlay([overlay, self.el2]).keys()
+        overlay = hv.Overlay([('Custom', self.el6)])
+        paths = hv.Overlay([overlay, self.el2]).keys()
         assert paths == [('Custom', 'LabelA'), ('Element', 'I')]
 
     def test_overlay_with_holomap(self):
-        overlay = Overlay([('Custom', self.el6)])
-        composite = overlay * HoloMap({0: Element(None, group='HoloMap')})
+        overlay = hv.Overlay([('Custom', self.el6)])
+        composite = overlay * hv.HoloMap({0: hv.Element(None, group='HoloMap')})
         assert composite.last.keys() == [('Custom', 'LabelA'), ('HoloMap', 'I')]
 
     def test_overlay_id_inheritance(self):
-        overlay = Overlay([], id=1)
+        overlay = hv.Overlay([], id=1)
         assert overlay.clone().id == 1
         assert overlay.clone()._plot_id == overlay._plot_id
         assert overlay.clone([])._plot_id != overlay._plot_id

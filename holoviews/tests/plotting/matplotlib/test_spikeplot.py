@@ -1,10 +1,8 @@
 import numpy as np
 import pytest
 
+import holoviews as hv
 from holoviews.core.options import AbbreviatedException
-from holoviews.core.overlay import NdOverlay
-from holoviews.core.spaces import HoloMap
-from holoviews.element import Spikes
 from holoviews.testing import assert_data_equal
 
 from ..utils import ParamLogStream
@@ -14,14 +12,14 @@ from .test_plot import TestMPLPlot, mpl_renderer
 class TestSpikesPlot(TestMPLPlot):
 
     def test_spikes_padding_square(self):
-        spikes = Spikes([1, 2, 3]).opts(padding=0.1)
+        spikes = hv.Spikes([1, 2, 3]).opts(padding=0.1)
         plot = mpl_renderer.get_plot(spikes)
         x_range = plot.handles['axis'].get_xlim()
         assert x_range[0] == 0.8
         assert x_range[1] == 3.2
 
     def test_spikes_padding_square_heights(self):
-        spikes = Spikes([(1, 1), (2, 2), (3, 3)], vdims=['Height']).opts(padding=0.1)
+        spikes = hv.Spikes([(1, 1), (2, 2), (3, 3)], vdims=['Height']).opts(padding=0.1)
         plot = mpl_renderer.get_plot(spikes)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         assert x_range[0] == 0.8
@@ -30,42 +28,42 @@ class TestSpikesPlot(TestMPLPlot):
         assert y_range[1] == 3.2
 
     def test_spikes_padding_hard_xrange(self):
-        spikes = Spikes([1, 2, 3]).redim.range(x=(0, 3)).opts(padding=0.1)
+        spikes = hv.Spikes([1, 2, 3]).redim.range(x=(0, 3)).opts(padding=0.1)
         plot = mpl_renderer.get_plot(spikes)
         x_range = plot.handles['axis'].get_xlim()
         assert x_range[0] == 0
         assert x_range[1] == 3
 
     def test_spikes_padding_soft_xrange(self):
-        spikes = Spikes([1, 2, 3]).redim.soft_range(x=(0, 3)).opts(padding=0.1)
+        spikes = hv.Spikes([1, 2, 3]).redim.soft_range(x=(0, 3)).opts(padding=0.1)
         plot = mpl_renderer.get_plot(spikes)
         x_range = plot.handles['axis'].get_xlim()
         assert x_range[0] == 0
         assert x_range[1] == 3
 
     def test_spikes_padding_unequal(self):
-        spikes = Spikes([1, 2, 3]).opts(padding=(0.05, 0.1))
+        spikes = hv.Spikes([1, 2, 3]).opts(padding=(0.05, 0.1))
         plot = mpl_renderer.get_plot(spikes)
         x_range = plot.handles['axis'].get_xlim()
         assert x_range[0] == 0.9
         assert x_range[1] == 3.1
 
     def test_spikes_padding_nonsquare(self):
-        spikes = Spikes([1, 2, 3]).opts(padding=0.1, aspect=2)
+        spikes = hv.Spikes([1, 2, 3]).opts(padding=0.1, aspect=2)
         plot = mpl_renderer.get_plot(spikes)
         x_range = plot.handles['axis'].get_xlim()
         assert x_range[0] == 0.9
         assert x_range[1] == 3.1
 
     def test_spikes_padding_logx(self):
-        spikes = Spikes([(1, 1), (2, 2), (3,3)]).opts(padding=0.1, logx=True)
+        spikes = hv.Spikes([(1, 1), (2, 2), (3,3)]).opts(padding=0.1, logx=True)
         plot = mpl_renderer.get_plot(spikes)
         x_range = plot.handles['axis'].get_xlim()
         assert x_range[0] == 0.89595845984076228
         assert x_range[1] == 3.3483695221017129
 
     def test_spikes_padding_datetime_square(self):
-        spikes = Spikes([np.datetime64(f'2016-04-0{i}') for i in range(1, 4)]).opts(
+        spikes = hv.Spikes([np.datetime64(f'2016-04-0{i}') for i in range(1, 4)]).opts(
             padding=0.1
         )
         plot = mpl_renderer.get_plot(spikes)
@@ -74,7 +72,7 @@ class TestSpikesPlot(TestMPLPlot):
         assert x_range[1] == 16894.2
 
     def test_spikes_padding_datetime_square_heights(self):
-        spikes = Spikes([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)], vdims=['Height']).opts(
+        spikes = hv.Spikes([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)], vdims=['Height']).opts(
             padding=0.1
         )
         plot = mpl_renderer.get_plot(spikes)
@@ -85,7 +83,7 @@ class TestSpikesPlot(TestMPLPlot):
         assert y_range[1] == 3.2
 
     def test_spikes_padding_datetime_nonsquare(self):
-        spikes = Spikes([np.datetime64(f'2016-04-0{i}') for i in range(1, 4)]).opts(
+        spikes = hv.Spikes([np.datetime64(f'2016-04-0{i}') for i in range(1, 4)]).opts(
             padding=0.1, aspect=2
         )
         plot = mpl_renderer.get_plot(spikes)
@@ -98,7 +96,7 @@ class TestSpikesPlot(TestMPLPlot):
     ###########################
 
     def test_spikes_color_op(self):
-        spikes = Spikes([(0, 0, '#000000'), (0, 1, '#FF0000'), (0, 2, '#00FF00')],
+        spikes = hv.Spikes([(0, 0, '#000000'), (0, 1, '#FF0000'), (0, 2, '#00FF00')],
                               vdims=['y', 'color']).opts(color='color')
         plot = mpl_renderer.get_plot(spikes)
         artist = plot.handles['artist']
@@ -107,10 +105,10 @@ class TestSpikesPlot(TestMPLPlot):
         ))
 
     def test_spikes_color_op_update(self):
-        spikes = HoloMap({
-            0: Spikes([(0, 0, '#000000'), (0, 1, '#FF0000'), (0, 2, '#00FF00')],
+        spikes = hv.HoloMap({
+            0: hv.Spikes([(0, 0, '#000000'), (0, 1, '#FF0000'), (0, 2, '#00FF00')],
                       vdims=['y', 'color']),
-            1: Spikes([(0, 0, '#FF0000'), (0, 1, '#00FF00'), (0, 2, '#0000FF')],
+            1: hv.Spikes([(0, 0, '#FF0000'), (0, 1, '#00FF00'), (0, 2, '#0000FF')],
                       vdims=['y', 'color'])}).opts(color='color')
         plot = mpl_renderer.get_plot(spikes)
         artist = plot.handles['artist']
@@ -123,7 +121,7 @@ class TestSpikesPlot(TestMPLPlot):
         ))
 
     def test_spikes_linear_color_op(self):
-        spikes = Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+        spikes = hv.Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                         vdims=['y', 'color']).opts(color='color')
         plot = mpl_renderer.get_plot(spikes)
         artist = plot.handles['artist']
@@ -131,10 +129,10 @@ class TestSpikesPlot(TestMPLPlot):
         assert artist.get_clim() == (0, 2)
 
     def test_spikes_linear_color_op_update(self):
-        spikes = HoloMap({
-            0: Spikes([(0, 0, 0.5), (0, 1, 3.2), (0, 2, 1.8)],
+        spikes = hv.HoloMap({
+            0: hv.Spikes([(0, 0, 0.5), (0, 1, 3.2), (0, 2, 1.8)],
                       vdims=['y', 'color']),
-            1: Spikes([(0, 0, 0.1), (0, 1, 0.8), (0, 2, 0.3)],
+            1: hv.Spikes([(0, 0, 0.1), (0, 1, 0.8), (0, 2, 0.3)],
                       vdims=['y', 'color'])}).opts(color='color', framewise=True)
         plot = mpl_renderer.get_plot(spikes)
         artist = plot.handles['artist']
@@ -145,7 +143,7 @@ class TestSpikesPlot(TestMPLPlot):
         assert artist.get_clim() == (0.1, 0.8)
 
     def test_spikes_categorical_color_op(self):
-        spikes = Spikes([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'A')],
+        spikes = hv.Spikes([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'A')],
                         vdims=['y', 'color']).opts(color='color')
         plot = mpl_renderer.get_plot(spikes)
         artist = plot.handles['artist']
@@ -153,14 +151,14 @@ class TestSpikesPlot(TestMPLPlot):
         assert artist.get_clim() == (0, 1)
 
     def test_spikes_alpha_op(self):
-        spikes = Spikes([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
+        spikes = hv.Spikes([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
                               vdims=['y', 'alpha']).opts(alpha='alpha')
         msg = 'ValueError: Mapping a dimension to the "alpha" style'
         with pytest.raises(AbbreviatedException, match=msg):
             mpl_renderer.get_plot(spikes)
 
     def test_spikes_line_width_op(self):
-        spikes = Spikes([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
+        spikes = hv.Spikes([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
                               vdims=['y', 'line_width']).opts(linewidth='line_width')
         plot = mpl_renderer.get_plot(spikes)
         artist = plot.handles['artist']
@@ -168,10 +166,10 @@ class TestSpikesPlot(TestMPLPlot):
 
 
     def test_spikes_line_width_op_update(self):
-        spikes = HoloMap({
-            0: Spikes([(0, 0, 0.5), (0, 1, 3.2), (0, 2, 1.8)],
+        spikes = hv.HoloMap({
+            0: hv.Spikes([(0, 0, 0.5), (0, 1, 3.2), (0, 2, 1.8)],
                       vdims=['y', 'line_width']),
-            1: Spikes([(0, 0, 0.1), (0, 1, 0.8), (0, 2, 0.3)],
+            1: hv.Spikes([(0, 0, 0.1), (0, 1, 0.8), (0, 2, 0.3)],
                       vdims=['y', 'line_width'])}).opts(linewidth='line_width')
         plot = mpl_renderer.get_plot(spikes)
         artist = plot.handles['artist']
@@ -181,7 +179,7 @@ class TestSpikesPlot(TestMPLPlot):
 
     def test_op_ndoverlay_value(self):
         colors = ['blue', 'red']
-        overlay = NdOverlay({color: Spikes(np.arange(i+2))
+        overlay = hv.NdOverlay({color: hv.Spikes(np.arange(i+2))
                              for i, color in enumerate(colors)}, 'Color').opts(
                                      'Spikes', color='Color'
                              )
@@ -193,7 +191,7 @@ class TestSpikesPlot(TestMPLPlot):
                 assert c.get_facecolor() == color
 
     def test_spikes_color_index_color_clash(self):
-        spikes = Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+        spikes = hv.Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                         vdims=['y', 'color']).opts(color='color', color_index='color')
         with ParamLogStream() as log:
             mpl_renderer.get_plot(spikes)

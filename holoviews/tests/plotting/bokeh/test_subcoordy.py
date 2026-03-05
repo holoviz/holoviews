@@ -2,9 +2,7 @@ import numpy as np
 import pytest
 from bokeh.models.tools import WheelZoomTool, ZoomInTool, ZoomOutTool
 
-from holoviews.core import NdOverlay, Overlay
-from holoviews.element import Curve
-from holoviews.element.annotation import VSpan
+import holoviews as hv
 from holoviews.operation.normalization import subcoordinate_group_ranges
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_5_0
 
@@ -16,7 +14,7 @@ class TestSubcoordinateY(TestBokehPlot):
     # With subcoordinate_y set to True
 
     def test_bool_base(self):
-        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay = hv.Overlay([hv.Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
         plot = bokeh_renderer.get_plot(overlay)
         # subcoordinate_y is propagated to the overlay
         assert plot.subcoordinate_y is True
@@ -43,8 +41,8 @@ class TestSubcoordinateY(TestBokehPlot):
         assert plot.state.yaxis.major_label_overrides == {0: 'Data 0', 1: 'Data 1'}
 
     def test_renderers_reversed(self):
-        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
-        overlay = VSpan(0, 1, label='back') * overlay * VSpan(2, 3, label='front')
+        overlay = hv.Overlay([hv.Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay = hv.VSpan(0, 1, label='back') * overlay * hv.VSpan(2, 3, label='front')
         plot = bokeh_renderer.get_plot(overlay)
         renderers = plot.handles['plot'].renderers
         assert (renderers[0].left, renderers[0].right) == (0, 1)
@@ -61,8 +59,8 @@ class TestSubcoordinateY(TestBokehPlot):
             (5, (-2.5, 2.5), (-1.5, 3.5), (-2.5, 3.5)),
         ]
         for scale, ytarget1, ytarget2, ytarget in test_data:
-            overlay = Overlay([
-                Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True, subcoordinate_scale=scale)
+            overlay = hv.Overlay([
+                hv.Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True, subcoordinate_scale=scale)
                 for i in range(2)
             ])
             plot = bokeh_renderer.get_plot(overlay)
@@ -78,8 +76,8 @@ class TestSubcoordinateY(TestBokehPlot):
             assert plot.handles['y_range'].end == ytarget[1]
 
     def test_ndoverlay_labels(self):
-        overlay = NdOverlay({
-            f'Data {i}': Curve(np.arange(10)*i).opts(subcoordinate_y=True)
+        overlay = hv.NdOverlay({
+            f'Data {i}': hv.Curve(np.arange(10)*i).opts(subcoordinate_y=True)
             for i in range(3)
         }, 'Channel')
         plot = bokeh_renderer.get_plot(overlay)
@@ -90,8 +88,8 @@ class TestSubcoordinateY(TestBokehPlot):
             assert sp.handles['glyph_renderer'].coordinates.y_target.end == (i+0.5)
 
     def test_ndoverlay_nd_labels(self):
-        overlay = NdOverlay({
-            ('A', f'Data {i}'): Curve(np.arange(10)*i).opts(subcoordinate_y=True)
+        overlay = hv.NdOverlay({
+            ('A', f'Data {i}'): hv.Curve(np.arange(10)*i).opts(subcoordinate_y=True)
             for i in range(3)
         }, ['Group', 'Channel'])
         plot = bokeh_renderer.get_plot(overlay)
@@ -102,7 +100,7 @@ class TestSubcoordinateY(TestBokehPlot):
             assert sp.handles['glyph_renderer'].coordinates.y_target.end == (i+0.5)
 
     def test_no_label(self):
-        overlay = Overlay([Curve(range(10)).opts(subcoordinate_y=True) for i in range(2)])
+        overlay = hv.Overlay([hv.Curve(range(10)).opts(subcoordinate_y=True) for i in range(2)])
         with pytest.raises(
             ValueError,
             match=r'Every Element plotted on a subcoordinate_y axis must have a label or be part of an NdOverlay.'
@@ -110,26 +108,26 @@ class TestSubcoordinateY(TestBokehPlot):
             bokeh_renderer.get_plot(overlay)
 
     def test_overlaid_without_label_no_error(self):
-        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
-        with_span = overlay * VSpan(1, 2)
+        overlay = hv.Overlay([hv.Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        with_span = overlay * hv.VSpan(1, 2)
         bokeh_renderer.get_plot(with_span)
 
     def test_underlaid_ytick_alignment(self):
-        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
-        with_span = VSpan(1, 2) * overlay
+        overlay = hv.Overlay([hv.Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        with_span = hv.VSpan(1, 2) * overlay
         plot = bokeh_renderer.get_plot(with_span)
         # the yticks are aligned with their subcoordinate_y axis
         assert plot.state.yaxis.ticker.ticks == [0, 1]
 
     def test_overlaid_ytick_alignment(self):
-        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
-        with_span = overlay * VSpan(1, 2)
+        overlay = hv.Overlay([hv.Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        with_span = overlay * hv.VSpan(1, 2)
         plot = bokeh_renderer.get_plot(with_span)
         # the yticks are aligned with their subcoordinate_y axis
         assert plot.state.yaxis.ticker.ticks == [0, 1]
 
     def test_custom_ylabel(self):
-        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay = hv.Overlay([hv.Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
         overlay.opts(ylabel='Y label')
         plot = bokeh_renderer.get_plot(overlay)
         # the figure axis has the label set
@@ -139,15 +137,15 @@ class TestSubcoordinateY(TestBokehPlot):
         assert plot.state.yaxis.major_label_overrides == {0: 'Data 0', 1: 'Data 1'}
 
     def test_legend_label(self):
-        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay = hv.Overlay([hv.Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
         plot = bokeh_renderer.get_plot(overlay)
         legend_labels = [l.label['value'] for l in plot.state.legend[0].items]
         # the legend displays the labels
         assert legend_labels == ['Data 0', 'Data 1']
 
     def test_shared_multi_axes(self):
-        overlay1 = Overlay([Curve(np.arange(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
-        overlay2 = Overlay([Curve(np.arange(10) + 5, label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay1 = hv.Overlay([hv.Curve(np.arange(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay2 = hv.Overlay([hv.Curve(np.arange(10) + 5, label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
 
         plot = bokeh_renderer.get_plot(overlay1 + overlay2)
 
@@ -159,28 +157,28 @@ class TestSubcoordinateY(TestBokehPlot):
         assert oplot2.handles['extra_y_ranges'] == {}
 
     def test_invisible_yaxis(self):
-        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay = hv.Overlay([hv.Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
         overlay.opts(yaxis=None)
         plot = bokeh_renderer.get_plot(overlay)
         assert not plot.state.yaxis.visible
 
     def test_overlay_set_ylim(self):
         ylim = (1, 2.5)
-        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay = hv.Overlay([hv.Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
         overlay.opts(ylim=ylim)
         plot = bokeh_renderer.get_plot(overlay)
         y_range = plot.handles['y_range']
         assert (y_range.start, y_range.end) == ylim
 
     def test_axis_labels(self):
-        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay = hv.Overlay([hv.Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
         plot = bokeh_renderer.get_plot(overlay)
 
         assert plot.state.xaxis.axis_label == 'x'
         assert plot.state.yaxis.axis_label == 'y'
 
     def test_only_x_axis_labels(self):
-        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay = hv.Overlay([hv.Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
         overlay.opts(labelled=['x'])
         plot = bokeh_renderer.get_plot(overlay)
 
@@ -188,7 +186,7 @@ class TestSubcoordinateY(TestBokehPlot):
         assert plot.state.yaxis.axis_label == ''
 
     def test_none_x_axis_labels(self):
-        overlay = Overlay([Curve(range(10), vdims=['A'], label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay = hv.Overlay([hv.Curve(range(10), vdims=['A'], label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
         plot = bokeh_renderer.get_plot(overlay)
 
         assert plot.state.xaxis.axis_label == 'x'
@@ -197,9 +195,9 @@ class TestSubcoordinateY(TestBokehPlot):
     # With subcoordinate_y set to a range
 
     def test_range_base(self):
-        overlay = Overlay([
-            Curve(range(10), label='Data 0').opts(subcoordinate_y=(0, 0.5)),
-            Curve(range(10), label='Data 1').opts(subcoordinate_y=(0.5, 1)),
+        overlay = hv.Overlay([
+            hv.Curve(range(10), label='Data 0').opts(subcoordinate_y=(0, 0.5)),
+            hv.Curve(range(10), label='Data 1').opts(subcoordinate_y=(0.5, 1)),
         ])
         plot = bokeh_renderer.get_plot(overlay)
         # subcoordinate_y is propagated to the overlay, just the first one though :(
@@ -227,13 +225,13 @@ class TestSubcoordinateY(TestBokehPlot):
         assert plot.state.yaxis.major_label_overrides == {0.25: 'Data 0', 0.75: 'Data 1'}
 
     def test_plot_standalone(self):
-        standalone = Curve(range(10), label='Data 0').opts(subcoordinate_y=True)
+        standalone = hv.Curve(range(10), label='Data 0').opts(subcoordinate_y=True)
         plot = bokeh_renderer.get_plot(standalone)
         assert (plot.state.x_range.start, plot.state.x_range.end) == (0, 9)
         assert (plot.state.y_range.start, plot.state.y_range.end) == (0, 9)
 
     def test_multi_y_error(self):
-        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay = hv.Overlay([hv.Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
         overlay.opts(multi_y=True)
         with pytest.raises(
             ValueError,
@@ -242,7 +240,7 @@ class TestSubcoordinateY(TestBokehPlot):
             bokeh_renderer.get_plot(overlay)
 
     def test_same_label_error(self):
-        overlay = Overlay([Curve(range(10), label='Same').opts(subcoordinate_y=True) for _ in range(2)])
+        overlay = hv.Overlay([hv.Curve(range(10), label='Same').opts(subcoordinate_y=True) for _ in range(2)])
         with pytest.raises(
             ValueError,
             match='Elements wrapped in a subcoordinate_y overlay must all have a unique label',
@@ -250,7 +248,7 @@ class TestSubcoordinateY(TestBokehPlot):
             bokeh_renderer.get_plot(overlay)
 
     def test_tools_default_wheel_zoom_configured(self):
-        overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
+        overlay = hv.Overlay([hv.Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True) for i in range(2)])
         plot = bokeh_renderer.get_plot(overlay)
         zoom_subcoordy = plot.handles['zooms_subcoordy']['wheel_zoom']
         assert len(zoom_subcoordy.renderers) == 2
@@ -260,7 +258,7 @@ class TestSubcoordinateY(TestBokehPlot):
 
     def test_tools_string_zoom_in_out_configured(self):
         for zoom in ['zoom_in', 'zoom_out', 'yzoom_in', 'yzoom_out', 'ywheel_zoom']:
-            overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True, tools=[zoom]) for i in range(2)])
+            overlay = hv.Overlay([hv.Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True, tools=[zoom]) for i in range(2)])
             plot = bokeh_renderer.get_plot(overlay)
             zoom_subcoordy = plot.handles['zooms_subcoordy'][zoom]
             assert len(zoom_subcoordy.renderers) == 2
@@ -274,7 +272,7 @@ class TestSubcoordinateY(TestBokehPlot):
             ('xzoom_out', ZoomOutTool),
             ('xwheel_zoom', WheelZoomTool),
         ]:
-            overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True, tools=[zoom]) for i in range(2)])
+            overlay = hv.Overlay([hv.Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True, tools=[zoom]) for i in range(2)])
             plot = bokeh_renderer.get_plot(overlay)
             for tool in plot.state.tools:
                 if isinstance(tool, zoom_type) and tool.tags == ['hv_created']:
@@ -286,7 +284,7 @@ class TestSubcoordinateY(TestBokehPlot):
 
     def test_tools_instance_zoom_untouched(self):
         for zoom in [WheelZoomTool(), ZoomInTool(), ZoomOutTool()]:
-            overlay = Overlay([Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True, tools=[zoom]) for i in range(2)])
+            overlay = hv.Overlay([hv.Curve(range(10), label=f'Data {i}').opts(subcoordinate_y=True, tools=[zoom]) for i in range(2)])
             plot = bokeh_renderer.get_plot(overlay)
             for tool in plot.state.tools:
                 if isinstance(tool, type(zoom)) and 'hv_created' not in tool.tags:
@@ -300,7 +298,7 @@ class TestSubcoordinateY(TestBokehPlot):
         # Same as test_bool_base, to check nothing is affected by defining
         # a single group.
 
-        overlay = Overlay([Curve(range(10), label=f'Data {i}', group='Group').opts(subcoordinate_y=True) for i in range(2)])
+        overlay = hv.Overlay([hv.Curve(range(10), label=f'Data {i}', group='Group').opts(subcoordinate_y=True) for i in range(2)])
         plot = bokeh_renderer.get_plot(overlay)
         # subcoordinate_y is propagated to the overlay
         assert plot.subcoordinate_y is True
@@ -327,8 +325,8 @@ class TestSubcoordinateY(TestBokehPlot):
         assert plot.state.yaxis.major_label_overrides == {0: 'Data 0', 1: 'Data 1'}
 
     def test_multiple_groups(self):
-        overlay = Overlay([
-            Curve(range(10), label=f'{group} / {i}', group=group).opts(subcoordinate_y=True)
+        overlay = hv.Overlay([
+            hv.Curve(range(10), label=f'{group} / {i}', group=group).opts(subcoordinate_y=True)
             for group in ['A', 'B']
             for i in range(2)
         ])
@@ -373,8 +371,8 @@ class TestSubcoordinateY(TestBokehPlot):
         # Same as test_tools_default_wheel_zoom_configured
 
         groups = ['A', 'B']
-        overlay = Overlay([
-            Curve(range(10), label=f'{group} / {i}', group=group).opts(subcoordinate_y=True)
+        overlay = hv.Overlay([
+            hv.Curve(range(10), label=f'{group} / {i}', group=group).opts(subcoordinate_y=True)
             for group in groups
             for i in range(2)
         ])
@@ -394,8 +392,8 @@ class TestSubcoordinateY(TestBokehPlot):
         # Same as test_tools_default_wheel_zoom_configured
 
         groups = ['A', 'B']
-        overlay = Overlay([
-            Curve(range(10), label=f'{group} / {i}', group=group).opts(subcoordinate_y=True)
+        overlay = hv.Overlay([
+            hv.Curve(range(10), label=f'{group} / {i}', group=group).opts(subcoordinate_y=True)
             for group in groups
             for i in range(2)
         ])
@@ -412,17 +410,17 @@ class TestSubcoordinateY(TestBokehPlot):
         assert len(zoom_tool.hit_test_behavior.groups) == 2
 
     def test_single_group_overlaid_no_error(self):
-        overlay = Overlay([Curve(range(10), label=f'Data {i}', group='Group').opts(subcoordinate_y=True) for i in range(2)])
-        with_span = VSpan(1, 2) * overlay * VSpan(3, 4)
+        overlay = hv.Overlay([hv.Curve(range(10), label=f'Data {i}', group='Group').opts(subcoordinate_y=True) for i in range(2)])
+        with_span = hv.VSpan(1, 2) * overlay * hv.VSpan(3, 4)
         bokeh_renderer.get_plot(with_span)
 
     def test_multiple_groups_overlaid_no_error(self):
-        overlay = Overlay([
-            Curve(range(10), label=f'{group} / {i}', group=group).opts(subcoordinate_y=True)
+        overlay = hv.Overlay([
+            hv.Curve(range(10), label=f'{group} / {i}', group=group).opts(subcoordinate_y=True)
             for group in ['A', 'B']
             for i in range(2)
         ])
-        with_span = VSpan(1, 2) * overlay * VSpan(3, 4)
+        with_span = hv.VSpan(1, 2) * overlay * hv.VSpan(3, 4)
         bokeh_renderer.get_plot(with_span)
 
     def test_missing_group_error(self):
@@ -431,11 +429,11 @@ class TestSubcoordinateY(TestBokehPlot):
             for i in range(2):
                 label = f'{group}{i}'
                 if group == "B":
-                    curve = Curve(range(10), label=label, group=group).opts(
+                    curve = hv.Curve(range(10), label=label, group=group).opts(
                         subcoordinate_y=True
                     )
                 else:
-                    curve = Curve(range(10), label=label).opts(
+                    curve = hv.Curve(range(10), label=label).opts(
                         subcoordinate_y=True
                     )
                 curves.append(curve)
@@ -447,7 +445,7 @@ class TestSubcoordinateY(TestBokehPlot):
                 r'subcoordinate_y element in the overlay must have a defined group.'
             )
         ):
-            bokeh_renderer.get_plot(Overlay(curves))
+            bokeh_renderer.get_plot(hv.Overlay(curves))
 
     def test_norm_subcoordinate_group_ranges(self):
         x = np.linspace(0, 10 * np.pi, 21)
@@ -457,11 +455,11 @@ class TestSubcoordinateY(TestBokehPlot):
             for i in range(2):
                 yvals = j * np.sin(x)
                 curves.append(
-                    Curve((x + np.pi/2, yvals), label=f'{group}{i}', group=group).opts(subcoordinate_y=True)
+                    hv.Curve((x + np.pi/2, yvals), label=f'{group}{i}', group=group).opts(subcoordinate_y=True)
                 )
                 j += 1
 
-        overlay = Overlay(curves)
+        overlay = hv.Overlay(curves)
         noverlay = subcoordinate_group_ranges(overlay)
 
         expected = [

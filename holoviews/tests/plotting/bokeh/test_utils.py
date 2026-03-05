@@ -2,7 +2,6 @@ import pytest
 from bokeh.models import Tool, tools as bk_tools
 
 import holoviews as hv
-from holoviews.core import Store
 from holoviews.plotting.bokeh.styles import expand_batched_style
 from holoviews.plotting.bokeh.util import (
     TOOL_TYPES,
@@ -12,7 +11,7 @@ from holoviews.plotting.bokeh.util import (
     select_legends,
 )
 
-bokeh_renderer = Store.renderers['bokeh']
+bokeh_renderer = hv.Store.renderers['bokeh']
 
 
 class TestBokehUtilsInstantiation:
