@@ -37,3 +37,23 @@ def test_no_blocklist_imports_IPython():
 
     output = check_output([sys.executable, '-m', 'IPython', '-c', dedent(check)])
     assert output == b""
+
+
+def test_mpl_cycle_colors_are_hex_strings():
+    pytest.importorskip("matplotlib")
+    pytest.importorskip("bokeh")
+
+    check = """\
+    import holoviews.plotting.bokeh
+    import holoviews.plotting.mpl
+    from holoviews.core.options import Cycle
+
+    for name, colors in Cycle.default_cycles.items():
+        for i, c in enumerate(colors):
+            if not isinstance(c, str):
+                print(f"{name}[{i}]={c!r}", end="")
+                raise SystemExit(1)
+    """
+
+    output = check_output([sys.executable, '-c', dedent(check)])
+    assert output == b""
