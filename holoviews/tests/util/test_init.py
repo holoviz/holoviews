@@ -40,8 +40,8 @@ def test_no_blocklist_imports_IPython():
 
 
 def test_mpl_cycle_colors_are_hex_strings():
+    # Test for https://github.com/holoviz/holoviews/pull/6798
     pytest.importorskip("matplotlib")
-    pytest.importorskip("bokeh")
 
     check = """\
     import holoviews.plotting.bokeh
