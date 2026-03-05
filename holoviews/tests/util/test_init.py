@@ -51,8 +51,7 @@ def test_mpl_cycle_colors_are_hex_strings():
     for name, colors in Cycle.default_cycles.items():
         for i, c in enumerate(colors):
             if not isinstance(c, str):
-                print(f"{name}[{i}]={c!r}", end="")
-                raise SystemExit(1)
+                print(f"{name}[{i}]={c!r}")
     """
 
     output = check_output([sys.executable, '-c', dedent(check)])
