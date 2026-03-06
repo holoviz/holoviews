@@ -1,11 +1,12 @@
 import pytest
-from bokeh.models import Tool
+from bokeh.models import Tool, tools as bk_tools
 
 import holoviews as hv
 from holoviews.plotting.bokeh.styles import expand_batched_style
 from holoviews.plotting.bokeh.util import (
     TOOL_TYPES,
     filter_batched_data,
+    get_tool_id,
     glyph_order,
     select_legends,
 )
@@ -109,9 +110,94 @@ def test_select_legends_figure_index(figure_index, expected):
 
 
 def test_bokeh_tools_types():
-    bk_tools = Tool._known_aliases
-    assert len(bk_tools) == len(TOOL_TYPES)
-    assert sorted(bk_tools) == sorted(TOOL_TYPES)
+    bk_tools_aliases = Tool._known_aliases
+    assert len(bk_tools_aliases) == len(TOOL_TYPES)
+    assert sorted(bk_tools_aliases) == sorted(TOOL_TYPES)
 
-    for key in bk_tools:
-        assert isinstance(bk_tools[key](), TOOL_TYPES[key])
+    for key in bk_tools_aliases:
+        assert isinstance(bk_tools_aliases[key](), TOOL_TYPES[key])
+
+class TestGetToolId:
+
+    def test_string_wheel_zoom(self):
+        tool_type, ident = get_tool_id('wheel_zoom')
+        assert tool_type is bk_tools.WheelZoomTool
+        assert ident == 'both'
+
+    def test_string_xwheel_zoom(self):
+        tool_type, ident = get_tool_id('xwheel_zoom')
+        assert tool_type is bk_tools.WheelZoomTool
+        assert ident == 'width'
+
+    def test_string_ywheel_zoom(self):
+        tool_type, ident = get_tool_id('ywheel_zoom')
+        assert tool_type is bk_tools.WheelZoomTool
+        assert ident == 'height'
+
+    def test_string_xwheel_pan(self):
+        tool_type, ident = get_tool_id('xwheel_pan')
+        assert tool_type is bk_tools.WheelPanTool
+        assert ident == 'width'
+
+    def test_string_ywheel_pan(self):
+        tool_type, ident = get_tool_id('ywheel_pan')
+        assert tool_type is bk_tools.WheelPanTool
+        assert ident == 'height'
+
+    def test_string_tap(self):
+        tool_type, ident = get_tool_id('tap')
+        assert tool_type is bk_tools.TapTool
+        assert ident == 'tap'
+
+    def test_string_click(self):
+        tool_type, ident = get_tool_id('click')
+        assert tool_type is bk_tools.TapTool
+        assert ident == 'inspect'
+
+    def test_string_doubletap(self):
+        tool_type, ident = get_tool_id('doubletap')
+        assert tool_type is bk_tools.TapTool
+        assert ident == 'doubletap'
+
+    def test_instance_wheel_zoom_default(self):
+        tool = bk_tools.WheelZoomTool()
+        tool_type, ident = get_tool_id(tool)
+        assert tool_type is bk_tools.WheelZoomTool
+        assert ident == 'both'
+
+    def test_instance_wheel_zoom_width(self):
+        tool = bk_tools.WheelZoomTool(dimensions='width')
+        tool_type, ident = get_tool_id(tool)
+        assert tool_type is bk_tools.WheelZoomTool
+        assert ident == 'width'
+
+    def test_instance_wheel_pan_width(self):
+        tool = bk_tools.WheelPanTool(dimension='width')
+        tool_type, ident = get_tool_id(tool)
+        assert tool_type is bk_tools.WheelPanTool
+        assert ident == 'width'
+
+    def test_instance_save_tool_no_tags(self):
+        tool = bk_tools.SaveTool(tags=['hv_created'])
+        tool_type, ident = get_tool_id(tool)
+        assert tool_type is bk_tools.SaveTool
+        assert ident is None
+
+    def test_instance_save_tool_user_tag(self):
+        tool = bk_tools.SaveTool(tags=['my_tag'])
+        tool_type, ident = get_tool_id(tool)
+        assert tool_type is bk_tools.SaveTool
+        assert ident == ('my_tag',)
+
+    def test_instance_save_tool_hv_and_user_tag(self):
+        tool = bk_tools.SaveTool(tags=['hv_created', 'my_tag'])
+        tool_type, ident = get_tool_id(tool)
+        assert tool_type is bk_tools.SaveTool
+        assert ident == ('my_tag',)
+
+    def test_instance_wheel_zoom_hv_created_tag(self):
+        tool = bk_tools.WheelZoomTool(tags=['hv_created'])
+        tool_type, ident = get_tool_id(tool)
+        assert tool_type is bk_tools.WheelZoomTool
+        # dimensions takes precedence over tags
+        assert ident == 'both'
