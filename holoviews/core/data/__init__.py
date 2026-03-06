@@ -1061,7 +1061,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         if group_type is None: group_type = type(self)
 
         dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
-        dim_names = [d.name for d in dimensions]
+        dim_names = [d.label for d in dimensions]
 
         if dynamic:
             group_dims = [kd for kd in self.kdims if kd not in dimensions]
@@ -1079,7 +1079,7 @@ class Dataset(Element, metaclass=PipelineMeta):
                 if drop_dim and self.interface.gridded:
                     data = data.columns()
                 return group_type(data, **group_kwargs)
-            dynamic_dims = [d.clone(values=list(self.interface.values(self, d.name, False)))
+            dynamic_dims = [d.clone(values=list(self.interface.values(self, d.label, False)))
                             for d in dimensions]
             return DynamicMap(load_subset, kdims=dynamic_dims)
 
@@ -1224,9 +1224,9 @@ class Dataset(Element, metaclass=PipelineMeta):
         DataFrame of columns corresponding to each dimension
         """
         if dimensions is None:
-            dimensions = [d.name for d in self.dimensions()]
+            dimensions = [d.label for d in self.dimensions()]
         else:
-            dimensions = [self.get_dimension(d, strict=True).name for d in dimensions]
+            dimensions = [self.get_dimension(d, strict=True).label for d in dimensions]
         df = self.interface.dframe(self, dimensions)
         if multi_index:
             df = df.set_index([d for d in dimensions if d in self.kdims])
