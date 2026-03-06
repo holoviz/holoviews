@@ -19,8 +19,10 @@ Fixes #{issue}
 - [ ] This PR contains AI-generated content.
   - [ ] I have tested all AI-generated content in my PR.
   - [ ] I take responsibility for all AI-generated content in my PR.
-    <!-- If you used AI to generate code, please specify the tool and model used, and how you have used it. -->
-    Tools: {e.g., Claude, Codex, GitHub Copilot, ChatGPT, etc.}
+
+<!-- If you used AI to generate code, please specify the tool and model used, and how you have used it. -->
+
+Tools: {e.g., Claude, Codex, GitHub Copilot, ChatGPT, etc.}
 
 ## Checklist
 
