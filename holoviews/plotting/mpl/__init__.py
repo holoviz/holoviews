@@ -4,7 +4,7 @@ from contextlib import suppress
 import matplotlib as mpl
 from colorcet import kbc, register_cmap
 from matplotlib import pyplot as plt, rc_params_from_file
-from matplotlib.colors import LinearSegmentedColormap, ListedColormap
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap, to_hex
 from param import concrete_descendents
 
 from ...core import (
@@ -172,7 +172,7 @@ styles = {'default': './default.mplstyle',
 Palette.colormaps.update({cm: plt.get_cmap(cm) for cm in plt.cm.datad
                           if not ('spectral' in cm or 'Vega' in cm)})
 listed_cmaps = [cm for cm in Palette.colormaps.values() if isinstance(cm, ListedColormap)]
-Cycle.default_cycles.update({cm.name: list(cm.colors) for cm in listed_cmaps})
+Cycle.default_cycles.update({cm.name: list(map(to_hex, cm.colors)) for cm in listed_cmaps})
 
 style_aliases = {'edgecolor': ['ec', 'ecolor'], 'facecolor': ['fc'],
                  'linewidth': ['lw'], 'edgecolors': ['ec', 'edgecolor'],
