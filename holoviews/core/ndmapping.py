@@ -712,7 +712,7 @@ class NdMapping(MultiDimensionalMapping):
 
         """
         conditions = []
-        for dim, dim_slice in zip(self.kdims, map_slice, strict=None):
+        for idx, (dim, dim_slice) in enumerate(zip(self.kdims, map_slice, strict=False)):
             if isinstance(dim_slice, slice):
                 start, stop = dim_slice.start, dim_slice.stop
                 if dim.values:
@@ -729,8 +729,10 @@ class NdMapping(MultiDimensionalMapping):
                     conditions.append(self._range_condition(dim_slice))
             elif isinstance(dim_slice, (set, list)):
                 if dim.values:
-                    dim_slice = [dim.values.index(dim_val)
-                                 for dim_val in dim_slice]
+                    dim_slice = [
+                        dim.values.index(dim_val[idx] if isinstance(dim_val, tuple) else dim_val)
+                        for dim_val in dim_slice
+                    ]
                 conditions.append(self._values_condition(dim_slice))
             elif dim_slice is Ellipsis:
                 conditions.append(self._all_condition())
