@@ -59,10 +59,7 @@ button.on_click(animate)
 
 # Combine the bokeh plot on plot.state with the widgets
 layout = layout(
-    [
-        [plot.state],
-        [slider, button],
-    ],
+    [[plot.state], [slider, button]],
     sizing_mode="fixed",
 )
 

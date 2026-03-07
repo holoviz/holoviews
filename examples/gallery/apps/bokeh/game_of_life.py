@@ -20,11 +20,7 @@ boat = [
     [0, 1, 0],
 ]
 
-r_pentomino = [
-    [0, 1, 1],
-    [1, 1, 0],
-    [0, 1, 0],
-]
+r_pentomino = [[0, 1, 1], [1, 1, 0], [0, 1, 0]]
 
 beacon = [
     [0, 0, 1, 1],
@@ -95,10 +91,7 @@ def update(pattern, counter, x, y):
 # Set up plot which advances on counter and adds pattern on tap
 title = "Game of Life - Tap to place pattern, Doubletap to clear"
 img = hv.Image(np.zeros((100, 200), dtype=np.uint8))
-counter, tap = (
-    Counter(transient=True),
-    Tap(transient=True),
-)
+counter, tap = Counter(transient=True), Tap(transient=True)
 pattern_dim = hv.Dimension("Pattern", values=sorted(shapes.keys()))
 dmap = hv.DynamicMap(update, kdims=[pattern_dim], streams=[counter, tap])
 

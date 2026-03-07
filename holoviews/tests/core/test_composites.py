@@ -30,27 +30,15 @@ class LayoutTestCase(ElementTestCase):
     def test_layouttree_keys_1(self):
         t = self.el1 + self.el2
         assert t.keys() == [
-            (
-                "Element",
-                "I",
-            ),
-            (
-                "Element",
-                "II",
-            ),
+            ("Element", "I"),
+            ("Element", "II"),
         ]
 
     def test_layouttree_keys_2(self):
         t = hv.Layout([self.el1, self.el2])
         assert t.keys() == [
-            (
-                "Element",
-                "I",
-            ),
-            (
-                "Element",
-                "II",
-            ),
+            ("Element", "I"),
+            ("Element", "II"),
         ]
 
     def test_layouttree_deduplicate(self):
@@ -137,47 +125,19 @@ class LayoutTestCase(ElementTestCase):
     def test_layouttree_quadruple_1(self):
         t = self.el1 + self.el1 + self.el1 + self.el1
         assert t.keys() == [
-            (
-                "Element",
-                "I",
-            ),
-            (
-                "Element",
-                "II",
-            ),
-            (
-                "Element",
-                "III",
-            ),
-            (
-                "Element",
-                "IV",
-            ),
+            ("Element", "I"),
+            ("Element", "II"),
+            ("Element", "III"),
+            ("Element", "IV"),
         ]
 
     def test_layouttree_quadruple_2(self):
         t = self.el6 + self.el6 + self.el6 + self.el6
         expected = [
-            (
-                "Element",
-                "LabelA",
-                "I",
-            ),
-            (
-                "Element",
-                "LabelA",
-                "II",
-            ),
-            (
-                "Element",
-                "LabelA",
-                "III",
-            ),
-            (
-                "Element",
-                "LabelA",
-                "IV",
-            ),
+            ("Element", "LabelA", "I"),
+            ("Element", "LabelA", "II"),
+            ("Element", "LabelA", "III"),
+            ("Element", "LabelA", "IV"),
         ]
         assert t.keys() == expected
 
@@ -186,22 +146,10 @@ class LayoutTestCase(ElementTestCase):
         layout2 = self.el2 + self.el5
         paths = hv.Layout([layout1, layout2]).keys()
         assert paths == [
-            (
-                "Element",
-                "I",
-            ),
-            (
-                "ValA",
-                "I",
-            ),
-            (
-                "Element",
-                "II",
-            ),
-            (
-                "ValB",
-                "I",
-            ),
+            ("Element", "I"),
+            ("ValA", "I"),
+            ("Element", "II"),
+            ("ValB", "I"),
         ]
 
     def test_layout_constructor_with_mixed_types(self):
@@ -209,10 +157,7 @@ class LayoutTestCase(ElementTestCase):
         layout2 = self.el2 + self.el5 + self.el8
         paths = hv.Layout([layout1, layout2, self.el3]).keys()
         expected = [
-            (
-                "Element",
-                "I",
-            ),
+            ("Element", "I"),
             ("ValA", "I"),
             ("ValA", "LabelA"),
             ("Element", "II"),
@@ -290,14 +235,8 @@ class OverlayTestCase(ElementTestCase):
     def test_overlay_keys_2(self):
         t = hv.Overlay([self.el1, self.el2])
         assert t.keys() == [
-            (
-                "Element",
-                "I",
-            ),
-            (
-                "Element",
-                "II",
-            ),
+            ("Element", "I"),
+            ("Element", "II"),
         ]
 
     def test_overlay_values(self):
@@ -409,48 +348,20 @@ class OverlayTestCase(ElementTestCase):
     def test_overlay_quadruple_1(self):
         t = self.el1 * self.el1 * self.el1 * self.el1
         expected = [
-            (
-                "Element",
-                "I",
-            ),
-            (
-                "Element",
-                "II",
-            ),
-            (
-                "Element",
-                "III",
-            ),
-            (
-                "Element",
-                "IV",
-            ),
+            ("Element", "I"),
+            ("Element", "II"),
+            ("Element", "III"),
+            ("Element", "IV"),
         ]
         assert t.keys() == expected
 
     def test_overlay_quadruple_2(self):
         t = self.el6 * self.el6 * self.el6 * self.el6
         expected = [
-            (
-                "Element",
-                "LabelA",
-                "I",
-            ),
-            (
-                "Element",
-                "LabelA",
-                "II",
-            ),
-            (
-                "Element",
-                "LabelA",
-                "III",
-            ),
-            (
-                "Element",
-                "LabelA",
-                "IV",
-            ),
+            ("Element", "LabelA", "I"),
+            ("Element", "LabelA", "II"),
+            ("Element", "LabelA", "III"),
+            ("Element", "LabelA", "IV"),
         ]
         assert t.keys() == expected
 
