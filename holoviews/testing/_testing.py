@@ -278,12 +278,8 @@ class _ElementComparison(_DataComparison):
         assert dim1_params.keys() == dim2_params.keys()
 
         for k in dim1_params.keys():
-            dim1_callable = (
-                dim1.param.objects("existing")[k].__class__.__name__ == "Callable"
-            )
-            dim2_callable = (
-                dim2.param.objects("existing")[k].__class__.__name__ == "Callable"
-            )
+            dim1_callable = dim1.param.objects("existing")[k].__class__.__name__ == "Callable"
+            dim2_callable = dim2.param.objects("existing")[k].__class__.__name__ == "Callable"
             if dim1_callable and dim2_callable:
                 continue
 

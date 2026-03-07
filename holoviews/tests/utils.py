@@ -34,11 +34,10 @@ if TYPE_CHECKING:
     MaybeModuleType = ModuleType | None
 
 cwd = os.path.abspath(os.path.split(__file__)[0])
-sys.path.insert(0, os.path.join(cwd, '..'))
+sys.path.insert(0, os.path.join(cwd, ".."))
 
 
-LEVELS = {'CRITICAL': 50, 'ERROR': 40, 'WARNING': 30, 'INFO': 20,
-          'DEBUG': 10, 'VERBOSE': 0}
+LEVELS = {"CRITICAL": 50, "ERROR": 40, "WARNING": 30, "INFO": 20, "DEBUG": 10, "VERBOSE": 0}
 
 
 class MockLoggingHandler(logging.Handler):
@@ -51,13 +50,20 @@ class MockLoggingHandler(logging.Handler):
     'info', etc.)."""
 
     def __init__(self, *args, **kwargs):
-        self.messages = {'DEBUG': [], 'INFO': [], 'WARNING': [],
-                         'ERROR': [], 'CRITICAL': [], 'VERBOSE':[]}
+        self.messages = {
+            "DEBUG": [],
+            "INFO": [],
+            "WARNING": [],
+            "ERROR": [],
+            "CRITICAL": [],
+            "VERBOSE": [],
+        }
         self.param_methods = {
-            'WARNING':'param.param.warning()',
-            'INFO':'param.param.message()',
-            'VERBOSE':'param.param.verbose()',
-            'DEBUG':'param.param.debug()'}
+            "WARNING": "param.param.warning()",
+            "INFO": "param.param.message()",
+            "VERBOSE": "param.param.verbose()",
+            "DEBUG": "param.param.debug()",
+        }
         super().__init__(*args, **kwargs)
 
     def emit(self, record):
@@ -70,8 +76,14 @@ class MockLoggingHandler(logging.Handler):
 
     def reset(self):
         self.acquire()
-        self.messages = {'DEBUG': [], 'INFO': [], 'WARNING': [],
-                         'ERROR': [], 'CRITICAL': [], 'VERBOSE':[]}
+        self.messages = {
+            "DEBUG": [],
+            "INFO": [],
+            "WARNING": [],
+            "ERROR": [],
+            "CRITICAL": [],
+            "VERBOSE": [],
+        }
         self.release()
 
     def tail(self, level, n=1):
@@ -87,14 +99,18 @@ class MockLoggingHandler(logging.Handler):
         Assert that the last line captured at the given level ends with
         a particular substring.
         """
-        msg='\n\n{method}: {last_line}\ndoes not end with:\n{substring}'
+        msg = "\n\n{method}: {last_line}\ndoes not end with:\n{substring}"
         last_line = self.tail(level, n=1)
         if len(last_line) == 0:
-            raise AssertionError(f'Missing {self.param_methods[level]} output: {substring!r}')
+            raise AssertionError(f"Missing {self.param_methods[level]} output: {substring!r}")
         if not last_line[0].endswith(substring):
-            raise AssertionError(msg.format(method=self.param_methods[level],
-                                            last_line=repr(last_line[0]),
-                                            substring=repr(substring)))
+            raise AssertionError(
+                msg.format(
+                    method=self.param_methods[level],
+                    last_line=repr(last_line[0]),
+                    substring=repr(substring),
+                )
+            )
         else:
             self.messages[level].pop(-1)
 
@@ -107,14 +123,18 @@ class MockLoggingHandler(logging.Handler):
         Assert that the last line captured at the given level contains a
         particular substring.
         """
-        msg='\n\n{method}: {last_line}\ndoes not contain:\n{substring}'
+        msg = "\n\n{method}: {last_line}\ndoes not contain:\n{substring}"
         last_line = self.tail(level, n=1)
         if len(last_line) == 0:
-            raise AssertionError(f'Missing {self.param_methods[level]} output: {substring!r}')
+            raise AssertionError(f"Missing {self.param_methods[level]} output: {substring!r}")
         if substring not in last_line[0]:
-            raise AssertionError(msg.format(method=self.param_methods[level],
-                                            last_line=repr(last_line[0]),
-                                            substring=repr(substring)))
+            raise AssertionError(
+                msg.format(
+                    method=self.param_methods[level],
+                    last_line=repr(last_line[0]),
+                    substring=repr(substring),
+                )
+            )
         else:
             self.messages[level].pop(-1)
 
@@ -141,7 +161,7 @@ class LoggingComparisonTestCase:
         log = param.parameterized.get_logger()
         self.handlers = log.handlers
         log.handlers = []
-        self.log_handler = MockLoggingHandler(level='DEBUG')
+        self.log_handler = MockLoggingHandler(level="DEBUG")
         log.addHandler(self.log_handler)
 
     def teardown_method(self):
@@ -167,7 +187,7 @@ class LoggingComparison:
         log = param.parameterized.get_logger()
         self.handlers = log.handlers
         log.handlers = []
-        self.log_handler = MockLoggingHandler(level='DEBUG')
+        self.log_handler = MockLoggingHandler(level="DEBUG")
         log.addHandler(self.log_handler)
         try:
             yield
@@ -184,52 +204,69 @@ class LoggingComparison:
 @overload
 def optional_dependencies(name: Literal["scipy"], /) -> tuple[scipy, MarkDecorator]: ...
 
+
 @overload
 def optional_dependencies(name: Literal["ibis"], /) -> tuple[ibis, MarkDecorator]: ...
+
 
 @overload
 def optional_dependencies(name: Literal["dask"], /) -> tuple[dask, MarkDecorator]: ...
 
+
 @overload
 def optional_dependencies(name: Literal["dask.array"], /) -> tuple[da, MarkDecorator]: ...
+
 
 @overload
 def optional_dependencies(name: Literal["dask.dataframe"], /) -> tuple[dd, MarkDecorator]: ...
 
+
 @overload
 def optional_dependencies(name: Literal["datashader"], /) -> tuple[datashader, MarkDecorator]: ...
+
 
 @overload
 def optional_dependencies(name: Literal["matplotlib"], /) -> tuple[mpl, MarkDecorator]: ...
 
+
 @overload
 def optional_dependencies(name: Literal["networkx"], /) -> tuple[nx, MarkDecorator]: ...
+
 
 @overload
 def optional_dependencies(name: Literal["notebook"], /) -> tuple[notebook, MarkDecorator]: ...
 
+
 @overload
 def optional_dependencies(name: Literal["plotly"], /) -> tuple[plotly, MarkDecorator]: ...
+
 
 @overload
 def optional_dependencies(name: Literal["pyparsing"], /) -> tuple[pyparsing, MarkDecorator]: ...
 
+
 @overload
 def optional_dependencies(name: Literal["shapely"], /) -> tuple[shapely, MarkDecorator]: ...
 
-@overload
-def optional_dependencies(name: Literal["spatialpandas"], /) -> tuple[spatialpandas, MarkDecorator]: ...
 
 @overload
-def optional_dependencies(name: Literal["tsdownsample"], /) -> tuple[tsdownsample, MarkDecorator]: ...
+def optional_dependencies(
+    name: Literal["spatialpandas"], /
+) -> tuple[spatialpandas, MarkDecorator]: ...
+
+
+@overload
+def optional_dependencies(
+    name: Literal["tsdownsample"], /
+) -> tuple[tsdownsample, MarkDecorator]: ...
+
 
 @overload
 def optional_dependencies(name: Literal["xarray"], /) -> tuple[xarray, MarkDecorator]: ...
 
 
 def optional_dependencies(name: str, /) -> tuple[MaybeModuleType, MarkDecorator]:
-    """Check if a dependency is installed and return the module and a fixture that skips test.
-    """
+    """Check if a dependency is installed and return the module and a fixture that skips test."""
     if _is_installed(name):
         module = importlib.import_module(name)
     else:

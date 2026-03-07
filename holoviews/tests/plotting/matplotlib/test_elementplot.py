@@ -16,9 +16,8 @@ from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestElementPlot(LoggingComparison, TestMPLPlot):
-
     def test_stream_cleanup(self):
-        stream = Stream.define('Test', test=1)()
+        stream = Stream.define("Test", test=1)()
         dmap = hv.DynamicMap(lambda test: hv.Curve([]), streams=[stream])
         plot = mpl_renderer.get_plot(dmap)
         assert bool(stream._subscribers)
@@ -27,13 +26,14 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
 
     def test_element_hooks(self):
         def hook(plot, element):
-            plot.handles['title'].set_text('Called')
-        curve = hv.Curve(range(10), label='Not Called').opts(hooks=[hook])
+            plot.handles["title"].set_text("Called")
+
+        curve = hv.Curve(range(10), label="Not Called").opts(hooks=[hook])
         plot = mpl_renderer.get_plot(curve)
-        assert plot.handles['title'].get_text() == 'Called'
+        assert plot.handles["title"].get_text() == "Called"
 
     def test_element_font_scaling(self):
-        curve = hv.Curve(range(10)).options(fontscale=2, title='A title')
+        curve = hv.Curve(range(10)).options(fontscale=2, title="A title")
         with style.context(
             {
                 "axes.labelsize": 10,
@@ -43,15 +43,15 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
             }
         ):
             plot = mpl_renderer.get_plot(curve)
-        ax = plot.handles['axis']
+        ax = plot.handles["axis"]
         assert ax.title.get_fontsize() == 24
         assert ax.xaxis.label.get_fontsize() == 20
         assert ax.yaxis.label.get_fontsize() == 20
-        assert ax.xaxis._major_tick_kw['labelsize'] == 20
-        assert ax.yaxis._major_tick_kw['labelsize'] == 20
+        assert ax.xaxis._major_tick_kw["labelsize"] == 20
+        assert ax.yaxis._major_tick_kw["labelsize"] == 20
 
     def test_element_font_scaling_fontsize_override_common(self):
-        curve = hv.Curve(range(10)).options(fontscale=2, fontsize=14, title='A title')
+        curve = hv.Curve(range(10)).options(fontscale=2, fontsize=14, title="A title")
         with style.context(
             {
                 "axes.labelsize": 10,
@@ -62,16 +62,17 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
             }
         ):
             plot = mpl_renderer.get_plot(curve)
-        ax = plot.handles['axis']
+        ax = plot.handles["axis"]
         assert ax.title.get_fontsize() == 28
         assert ax.xaxis.label.get_fontsize() == 28
         assert ax.yaxis.label.get_fontsize() == 28
-        assert ax.xaxis._major_tick_kw['labelsize'] == 20
-        assert ax.yaxis._major_tick_kw['labelsize'] == 20
+        assert ax.xaxis._major_tick_kw["labelsize"] == 20
+        assert ax.yaxis._major_tick_kw["labelsize"] == 20
 
     def test_element_font_scaling_fontsize_override_specific(self):
         curve = hv.Curve(range(10)).opts(
-            fontscale=2, fontsize={'title': 16, 'xticks': 12, 'xlabel': 6}, title='A title')
+            fontscale=2, fontsize={"title": 16, "xticks": 12, "xlabel": 6}, title="A title"
+        )
         with style.context(
             {
                 "axes.labelsize": 10,
@@ -81,79 +82,82 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
             }
         ):
             plot = mpl_renderer.get_plot(curve)
-        ax = plot.handles['axis']
+        ax = plot.handles["axis"]
         assert ax.title.get_fontsize() == 32
         assert ax.xaxis.label.get_fontsize() == 12
         assert ax.yaxis.label.get_fontsize() == 20
-        assert ax.xaxis._major_tick_kw['labelsize'] == 24
-        assert ax.yaxis._major_tick_kw['labelsize'] == 20
+        assert ax.xaxis._major_tick_kw["labelsize"] == 24
+        assert ax.yaxis._major_tick_kw["labelsize"] == 20
 
     def test_element_no_xaxis_yaxis(self):
         element = hv.Curve(range(10)).opts(xaxis=None, yaxis=None)
-        axes = mpl_renderer.get_plot(element).handles['axis']
+        axes = mpl_renderer.get_plot(element).handles["axis"]
         xaxis = axes.get_xaxis()
         yaxis = axes.get_yaxis()
         assert xaxis.get_visible() is False
         assert yaxis.get_visible() is False
 
     def test_element_xlabel(self):
-        element = hv.Curve(range(10)).opts(xlabel='custom x-label')
-        axes = mpl_renderer.get_plot(element).handles['axis']
-        assert axes.get_xlabel() == 'custom x-label'
+        element = hv.Curve(range(10)).opts(xlabel="custom x-label")
+        axes = mpl_renderer.get_plot(element).handles["axis"]
+        assert axes.get_xlabel() == "custom x-label"
 
     def test_element_ylabel(self):
-        element = hv.Curve(range(10)).opts(ylabel='custom y-label')
-        axes = mpl_renderer.get_plot(element).handles['axis']
-        assert axes.get_ylabel() == 'custom y-label'
+        element = hv.Curve(range(10)).opts(ylabel="custom y-label")
+        axes = mpl_renderer.get_plot(element).handles["axis"]
+        assert axes.get_ylabel() == "custom y-label"
 
     def test_element_xformatter_string(self):
-        curve = hv.Curve(range(10)).opts(xformatter='%d')
+        curve = hv.Curve(range(10)).opts(xformatter="%d")
         plot = mpl_renderer.get_plot(curve)
-        xaxis = plot.handles['axis'].xaxis
+        xaxis = plot.handles["axis"].xaxis
         xformatter = xaxis.get_major_formatter()
         assert isinstance(xformatter, FormatStrFormatter)
-        assert xformatter.fmt == '%d'
+        assert xformatter.fmt == "%d"
 
     def test_element_yformatter_string(self):
-        curve = hv.Curve(range(10)).opts(yformatter='%d')
+        curve = hv.Curve(range(10)).opts(yformatter="%d")
         plot = mpl_renderer.get_plot(curve)
-        yaxis = plot.handles['axis'].yaxis
+        yaxis = plot.handles["axis"].yaxis
         yformatter = yaxis.get_major_formatter()
         assert isinstance(yformatter, FormatStrFormatter)
-        assert yformatter.fmt == '%d'
+        assert yformatter.fmt == "%d"
 
     def test_element_zformatter_string(self):
-        curve = hv.Scatter3D([]).opts(zformatter='%d')
+        curve = hv.Scatter3D([]).opts(zformatter="%d")
         plot = mpl_renderer.get_plot(curve)
-        zaxis = plot.handles['axis'].zaxis
+        zaxis = plot.handles["axis"].zaxis
         zformatter = zaxis.get_major_formatter()
         assert isinstance(zformatter, FormatStrFormatter)
-        assert zformatter.fmt == '%d'
+        assert zformatter.fmt == "%d"
 
     def test_element_xformatter_function(self):
         def formatter(value):
-            return str(value) + ' %'
+            return str(value) + " %"
+
         curve = hv.Curve(range(10)).opts(xformatter=formatter)
         plot = mpl_renderer.get_plot(curve)
-        xaxis = plot.handles['axis'].xaxis
+        xaxis = plot.handles["axis"].xaxis
         xformatter = xaxis.get_major_formatter()
         assert isinstance(xformatter, FuncFormatter)
 
     def test_element_yformatter_function(self):
         def formatter(value):
-            return str(value) + ' %'
+            return str(value) + " %"
+
         curve = hv.Curve(range(10)).opts(yformatter=formatter)
         plot = mpl_renderer.get_plot(curve)
-        yaxis = plot.handles['axis'].yaxis
+        yaxis = plot.handles["axis"].yaxis
         yformatter = yaxis.get_major_formatter()
         assert isinstance(yformatter, FuncFormatter)
 
     def test_element_zformatter_function(self):
         def formatter(value):
-            return str(value) + ' %'
+            return str(value) + " %"
+
         curve = hv.Scatter3D([]).opts(zformatter=formatter)
         plot = mpl_renderer.get_plot(curve)
-        zaxis = plot.handles['axis'].zaxis
+        zaxis = plot.handles["axis"].zaxis
         zformatter = zaxis.get_major_formatter()
         assert isinstance(zformatter, FuncFormatter)
 
@@ -161,7 +165,7 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
         formatter = PercentFormatter()
         curve = hv.Curve(range(10)).opts(xformatter=formatter)
         plot = mpl_renderer.get_plot(curve)
-        xaxis = plot.handles['axis'].xaxis
+        xaxis = plot.handles["axis"].xaxis
         xformatter = xaxis.get_major_formatter()
         assert xformatter is formatter
 
@@ -169,7 +173,7 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
         formatter = PercentFormatter()
         curve = hv.Curve(range(10)).opts(yformatter=formatter)
         plot = mpl_renderer.get_plot(curve)
-        yaxis = plot.handles['axis'].yaxis
+        yaxis = plot.handles["axis"].yaxis
         yformatter = yaxis.get_major_formatter()
         assert yformatter is formatter
 
@@ -177,16 +181,16 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
         formatter = PercentFormatter()
         curve = hv.Scatter3D([]).opts(zformatter=formatter)
         plot = mpl_renderer.get_plot(curve)
-        zaxis = plot.handles['axis'].zaxis
+        zaxis = plot.handles["axis"].zaxis
         zformatter = zaxis.get_major_formatter()
         assert zformatter is formatter
 
     def test_element_polar_xlimits(self):
         theta = np.arange(0, 5.4, 0.1)
         r = np.ones(len(theta))
-        scatter = hv.Scatter((theta, r), 'theta', 'r').opts(projection='polar')
+        scatter = hv.Scatter((theta, r), "theta", "r").opts(projection="polar")
         plot = mpl_renderer.get_plot(scatter)
-        ax = plot.handles['axis']
+        ax = plot.handles["axis"]
         assert isinstance(ax, PolarAxes)
         assert ax.get_xlim() == (0, 2 * np.pi)
 
@@ -204,7 +208,7 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
             },
         )
         plot = mpl_renderer.get_plot(heat_map)
-        colorbar = plot.handles['cbar']
+        colorbar = plot.handles["cbar"]
         assert colorbar.ax.yaxis.get_label().get_text() == "Testing"
         assert_data_equal(colorbar.get_ticks(), [3.5, 5])
         ticklabels = [ticklabel.get_text() for ticklabel in colorbar.ax.get_yticklabels()]
@@ -216,11 +220,11 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
             backend_opts={
                 "cbar.set_label": "Testing",
                 "cbar.set_ticks": [3.5, 5],
-                "cbar.ax.yticklabels": ["A", "B"]
+                "cbar.ax.yticklabels": ["A", "B"],
             },
         )
         plot = mpl_renderer.get_plot(heat_map)
-        colorbar = plot.handles['cbar']
+        colorbar = plot.handles["cbar"]
         assert colorbar.ax.yaxis.get_label().get_text() == "Testing"
         assert_data_equal(colorbar.get_ticks(), [3.5, 5])
         ticklabels = [ticklabel.get_text() for ticklabel in colorbar.ax.get_yticklabels()]
@@ -233,10 +237,10 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
             show_legend=True,
             backend_opts={
                 "legend.frame_on": False,
-            }
+            },
         )
         plot = mpl_renderer.get_plot(curve)
-        legend = plot.handles['legend']
+        legend = plot.handles["legend"]
         assert not legend.get_frame_on()
 
     def test_element_backend_opts_sequential_method(self):
@@ -246,10 +250,10 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
             show_legend=True,
             backend_opts={
                 "legend.get_title().set_fontsize": 188,
-            }
+            },
         )
         plot = mpl_renderer.get_plot(curve)
-        legend = plot.handles['legend']
+        legend = plot.handles["legend"]
         assert legend.get_title().get_fontsize() == 188
 
     def test_element_backend_opts_getitem(self):
@@ -264,10 +268,10 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
                 "legend.get_texts()[0].fontsize": 188,
                 "legend.get_texts()[1:3].fontsize": 288,
                 "legend.get_texts()[3,4].fontsize": 388,
-            }
+            },
         )
         plot = mpl_renderer.get_plot(curve)
-        legend = plot.handles['legend']
+        legend = plot.handles["legend"]
         assert legend.get_texts()[0].get_fontsize() == 188
         assert legend.get_texts()[1].get_fontsize() == 288
         assert legend.get_texts()[2].get_fontsize() == 288
@@ -276,7 +280,8 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
 
     def test_element_backend_opts_two_accessors(self):
         heat_map = hv.HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
-            colorbar=True, backend_opts={"colorbar": "Testing"},
+            colorbar=True,
+            backend_opts={"colorbar": "Testing"},
         )
         mpl_renderer.get_plot(heat_map)
         self.log_handler.assert_contains(
@@ -285,12 +290,11 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
 
     def test_element_backend_opts_model_not_resolved(self):
         heat_map = hv.HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(
-            colorbar=True, backend_opts={"cb.title": "Testing"},
+            colorbar=True,
+            backend_opts={"cb.title": "Testing"},
         )
         mpl_renderer.get_plot(heat_map)
-        self.log_handler.assert_contains(
-            "WARNING", "cb model could not be"
-        )
+        self.log_handler.assert_contains("WARNING", "cb model could not be")
 
     def test_element_backend_opts_model_invalid_method(self):
         a = hv.Curve([1, 2, 3], label="a")
@@ -299,19 +303,17 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
             show_legend=True,
             backend_opts={
                 "legend.get_texts()[0,1].f0ntzise": 811,
-            }
+            },
         )
         mpl_renderer.get_plot(curve)
-        self.log_handler.assert_contains(
-            "WARNING", "valid method on the specified model"
-        )
+        self.log_handler.assert_contains("WARNING", "valid method on the specified model")
 
     ### Aspect ratio ###
     def test_aspect_non_matching_types(self):
         X = pd.date_range(start="1/1/2018", end="1/08/2018", periods=100)
         Y = np.linspace(1, 100, 100)
         Z = np.random.randn(100, 100)
-        qm = hv.QuadMesh((X, Y, Z)).opts(aspect='equal')
+        qm = hv.QuadMesh((X, Y, Z)).opts(aspect="equal")
         msg = (
             "The aspect is set to 'equal', but the axes does not have the same type: "
             "x-axis timedelta64 and y-axis float64. "
@@ -323,210 +325,266 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
 
     ### Grid ###
     def test_grid_both(self):
-        curve = hv.Curve(range(10)).opts(gridstyle={'grid_color': 'red', 'grid_linestyle': '--', 'grid_alpha': 0.5, 'grid_linewidth': 2}, show_grid=True)
+        curve = hv.Curve(range(10)).opts(
+            gridstyle={
+                "grid_color": "red",
+                "grid_linestyle": "--",
+                "grid_alpha": 0.5,
+                "grid_linewidth": 2,
+            },
+            show_grid=True,
+        )
         plot = mpl_renderer.get_plot(curve)
-        ax = plot.handles['axis']
+        ax = plot.handles["axis"]
         gridlines = ax.get_xgridlines() + ax.get_ygridlines()
         for line in gridlines:
-            assert line.get_color() == 'red'
-            assert line.get_linestyle() == '--'
+            assert line.get_color() == "red"
+            assert line.get_linestyle() == "--"
             assert line.get_alpha() == 0.5
             assert line.get_linewidth() == 2
 
     def test_grid_both_show_grid_False(self):
-        curve = hv.Curve(range(10)).opts(gridstyle={'grid_color': 'red', 'grid_linestyle': '--', 'grid_alpha': 0.5, 'grid_linewidth': 2}, show_grid=False)
+        curve = hv.Curve(range(10)).opts(
+            gridstyle={
+                "grid_color": "red",
+                "grid_linestyle": "--",
+                "grid_alpha": 0.5,
+                "grid_linewidth": 2,
+            },
+            show_grid=False,
+        )
         plot = mpl_renderer.get_plot(curve)
-        ax = plot.handles['axis']
+        ax = plot.handles["axis"]
         assert not any(line.get_visible() for line in ax.get_xgridlines() + ax.get_ygridlines())
 
     def test_grid_both_no_grid_prefix(self):
-        curve = hv.Curve(range(10)).opts(gridstyle={'color': 'red', 'linestyle': '--', 'alpha': 0.5, 'linewidth': 2}, show_grid=True)
+        curve = hv.Curve(range(10)).opts(
+            gridstyle={"color": "red", "linestyle": "--", "alpha": 0.5, "linewidth": 2},
+            show_grid=True,
+        )
         plot = mpl_renderer.get_plot(curve)
-        ax = plot.handles['axis']
+        ax = plot.handles["axis"]
         gridlines = ax.get_xgridlines() + ax.get_ygridlines()
         for line in gridlines:
-            assert line.get_color() == 'red'
-            assert line.get_linestyle() == '--'
+            assert line.get_color() == "red"
+            assert line.get_linestyle() == "--"
             assert line.get_alpha() == 0.5
             assert line.get_linewidth() == 2
 
     def test_grid_x(self):
-        curve = hv.Curve(range(10)).opts(gridstyle={'xgrid_color': 'blue', 'xgrid_linestyle': '--', 'xgrid_alpha': 0.5, 'xgrid_linewidth': 2}, show_grid=True)
+        curve = hv.Curve(range(10)).opts(
+            gridstyle={
+                "xgrid_color": "blue",
+                "xgrid_linestyle": "--",
+                "xgrid_alpha": 0.5,
+                "xgrid_linewidth": 2,
+            },
+            show_grid=True,
+        )
         plot = mpl_renderer.get_plot(curve)
-        ax = plot.handles['axis']
+        ax = plot.handles["axis"]
         xgridlines = ax.get_xgridlines()
         for line in xgridlines:
-            assert line.get_color() == 'blue'
-            assert line.get_linestyle() == '--'
+            assert line.get_color() == "blue"
+            assert line.get_linestyle() == "--"
             assert line.get_alpha() == 0.5
             assert line.get_linewidth() == 2
         ygridlines = ax.get_ygridlines()
         for line in ygridlines:
-            assert line.get_color() != 'blue'
-            assert line.get_linestyle() != '--'
+            assert line.get_color() != "blue"
+            assert line.get_linestyle() != "--"
             assert line.get_alpha() != 0.5
             assert line.get_linewidth() != 2
 
     def test_grid_x_no_grid_prefix(self):
-        curve = hv.Curve(range(10)).opts(gridstyle={'color': 'blue', 'linestyle': '--', 'alpha': 0.5, 'linewidth': 2}, show_grid=True)
+        curve = hv.Curve(range(10)).opts(
+            gridstyle={"color": "blue", "linestyle": "--", "alpha": 0.5, "linewidth": 2},
+            show_grid=True,
+        )
         plot = mpl_renderer.get_plot(curve)
-        ax = plot.handles['axis']
+        ax = plot.handles["axis"]
         xgridlines = ax.get_xgridlines()
         for line in xgridlines:
-            assert line.get_color() == 'blue'
-            assert line.get_linestyle() == '--'
+            assert line.get_color() == "blue"
+            assert line.get_linestyle() == "--"
             assert line.get_alpha() == 0.5
             assert line.get_linewidth() == 2
         ygridlines = ax.get_ygridlines()
         for line in ygridlines:
-            assert line.get_color() == 'blue'
-            assert line.get_linestyle() == '--'
+            assert line.get_color() == "blue"
+            assert line.get_linestyle() == "--"
             assert line.get_alpha() == 0.5
             assert line.get_linewidth() == 2
 
     def test_grid_y(self):
-        curve = hv.Curve(range(10)).opts(gridstyle={'ygrid_color': 'green', 'ygrid_linestyle': '--', 'ygrid_alpha': 0.5, 'ygrid_linewidth': 2}, show_grid=True)
+        curve = hv.Curve(range(10)).opts(
+            gridstyle={
+                "ygrid_color": "green",
+                "ygrid_linestyle": "--",
+                "ygrid_alpha": 0.5,
+                "ygrid_linewidth": 2,
+            },
+            show_grid=True,
+        )
         plot = mpl_renderer.get_plot(curve)
-        ax = plot.handles['axis']
+        ax = plot.handles["axis"]
         ygridlines = ax.get_ygridlines()
         for line in ygridlines:
-            assert line.get_color() == 'green'
-            assert line.get_linestyle() == '--'
+            assert line.get_color() == "green"
+            assert line.get_linestyle() == "--"
             assert line.get_alpha() == 0.5
             assert line.get_linewidth() == 2
         xgridlines = ax.get_xgridlines()
         for line in xgridlines:
-            assert line.get_color() != 'green'
-            assert line.get_linestyle() != '--'
+            assert line.get_color() != "green"
+            assert line.get_linestyle() != "--"
             assert line.get_alpha() != 0.5
             assert line.get_linewidth() != 2
 
     def test_grid_y_no_grid_prefix(self):
-        curve = hv.Curve(range(10)).opts(gridstyle={'color': 'green', 'linestyle': '--', 'alpha': 0.5, 'linewidth': 2}, show_grid=True)
+        curve = hv.Curve(range(10)).opts(
+            gridstyle={"color": "green", "linestyle": "--", "alpha": 0.5, "linewidth": 2},
+            show_grid=True,
+        )
         plot = mpl_renderer.get_plot(curve)
-        ax = plot.handles['axis']
+        ax = plot.handles["axis"]
         ygridlines = ax.get_ygridlines()
         for line in ygridlines:
-            assert line.get_color() == 'green'
-            assert line.get_linestyle() == '--'
+            assert line.get_color() == "green"
+            assert line.get_linestyle() == "--"
             assert line.get_alpha() == 0.5
             assert line.get_linewidth() == 2
         xgridlines = ax.get_xgridlines()
         for line in xgridlines:
-            assert line.get_color() == 'green'
-            assert line.get_linestyle() == '--'
+            assert line.get_color() == "green"
+            assert line.get_linestyle() == "--"
             assert line.get_alpha() == 0.5
             assert line.get_linewidth() == 2
 
     def test_grid_mix(self):
-        curve = hv.Curve(range(10)).opts(gridstyle={'grid_color': 'red', 'ygrid_linestyle': '--', 'ygrid_alpha': 0.5, 'ygrid_linewidth': 2}, show_grid=True)
+        curve = hv.Curve(range(10)).opts(
+            gridstyle={
+                "grid_color": "red",
+                "ygrid_linestyle": "--",
+                "ygrid_alpha": 0.5,
+                "ygrid_linewidth": 2,
+            },
+            show_grid=True,
+        )
         plot = mpl_renderer.get_plot(curve)
-        ax = plot.handles['axis']
+        ax = plot.handles["axis"]
         xgridlines = ax.get_xgridlines()
         for line in xgridlines:
-            assert line.get_color() == 'red'
-            assert line.get_linestyle() != '--'
+            assert line.get_color() == "red"
+            assert line.get_linestyle() != "--"
             assert line.get_alpha() != 0.5
             assert line.get_linewidth() != 2
         ygridlines = ax.get_ygridlines()
         for line in ygridlines:
-            assert line.get_color() == 'red'
-            assert line.get_linestyle() == '--'
+            assert line.get_color() == "red"
+            assert line.get_linestyle() == "--"
             assert line.get_alpha() == 0.5
             assert line.get_linewidth() == 2
 
     def test_grid_mix_no_grid_prefix(self):
-        curve = hv.Curve(range(10)).opts(gridstyle={'color': 'red', 'y_linestyle': '--', 'y_alpha': 0.5, 'y_linewidth': 2}, show_grid=True)
+        curve = hv.Curve(range(10)).opts(
+            gridstyle={"color": "red", "y_linestyle": "--", "y_alpha": 0.5, "y_linewidth": 2},
+            show_grid=True,
+        )
         plot = mpl_renderer.get_plot(curve)
-        ax = plot.handles['axis']
+        ax = plot.handles["axis"]
         xgridlines = ax.get_xgridlines()
         for line in xgridlines:
-            assert line.get_color() == 'red'
-            assert line.get_linestyle() != '--'
+            assert line.get_color() == "red"
+            assert line.get_linestyle() != "--"
             assert line.get_alpha() != 0.5
             assert line.get_linewidth() != 2
         ygridlines = ax.get_ygridlines()
         for line in ygridlines:
-            assert line.get_color() == 'red'
-            assert line.get_linestyle() == '--'
+            assert line.get_color() == "red"
+            assert line.get_linestyle() == "--"
             assert line.get_alpha() == 0.5
             assert line.get_linewidth() == 2
 
 
 class TestColorbarPlot(TestMPLPlot):
-
     def test_colormapper_unsigned_int(self):
-        img = hv.Image(np.array([[1, 1, 1, 2], [2, 2, 3, 4]]).astype('uint16'))
+        img = hv.Image(np.array([[1, 1, 1, 2], [2, 2, 3, 4]]).astype("uint16"))
         plot = mpl_renderer.get_plot(img)
-        artist = plot.handles['artist']
+        artist = plot.handles["artist"]
         assert artist.get_clim() == (1, 4)
 
     def test_colormapper_symmetric(self):
         img = hv.Image(np.array([[0, 1], [2, 3]])).opts(symmetric=True)
         plot = mpl_renderer.get_plot(img)
-        artist = plot.handles['artist']
+        artist = plot.handles["artist"]
         assert artist.get_clim() == (-3, 3)
 
     def test_colormapper_clims(self):
         img = hv.Image(np.array([[0, 1], [2, 3]])).opts(clims=(0, 4))
         plot = mpl_renderer.get_plot(img)
-        artist = plot.handles['artist']
+        artist = plot.handles["artist"]
         assert artist.get_clim() == (0, 4)
 
     def test_colormapper_color_levels(self):
         img = hv.Image(np.array([[0, 1], [2, 3]])).opts(color_levels=5)
         plot = mpl_renderer.get_plot(img)
-        artist = plot.handles['artist']
+        artist = plot.handles["artist"]
         assert len(artist.cmap.colors) == 5
 
     def test_colormapper_transparent_nan(self):
-        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(clipping_colors={'NaN': 'transparent'})
+        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(clipping_colors={"NaN": "transparent"})
         plot = mpl_renderer.get_plot(img)
-        cmap = plot.handles['artist'].cmap
+        cmap = plot.handles["artist"].cmap
         assert cmap._rgba_bad == (1.0, 1.0, 1.0, 0)
 
     def test_colormapper_min_max_colors(self):
-        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(clipping_colors={'min': 'red', 'max': 'blue'})
+        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(
+            clipping_colors={"min": "red", "max": "blue"}
+        )
         plot = mpl_renderer.get_plot(img)
-        cmap = plot.handles['artist'].cmap
+        cmap = plot.handles["artist"].cmap
         assert cmap._rgba_under == (1.0, 0, 0, 1)
         assert cmap._rgba_over == (0, 0, 1.0, 1)
 
     def test_colorbar_label(self):
-        scatter = hv.Scatter(np.random.rand(100, 3), vdims=["y", "color"]).opts(color_index=2, colorbar=True)
+        scatter = hv.Scatter(np.random.rand(100, 3), vdims=["y", "color"]).opts(
+            color_index=2, colorbar=True
+        )
         plot = mpl_renderer.get_plot(scatter)
-        cbar_ax = plot.handles['cax']
-        assert cbar_ax.get_ylabel() == 'color'
+        cbar_ax = plot.handles["cax"]
+        assert cbar_ax.get_ylabel() == "color"
 
     def test_colorbar_empty_clabel(self):
-        img = hv.Image(np.array([[1, 1, 1, 2], [2, 2, 3, 4]])).opts(clabel='', colorbar=True)
+        img = hv.Image(np.array([[1, 1, 1, 2], [2, 2, 3, 4]])).opts(clabel="", colorbar=True)
         plot = mpl_renderer.get_plot(img)
-        colorbar = plot.handles['cax']
-        assert colorbar.get_label() == ''
+        colorbar = plot.handles["cax"]
+        assert colorbar.get_label() == ""
 
     def test_colorbar_label_style_mapping(self):
-        scatter = hv.Scatter(np.random.rand(100, 3), vdims=["y", "color"]).opts(color='color', colorbar=True)
+        scatter = hv.Scatter(np.random.rand(100, 3), vdims=["y", "color"]).opts(
+            color="color", colorbar=True
+        )
         plot = mpl_renderer.get_plot(scatter)
-        cbar_ax = plot.handles['cax']
-        assert cbar_ax.get_ylabel() == 'color'
+        cbar_ax = plot.handles["cax"]
+        assert cbar_ax.get_ylabel() == "color"
 
     def test_style_map_dimension_object(self):
-        x = hv.Dimension('x')
-        y = hv.Dimension('y')
+        x = hv.Dimension("x")
+        y = hv.Dimension("y")
         scatter = hv.Scatter([1, 2, 3], kdims=[x], vdims=[y]).opts(color=x)
         plot = mpl_renderer.get_plot(scatter)
-        artist = plot.handles['artist']
+        artist = plot.handles["artist"]
         assert artist.get_clim() == (0, 2)
 
 
 class TestOverlayPlot(TestMPLPlot):
-
     def test_overlay_legend_opts(self):
         overlay = (
-            hv.Curve(np.random.randn(10).cumsum(), label='A') *
-            hv.Curve(np.random.randn(10).cumsum(), label='B')
-        ).opts(legend_opts={'framealpha': 0.5, 'facecolor': 'red'})
+            hv.Curve(np.random.randn(10).cumsum(), label="A")
+            * hv.Curve(np.random.randn(10).cumsum(), label="B")
+        ).opts(legend_opts={"framealpha": 0.5, "facecolor": "red"})
         plot = mpl_renderer.get_plot(overlay)
-        legend_frame = plot.handles['legend'].get_frame()
+        legend_frame = plot.handles["legend"].get_frame()
         assert legend_frame.get_alpha() == 0.5
         assert legend_frame.get_facecolor() == (1.0, 0.0, 0.0, 0.5)

@@ -20,33 +20,33 @@ class DaskInterface(PandasInterface):
     The DaskInterface covers almost the complete API exposed
     by the PandasInterface with two notable exceptions:
 
-    1) Sorting is not supported and any attempt at sorting will
-       be ignored with a warning.
+    1) Sorting is not supported and any attempt at sorting will be ignored with
+    a warning.
 
     2) Dask does not easily support adding a new column to an existing
-       dataframe unless it is a scalar, add_dimension will therefore
-       error when supplied a non-scalar value.
+    dataframe unless it is a scalar, add_dimension will therefore error when
+    supplied a non-scalar value.
 
-    3) Not all functions can be easily applied to a dask dataframe so
-       some functions applied with aggregate and reduce will not work.
-
+    3) Not all functions can be easily applied to a dask dataframe so some
+    functions applied with aggregate and reduce will not work.
     """
 
     types = ()
 
-    datatype = 'dask'
+    datatype = "dask"
 
     default_partitions = 100
 
     @classmethod
     def loaded(cls):
-        return 'dask.dataframe' in sys.modules and 'pandas' in sys.modules
+        return "dask.dataframe" in sys.modules and "pandas" in sys.modules
 
     @classmethod
     def applies(cls, obj):
         if not cls.loaded():
             return False
         import dask.dataframe as dd
+
         return isinstance(obj, (dd.DataFrame, dd.Series))
 
     @classmethod
@@ -56,7 +56,7 @@ class DaskInterface(PandasInterface):
         data, dims, extra = PandasInterface.init(eltype, data, kdims, vdims)
         if not isinstance(data, dd.DataFrame):
             data = dd.from_pandas(data, npartitions=cls.default_partitions, sort=False)
-        kdims = [d.name if isinstance(d, Dimension) else d for d in dims['kdims']]
+        kdims = [d.name if isinstance(d, Dimension) else d for d in dims["kdims"]]
 
         # If a key dimension can be found, speculatively reset index
         # to work around lacking dask support for MultiIndex
@@ -81,9 +81,10 @@ class DaskInterface(PandasInterface):
     @classmethod
     def range(cls, dataset, dimension):
         import dask.dataframe as dd
+
         dimension = dataset.get_dimension(dimension, strict=True)
         column = dataset.data[dimension.name]
-        if dtype_kind(column) == 'O':
+        if dtype_kind(column) == "O":
             try:
                 column = np.sort(column[column.notnull()].compute())
                 return (column[0], column[-1]) if len(column) else (None, None)
@@ -98,7 +99,7 @@ class DaskInterface(PandasInterface):
     def sort(cls, dataset, by=None, reverse=False):
         if by is None:
             by = []
-        dataset.param.warning('Dask dataframes do not support sorting')
+        dataset.param.warning("Dask dataframes do not support sorting")
         return dataset.data
 
     @classmethod
@@ -160,6 +161,7 @@ class DaskInterface(PandasInterface):
         df = dataset.data
         if selection_mask is not None:
             import dask.array as da
+
             if isinstance(selection_mask, da.Array):
                 return df.loc[selection_mask]
             return df[selection_mask]
@@ -190,24 +192,22 @@ class DaskInterface(PandasInterface):
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
         index_dims = [dataset.get_dimension(d) for d in dimensions]
-        element_dims = [kdim for kdim in dataset.kdims
-                        if kdim not in index_dims]
+        element_dims = [kdim for kdim in dataset.kdims if kdim not in index_dims]
 
         group_kwargs = {}
-        if group_type != 'raw' and issubclass(group_type, Element):
-            group_kwargs = dict(util.get_param_values(dataset),
-                                kdims=element_dims)
+        if group_type != "raw" and issubclass(group_type, Element):
+            group_kwargs = dict(util.get_param_values(dataset), kdims=element_dims)
         group_kwargs.update(kwargs)
 
         # Propagate dataset
-        group_kwargs['dataset'] = dataset.dataset
+        group_kwargs["dataset"] = dataset.dataset
 
         data = []
         group_by = [d.name for d in index_dims]
         groupby = dataset.data.groupby(group_by)
         if len(group_by) == 1:
             column = dataset.data[group_by[0]]
-            if column.dtype.name == 'category':
+            if column.dtype.name == "category":
                 try:
                     indices = ((ind,) for ind in column.cat.categories)
                 except NotImplementedError:
@@ -234,27 +234,37 @@ class DaskInterface(PandasInterface):
     def aggregate(cls, dataset, dimensions, function, **kwargs):
         data = dataset.data
         cols = [d.name for d in dataset.kdims if d in dimensions]
-        vdims = dataset.dimensions('value', label='name')
+        vdims = dataset.dimensions("value", label="name")
         dtypes = data.dtypes
-        numeric = [c for c, dtype in zip(dtypes.index, dtypes.values, strict=None)
-                   if dtype_kind(dtype) in 'iufc' and c in vdims]
-        reindexed = data[cols+numeric]
+        numeric = [
+            c
+            for c, dtype in zip(dtypes.index, dtypes.values, strict=None)
+            if dtype_kind(dtype) in "iufc" and c in vdims
+        ]
+        reindexed = data[cols + numeric]
 
-        inbuilts = {'amin': 'min', 'amax': 'max', 'mean': 'mean',
-                    'std': 'std', 'sum': 'sum', 'var': 'var'}
+        inbuilts = {
+            "amin": "min",
+            "amax": "max",
+            "mean": "mean",
+            "std": "std",
+            "sum": "sum",
+            "var": "var",
+        }
         if len(dimensions):
             groups = reindexed.groupby(cols)
-            if (function.__name__ in inbuilts):
+            if function.__name__ in inbuilts:
                 agg = getattr(groups, inbuilts[function.__name__])()
             else:
                 agg = groups.apply(function)
             df = agg.reset_index()
         else:
-            if (function.__name__ in inbuilts):
+            if function.__name__ in inbuilts:
                 agg = getattr(reindexed, inbuilts[function.__name__])()
             else:
                 raise NotImplementedError
             import pandas as pd
+
             df = pd.DataFrame(agg.compute()).T
 
         dropped = []
@@ -270,23 +280,25 @@ class DaskInterface(PandasInterface):
 
         """
         import dask.dataframe as dd
+
         if len(data.columns) > 1 or len(data) != 1:
             return data
         if isinstance(data, dd.DataFrame):
             data = data.compute()
-        return data.iat[0,0]
+        return data.iat[0, 0]
 
     @classmethod
     def sample(cls, dataset, samples=None):
         if samples is None:
             samples = []
         data = dataset.data
-        dims = dataset.dimensions('key', label='name')
+        dims = dataset.dimensions("key", label="name")
         mask = None
         for sample in samples:
-            if np.isscalar(sample): sample = [sample]
+            if np.isscalar(sample):
+                sample = [sample]
             for c, v in zip(dims, sample, strict=None):
-                dim_mask = data[c]==v
+                dim_mask = data[c] == v
                 if mask is None:
                     mask = dim_mask
                 else:
@@ -299,8 +311,7 @@ class DaskInterface(PandasInterface):
         if dimension.name not in data.columns:
             if not np.isscalar(values):
                 if len(values):
-                    err = ('Dask dataframe does not support assigning '
-                           'non-scalar value.')
+                    err = "Dask dataframe does not support assigning non-scalar value."
                     raise NotImplementedError(err)
                 values = None
             data = data.assign(**{dimension.name: values})
@@ -309,6 +320,7 @@ class DaskInterface(PandasInterface):
     @classmethod
     def concat_fn(cls, dataframes, **kwargs):
         import dask.dataframe as dd
+
         return dd.concat(dataframes, **kwargs)
 
     @classmethod

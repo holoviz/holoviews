@@ -9,22 +9,25 @@ from holoviews.testing import assert_element_equal
 
 
 class PathComparisonTest:
-
     def setup_method(self):
-        self.path1 = hv.Path([(-0.3, 0.4), (-0.3, 0.3), (-0.2, 0.3),
-                           (-0.2, 0.4),(-0.3, 0.4)])
+        self.path1 = hv.Path([(-0.3, 0.4), (-0.3, 0.3), (-0.2, 0.3), (-0.2, 0.4), (-0.3, 0.4)])
 
-        self.path2 = hv.Path([(-0.3, 0.4), (-0.3, 0.3), (-0.2, 0.3),
-                           (-0.2, 0.4),(-3, 4)])
+        self.path2 = hv.Path([(-0.3, 0.4), (-0.3, 0.3), (-0.2, 0.3), (-0.2, 0.4), (-3, 4)])
 
-        self.contours1 = hv.Contours([(-0.3, 0.4, 1), (-0.3, 0.3, 1), (-0.2, 0.3, 1),
-                                   (-0.2, 0.4, 1),(-0.3, 0.4, 1)], vdims='Level')
+        self.contours1 = hv.Contours(
+            [(-0.3, 0.4, 1), (-0.3, 0.3, 1), (-0.2, 0.3, 1), (-0.2, 0.4, 1), (-0.3, 0.4, 1)],
+            vdims="Level",
+        )
 
-        self.contours2 = hv.Contours([(-0.3, 0.4, 1), (-0.3, 0.3, 1), (-0.2, 0.3, 1),
-                                   (-0.2, 0.4, 1), (-3, 4, 1)], vdims='Level')
+        self.contours2 = hv.Contours(
+            [(-0.3, 0.4, 1), (-0.3, 0.3, 1), (-0.2, 0.3, 1), (-0.2, 0.4, 1), (-3, 4, 1)],
+            vdims="Level",
+        )
 
-        self.contours3 = hv.Contours([(-0.3, 0.4, 2), (-0.3, 0.3, 2), (-0.2, 0.3, 2),
-                                   (-0.2, 0.4, 2), (-0.3, 0.4, 2)], vdims='Level')
+        self.contours3 = hv.Contours(
+            [(-0.3, 0.4, 2), (-0.3, 0.3, 2), (-0.2, 0.3, 2), (-0.2, 0.4, 2), (-0.3, 0.4, 2)],
+            vdims="Level",
+        )
 
         self.bounds1 = hv.Bounds(0.3)
         self.bounds2 = hv.Bounds(0.4)
@@ -55,7 +58,6 @@ class PathComparisonTest:
         msg = "Arrays are not almost equal to 6 decimals"
         with pytest.raises(AssertionError, match=msg):
             assert_element_equal(self.contours1, self.contours3)
-
 
     def test_bounds_equal(self):
         assert_element_equal(self.bounds1, self.bounds1)

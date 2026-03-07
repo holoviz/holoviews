@@ -16,43 +16,49 @@ class ImageInterfaceTests(GriddedInterfaceTests, InterfaceTests):
     Tests for ImageInterface
     """
 
-    datatype = 'image'
+    datatype = "image"
     data_type = np.ndarray
     element = hv.Image
 
     __test__ = True
 
     def test_canonical_vdim(self):
-        x = np.array([ 0.  ,  0.75,  1.5 ])
-        y = np.array([ 1.5 ,  0.75,  0.  ])
-        z = np.array([[ 0.06925999,  0.05800389,  0.05620127],
-                      [ 0.06240918,  0.05800931,  0.04969735],
-                      [ 0.05376789,  0.04669417,  0.03880118]])
-        dataset = hv.Image((x, y, z), kdims=['x', 'y'], vdims=['z'])
-        canonical = np.array([[ 0.05376789,  0.04669417,  0.03880118],
-                              [ 0.06240918,  0.05800931,  0.04969735],
-                              [ 0.06925999,  0.05800389,  0.05620127]])
-        assert_data_equal(dataset.dimension_values('z', flat=False),
-                         canonical)
+        x = np.array([0.0, 0.75, 1.5])
+        y = np.array([1.5, 0.75, 0.0])
+        z = np.array(
+            [
+                [0.06925999, 0.05800389, 0.05620127],
+                [0.06240918, 0.05800931, 0.04969735],
+                [0.05376789, 0.04669417, 0.03880118],
+            ]
+        )
+        dataset = hv.Image((x, y, z), kdims=["x", "y"], vdims=["z"])
+        canonical = np.array(
+            [
+                [0.05376789, 0.04669417, 0.03880118],
+                [0.06240918, 0.05800931, 0.04969735],
+                [0.06925999, 0.05800389, 0.05620127],
+            ]
+        )
+        assert_data_equal(dataset.dimension_values("z", flat=False), canonical)
 
     def test_gridded_dtypes(self):
         ds = self.dataset_grid
-        assert ds.interface.dtype(ds, 'x') == np.float64
-        assert ds.interface.dtype(ds, 'y') == np.float64
-        assert ds.interface.dtype(ds, 'z') == np.dtype(int)
+        assert ds.interface.dtype(ds, "x") == np.float64
+        assert ds.interface.dtype(ds, "y") == np.float64
+        assert ds.interface.dtype(ds, "z") == np.dtype(int)
 
     def test_dataset_groupby_with_transposed_dimensions(self):
-        pytest.skip('Image interface does not support multi-dimensional data.')
+        pytest.skip("Image interface does not support multi-dimensional data.")
 
     def test_dataset_dynamic_groupby_with_transposed_dimensions(self):
-        pytest.skip('Image interface does not support multi-dimensional data.')
+        pytest.skip("Image interface does not support multi-dimensional data.")
 
     def test_dataset_slice_inverted_dimension(self):
-        pytest.skip('Image interface does not support 1D data')
+        pytest.skip("Image interface does not support 1D data")
 
     def test_sample_2d(self):
-        pytest.skip('Image interface only supports Image type')
-
+        pytest.skip("Image interface only supports Image type")
 
 
 class BaseImageElementInterfaceTests(InterfaceTests):
@@ -91,13 +97,13 @@ class BaseImageElementInterfaceTests(InterfaceTests):
 
     def test_init_data_datetime_xaxis(self):
         start = np.datetime64(dt.datetime.today())
-        end = start+np.timedelta64(1, 's')
+        end = start + np.timedelta64(1, "s")
         xs = date_range(start, end, 10).astype("datetime64[ns]")
         hv.Image((xs, self.ys, self.array))
 
     def test_init_data_datetime_yaxis(self):
         start = np.datetime64(dt.datetime.today())
-        end = start+np.timedelta64(1, 's')
+        end = start + np.timedelta64(1, "s")
         ys = date_range(start, end, 10).astype("datetime64[ns]")
         hv.Image((self.xs, ys, self.array))
 
@@ -106,7 +112,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
 
     def test_init_bounds_datetime_xaxis(self):
         start = np.datetime64(dt.datetime.today())
-        end = start+np.timedelta64(1, 's')
+        end = start + np.timedelta64(1, "s")
         xs = date_range(start, end, 10).astype("datetime64[ns]")
         bounds = (start, 0, end, 10)
         image = hv.Image((xs, self.ys, self.array), bounds=bounds)
@@ -114,7 +120,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
 
     def test_init_bounds_datetime_yaxis(self):
         start = np.datetime64(dt.datetime.today())
-        end = start+np.timedelta64(1, 's')
+        end = start + np.timedelta64(1, "s")
         ys = date_range(start, end, 10).astype("datetime64[ns]")
         bounds = (-10, start, 10, end)
         image = hv.Image((self.xs, ys, self.array))
@@ -126,7 +132,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
 
     def test_init_densities_datetime_xaxis(self):
         start = np.datetime64(dt.datetime.today())
-        end = start+np.timedelta64(1, 's')
+        end = start + np.timedelta64(1, "s")
         xs = date_range(start, end, 10).astype("datetime64[ns]")
         image = hv.Image((xs, self.ys, self.array))
         assert image.xdensity == 1e-5
@@ -134,23 +140,22 @@ class BaseImageElementInterfaceTests(InterfaceTests):
 
     def test_init_densities_datetime_yaxis(self):
         start = np.datetime64(dt.datetime.today())
-        end = start+np.timedelta64(1, 's')
+        end = start + np.timedelta64(1, "s")
         ys = date_range(start, end, 10).astype("datetime64[ns]")
         image = hv.Image((self.xs, ys, self.array))
         assert image.xdensity == 0.5
         assert image.ydensity == 1e-5
 
     def test_dimension_values_xs(self):
-        assert_data_equal(self.image.dimension_values(0, expanded=False),
-                         np.linspace(-9, 9, 10))
+        assert_data_equal(self.image.dimension_values(0, expanded=False), np.linspace(-9, 9, 10))
 
     def test_dimension_values_ys(self):
-        assert_data_equal(self.image.dimension_values(1, expanded=False),
-                         np.linspace(0.5, 9.5, 10))
+        assert_data_equal(
+            self.image.dimension_values(1, expanded=False), np.linspace(0.5, 9.5, 10)
+        )
 
     def test_dimension_values_vdim(self):
-        assert_data_equal(self.image.dimension_values(2, flat=False),
-                         self.array)
+        assert_data_equal(self.image.dimension_values(2, flat=False), self.array)
 
     def test_index_single_coordinate(self):
         assert self.image[0.3, 5.1] == 25
@@ -160,66 +165,59 @@ class BaseImageElementInterfaceTests(InterfaceTests):
         assert sliced.bounds.lbrt() == (0, 0, 6, 10)
         assert sliced.xdensity == 0.5
         assert sliced.ydensity == 1
-        assert_data_equal(sliced.dimension_values(2, flat=False),
-                         self.array[:, 5:8])
+        assert_data_equal(sliced.dimension_values(2, flat=False), self.array[:, 5:8])
 
     def test_slice_datetime_xaxis(self):
         start = np.datetime64(dt.datetime.today())
-        end = start+np.timedelta64(1, 's')
+        end = start + np.timedelta64(1, "s")
         bounds = (start, 0, end, 10)
         xs = date_range(start, end, 10).astype("datetime64[ns]")
         image = hv.Image((xs, self.ys, self.array), bounds=bounds)
-        sliced = image[start+np.timedelta64(530, 'ms'): start+np.timedelta64(770, 'ms')]
-        assert_data_equal(sliced.dimension_values(2, flat=False),
-                         self.array[:, 5:8])
+        sliced = image[start + np.timedelta64(530, "ms") : start + np.timedelta64(770, "ms")]
+        assert_data_equal(sliced.dimension_values(2, flat=False), self.array[:, 5:8])
 
     def test_slice_yaxis(self):
         sliced = self.image[:, 1.2:5.2]
-        assert sliced.bounds.lbrt() == (-10, 1., 10, 5)
+        assert sliced.bounds.lbrt() == (-10, 1.0, 10, 5)
         assert sliced.xdensity == 0.5
         assert sliced.ydensity == 1
-        assert_data_equal(sliced.dimension_values(2, flat=False),
-                         self.array[1:5, :])
+        assert_data_equal(sliced.dimension_values(2, flat=False), self.array[1:5, :])
 
     def test_slice_datetime_yaxis(self):
         start = np.datetime64(dt.datetime.today())
-        end = start+np.timedelta64(1, 's')
+        end = start + np.timedelta64(1, "s")
         ys = date_range(start, end, 10).astype("datetime64[ns]")
         image = hv.Image((self.xs, ys, self.array))
-        sliced = image[:, start+np.timedelta64(120, 'ms'): start+np.timedelta64(520, 'ms')]
-        assert_data_equal(sliced.dimension_values(2, flat=False),
-                         self.array[1:5, :])
+        sliced = image[:, start + np.timedelta64(120, "ms") : start + np.timedelta64(520, "ms")]
+        assert_data_equal(sliced.dimension_values(2, flat=False), self.array[1:5, :])
 
     def test_slice_both_axes(self):
         sliced = self.image[0.3:5.2, 1.2:5.2]
-        assert sliced.bounds.lbrt() == (0, 1., 6, 5)
+        assert sliced.bounds.lbrt() == (0, 1.0, 6, 5)
         assert sliced.xdensity == 0.5
         assert sliced.ydensity == 1
-        assert_data_equal(sliced.dimension_values(2, flat=False),
-                         self.array[1:5, 5:8])
+        assert_data_equal(sliced.dimension_values(2, flat=False), self.array[1:5, 5:8])
 
     def test_slice_x_index_y(self):
         sliced = self.image[0.3:5.2, 5.2]
         assert sliced.bounds.lbrt() == (0, 5.0, 6.0, 6.0)
         assert sliced.xdensity == 0.5
         assert sliced.ydensity == 1
-        assert_data_equal(sliced.dimension_values(2, flat=False),
-                         self.array[5:6, 5:8])
+        assert_data_equal(sliced.dimension_values(2, flat=False), self.array[5:6, 5:8])
 
     def test_index_x_slice_y(self):
         sliced = self.image[3.2, 1.2:5.2]
         assert sliced.bounds.lbrt() == (2.0, 1.0, 4.0, 5.0)
         assert sliced.xdensity == 0.5
         assert sliced.ydensity == 1
-        assert_data_equal(sliced.dimension_values(2, flat=False),
-                         self.array[1:5, 6:7])
+        assert_data_equal(sliced.dimension_values(2, flat=False), self.array[1:5, 6:7])
 
     def test_range_xdim(self):
         assert self.image.range(0) == (-10, 10)
 
     def test_range_datetime_xdim(self):
         start = np.datetime64(dt.datetime.today())
-        end = start+np.timedelta64(1, 's')
+        end = start + np.timedelta64(1, "s")
         xs = date_range(start, end, 10).astype("datetime64[ns]")
         image = hv.Image((xs, self.ys, self.array))
         assert image.range(0) == (start, end)
@@ -229,7 +227,7 @@ class BaseImageElementInterfaceTests(InterfaceTests):
 
     def test_range_datetime_ydim(self):
         start = np.datetime64(dt.datetime.today())
-        end = start+np.timedelta64(1, 's')
+        end = start + np.timedelta64(1, "s")
         ys = date_range(start, end, 10).astype("datetime64[ns]")
         image = hv.Image((self.xs, ys, self.array))
         assert image.range(1) == (start, end)
@@ -238,100 +236,98 @@ class BaseImageElementInterfaceTests(InterfaceTests):
         assert self.image.range(2) == (0, 81)
 
     def test_dimension_values_xcoords(self):
-        assert_data_equal(self.image.dimension_values(0, expanded=False),
-                         np.linspace(-9, 9, 10))
+        assert_data_equal(self.image.dimension_values(0, expanded=False), np.linspace(-9, 9, 10))
 
     def test_dimension_values_datetime_xcoords(self):
         start = np.datetime64(dt.datetime.today())
-        end = start+np.timedelta64(1, 's')
+        end = start + np.timedelta64(1, "s")
         xs = date_range(start, end, 10).astype("datetime64[ns]")
         image = hv.Image((xs, self.ys, self.array))
-        assert_data_equal(image.dimension_values(0, expanded=False),
-                         date_range(start, end, 10))
+        assert_data_equal(image.dimension_values(0, expanded=False), date_range(start, end, 10))
 
     def test_dimension_values_ycoords(self):
-        assert_data_equal(self.image.dimension_values(1, expanded=False),
-                         np.linspace(0.5, 9.5, 10))
+        assert_data_equal(
+            self.image.dimension_values(1, expanded=False), np.linspace(0.5, 9.5, 10)
+        )
 
     def test_sample_xcoord(self):
         ys = np.linspace(0.5, 9.5, 10)
         zs = [0, 7, 14, 21, 28, 35, 42, 49, 56, 63]
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.image):
-            assert_element_equal(self.image.sample(x=5),
-                             hv.Curve((ys, zs), kdims=['y'], vdims=['z']))
+        with DatatypeContext([self.datatype, "dictionary", "dataframe"], self.image):
+            assert_element_equal(
+                self.image.sample(x=5), hv.Curve((ys, zs), kdims=["y"], vdims=["z"])
+            )
 
     def test_sample_ycoord(self):
         xs = np.linspace(-9, 9, 10)
         zs = [0, 4, 8, 12, 16, 20, 24, 28, 32, 36]
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.image):
-            assert_element_equal(self.image.sample(y=5),
-                             hv.Curve((xs, zs), kdims=['x'], vdims=['z']))
+        with DatatypeContext([self.datatype, "dictionary", "dataframe"], self.image):
+            assert_element_equal(
+                self.image.sample(y=5), hv.Curve((xs, zs), kdims=["x"], vdims=["z"])
+            )
 
     def test_sample_coords(self):
-        arr = np.arange(10)*np.arange(5)[np.newaxis].T
+        arr = np.arange(10) * np.arange(5)[np.newaxis].T
         xs = np.linspace(0.12, 0.81, 10)
         ys = np.linspace(0.12, 0.391, 5)
-        img = hv.Image((xs, ys, arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype])
+        img = hv.Image((xs, ys, arr), kdims=["x", "y"], vdims=["z"], datatype=[self.datatype])
         sampled = img.sample([(0.15, 0.15), (0.15, 0.4), (0.8, 0.4), (0.8, 0.15)])
         assert isinstance(sampled, hv.Table)
         yidx = [0, 4, 4, 0]
         xidx = [0, 0, 9, 9]
-        table = hv.Table((xs[xidx], ys[yidx], arr[yidx, xidx]), kdims=['x', 'y'], vdims=['z'])
+        table = hv.Table((xs[xidx], ys[yidx], arr[yidx, xidx]), kdims=["x", "y"], vdims=["z"])
         assert_element_equal(sampled, table)
 
     def test_reduce_to_scalar(self):
-        assert self.image.reduce(['x', 'y'], function=np.mean) == 20.25
+        assert self.image.reduce(["x", "y"], function=np.mean) == 20.25
 
     def test_reduce_x_dimension(self):
         ys = np.linspace(0.5, 9.5, 10)
-        zs = [0., 4.5, 9., 13.5, 18., 22.5, 27., 31.5, 36., 40.5]
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], hv.Image):
-            assert_element_equal(self.image.reduce(x=np.mean),
-                             hv.Curve((ys, zs), kdims=['y'], vdims=['z']))
+        zs = [0.0, 4.5, 9.0, 13.5, 18.0, 22.5, 27.0, 31.5, 36.0, 40.5]
+        with DatatypeContext([self.datatype, "dictionary", "dataframe"], hv.Image):
+            assert_element_equal(
+                self.image.reduce(x=np.mean), hv.Curve((ys, zs), kdims=["y"], vdims=["z"])
+            )
 
     def test_reduce_y_dimension(self):
         xs = np.linspace(-9, 9, 10)
-        zs = [0., 4.5, 9., 13.5, 18., 22.5, 27., 31.5, 36., 40.5]
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], hv.Image):
-            assert_element_equal(self.image.reduce(y=np.mean),
-                             hv.Curve((xs, zs), kdims=['x'], vdims=['z']))
+        zs = [0.0, 4.5, 9.0, 13.5, 18.0, 22.5, 27.0, 31.5, 36.0, 40.5]
+        with DatatypeContext([self.datatype, "dictionary", "dataframe"], hv.Image):
+            assert_element_equal(
+                self.image.reduce(y=np.mean), hv.Curve((xs, zs), kdims=["x"], vdims=["z"])
+            )
 
     def test_dataset_reindex_constant(self):
-        with DatatypeContext([self.datatype, 'dictionary', 'dataframe', 'grid'], self.image):
+        with DatatypeContext([self.datatype, "dictionary", "dataframe", "grid"], self.image):
             selected = hv.Dataset(self.image.select(x=0))
-            reindexed = selected.reindex(['y'])
-        data = hv.Dataset(selected.columns(['y', 'z']),
-                       kdims=['y'], vdims=['z'])
+            reindexed = selected.reindex(["y"])
+        data = hv.Dataset(selected.columns(["y", "z"]), kdims=["y"], vdims=["z"])
         assert_element_equal(reindexed, data)
 
     def test_dataset_reindex_non_constant(self):
-        with DatatypeContext([self.datatype, 'dictionary', 'dataframe', 'grid'], self.image):
+        with DatatypeContext([self.datatype, "dictionary", "dataframe", "grid"], self.image):
             ds = hv.Dataset(self.image)
-            reindexed = ds.reindex(['y'])
-        data = hv.Dataset(ds.columns(['y', 'z']),
-                       kdims=['y'], vdims=['z'])
+            reindexed = ds.reindex(["y"])
+        data = hv.Dataset(ds.columns(["y", "z"]), kdims=["y"], vdims=["z"])
         assert_element_equal(reindexed, data)
 
     def test_aggregate_with_spreadfn(self):
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.image):
-            agg = self.image.aggregate('x', np.mean, np.std)
-        xs = self.image.dimension_values('x', expanded=False)
+        with DatatypeContext([self.datatype, "dictionary", "dataframe"], self.image):
+            agg = self.image.aggregate("x", np.mean, np.std)
+        xs = self.image.dimension_values("x", expanded=False)
         mean = self.array.mean(axis=0)
         std = self.array.std(axis=0)
-        assert_element_equal(agg, hv.Curve((xs, mean, std), kdims=['x'],
-                                    vdims=['z', 'z_std']))
+        assert_element_equal(agg, hv.Curve((xs, mean, std), kdims=["x"], vdims=["z", "z_std"]))
 
 
 class ImageElement_ImageInterfaceTests(BaseImageElementInterfaceTests):
-
-    datatype = 'image'
+    datatype = "image"
     data_type = np.ndarray
 
     __test__ = True
 
 
 class BaseRGBElementInterfaceTests(InterfaceTests):
-
     element = hv.RGB
 
     __test__ = False
@@ -352,116 +348,112 @@ class BaseRGBElementInterfaceTests(InterfaceTests):
         assert self.rgb.ydensity == 1
 
     def test_dimension_values_xs(self):
-        assert_data_equal(self.rgb.dimension_values(0, expanded=False),
-                         np.linspace(-9, 9, 10))
+        assert_data_equal(self.rgb.dimension_values(0, expanded=False), np.linspace(-9, 9, 10))
 
     def test_dimension_values_ys(self):
-        assert_data_equal(self.rgb.dimension_values(1, expanded=False),
-                         np.linspace(0.5, 9.5, 10))
+        assert_data_equal(self.rgb.dimension_values(1, expanded=False), np.linspace(0.5, 9.5, 10))
 
     def test_dimension_values_vdims(self):
-        assert_data_equal(self.rgb.dimension_values(2, flat=False),
-                         self.rgb_array[:, :, 0])
-        assert_data_equal(self.rgb.dimension_values(3, flat=False),
-                         self.rgb_array[:, :, 1])
-        assert_data_equal(self.rgb.dimension_values(4, flat=False),
-                         self.rgb_array[:, :, 2])
+        assert_data_equal(self.rgb.dimension_values(2, flat=False), self.rgb_array[:, :, 0])
+        assert_data_equal(self.rgb.dimension_values(3, flat=False), self.rgb_array[:, :, 1])
+        assert_data_equal(self.rgb.dimension_values(4, flat=False), self.rgb_array[:, :, 2])
 
     def test_slice_xaxis(self):
         sliced = self.rgb[0.3:5.2]
         assert sliced.bounds.lbrt() == (0, 0, 6, 10)
         assert sliced.xdensity == 0.5
         assert sliced.ydensity == 1
-        assert_data_equal(sliced.dimension_values(2, flat=False),
-                         self.rgb_array[:, 5:8, 0])
+        assert_data_equal(sliced.dimension_values(2, flat=False), self.rgb_array[:, 5:8, 0])
 
     def test_slice_yaxis(self):
         sliced = self.rgb[:, 1.2:5.2]
-        assert sliced.bounds.lbrt() == (-10, 1., 10, 5)
+        assert sliced.bounds.lbrt() == (-10, 1.0, 10, 5)
         assert sliced.xdensity == 0.5
         assert sliced.ydensity == 1
-        assert_data_equal(sliced.dimension_values(2, flat=False),
-                         self.rgb_array[1:5, :, 0])
+        assert_data_equal(sliced.dimension_values(2, flat=False), self.rgb_array[1:5, :, 0])
 
     def test_slice_both_axes(self):
         sliced = self.rgb[0.3:5.2, 1.2:5.2]
-        assert sliced.bounds.lbrt() == (0, 1., 6, 5)
+        assert sliced.bounds.lbrt() == (0, 1.0, 6, 5)
         assert sliced.xdensity == 0.5
         assert sliced.ydensity == 1
-        assert_data_equal(sliced.dimension_values(2, flat=False),
-                         self.rgb_array[1:5, 5:8, 0])
+        assert_data_equal(sliced.dimension_values(2, flat=False), self.rgb_array[1:5, 5:8, 0])
 
     def test_slice_x_index_y(self):
         sliced = self.rgb[0.3:5.2, 5.2]
         assert sliced.bounds.lbrt() == (0, 5.0, 6.0, 6.0)
         assert sliced.xdensity == 0.5
         assert sliced.ydensity == 1
-        assert_data_equal(sliced.dimension_values(2, flat=False),
-                         self.rgb_array[5:6, 5:8, 0])
+        assert_data_equal(sliced.dimension_values(2, flat=False), self.rgb_array[5:6, 5:8, 0])
 
     def test_index_x_slice_y(self):
         sliced = self.rgb[3.2, 1.2:5.2]
         assert sliced.bounds.lbrt() == (2.0, 1.0, 4.0, 5.0)
         assert sliced.xdensity == 0.5
         assert sliced.ydensity == 1
-        assert_data_equal(sliced.dimension_values(2, flat=False),
-                         self.rgb_array[1:5, 6:7, 0])
+        assert_data_equal(sliced.dimension_values(2, flat=False), self.rgb_array[1:5, 6:7, 0])
 
     def test_select_value_dimension_rgb(self):
 
-        assert_element_equal(self.rgb[..., 'R'],
-                         hv.Image(np.flipud(self.rgb_array[:, :, 0]), bounds=self.rgb.bounds,
-                               vdims=[hv.Dimension('R', range=(0, 1))], datatype=['image']))
+        assert_element_equal(
+            self.rgb[..., "R"],
+            hv.Image(
+                np.flipud(self.rgb_array[:, :, 0]),
+                bounds=self.rgb.bounds,
+                vdims=[hv.Dimension("R", range=(0, 1))],
+                datatype=["image"],
+            ),
+        )
 
     def test_select_single_coordinate(self):
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.rgb):
-            assert_element_equal(self.rgb[5.2, 3.1],
-                             self.rgb.clone([tuple(self.rgb_array[3, 7])],
-                                            kdims=[], new_type=hv.Dataset))
-
+        with DatatypeContext([self.datatype, "dictionary", "dataframe"], self.rgb):
+            assert_element_equal(
+                self.rgb[5.2, 3.1],
+                self.rgb.clone([tuple(self.rgb_array[3, 7])], kdims=[], new_type=hv.Dataset),
+            )
 
     def test_reduce_to_single_values(self):
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.rgb):
-            assert_element_equal(self.rgb.reduce(['x', 'y'], function=np.mean),
-                             self.rgb.clone([tuple(np.mean(self.rgb_array, axis=(0, 1)))],
-                                            kdims=[], new_type=hv.Dataset))
+        with DatatypeContext([self.datatype, "dictionary", "dataframe"], self.rgb):
+            assert_element_equal(
+                self.rgb.reduce(["x", "y"], function=np.mean),
+                self.rgb.clone(
+                    [tuple(np.mean(self.rgb_array, axis=(0, 1)))], kdims=[], new_type=hv.Dataset
+                ),
+            )
 
     def test_sample_xcoord(self):
         ys = np.linspace(0.5, 9.5, 10)
         data = (ys, *(self.rgb_array[:, 7, i] for i in range(3)))
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.rgb):
-            assert_element_equal(self.rgb.sample(x=5),
-                             self.rgb.clone(data, kdims=['y'],
-                                            new_type=hv.Curve))
+        with DatatypeContext([self.datatype, "dictionary", "dataframe"], self.rgb):
+            assert_element_equal(
+                self.rgb.sample(x=5), self.rgb.clone(data, kdims=["y"], new_type=hv.Curve)
+            )
 
     def test_sample_ycoord(self):
         xs = np.linspace(-9, 9, 10)
         data = (xs, *(self.rgb_array[4, :, i] for i in range(3)))
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.rgb):
-            assert_element_equal(self.rgb.sample(y=5),
-                             self.rgb.clone(data, kdims=['x'],
-                                            new_type=hv.Curve))
+        with DatatypeContext([self.datatype, "dictionary", "dataframe"], self.rgb):
+            assert_element_equal(
+                self.rgb.sample(y=5), self.rgb.clone(data, kdims=["x"], new_type=hv.Curve)
+            )
 
     def test_dataset_reindex_constant(self):
-        with DatatypeContext([self.datatype, 'dictionary', 'dataframe', 'grid'], self.rgb):
+        with DatatypeContext([self.datatype, "dictionary", "dataframe", "grid"], self.rgb):
             ds = hv.Dataset(self.rgb.select(x=0))
-            reindexed = ds.reindex(['y'], ['R'])
-        data = hv.Dataset(ds.columns(['y', 'R']),
-                       kdims=['y'], vdims=[ds.vdims[0]])
+            reindexed = ds.reindex(["y"], ["R"])
+        data = hv.Dataset(ds.columns(["y", "R"]), kdims=["y"], vdims=[ds.vdims[0]])
         assert_element_equal(reindexed, data)
 
     def test_dataset_reindex_non_constant(self):
-        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe', 'grid'], self.rgb):
+        with DatatypeContext([self.datatype, "dictionary", "dataframe", "grid"], self.rgb):
             ds = hv.Dataset(self.rgb)
-            reindexed = ds.reindex(['y'], ['R'])
-        data = hv.Dataset(ds.columns(['y', 'R']),
-                       kdims=['y'], vdims=[ds.vdims[0]])
+            reindexed = ds.reindex(["y"], ["R"])
+        data = hv.Dataset(ds.columns(["y", "R"]), kdims=["y"], vdims=[ds.vdims[0]])
         assert_element_equal(reindexed, data)
 
 
 class RGBElement_ImageInterfaceTests(BaseRGBElementInterfaceTests):
-
-    datatype = 'image'
+    datatype = "image"
 
     __test__ = True
 
@@ -469,8 +461,8 @@ class RGBElement_ImageInterfaceTests(BaseRGBElementInterfaceTests):
     def test_reduce_to_single_values(self):
         super().test_reduce_to_single_values()
 
-class BaseHSVElementInterfaceTests(InterfaceTests):
 
+class BaseHSVElementInterfaceTests(InterfaceTests):
     element = hv.HSV
 
     __test__ = False
@@ -485,16 +477,15 @@ class BaseHSVElementInterfaceTests(InterfaceTests):
         self.hsv = hv.HSV(self.hsv_array[::-1], bounds=(-10, 0, 10, 10))
 
     def test_hsv_rgb_interface(self):
-        R = self.hsv.rgb[..., 'R'].dimension_values(2, expanded=False, flat=False)
-        G = self.hsv.rgb[..., 'G'].dimension_values(2, expanded=False, flat=False)
-        B = self.hsv.rgb[..., 'B'].dimension_values(2, expanded=False, flat=False)
+        R = self.hsv.rgb[..., "R"].dimension_values(2, expanded=False, flat=False)
+        G = self.hsv.rgb[..., "G"].dimension_values(2, expanded=False, flat=False)
+        B = self.hsv.rgb[..., "B"].dimension_values(2, expanded=False, flat=False)
         assert R[0, 0] == 1
         assert G[0, 0] == 0
         assert B[0, 0] == 0
 
 
 class HSVElement_ImageInterfaceTests(BaseHSVElementInterfaceTests):
-
-    datatype = 'image'
+    datatype = "image"
 
     __test__ = True

@@ -12,26 +12,28 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestSpikesPlot(TestBokehPlot):
-
     def test_spikes_colormapping(self):
-        spikes = hv.Spikes(np.random.rand(20, 2), vdims=['Intensity'])
+        spikes = hv.Spikes(np.random.rand(20, 2), vdims=["Intensity"])
         color_spikes = spikes.opts(color_index=1)
         self._test_colormapping(color_spikes, 1)
 
     def test_empty_spikes_plot(self):
-        spikes = hv.Spikes([], vdims=['Intensity'])
+        spikes = hv.Spikes([], vdims=["Intensity"])
         plot = bokeh_renderer.get_plot(spikes)
-        source = plot.handles['source']
-        assert len(source.data['x']) == 0
-        assert len(source.data['y0']) == 0
-        assert len(source.data['y1']) == 0
+        source = plot.handles["source"]
+        assert len(source.data["x"]) == 0
+        assert len(source.data["y0"]) == 0
+        assert len(source.data["y1"]) == 0
 
     def test_batched_spike_plot(self):
-        overlay = hv.NdOverlay({
-            i: hv.Spikes([i], kdims=['Time']).opts(
-                position=0.1*i, spike_length=0.1, show_legend=False)
-            for i in range(10)
-        })
+        overlay = hv.NdOverlay(
+            {
+                i: hv.Spikes([i], kdims=["Time"]).opts(
+                    position=0.1 * i, spike_length=0.1, show_legend=False
+                )
+                for i in range(10)
+            }
+        )
         plot = bokeh_renderer.get_plot(overlay)
         extents = plot.get_extents(overlay, {})
         assert extents == (0, 0, 9, 1)
@@ -39,14 +41,14 @@ class TestSpikesPlot(TestBokehPlot):
     def test_spikes_padding_square(self):
         spikes = hv.Spikes([1, 2, 3]).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(spikes)
-        x_range = plot.handles['x_range']
+        x_range = plot.handles["x_range"]
         assert x_range.start == 0.8
         assert x_range.end == 3.2
 
     def test_spikes_padding_square_heights(self):
-        spikes = hv.Spikes([(1, 1), (2, 2), (3, 3)], vdims=['Height']).opts(padding=0.1)
+        spikes = hv.Spikes([(1, 1), (2, 2), (3, 3)], vdims=["Height"]).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(spikes)
-        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        x_range, y_range = plot.handles["x_range"], plot.handles["y_range"]
         assert x_range.start == 0.8
         assert x_range.end == 3.2
         assert y_range.start == 0
@@ -55,184 +57,195 @@ class TestSpikesPlot(TestBokehPlot):
     def test_spikes_padding_hard_xrange(self):
         spikes = hv.Spikes([1, 2, 3]).redim.range(x=(0, 3)).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(spikes)
-        x_range = plot.handles['x_range']
+        x_range = plot.handles["x_range"]
         assert x_range.start == 0
         assert x_range.end == 3
 
     def test_spikes_padding_soft_xrange(self):
         spikes = hv.Spikes([1, 2, 3]).redim.soft_range(x=(0, 3)).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(spikes)
-        x_range = plot.handles['x_range']
+        x_range = plot.handles["x_range"]
         assert x_range.start == 0
         assert x_range.end == 3
 
     def test_spikes_padding_unequal(self):
         spikes = hv.Spikes([1, 2, 3]).opts(padding=(0.05, 0.1))
         plot = bokeh_renderer.get_plot(spikes)
-        x_range = plot.handles['x_range']
+        x_range = plot.handles["x_range"]
         assert x_range.start == 0.9
         assert x_range.end == 3.1
 
     def test_spikes_padding_nonsquare(self):
         spikes = hv.Spikes([1, 2, 3]).opts(padding=0.1, width=600)
         plot = bokeh_renderer.get_plot(spikes)
-        x_range = plot.handles['x_range']
+        x_range = plot.handles["x_range"]
         assert x_range.start == 0.9
         assert x_range.end == 3.1
 
     def test_spikes_padding_logx(self):
-        spikes = hv.Spikes([(1, 1), (2, 2), (3,3)]).opts(padding=0.1, logx=True)
+        spikes = hv.Spikes([(1, 1), (2, 2), (3, 3)]).opts(padding=0.1, logx=True)
         plot = bokeh_renderer.get_plot(spikes)
-        x_range = plot.handles['x_range']
+        x_range = plot.handles["x_range"]
         assert x_range.start == 0.89595845984076228
         assert x_range.end == 3.3483695221017129
 
     def test_spikes_padding_datetime_square(self):
-        spikes = hv.Spikes([np.datetime64(f'2016-04-0{i}') for i in range(1, 4)]).opts(
-            padding=0.1
-        )
+        spikes = hv.Spikes([np.datetime64(f"2016-04-0{i}") for i in range(1, 4)]).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(spikes)
-        x_range = plot.handles['x_range']
-        assert x_range.start == np.datetime64('2016-03-31T19:12:00.000000000')
-        assert x_range.end == np.datetime64('2016-04-03T04:48:00.000000000')
+        x_range = plot.handles["x_range"]
+        assert x_range.start == np.datetime64("2016-03-31T19:12:00.000000000")
+        assert x_range.end == np.datetime64("2016-04-03T04:48:00.000000000")
 
     def test_spikes_padding_datetime_square_heights(self):
-        spikes = hv.Spikes([(np.datetime64(f'2016-04-0{i}'), i) for i in range(1, 4)], vdims=['Height']).opts(
-            padding=0.1
-        )
+        spikes = hv.Spikes(
+            [(np.datetime64(f"2016-04-0{i}"), i) for i in range(1, 4)], vdims=["Height"]
+        ).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(spikes)
-        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
-        assert x_range.start == np.datetime64('2016-03-31T19:12:00.000000000')
-        assert x_range.end == np.datetime64('2016-04-03T04:48:00.000000000')
+        x_range, y_range = plot.handles["x_range"], plot.handles["y_range"]
+        assert x_range.start == np.datetime64("2016-03-31T19:12:00.000000000")
+        assert x_range.end == np.datetime64("2016-04-03T04:48:00.000000000")
         assert y_range.start == 0
         assert y_range.end == 3.2
 
     def test_spikes_padding_datetime_nonsquare(self):
-        spikes = hv.Spikes([np.datetime64(f'2016-04-0{i}') for i in range(1, 4)]).opts(
+        spikes = hv.Spikes([np.datetime64(f"2016-04-0{i}") for i in range(1, 4)]).opts(
             padding=0.1, width=600
         )
         plot = bokeh_renderer.get_plot(spikes)
-        x_range = plot.handles['x_range']
-        assert x_range.start == np.datetime64('2016-03-31T21:36:00.000000000')
-        assert x_range.end == np.datetime64('2016-04-03T02:24:00.000000000')
+        x_range = plot.handles["x_range"]
+        assert x_range.start == np.datetime64("2016-03-31T21:36:00.000000000")
+        assert x_range.end == np.datetime64("2016-04-03T02:24:00.000000000")
 
     def test_spikes_datetime_vdim_hover(self):
-        points = hv.Spikes([(0, 1, dt.datetime(2017, 1, 1))], vdims=['value', 'date']).opts(tools=['hover'])
+        points = hv.Spikes([(0, 1, dt.datetime(2017, 1, 1))], vdims=["value", "date"]).opts(
+            tools=["hover"]
+        )
         plot = bokeh_renderer.get_plot(points)
-        cds = plot.handles['cds']
-        assert cds.data['date'] == np.datetime64("2017-01-01", "ns")
-        hover = plot.handles['hover']
-        assert hover.tooltips == [('x', '@{x}'), ('value', '@{value}'), ('date', '@{date}{%F %T}')]
-        assert hover.formatters == {'@{date}': "datetime"}
+        cds = plot.handles["cds"]
+        assert cds.data["date"] == np.datetime64("2017-01-01", "ns")
+        hover = plot.handles["hover"]
+        assert hover.tooltips == [("x", "@{x}"), ("value", "@{value}"), ("date", "@{date}{%F %T}")]
+        assert hover.formatters == {"@{date}": "datetime"}
 
     def test_spikes_datetime_kdim_hover(self):
-        points = hv.Spikes([(dt.datetime(2017, 1, 1), 1)], 'x', 'y').opts(tools=['hover'])
+        points = hv.Spikes([(dt.datetime(2017, 1, 1), 1)], "x", "y").opts(tools=["hover"])
         plot = bokeh_renderer.get_plot(points)
-        cds = plot.handles['cds']
-        assert cds.data['x'] == np.datetime64("2017-01-01", "ns")
-        assert_data_equal(cds.data['y0'], np.array([0]))
-        assert_data_equal(cds.data['y1'], np.array([1]))
+        cds = plot.handles["cds"]
+        assert cds.data["x"] == np.datetime64("2017-01-01", "ns")
+        assert_data_equal(cds.data["y0"], np.array([0]))
+        assert_data_equal(cds.data["y1"], np.array([1]))
 
-        hover = plot.handles['hover']
-        assert hover.tooltips == [('x', '@{x}{%F %T}'), ('y', '@{y}')]
-        assert hover.formatters == {'@{x}': "datetime"}
+        hover = plot.handles["hover"]
+        assert hover.tooltips == [("x", "@{x}{%F %T}"), ("y", "@{y}")]
+        assert hover.formatters == {"@{x}": "datetime"}
 
     def test_spikes_datetime_kdim_hover_spike_length_override(self):
-        points = hv.Spikes([(dt.datetime(2017, 1, 1), 1)], 'x', 'y').opts(
-            tools=['hover'], spike_length=0.75)
+        points = hv.Spikes([(dt.datetime(2017, 1, 1), 1)], "x", "y").opts(
+            tools=["hover"], spike_length=0.75
+        )
         plot = bokeh_renderer.get_plot(points)
-        cds = plot.handles['cds']
-        assert cds.data['x'] == np.datetime64("2017-01-01", "ns")
-        assert_data_equal(cds.data['y0'], np.array([0]))
-        assert_data_equal(cds.data['y1'], np.array([0.75]))
-        hover = plot.handles['hover']
-        assert hover.tooltips == [('x', '@{x}{%F %T}'), ('y', '@{y}')]
-        assert hover.formatters == {'@{x}': "datetime"}
+        cds = plot.handles["cds"]
+        assert cds.data["x"] == np.datetime64("2017-01-01", "ns")
+        assert_data_equal(cds.data["y0"], np.array([0]))
+        assert_data_equal(cds.data["y1"], np.array([0.75]))
+        hover = plot.handles["hover"]
+        assert hover.tooltips == [("x", "@{x}{%F %T}"), ("y", "@{y}")]
+        assert hover.formatters == {"@{x}": "datetime"}
 
     ###########################
     #    Styling mapping      #
     ###########################
 
     def test_spikes_color_op(self):
-        spikes = hv.Spikes([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
-                              vdims=['y', 'color']).opts(color='color')
+        spikes = hv.Spikes(
+            [(0, 0, "#000"), (0, 1, "#F00"), (0, 2, "#0F0")], vdims=["y", "color"]
+        ).opts(color="color")
         plot = bokeh_renderer.get_plot(spikes)
-        cds = plot.handles['cds']
-        glyph = plot.handles['glyph']
-        assert cds.data['color'] == ['#000', '#F00', '#0F0']
-        assert property_to_dict(glyph.line_color) == {'field': 'color'}
+        cds = plot.handles["cds"]
+        glyph = plot.handles["glyph"]
+        assert cds.data["color"] == ["#000", "#F00", "#0F0"]
+        assert property_to_dict(glyph.line_color) == {"field": "color"}
 
     def test_spikes_linear_color_op(self):
-        spikes = hv.Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                              vdims=['y', 'color']).opts(color='color')
+        spikes = hv.Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)], vdims=["y", "color"]).opts(
+            color="color"
+        )
         plot = bokeh_renderer.get_plot(spikes)
-        cds = plot.handles['cds']
-        glyph = plot.handles['glyph']
-        cmapper = plot.handles['color_color_mapper']
+        cds = plot.handles["cds"]
+        glyph = plot.handles["glyph"]
+        cmapper = plot.handles["color_color_mapper"]
         assert isinstance(cmapper, LinearColorMapper)
         assert cmapper.low == 0
         assert cmapper.high == 2
-        assert_data_equal(cds.data['color'], np.array([0, 1, 2]))
-        assert property_to_dict(glyph.line_color) == {'field': 'color', 'transform': cmapper}
+        assert_data_equal(cds.data["color"], np.array([0, 1, 2]))
+        assert property_to_dict(glyph.line_color) == {"field": "color", "transform": cmapper}
 
     def test_spikes_categorical_color_op(self):
-        spikes = hv.Spikes([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
-                              vdims=['y', 'color']).opts(color='color')
+        spikes = hv.Spikes([(0, 0, "A"), (0, 1, "B"), (0, 2, "C")], vdims=["y", "color"]).opts(
+            color="color"
+        )
         plot = bokeh_renderer.get_plot(spikes)
-        cds = plot.handles['cds']
-        glyph = plot.handles['glyph']
-        cmapper = plot.handles['color_color_mapper']
+        cds = plot.handles["cds"]
+        glyph = plot.handles["glyph"]
+        cmapper = plot.handles["color_color_mapper"]
         assert isinstance(cmapper, CategoricalColorMapper)
-        assert cmapper.factors == ['A', 'B', 'C']
-        assert cds.data['color'] == ['A', 'B', 'C']
-        assert property_to_dict(glyph.line_color) == {'field': 'color', 'transform': cmapper}
+        assert cmapper.factors == ["A", "B", "C"]
+        assert cds.data["color"] == ["A", "B", "C"]
+        assert property_to_dict(glyph.line_color) == {"field": "color", "transform": cmapper}
 
     def test_spikes_line_color_op(self):
-        spikes = hv.Spikes([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
-                              vdims=['y', 'color']).opts(line_color='color')
+        spikes = hv.Spikes(
+            [(0, 0, "#000"), (0, 1, "#F00"), (0, 2, "#0F0")], vdims=["y", "color"]
+        ).opts(line_color="color")
         plot = bokeh_renderer.get_plot(spikes)
-        cds = plot.handles['cds']
-        glyph = plot.handles['glyph']
-        assert cds.data['line_color'] == ['#000', '#F00', '#0F0']
-        assert property_to_dict(glyph.line_color) == {'field': 'line_color'}
+        cds = plot.handles["cds"]
+        glyph = plot.handles["glyph"]
+        assert cds.data["line_color"] == ["#000", "#F00", "#0F0"]
+        assert property_to_dict(glyph.line_color) == {"field": "line_color"}
 
     def test_spikes_alpha_op(self):
-        spikes = hv.Spikes([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
-                              vdims=['y', 'alpha']).opts(alpha='alpha')
+        spikes = hv.Spikes([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)], vdims=["y", "alpha"]).opts(
+            alpha="alpha"
+        )
         plot = bokeh_renderer.get_plot(spikes)
-        cds = plot.handles['cds']
-        glyph = plot.handles['glyph']
-        assert_data_equal(cds.data['alpha'], np.array([0, 0.2, 0.7]))
-        assert property_to_dict(glyph.line_alpha) == {'field': 'alpha'}
+        cds = plot.handles["cds"]
+        glyph = plot.handles["glyph"]
+        assert_data_equal(cds.data["alpha"], np.array([0, 0.2, 0.7]))
+        assert property_to_dict(glyph.line_alpha) == {"field": "alpha"}
 
     def test_spikes_line_alpha_op(self):
-        spikes = hv.Spikes([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
-                              vdims=['y', 'alpha']).opts(line_alpha='alpha')
+        spikes = hv.Spikes([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)], vdims=["y", "alpha"]).opts(
+            line_alpha="alpha"
+        )
         plot = bokeh_renderer.get_plot(spikes)
-        cds = plot.handles['cds']
-        glyph = plot.handles['glyph']
-        assert_data_equal(cds.data['line_alpha'], np.array([0, 0.2, 0.7]))
-        assert property_to_dict(glyph.line_alpha) == {'field': 'line_alpha'}
+        cds = plot.handles["cds"]
+        glyph = plot.handles["glyph"]
+        assert_data_equal(cds.data["line_alpha"], np.array([0, 0.2, 0.7]))
+        assert property_to_dict(glyph.line_alpha) == {"field": "line_alpha"}
 
     def test_spikes_line_width_op(self):
-        spikes = hv.Spikes([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
-                              vdims=['y', 'line_width']).opts(line_width='line_width')
+        spikes = hv.Spikes([(0, 0, 1), (0, 1, 4), (0, 2, 8)], vdims=["y", "line_width"]).opts(
+            line_width="line_width"
+        )
         plot = bokeh_renderer.get_plot(spikes)
-        cds = plot.handles['cds']
-        glyph = plot.handles['glyph']
-        assert_data_equal(cds.data['line_width'], np.array([1, 4, 8]))
-        assert property_to_dict(glyph.line_width) == {'field': 'line_width'}
+        cds = plot.handles["cds"]
+        glyph = plot.handles["glyph"]
+        assert_data_equal(cds.data["line_width"], np.array([1, 4, 8]))
+        assert property_to_dict(glyph.line_width) == {"field": "line_width"}
 
     def test_op_ndoverlay_value(self):
-        colors = ['blue', 'red']
-        overlay = hv.NdOverlay({color: hv.Spikes(np.arange(i+2)) for i, color in enumerate(colors)}, 'Color').opts('Spikes', color='Color')
+        colors = ["blue", "red"]
+        overlay = hv.NdOverlay(
+            {color: hv.Spikes(np.arange(i + 2)) for i, color in enumerate(colors)}, "Color"
+        ).opts("Spikes", color="Color")
         plot = bokeh_renderer.get_plot(overlay)
-        for subplot, color in zip(plot.subplots.values(),  colors, strict=True):
-            assert subplot.handles['glyph'].line_color == color
+        for subplot, color in zip(plot.subplots.values(), colors, strict=True):
+            assert subplot.handles["glyph"].line_color == color
 
     def test_spikes_color_index_color_clash(self):
-        spikes = hv.Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                    vdims=['y', 'color']).opts(color='color', color_index='color')
+        spikes = hv.Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)], vdims=["y", "color"]).opts(
+            color="color", color_index="color"
+        )
         with ParamLogStream() as log:
             bokeh_renderer.get_plot(spikes)
         log_msg = log.stream.read()

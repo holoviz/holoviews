@@ -18,12 +18,11 @@ from .test_plot import TestPlotlyPlot
 
 
 class TestDynamicMap(TestPlotlyPlot):
-
     def test_update_dynamic_map_with_stream(self):
         ys = np.arange(10)
 
         # Build stream
-        Scale = Stream.define('Scale', scale=1.0)
+        Scale = Stream.define("Scale", scale=1.0)
         scale_stream = Scale()
 
         # Build DynamicMap
@@ -34,7 +33,7 @@ class TestDynamicMap(TestPlotlyPlot):
 
         # Create HoloViews Pane using panel so that we can access the plotly pane
         # used to display the plotly figure
-        dmap_pane = pn.pane.HoloViews(dmap, backend='plotly')
+        dmap_pane = pn.pane.HoloViews(dmap, backend="plotly")
 
         # Call get_root to force instantiation of internal plots/models
         doc = Document()
@@ -45,21 +44,21 @@ class TestDynamicMap(TestPlotlyPlot):
         _, plotly_pane = next(iter(dmap_pane._plots.values()))
 
         # Check initial data
-        data = _convert_numpy_in_fig_dict(plotly_pane.object['data'])
+        data = _convert_numpy_in_fig_dict(plotly_pane.object["data"])
         assert len(data) == 1
-        assert data[0]['type'] == 'scatter'
-        np.testing.assert_equal(data[0]['y'], ys)
+        assert data[0]["type"] == "scatter"
+        np.testing.assert_equal(data[0]["y"], ys)
 
         # Watch object for changes
         fn = Mock()
-        plotly_pane.param.watch(fn, 'object')
+        plotly_pane.param.watch(fn, "object")
 
         # Update stream
         scale_stream.event(scale=2.0)
 
         # Check that figure object was updated
-        data = _convert_numpy_in_fig_dict(plotly_pane.object['data'])
-        np.testing.assert_equal(data[0]['y'], ys * 2.0)
+        data = _convert_numpy_in_fig_dict(plotly_pane.object["data"])
+        np.testing.assert_equal(data[0]["y"], ys * 2.0)
 
         # Check that object callback was triggered
         fn.assert_called_once()
@@ -94,7 +93,7 @@ class TestInteractiveStream(TestPlotlyPlot):
 
         # Build layout and layout Pane
         layout = scatter1 + scatter2 + scatter3
-        layout_pane = pn.pane.HoloViews(layout, backend='plotly')
+        layout_pane = pn.pane.HoloViews(layout, backend="plotly")
 
         # Get plotly pane reference
         doc = Document()
@@ -104,12 +103,12 @@ class TestInteractiveStream(TestPlotlyPlot):
 
         # Simulate zoom and check that RangeXY streams updated accordingly
         plotly_pane.viewport = {
-            'xaxis.range': [1, 3],
-            'yaxis.range': [2, 4],
-            'xaxis2.range': [3, 5],
-            'yaxis2.range': [4, 6],
-            'xaxis3.range': [5, 7],
-            'yaxis3.range': [6, 8],
+            "xaxis.range": [1, 3],
+            "yaxis.range": [2, 4],
+            "xaxis2.range": [3, 5],
+            "yaxis2.range": [4, 6],
+            "xaxis3.range": [5, 7],
+            "yaxis3.range": [6, 8],
         }
 
         assert rangexy1.x_range == (1, 3)
@@ -127,28 +126,19 @@ class TestInteractiveStream(TestPlotlyPlot):
         # update accordingly
 
         # Box select on second subplot
-        plotly_pane.selected_data = {
-            'points': [],
-            'range': {
-                'x2': [10, 20],
-                'y2': [11, 22]
-            }
-        }
+        plotly_pane.selected_data = {"points": [], "range": {"x2": [10, 20], "y2": [11, 22]}}
 
         assert boundsxy2a.bounds == (10, 11, 20, 22)
         assert boundsxy2b.bounds == (10, 11, 20, 22)
 
         # Box select on third subplot
         plotly_pane.selected_data = {
-            'points': [
-                {'curveNumber': 2, 'pointNumber': 0},
-                {'curveNumber': 2, 'pointNumber': 3},
-                {'curveNumber': 2, 'pointNumber': 7},
+            "points": [
+                {"curveNumber": 2, "pointNumber": 0},
+                {"curveNumber": 2, "pointNumber": 3},
+                {"curveNumber": 2, "pointNumber": 7},
             ],
-            'range': {
-                'x3': [0, 5],
-                'y3': [1, 6]
-            }
+            "range": {"x3": [0, 5], "y3": [1, 6]},
         }
 
         assert boundsxy3.bounds == (0, 1, 5, 6)

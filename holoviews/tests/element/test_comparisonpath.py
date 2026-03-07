@@ -7,22 +7,25 @@ from holoviews.element.comparison import ComparisonTestCase
 
 
 class PathComparisonTest(ComparisonTestCase):
-
     def setUp(self):
-        self.path1 = hv.Path([(-0.3, 0.4), (-0.3, 0.3), (-0.2, 0.3),
-                           (-0.2, 0.4),(-0.3, 0.4)])
+        self.path1 = hv.Path([(-0.3, 0.4), (-0.3, 0.3), (-0.2, 0.3), (-0.2, 0.4), (-0.3, 0.4)])
 
-        self.path2 = hv.Path([(-0.3, 0.4), (-0.3, 0.3), (-0.2, 0.3),
-                           (-0.2, 0.4),(-3, 4)])
+        self.path2 = hv.Path([(-0.3, 0.4), (-0.3, 0.3), (-0.2, 0.3), (-0.2, 0.4), (-3, 4)])
 
-        self.contours1 = hv.Contours([(-0.3, 0.4, 1), (-0.3, 0.3, 1), (-0.2, 0.3, 1),
-                                   (-0.2, 0.4, 1),(-0.3, 0.4, 1)], vdims='Level')
+        self.contours1 = hv.Contours(
+            [(-0.3, 0.4, 1), (-0.3, 0.3, 1), (-0.2, 0.3, 1), (-0.2, 0.4, 1), (-0.3, 0.4, 1)],
+            vdims="Level",
+        )
 
-        self.contours2 = hv.Contours([(-0.3, 0.4, 1), (-0.3, 0.3, 1), (-0.2, 0.3, 1),
-                                   (-0.2, 0.4, 1), (-3, 4, 1)], vdims='Level')
+        self.contours2 = hv.Contours(
+            [(-0.3, 0.4, 1), (-0.3, 0.3, 1), (-0.2, 0.3, 1), (-0.2, 0.4, 1), (-3, 4, 1)],
+            vdims="Level",
+        )
 
-        self.contours3 = hv.Contours([(-0.3, 0.4, 2), (-0.3, 0.3, 2), (-0.2, 0.3, 2),
-                                   (-0.2, 0.4, 2), (-0.3, 0.4, 2)], vdims='Level')
+        self.contours3 = hv.Contours(
+            [(-0.3, 0.4, 2), (-0.3, 0.3, 2), (-0.2, 0.3, 2), (-0.2, 0.4, 2), (-0.3, 0.4, 2)],
+            vdims="Level",
+        )
 
         self.bounds1 = hv.Bounds(0.3)
         self.bounds2 = hv.Bounds(0.4)
@@ -59,7 +62,6 @@ class PathComparisonTest(ComparisonTestCase):
         except AssertionError as e:
             if not str(e).startswith("Contours not almost equal to 6 decimals"):
                 raise self.failureException("Contour level are mismatch error not raised.")
-
 
     def test_bounds_equal(self):
         self.assertEqual(self.bounds1, self.bounds1)

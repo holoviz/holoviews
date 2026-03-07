@@ -74,6 +74,7 @@ To ask the community go to https://discourse.holoviz.org/.
 To report issues go to https://github.com/holoviz/holoviews.
 
 """
+
 import builtins
 import os
 import sys
@@ -183,14 +184,18 @@ TYPE_CHECKING = False
 
 if hasattr(builtins, "__IPYTHON__"):
     from .ipython import notebook_extension
+
     extension = notebook_extension
 else:
+
     class notebook_extension(param.ParameterizedFunction):
         def __call__(self, *args, **kwargs):
             raise Exception("Jupyter notebook not available: use hv.extension instead.")
 
-if '_pyodide' in sys.modules:
+
+if "_pyodide" in sys.modules:
     from .pyodide import in_jupyterlite, pyodide_extension
+
     # The notebook_extension is needed inside jupyterlite,
     # so the override is only done if we are not inside jupyterlite.
     if in_jupyterlite():
@@ -205,8 +210,8 @@ if TYPE_CHECKING:
 
 _load_rc_file()
 
-def help(obj, visualization=True, ansi=True, backend=None,
-         recursive=False, pattern=None):
+
+def help(obj, visualization=True, ansi=True, backend=None, recursive=False, pattern=None):
     """Extended version of the built-in help that supports parameterized
     functions and objects. A pattern (regular expression) may be used to
     filter the output and if recursive is set to True, documentation for
@@ -217,27 +222,41 @@ def help(obj, visualization=True, ansi=True, backend=None,
 
     """
     backend = backend if backend else Store.current_backend
-    info = Store.info(obj, ansi=ansi, backend=backend, visualization=visualization,
-                      recursive=recursive, pattern=pattern, elements=elements_list)
+    info = Store.info(
+        obj,
+        ansi=ansi,
+        backend=backend,
+        visualization=visualization,
+        recursive=recursive,
+        pattern=pattern,
+        elements=elements_list,
+    )
 
-    msg = ("\nTo view the visualization options applicable to this "
-           "object or class, use:\n\n"
-           "   holoviews.help(obj, visualization=True)\n\n")
+    msg = (
+        "\nTo view the visualization options applicable to this "
+        "object or class, use:\n\n"
+        "   holoviews.help(obj, visualization=True)\n\n"
+    )
     if info:
-        print((msg if visualization is False else '') + info)
+        print((msg if visualization is False else "") + info)
     else:
         import pydoc
+
         pydoc.help(obj)
+
 
 def __getattr__(name):
     if name == "annotate":
         # Lazy loading Panel
         from .annotators import annotate
+
         return annotate
     elif name == "testing":
         import holoviews.testing
+
         return holoviews.testing
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = [
     "HSV",
@@ -351,8 +370,10 @@ __all__ = [
     "util",
 ]
 
+
 def __dir__():
     return __all__
+
 
 if TYPE_CHECKING:
     from . import testing

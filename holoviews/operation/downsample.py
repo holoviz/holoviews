@@ -103,9 +103,7 @@ def _lttb_inner(x, y, n_out, sampled_x, offset):
 
 
 def _ensure_contiguous(x, y):
-    """Ensures the arrays are contiguous in memory (required by tsdownsample).
-
-    """
+    """Ensures the arrays are contiguous in memory (required by tsdownsample)."""
     return np.ascontiguousarray(x), np.ascontiguousarray(y)
 
 
@@ -129,6 +127,7 @@ def _lttb(x, y, n_out, **kwargs):
     """
     try:
         from tsdownsample import LTTBDownsampler
+
         x, y = _ensure_contiguous(x, y)
         return LTTBDownsampler().downsample(x, y, n_out=n_out, **kwargs)
     except ModuleNotFoundError:
@@ -149,14 +148,15 @@ def _lttb(x, y, n_out, **kwargs):
     sampled_x[-1] = x.shape[0] - 1
 
     # View it as int64 to take the mean of it
-    if dtype_kind(x) == 'M':
+    if dtype_kind(x) == "M":
         x = x.view(np.int64)
-    if dtype_kind(y) == 'M':
+    if dtype_kind(y) == "M":
         y = y.view(np.int64)
 
     _lttb_inner(x, y, n_out, sampled_x, offset)
 
     return sampled_x
+
 
 def _nth_point(x, y, n_out, **kwargs):
     """Downsampling by selecting every n-th datapoint
@@ -177,38 +177,40 @@ def _nth_point(x, y, n_out, **kwargs):
     n_samples = len(x)
     return slice(0, n_samples, max(1, math.ceil(n_samples / n_out)))
 
+
 def _viewport(x, y, n_out, **kwargs):
     return slice(len(x))
+
 
 def _min_max(x, y, n_out, **kwargs):
     try:
         from tsdownsample import MinMaxDownsampler
     except ModuleNotFoundError:
         raise NotImplementedError(
-            'The min-max downsampling algorithm requires the tsdownsample '
-            'library to be installed.'
+            "The min-max downsampling algorithm requires the tsdownsample library to be installed."
         ) from None
     x, y = _ensure_contiguous(x, y)
     return MinMaxDownsampler().downsample(x, y, n_out=n_out, **kwargs)
+
 
 def _min_max_lttb(x, y, n_out, **kwargs):
     try:
         from tsdownsample import MinMaxLTTBDownsampler
     except ModuleNotFoundError:
         raise NotImplementedError(
-            'The minmax-lttb downsampling algorithm requires the tsdownsample '
-            'library to be installed.'
+            "The minmax-lttb downsampling algorithm requires the tsdownsample "
+            "library to be installed."
         ) from None
     x, y = _ensure_contiguous(x, y)
     return MinMaxLTTBDownsampler().downsample(x, y, n_out=n_out, **kwargs)
+
 
 def _m4(x, y, n_out, **kwargs):
     try:
         from tsdownsample import M4Downsampler
     except ModuleNotFoundError:
         raise NotImplementedError(
-            'The m4 downsampling algorithm requires the tsdownsample '
-            'library to be installed.'
+            "The m4 downsampling algorithm requires the tsdownsample library to be installed."
         ) from None
     x, y = _ensure_contiguous(x, y)
     n_out = n_out - (n_out % 4)  # n_out must be a multiple of 4
@@ -216,13 +218,14 @@ def _m4(x, y, n_out, **kwargs):
 
 
 _ALGORITHMS = {
-    'lttb': _lttb,
-    'nth': _nth_point,
-    'viewport': _viewport,
-    'minmax': _min_max,
-    'minmax-lttb': _min_max_lttb,
-    'm4': _m4,
+    "lttb": _lttb,
+    "nth": _nth_point,
+    "viewport": _viewport,
+    "minmax": _min_max,
+    "minmax-lttb": _min_max_lttb,
+    "m4": _m4,
 }
+
 
 class downsample1d(ResampleOperation1D):
     """Implements downsampling of a regularly sampled 1D dataset.
@@ -232,7 +235,10 @@ class downsample1d(ResampleOperation1D):
 
     """
 
-    algorithm = param.Selector(default='lttb', objects=list(_ALGORITHMS), doc="""
+    algorithm = param.Selector(
+        default="lttb",
+        objects=list(_ALGORITHMS),
+        doc="""
         The algorithm to use for downsampling:
 
         - `lttb`: Largest Triangle Three Buckets downsample algorithm.
@@ -241,25 +247,35 @@ class downsample1d(ResampleOperation1D):
         - `minmax`: Selects the min and max value in each bin (requires tsdownsample).
         - `m4`: Selects the min, max, first and last value in each bin (requires tsdownsample).
         - `minmax-lttb`: First selects n_out * minmax_ratio min and max values,
-                         then further reduces these to n_out values using the
-                         Largest Triangle Three Buckets algorithm (requires tsdownsample).""")
+          then further reduces these to n_out values using the Largest Triangle
+          Three Buckets algorithm (requires tsdownsample).""",
+    )
 
-    parallel = param.Boolean(default=False, doc="""
-       The number of threads to use (if tsdownsample is available).""")
+    parallel = param.Boolean(
+        default=False,
+        doc="The number of threads to use (if tsdownsample is available).",
+    )
 
-    minmax_ratio = param.Integer(default=4, bounds=(0, None), doc="""
-       For the minmax-lttb algorithm determines the ratio of candidate
-       values to generate with the minmax algorithm before further
-       downsampling with LTTB.""")
+    minmax_ratio = param.Integer(
+        default=4,
+        bounds=(0, None),
+        doc="""
+        For the minmax-lttb algorithm determines the ratio of candidate
+        values to generate with the minmax algorithm before further
+        downsampling with LTTB.""",
+    )
 
-    neighbor_points = param.Boolean(default=None, doc="""
+    neighbor_points = param.Boolean(
+        default=None,
+        doc="""
         Whether to add the neighbor points to the range before downsampling.
-        By default this is only enabled for the viewport algorithm.""")
+        By default this is only enabled for the viewport algorithm.""",
+    )
 
     def _process(self, element, key=None, shared_data=None):
         if isinstance(element, (Overlay, NdOverlay)):
             # Shared data is so we only slice the given data once
-            kwargs = {'key': key, 'shared_data': {}}
+            kwargs = {"key": key, "shared_data": {}}
             _process = partial(self._process, **kwargs)
             if isinstance(element, Overlay):
                 elements = [v.map(_process) for v in element]
@@ -285,18 +301,14 @@ class downsample1d(ResampleOperation1D):
         downsample = _ALGORITHMS[self.p.algorithm]
         kwargs = {}
         if "lttb" in self.p.algorithm and isinstance(element, Area):
-            raise NotImplementedError(
-                "LTTB algorithm is not implemented for hv.Area"
-            )
+            raise NotImplementedError("LTTB algorithm is not implemented for hv.Area")
         elif self.p.algorithm == "minmax-lttb":
-            kwargs['minmax_ratio'] = self.p.minmax_ratio
+            kwargs["minmax_ratio"] = self.p.minmax_ratio
         samples = downsample(xs, ys, self.p.width, parallel=self.p.parallel, **kwargs)
         return element.iloc[samples]
 
     def _compute_mask(self, element):
-        """Computes the mask to apply to the element before downsampling.
-
-        """
+        """Computes the mask to apply to the element before downsampling."""
         neighbor_enabled = (
             self.p.neighbor_points
             if self.p.neighbor_points is not None
