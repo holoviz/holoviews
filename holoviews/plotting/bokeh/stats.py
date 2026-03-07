@@ -114,7 +114,13 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
                 element = agg
             else:
                 element = element.clone([(agg,)])
-        return super()._apply_transforms(element, data, ranges, style, group)
+        result = super()._apply_transforms(element, data, ranges, style, group)
+        # Remove legend_field to prevent duplicate legend entries (#6486).
+        # The box is split into two VBar glyphs (upper/lower half), and
+        # legend is controlled via the mapping dict in get_data().
+        if group == 'box':
+            result.pop('legend_field', None)
+        return result
 
     def _get_factors(self, element, ranges):
         """Get factors for categorical axes.
