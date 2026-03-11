@@ -10,7 +10,6 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestLinkCallbacks(TestBokehPlot):
-
     def test_range_tool_link_callback_single_axis(self):
         array = np.random.rand(100, 2)
         src = hv.Curve(array)
@@ -18,23 +17,23 @@ class TestLinkCallbacks(TestBokehPlot):
         RangeToolLink(src, target)
         layout = target + src
         plot = bokeh_renderer.get_plot(layout)
-        tgt_plot = plot.subplots[(0, 0)].subplots['main']
-        src_plot = plot.subplots[(0, 1)].subplots['main']
-        range_tool = src_plot.state.select_one({'type': RangeTool})
-        assert range_tool.x_range == tgt_plot.handles['x_range']
+        tgt_plot = plot.subplots[(0, 0)].subplots["main"]
+        src_plot = plot.subplots[(0, 1)].subplots["main"]
+        range_tool = src_plot.state.select_one({"type": RangeTool})
+        assert range_tool.x_range == tgt_plot.handles["x_range"]
         assert range_tool.y_range is None
 
     def test_range_tool_link_callback_single_axis_overlay_target(self):
         array = np.random.rand(100, 2)
         src = hv.Curve(array)
-        target = hv.Scatter(array, label='a') * hv.Scatter(array, label='b')
+        target = hv.Scatter(array, label="a") * hv.Scatter(array, label="b")
         RangeToolLink(src, target)
         layout = target + src
         plot = bokeh_renderer.get_plot(layout)
-        tgt_plot = plot.subplots[(0, 0)].subplots['main']
-        src_plot = plot.subplots[(0, 1)].subplots['main']
-        range_tool = src_plot.state.select_one({'type': RangeTool})
-        assert range_tool.x_range == tgt_plot.handles['x_range']
+        tgt_plot = plot.subplots[(0, 0)].subplots["main"]
+        src_plot = plot.subplots[(0, 1)].subplots["main"]
+        range_tool = src_plot.state.select_one({"type": RangeTool})
+        assert range_tool.x_range == tgt_plot.handles["x_range"]
         assert range_tool.y_range is None
 
     def test_range_tool_link_callback_single_axis_overlay_target_image_source(self):
@@ -44,57 +43,55 @@ class TestLinkCallbacks(TestBokehPlot):
         RangeToolLink(source, target)
         layout = target + source
         plot = bokeh_renderer.get_plot(layout)
-        tgt_plot = plot.subplots[(0, 0)].subplots['main']
-        src_plot = plot.subplots[(0, 1)].subplots['main']
-        range_tool = src_plot.state.select_one({'type': RangeTool})
-        assert range_tool.x_range == tgt_plot.handles['x_range']
+        tgt_plot = plot.subplots[(0, 0)].subplots["main"]
+        src_plot = plot.subplots[(0, 1)].subplots["main"]
+        range_tool = src_plot.state.select_one({"type": RangeTool})
+        assert range_tool.x_range == tgt_plot.handles["x_range"]
         assert range_tool.y_range is None
 
     def test_range_tool_link_callback_single_axis_curve_target_image_dmap_source(self):
         # Choosing Image to exert the apply_nodata compositor
         src = hv.DynamicMap(
-            lambda a: hv.Image(a*np.random.random((20, 20)), bounds=[0, 0, 9, 9]),
-            kdims=['a']
-        ).redim.range(a=(0.1,1))
+            lambda a: hv.Image(a * np.random.random((20, 20)), bounds=[0, 0, 9, 9]), kdims=["a"]
+        ).redim.range(a=(0.1, 1))
         target = hv.Curve(np.arange(10))
         RangeToolLink(src, target)
         layout = target + src
         plot = bokeh_renderer.get_plot(layout)
-        tgt_plot = plot.subplots[(0, 0)].subplots['main']
-        src_plot = plot.subplots[(0, 1)].subplots['main']
-        range_tool = src_plot.state.select_one({'type': RangeTool})
-        assert range_tool.x_range == tgt_plot.handles['x_range']
+        tgt_plot = plot.subplots[(0, 0)].subplots["main"]
+        src_plot = plot.subplots[(0, 1)].subplots["main"]
+        range_tool = src_plot.state.select_one({"type": RangeTool})
+        assert range_tool.x_range == tgt_plot.handles["x_range"]
         assert range_tool.y_range is None
 
     def test_range_tool_link_callback_single_axis_overlay_target_image_dmap_source(self):
         # Choosing Image to exert the apply_nodata compositor
         src = hv.DynamicMap(
-            lambda a: hv.Image(a*np.random.random((20, 20)), bounds=[0, 0, 9, 9]),
-            kdims=['a']
-        ).redim.range(a=(0.1,1))
+            lambda a: hv.Image(a * np.random.random((20, 20)), bounds=[0, 0, 9, 9]), kdims=["a"]
+        ).redim.range(a=(0.1, 1))
         data = np.random.rand(50, 50)
         target = hv.Curve(data) * hv.Curve(data)
         RangeToolLink(src, target)
         layout = target + src
         plot = bokeh_renderer.get_plot(layout)
-        tgt_plot = plot.subplots[(0, 0)].subplots['main']
-        src_plot = plot.subplots[(0, 1)].subplots['main']
-        range_tool = src_plot.state.select_one({'type': RangeTool})
-        assert range_tool.x_range == tgt_plot.handles['x_range']
+        tgt_plot = plot.subplots[(0, 0)].subplots["main"]
+        src_plot = plot.subplots[(0, 1)].subplots["main"]
+        range_tool = src_plot.state.select_one({"type": RangeTool})
+        assert range_tool.x_range == tgt_plot.handles["x_range"]
         assert range_tool.y_range is None
 
     def test_range_tool_link_callback_both_axes(self):
         array = np.random.rand(100, 2)
         src = hv.Curve(array)
         target = hv.Scatter(array)
-        RangeToolLink(src, target, axes=['x', 'y'])
+        RangeToolLink(src, target, axes=["x", "y"])
         layout = target + src
         plot = bokeh_renderer.get_plot(layout)
-        tgt_plot = plot.subplots[(0, 0)].subplots['main']
-        src_plot = plot.subplots[(0, 1)].subplots['main']
-        range_tool = src_plot.state.select_one({'type': RangeTool})
-        assert range_tool.x_range == tgt_plot.handles['x_range']
-        assert range_tool.y_range == tgt_plot.handles['y_range']
+        tgt_plot = plot.subplots[(0, 0)].subplots["main"]
+        src_plot = plot.subplots[(0, 1)].subplots["main"]
+        range_tool = src_plot.state.select_one({"type": RangeTool})
+        assert range_tool.x_range == tgt_plot.handles["x_range"]
+        assert range_tool.y_range == tgt_plot.handles["y_range"]
 
     def test_range_tool_link_callback_boundsx_arg(self):
         array = np.random.rand(100, 2)
@@ -102,14 +99,14 @@ class TestLinkCallbacks(TestBokehPlot):
         target = hv.Scatter(array)
         x_start = 0.2
         x_end = 0.3
-        RangeToolLink(src, target, axes=['x', 'y'], boundsx=(x_start, x_end))
+        RangeToolLink(src, target, axes=["x", "y"], boundsx=(x_start, x_end))
         layout = target + src
         plot = bokeh_renderer.get_plot(layout)
-        tgt_plot = plot.subplots[(0, 0)].subplots['main']
-        assert tgt_plot.handles['x_range'].start == x_start
-        assert tgt_plot.handles['x_range'].end == x_end
-        assert tgt_plot.handles['x_range'].reset_start == x_start
-        assert tgt_plot.handles['x_range'].reset_end == x_end
+        tgt_plot = plot.subplots[(0, 0)].subplots["main"]
+        assert tgt_plot.handles["x_range"].start == x_start
+        assert tgt_plot.handles["x_range"].end == x_end
+        assert tgt_plot.handles["x_range"].reset_start == x_start
+        assert tgt_plot.handles["x_range"].reset_end == x_end
 
     def test_range_tool_link_callback_boundsy_arg(self):
         array = np.random.rand(100, 2)
@@ -117,24 +114,24 @@ class TestLinkCallbacks(TestBokehPlot):
         target = hv.Scatter(array)
         y_start = 0.8
         y_end = 0.9
-        RangeToolLink(src, target, axes=['x', 'y'], boundsy=(y_start, y_end))
+        RangeToolLink(src, target, axes=["x", "y"], boundsy=(y_start, y_end))
         layout = target + src
         plot = bokeh_renderer.get_plot(layout)
-        tgt_plot = plot.subplots[(0, 0)].subplots['main']
-        assert tgt_plot.handles['y_range'].start == y_start
-        assert tgt_plot.handles['y_range'].end == y_end
-        assert tgt_plot.handles['y_range'].reset_start == y_start
-        assert tgt_plot.handles['y_range'].reset_end == y_end
+        tgt_plot = plot.subplots[(0, 0)].subplots["main"]
+        assert tgt_plot.handles["y_range"].start == y_start
+        assert tgt_plot.handles["y_range"].end == y_end
+        assert tgt_plot.handles["y_range"].reset_start == y_start
+        assert tgt_plot.handles["y_range"].reset_end == y_end
 
     def test_data_link_dynamicmap_table(self):
-        dmap = hv.DynamicMap(lambda X: hv.Points([(0, X)]), kdims='X').redim.range(X=(-1, 1))
-        table = hv.Table([(-1,)], vdims='y')
+        dmap = hv.DynamicMap(lambda X: hv.Points([(0, X)]), kdims="X").redim.range(X=(-1, 1))
+        table = hv.Table([(-1,)], vdims="y")
         DataLink(dmap, table)
         layout = dmap + table
         plot = bokeh_renderer.get_plot(layout)
-        cds = list(plot.state.select({'type': ColumnDataSource}))
+        cds = list(plot.state.select({"type": ColumnDataSource}))
         assert len(cds) == 1
-        data = {'x': np.array([0]), 'y': np.array([-1])}
+        data = {"x": np.array([0]), "y": np.array([-1])}
         for k, v in cds[0].data.items():
             assert_data_equal(v, data[k])
 
@@ -142,17 +139,24 @@ class TestLinkCallbacks(TestBokehPlot):
         arr1 = np.random.rand(10, 2)
         arr2 = np.random.rand(10, 2)
         polys = hv.Polygons([arr1, arr2])
-        table = hv.Table([('A', 1), ('B', 2)], 'A', 'B')
+        table = hv.Table([("A", 1), ("B", 2)], "A", "B")
         DataLink(polys, table)
         layout = polys + table
         plot = bokeh_renderer.get_plot(layout)
-        cds = list(plot.state.select({'type': ColumnDataSource}))
+        cds = list(plot.state.select({"type": ColumnDataSource}))
         assert len(cds) == 1
-        merged_data = {'xs': [[[np.concatenate([arr1[:, 0], arr1[:1, 0]])]],
-                              [[np.concatenate([arr2[:, 0], arr2[:1, 0]])]]],
-                       'ys': [[[np.concatenate([arr1[:, 1], arr1[:1, 1]])]],
-                              [[np.concatenate([arr2[:, 1], arr2[:1, 1]])]]],
-                       'A': np.array(['A', 'B']), 'B': np.array([1, 2])}
+        merged_data = {
+            "xs": [
+                [[np.concatenate([arr1[:, 0], arr1[:1, 0]])]],
+                [[np.concatenate([arr2[:, 0], arr2[:1, 0]])]],
+            ],
+            "ys": [
+                [[np.concatenate([arr1[:, 1], arr1[:1, 1]])]],
+                [[np.concatenate([arr2[:, 1], arr2[:1, 1]])]],
+            ],
+            "A": np.array(["A", "B"]),
+            "B": np.array([1, 2]),
+        }
         for k, v in cds[0].data.items():
             np.testing.assert_array_equal(v, merged_data[k])
 
@@ -160,27 +164,27 @@ class TestLinkCallbacks(TestBokehPlot):
         arr1 = np.random.rand(10, 2)
         arr2 = np.random.rand(10, 2)
         polys = hv.Polygons([arr1, arr2])
-        table = hv.Table([('A', 1), ('B', 2)], 'A', 'B')
+        table = hv.Table([("A", 1), ("B", 2)], "A", "B")
         DataLink(polys, table)
         layout = polys.clone() + table.clone()
         plot = bokeh_renderer.get_plot(layout)
-        cds = list(plot.state.select({'type': ColumnDataSource}))
+        cds = list(plot.state.select({"type": ColumnDataSource}))
         assert len(cds) == 1
 
     def test_data_link_poly_table_on_unlinked_clone(self):
         arr1 = np.random.rand(10, 2)
         arr2 = np.random.rand(10, 2)
         polys = hv.Polygons([arr1, arr2])
-        table = hv.Table([('A', 1), ('B', 2)], 'A', 'B')
+        table = hv.Table([("A", 1), ("B", 2)], "A", "B")
         DataLink(polys, table)
         layout = polys.clone() + table.clone(link=False)
         plot = bokeh_renderer.get_plot(layout)
-        cds = list(plot.state.select({'type': ColumnDataSource}))
+        cds = list(plot.state.select({"type": ColumnDataSource}))
         assert len(cds) == 2
 
     def test_data_link_mismatch(self):
         polys = hv.Polygons([np.random.rand(10, 2)])
-        table = hv.Table([('A', 1), ('B', 2)], 'A', 'B')
+        table = hv.Table([("A", 1), ("B", 2)], "A", "B")
         DataLink(polys, table)
         layout = polys + table
         msg = "DataLink source data length must match target"
@@ -188,17 +192,17 @@ class TestLinkCallbacks(TestBokehPlot):
             bokeh_renderer.get_plot(layout)
 
     def test_data_link_list(self):
-        path = hv.Path([[(0, 0, 0), (1, 1, 1), (2, 2, 2)]], vdims='color').opts(color='color')
-        table = hv.Table([('A', 1), ('B', 2)], 'A', 'B')
+        path = hv.Path([[(0, 0, 0), (1, 1, 1), (2, 2, 2)]], vdims="color").opts(color="color")
+        table = hv.Table([("A", 1), ("B", 2)], "A", "B")
         DataLink(path, table)
         layout = path + table
         plot = bokeh_renderer.get_plot(layout)
-        path_plot, table_plot = (sp.subplots['main'] for sp in plot.subplots.values())
-        assert path_plot.handles['source'] is table_plot.handles['source']
+        path_plot, table_plot = (sp.subplots["main"] for sp in plot.subplots.values())
+        assert path_plot.handles["source"] is table_plot.handles["source"]
 
     def test_data_link_idempotent(self):
-        table1 = hv.Table([], 'A', 'B')
-        table2 = hv.Table([], 'C', 'D')
+        table1 = hv.Table([], "A", "B")
+        table2 = hv.Table([], "C", "D")
         link1 = DataLink(table1, table2)
         DataLink(table1, table2)
         assert len(Link.registry[table1]) == 1
@@ -207,14 +211,15 @@ class TestLinkCallbacks(TestBokehPlot):
     def test_data_link_nan(self):
         arr = np.random.rand(3, 5)
         arr[0, 0] = np.nan
-        data = {k: v for k, v in zip(['x', 'y', 'z'], arr, strict=True)}
-        a = hv.Scatter(data, 'x', 'z')
-        b = hv.Scatter(data, 'x', 'y')
+        data = {k: v for k, v in zip(["x", "y", "z"], arr, strict=True)}
+        a = hv.Scatter(data, "x", "z")
+        b = hv.Scatter(data, "x", "y")
         DataLink(a, b)
         try:
-            bokeh_renderer.get_plot(a+b)
+            bokeh_renderer.get_plot(a + b)
         except Exception:
             self.fail()
+
 
 def test_range_tool_link_clones_axis():
     x = np.linspace(0, 10, 100)

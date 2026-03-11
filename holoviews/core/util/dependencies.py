@@ -7,6 +7,7 @@ from importlib.util import find_spec
 
 _re_no = re.compile(r"\d+")
 
+
 class VersionError(Exception):
     """Raised when there is a library version mismatch."""
 
@@ -89,7 +90,10 @@ class _LazyModule:
 
     def __bool__(self):
         if self.__bool_use_sys_modules:
-            return bool(self.__module or (_is_installed(self.__module_name) and self.__module_name in sys.modules))
+            return bool(
+                self.__module
+                or (_is_installed(self.__module_name) and self.__module_name in sys.modules)
+            )
         else:
             return bool(self.__module or _is_installed(self.__module_name))
 

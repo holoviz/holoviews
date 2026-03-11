@@ -12,9 +12,7 @@ from .util import finite_range
 
 
 class DataError(ValueError):
-    """DataError is raised when the data cannot be interpreted
-
-    """
+    """DataError is raised when the data cannot be interpreted"""
 
     def __init__(self, msg, interface=None):
         if interface is not None:
@@ -29,6 +27,7 @@ class Accessor:
     def __getitem__(self, index):
         from ...operation.element import method
         from ..data import Dataset
+
         in_method = self.dataset._in_method
         if not in_method:
             self.dataset._in_method = True
@@ -38,12 +37,12 @@ class Accessor:
                 getitem_op = method.instance(
                     input_type=type(self),
                     output_type=type(self.dataset),
-                    method_name='_perform_getitem',
+                    method_name="_perform_getitem",
                     args=[index],
                 )
                 res._pipeline = self.dataset.pipeline.instance(
                     operations=[*self.dataset.pipeline.operations, getitem_op],
-                    output_type=type(self.dataset)
+                    output_type=type(self.dataset),
                 )
         finally:
             if not in_method:
@@ -70,8 +69,7 @@ class iloc(Accessor):
         if len(index) == 1:
             index = (index[0], slice(None))
         elif len(index) > 2:
-            raise IndexError('Tabular index not understood, index '
-                             'must be at most length 2.')
+            raise IndexError("Tabular index not understood, index must be at most length 2.")
 
         rows, cols = index
         if rows is Ellipsis:
@@ -95,9 +93,13 @@ class iloc(Accessor):
             vdims = [d for d in dims if d in vdims]
 
         datatypes = util.unique_iterator([dataset.interface.datatype, *dataset.datatype])
-        datatype = [dt for dt in datatypes if dt in Interface.interfaces and
-                    not Interface.interfaces[dt].gridded]
-        if not datatype: datatype = ['dataframe', 'dictionary']
+        datatype = [
+            dt
+            for dt in datatypes
+            if dt in Interface.interfaces and not Interface.interfaces[dt].gridded
+        ]
+        if not datatype:
+            datatype = ["dataframe", "dictionary"]
         return dataset.clone(data, kdims=kdims, vdims=vdims, datatype=datatype)
 
 
@@ -115,18 +117,17 @@ class ndloc(Accessor):
         ds = dataset
         indices = util.wrap_tuple(indices)
         if not ds.interface.gridded:
-            raise IndexError('Cannot use ndloc on non nd-dimensional datastructure')
+            raise IndexError("Cannot use ndloc on non nd-dimensional datastructure")
         selected = dataset.interface.ndloc(ds, indices)
         if np.isscalar(selected):
             return selected
         params = {}
-        if hasattr(ds, 'bounds'):
-            params['bounds'] = None
+        if hasattr(ds, "bounds"):
+            params["bounds"] = None
         return dataset.clone(selected, datatype=[ds.interface.datatype, *ds.datatype], **params)
 
 
 class Interface(param.Parameterized):
-
     interfaces = {}
 
     datatype = None
@@ -144,9 +145,7 @@ class Interface(param.Parameterized):
 
     @classmethod
     def loaded(cls):
-        """Indicates whether the required dependencies are loaded.
-
-        """
+        """Indicates whether the required dependencies are loaded."""
         return True
 
     @classmethod
@@ -190,55 +189,65 @@ class Interface(param.Parameterized):
         info = dict(interface=cls.__name__)
         url = "https://holoviews.org/user_guide/%s_Datasets.html"
         if cls.multi:
-            datatype = 'a list of tabular'
-            info['url'] = url % 'Tabular'
+            datatype = "a list of tabular"
+            info["url"] = url % "Tabular"
         else:
             if cls.gridded:
-                datatype = 'gridded'
+                datatype = "gridded"
             else:
-                datatype = 'tabular'
-            info['url'] = url % datatype.capitalize()
-        info['datatype'] = datatype
-        return ("{interface} expects {datatype} data, for more information "
-                "on supported datatypes see {url}".format(**info))
-
+                datatype = "tabular"
+            info["url"] = url % datatype.capitalize()
+        info["datatype"] = datatype
+        return (
+            "{interface} expects {datatype} data, for more information "
+            "on supported datatypes see {url}".format(**info)
+        )
 
     @classmethod
     def initialize(cls, eltype, data, kdims, vdims, datatype=None):
         # Process params and dimensions
         if isinstance(data, Element):
             pvals = util.get_param_values(data)
-            kdims = pvals.get('kdims') if kdims is None else kdims
-            vdims = pvals.get('vdims') if vdims is None else vdims
+            kdims = pvals.get("kdims") if kdims is None else kdims
+            vdims = pvals.get("vdims") if vdims is None else vdims
 
         # Process Element data
-        if hasattr(data, 'interface') and isinstance(data.interface, type) and issubclass(data.interface, Interface):
+        if (
+            hasattr(data, "interface")
+            and isinstance(data.interface, type)
+            and issubclass(data.interface, Interface)
+        ):
             if datatype is None:
                 datatype = [dt for dt in data.datatype if dt in eltype.datatype]
                 if not datatype:
                     datatype = eltype.datatype
 
             interface = data.interface
-            if interface.datatype in datatype and interface.datatype in eltype.datatype and interface.named:
+            if (
+                interface.datatype in datatype
+                and interface.datatype in eltype.datatype
+                and interface.named
+            ):
                 data = data.data
-            elif interface.multi and any(cls.interfaces[dt].multi for dt in datatype if dt in cls.interfaces):
-                data = [d for d in data.interface.split(data, None, None, 'columns')]
+            elif interface.multi and any(
+                cls.interfaces[dt].multi for dt in datatype if dt in cls.interfaces
+            ):
+                data = [d for d in data.interface.split(data, None, None, "columns")]
             elif interface.gridded and any(cls.interfaces[dt].gridded for dt in datatype):
                 new_data = []
                 for kd in data.kdims:
                     irregular = interface.irregular(data, kd)
-                    coords = data.dimension_values(kd.name, expanded=irregular,
-                                                   flat=not irregular)
+                    coords = data.dimension_values(kd.name, expanded=irregular, flat=not irregular)
                     new_data.append(coords)
                 for vd in data.vdims:
                     new_data.append(interface.values(data, vd, flat=False, compute=False))
                 data = tuple(new_data)
-            elif 'dataframe' in datatype:
+            elif "dataframe" in datatype:
                 data = data.dframe()
             else:
                 data = tuple(data.columns().values())
         elif isinstance(data, Element):
-            data = tuple(data.dimension_values(d) for d in kdims+vdims)
+            data = tuple(data.dimension_values(d) for d in kdims + vdims)
         elif isinstance(data, util.generator_types):
             data = list(data)
 
@@ -246,8 +255,7 @@ class Interface(param.Parameterized):
             datatype = eltype.datatype
 
         # Set interface priority order
-        prioritized = [cls.interfaces[p] for p in datatype
-                       if p in cls.interfaces]
+        prioritized = [cls.interfaces[p] for p in datatype if p in cls.interfaces]
         head = [intfc for intfc in prioritized if intfc.applies(data)]
         if head:
             # Prioritize interfaces which have matching types
@@ -268,8 +276,10 @@ class Interface(param.Parameterized):
                 if interface in head or len(prioritized) == 1:
                     priority_errors.append((interface, e, True))
         else:
-            error = ("None of the available storage backends were able "
-                     "to support the supplied data format.")
+            error = (
+                "None of the available storage backends were able "
+                "to support the supplied data format."
+            )
             if priority_errors:
                 intfc, e, _ = priority_errors[0]
                 priority_error = f"{intfc.__name__} raised following error:\n\n {e}"
@@ -279,7 +289,6 @@ class Interface(param.Parameterized):
 
         return data, interface, dims, extra_kws
 
-
     @classmethod
     def validate(cls, dataset, vdims=True):
         """
@@ -287,13 +296,15 @@ class Interface(param.Parameterized):
         validate that the Dataset is correctly formed and contains
         all declared dimensions.
         """
-        dims = 'all' if vdims else 'key'
-        not_found = [d for d in dataset.dimensions(dims, label='name')
-                     if d not in dataset.data]
+        dims = "all" if vdims else "key"
+        not_found = [d for d in dataset.dimensions(dims, label="name") if d not in dataset.data]
         if not_found:
-            raise DataError("Supplied data does not contain specified "
-                            "dimensions, the following dimensions were "
-                            f"not found: {not_found!r}", cls)
+            raise DataError(
+                "Supplied data does not contain specified "
+                "dimensions, the following dimensions were "
+                f"not found: {not_found!r}",
+                cls,
+            )
 
     @classmethod
     def persist(cls, dataset):
@@ -428,9 +439,9 @@ class Interface(param.Parameterized):
         np.ndarray
             Array with the nodata value replaced with NaN
         """
-        data = data.astype('float64')
+        data = data.astype("float64")
         mask = data != nodata
-        if hasattr(data, 'where'):
+        if hasattr(data, "where"):
             return data.where(mask, np.nan)
         return np.where(mask, data, np.nan)
 
@@ -466,7 +477,7 @@ class Interface(param.Parameterized):
                     pass
             if isinstance(sel, slice):
                 with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore', r'invalid value encountered')
+                    warnings.filterwarnings("ignore", r"invalid value encountered")
                     if sel.start is not None and not np.isnan(sel.start):
                         mask &= sel.start <= arr
                     if sel.stop is not None and not np.isnan(sel.stop):
@@ -475,7 +486,7 @@ class Interface(param.Parameterized):
                 iter_slcs = []
                 for ik in sel:
                     with warnings.catch_warnings():
-                        warnings.filterwarnings('ignore', r'invalid value encountered')
+                        warnings.filterwarnings("ignore", r"invalid value encountered")
                         iter_slcs.append(arr == ik)
                 mask &= np.logical_or.reduce(iter_slcs)
             elif callable(sel):
@@ -513,8 +524,10 @@ class Interface(param.Parameterized):
 
         """
         selected = list(selection.keys())
-        all_scalar = all((not isinstance(sel, (tuple, slice, set, list))
-                          and not callable(sel)) for sel in selection.values())
+        all_scalar = all(
+            (not isinstance(sel, (tuple, slice, set, list)) and not callable(sel))
+            for sel in selection.values()
+        )
         all_kdims = all(d in selected for d in dataset.kdims)
         return all_scalar and all_kdims
 
@@ -576,15 +589,15 @@ class Interface(param.Parameterized):
             Tuple of (min, max) values
         """
         column = dataset.dimension_values(dimension)
-        if dtype_kind(column) == 'M':
+        if dtype_kind(column) == "M":
             return column.min(), column.max()
         elif len(column) == 0:
             return np.nan, np.nan
         else:
             try:
-                assert dtype_kind(column) not in 'SUO'
+                assert dtype_kind(column) not in "SUO"
                 with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+                    warnings.filterwarnings("ignore", r"All-NaN (slice|axis) encountered")
                     return finite_range(column, np.nanmin(column), np.nanmax(column))
             except (AssertionError, TypeError):
                 column = [v for v in util.python2sort(column) if v is not None]
@@ -598,37 +611,42 @@ class Interface(param.Parameterized):
         Utility function to concatenate an NdMapping of Dataset objects.
         """
         from . import Dataset, default_datatype
+
         new_type = new_type or Dataset
         if isinstance(datasets, NdMapping):
             dimensions = datasets.kdims
             keys, datasets = zip(*datasets.data.items(), strict=True)
         elif isinstance(datasets, list) and all(not isinstance(v, tuple) for v in datasets):
             # Allow concatenating list of datasets (by declaring no dimensions and keys)
-            dimensions, keys = [], [()]*len(datasets)
+            dimensions, keys = [], [()] * len(datasets)
         else:
-            raise DataError('Concatenation only supported for NdMappings '
-                            f'and lists of Datasets, found {type(datasets).__name__}.')
+            raise DataError(
+                "Concatenation only supported for NdMappings "
+                f"and lists of Datasets, found {type(datasets).__name__}."
+            )
 
         template = datasets[0]
         datatype = datatype or template.interface.datatype
 
         # Handle non-general datatypes by casting to general type
-        if datatype == 'array':
+        if datatype == "array":
             datatype = default_datatype
-        elif datatype == 'image':
-            datatype = 'grid'
+        elif datatype == "image":
+            datatype = "grid"
 
         if len(datasets) > 1 and not dimensions and cls.interfaces[datatype].gridded:
-            raise DataError(f'Datasets with {datatype} datatype cannot be concatenated '
-                            'without defining the dimensions to concatenate along. '
-                            'Ensure you pass in a NdMapping (e.g. a HoloMap) '
-                            'of Dataset types, not a list.')
+            raise DataError(
+                f"Datasets with {datatype} datatype cannot be concatenated "
+                "without defining the dimensions to concatenate along. "
+                "Ensure you pass in a NdMapping (e.g. a HoloMap) "
+                "of Dataset types, not a list."
+            )
 
         datasets = template.interface.cast(datasets, datatype)
         template = datasets[0]
         data = list(zip(keys, datasets, strict=None)) if keys else datasets
         concat_data = template.interface.concat(data, dimensions, vdims=template.vdims)
-        return template.clone(concat_data, kdims=dimensions+template.kdims, new_type=new_type)
+        return template.clone(concat_data, kdims=dimensions + template.kdims, new_type=new_type)
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
@@ -746,9 +764,11 @@ class Interface(param.Parameterized):
         """
         if util.is_dask_array(array):
             import dask.array as da
+
             histogram = da.histogram
         elif util.is_cupy_array(array):
             import cupy
+
             histogram = cupy.histogram
         else:
             histogram = np.histogram
@@ -977,8 +997,8 @@ class Interface(param.Parameterized):
             List of list of arrays representing geometry holes
         """
         coords = cls.values(dataset, dataset.kdims[0])
-        splits = np.where(np.isnan(coords.astype('float')))[0]
-        return [[[]]*(len(splits)+1)]
+        splits = np.where(np.isnan(coords.astype("float")))[0]
+        return [[[]] * (len(splits) + 1)]
 
     @classmethod
     def as_dframe(cls, dataset):

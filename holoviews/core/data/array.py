@@ -9,10 +9,9 @@ from .interface import DataError, Interface
 
 
 class ArrayInterface(Interface):
-
     types = (np.ndarray,)
 
-    datatype = 'array'
+    datatype = "array"
 
     named = False
 
@@ -28,27 +27,29 @@ class ArrayInterface(Interface):
             vdims = eltype.vdims
 
         dimensions = [dimension_name(d) for d in kdims + vdims]
-        if ((isinstance(data, dict) or util.is_dataframe(data)) and
-            all(d in data for d in dimensions)):
+        if (isinstance(data, dict) or util.is_dataframe(data)) and all(
+            d in data for d in dimensions
+        ):
             dataset = [d if isinstance(d, np.ndarray) else np.asarray(data[d]) for d in dimensions]
             if len({dtype_kind(d) for d in dataset}) > 1:
-                raise ValueError('ArrayInterface expects all columns to be of the same dtype')
+                raise ValueError("ArrayInterface expects all columns to be of the same dtype")
             data = np.column_stack(dataset)
         elif isinstance(data, dict) and not all(d in data for d in dimensions):
             dict_data = sorted(data.items())
-            dataset = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
-                            for k, v in dict_data), strict=None)
+            dataset = zip(
+                *((util.wrap_tuple(k) + util.wrap_tuple(v)) for k, v in dict_data), strict=None
+            )
             data = np.column_stack(list(dataset))
         elif isinstance(data, tuple):
             data = [d if isinstance(d, np.ndarray) else np.asarray(d) for d in data]
             if len({dtype_kind(d) for d in data}) > 1:
-                raise ValueError('ArrayInterface expects all columns to be of the same dtype')
+                raise ValueError("ArrayInterface expects all columns to be of the same dtype")
             elif cls.expanded(data):
                 data = np.column_stack(data)
             else:
-                raise ValueError('ArrayInterface expects data to be of uniform shape.')
+                raise ValueError("ArrayInterface expects data to be of uniform shape.")
         elif isinstance(data, list) and data == []:
-            data = np.empty((0,len(dimensions)))
+            data = np.empty((0, len(dimensions)))
         elif not isinstance(data, np.ndarray):
             data = np.array([], ndmin=2).T if data is None else list(data)
             try:
@@ -61,30 +62,31 @@ class ArrayInterface(Interface):
         if vdims is None:
             vdims = eltype.vdims
 
-        if data is None or data.ndim > 2 or dtype_kind(data) in ['S', 'U', 'O']:
+        if data is None or data.ndim > 2 or dtype_kind(data) in ["S", "U", "O"]:
             raise ValueError("ArrayInterface interface could not handle input type.")
         elif data.ndim == 1:
-            if eltype._auto_indexable_1d and len(kdims)+len(vdims)>1:
+            if eltype._auto_indexable_1d and len(kdims) + len(vdims) > 1:
                 data = np.column_stack([np.arange(len(data)), data])
             else:
                 data = np.atleast_2d(data).T
 
-        return data, {'kdims':kdims, 'vdims':vdims}, {}
+        return data, {"kdims": kdims, "vdims": vdims}, {}
 
     @classmethod
     def validate(cls, dataset, vdims=True):
         ndims = len(dataset.dimensions()) if vdims else dataset.ndims
         ncols = dataset.data.shape[1] if dataset.data.ndim > 1 else 1
         if ncols < ndims:
-            raise DataError("Supplied data does not match specified "
-                            f"dimensions, expected at least {ndims} columns.", cls)
-
+            raise DataError(
+                "Supplied data does not match specified "
+                f"dimensions, expected at least {ndims} columns.",
+                cls,
+            )
 
     @classmethod
     def isscalar(cls, dataset, dim):
         idx = dataset.get_dimension_index(dim)
         return len(np.unique(dataset.data[:, idx])) == 1
-
 
     @classmethod
     def array(cls, dataset, dimensions):
@@ -94,17 +96,14 @@ class ArrayInterface(Interface):
         else:
             return dataset.data
 
-
     @classmethod
     def dtype(cls, dataset, dimension):
         return dataset.data.dtype
-
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
         data = dataset.data.copy()
         return np.insert(data, dim_pos, values, axis=1)
-
 
     @classmethod
     def sort(cls, dataset, by=None, reverse=False):
@@ -121,7 +120,6 @@ class ArrayInterface(Interface):
         sorted_data = data[sorting]
         return sorted_data[::-1] if reverse else sorted_data
 
-
     @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
         data = dataset.data
@@ -133,13 +131,11 @@ class ArrayInterface(Interface):
             return util.unique_array(values)
         return values
 
-
     @classmethod
     def mask(cls, dataset, mask, mask_value=np.nan):
         masked = np.copy(dataset.data)
         masked[mask] = mask_value
         return masked
-
 
     @classmethod
     def reindex(cls, dataset, kdims=None, vdims=None):
@@ -148,7 +144,6 @@ class ArrayInterface(Interface):
         data = [dataset.dimension_values(d) for d in dims]
         return np.column_stack(data)
 
-
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
         data = dataset.data
@@ -156,8 +151,7 @@ class ArrayInterface(Interface):
         # Get dimension objects, labels, indexes and data
         dimensions = [dataset.get_dimension(d, strict=True) for d in dimensions]
         dim_idxs = [dataset.get_dimension_index(d) for d in dimensions]
-        kdims = [kdim for kdim in dataset.kdims
-                 if kdim not in dimensions]
+        kdims = [kdim for kdim in dataset.kdims if kdim not in dimensions]
         vdims = dataset.vdims
 
         # Find unique entries along supplied dimensions
@@ -172,24 +166,25 @@ class ArrayInterface(Interface):
 
         # Get group
         group_kwargs = {}
-        if group_type != 'raw' and issubclass(group_type, Element):
+        if group_type != "raw" and issubclass(group_type, Element):
             group_kwargs.update(util.get_param_values(dataset))
-            group_kwargs['kdims'] = kdims
+            group_kwargs["kdims"] = kdims
         group_kwargs.update(kwargs)
 
         # Iterate over the unique entries building masks
         # to apply the group selection
         grouped_data = []
-        col_idxs = [dataset.get_dimension_index(d) for d in dataset.dimensions()
-                    if d not in dimensions]
+        col_idxs = [
+            dataset.get_dimension_index(d) for d in dataset.dimensions() if d not in dimensions
+        ]
         for group in unique_indices:
-            mask = np.logical_and.reduce([data[:, d_idx] == group[i]
-                                          for i, d_idx in enumerate(dim_idxs)])
+            mask = np.logical_and.reduce(
+                [data[:, d_idx] == group[i] for i, d_idx in enumerate(dim_idxs)]
+            )
             group_data = data[mask][:, col_idxs]
-            if not group_type == 'raw':
+            if not group_type == "raw":
                 if issubclass(group_type, dict):
-                    group_data = {d.name: group_data[:, i] for i, d in
-                                  enumerate(kdims+vdims)}
+                    group_data = {d.name: group_data[:, i] for i, d in enumerate(kdims + vdims)}
                 else:
                     group_data = group_type(group_data, **group_kwargs)
             grouped_data.append((tuple(group), group_data))
@@ -199,7 +194,6 @@ class ArrayInterface(Interface):
                 return container_type(grouped_data, kdims=dimensions)
         else:
             return container_type(grouped_data)
-
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
@@ -211,7 +205,6 @@ class ArrayInterface(Interface):
             data = data[0, dataset.ndims]
         return data
 
-
     @classmethod
     def sample(cls, dataset, samples=None):
         if samples is None:
@@ -220,13 +213,13 @@ class ArrayInterface(Interface):
         mask = False
         for sample in samples:
             sample_mask = True
-            if np.isscalar(sample): sample = [sample]
+            if np.isscalar(sample):
+                sample = [sample]
             for i, v in enumerate(sample):
-                sample_mask &= data[:, i]==v
+                sample_mask &= data[:, i] == v
             mask |= sample_mask
 
         return data[mask]
-
 
     @classmethod
     def unpack_scalar(cls, dataset, data):
@@ -237,7 +230,6 @@ class ArrayInterface(Interface):
         if data.shape == (1, 1):
             return data[0, 0]
         return data
-
 
     @classmethod
     def assign(cls, dataset, new_data):
@@ -250,12 +242,14 @@ class ArrayInterface(Interface):
         new_cols = [arr for d, arr in new_data.items() if dataset.get_dimension(d) is None]
         return np.column_stack([data, *new_cols])
 
-
     @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
         reindexed = dataset.reindex(dimensions)
-        grouped = (cls.groupby(reindexed, dimensions, list, 'raw')
-                   if len(dimensions) else [((), reindexed.data)])
+        grouped = (
+            cls.groupby(reindexed, dimensions, list, "raw")
+            if len(dimensions)
+            else [((), reindexed.data)]
+        )
 
         rows = []
         for k, group in grouped:
@@ -265,7 +259,6 @@ class ArrayInterface(Interface):
                 reduced = function(group, axis=0, **kwargs)
             rows.append(np.concatenate([k, (reduced,) if np.isscalar(reduced) else reduced]))
         return np.atleast_2d(rows), []
-
 
     @classmethod
     def iloc(cls, dataset, index):
@@ -285,5 +278,6 @@ class ArrayInterface(Interface):
         if data.ndim == 1:
             return np.atleast_2d(data).T
         return data
+
 
 Interface.register(ArrayInterface)

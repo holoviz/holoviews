@@ -99,6 +99,7 @@ def arraylike_types():
 
     yield nw.Series
 
+
 @gen_types
 def masked_types():
     if np:

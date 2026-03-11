@@ -40,7 +40,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
 
     @property
     def opts(self):
-        return Opts(self, mode='holomap')
+        return Opts(self, mode="holomap")
 
     def overlay(self, dimensions=None, **kwargs):
         """Group by supplied dimension(s) and overlay each group
@@ -65,7 +65,6 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
             dims = [d for d in self.kdims if d not in dimensions]
             return self.groupby(dims, group_type=NdOverlay, **kwargs)
 
-
     def grid(self, dimensions=None, **kwargs):
         """Group by supplied dimension(s) and lay out groups in grid
 
@@ -87,7 +86,6 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
                 return GridSpace(self, **kwargs).reindex(dimensions)
         return self.groupby(dimensions, container_type=GridSpace, **kwargs)
 
-
     def layout(self, dimensions=None, **kwargs):
         """Group by supplied dimension(s) and lay out groups
 
@@ -108,7 +106,6 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
             with item_check(False):
                 return NdLayout(self, **kwargs).reindex(dimensions)
         return self.groupby(dimensions, container_type=NdLayout, **kwargs)
-
 
     def options(self, *args, **kwargs):
         """Applies simplified option definition returning a new object
@@ -150,14 +147,11 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         -------
         Returns the cloned object with the options applied
         """
-        data = dict([(k, v.options(*args, **kwargs))
-                             for k, v in self.data.items()])
+        data = dict([(k, v.options(*args, **kwargs)) for k, v in self.data.items()])
         return self.clone(data)
 
     def _split_overlays(self):
-        """Splits overlays inside the HoloMap into list of HoloMaps
-
-        """
+        """Splits overlays inside the HoloMap into list of HoloMaps"""
         if not issubclass(self.type, CompositeOverlay):
             return None, self.clone()
 
@@ -180,8 +174,10 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         the dimension labels.
 
         """
-        return [tuple(zip([d.name for d in self.kdims], [k] if self.ndims == 1 else k, strict=None))
-                for k in self.keys()]
+        return [
+            tuple(zip([d.name for d in self.kdims], [k] if self.ndims == 1 else k, strict=None))
+            for k in self.keys()
+        ]
 
     def _dynamic_mul(self, dimensions, other, keys):
         """Implements dynamic version of overlaying operation overlaying
@@ -192,8 +188,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         # If either is a HoloMap compute Dimension values
         if not isinstance(self, DynamicMap) or not isinstance(other, DynamicMap):
             keys = sorted((d, v) for k in keys for d, v in k)
-            grouped =  {g: [v for _, v in group]
-                             for g, group in groupby(keys, lambda x: x[0])}
+            grouped = {g: [v for _, v in group] for g, group in groupby(keys, lambda x: x[0])}
             dimensions = [d.clone(values=grouped[d.name]) for d in dimensions]
             map_obj = None
 
@@ -202,7 +197,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         if isinstance(self, DynamicMap) and isinstance(other, DynamicMap):
             self_streams = util.dimensioned_streams(self)
             other_streams = util.dimensioned_streams(other)
-            streams = list(util.unique_iterator(self_streams+other_streams))
+            streams = list(util.unique_iterator(self_streams + other_streams))
         else:
             streams = map_obj.streams
 
@@ -220,16 +215,15 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
             except KeyError:
                 pass
             return Overlay(layers)
+
         callback = Callable(dynamic_mul, inputs=[self, other])
         callback._is_overlay = True
         if map_obj:
-            return map_obj.clone(callback=callback, shared_data=False,
-                                 kdims=dimensions, streams=streams)
+            return map_obj.clone(
+                callback=callback, shared_data=False, kdims=dimensions, streams=streams
+            )
         else:
-            return DynamicMap(callback=callback, kdims=dimensions,
-                              streams=streams)
-
-
+            return DynamicMap(callback=callback, kdims=dimensions, streams=streams)
 
     def __mul__(self, other, reverse=False):
         """Overlays items in the object with another object
@@ -255,16 +249,16 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
             dims = [other.kdims, self.kdims] if self_in_other else [self.kdims, other.kdims]
             dimensions = util.merge_dimensions(dims)
 
-            if self_in_other and other_in_self: # superset of each other
+            if self_in_other and other_in_self:  # superset of each other
                 keys = self._dimension_keys() + other._dimension_keys()
                 super_keys = util.unique_iterator(keys)
-            elif self_in_other: # self is superset
+            elif self_in_other:  # self is superset
                 dimensions = other.kdims
                 super_keys = other._dimension_keys()
-            elif other_in_self: # self is superset
+            elif other_in_self:  # self is superset
                 super_keys = self._dimension_keys()
-            else: # neither is superset
-                raise Exception('One set of keys needs to be a strict subset of the other.')
+            else:  # neither is superset
+                raise Exception("One set of keys needs to be a strict subset of the other.")
 
             if isinstance(self, DynamicMap) or isinstance(other, DynamicMap):
                 return self._dynamic_mul(dimensions, other, super_keys)
@@ -272,12 +266,26 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
             items = []
             for dim_keys in super_keys:
                 # Generate keys for both subset and superset and sort them by the dimension index.
-                self_key = tuple(k for p, k in sorted(
-                    [(self.get_dimension_index(dim), v) for dim, v in dim_keys
-                     if dim in self.kdims]))
-                other_key = tuple(k for p, k in sorted(
-                    [(other.get_dimension_index(dim), v) for dim, v in dim_keys
-                     if dim in other.kdims]))
+                self_key = tuple(
+                    k
+                    for p, k in sorted(
+                        [
+                            (self.get_dimension_index(dim), v)
+                            for dim, v in dim_keys
+                            if dim in self.kdims
+                        ]
+                    )
+                )
+                other_key = tuple(
+                    k
+                    for p, k in sorted(
+                        [
+                            (other.get_dimension_index(dim), v)
+                            for dim, v in dim_keys
+                            if dim in other.kdims
+                        ]
+                    )
+                )
                 new_key = self_key if other_in_self else other_key
                 # Append SheetOverlay of combined items
                 if (self_key in self) and (other_key in other):
@@ -293,33 +301,32 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
             return self.clone(items, kdims=dimensions, label=self._label, group=self._group)
         elif isinstance(other, self.data_type) and not isinstance(other, Layout):
             if isinstance(self, DynamicMap):
+
                 def dynamic_mul(*args, **kwargs):
                     element = self[args]
                     if reverse:
                         return other * element
                     else:
                         return element * other
+
                 callback = Callable(dynamic_mul, inputs=[self, other])
                 callback._is_overlay = True
-                return self.clone(shared_data=False, callback=callback,
-                                  streams=util.dimensioned_streams(self))
-            items = [(k, other * v) if reverse else (k, v * other)
-                     for (k, v) in self.data.items()]
+                return self.clone(
+                    shared_data=False, callback=callback, streams=util.dimensioned_streams(self)
+                )
+            items = [(k, other * v) if reverse else (k, v * other) for (k, v) in self.data.items()]
             return self.clone(items, label=self._label, group=self._group)
         else:
             return NotImplemented
 
     def __lshift__(self, other):
-        """Adjoin another object to this one returning an AdjointLayout
-
-        """
+        """Adjoin another object to this one returning an AdjointLayout"""
         if isinstance(other, (ViewableElement, UniformNdMapping, Empty)):
             return AdjointLayout([self, other])
         elif isinstance(other, AdjointLayout):
             return AdjointLayout([*other.data, self])
         else:
-            raise TypeError(f'Cannot append {type(other).__name__} to a AdjointLayout')
-
+            raise TypeError(f"Cannot append {type(other).__name__} to a AdjointLayout")
 
     def collate(self, merge_type=None, drop=None, drop_constant=False):
         """Collate allows reordering nested containers
@@ -353,9 +360,9 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         if drop is None:
             drop = []
         from .element import Collator
-        merge_type=merge_type if merge_type else self.__class__
-        return Collator(self, merge_type=merge_type, drop=drop,
-                        drop_constant=drop_constant)()
+
+        merge_type = merge_type if merge_type else self.__class__
+        return Collator(self, merge_type=merge_type, drop=drop, drop_constant=drop_constant)()
 
     def decollate(self):
         """Packs HoloMap of DynamicMaps into a single DynamicMap that returns an
@@ -375,6 +382,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         DynamicMap that returns an HoloMap
         """
         from .decollate import decollate
+
         return decollate(self)
 
     def relabel(self, label=None, group=None, depth=1):
@@ -399,8 +407,9 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         """
         return super().relabel(label=label, group=group, depth=depth)
 
-    def hist(self, dimension=None, num_bins=20, bin_range=None,
-             adjoin=True, individually=True, **kwargs):
+    def hist(
+        self, dimension=None, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs
+    ):
         """Computes and adjoins histogram along specified dimension(s).
 
         Defaults to first value dimension if present otherwise falls
@@ -431,17 +440,22 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         else:
             if dimension is None:
                 raise Exception("Please supply the dimension to compute a histogram for.")
-            map_range = self.range(kwargs['dimension'])
+            map_range = self.range(kwargs["dimension"])
 
         bin_range = map_range if bin_range is None else bin_range
-        style_prefix = 'Custom[<' + self.name + '>]_'
-        if issubclass(self.type, (NdOverlay, Overlay)) and 'index' not in kwargs:
-            kwargs['index'] = 0
+        style_prefix = "Custom[<" + self.name + ">]_"
+        if issubclass(self.type, (NdOverlay, Overlay)) and "index" not in kwargs:
+            kwargs["index"] = 0
 
         for k, v in self.data.items():
-            hists = v.hist(adjoin=False, dimension=dimension,
-                           bin_range=bin_range, num_bins=num_bins,
-                           style_prefix=style_prefix, **kwargs)
+            hists = v.hist(
+                adjoin=False,
+                dimension=dimension,
+                bin_range=bin_range,
+                num_bins=num_bins,
+                style_prefix=style_prefix,
+                **kwargs,
+            )
             if isinstance(hists, Layout):
                 for i, hist in enumerate(hists):
                     histmaps[i][k] = hist
@@ -451,9 +465,9 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         if adjoin:
             layout = self
             for hist in histmaps:
-                layout = (layout << hist)
+                layout = layout << hist
             if issubclass(self.type, (NdOverlay, Overlay)):
-                layout.main_layer = kwargs['index']
+                layout.main_layer = kwargs["index"]
             return layout
         elif len(histmaps) > 1:
             return Layout(histmaps)
@@ -494,44 +508,68 @@ class Callable(param.Parameterized):
 
     """
 
-    callable = param.Callable(default=None, constant=True, allow_refs=False, doc="""
-         The callable function being wrapped.""")
+    callable = param.Callable(
+        default=None,
+        constant=True,
+        allow_refs=False,
+        doc="The callable function being wrapped.",
+    )
 
-    inputs = param.List(default=[], constant=True, doc="""
-         The list of inputs the callable function is wrapping. Used
-         to allow deep access to streams in chained Callables.""")
+    inputs = param.List(
+        default=[],
+        constant=True,
+        doc="""
+        The list of inputs the callable function is wrapping. Used
+        to allow deep access to streams in chained Callables.""",
+    )
 
-    operation_kwargs = param.Dict(default={}, constant=True, doc="""
+    operation_kwargs = param.Dict(
+        default={},
+        constant=True,
+        doc="""
         Potential dynamic keyword arguments associated with the
-        operation.""")
+        operation.""",
+    )
 
-    link_inputs = param.Boolean(default=True, doc="""
-         If the Callable wraps around other DynamicMaps in its inputs,
-         determines whether linked streams attached to the inputs are
-         transferred to the objects returned by the Callable.
+    link_inputs = param.Boolean(
+        default=True,
+        doc="""
+        If the Callable wraps around other DynamicMaps in its inputs,
+        determines whether linked streams attached to the inputs are
+        transferred to the objects returned by the Callable.
 
-         For example the Callable wraps a DynamicMap with an RangeXY
-         stream, this switch determines whether the corresponding
-         visualization should update this stream with range changes
-         originating from the newly generated axes.""")
+        For example the Callable wraps a DynamicMap with an RangeXY
+        stream, this switch determines whether the corresponding
+        visualization should update this stream with range changes
+        originating from the newly generated axes.""",
+    )
 
-    memoize = param.Boolean(default=True, doc="""
-         Whether the return value of the callable should be memoized
-         based on the call arguments and any streams attached to the
-         inputs.""")
+    memoize = param.Boolean(
+        default=True,
+        doc="""
+        Whether the return value of the callable should be memoized
+        based on the call arguments and any streams attached to the
+        inputs.""",
+    )
 
-    operation = param.Callable(default=None, doc="""
-         The function being applied by the Callable. May be used
-         to record the transform(s) being applied inside the
-         callback function.""")
+    operation = param.Callable(
+        default=None,
+        doc="""
+        The function being applied by the Callable. May be used
+        to record the transform(s) being applied inside the
+        callback function.""",
+    )
 
-    stream_mapping = param.Dict(default={}, constant=True, doc="""
-         Defines how streams should be mapped to objects returned by
-         the Callable, e.g. when it returns a Layout.""")
+    stream_mapping = param.Dict(
+        default={},
+        constant=True,
+        doc="""
+        Defines how streams should be mapped to objects returned by
+        the Callable, e.g. when it returns a Layout.""",
+    )
 
     def __init__(self, callable, **params):
-        super().__init__(callable=callable,
-                         **dict(params, name=util.callable_name(callable)))
+        super().__init__(callable=callable, **dict(params, name=util.callable_name(callable)))
         self._memoized = {}
         self._is_overlay = False
         self.args = None
@@ -544,12 +582,9 @@ class Callable(param.Parameterized):
 
     @property
     def noargs(self):
-        """Returns True if the callable takes no arguments
-
-        """
+        """Returns True if the callable takes no arguments"""
         noargs = util.ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
         return self.argspec == noargs
-
 
     def clone(self, callable=None, **overrides):
         """Clones the Callable optionally with new settings
@@ -565,12 +600,10 @@ class Callable(param.Parameterized):
         -------
         Cloned Callable object
         """
-        old = {k: v for k, v in self.param.values().items()
-               if k not in ['callable', 'name']}
+        old = {k: v for k, v in self.param.values().items() if k not in ["callable", "name"]}
         params = dict(old, **overrides)
         callable = self.callable if callable is None else callable
         return self.__class__(callable, **params)
-
 
     def __call__(self, *args, **kwargs):
         """Calls the callable function with supplied args and kwargs.
@@ -590,7 +623,7 @@ class Callable(param.Parameterized):
         Return value of the wrapped callable function
         """
         # Nothing to do for callbacks that accept no arguments
-        kwarg_hash = kwargs.pop('_memoization_hash_', ())
+        kwarg_hash = kwargs.pop("_memoization_hash_", ())
         (self.args, self.kwargs) = (args, kwargs)
         if isinstance(self.callable, param.rx):
             return self.callable.rx.value
@@ -599,9 +632,12 @@ class Callable(param.Parameterized):
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
         streams = []
         for stream in [s for i in inputs for s in get_nested_streams(i)]:
-            if stream not in streams: streams.append(stream)
+            if stream not in streams:
+                streams.append(stream)
 
-        memoize = self._stream_memoization and not any(s.transient and s._triggering for s in streams)
+        memoize = self._stream_memoization and not any(
+            s.transient and s._triggering for s in streams
+        )
         values = tuple(tuple(sorted(s.hashkey.items())) for s in streams)
         key = args + kwarg_hash + values
 
@@ -612,15 +648,20 @@ class Callable(param.Parameterized):
         if self.argspec.varargs is not None:
             # Missing information on positional argument names, cannot promote to keywords
             pass
-        elif len(args) != 0: # Turn positional arguments into keyword arguments
-            pos_kwargs = {k:v for k,v in zip(self.argspec.args, args, strict=None)}
-            ignored = range(len(self.argspec.args),len(args))
+        elif len(args) != 0:  # Turn positional arguments into keyword arguments
+            pos_kwargs = {k: v for k, v in zip(self.argspec.args, args, strict=None)}
+            ignored = range(len(self.argspec.args), len(args))
             if ignored:
-                self.param.warning('Ignoring extra positional argument {}'.format(', '.join(f'{i}' for i in ignored)))
+                self.param.warning(
+                    "Ignoring extra positional argument {}".format(
+                        ", ".join(f"{i}" for i in ignored)
+                    )
+                )
             clashes = set(pos_kwargs.keys()) & set(kwargs.keys())
             if clashes:
                 self.param.warning(
-                    f'Positional arguments {list(clashes)!r} overridden by keywords')
+                    f"Positional arguments {list(clashes)!r} overridden by keywords"
+                )
             args, kwargs = (), dict(pos_kwargs, **kwargs)
 
         try:
@@ -630,18 +671,16 @@ class Callable(param.Parameterized):
             # invalid keys on DynamicMap and should not warn
             raise
         except Exception as e:
-            posstr = ', '.join([f'{el!r}' for el in self.args]) if self.args else ''
-            kwstr = ', '.join(f'{k}={v!r}' for k,v in self.kwargs.items())
-            argstr = ', '.join([el for el in [posstr, kwstr] if el])
-            message = ("Callable raised \"{e}\".\n"
-                       "Invoked as {name}({argstr})")
+            posstr = ", ".join([f"{el!r}" for el in self.args]) if self.args else ""
+            kwstr = ", ".join(f"{k}={v!r}" for k, v in self.kwargs.items())
+            argstr = ", ".join([el for el in [posstr, kwstr] if el])
+            message = 'Callable raised "{e}".\nInvoked as {name}({argstr})'
             self.param.warning(message.format(name=self.name, argstr=argstr, e=repr(e)))
             raise
 
         if hashed_key is not None:
-            self._memoized = {hashed_key : ret}
+            self._memoized = {hashed_key: ret}
         return ret
-
 
 
 class Generator(Callable):
@@ -650,9 +689,12 @@ class Generator(Callable):
 
     """
 
-    callable = param.ClassSelector(default=None, class_ = types.GeneratorType,
-                                   constant=True, doc="""
-         The generator that is wrapped by this Generator.""")
+    callable = param.ClassSelector(
+        default=None,
+        class_=types.GeneratorType,
+        constant=True,
+        doc="The generator that is wrapped by this Generator.",
+    )
 
     @property
     def argspec(self):
@@ -664,7 +706,7 @@ class Generator(Callable):
         except StopIteration:
             raise
         except Exception:
-            msg = 'Generator {name} raised the following exception:'
+            msg = "Generator {name} raised the following exception:"
             self.param.warning(msg.format(name=self.name))
             raise
 
@@ -720,7 +762,6 @@ def dynamicmap_memoization(callable_obj, streams):
         callable_obj._stream_memoization = memoization_state
 
 
-
 class periodic:
     """Implements the utility of the same name on DynamicMap.
 
@@ -757,9 +798,12 @@ class periodic:
             Whether the periodic callbacks should be blocking
         """
         if self.instance is not None and not self.instance.completed:
-            raise RuntimeError('Periodic process already running. '
-                               'Wait until it completes or call '
-                               'stop() before running a new periodic process')
+            raise RuntimeError(
+                "Periodic process already running. "
+                "Wait until it completes or call "
+                "stop() before running a new periodic process"
+            )
+
         def inner(i):
             kwargs = {} if param_fn is None else param_fn(i)
             if kwargs:
@@ -767,20 +811,16 @@ class periodic:
             else:
                 Stream.trigger(self.dmap.streams)
 
-        instance = self._periodic_util(period, count, inner,
-                                       timeout=timeout, block=block)
+        instance = self._periodic_util(period, count, inner, timeout=timeout, block=block)
         instance.start()
         self.instance = instance
 
     def stop(self):
-        """Stop the periodic process.
-
-        """
+        """Stop the periodic process."""
         self.instance.stop()
 
     def __str__(self):
         return "<holoviews.core.spaces.periodic method>"
-
 
 
 class DynamicMap(HoloMap):
@@ -792,52 +832,73 @@ class DynamicMap(HoloMap):
     """
 
     # Declare that callback is a positional parameter (used in clone)
-    __pos_params = ['callback']
+    __pos_params = ["callback"]
 
-    kdims = param.List(default=[], constant=True, doc="""
+    kdims = param.List(
+        default=[],
+        constant=True,
+        doc="""
         The key dimensions of a DynamicMap map to the arguments of the
-        callback. This mapping can be by position or by name.""")
+        callback. This mapping can be by position or by name.""",
+    )
 
-    callback = param.ClassSelector(class_=Callable, constant=True, doc="""
+    callback = param.ClassSelector(
+        class_=Callable,
+        constant=True,
+        doc="""
         The callable used to generate the elements. The arguments to the
         callable includes any number of declared key dimensions as well
         as any number of stream parameters defined on the input streams.
 
         If the callable is an instance of Callable it will be used
-        directly, otherwise it will be automatically wrapped in one.""")
+        directly, otherwise it will be automatically wrapped in one.""",
+    )
 
-    streams = param.List(default=[], constant=True, doc="""
-       List of Stream instances to associate with the DynamicMap. The
-       set of parameter values across these streams will be supplied as
-       keyword arguments to the callback when the events are received,
-       updating the streams. Can also be supplied as a dictionary that
-       maps parameters or panel widgets to callback argument names that
-       will then be automatically converted to the equivalent list
-       format.""")
+    streams = param.List(
+        default=[],
+        constant=True,
+        doc="""
+        List of Stream instances to associate with the DynamicMap. The
+        set of parameter values across these streams will be supplied as
+        keyword arguments to the callback when the events are received,
+        updating the streams. Can also be supplied as a dictionary that
+        maps parameters or panel widgets to callback argument names that
+        will then be automatically converted to the equivalent list
+        format.""",
+    )
 
-    cache_size = param.Integer(default=500, bounds=(1, None), doc="""
-       The number of entries to cache for fast access. This is an LRU
-       cache where the least recently used item is overwritten once
-       the cache is full.""")
+    cache_size = param.Integer(
+        default=500,
+        bounds=(1, None),
+        doc="""
+        The number of entries to cache for fast access. This is an LRU
+        cache where the least recently used item is overwritten once
+        the cache is full.""",
+    )
 
-    positional_stream_args = param.Boolean(default=False, constant=True, doc="""
-       If False, stream parameters are passed to the callback as keyword arguments.
-       If True, stream parameters are passed to callback as positional arguments.
-       Each positional argument is a dict containing the contents of a stream.
-       The positional stream arguments follow the positional arguments for each kdim,
-       and they are ordered to match the order of the DynamicMap's streams list.
-    """)
+    positional_stream_args = param.Boolean(
+        default=False,
+        constant=True,
+        doc="""
+        If False, stream parameters are passed to the callback as keyword arguments.
+        If True, stream parameters are passed to callback as positional arguments.
+        Each positional argument is a dict containing the contents of a stream.
+        The positional stream arguments follow the positional arguments for each kdim,
+        and they are ordered to match the order of the DynamicMap's streams list.""",
+    )
 
     def __init__(self, callback, initial_items=None, streams=None, **params):
-        streams = (streams or [])
+        streams = streams or []
         if isinstance(streams, dict):
             streams = streams_list_from_dict(streams)
 
         # If callback is a parameterized method and watch is disabled add as stream
         if param.parameterized.resolve_ref(callback):
             streams.append(callback)
-        elif (params.get('watch', True) and (util.is_param_method(callback, has_deps=True) or
-            (isinstance(callback, FunctionType) and hasattr(callback, '_dinfo')))):
+        elif params.get("watch", True) and (
+            util.is_param_method(callback, has_deps=True)
+            or (isinstance(callback, FunctionType) and hasattr(callback, "_dinfo"))
+        ):
             streams.append(callback)
 
         if isinstance(callback, types.GeneratorType):
@@ -847,21 +908,25 @@ class DynamicMap(HoloMap):
 
         valid, invalid = Stream._process_streams(streams)
         if invalid:
-            msg = ('The supplied streams list contains objects that '
-                   'are not Stream instances: {objs}')
-            raise TypeError(msg.format(objs = ', '.join(f'{el!r}' for el in invalid)))
+            msg = (
+                "The supplied streams list contains objects that are not Stream instances: {objs}"
+            )
+            raise TypeError(msg.format(objs=", ".join(f"{el!r}" for el in invalid)))
 
         super().__init__(initial_items, callback=callback, streams=valid, **params)
 
         if self.callback.noargs:
-            prefix = 'DynamicMaps using generators (or callables without arguments)'
+            prefix = "DynamicMaps using generators (or callables without arguments)"
             if self.kdims:
-                raise Exception(prefix + ' must be declared without key dimensions')
-            if len(self.streams)> 1:
-                raise Exception(prefix + ' must have either streams=[] or a single, '
-                                + 'stream instance without any stream parameters')
+                raise Exception(prefix + " must be declared without key dimensions")
+            if len(self.streams) > 1:
+                raise Exception(
+                    prefix
+                    + " must have either streams=[] or a single, "
+                    + "stream instance without any stream parameters"
+                )
             if self._stream_parameters() != []:
-                raise Exception(prefix + ' cannot accept any stream parameters')
+                raise Exception(prefix + " cannot accept any stream parameters")
 
         if self.positional_stream_args:
             self._posarg_keys = None
@@ -885,11 +950,11 @@ class DynamicMap(HoloMap):
 
     @property
     def opts(self):
-        return Opts(self, mode='dynamicmap')
+        return Opts(self, mode="dynamicmap")
 
     @property
     def redim(self):
-        return Redim(self, mode='dynamic')
+        return Redim(self, mode="dynamic")
 
     @property
     def unbounded(self):
@@ -912,15 +977,11 @@ class DynamicMap(HoloMap):
 
     @property
     def current_key(self):
-        """Returns the current key value.
-
-        """
+        """Returns the current key value."""
         return self._current_key
 
     def _stream_parameters(self):
-        return util.stream_parameters(
-            self.streams, no_duplicates=not self.positional_stream_args
-        )
+        return util.stream_parameters(self.streams, no_duplicates=not self.positional_stream_args)
 
     def _initial_key(self):
         """Construct an initial key for based on the lower range bounds or
@@ -945,20 +1006,22 @@ class DynamicMap(HoloMap):
             else:
                 undefined.append(kdim)
         if undefined:
-            msg = ('Dimension(s) {undefined_dims} do not specify range or values needed '
-                   'to generate initial key')
-            undefined_dims = ', '.join(f'{str(dim)!r}' for dim in undefined)
+            msg = (
+                "Dimension(s) {undefined_dims} do not specify range or values needed "
+                "to generate initial key"
+            )
+            undefined_dims = ", ".join(f"{str(dim)!r}" for dim in undefined)
             raise KeyError(msg.format(undefined_dims=undefined_dims))
 
         return tuple(key)
-
 
     def _validate_key(self, key):
         """Make sure the supplied key values are within the bounds
         specified by the corresponding dimension range and soft_range.
 
         """
-        if key == () and len(self.kdims) == 0: return ()
+        if key == () and len(self.kdims) == 0:
+            return ()
         key = util.wrap_tuple(key)
         assert len(key) == len(self.kdims)
         for ind, val in enumerate(key):
@@ -984,25 +1047,24 @@ class DynamicMap(HoloMap):
         """
         if self.callback.noargs and self.streams == []:
             self.param.warning(
-                'No streams declared. To update a DynamicMaps using '
-                'generators (or callables without arguments) use streams=[Next()]')
+                "No streams declared. To update a DynamicMaps using "
+                "generators (or callables without arguments) use streams=[Next()]"
+            )
             return
         if self.streams == []:
-            self.param.warning('No streams on DynamicMap, calling event '
-                               'will have no effect')
+            self.param.warning("No streams on DynamicMap, calling event will have no effect")
             return
 
         stream_params = set(self._stream_parameters())
         invalid = [k for k in kwargs.keys() if k not in stream_params]
         if invalid:
-            msg = 'Key(s) {invalid} do not correspond to stream parameters'
-            raise KeyError(msg.format(invalid = ', '.join(f'{i!r}' for i in invalid)))
+            msg = "Key(s) {invalid} do not correspond to stream parameters"
+            raise KeyError(msg.format(invalid=", ".join(f"{i!r}" for i in invalid)))
 
         streams = []
         for stream in self.streams:
             contents = stream.contents
-            applicable_kws = {k:v for k,v in kwargs.items()
-                              if k in set(contents.keys())}
+            applicable_kws = {k: v for k, v in kwargs.items() if k in set(contents.keys())}
             if not applicable_kws and contents:
                 continue
             streams.append(stream)
@@ -1011,30 +1073,24 @@ class DynamicMap(HoloMap):
 
         Stream.trigger(streams)
 
-
     def _style(self, retval):
-        """Applies custom option tree to values return by the callback.
-
-        """
+        """Applies custom option tree to values return by the callback."""
         from ..util import opts
+
         if self.id not in Store.custom_options():
             return retval
         spec = StoreOptions.tree_to_dict(Store.custom_options()[self.id])
         return opts.apply_groups(retval, options=spec)
 
-
     def _execute_callback(self, *args):
-        """Executes the callback with the appropriate args and kwargs
-
-        """
-        self._validate_key(args)      # Validate input key
+        """Executes the callback with the appropriate args and kwargs"""
+        self._validate_key(args)  # Validate input key
 
         # Additional validation needed to ensure kwargs don't clash
         kdims = [kdim.name for kdim in self.kdims]
         kwarg_items = [s.contents.items() for s in self.streams]
-        hash_items = tuple(tuple(sorted(s.hashkey.items())) for s in self.streams)+args
-        flattened = [(k,v) for kws in kwarg_items for (k,v) in kws
-                     if k not in kdims]
+        hash_items = tuple(tuple(sorted(s.hashkey.items())) for s in self.streams) + args
+        flattened = [(k, v) for kws in kwarg_items for (k, v) in kws if k not in kdims]
 
         if self.positional_stream_args:
             kwargs = {}
@@ -1045,12 +1101,11 @@ class DynamicMap(HoloMap):
         else:
             kwargs = dict(flattened)
         if not isinstance(self.callback, Generator):
-            kwargs['_memoization_hash_'] = hash_items
+            kwargs["_memoization_hash_"] = hash_items
 
         with dynamicmap_memoization(self.callback, self.streams):
             retval = self.callback(*args, **kwargs)
         return self._style(retval)
-
 
     def options(self, *args, **kwargs):
         """Applies simplified option definition returning a new object.
@@ -1093,13 +1148,11 @@ class DynamicMap(HoloMap):
         -------
         Returns the cloned object with the options applied
         """
-        if 'clone' not in kwargs:
-            kwargs['clone'] = True
+        if "clone" not in kwargs:
+            kwargs["clone"] = True
         return self.opts(*args, **kwargs)
 
-
-    def clone(self, data=None, shared_data=True, new_type=None, link=True,
-              *args, **overrides):
+    def clone(self, data=None, shared_data=True, new_type=None, link=True, *args, **overrides):
         """Clones the object, overriding data and parameters.
 
         Parameters
@@ -1123,35 +1176,31 @@ class DynamicMap(HoloMap):
         -------
         Cloned object
         """
-        callback = overrides.pop('callback', self.callback)
+        callback = overrides.pop("callback", self.callback)
         if data is None and shared_data:
             data = self.data
             if link and callback is self.callback:
-                overrides['plot_id'] = self._plot_id
+                overrides["plot_id"] = self._plot_id
         clone = super(UniformNdMapping, self).clone(
-            callback, shared_data, new_type, link,
-            *(data, *args), **overrides)
+            callback, shared_data, new_type, link, *(data, *args), **overrides
+        )
 
         # Ensure the clone references this object to ensure
         # stream sources are inherited
         if clone.callback is self.callback:
             from ..operation import function
+
             with util.disable_constant(clone):
                 op = function.instance(fn=lambda x, **kwargs: x)
                 clone.callback = clone.callback.clone(
-                    inputs=[self], link_inputs=link, operation=op,
-                    operation_kwargs={}
+                    inputs=[self], link_inputs=link, operation=op, operation_kwargs={}
                 )
         return clone
 
-
     def reset(self):
-        """Clear the DynamicMap cache
-
-        """
+        """Clear the DynamicMap cache"""
         self.data = {}
         return self
-
 
     def _cross_product(self, tuple_key, cache, data_slice):
         """Returns a new DynamicMap if the key (tuple form) expresses a
@@ -1169,11 +1218,10 @@ class DynamicMap(HoloMap):
         """
         if not any(isinstance(el, (list, set)) for el in tuple_key):
             return None
-        if len(tuple_key)==1:
+        if len(tuple_key) == 1:
             product = tuple_key[0]
         else:
-            args = [set(el) if isinstance(el, (list,set))
-                    else {el} for el in tuple_key]
+            args = [set(el) if isinstance(el, (list, set)) else {el} for el in tuple_key]
             product = itertools.product(*args)
 
         data = []
@@ -1190,12 +1238,13 @@ class DynamicMap(HoloMap):
 
         if data_slice:
             from ..util import Dynamic
-            dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj[data_slice],
-                           streams=self.streams)
+
+            dmap = Dynamic(
+                self, operation=lambda obj, **dynkwargs: obj[data_slice], streams=self.streams
+            )
             dmap.data = product.data
             return dmap
         return product
-
 
     def _slice_bounded(self, tuple_key, data_slice):
         """Slices bounded DynamicMaps by setting the soft_ranges on
@@ -1224,15 +1273,16 @@ class DynamicMap(HoloMap):
                 return self._dataslice(sliced, data_slice)
             else:
                 from ..util import Dynamic
+
                 if len(self):
                     slices = [slice(None) for _ in range(self.ndims)] + list(data_slice)
                     sliced = super(DynamicMap, sliced).__getitem__(tuple(slices))
-                dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj[data_slice],
-                               streams=self.streams)
+                dmap = Dynamic(
+                    self, operation=lambda obj, **dynkwargs: obj[data_slice], streams=self.streams
+                )
                 dmap.data = sliced.data
                 return dmap
         return sliced
-
 
     def __getitem__(self, key):
         """Evaluates DynamicMap with specified key.
@@ -1284,11 +1334,12 @@ class DynamicMap(HoloMap):
 
         # Cache lookup
         try:
-            dimensionless = util.dimensionless_contents(get_nested_streams(self),
-                                                        self.kdims, no_duplicates=False)
-            empty = self._stream_parameters() == [] and self.kdims==[]
+            dimensionless = util.dimensionless_contents(
+                get_nested_streams(self), self.kdims, no_duplicates=False
+            )
+            empty = self._stream_parameters() == [] and self.kdims == []
             if dimensionless or empty:
-                raise KeyError('Using dimensionless streams disables DynamicMap cache')
+                raise KeyError("Using dimensionless streams disables DynamicMap cache")
             cache = super().__getitem__(key)
         except KeyError:
             cache = None
@@ -1299,13 +1350,13 @@ class DynamicMap(HoloMap):
             return product
 
         # Not a cross product and nothing cached so compute element.
-        if cache is not None: return cache
+        if cache is not None:
+            return cache
         val = self._execute_callback(*tuple_key)
         if data_slice:
             val = self._dataslice(val, data_slice)
         self._cache(tuple_key, val)
         return val
-
 
     def select(self, selection_specs=None, **kwargs):
         """Applies selection by dimension name
@@ -1317,18 +1368,17 @@ class DynamicMap(HoloMap):
 
         Selections may select a specific value, slice or set of values:
 
-        * value: Scalar values will select rows along with an exact
-                 match, e.g.:
+        * value: Scalar values will select rows along with an exact match,
+        e.g.:
 
             ds.select(x=3)
 
-        * slice: Slices may be declared as tuples of the upper and
-                 lower bound, e.g.:
+        * slice: Slices may be declared as tuples of the upper and lower bound,
+        e.g.:
 
             ds.select(x=(0, 3))
 
-        * values: A list of values may be selected using a list or
-                  set, e.g.:
+        * values: A list of values may be selected using a list or set, e.g.:
 
             ds.select(x=[0, 1, 2])
 
@@ -1350,6 +1400,7 @@ class DynamicMap(HoloMap):
         if selection_specs is not None and not isinstance(selection_specs, (list, tuple)):
             selection_specs = [selection_specs]
         selection = super().select(selection_specs=selection_specs, **kwargs)
+
         def dynamic_select(obj, **dynkwargs):
             if selection_specs is not None:
                 matches = any(obj.matches(spec) for spec in selection_specs)
@@ -1363,23 +1414,24 @@ class DynamicMap(HoloMap):
             return dynamic_select(selection)
         else:
             from ..util import Dynamic
+
             dmap = Dynamic(self, operation=dynamic_select, streams=self.streams)
             dmap.data = selection.data
             return dmap
 
-
     def _cache(self, key, val):
-        """Request that a key/value pair be considered for caching.
-
-        """
-        cache_size = (1 if util.dimensionless_contents(
-            self.streams, self.kdims, no_duplicates=not self.positional_stream_args)
-                      else self.cache_size)
+        """Request that a key/value pair be considered for caching."""
+        cache_size = (
+            1
+            if util.dimensionless_contents(
+                self.streams, self.kdims, no_duplicates=not self.positional_stream_args
+            )
+            else self.cache_size
+        )
         if len(self) >= cache_size:
             first_key = next(k for k in self.data)
             self.data.pop(first_key)
         self[key] = val
-
 
     def map(self, map_fn, specs=None, clone=True, link_inputs=True):
         """Map a function to all objects matching the specs
@@ -1406,14 +1458,16 @@ class DynamicMap(HoloMap):
         deep_mapped = super().map(map_fn, specs, clone)
         if isinstance(deep_mapped, type(self)):
             from ..util import Dynamic
+
             def apply_map(obj, **dynkwargs):
                 return obj.map(map_fn, specs, clone)
-            dmap = Dynamic(self, operation=apply_map, streams=self.streams,
-                           link_inputs=link_inputs)
+
+            dmap = Dynamic(
+                self, operation=apply_map, streams=self.streams, link_inputs=link_inputs
+            )
             dmap.data = deep_mapped.data
             return dmap
         return deep_mapped
-
 
     def relabel(self, label=None, group=None, depth=1):
         """Clone object and apply new group and/or label.
@@ -1438,8 +1492,10 @@ class DynamicMap(HoloMap):
         relabelled = super().relabel(label, group, depth)
         if depth > 0:
             from ..util import Dynamic
+
             def dynamic_relabel(obj, **dynkwargs):
-                return obj.relabel(group=group, label=label, depth=depth-1)
+                return obj.relabel(group=group, label=label, depth=depth - 1)
+
             dmap = Dynamic(self, streams=self.streams, operation=dynamic_relabel)
             dmap.data = relabelled.data
             with util.disable_constant(dmap):
@@ -1454,27 +1510,31 @@ class DynamicMap(HoloMap):
 
         """
         if not len(self):
-            raise ValueError('Cannot split DynamicMap before it has been initialized')
+            raise ValueError("Cannot split DynamicMap before it has been initialized")
         elif not issubclass(self.type, CompositeOverlay):
             return None, self
 
         from ..util import Dynamic
+
         keys = list(self.last.data.keys())
         dmaps = []
         for key in keys:
             el = self.last.data[key]
+
             def split_overlay_callback(obj, overlay_key=key, overlay_el=el, **kwargs):
                 spec = util.get_overlay_spec(obj, overlay_key, overlay_el)
                 items = list(obj.data.items())
-                specs = [(i, util.get_overlay_spec(obj, k, v))
-                         for i, (k, v) in enumerate(items)]
+                specs = [(i, util.get_overlay_spec(obj, k, v)) for i, (k, v) in enumerate(items)]
                 match = util.closest_match(spec, specs)
                 if match is None:
                     otype = type(obj).__name__
-                    raise KeyError(f'{spec} spec not found in {otype}. The split_overlays method '
-                                   'only works consistently for a DynamicMap where the '
-                                   f'layers of the {otype} do not change.')
+                    raise KeyError(
+                        f"{spec} spec not found in {otype}. The split_overlays method "
+                        "only works consistently for a DynamicMap where the "
+                        f"layers of the {otype} do not change."
+                    )
                 return items[match][1]
+
             dmap = Dynamic(self, streams=self.streams, operation=split_overlay_callback)
             dmap.data = dict([(list(self.data.keys())[-1], self.last.data[key])])
             dmaps.append(dmap)
@@ -1498,6 +1558,7 @@ class DynamicMap(HoloMap):
         DynamicMap that returns a non-dynamic element
         """
         from .decollate import decollate
+
         return decollate(self)
 
     def collate(self):
@@ -1534,7 +1595,7 @@ class DynamicMap(HoloMap):
             if not vstreams:
                 if isinstance(initialized.last, Layout):
                     for l in range(len(k)):
-                        path = '.'.join(k[:l])
+                        path = ".".join(k[:l])
                         if path in streams:
                             vstreams = streams[path]
                             break
@@ -1544,7 +1605,8 @@ class DynamicMap(HoloMap):
                 raise ValueError(
                     "The stream_mapping supplied on the Callable "
                     "is ambiguous please supply more specific Layout "
-                    "path specs.")
+                    "path specs."
+                )
             remapped_streams += vstreams
 
             # Define collation callback
@@ -1552,12 +1614,14 @@ class DynamicMap(HoloMap):
                 layout = self[args]
                 layout_type = type(layout).__name__
                 if len(container.keys()) != len(layout.keys()):
-                    raise ValueError('Collated DynamicMaps must return '
-                                     f'{layout_type} with consistent number of items.')
+                    raise ValueError(
+                        "Collated DynamicMaps must return "
+                        f"{layout_type} with consistent number of items."
+                    )
 
-                key = kwargs['selection_key']
-                index = kwargs['selection_index']
-                obj_type = kwargs['selection_type']
+                key = kwargs["selection_key"]
+                index = kwargs["selection_index"]
+                obj_type = kwargs["selection_type"]
                 dyn_type_map = defaultdict(list)
                 for k, v in layout.data.items():
                     if k == key:
@@ -1566,19 +1630,25 @@ class DynamicMap(HoloMap):
 
                 dyn_type_counter = {t: len(vals) for t, vals in dyn_type_map.items()}
                 if dyn_type_counter != type_counter:
-                    raise ValueError(f'The objects in a {layout_type} returned by a '
-                                     'DynamicMap must consistently return '
-                                     'the same number of items of the '
-                                     'same type.')
+                    raise ValueError(
+                        f"The objects in a {layout_type} returned by a "
+                        "DynamicMap must consistently return "
+                        "the same number of items of the "
+                        "same type."
+                    )
                 return dyn_type_map[obj_type][index]
 
-            callback = Callable(partial(collation_cb, selection_key=k,
-                                        selection_index=type_counter[type(v)],
-                                        selection_type=type(v)),
-                                inputs=[self])
+            callback = Callable(
+                partial(
+                    collation_cb,
+                    selection_key=k,
+                    selection_index=type_counter[type(v)],
+                    selection_type=type(v),
+                ),
+                inputs=[self],
+            )
             vstreams = list(util.unique_iterator(self_dstreams + vstreams))
-            vdmap = self.clone(callback=callback, shared_data=False,
-                               streams=vstreams)
+            vdmap = self.clone(callback=callback, shared_data=False, streams=vstreams)
             type_counter[type(v)] += 1
 
             # Remap source of streams
@@ -1587,18 +1657,20 @@ class DynamicMap(HoloMap):
                     stream.source = vdmap
             container[k] = vdmap
 
-        unmapped_streams = [repr(stream) for stream in self.streams
-                            if (stream.source is self) and
-                            (stream not in remapped_streams)
-                            and stream.linked]
+        unmapped_streams = [
+            repr(stream)
+            for stream in self.streams
+            if (stream.source is self) and (stream not in remapped_streams) and stream.linked
+        ]
         if unmapped_streams:
             raise ValueError(
-                'The following streams are set to be automatically '
-                'linked to a plot, but no stream_mapping specifying '
-                'which item in the (Nd)Layout to link it to was found:\n{}'.format(', '.join(unmapped_streams))
+                "The following streams are set to be automatically "
+                "linked to a plot, but no stream_mapping specifying "
+                "which item in the (Nd)Layout to link it to was found:\n{}".format(
+                    ", ".join(unmapped_streams)
+                )
             )
         return container
-
 
     def groupby(self, dimensions=None, container_type=None, group_type=None, **kwargs):
         """Groups DynamicMap by one or more dimensions
@@ -1634,61 +1706,63 @@ class DynamicMap(HoloMap):
         outer_dynamic = issubclass(container_type, DynamicMap)
         inner_dynamic = issubclass(group_type, DynamicMap)
 
-        if ((not outer_dynamic and any(not d.values for d in outer_kdims)) or
-            (not inner_dynamic and any(not d.values for d in inner_kdims))):
-            raise Exception('Dimensions must specify sampling via '
-                            'values to apply a groupby')
+        if (not outer_dynamic and any(not d.values for d in outer_kdims)) or (
+            not inner_dynamic and any(not d.values for d in inner_kdims)
+        ):
+            raise Exception("Dimensions must specify sampling via values to apply a groupby")
 
         if outer_dynamic:
+
             def outer_fn(*outer_key, **dynkwargs):
                 if inner_dynamic:
+
                     def inner_fn(*inner_key, **dynkwargs):
                         outer_vals = zip(outer_kdims, util.wrap_tuple(outer_key), strict=None)
                         inner_vals = zip(inner_kdims, util.wrap_tuple(inner_key), strict=None)
                         inner_sel = [(k.name, v) for k, v in inner_vals]
                         outer_sel = [(k.name, v) for k, v in outer_vals]
-                        return self.select(**dict(inner_sel+outer_sel))
+                        return self.select(**dict(inner_sel + outer_sel))
+
                     return self.clone([], callback=inner_fn, kdims=inner_kdims)
                 else:
                     dim_vals = [(d.name, d.values) for d in inner_kdims]
-                    dim_vals += [(d.name, [v]) for d, v in
-                                   zip(outer_kdims, util.wrap_tuple(outer_key), strict=None)]
+                    dim_vals += [
+                        (d.name, [v])
+                        for d, v in zip(outer_kdims, util.wrap_tuple(outer_key), strict=None)
+                    ]
                     with item_check(False):
                         selected = HoloMap(self.select(**dict(dim_vals)))
                         return group_type(selected.reindex(inner_kdims))
+
             if outer_kdims:
                 return self.clone([], callback=outer_fn, kdims=outer_kdims)
             else:
                 return outer_fn(())
         else:
-            outer_product = itertools.product(*[self.get_dimension(d).values
-                                                for d in dimensions])
+            outer_product = itertools.product(*[self.get_dimension(d).values for d in dimensions])
             groups = []
             for outer in outer_product:
                 outer_vals = [(d.name, [o]) for d, o in zip(outer_kdims, outer, strict=None)]
                 if inner_dynamic or not inner_kdims:
+
                     def inner_fn(outer_vals, *key, **dynkwargs):
                         inner_dims = zip(inner_kdims, util.wrap_tuple(key), strict=None)
                         inner_vals = [(d.name, k) for d, k in inner_dims]
-                        return self.select(**dict(outer_vals+inner_vals)).last
+                        return self.select(**dict(outer_vals + inner_vals)).last
+
                     if inner_kdims or self.streams:
-                        callback = Callable(partial(inner_fn, outer_vals),
-                                            inputs=[self])
-                        group = self.clone(
-                            callback=callback, kdims=inner_kdims
-                        )
+                        callback = Callable(partial(inner_fn, outer_vals), inputs=[self])
+                        group = self.clone(callback=callback, kdims=inner_kdims)
                     else:
                         group = inner_fn(outer_vals, ())
                     groups.append((outer, group))
                 else:
-                    inner_vals = [(d.name, self.get_dimension(d).values)
-                                     for d in inner_kdims]
+                    inner_vals = [(d.name, self.get_dimension(d).values) for d in inner_kdims]
                     with item_check(False):
-                        selected = HoloMap(self.select(**dict(outer_vals+inner_vals)))
+                        selected = HoloMap(self.select(**dict(outer_vals + inner_vals)))
                         group = group_type(selected.reindex(inner_kdims))
                     groups.append((outer, group))
             return container_type(groups, kdims=outer_kdims)
-
 
     def grid(self, dimensions=None, **kwargs):
         """Groups data by supplied dimension(s) laying the groups along
@@ -1706,7 +1780,6 @@ class DynamicMap(HoloMap):
         """
         return self.groupby(dimensions, container_type=GridSpace, **kwargs)
 
-
     def layout(self, dimensions=None, **kwargs):
         """Groups data by supplied dimension(s) laying the groups along
         the dimension(s) out in a NdLayout.
@@ -1722,7 +1795,6 @@ class DynamicMap(HoloMap):
             NdLayout with supplied dimensions
         """
         return self.groupby(dimensions, container_type=NdLayout, **kwargs)
-
 
     def overlay(self, dimensions=None, **kwargs):
         """Group by supplied dimension(s) and overlay each group
@@ -1743,14 +1815,11 @@ class DynamicMap(HoloMap):
         else:
             if not isinstance(dimensions, (list, tuple)):
                 dimensions = [dimensions]
-            dimensions = [self.get_dimension(d, strict=True)
-                          for d in dimensions]
+            dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
         dims = [d for d in self.kdims if d not in dimensions]
         return self.groupby(dims, group_type=NdOverlay)
 
-
-    def hist(self, dimension=None, num_bins=20, bin_range=None,
-             adjoin=True, **kwargs):
+    def hist(self, dimension=None, num_bins=20, bin_range=None, adjoin=True, **kwargs):
         """Computes and adjoins histogram along specified dimension(s).
 
         Defaults to first value dimension if present otherwise falls
@@ -1771,26 +1840,22 @@ class DynamicMap(HoloMap):
         AdjointLayout of DynamicMap and adjoined histogram if
         adjoin=True, otherwise just the histogram
         """
+
         def dynamic_hist(obj, **dynkwargs):
             if isinstance(obj, (NdOverlay, Overlay)):
-                index = kwargs.get('index', 0)
+                index = kwargs.get("index", 0)
                 obj = obj.get(index)
             return obj.hist(
-                dimension=dimension,
-                num_bins=num_bins,
-                bin_range=bin_range,
-                adjoin=False,
-                **kwargs
+                dimension=dimension, num_bins=num_bins, bin_range=bin_range, adjoin=False, **kwargs
             )
 
         from ..util import Dynamic
-        hist = Dynamic(self, streams=self.streams, link_inputs=False,
-                       operation=dynamic_hist)
+
+        hist = Dynamic(self, streams=self.streams, link_inputs=False, operation=dynamic_hist)
         if adjoin:
             return self << hist
         else:
             return hist
-
 
     def reindex(self, kdims=None, force=False):
         """Reorders key dimensions on DynamicMap
@@ -1814,25 +1879,30 @@ class DynamicMap(HoloMap):
         kdims = [self.get_dimension(kd, strict=True) for kd in kdims]
         dropped = [kd for kd in self.kdims if kd not in kdims]
         if dropped:
-            raise ValueError("DynamicMap does not allow dropping dimensions, "
-                             "reindex may only be used to reorder dimensions.")
+            raise ValueError(
+                "DynamicMap does not allow dropping dimensions, "
+                "reindex may only be used to reorder dimensions."
+            )
         return super().reindex(kdims, force)
 
-
     def drop_dimension(self, dimensions):
-        raise NotImplementedError('Cannot drop dimensions from a DynamicMap, '
-                                  'cast to a HoloMap first.')
+        raise NotImplementedError(
+            "Cannot drop dimensions from a DynamicMap, cast to a HoloMap first."
+        )
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
-        raise NotImplementedError('Cannot add dimensions to a DynamicMap, '
-                                  'cast to a HoloMap first.')
+        raise NotImplementedError(
+            "Cannot add dimensions to a DynamicMap, cast to a HoloMap first."
+        )
 
     def __next__(self):
         if self.callback.noargs:
             return self[()]
         else:
-            raise Exception('The next method can only be used for DynamicMaps using'
-                            'generators (or callables without arguments)')
+            raise Exception(
+                "The next method can only be used for DynamicMaps using"
+                "generators (or callables without arguments)"
+            )
 
 
 class GridSpace(Layoutable, UniformNdMapping):
@@ -1845,25 +1915,21 @@ class GridSpace(Layoutable, UniformNdMapping):
 
     """
 
-    kdims = param.List(default=[Dimension("X"), Dimension("Y")], bounds=(1,2))
+    kdims = param.List(default=[Dimension("X"), Dimension("Y")], bounds=(1, 2))
 
     def __init__(self, initial_items=None, kdims=None, **params):
         super().__init__(initial_items, kdims=kdims, **params)
         if self.ndims > 2:
-            raise Exception('Grids can have no more than two dimensions.')
-
+            raise Exception("Grids can have no more than two dimensions.")
 
     def __lshift__(self, other):
-        """Adjoins another object to the GridSpace
-
-        """
+        """Adjoins another object to the GridSpace"""
         if isinstance(other, (ViewableElement, UniformNdMapping)):
             return AdjointLayout([self, other])
         elif isinstance(other, AdjointLayout):
             return AdjointLayout([*other.data, self])
         else:
-            raise TypeError(f'Cannot append {type(other).__name__} to a AdjointLayout')
-
+            raise TypeError(f"Cannot append {type(other).__name__} to a AdjointLayout")
 
     def _transform_indices(self, key):
         """Snaps indices into the GridSpace to the closest coordinate.
@@ -1884,33 +1950,38 @@ class GridSpace(Layoutable, UniformNdMapping):
                 dim_type = self.get_dimension_type(dim)
                 if isinstance(dim_type, type) and issubclass(dim_type, Number):
                     dim_inds.append(self.get_dimension_index(dim))
-            str_keys = iter(key[i] for i in range(self.ndims)
-                            if i not in dim_inds)
+            str_keys = iter(key[i] for i in range(self.ndims) if i not in dim_inds)
             num_keys = []
             if dim_inds:
-                keys = list({tuple(k[i] if ndims > 1 else k for i in dim_inds)
-                             for k in self.keys()})
+                keys = list(
+                    {tuple(k[i] if ndims > 1 else k for i in dim_inds) for k in self.keys()}
+                )
                 q = np.array([tuple(key[i] if ndims > 1 else key for i in dim_inds)])
-                idx = np.argmin([np.inner(q - np.array(x), q - np.array(x))
-                                 if len(dim_inds) == 2 else np.abs(q-x)
-                                     for x in keys])
+                idx = np.argmin(
+                    [
+                        np.inner(q - np.array(x), q - np.array(x))
+                        if len(dim_inds) == 2
+                        else np.abs(q - x)
+                        for x in keys
+                    ]
+                )
                 num_keys = iter(keys[idx])
-            key = tuple(next(num_keys) if i in dim_inds else next(str_keys)
-                        for i in range(self.ndims))
+            key = tuple(
+                next(num_keys) if i in dim_inds else next(str_keys) for i in range(self.ndims)
+            )
         elif any(not (isinstance(el, slice) or callable(el)) for el in key):
             keys = self.keys()
             for i, k in enumerate(key):
                 if isinstance(k, slice):
                     continue
                 dim_keys = np.array([ke[i] for ke in keys])
-                if dtype_kind(dim_keys) in 'OSU':
+                if dtype_kind(dim_keys) in "OSU":
                     continue
-                snapped_val = dim_keys[np.argmin(np.abs(dim_keys-k))]
+                snapped_val = dim_keys[np.argmin(np.abs(dim_keys - k))]
                 key = list(key)
                 key[i] = snapped_val
             key = tuple(key)
         return key
-
 
     def keys(self, full_grid=False):
         """Returns the keys of the GridSpace
@@ -1931,7 +2002,6 @@ class GridSpace(Layoutable, UniformNdMapping):
         dim2_keys = list(dict.fromkeys(k[1] for k in keys))
         return [(d1, d2) for d1 in dim1_keys for d2 in dim2_keys]
 
-
     @property
     def last(self):
         """The last of a GridSpace is another GridSpace
@@ -1941,12 +2011,12 @@ class GridSpace(Layoutable, UniformNdMapping):
 
         """
         if self.type == HoloMap:
-            last_items = [(k, v.last if isinstance(v, HoloMap) else v)
-                          for (k, v) in self.data.items()]
+            last_items = [
+                (k, v.last if isinstance(v, HoloMap) else v) for (k, v) in self.data.items()
+            ]
         else:
             last_items = self.data
         return self.clone(last_items)
-
 
     def __len__(self):
         """The maximum depth of all the elements. Matches the semantics
@@ -1954,13 +2024,11 @@ class GridSpace(Layoutable, UniformNdMapping):
         count the full set of keys.
 
         """
-        return max([(len(v) if hasattr(v, '__len__') else 1) for v in self.values()] + [0])
+        return max([(len(v) if hasattr(v, "__len__") else 1) for v in self.values()] + [0])
 
     @property
     def shape(self):
-        """Returns the 2D shape of the GridSpace as (rows, cols).
-
-        """
+        """Returns the 2D shape of the GridSpace as (rows, cols)."""
         keys = self.keys()
         if self.ndims == 1:
             return (len(keys), 1)
@@ -1984,6 +2052,7 @@ class GridSpace(Layoutable, UniformNdMapping):
         DynamicMap that returns a GridSpace
         """
         from .decollate import decollate
+
         return decollate(self)
 
 

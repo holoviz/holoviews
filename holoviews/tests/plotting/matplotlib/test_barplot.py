@@ -10,7 +10,6 @@ from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestBarPlot(LoggingComparison, TestMPLPlot):
-
     def test_bars_continuous_data_list_same_interval(self):
         bars = hv.Bars(([0, 1, 2], [10, 20, 30]))
         plot = mpl_renderer.get_plot(bars)
@@ -69,7 +68,7 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
         plot = mpl_renderer.get_plot(bars)
         ax = plot.handles["axis"]
 
-        np.testing.assert_almost_equal(ax.get_xlim(), (-0.1333333,  3.6666667))
+        np.testing.assert_almost_equal(ax.get_xlim(), (-0.1333333, 3.6666667))
         assert ax.patches[0].get_width() == 0.26666666666666666
         ticklabels = ax.get_xticklabels()
         expected = [
@@ -136,10 +135,10 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
         plot = mpl_renderer.get_plot(bars)
         ax = plot.handles["axis"]
 
-        np.testing.assert_almost_equal(ax.get_xlim(), (-0.2,  2.6))
+        np.testing.assert_almost_equal(ax.get_xlim(), (-0.2, 2.6))
         assert ax.patches[0].get_width() == 0.4
         assert len(ax.get_xticks()) > 3
 
-        xticklabels = ['A', '1', 'B', 'A', '3', 'B', 'A', '10', 'B']
+        xticklabels = ["A", "1", "B", "A", "3", "B", "A", "10", "B"]
         for i, tick in enumerate(ax.get_xticklabels()):
             assert tick.get_text() == xticklabels[i]

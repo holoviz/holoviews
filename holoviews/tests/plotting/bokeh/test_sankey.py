@@ -8,75 +8,92 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestSankeyPlot(TestBokehPlot):
-
     def test_sankey_simple(self):
-        sankey = hv.Sankey([
-            ('A', 'X', 5), ('A', 'Y', 7), ('A', 'Z', 6),
-            ('B', 'X', 2), ('B', 'Y', 9), ('B', 'Z', 4)]
+        sankey = hv.Sankey(
+            [
+                ("A", "X", 5),
+                ("A", "Y", 7),
+                ("A", "Z", 6),
+                ("B", "X", 2),
+                ("B", "Y", 9),
+                ("B", "Z", 4),
+            ]
         )
         plot = bokeh_renderer.get_plot(sankey)
-        scatter_source = plot.handles['scatter_1_source']
-        quad_source = plot.handles['quad_1_source']
-        text_source = plot.handles['text_1_source']
-        patch_source = plot.handles['patches_1_source']
+        scatter_source = plot.handles["scatter_1_source"]
+        quad_source = plot.handles["quad_1_source"]
+        text_source = plot.handles["text_1_source"]
+        patch_source = plot.handles["patches_1_source"]
 
-        scatter_index = ['A', 'B', 'X', 'Y', 'Z']
-        assert scatter_source.data['index'] == scatter_index
+        scatter_index = ["A", "B", "X", "Y", "Z"]
+        assert scatter_source.data["index"] == scatter_index
 
-        text_data = {'x': np.array([18.75, 18.75, 1003.75, 1003.75, 1003.75]),
-                     'y': np.array([125.454545, 375.454545,  48.787879, 229.090909, 430.30303 ]),
-                     'text': ['A - 18', 'B - 15', 'X - 7', 'Y - 16', 'Z - 10']}
+        text_data = {
+            "x": np.array([18.75, 18.75, 1003.75, 1003.75, 1003.75]),
+            "y": np.array([125.454545, 375.454545, 48.787879, 229.090909, 430.30303]),
+            "text": ["A - 18", "B - 15", "X - 7", "Y - 16", "Z - 10"],
+        }
         assert_dict_equal(text_source.data, text_data)
 
         quad_data = {
-            'index': scatter_index,
-            'x0': [0, 0, 985.0, 985.0, 985.0],
-            'x1': [15, 15, 1000.0, 1000.0, 1000.0],
-            'y0': [0.0, 270.9090909090908, -7.105427357601002e-15, 117.57575757575756, 360.6060606060606],
-            'y1': [250.909091, 480.0, 97.575758, 340.606061, 500.0]
+            "index": scatter_index,
+            "x0": [0, 0, 985.0, 985.0, 985.0],
+            "x1": [15, 15, 1000.0, 1000.0, 1000.0],
+            "y0": [
+                0.0,
+                270.9090909090908,
+                -7.105427357601002e-15,
+                117.57575757575756,
+                360.6060606060606,
+            ],
+            "y1": [250.909091, 480.0, 97.575758, 340.606061, 500.0],
         }
         assert_dict_equal(quad_source.data, quad_data)
 
-        assert_data_equal(patch_source.data['Value'], np.array([5, 7, 6, 2, 9, 4]))
+        assert_data_equal(patch_source.data["Value"], np.array([5, 7, 6, 2, 9, 4]))
 
         renderers = plot.state.renderers
-        quad_renderer = plot.handles['quad_1_glyph_renderer']
-        text_renderer = plot.handles['text_1_glyph_renderer']
-        graph_renderer = plot.handles['glyph_renderer']
+        quad_renderer = plot.handles["quad_1_glyph_renderer"]
+        text_renderer = plot.handles["text_1_glyph_renderer"]
+        graph_renderer = plot.handles["glyph_renderer"]
         assert renderers.index(graph_renderer) < renderers.index(quad_renderer)
         assert renderers.index(quad_renderer) < renderers.index(text_renderer)
 
-
     def test_sankey_label_index(self):
-        sankey = hv.Sankey(([
-            (0, 2, 5), (0, 3, 7), (0, 4, 6),
-            (1, 2, 2), (1, 3, 9), (1, 4, 4)],
-            hv.Dataset(enumerate('ABXYZ'), 'index', 'label'))
-        ).opts(label_index='label', tools=['hover'])
+        sankey = hv.Sankey(
+            (
+                [(0, 2, 5), (0, 3, 7), (0, 4, 6), (1, 2, 2), (1, 3, 9), (1, 4, 4)],
+                hv.Dataset(enumerate("ABXYZ"), "index", "label"),
+            )
+        ).opts(label_index="label", tools=["hover"])
         plot = bokeh_renderer.get_plot(sankey)
 
-        scatter_source = plot.handles['scatter_1_source']
-        text_source = plot.handles['text_1_source']
-        patch_source = plot.handles['patches_1_source']
+        scatter_source = plot.handles["scatter_1_source"]
+        text_source = plot.handles["text_1_source"]
+        patch_source = plot.handles["patches_1_source"]
 
         scatter_index = np.arange(5)
-        assert_data_equal(scatter_source.data['index'], scatter_index)
+        assert_data_equal(scatter_source.data["index"], scatter_index)
 
-        text_data = {'x': np.array([18.75, 18.75, 1003.75, 1003.75, 1003.75]),
-                     'y': np.array([125.454545, 375.454545,  48.787879, 229.090909, 430.30303 ]),
-                     'text': ['A - 18', 'B - 15', 'X - 7', 'Y - 16', 'Z - 10']}
+        text_data = {
+            "x": np.array([18.75, 18.75, 1003.75, 1003.75, 1003.75]),
+            "y": np.array([125.454545, 375.454545, 48.787879, 229.090909, 430.30303]),
+            "text": ["A - 18", "B - 15", "X - 7", "Y - 16", "Z - 10"],
+        }
         assert_dict_equal(text_source.data, text_data)
 
-        patch_data = {'start_values': ['A', 'A', 'A', 'B', 'B', 'B'],
-                      'end_values': ['X', 'Y', 'Z', 'X', 'Y', 'Z'],
-                      'Value': np.array([5, 7, 6, 2, 9, 4])}
+        patch_data = {
+            "start_values": ["A", "A", "A", "B", "B", "B"],
+            "end_values": ["X", "Y", "Z", "X", "Y", "Z"],
+            "Value": np.array([5, 7, 6, 2, 9, 4]),
+        }
         output = {k: patch_source.data[k] for k in patch_data}
         assert_dict_equal(output, patch_data)
 
         renderers = plot.state.renderers
-        quad_renderer = plot.handles['quad_1_glyph_renderer']
-        text_renderer = plot.handles['text_1_glyph_renderer']
-        graph_renderer = plot.handles['glyph_renderer']
+        quad_renderer = plot.handles["quad_1_glyph_renderer"]
+        text_renderer = plot.handles["text_1_glyph_renderer"]
+        graph_renderer = plot.handles["glyph_renderer"]
         assert renderers.index(graph_renderer) < renderers.index(quad_renderer)
         assert renderers.index(quad_renderer) < renderers.index(text_renderer)
 

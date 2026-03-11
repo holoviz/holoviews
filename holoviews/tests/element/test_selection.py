@@ -19,11 +19,11 @@ dd, dask_skip = optional_dependencies("dask.dataframe")
 
 
 class TestIndexExpr:
-
     def setup_method(self):
-        import holoviews.plotting.bokeh # noqa
+        import holoviews.plotting.bokeh  # noqa
+
         self._backend = hv.Store.current_backend
-        hv.Store.set_current_backend('bokeh')
+        hv.Store.set_current_backend("bokeh")
 
     def teardown_method(self):
         hv.Store.current_backend = self._backend
@@ -34,18 +34,18 @@ class TestIndexExpr:
         idx = np.arange(100)
 
         points = hv.Points(
-            {'x': x, 'y': y, 'id': idx}, kdims=['x', 'y'], vdims=['id'], datatype=['dataframe']
+            {"x": x, "y": y, "id": idx}, kdims=["x", "y"], vdims=["id"], datatype=["dataframe"]
         )
-        sel, _, _ = points._get_index_selection([3, 7], ['id'])
-        assert sel == hv.dim('id').isin([3, 7])
+        sel, _, _ = points._get_index_selection([3, 7], ["id"])
+        assert sel == hv.dim("id").isin([3, 7])
 
 
 class TestSelection1DExpr:
-
     def setup_method(self):
-        import holoviews.plotting.bokeh # noqa
+        import holoviews.plotting.bokeh  # noqa
+
         self._backend = hv.Store.current_backend
-        hv.Store.set_current_backend('bokeh')
+        hv.Store.set_current_backend("bokeh")
 
     def teardown_method(self):
         hv.Store.current_backend = self._backend
@@ -53,177 +53,183 @@ class TestSelection1DExpr:
     def test_area_selection_numeric(self):
         area = hv.Area([3, 2, 1, 3, 4])
         expr, bbox, region = area._get_selection_expr_for_stream_value(bounds=(1, 0, 3, 2))
-        assert bbox == {'x': (1, 3)}
+        assert bbox == {"x": (1, 3)}
         assert_data_equal(expr.apply(area), np.array([False, True, True, True, False]))
         assert_element_equal(region, hv.NdOverlay({0: hv.VSpan(1, 3)}))
 
     def test_area_selection_numeric_inverted(self):
         area = hv.Area([3, 2, 1, 3, 4]).opts(invert_axes=True)
         expr, bbox, region = area._get_selection_expr_for_stream_value(bounds=(0, 1, 2, 3))
-        assert bbox == {'x': (1, 3)}
+        assert bbox == {"x": (1, 3)}
         assert_data_equal(expr.apply(area), np.array([False, True, True, True, False]))
         assert_element_equal(region, hv.NdOverlay({0: hv.HSpan(1, 3)}))
 
     def test_area_selection_categorical(self):
-        area = hv.Area((['B', 'A', 'C', 'D', 'E'], [3, 2, 1, 3, 4]))
+        area = hv.Area((["B", "A", "C", "D", "E"], [3, 2, 1, 3, 4]))
         expr, bbox, region = area._get_selection_expr_for_stream_value(
-            bounds=(0, 1, 2, 3), x_selection=['B', 'A', 'C']
+            bounds=(0, 1, 2, 3), x_selection=["B", "A", "C"]
         )
-        assert bbox == {'x': ['B', 'A', 'C']}
+        assert bbox == {"x": ["B", "A", "C"]}
         assert_data_equal(expr.apply(area), np.array([True, True, True, False, False]))
         assert_element_equal(region, hv.NdOverlay({0: hv.VSpan(0, 2)}))
 
     def test_area_selection_numeric_index_cols(self):
         area = hv.Area([3, 2, 1, 3, 2])
         expr, bbox, region = area._get_selection_expr_for_stream_value(
-            bounds=(1, 0, 3, 2), index_cols=['y']
+            bounds=(1, 0, 3, 2), index_cols=["y"]
         )
-        assert bbox == {'x': (1, 3)}
+        assert bbox == {"x": (1, 3)}
         assert_data_equal(expr.apply(area), np.array([False, True, True, False, True]))
         assert region is None
 
     def test_curve_selection_numeric(self):
         curve = hv.Curve([3, 2, 1, 3, 4])
         expr, bbox, region = curve._get_selection_expr_for_stream_value(bounds=(1, 0, 3, 2))
-        assert bbox == {'x': (1, 3)}
+        assert bbox == {"x": (1, 3)}
         assert_data_equal(expr.apply(curve), np.array([False, True, True, True, False]))
         assert_element_equal(region, hv.NdOverlay({0: hv.VSpan(1, 3)}))
 
     def test_curve_selection_categorical(self):
-        curve = hv.Curve((['B', 'A', 'C', 'D', 'E'], [3, 2, 1, 3, 4]))
+        curve = hv.Curve((["B", "A", "C", "D", "E"], [3, 2, 1, 3, 4]))
         expr, bbox, region = curve._get_selection_expr_for_stream_value(
-            bounds=(0, 1, 2, 3), x_selection=['B', 'A', 'C']
+            bounds=(0, 1, 2, 3), x_selection=["B", "A", "C"]
         )
-        assert bbox == {'x': ['B', 'A', 'C']}
+        assert bbox == {"x": ["B", "A", "C"]}
         assert_data_equal(expr.apply(curve), np.array([True, True, True, False, False]))
         assert_element_equal(region, hv.NdOverlay({0: hv.VSpan(0, 2)}))
 
     def test_curve_selection_numeric_index_cols(self):
         curve = hv.Curve([3, 2, 1, 3, 2])
         expr, bbox, region = curve._get_selection_expr_for_stream_value(
-            bounds=(1, 0, 3, 2), index_cols=['y']
+            bounds=(1, 0, 3, 2), index_cols=["y"]
         )
-        assert bbox == {'x': (1, 3)}
+        assert bbox == {"x": (1, 3)}
         assert_data_equal(expr.apply(curve), np.array([False, True, True, False, True]))
         assert region is None
 
     def test_box_whisker_single(self):
         box_whisker = hv.BoxWhisker(list(range(10)))
-        expr, bbox, region = box_whisker._get_selection_expr_for_stream_value(
-            bounds=(0, 3, 1, 7)
+        expr, bbox, region = box_whisker._get_selection_expr_for_stream_value(bounds=(0, 3, 1, 7))
+        assert bbox == {"y": (3, 7)}
+        assert_data_equal(
+            expr.apply(box_whisker),
+            np.array([False, False, False, True, True, True, True, True, False, False]),
         )
-        assert bbox == {'y': (3, 7)}
-        assert_data_equal(expr.apply(box_whisker), np.array([
-            False, False, False, True, True, True, True, True, False, False
-        ]))
         assert_element_equal(region, hv.NdOverlay({0: hv.HSpan(3, 7)}))
 
     def test_box_whisker_single_inverted(self):
         box = hv.BoxWhisker(list(range(10))).opts(invert_axes=True)
-        expr, bbox, region = box._get_selection_expr_for_stream_value(
-            bounds=(3, 0, 7, 1)
+        expr, bbox, region = box._get_selection_expr_for_stream_value(bounds=(3, 0, 7, 1))
+        assert bbox == {"y": (3, 7)}
+        assert_data_equal(
+            expr.apply(box),
+            np.array([False, False, False, True, True, True, True, True, False, False]),
         )
-        assert bbox == {'y': (3, 7)}
-        assert_data_equal(expr.apply(box), np.array([
-            False, False, False, True, True, True, True, True, False, False
-        ]))
         assert_element_equal(region, hv.NdOverlay({0: hv.VSpan(3, 7)}))
 
     def test_box_whisker_cats(self):
-        box_whisker = hv.BoxWhisker((['A', 'A', 'A', 'B', 'B', 'C', 'C', 'C', 'C', 'C'], list(range(10))), 'x', 'y')
-        expr, bbox, region = box_whisker._get_selection_expr_for_stream_value(
-            bounds=(0, 1, 2, 7), x_selection=['A', 'B']
+        box_whisker = hv.BoxWhisker(
+            (["A", "A", "A", "B", "B", "C", "C", "C", "C", "C"], list(range(10))), "x", "y"
         )
-        assert bbox == {'y': (1, 7), 'x': ['A', 'B']}
-        assert_data_equal(expr.apply(box_whisker), np.array([
-            False, True, True, True, True, False, False, False, False, False
-        ]))
+        expr, bbox, region = box_whisker._get_selection_expr_for_stream_value(
+            bounds=(0, 1, 2, 7), x_selection=["A", "B"]
+        )
+        assert bbox == {"y": (1, 7), "x": ["A", "B"]}
+        assert_data_equal(
+            expr.apply(box_whisker),
+            np.array([False, True, True, True, True, False, False, False, False, False]),
+        )
         assert_element_equal(region, hv.NdOverlay({0: hv.HSpan(1, 7)}))
 
     def test_box_whisker_cats_index_cols(self):
-        box_whisker = hv.BoxWhisker((['A', 'A', 'A', 'B', 'B', 'C', 'C', 'C', 'C', 'C'], list(range(10))), 'x', 'y')
-        expr, bbox, region = box_whisker._get_selection_expr_for_stream_value(
-            bounds=(0, 1, 2, 7), x_selection=['A', 'B'], index_cols=['x']
+        box_whisker = hv.BoxWhisker(
+            (["A", "A", "A", "B", "B", "C", "C", "C", "C", "C"], list(range(10))), "x", "y"
         )
-        assert bbox == {'y': (1, 7), 'x': ['A', 'B']}
-        assert_data_equal(expr.apply(box_whisker), np.array([
-            True, True, True, True, True, False, False, False, False, False
-        ]))
+        expr, bbox, region = box_whisker._get_selection_expr_for_stream_value(
+            bounds=(0, 1, 2, 7), x_selection=["A", "B"], index_cols=["x"]
+        )
+        assert bbox == {"y": (1, 7), "x": ["A", "B"]}
+        assert_data_equal(
+            expr.apply(box_whisker),
+            np.array([True, True, True, True, True, False, False, False, False, False]),
+        )
         assert region is None
 
     def test_violin_single(self):
         violin = hv.Violin(list(range(10)))
-        expr, bbox, region = violin._get_selection_expr_for_stream_value(
-            bounds=(0, 3, 1, 7)
+        expr, bbox, region = violin._get_selection_expr_for_stream_value(bounds=(0, 3, 1, 7))
+        assert bbox == {"y": (3, 7)}
+        assert_data_equal(
+            expr.apply(violin),
+            np.array([False, False, False, True, True, True, True, True, False, False]),
         )
-        assert bbox == {'y': (3, 7)}
-        assert_data_equal(expr.apply(violin), np.array([
-            False, False, False, True, True, True, True, True, False, False
-        ]))
         assert_element_equal(region, hv.NdOverlay({0: hv.HSpan(3, 7)}))
 
     def test_violin_single_inverted(self):
         violin = hv.Violin(list(range(10))).opts(invert_axes=True)
-        expr, bbox, region = violin._get_selection_expr_for_stream_value(
-            bounds=(3, 0, 7, 1)
+        expr, bbox, region = violin._get_selection_expr_for_stream_value(bounds=(3, 0, 7, 1))
+        assert bbox == {"y": (3, 7)}
+        assert_data_equal(
+            expr.apply(violin),
+            np.array([False, False, False, True, True, True, True, True, False, False]),
         )
-        assert bbox == {'y': (3, 7)}
-        assert_data_equal(expr.apply(violin), np.array([
-            False, False, False, True, True, True, True, True, False, False
-        ]))
         assert_element_equal(region, hv.NdOverlay({0: hv.VSpan(3, 7)}))
 
     def test_violin_cats(self):
-        violin = hv.Violin((['A', 'A', 'A', 'B', 'B', 'C', 'C', 'C', 'C', 'C'], list(range(10))), 'x', 'y')
-        expr, bbox, region = violin._get_selection_expr_for_stream_value(
-            bounds=(0, 1, 2, 7), x_selection=['A', 'B']
+        violin = hv.Violin(
+            (["A", "A", "A", "B", "B", "C", "C", "C", "C", "C"], list(range(10))), "x", "y"
         )
-        assert bbox == {'y': (1, 7), 'x': ['A', 'B']}
-        assert_data_equal(expr.apply(violin), np.array([
-            False, True, True, True, True, False, False, False, False, False
-        ]))
+        expr, bbox, region = violin._get_selection_expr_for_stream_value(
+            bounds=(0, 1, 2, 7), x_selection=["A", "B"]
+        )
+        assert bbox == {"y": (1, 7), "x": ["A", "B"]}
+        assert_data_equal(
+            expr.apply(violin),
+            np.array([False, True, True, True, True, False, False, False, False, False]),
+        )
         assert_element_equal(region, hv.NdOverlay({0: hv.HSpan(1, 7)}))
 
     def test_violin_cats_index_cols(self):
-        violin = hv.Violin((['A', 'A', 'A', 'B', 'B', 'C', 'C', 'C', 'C', 'C'], list(range(10))), 'x', 'y')
-        expr, bbox, region = violin._get_selection_expr_for_stream_value(
-            bounds=(0, 1, 2, 7), x_selection=['A', 'B'], index_cols=['x']
+        violin = hv.Violin(
+            (["A", "A", "A", "B", "B", "C", "C", "C", "C", "C"], list(range(10))), "x", "y"
         )
-        assert bbox == {'y': (1, 7), 'x': ['A', 'B']}
-        assert_data_equal(expr.apply(violin), np.array([
-            True, True, True, True, True, False, False, False, False, False
-        ]))
+        expr, bbox, region = violin._get_selection_expr_for_stream_value(
+            bounds=(0, 1, 2, 7), x_selection=["A", "B"], index_cols=["x"]
+        )
+        assert bbox == {"y": (1, 7), "x": ["A", "B"]}
+        assert_data_equal(
+            expr.apply(violin),
+            np.array([True, True, True, True, True, False, False, False, False, False]),
+        )
         assert region is None
 
     def test_distribution_single(self):
         dist = hv.Distribution(list(range(10)))
-        expr, bbox, region = dist._get_selection_expr_for_stream_value(
-            bounds=(3, 0, 7, 1)
+        expr, bbox, region = dist._get_selection_expr_for_stream_value(bounds=(3, 0, 7, 1))
+        assert bbox == {"Value": (3, 7)}
+        assert_data_equal(
+            expr.apply(dist),
+            np.array([False, False, False, True, True, True, True, True, False, False]),
         )
-        assert bbox == {'Value': (3, 7)}
-        assert_data_equal(expr.apply(dist), np.array([
-            False, False, False, True, True, True, True, True, False, False
-        ]))
         assert_element_equal(region, hv.NdOverlay({0: hv.VSpan(3, 7)}))
 
     def test_distribution_single_inverted(self):
         dist = hv.Distribution(list(range(10))).opts(invert_axes=True)
-        expr, bbox, region = dist._get_selection_expr_for_stream_value(
-            bounds=(0, 3, 1, 7)
+        expr, bbox, region = dist._get_selection_expr_for_stream_value(bounds=(0, 3, 1, 7))
+        assert bbox == {"Value": (3, 7)}
+        assert_data_equal(
+            expr.apply(dist),
+            np.array([False, False, False, True, True, True, True, True, False, False]),
         )
-        assert bbox == {'Value': (3, 7)}
-        assert_data_equal(expr.apply(dist), np.array([
-            False, False, False, True, True, True, True, True, False, False
-        ]))
         assert_element_equal(region, hv.NdOverlay({0: hv.HSpan(3, 7)}))
 
 
 class TestSelection2DExpr:
-
     def setup_method(self):
-        import holoviews.plotting.bokeh # noqa
+        import holoviews.plotting.bokeh  # noqa
+
         self._backend = hv.Store.current_backend
-        hv.Store.set_current_backend('bokeh')
+        hv.Store.set_current_backend("bokeh")
 
     def teardown_method(self):
         hv.Store.current_backend = self._backend
@@ -231,14 +237,14 @@ class TestSelection2DExpr:
     def test_points_selection_numeric(self):
         points = hv.Points([3, 2, 1, 3, 4])
         expr, bbox, region = points._get_selection_expr_for_stream_value(bounds=(1, 0, 3, 2))
-        assert bbox == {'x': (1, 3), 'y': (0, 2)}
+        assert bbox == {"x": (1, 3), "y": (0, 2)}
         assert_data_equal(expr.apply(points), np.array([False, True, True, False, False]))
         assert_element_equal(region, hv.Rectangles([(1, 0, 3, 2)]) * hv.Path([]))
 
     def test_points_selection_numeric_inverted(self):
         points = hv.Points([3, 2, 1, 3, 4]).opts(invert_axes=True)
         expr, bbox, region = points._get_selection_expr_for_stream_value(bounds=(0, 1, 2, 3))
-        assert bbox == {'x': (1, 3), 'y': (0, 2)}
+        assert bbox == {"x": (1, 3), "y": (0, 2)}
         assert_data_equal(expr.apply(points), np.array([False, True, True, False, False]))
         assert_element_equal(region, hv.Rectangles([(0, 1, 2, 3)]) * hv.Path([]))
 
@@ -247,13 +253,15 @@ class TestSelection2DExpr:
         # Will import _posixshmem on Linux + Python 3.14 + spatialpandas
         # which does not work with unimport
         import multiprocessing.resource_tracker  # noqa: F401
+
         pytest.importorskip(module)
         unimport("spatialpandas" if module == "shapely" else "shapely")
         points = hv.Points([3, 2, 1, 3, 4])
         geom = np.array([(-0.1, -0.1), (1.4, 0), (1.4, 2.2), (-0.1, 2.2)])
         expr, bbox, region = points._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_equal(bbox, {'x': np.array([-0.1, 1.4, 1.4, -0.1]),
-                                'y': np.array([-0.1, 0, 2.2, 2.2])})
+        assert_dict_equal(
+            bbox, {"x": np.array([-0.1, 1.4, 1.4, -0.1]), "y": np.array([-0.1, 0, 2.2, 2.2])}
+        )
         assert_data_equal(expr.apply(points), np.array([False, True, False, False, False]))
         assert_element_equal(region, hv.Rectangles([]) * hv.Path([[*geom, (-0.1, -0.1)]]))
 
@@ -262,88 +270,100 @@ class TestSelection2DExpr:
         # Will import _posixshmem on Linux + Python 3.14 + spatialpandas
         # which does not work with unimport
         import multiprocessing.resource_tracker  # noqa: F401
+
         pytest.importorskip(module)
         unimport("spatialpandas" if module == "shapely" else "shapely")
         points = hv.Points([3, 2, 1, 3, 4]).opts(invert_axes=True)
         geom = np.array([(-0.1, -0.1), (1.4, 0), (1.4, 2.2), (-0.1, 2.2)])
         expr, bbox, region = points._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_equal(bbox, {'y': np.array([-0.1, 1.4, 1.4, -0.1]),
-                                'x': np.array([-0.1, 0, 2.2, 2.2])})
+        assert_dict_equal(
+            bbox, {"y": np.array([-0.1, 1.4, 1.4, -0.1]), "x": np.array([-0.1, 0, 2.2, 2.2])}
+        )
         assert_data_equal(expr.apply(points), np.array([False, False, True, False, False]))
         assert_element_equal(region, hv.Rectangles([]) * hv.Path([[*geom, (-0.1, -0.1)]]))
 
     def test_points_selection_categorical(self):
-        points = hv.Points((['B', 'A', 'C', 'D', 'E'], [3, 2, 1, 3, 4]))
+        points = hv.Points((["B", "A", "C", "D", "E"], [3, 2, 1, 3, 4]))
         expr, bbox, region = points._get_selection_expr_for_stream_value(
-            bounds=(0, 1, 2, 3), x_selection=['B', 'A', 'C'], y_selection=None
+            bounds=(0, 1, 2, 3), x_selection=["B", "A", "C"], y_selection=None
         )
-        assert bbox == {'x': ['B', 'A', 'C'], 'y': (1, 3)}
+        assert bbox == {"x": ["B", "A", "C"], "y": (1, 3)}
         assert_data_equal(expr.apply(points), np.array([True, True, True, False, False]))
         assert_element_equal(region, hv.Rectangles([(0, 1, 2, 3)]) * hv.Path([]))
 
     def test_points_selection_numeric_index_cols(self):
         points = hv.Points([3, 2, 1, 3, 2])
         expr, bbox, region = points._get_selection_expr_for_stream_value(
-            bounds=(1, 0, 3, 2), index_cols=['y']
+            bounds=(1, 0, 3, 2), index_cols=["y"]
         )
-        assert bbox == {'x': (1, 3), 'y': (0, 2)}
+        assert bbox == {"x": (1, 3), "y": (0, 2)}
         assert_data_equal(expr.apply(points), np.array([False, False, True, False, False]))
         assert region is None
 
     def test_scatter_selection_numeric(self):
         scatter = hv.Scatter([3, 2, 1, 3, 4])
         expr, bbox, region = scatter._get_selection_expr_for_stream_value(bounds=(1, 0, 3, 2))
-        assert bbox == {'x': (1, 3)}
+        assert bbox == {"x": (1, 3)}
         assert_data_equal(expr.apply(scatter), np.array([False, True, True, True, False]))
         assert_element_equal(region, hv.NdOverlay({0: hv.VSpan(1, 3)}))
 
     def test_scatter_selection_numeric_inverted(self):
         scatter = hv.Scatter([3, 2, 1, 3, 4]).opts(invert_axes=True)
         expr, bbox, region = scatter._get_selection_expr_for_stream_value(bounds=(0, 1, 2, 3))
-        assert bbox == {'x': (1, 3)}
+        assert bbox == {"x": (1, 3)}
         assert_data_equal(expr.apply(scatter), np.array([False, True, True, True, False]))
         assert_element_equal(region, hv.NdOverlay({0: hv.HSpan(1, 3)}))
 
     def test_scatter_selection_categorical(self):
-        scatter = hv.Scatter((['B', 'A', 'C', 'D', 'E'], [3, 2, 1, 3, 4]))
+        scatter = hv.Scatter((["B", "A", "C", "D", "E"], [3, 2, 1, 3, 4]))
         expr, bbox, region = scatter._get_selection_expr_for_stream_value(
-            bounds=(0, 1, 2, 3), x_selection=['B', 'A', 'C'], y_selection=None
+            bounds=(0, 1, 2, 3), x_selection=["B", "A", "C"], y_selection=None
         )
-        assert bbox == {'x': ['B', 'A', 'C']}
+        assert bbox == {"x": ["B", "A", "C"]}
         assert_data_equal(expr.apply(scatter), np.array([True, True, True, False, False]))
         assert_element_equal(region, hv.NdOverlay({0: hv.VSpan(0, 2)}))
 
     def test_scatter_selection_numeric_index_cols(self):
         scatter = hv.Scatter([3, 2, 1, 3, 2])
         expr, bbox, region = scatter._get_selection_expr_for_stream_value(
-            bounds=(1, 0, 3, 2), index_cols=['y']
+            bounds=(1, 0, 3, 2), index_cols=["y"]
         )
-        assert bbox == {'x': (1, 3)}
+        assert bbox == {"x": (1, 3)}
         assert_data_equal(expr.apply(scatter), np.array([False, True, True, False, True]))
         assert region is None
 
     def test_image_selection_numeric(self):
         img = hv.Image(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3)))
         expr, bbox, region = img._get_selection_expr_for_stream_value(bounds=(0.5, 1.5, 2.1, 3.1))
-        assert bbox == {'x': (0.5, 2.1), 'y': (1.5, 3.1)}
-        assert_data_equal(expr.apply(img, expanded=True, flat=False), np.array([
-            [False, False, False],
-            [False, False, False],
-            [False, True, True],
-            [False, True, True]
-        ]))
+        assert bbox == {"x": (0.5, 2.1), "y": (1.5, 3.1)}
+        assert_data_equal(
+            expr.apply(img, expanded=True, flat=False),
+            np.array(
+                [
+                    [False, False, False],
+                    [False, False, False],
+                    [False, True, True],
+                    [False, True, True],
+                ]
+            ),
+        )
         assert_element_equal(region, hv.Rectangles([(0.5, 1.5, 2.1, 3.1)]) * hv.Path([]))
 
     def test_image_selection_numeric_inverted(self):
         img = hv.Image(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3))).opts(invert_axes=True)
         expr, bbox, region = img._get_selection_expr_for_stream_value(bounds=(1.5, 0.5, 3.1, 2.1))
-        assert bbox == {'x': (0.5, 2.1), 'y': (1.5, 3.1)}
-        assert_data_equal(expr.apply(img, expanded=True, flat=False), np.array([
-            [False, False, False],
-            [False, False, False],
-            [False, True, True],
-            [False, True, True]
-        ]))
+        assert bbox == {"x": (0.5, 2.1), "y": (1.5, 3.1)}
+        assert_data_equal(
+            expr.apply(img, expanded=True, flat=False),
+            np.array(
+                [
+                    [False, False, False],
+                    [False, False, False],
+                    [False, True, True],
+                    [False, True, True],
+                ]
+            ),
+        )
         assert_element_equal(region, hv.Rectangles([(1.5, 0.5, 3.1, 2.1)]) * hv.Path([]))
 
     @ds_skip
@@ -352,14 +372,20 @@ class TestSelection2DExpr:
         img = hv.Image(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3)))
         geom = np.array([(-0.4, -0.1), (0.6, -0.1), (0.4, 1.7), (-0.1, 1.7)])
         expr, bbox, region = img._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_equal(bbox, {'x': np.array([-0.4, 0.6, 0.4, -0.1]),
-                                'y': np.array([-0.1, -0.1, 1.7, 1.7])})
-        assert_data_equal(expr.apply(img, expanded=True, flat=False), np.array([
-            [    1., np.nan, np.nan],
-            [    1., np.nan, np.nan],
-            [np.nan, np.nan, np.nan],
-            [np.nan, np.nan, np.nan]
-        ]))
+        assert_dict_equal(
+            bbox, {"x": np.array([-0.4, 0.6, 0.4, -0.1]), "y": np.array([-0.1, -0.1, 1.7, 1.7])}
+        )
+        assert_data_equal(
+            expr.apply(img, expanded=True, flat=False),
+            np.array(
+                [
+                    [1.0, np.nan, np.nan],
+                    [1.0, np.nan, np.nan],
+                    [np.nan, np.nan, np.nan],
+                    [np.nan, np.nan, np.nan],
+                ]
+            ),
+        )
         assert_element_equal(region, hv.Rectangles([]) * hv.Path([[*geom, (-0.4, -0.1)]]))
 
     @ds_skip
@@ -367,84 +393,109 @@ class TestSelection2DExpr:
         img = hv.Image(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3))).opts(invert_axes=True)
         geom = np.array([(-0.4, -0.1), (0.6, -0.1), (0.4, 1.7), (-0.1, 1.7)])
         expr, bbox, region = img._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_equal(bbox, {'y': np.array([-0.4, 0.6, 0.4, -0.1]),
-                                'x': np.array([-0.1, -0.1, 1.7, 1.7])})
-        assert_data_equal(expr.apply(img, expanded=True, flat=False), np.array([
-            [ True,  True, False],
-            [ False, False, False],
-            [ False,  False, False],
-            [False, False, False]
-        ]))
+        assert_dict_equal(
+            bbox, {"y": np.array([-0.4, 0.6, 0.4, -0.1]), "x": np.array([-0.1, -0.1, 1.7, 1.7])}
+        )
+        assert_data_equal(
+            expr.apply(img, expanded=True, flat=False),
+            np.array(
+                [
+                    [True, True, False],
+                    [False, False, False],
+                    [False, False, False],
+                    [False, False, False],
+                ]
+            ),
+        )
         assert_element_equal(region, hv.Rectangles([]) * hv.Path([[*geom, (-0.4, -0.1)]]))
 
     def test_rgb_selection_numeric(self):
         img = hv.RGB(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3, 3)))
         expr, bbox, region = img._get_selection_expr_for_stream_value(bounds=(0.5, 1.5, 2.1, 3.1))
-        assert bbox == {'x': (0.5, 2.1), 'y': (1.5, 3.1)}
-        assert_data_equal(expr.apply(img, expanded=True, flat=False), np.array([
-            [False, False, False],
-            [False, False, False],
-            [False, True, True],
-            [False, True, True]
-        ]))
+        assert bbox == {"x": (0.5, 2.1), "y": (1.5, 3.1)}
+        assert_data_equal(
+            expr.apply(img, expanded=True, flat=False),
+            np.array(
+                [
+                    [False, False, False],
+                    [False, False, False],
+                    [False, True, True],
+                    [False, True, True],
+                ]
+            ),
+        )
         assert_element_equal(region, hv.Rectangles([(0.5, 1.5, 2.1, 3.1)]) * hv.Path([]))
 
     def test_rgb_selection_numeric_inverted(self):
         img = hv.RGB(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3, 3))).opts(invert_axes=True)
         expr, bbox, region = img._get_selection_expr_for_stream_value(bounds=(1.5, 0.5, 3.1, 2.1))
-        assert bbox == {'x': (0.5, 2.1), 'y': (1.5, 3.1)}
-        assert_data_equal(expr.apply(img, expanded=True, flat=False), np.array([
-            [False, False, False],
-            [False, False, False],
-            [False, True, True],
-            [False, True, True]
-        ]))
+        assert bbox == {"x": (0.5, 2.1), "y": (1.5, 3.1)}
+        assert_data_equal(
+            expr.apply(img, expanded=True, flat=False),
+            np.array(
+                [
+                    [False, False, False],
+                    [False, False, False],
+                    [False, True, True],
+                    [False, True, True],
+                ]
+            ),
+        )
         assert_element_equal(region, hv.Rectangles([(1.5, 0.5, 3.1, 2.1)]) * hv.Path([]))
 
     def test_quadmesh_selection(self):
         n = 4
-        coords = np.linspace(-1.5,1.5,n)
-        X,Y = np.meshgrid(coords, coords)
+        coords = np.linspace(-1.5, 1.5, n)
+        X, Y = np.meshgrid(coords, coords)
         Qx = np.cos(Y) - np.cos(X)
         Qy = np.sin(Y) + np.sin(X)
         Z = np.sqrt(X**2 + Y**2)
         qmesh = hv.QuadMesh((Qx, Qy, Z))
         expr, bbox, region = qmesh._get_selection_expr_for_stream_value(bounds=(0, -0.5, 0.7, 1.5))
-        assert bbox == {'x': (0, 0.7), 'y': (-0.5, 1.5)}
-        assert_data_equal(expr.apply(qmesh, expanded=True, flat=False), np.array([
-            [False, False, False, True],
-            [False, False,  True, False],
-            [False,  True,  True, False],
-            [True,  False, False, False]
-        ]))
+        assert bbox == {"x": (0, 0.7), "y": (-0.5, 1.5)}
+        assert_data_equal(
+            expr.apply(qmesh, expanded=True, flat=False),
+            np.array(
+                [
+                    [False, False, False, True],
+                    [False, False, True, False],
+                    [False, True, True, False],
+                    [True, False, False, False],
+                ]
+            ),
+        )
         assert_element_equal(region, hv.Rectangles([(0, -0.5, 0.7, 1.5)]) * hv.Path([]))
 
     def test_quadmesh_selection_inverted(self):
         n = 4
-        coords = np.linspace(-1.5,1.5,n)
-        X,Y = np.meshgrid(coords, coords)
+        coords = np.linspace(-1.5, 1.5, n)
+        X, Y = np.meshgrid(coords, coords)
         Qx = np.cos(Y) - np.cos(X)
         Qy = np.sin(Y) + np.sin(X)
         Z = np.sqrt(X**2 + Y**2)
         qmesh = hv.QuadMesh((Qx, Qy, Z)).opts(invert_axes=True)
         expr, bbox, region = qmesh._get_selection_expr_for_stream_value(bounds=(0, -0.5, 0.7, 1.5))
-        assert bbox == {'x': (-0.5, 1.5), 'y': (0, 0.7)}
-        assert_data_equal(expr.apply(qmesh, expanded=True, flat=False), np.array([
-            [False, False, False,  True],
-            [False, False,  True,  True],
-            [False,  True, False, False],
-            [True,  False, False, False]
-        ]))
+        assert bbox == {"x": (-0.5, 1.5), "y": (0, 0.7)}
+        assert_data_equal(
+            expr.apply(qmesh, expanded=True, flat=False),
+            np.array(
+                [
+                    [False, False, False, True],
+                    [False, False, True, True],
+                    [False, True, False, False],
+                    [True, False, False, False],
+                ]
+            ),
+        )
         assert_element_equal(region, hv.Rectangles([(0, -0.5, 0.7, 1.5)]) * hv.Path([]))
 
 
-
 class TestSelectionGeomExpr:
-
     def setup_method(self):
-        import holoviews.plotting.bokeh # noqa
+        import holoviews.plotting.bokeh  # noqa
+
         self._backend = hv.Store.current_backend
-        hv.Store.set_current_backend('bokeh')
+        hv.Store.set_current_backend("bokeh")
 
     def teardown_method(self):
         hv.Store.current_backend = self._backend
@@ -452,22 +503,24 @@ class TestSelectionGeomExpr:
     def test_rect_selection_numeric(self):
         rect = hv.Rectangles([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)])
         expr, bbox, region = rect._get_selection_expr_for_stream_value(bounds=(0.5, 0.9, 3.4, 4.9))
-        assert bbox == {'x0': (0.5, 3.4), 'y0': (0.9, 4.9), 'x1': (0.5, 3.4), 'y1': (0.9, 4.9)}
+        assert bbox == {"x0": (0.5, 3.4), "y0": (0.9, 4.9), "x1": (0.5, 3.4), "y1": (0.9, 4.9)}
         assert_data_equal(expr.apply(rect), np.array([False, True, False]))
         assert_element_equal(region, hv.Rectangles([(0.5, 0.9, 3.4, 4.9)]) * hv.Path([]))
         expr, bbox, region = rect._get_selection_expr_for_stream_value(bounds=(0, 0.9, 3.5, 4.9))
-        assert bbox == {'x0': (0, 3.5), 'y0': (0.9, 4.9), 'x1': (0, 3.5), 'y1': (0.9, 4.9)}
+        assert bbox == {"x0": (0, 3.5), "y0": (0.9, 4.9), "x1": (0, 3.5), "y1": (0.9, 4.9)}
         assert_data_equal(expr.apply(rect), np.array([True, True, True]))
         assert_element_equal(region, hv.Rectangles([(0, 0.9, 3.5, 4.9)]) * hv.Path([]))
 
     def test_rect_selection_numeric_inverted(self):
-        rect = hv.Rectangles([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)]).opts(invert_axes=True)
+        rect = hv.Rectangles([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)]).opts(
+            invert_axes=True
+        )
         expr, bbox, region = rect._get_selection_expr_for_stream_value(bounds=(0.9, 0.5, 4.9, 3.4))
-        assert bbox == {'x0': (0.5, 3.4), 'y0': (0.9, 4.9), 'x1': (0.5, 3.4), 'y1': (0.9, 4.9)}
+        assert bbox == {"x0": (0.5, 3.4), "y0": (0.9, 4.9), "x1": (0.5, 3.4), "y1": (0.9, 4.9)}
         assert_data_equal(expr.apply(rect), np.array([False, True, False]))
         assert_element_equal(region, hv.Rectangles([(0.9, 0.5, 4.9, 3.4)]) * hv.Path([]))
         expr, bbox, region = rect._get_selection_expr_for_stream_value(bounds=(0.9, 0, 4.9, 3.5))
-        assert bbox == {'x0': (0, 3.5), 'y0': (0.9, 4.9), 'x1': (0, 3.5), 'y1': (0.9, 4.9)}
+        assert bbox == {"x0": (0, 3.5), "y0": (0.9, 4.9), "x1": (0, 3.5), "y1": (0.9, 4.9)}
         assert_data_equal(expr.apply(rect), np.array([True, True, True]))
         assert_element_equal(region, hv.Rectangles([(0.9, 0, 4.9, 3.5)]) * hv.Path([]))
 
@@ -476,44 +529,58 @@ class TestSelectionGeomExpr:
         rect = hv.Rectangles([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)])
         geom = np.array([(-0.4, -0.1), (2.2, -0.1), (2.2, 4.1), (-0.1, 4.2)])
         expr, bbox, region = rect._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_equal(bbox, {'x0': np.array([-0.4, 2.2, 2.2, -0.1]),
-                                'y0': np.array([-0.1, -0.1, 4.1, 4.2]),
-                                'x1': np.array([-0.4, 2.2, 2.2, -0.1]),
-                                'y1': np.array([-0.1, -0.1, 4.1, 4.2])})
+        assert_dict_equal(
+            bbox,
+            {
+                "x0": np.array([-0.4, 2.2, 2.2, -0.1]),
+                "y0": np.array([-0.1, -0.1, 4.1, 4.2]),
+                "x1": np.array([-0.4, 2.2, 2.2, -0.1]),
+                "y1": np.array([-0.1, -0.1, 4.1, 4.2]),
+            },
+        )
         assert_data_equal(expr.apply(rect), np.array([True, True, False]))
         assert_element_equal(region, hv.Rectangles([]) * hv.Path([[*geom, (-0.4, -0.1)]]))
 
     @shapely_skip
     def test_rect_geom_selection_inverted(self):
-        rect = hv.Rectangles([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)]).opts(invert_axes=True)
+        rect = hv.Rectangles([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)]).opts(
+            invert_axes=True
+        )
         geom = np.array([(-0.4, -0.1), (3.2, -0.1), (3.2, 4.1), (-0.1, 4.2)])
         expr, bbox, region = rect._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_equal(bbox, {'y0': np.array([-0.4, 3.2, 3.2, -0.1]),
-                                'x0': np.array([-0.1, -0.1, 4.1, 4.2]),
-                                'y1': np.array([-0.4, 3.2, 3.2, -0.1]),
-                                'x1': np.array([-0.1, -0.1, 4.1, 4.2])})
+        assert_dict_equal(
+            bbox,
+            {
+                "y0": np.array([-0.4, 3.2, 3.2, -0.1]),
+                "x0": np.array([-0.1, -0.1, 4.1, 4.2]),
+                "y1": np.array([-0.4, 3.2, 3.2, -0.1]),
+                "x1": np.array([-0.1, -0.1, 4.1, 4.2]),
+            },
+        )
         assert_data_equal(expr.apply(rect), np.array([True, False, False]))
         assert_element_equal(region, hv.Rectangles([]) * hv.Path([[*geom, (-0.4, -0.1)]]))
 
     def test_segments_selection_numeric(self):
         segs = hv.Segments([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)])
         expr, bbox, region = segs._get_selection_expr_for_stream_value(bounds=(0.5, 0.9, 3.4, 4.9))
-        assert bbox == {'x0': (0.5, 3.4), 'y0': (0.9, 4.9), 'x1': (0.5, 3.4), 'y1': (0.9, 4.9)}
+        assert bbox == {"x0": (0.5, 3.4), "y0": (0.9, 4.9), "x1": (0.5, 3.4), "y1": (0.9, 4.9)}
         assert_data_equal(expr.apply(segs), np.array([False, True, False]))
         assert_element_equal(region, hv.Rectangles([(0.5, 0.9, 3.4, 4.9)]) * hv.Path([]))
         expr, bbox, region = segs._get_selection_expr_for_stream_value(bounds=(0, 0.9, 3.5, 4.9))
-        assert bbox == {'x0': (0, 3.5), 'y0': (0.9, 4.9), 'x1': (0, 3.5), 'y1': (0.9, 4.9)}
+        assert bbox == {"x0": (0, 3.5), "y0": (0.9, 4.9), "x1": (0, 3.5), "y1": (0.9, 4.9)}
         assert_data_equal(expr.apply(segs), np.array([True, True, True]))
         assert_element_equal(region, hv.Rectangles([(0, 0.9, 3.5, 4.9)]) * hv.Path([]))
 
     def test_segs_selection_numeric_inverted(self):
-        segs = hv.Segments([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)]).opts(invert_axes=True)
+        segs = hv.Segments([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)]).opts(
+            invert_axes=True
+        )
         expr, bbox, region = segs._get_selection_expr_for_stream_value(bounds=(0.9, 0.5, 4.9, 3.4))
-        assert bbox == {'x0': (0.5, 3.4), 'y0': (0.9, 4.9), 'x1': (0.5, 3.4), 'y1': (0.9, 4.9)}
+        assert bbox == {"x0": (0.5, 3.4), "y0": (0.9, 4.9), "x1": (0.5, 3.4), "y1": (0.9, 4.9)}
         assert_data_equal(expr.apply(segs), np.array([False, True, False]))
         assert_element_equal(region, hv.Rectangles([(0.9, 0.5, 4.9, 3.4)]) * hv.Path([]))
         expr, bbox, region = segs._get_selection_expr_for_stream_value(bounds=(0.9, 0, 4.9, 3.5))
-        assert bbox == {'x0': (0, 3.5), 'y0': (0.9, 4.9), 'x1': (0, 3.5), 'y1': (0.9, 4.9)}
+        assert bbox == {"x0": (0, 3.5), "y0": (0.9, 4.9), "x1": (0, 3.5), "y1": (0.9, 4.9)}
         assert_data_equal(expr.apply(segs), np.array([True, True, True]))
         assert_element_equal(region, hv.Rectangles([(0.9, 0, 4.9, 3.5)]) * hv.Path([]))
 
@@ -522,97 +589,126 @@ class TestSelectionGeomExpr:
         rect = hv.Segments([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)])
         geom = np.array([(-0.4, -0.1), (2.2, -0.1), (2.2, 4.1), (-0.1, 4.2)])
         expr, bbox, region = rect._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_equal(bbox, {'x0': np.array([-0.4, 2.2, 2.2, -0.1]),
-                                'y0': np.array([-0.1, -0.1, 4.1, 4.2]),
-                                'x1': np.array([-0.4, 2.2, 2.2, -0.1]),
-                                'y1': np.array([-0.1, -0.1, 4.1, 4.2])})
+        assert_dict_equal(
+            bbox,
+            {
+                "x0": np.array([-0.4, 2.2, 2.2, -0.1]),
+                "y0": np.array([-0.1, -0.1, 4.1, 4.2]),
+                "x1": np.array([-0.4, 2.2, 2.2, -0.1]),
+                "y1": np.array([-0.1, -0.1, 4.1, 4.2]),
+            },
+        )
         assert_data_equal(expr.apply(rect), np.array([True, True, False]))
         assert_element_equal(region, hv.Rectangles([]) * hv.Path([[*geom, (-0.4, -0.1)]]))
 
     @shapely_skip
     def test_segs_geom_selection_inverted(self):
-        rect = hv.Segments([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)]).opts(invert_axes=True)
+        rect = hv.Segments([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)]).opts(
+            invert_axes=True
+        )
         geom = np.array([(-0.4, -0.1), (3.2, -0.1), (3.2, 4.1), (-0.1, 4.2)])
         expr, bbox, region = rect._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_equal(bbox, {'y0': np.array([-0.4, 3.2, 3.2, -0.1]),
-                                'x0': np.array([-0.1, -0.1, 4.1, 4.2]),
-                                'y1': np.array([-0.4, 3.2, 3.2, -0.1]),
-                                'x1': np.array([-0.1, -0.1, 4.1, 4.2])})
+        assert_dict_equal(
+            bbox,
+            {
+                "y0": np.array([-0.4, 3.2, 3.2, -0.1]),
+                "x0": np.array([-0.1, -0.1, 4.1, 4.2]),
+                "y1": np.array([-0.4, 3.2, 3.2, -0.1]),
+                "x1": np.array([-0.1, -0.1, 4.1, 4.2]),
+            },
+        )
         assert_data_equal(expr.apply(rect), np.array([True, False, False]))
         assert_element_equal(region, hv.Rectangles([]) * hv.Path([[*geom, (-0.4, -0.1)]]))
 
 
 class TestSelectionPolyExpr:
-
     def setup_method(self):
-        import holoviews.plotting.bokeh # noqa
+        import holoviews.plotting.bokeh  # noqa
+
         self._backend = hv.Store.current_backend
-        hv.Store.set_current_backend('bokeh')
+        hv.Store.set_current_backend("bokeh")
 
     def teardown_method(self):
         hv.Store.current_backend = self._backend
 
     def test_poly_selection_numeric(self):
-        poly = hv.Polygons([
-            [(0, 0), (0.2, 0.1), (0.3, 0.4), (0.1, 0.2)],
-            [(0.25, -.1), (0.4, 0.2), (0.6, 0.3), (0.5, 0.1)],
-            [(0.3, 0.3), (0.5, 0.4), (0.6, 0.5), (0.35, 0.45)]
-        ])
-        expr, bbox, region = poly._get_selection_expr_for_stream_value(bounds=(0.2, -0.2, 0.6, 0.6))
-        assert bbox == {'x': (0.2, 0.6), 'y': (-0.2, 0.6)}
+        poly = hv.Polygons(
+            [
+                [(0, 0), (0.2, 0.1), (0.3, 0.4), (0.1, 0.2)],
+                [(0.25, -0.1), (0.4, 0.2), (0.6, 0.3), (0.5, 0.1)],
+                [(0.3, 0.3), (0.5, 0.4), (0.6, 0.5), (0.35, 0.45)],
+            ]
+        )
+        expr, bbox, region = poly._get_selection_expr_for_stream_value(
+            bounds=(0.2, -0.2, 0.6, 0.6)
+        )
+        assert bbox == {"x": (0.2, 0.6), "y": (-0.2, 0.6)}
         assert_data_equal(expr.apply(poly, expanded=False), np.array([False, True, True]))
         assert_element_equal(region, hv.Rectangles([(0.2, -0.2, 0.6, 0.6)]) * hv.Path([]))
 
     def test_poly_selection_numeric_inverted(self):
-        poly = hv.Polygons([
-            [(0, 0), (0.2, 0.1), (0.3, 0.4), (0.1, 0.2)],
-            [(0.25, -.1), (0.4, 0.2), (0.6, 0.3), (0.5, 0.1)],
-            [(0.3, 0.3), (0.5, 0.4), (0.6, 0.5), (0.35, 0.45)]
-        ]).opts(invert_axes=True)
-        expr, bbox, region = poly._get_selection_expr_for_stream_value(bounds=(0.2, -0.2, 0.6, 0.6))
-        assert bbox == {'y': (0.2, 0.6), 'x': (-0.2, 0.6)}
+        poly = hv.Polygons(
+            [
+                [(0, 0), (0.2, 0.1), (0.3, 0.4), (0.1, 0.2)],
+                [(0.25, -0.1), (0.4, 0.2), (0.6, 0.3), (0.5, 0.1)],
+                [(0.3, 0.3), (0.5, 0.4), (0.6, 0.5), (0.35, 0.45)],
+            ]
+        ).opts(invert_axes=True)
+        expr, bbox, region = poly._get_selection_expr_for_stream_value(
+            bounds=(0.2, -0.2, 0.6, 0.6)
+        )
+        assert bbox == {"y": (0.2, 0.6), "x": (-0.2, 0.6)}
         assert_data_equal(expr.apply(poly, expanded=False), np.array([False, False, True]))
         assert_element_equal(region, hv.Rectangles([(0.2, -0.2, 0.6, 0.6)]) * hv.Path([]))
 
     @shapely_skip
     def test_poly_geom_selection(self):
-        poly = hv.Polygons([
-            [(0, 0), (0.2, 0.1), (0.3, 0.4), (0.1, 0.2)],
-            [(0.25, -.1), (0.4, 0.2), (0.6, 0.3), (0.5, 0.1)],
-            [(0.3, 0.3), (0.5, 0.4), (0.6, 0.5), (0.35, 0.45)]
-        ])
+        poly = hv.Polygons(
+            [
+                [(0, 0), (0.2, 0.1), (0.3, 0.4), (0.1, 0.2)],
+                [(0.25, -0.1), (0.4, 0.2), (0.6, 0.3), (0.5, 0.1)],
+                [(0.3, 0.3), (0.5, 0.4), (0.6, 0.5), (0.35, 0.45)],
+            ]
+        )
         geom = np.array([(0.2, -0.15), (0.5, 0), (0.75, 0.6), (0.1, 0.45)])
         expr, bbox, region = poly._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_equal(bbox, {'x': np.array([0.2, 0.5, 0.75, 0.1]),
-                                'y': np.array([-0.15, 0, 0.6, 0.45])})
+        assert_dict_equal(
+            bbox, {"x": np.array([0.2, 0.5, 0.75, 0.1]), "y": np.array([-0.15, 0, 0.6, 0.45])}
+        )
         assert_data_equal(expr.apply(poly, expanded=False), np.array([False, True, True]))
         assert_element_equal(region, hv.Rectangles([]) * hv.Path([[*geom, (0.2, -0.15)]]))
 
     @shapely_skip
     def test_poly_geom_selection_inverted(self):
-        poly = hv.Polygons([
-            [(0, 0), (0.2, 0.1), (0.3, 0.4), (0.1, 0.2)],
-            [(0.25, -.1), (0.4, 0.2), (0.6, 0.3), (0.5, 0.1)],
-            [(0.3, 0.3), (0.5, 0.4), (0.6, 0.5), (0.35, 0.45)]
-        ]).opts(invert_axes=True)
+        poly = hv.Polygons(
+            [
+                [(0, 0), (0.2, 0.1), (0.3, 0.4), (0.1, 0.2)],
+                [(0.25, -0.1), (0.4, 0.2), (0.6, 0.3), (0.5, 0.1)],
+                [(0.3, 0.3), (0.5, 0.4), (0.6, 0.5), (0.35, 0.45)],
+            ]
+        ).opts(invert_axes=True)
         geom = np.array([(0.2, -0.15), (0.5, 0), (0.75, 0.6), (0.1, 0.6)])
         expr, bbox, region = poly._get_selection_expr_for_stream_value(geometry=geom)
-        assert_dict_equal(bbox, {'y': np.array([0.2, 0.5, 0.75, 0.1]),
-                                'x': np.array([-0.15, 0, 0.6, 0.6])})
+        assert_dict_equal(
+            bbox, {"y": np.array([0.2, 0.5, 0.75, 0.1]), "x": np.array([-0.15, 0, 0.6, 0.6])}
+        )
         assert_data_equal(expr.apply(poly, expanded=False), np.array([False, False, True]))
         assert_element_equal(region, hv.Rectangles([]) * hv.Path([[*geom, (0.2, -0.15)]]))
 
 
-@pytest.mark.parametrize(("geometry", "pt_mask"), [
-    (
-        np.array([[-1, 0.5], [1, 0.5], [0, -1.5], [-2, -1.5]], dtype=float),
-        np.array([0, 0, 0, 1, 1, 0, 1, 1, 0], dtype=bool)
-    ),
-    (
-        np.array([[10, 10], [10, 11], [11, 11], [11, 10]], dtype=float),
-        np.array([0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=bool)
-    )
-])
+@pytest.mark.parametrize(
+    ("geometry", "pt_mask"),
+    [
+        (
+            np.array([[-1, 0.5], [1, 0.5], [0, -1.5], [-2, -1.5]], dtype=float),
+            np.array([0, 0, 0, 1, 1, 0, 1, 1, 0], dtype=bool),
+        ),
+        (
+            np.array([[10, 10], [10, 11], [11, 11], [11, 10]], dtype=float),
+            np.array([0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=bool),
+        ),
+    ],
+)
 class TestSpatialSelectColumnar:
     __test__ = False
     method = None
@@ -620,8 +716,7 @@ class TestSpatialSelectColumnar:
     @pytest.fixture
     def pandas_df(self):
         return pd.DataFrame(
-            {"x": [-1, 0, 1, -1, 0, 1, -1, 0, 1], "y": [1, 1, 1, 0, 0, 0, -1, -1, -1]},
-            dtype=float
+            {"x": [-1, 0, 1, -1, 0, 1, -1, 0, 1], "y": [1, 1, 1, 0, 0, 0, -1, -1, -1]}, dtype=float
         )
 
     @pytest.fixture
@@ -633,7 +728,9 @@ class TestSpatialSelectColumnar:
         assert np.array_equal(mask, pt_mask)
 
     def test_numpy(self, geometry, pt_mask, pandas_df):
-        mask = spatial_select_columnar(pandas_df.x.to_numpy(copy=True), pandas_df.y.to_numpy(copy=True), geometry, self.method)
+        mask = spatial_select_columnar(
+            pandas_df.x.to_numpy(copy=True), pandas_df.y.to_numpy(copy=True), geometry, self.method
+        )
         assert np.array_equal(mask, pt_mask)
 
     @dask_skip
@@ -650,7 +747,8 @@ class TestSpatialSelectColumnar:
     def test_cudf(self, geometry, pt_mask, pandas_df, unimport):
         import cudf
         import cupy as cp
-        unimport('cuspatial')
+
+        unimport("cuspatial")
 
         df = cudf.from_pandas(pandas_df)
         mask = spatial_select_columnar(df.x, df.y, geometry, self.method)
@@ -666,14 +764,13 @@ class TestSpatialSelectColumnar:
         assert np.array_equal(cp.asnumpy(mask), pt_mask)
 
 
-
 @shapely_skip
 class TestSpatialSelectColumnarShapely(TestSpatialSelectColumnar):
     __test__ = True
-    method = 'shapely'
+    method = "shapely"
 
 
 @spd_skip
 class TestSpatialSelectColumnarSpatialpandas(TestSpatialSelectColumnar):
     __test__ = True
-    method = 'spatialpandas'
+    method = "spatialpandas"

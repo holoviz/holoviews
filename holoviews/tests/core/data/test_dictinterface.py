@@ -11,45 +11,53 @@ class DictDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
     Test of the generic dictionary interface.
     """
 
-    datatype = 'dictionary'
+    datatype = "dictionary"
     data_type = (dict,)
 
     __test__ = True
 
     def test_dataset_simple_dict_sorted(self):
-        dataset = hv.Dataset({2: 2, 1: 1, 3: 3}, kdims=['x'], vdims=['y'])
-        assert_element_equal(dataset, hv.Dataset([(i, i) for i in range(1, 4)],
-                                          kdims=['x'], vdims=['y']))
+        dataset = hv.Dataset({2: 2, 1: 1, 3: 3}, kdims=["x"], vdims=["y"])
+        assert_element_equal(
+            dataset, hv.Dataset([(i, i) for i in range(1, 4)], kdims=["x"], vdims=["y"])
+        )
 
     def test_dataset_dataset_ht_dtypes(self):
         ds = self.table
-        str_type = '<U1'
-        assert ds.interface.dtype(ds, 'Gender') == np.dtype(str_type)
-        assert ds.interface.dtype(ds, 'Age') == np.dtype(int)
-        assert ds.interface.dtype(ds, 'Weight') == np.dtype(int)
-        assert ds.interface.dtype(ds, 'Height') == np.dtype('float64')
+        str_type = "<U1"
+        assert ds.interface.dtype(ds, "Gender") == np.dtype(str_type)
+        assert ds.interface.dtype(ds, "Age") == np.dtype(int)
+        assert ds.interface.dtype(ds, "Weight") == np.dtype(int)
+        assert ds.interface.dtype(ds, "Height") == np.dtype("float64")
 
     def test_dataset_empty_list_init_dtypes(self):
-        dataset = hv.Dataset([], kdims=['x'], vdims=['y'])
-        for d in 'xy':
+        dataset = hv.Dataset([], kdims=["x"], vdims=["y"])
+        for d in "xy":
             assert dataset.dimension_values(d).dtype == np.float64
 
     def test_dataset_empty_combined_dimension(self):
-        ds = hv.Dataset({('x', 'y'): []}, kdims=['x', 'y'])
-        ds2 = hv.Dataset({'x': [], 'y': []}, kdims=['x', 'y'])
+        ds = hv.Dataset({("x", "y"): []}, kdims=["x", "y"])
+        ds2 = hv.Dataset({"x": [], "y": []}, kdims=["x", "y"])
         assert_element_equal(ds, ds2)
 
     def test_dataset_allow_none_value(self):
-        ds = hv.Dataset({'x': None, 'y': [1]}, kdims=['x', 'y'])
+        ds = hv.Dataset({"x": None, "y": [1]}, kdims=["x", "y"])
         assert_data_equal(ds.dimension_values(0), np.array([None]))
 
     def test_dataset_allow_none_values(self):
-        ds = hv.Dataset({'x': None, 'y': [0, 1]}, kdims=['x', 'y'])
+        ds = hv.Dataset({"x": None, "y": [0, 1]}, kdims=["x", "y"])
         assert_data_equal(ds.dimension_values(0), np.array([None, None]))
 
     def test_dataset_ignore_non_dimensions(self):
-        ds = hv.Dataset({'x': [0, 1], 'y': [1, 2], 'ignore_scalar': 1,
-                      'ignore_array': np.array([2, 3]), 'ignore_None': None},
-                     kdims=['x', 'y'])
-        ds2 = hv.Dataset({'x': [0, 1], 'y': [1, 2]}, kdims=['x', 'y'])
+        ds = hv.Dataset(
+            {
+                "x": [0, 1],
+                "y": [1, 2],
+                "ignore_scalar": 1,
+                "ignore_array": np.array([2, 3]),
+                "ignore_None": None,
+            },
+            kdims=["x", "y"],
+        )
+        ds2 = hv.Dataset({"x": [0, 1], "y": [1, 2]}, kdims=["x", "y"])
         assert_element_equal(ds, ds2)

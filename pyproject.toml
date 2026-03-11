@@ -157,6 +157,10 @@ exclude_also = ["if __name__ == .__main__.:", "if TYPE_CHECKING:", "if ._pyodide
 
 [tool.ruff]
 fix = true
+line-length = 99
+
+[tool.ruff.format]
+exclude = ["*.ipynb", "*.md"]
 
 [tool.ruff.lint]
 select = [
@@ -182,7 +186,6 @@ select = [
 ignore = [
     "E402", # Module level import not at top of file
     "E501", # Line too long
-    "E701", # Multiple statements on one line
     "E712", # Comparison to true should be is
     "E731", # Do not assign a lambda expression, use a def
     "E741", # Ambiguous variable name

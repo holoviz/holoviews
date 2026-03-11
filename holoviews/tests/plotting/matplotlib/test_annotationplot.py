@@ -8,9 +8,7 @@ from .test_plot import TestMPLPlot, mpl_renderer
 
 class TestHVLinesPlot(TestMPLPlot):
     def test_hlines_plot(self):
-        hlines = hv.HLines(
-            {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
-        )
+        hlines = hv.HLines({"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"])
         plot = mpl_renderer.get_plot(hlines)
         assert plot.handles["fig"].axes[0].get_xlabel() == "x"
         assert plot.handles["fig"].axes[0].get_ylabel() == "y"
@@ -76,9 +74,7 @@ class TestHVLinesPlot(TestMPLPlot):
             assert source.get_data() == ([0, 1], [val, val])
 
     def test_vlines_plot(self):
-        vlines = hv.VLines(
-            {"x": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
-        )
+        vlines = hv.VLines({"x": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"])
         plot = mpl_renderer.get_plot(vlines)
         assert plot.handles["fig"].axes[0].get_xlabel() == "x"
         assert plot.handles["fig"].axes[0].get_ylabel() == "y"
@@ -128,12 +124,8 @@ class TestHVLinesPlot(TestMPLPlot):
             assert source.get_data() == ([val, val], [0, 1])
 
     def test_vlines_hlines_overlay(self):
-        hlines = hv.HLines(
-            {"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
-        )
-        vlines = hv.VLines(
-            {"x": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"]
-        )
+        hlines = hv.HLines({"y": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"])
+        vlines = hv.VLines({"x": [0, 1, 2, 5.5], "extra": [-1, -2, -3, -44]}, vdims=["extra"])
 
         plot = mpl_renderer.get_plot(hlines * vlines)
         assert plot.handles["fig"].axes[0].get_xlabel() == "x"
@@ -153,7 +145,6 @@ class TestHVLinesPlot(TestMPLPlot):
 
 
 class TestHVSpansPlot(TestMPLPlot):
-
     def _hspans_check(self, source, v0, v1):
         # Matplotlib 3.9+ uses a rectangle instead of polygon
         if MPL_GE_3_9_0:

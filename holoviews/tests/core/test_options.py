@@ -25,233 +25,221 @@ if plotly:
 
 
 class TestOptions:
-
     def setup_method(self):
         self.original_option_groups = hv.Options._option_groups
-        hv.Options._option_groups = ['test']
+        hv.Options._option_groups = ["test"]
 
     def teardown_method(self):
         hv.Options._option_groups = self.original_option_groups
 
     def test_options_init(self):
-        hv.Options('test')
+        hv.Options("test")
 
     def test_options_valid_keywords1(self):
-        opts = hv.Options('test', allowed_keywords=['kw1'], kw1='value')
-        assert opts.kwargs == {'kw1':'value'}
+        opts = hv.Options("test", allowed_keywords=["kw1"], kw1="value")
+        assert opts.kwargs == {"kw1": "value"}
 
     def test_options_valid_keywords2(self):
-        opts = hv.Options('test', allowed_keywords=['kw1', 'kw2'], kw1='value')
-        assert opts.kwargs == {'kw1':'value'}
+        opts = hv.Options("test", allowed_keywords=["kw1", "kw2"], kw1="value")
+        assert opts.kwargs == {"kw1": "value"}
 
     def test_options_valid_keywords3(self):
-        opts = hv.Options('test', allowed_keywords=['kw1', 'kw2'], kw1='value1', kw2='value2')
-        assert opts.kwargs == {'kw1':'value1', 'kw2':'value2'}
+        opts = hv.Options("test", allowed_keywords=["kw1", "kw2"], kw1="value1", kw2="value2")
+        assert opts.kwargs == {"kw1": "value1", "kw2": "value2"}
 
     def test_options_any_keywords3(self):
-        opts = hv.Options('test', kw1='value1', kw2='value3')
-        assert opts.kwargs == {'kw1':'value1', 'kw2':'value3'}
+        opts = hv.Options("test", kw1="value1", kw2="value3")
+        assert opts.kwargs == {"kw1": "value1", "kw2": "value3"}
 
     def test_options_invalid_keywords1(self):
         msg = "Invalid option 'kw', valid options are: ['kw1']."
         with pytest.raises(OptionError, match=re.escape(msg)):
-            hv.Options('test', allowed_keywords=['kw1'], kw='value')
+            hv.Options("test", allowed_keywords=["kw1"], kw="value")
 
     def test_options_invalid_keywords2(self):
         msg = "Invalid option 'kw3', valid options are: ['kw2']."
         with pytest.raises(OptionError, match=re.escape(msg)):
-            hv.Options('test', allowed_keywords=['kw2'], kw2='value', kw3='value')
+            hv.Options("test", allowed_keywords=["kw2"], kw2="value", kw3="value")
 
     def test_options_invalid_keywords_skip1(self):
         with options_policy(skip_invalid=True, warn_on_skip=False):
-            opts = hv.Options('test', allowed_keywords=['kw1'], kw='value')
+            opts = hv.Options("test", allowed_keywords=["kw1"], kw="value")
         assert opts.kwargs == {}
 
     def test_options_invalid_keywords_skip2(self):
         with options_policy(skip_invalid=True, warn_on_skip=False):
-            opts = hv.Options('test', allowed_keywords=['kw1'], kw1='value', kw2='val')
-        assert opts.kwargs == {'kw1':'value'}
-
+            opts = hv.Options("test", allowed_keywords=["kw1"], kw1="value", kw2="val")
+        assert opts.kwargs == {"kw1": "value"}
 
     def test_options_record_invalid(self):
         hv.StoreOptions.start_recording_skipped()
         with options_policy(skip_invalid=True, warn_on_skip=False):
-            hv.Options('test', allowed_keywords=['kw1'], kw1='value', kw2='val')
+            hv.Options("test", allowed_keywords=["kw1"], kw1="value", kw2="val")
         errors = hv.StoreOptions.stop_recording_skipped()
         assert len(errors) == 1
-        assert errors[0].invalid_keyword == 'kw2'
-
+        assert errors[0].invalid_keyword == "kw2"
 
     def test_options_get_options(self):
-        opts = hv.Options('test', allowed_keywords=['kw2', 'kw3'],
-                       kw2='value', kw3='value').options
-        assert opts == dict(kw2='value', kw3='value')
+        opts = hv.Options(
+            "test", allowed_keywords=["kw2", "kw3"], kw2="value", kw3="value"
+        ).options
+        assert opts == dict(kw2="value", kw3="value")
 
     def test_options_get_options_cyclic1(self):
-        opts = hv.Options('test', allowed_keywords=['kw2', 'kw3'],
-                       kw2='value', kw3='value')
+        opts = hv.Options("test", allowed_keywords=["kw2", "kw3"], kw2="value", kw3="value")
         for i in range(16):
-            assert opts[i] == dict(kw2='value', kw3='value')
+            assert opts[i] == dict(kw2="value", kw3="value")
 
     def test_options_keys(self):
-        opts = hv.Options('test', allowed_keywords=['kw3', 'kw2'],
-                       kw2='value', kw3='value')
-        assert opts.keys() == ['kw2', 'kw3']
+        opts = hv.Options("test", allowed_keywords=["kw3", "kw2"], kw2="value", kw3="value")
+        assert opts.keys() == ["kw2", "kw3"]
 
     def test_options_inherit(self):
-        original_kws = dict(kw2='value', kw3='value')
-        opts = hv.Options('test', **original_kws)
-        new_kws = dict(kw4='val4', kw5='val5')
+        original_kws = dict(kw2="value", kw3="value")
+        opts = hv.Options("test", **original_kws)
+        new_kws = dict(kw4="val4", kw5="val5")
         new_opts = opts(**new_kws)
 
         assert new_opts.options == dict(original_kws, **new_kws)
 
     def test_options_inherit_invalid_keywords(self):
-        original_kws = dict(kw2='value', kw3='value')
-        opts = hv.Options('test', allowed_keywords=['kw3', 'kw2'], **original_kws)
-        new_kws = dict(kw4='val4', kw5='val5')
+        original_kws = dict(kw2="value", kw3="value")
+        opts = hv.Options("test", allowed_keywords=["kw3", "kw2"], **original_kws)
+        new_kws = dict(kw4="val4", kw5="val5")
         msg = re.escape(r"Invalid option 'kw4', valid options are: ['kw2', 'kw3'].")
         with pytest.raises(OptionError, match=msg):
             opts(**new_kws)
 
 
 class TestCycle:
-
     def setup_method(self):
         self.original_option_groups = hv.Options._option_groups
-        hv.Options._option_groups = ['test']
+        hv.Options._option_groups = ["test"]
 
     def teardown_method(self):
         hv.Options._option_groups = self.original_option_groups
 
     def test_cycle_init(self):
-        hv.Cycle(values=['a', 'b', 'c'])
+        hv.Cycle(values=["a", "b", "c"])
         hv.Cycle(values=[1, 2, 3])
 
-
     def test_cycle_expansion(self):
-        cycle1 = hv.Cycle(values=['a', 'b', 'c'])
+        cycle1 = hv.Cycle(values=["a", "b", "c"])
         cycle2 = hv.Cycle(values=[1, 2, 3])
 
-        opts = hv.Options('test', one=cycle1, two=cycle2)
-        assert opts[0] == {'one': 'a', 'two': 1}
-        assert opts[1] == {'one': 'b', 'two': 2}
-        assert opts[2] == {'one': 'c', 'two': 3}
-        assert opts[3] == {'one': 'a', 'two': 1}
-        assert opts[4] == {'one': 'b', 'two': 2}
-        assert opts[5] == {'one': 'c', 'two': 3}
-
+        opts = hv.Options("test", one=cycle1, two=cycle2)
+        assert opts[0] == {"one": "a", "two": 1}
+        assert opts[1] == {"one": "b", "two": 2}
+        assert opts[2] == {"one": "c", "two": 3}
+        assert opts[3] == {"one": "a", "two": 1}
+        assert opts[4] == {"one": "b", "two": 2}
+        assert opts[5] == {"one": "c", "two": 3}
 
     def test_cycle_expansion_unequal(self):
-        cycle1 = hv.Cycle(values=['a', 'b', 'c', 'd'])
+        cycle1 = hv.Cycle(values=["a", "b", "c", "d"])
         cycle2 = hv.Cycle(values=[1, 2, 3])
 
-        opts = hv.Options('test', one=cycle1, two=cycle2)
-        assert opts[0] == {'one': 'a', 'two': 1}
-        assert opts[1] == {'one': 'b', 'two': 2}
-        assert opts[2] == {'one': 'c', 'two': 3}
-        assert opts[3] == {'one': 'd', 'two': 1}
-        assert opts[4] == {'one': 'a', 'two': 2}
-        assert opts[5] == {'one': 'b', 'two': 3}
-
+        opts = hv.Options("test", one=cycle1, two=cycle2)
+        assert opts[0] == {"one": "a", "two": 1}
+        assert opts[1] == {"one": "b", "two": 2}
+        assert opts[2] == {"one": "c", "two": 3}
+        assert opts[3] == {"one": "d", "two": 1}
+        assert opts[4] == {"one": "a", "two": 2}
+        assert opts[5] == {"one": "b", "two": 3}
 
     def test_cycle_slice(self):
-        cycle1 = hv.Cycle(values=['a', 'b', 'c'])[2]
+        cycle1 = hv.Cycle(values=["a", "b", "c"])[2]
         cycle2 = hv.Cycle(values=[1, 2, 3])
 
-        opts = hv.Options('test', one=cycle1, two=cycle2)
-        assert opts[0] == {'one': 'a', 'two': 1}
-        assert opts[1] == {'one': 'b', 'two': 2}
-        assert opts[2] == {'one': 'a', 'two': 3}
-        assert opts[3] == {'one': 'b', 'two': 1}
-
+        opts = hv.Options("test", one=cycle1, two=cycle2)
+        assert opts[0] == {"one": "a", "two": 1}
+        assert opts[1] == {"one": "b", "two": 2}
+        assert opts[2] == {"one": "a", "two": 3}
+        assert opts[3] == {"one": "b", "two": 1}
 
     def test_cyclic_property_true(self):
-        cycle1 = hv.Cycle(values=['a', 'b', 'c'])
-        opts = hv.Options('test', one=cycle1, two='two')
+        cycle1 = hv.Cycle(values=["a", "b", "c"])
+        opts = hv.Options("test", one=cycle1, two="two")
         assert opts.cyclic is True
 
     def test_cyclic_property_false(self):
-        opts = hv.Options('test', one='one', two='two')
+        opts = hv.Options("test", one="one", two="two")
         assert opts.cyclic is False
 
-
     def test_options_property_disabled(self):
-        cycle1 = hv.Cycle(values=['a', 'b', 'c'])
-        opts = hv.Options('test', one=cycle1)
+        cycle1 = hv.Cycle(values=["a", "b", "c"])
+        opts = hv.Options("test", one=cycle1)
         msg = r"The options property may only be used with non-cyclic Options\."
         with pytest.raises(Exception, match=msg):
             opts.options  # noqa: B018
 
 
-
 class TestOptionTree:
-
     def setup_method(self):
         self.original_option_groups = hv.Options._option_groups[:]
-        hv.Options._option_groups = ['group1', 'group2']
+        hv.Options._option_groups = ["group1", "group2"]
 
     def teardown_method(self):
         hv.Options._option_groups = self.original_option_groups
 
     def test_optiontree_init_1(self):
-        OptionTree(groups=['group1', 'group2'])
+        OptionTree(groups=["group1", "group2"])
 
     def test_optiontree_init_2(self):
-        OptionTree(groups=['group1', 'group2'])
+        OptionTree(groups=["group1", "group2"])
 
     def test_optiontree_setter_getter(self):
-        options = OptionTree(groups=['group1', 'group2'])
-        opts = hv.Options('group1', kw1='value')
+        options = OptionTree(groups=["group1", "group2"])
+        opts = hv.Options("group1", kw1="value")
         options.MyType = opts
-        assert_element_equal(options.MyType['group1'], opts)
-        assert options.MyType['group1'].options == {'kw1':'value'}
+        assert_element_equal(options.MyType["group1"], opts)
+        assert options.MyType["group1"].options == {"kw1": "value"}
 
     def test_optiontree_dict_setter_getter(self):
-        options = OptionTree(groups=['group1', 'group2'])
+        options = OptionTree(groups=["group1", "group2"])
 
-        opts1 = hv.Options(kw1='value1')
-        opts2 = hv.Options(kw2='value2')
-        options.MyType = {'group1':opts1, 'group2':opts2}
+        opts1 = hv.Options(kw1="value1")
+        opts2 = hv.Options(kw2="value2")
+        options.MyType = {"group1": opts1, "group2": opts2}
 
-        assert_element_equal(options.MyType['group1'], opts1)
-        assert options.MyType['group1'].options == {'kw1':'value1'}
+        assert_element_equal(options.MyType["group1"], opts1)
+        assert options.MyType["group1"].options == {"kw1": "value1"}
 
-        assert_element_equal(options.MyType['group2'], opts2)
-        assert options.MyType['group2'].options == {'kw2':'value2'}
+        assert_element_equal(options.MyType["group2"], opts2)
+        assert options.MyType["group2"].options == {"kw2": "value2"}
 
     def test_optiontree_inheritance(self):
-        options = OptionTree(groups=['group1', 'group2'])
+        options = OptionTree(groups=["group1", "group2"])
 
-        opts1 = hv.Options(kw1='value1')
-        opts2 = hv.Options(kw2='value2')
-        options.MyType = {'group1':opts1, 'group2':opts2}
+        opts1 = hv.Options(kw1="value1")
+        opts2 = hv.Options(kw2="value2")
+        options.MyType = {"group1": opts1, "group2": opts2}
 
-        opts3 = hv.Options(kw3='value3')
-        opts4 = hv.Options(kw4='value4')
-        options.MyType.Child = {'group1':opts3, 'group2':opts4}
+        opts3 = hv.Options(kw3="value3")
+        opts4 = hv.Options(kw4="value4")
+        options.MyType.Child = {"group1": opts3, "group2": opts4}
 
-        assert options.MyType.Child.options('group1').kwargs == {'kw1':'value1', 'kw3':'value3'}
+        assert options.MyType.Child.options("group1").kwargs == {"kw1": "value1", "kw3": "value3"}
 
-        assert options.MyType.Child.options('group2').kwargs == {'kw2':'value2', 'kw4':'value4'}
+        assert options.MyType.Child.options("group2").kwargs == {"kw2": "value2", "kw4": "value4"}
 
     def test_optiontree_inheritance_flipped(self):
         """
         Tests for ordering problems manifested in issue #93
         """
-        options = OptionTree(groups=['group1', 'group2'])
+        options = OptionTree(groups=["group1", "group2"])
 
-        opts3 = hv.Options(kw3='value3')
-        opts4 = hv.Options(kw4='value4')
-        options.MyType.Child = {'group1':opts3, 'group2':opts4}
+        opts3 = hv.Options(kw3="value3")
+        opts4 = hv.Options(kw4="value4")
+        options.MyType.Child = {"group1": opts3, "group2": opts4}
 
-        opts1 = hv.Options(kw1='value1')
-        opts2 = hv.Options(kw2='value2')
-        options.MyType = {'group1':opts1, 'group2':opts2}
+        opts1 = hv.Options(kw1="value1")
+        opts2 = hv.Options(kw2="value2")
+        options.MyType = {"group1": opts1, "group2": opts2}
 
-        assert options.MyType.Child.options('group1').kwargs == {'kw1':'value1', 'kw3':'value3'}
+        assert options.MyType.Child.options("group1").kwargs == {"kw1": "value1", "kw3": "value3"}
 
-        assert options.MyType.Child.options('group2').kwargs == {'kw2':'value2', 'kw4':'value4'}
+        assert options.MyType.Child.options("group2").kwargs == {"kw2": "value2", "kw4": "value4"}
 
 
 @mpl_skip
@@ -261,45 +249,45 @@ class TestStoreInheritanceDynamic:
     """
 
     def setup_method(self):
-        self.backend = 'matplotlib'
+        self.backend = "matplotlib"
         hv.Store.set_current_backend(self.backend)
         options = hv.Store.options()
-        self.store_copy = OptionTree(sorted(options.items()),
-                                     groups=hv.Options._option_groups,
-                                     backend=options.backend)
+        self.store_copy = OptionTree(
+            sorted(options.items()), groups=hv.Options._option_groups, backend=options.backend
+        )
 
     def teardown_method(self):
         hv.Store.options(val=self.store_copy)
 
     def initialize_option_tree(self):
-        hv.Store.options(val=OptionTree(groups=['plot', 'style']))
+        hv.Store.options(val=OptionTree(groups=["plot", "style"]))
         options = hv.Store.options()
-        options.Image = hv.Options('style', cmap='hot', interpolation='nearest')
+        options.Image = hv.Options("style", cmap="hot", interpolation="nearest")
         return options
 
     def test_empty_group(self):
         "Test to prevent regression of issue fixed in #5131"
         ls = np.linspace(0, 10, 200)
         xx, yy = np.meshgrid(ls, ls)
-        hv.util.render(hv.Image(np.sin(xx)*np.cos(yy), group="").opts(cmap="greys"))
+        hv.util.render(hv.Image(np.sin(xx) * np.cos(yy), group="").opts(cmap="greys"))
 
     def test_merge_keywords(self):
         options = self.initialize_option_tree()
-        options.Image = hv.Options('style', clims=(0, 0.5))
+        options.Image = hv.Options("style", clims=(0, 0.5))
 
-        expected = {'clims': (0, 0.5), 'cmap': 'hot', 'interpolation': 'nearest'}
-        direct_kws = options.Image.groups['style'].kwargs
-        inherited_kws = options.Image.options('style').kwargs
+        expected = {"clims": (0, 0.5), "cmap": "hot", "interpolation": "nearest"}
+        direct_kws = options.Image.groups["style"].kwargs
+        inherited_kws = options.Image.options("style").kwargs
         assert direct_kws == expected
         assert inherited_kws == expected
 
     def test_merge_keywords_disabled(self):
         options = self.initialize_option_tree()
-        options.Image = hv.Options('style', clims=(0, 0.5), merge_keywords=False)
+        options.Image = hv.Options("style", clims=(0, 0.5), merge_keywords=False)
 
-        expected = {'clims': (0, 0.5)}
-        direct_kws = options.Image.groups['style'].kwargs
-        inherited_kws = options.Image.options('style').kwargs
+        expected = {"clims": (0, 0.5)}
+        direct_kws = options.Image.groups["style"].kwargs
+        inherited_kws = options.Image.options("style").kwargs
         assert direct_kws == expected
         assert inherited_kws == expected
 
@@ -310,22 +298,21 @@ class TestStoreInheritanceDynamic:
         """
         options = self.initialize_option_tree()
 
-        obj = hv.Image(np.random.rand(10,10), group='SomeGroup')
+        obj = hv.Image(np.random.rand(10, 10), group="SomeGroup")
 
-        options.Image = hv.Options('style', cmap='viridis')
-        options.Image.SomeGroup = hv.Options('style', alpha=0.2)
+        options.Image = hv.Options("style", cmap="viridis")
+        options.Image.SomeGroup = hv.Options("style", alpha=0.2)
 
-        expected = {'alpha': 0.2, 'cmap': 'viridis', 'interpolation': 'nearest'}
-        lookup = hv.Store.lookup_options('matplotlib', obj, 'style')
+        expected = {"alpha": 0.2, "cmap": "viridis", "interpolation": "nearest"}
+        lookup = hv.Store.lookup_options("matplotlib", obj, "style")
 
         assert lookup.kwargs == expected
         # Check the tree is structured as expected
-        node1 = options.Image.groups['style']
-        node2 = options.Image.SomeGroup.groups['style']
+        node1 = options.Image.groups["style"]
+        node2 = options.Image.SomeGroup.groups["style"]
 
-        assert node1.kwargs == {'cmap': 'viridis', 'interpolation': 'nearest'}
-        assert node2.kwargs == {'alpha': 0.2}
-
+        assert node1.kwargs == {"cmap": "viridis", "interpolation": "nearest"}
+        assert node2.kwargs == {"alpha": 0.2}
 
     def test_specification_general_to_specific_group_and_label(self):
         """
@@ -334,21 +321,21 @@ class TestStoreInheritanceDynamic:
         """
         options = self.initialize_option_tree()
 
-        obj = hv.Image(np.random.rand(10,10), group='SomeGroup', label='SomeLabel')
+        obj = hv.Image(np.random.rand(10, 10), group="SomeGroup", label="SomeLabel")
 
-        options.Image = hv.Options('style', cmap='viridis')
-        options.Image.SomeGroup.SomeLabel = hv.Options('style', alpha=0.2)
+        options.Image = hv.Options("style", cmap="viridis")
+        options.Image.SomeGroup.SomeLabel = hv.Options("style", alpha=0.2)
 
-        expected = {'alpha': 0.2, 'cmap': 'viridis', 'interpolation': 'nearest'}
-        lookup = hv.Store.lookup_options('matplotlib', obj, 'style')
+        expected = {"alpha": 0.2, "cmap": "viridis", "interpolation": "nearest"}
+        lookup = hv.Store.lookup_options("matplotlib", obj, "style")
 
         assert lookup.kwargs == expected
         # Check the tree is structured as expected
-        node1 = options.Image.groups['style']
-        node2 = options.Image.SomeGroup.SomeLabel.groups['style']
+        node1 = options.Image.groups["style"]
+        node2 = options.Image.SomeGroup.SomeLabel.groups["style"]
 
-        assert node1.kwargs == {'cmap': 'viridis', 'interpolation': 'nearest'}
-        assert node2.kwargs == {'alpha': 0.2}
+        assert node1.kwargs == {"cmap": "viridis", "interpolation": "nearest"}
+        assert node2.kwargs == {"alpha": 0.2}
 
     def test_specification_specific_to_general_group(self):
         """
@@ -356,22 +343,21 @@ class TestStoreInheritanceDynamic:
         then specifying a general one
         """
         options = self.initialize_option_tree()
-        options.Image.SomeGroup = hv.Options('style', alpha=0.2)
+        options.Image.SomeGroup = hv.Options("style", alpha=0.2)
 
-        obj = hv.Image(np.random.rand(10,10), group='SomeGroup')
-        options.Image = hv.Options('style', cmap='viridis')
+        obj = hv.Image(np.random.rand(10, 10), group="SomeGroup")
+        options.Image = hv.Options("style", cmap="viridis")
 
-        expected = {'alpha': 0.2, 'cmap': 'viridis', 'interpolation': 'nearest'}
-        lookup = hv.Store.lookup_options('matplotlib', obj, 'style')
+        expected = {"alpha": 0.2, "cmap": "viridis", "interpolation": "nearest"}
+        lookup = hv.Store.lookup_options("matplotlib", obj, "style")
 
         assert lookup.kwargs == expected
         # Check the tree is structured as expected
-        node1 = options.Image.groups['style']
-        node2 = options.Image.SomeGroup.groups['style']
+        node1 = options.Image.groups["style"]
+        node2 = options.Image.SomeGroup.groups["style"]
 
-        assert node1.kwargs == {'cmap': 'viridis', 'interpolation': 'nearest'}
-        assert node2.kwargs == {'alpha': 0.2}
-
+        assert node1.kwargs == {"cmap": "viridis", "interpolation": "nearest"}
+        assert node2.kwargs == {"alpha": 0.2}
 
     def test_specification_specific_to_general_group_and_label(self):
         """
@@ -379,20 +365,20 @@ class TestStoreInheritanceDynamic:
         to specific
         """
         options = self.initialize_option_tree()
-        options.Image.SomeGroup.SomeLabel = hv.Options('style', alpha=0.2)
-        obj = hv.Image(np.random.rand(10,10), group='SomeGroup', label='SomeLabel')
+        options.Image.SomeGroup.SomeLabel = hv.Options("style", alpha=0.2)
+        obj = hv.Image(np.random.rand(10, 10), group="SomeGroup", label="SomeLabel")
 
-        options.Image = hv.Options('style', cmap='viridis')
-        expected = {'alpha': 0.2, 'cmap': 'viridis', 'interpolation': 'nearest'}
-        lookup = hv.Store.lookup_options('matplotlib', obj, 'style')
+        options.Image = hv.Options("style", cmap="viridis")
+        expected = {"alpha": 0.2, "cmap": "viridis", "interpolation": "nearest"}
+        lookup = hv.Store.lookup_options("matplotlib", obj, "style")
 
         assert lookup.kwargs == expected
         # Check the tree is structured as expected
-        node1 = options.Image.groups['style']
-        node2 = options.Image.SomeGroup.SomeLabel.groups['style']
+        node1 = options.Image.groups["style"]
+        node2 = options.Image.SomeGroup.SomeLabel.groups["style"]
 
-        assert node1.kwargs == {'cmap': 'viridis', 'interpolation': 'nearest'}
-        assert node2.kwargs == {'alpha': 0.2}
+        assert node1.kwargs == {"cmap": "viridis", "interpolation": "nearest"}
+        assert node2.kwargs == {"alpha": 0.2}
 
     def test_backend_opts_to_default_inheritance(self):
         """
@@ -400,17 +386,17 @@ class TestStoreInheritanceDynamic:
         using .opts.
         """
         options = self.initialize_option_tree()
-        options.Image.A.B = hv.Options('style', alpha=0.2)
+        options.Image.A.B = hv.Options("style", alpha=0.2)
 
-        obj = hv.Image(np.random.rand(10, 10), group='A', label='B')
-        expected_obj =  {'alpha': 0.2, 'cmap': 'hot', 'interpolation': 'nearest'}
-        obj_lookup = hv.Store.lookup_options('matplotlib', obj, 'style')
+        obj = hv.Image(np.random.rand(10, 10), group="A", label="B")
+        expected_obj = {"alpha": 0.2, "cmap": "hot", "interpolation": "nearest"}
+        obj_lookup = hv.Store.lookup_options("matplotlib", obj, "style")
         assert obj_lookup.kwargs == expected_obj
 
         # Customize this particular object
         custom_obj = hv.opts.apply_groups(obj, style=dict(clims=(0, 0.5)))
-        expected_custom_obj =  dict(clims=(0,0.5), **expected_obj)
-        custom_obj_lookup = hv.Store.lookup_options('matplotlib', custom_obj, 'style')
+        expected_custom_obj = dict(clims=(0, 0.5), **expected_obj)
+        custom_obj_lookup = hv.Store.lookup_options("matplotlib", custom_obj, "style")
         assert custom_obj_lookup.kwargs == expected_custom_obj
 
     def test_custom_magic_to_default_inheritance(self):
@@ -419,23 +405,24 @@ class TestStoreInheritanceDynamic:
         simulating the %%opts cell magic.
         """
         options = self.initialize_option_tree()
-        options.Image.A.B = hv.Options('style', alpha=0.2)
+        options.Image.A.B = hv.Options("style", alpha=0.2)
 
-        obj = hv.Image(np.random.rand(10, 10), group='A', label='B')
+        obj = hv.Image(np.random.rand(10, 10), group="A", label="B")
 
         # Before customizing...
-        expected_obj =  {'alpha': 0.2, 'cmap': 'hot', 'interpolation': 'nearest'}
-        obj_lookup = hv.Store.lookup_options('matplotlib', obj, 'style')
+        expected_obj = {"alpha": 0.2, "cmap": "hot", "interpolation": "nearest"}
+        obj_lookup = hv.Store.lookup_options("matplotlib", obj, "style")
         assert obj_lookup.kwargs == expected_obj
 
-        custom_tree = {0: OptionTree(groups=hv.Options._option_groups,
-                                     style={'Image' : dict(clims=(0, 0.5))})}
-        hv.Store._custom_options['matplotlib'] = custom_tree
-        obj.id = 0 # Manually set the id to point to the tree above
+        custom_tree = {
+            0: OptionTree(groups=hv.Options._option_groups, style={"Image": dict(clims=(0, 0.5))})
+        }
+        hv.Store._custom_options["matplotlib"] = custom_tree
+        obj.id = 0  # Manually set the id to point to the tree above
 
         # Customize this particular object
-        expected_custom_obj =  dict(clims=(0,0.5), **expected_obj)
-        custom_obj_lookup = hv.Store.lookup_options('matplotlib', obj, 'style')
+        expected_custom_obj = dict(clims=(0, 0.5), **expected_obj)
+        custom_obj_lookup = hv.Store.lookup_options("matplotlib", obj, "style")
         assert custom_obj_lookup.kwargs == expected_custom_obj
 
 
@@ -447,21 +434,20 @@ class TestStoreInheritance:
     """
 
     def setup_method(self):
-        self.backend = 'matplotlib'
+        self.backend = "matplotlib"
         hv.Store.set_current_backend(self.backend)
-        self.store_copy = OptionTree(sorted(hv.Store.options().items()),
-                                     groups=hv.Options._option_groups)
-        hv.Store.options(val=OptionTree(
-            groups=['plot', 'style'], backend=self.backend
-        ))
+        self.store_copy = OptionTree(
+            sorted(hv.Store.options().items()), groups=hv.Options._option_groups
+        )
+        hv.Store.options(val=OptionTree(groups=["plot", "style"], backend=self.backend))
 
         options = hv.Store.options()
 
-        self.default_plot = dict(plot1='plot1', plot2='plot2')
-        options.Histogram = hv.Options('plot', **self.default_plot)
+        self.default_plot = dict(plot1="plot1", plot2="plot2")
+        options.Histogram = hv.Options("plot", **self.default_plot)
 
-        self.default_style = dict(style1='style1', style2='style2')
-        options.Histogram = hv.Options('style', **self.default_style)
+        self.default_style = dict(style1="style1", style2="style2")
+        options.Histogram = hv.Options("style", **self.default_style)
 
         data = [np.random.normal() for i in range(10000)]
         frequencies, edges = np.histogram(data, 20)
@@ -474,58 +460,65 @@ class TestStoreInheritance:
         return hv.Store.lookup_options(self.backend, obj, group)
 
     def test_original_style_options(self):
-        assert self.lookup_options(self.hist, 'style').options == self.default_style
+        assert self.lookup_options(self.hist, "style").options == self.default_style
 
     def test_original_plot_options(self):
-        assert self.lookup_options(self.hist, 'plot').options == self.default_plot
+        assert self.lookup_options(self.hist, "plot").options == self.default_plot
 
     def test_plot_inheritance_addition(self):
         "Adding an element"
-        hist2 = hv.opts.apply_groups(self.hist, plot={'plot3':'plot3'})
-        assert self.lookup_options(hist2, 'plot').options == dict(plot1='plot1', plot2='plot2', plot3='plot3')
+        hist2 = hv.opts.apply_groups(self.hist, plot={"plot3": "plot3"})
+        assert self.lookup_options(hist2, "plot").options == dict(
+            plot1="plot1", plot2="plot2", plot3="plot3"
+        )
         # Check style works as expected
-        assert self.lookup_options(hist2, 'style').options == self.default_style
+        assert self.lookup_options(hist2, "style").options == self.default_style
 
     def test_plot_inheritance_override(self):
         "Overriding an element"
-        hist2 = hv.opts.apply_groups(self.hist, plot={'plot1':'plot_child'})
-        assert self.lookup_options(hist2, 'plot').options == dict(plot1='plot_child', plot2='plot2')
+        hist2 = hv.opts.apply_groups(self.hist, plot={"plot1": "plot_child"})
+        assert self.lookup_options(hist2, "plot").options == dict(
+            plot1="plot_child", plot2="plot2"
+        )
         # Check style works as expected
-        assert self.lookup_options(hist2, 'style').options == self.default_style
+        assert self.lookup_options(hist2, "style").options == self.default_style
 
     def test_style_inheritance_addition(self):
         "Adding an element"
-        hist2 = hv.opts.apply_groups(self.hist, style={'style3':'style3'})
-        assert self.lookup_options(hist2, 'style').options == dict(style1='style1', style2='style2', style3='style3')
+        hist2 = hv.opts.apply_groups(self.hist, style={"style3": "style3"})
+        assert self.lookup_options(hist2, "style").options == dict(
+            style1="style1", style2="style2", style3="style3"
+        )
         # Check plot options works as expected
-        assert self.lookup_options(hist2, 'plot').options == self.default_plot
+        assert self.lookup_options(hist2, "plot").options == self.default_plot
 
     def test_style_inheritance_override(self):
         "Overriding an element"
-        hist2 = hv.opts.apply_groups(self.hist, style={'style1':'style_child'})
-        assert self.lookup_options(hist2, 'style').options == dict(style1='style_child', style2='style2')
+        hist2 = hv.opts.apply_groups(self.hist, style={"style1": "style_child"})
+        assert self.lookup_options(hist2, "style").options == dict(
+            style1="style_child", style2="style2"
+        )
         # Check plot options works as expected
-        assert self.lookup_options(hist2, 'plot').options == self.default_plot
+        assert self.lookup_options(hist2, "plot").options == self.default_plot
 
     def test_style_transfer(self):
-        hist = hv.opts.apply_groups(self.hist, style={'style1':'style_child'})
+        hist = hv.opts.apply_groups(self.hist, style={"style1": "style_child"})
         hist2 = self.hist.opts()
-        opts_kwargs = hv.Store.lookup_options('matplotlib', hist2, 'style').kwargs
-        assert opts_kwargs == {'style1': 'style1', 'style2': 'style2'}
-        hv.Store.transfer_options(hist, hist2, 'matplotlib')
-        opts_kwargs = hv.Store.lookup_options('matplotlib', hist2, 'style').kwargs
-        assert opts_kwargs == {'style1': 'style_child', 'style2': 'style2'}
-
+        opts_kwargs = hv.Store.lookup_options("matplotlib", hist2, "style").kwargs
+        assert opts_kwargs == {"style1": "style1", "style2": "style2"}
+        hv.Store.transfer_options(hist, hist2, "matplotlib")
+        opts_kwargs = hv.Store.lookup_options("matplotlib", hist2, "style").kwargs
+        assert opts_kwargs == {"style1": "style_child", "style2": "style2"}
 
 
 @mpl_skip
 class TestOptionsMethod:
-
     def setup_method(self):
-        self.backend = 'matplotlib'
+        self.backend = "matplotlib"
         hv.Store.set_current_backend(self.backend)
-        self.store_copy = OptionTree(sorted(hv.Store.options().items()),
-                                     groups=hv.Options._option_groups)
+        self.store_copy = OptionTree(
+            sorted(hv.Store.options().items()), groups=hv.Options._option_groups
+        )
 
     def teardown_method(self):
         hv.Store.options(val=self.store_copy)
@@ -534,43 +527,51 @@ class TestOptionsMethod:
         return hv.Store.lookup_options(self.backend, obj, group)
 
     def test_plot_options_keywords(self):
-        im = hv.Image(np.random.rand(10,10))
-        styled_im = im.options(interpolation='nearest', cmap='jet')
-        assert self.lookup_options(im, 'plot').options == {}
-        assert self.lookup_options(styled_im, 'style').options == dict(cmap='jet', interpolation='nearest')
+        im = hv.Image(np.random.rand(10, 10))
+        styled_im = im.options(interpolation="nearest", cmap="jet")
+        assert self.lookup_options(im, "plot").options == {}
+        assert self.lookup_options(styled_im, "style").options == dict(
+            cmap="jet", interpolation="nearest"
+        )
 
     def test_plot_options_one_object(self):
-        im = hv.Image(np.random.rand(10,10))
-        imopts = hv.opts.Image(interpolation='nearest', cmap='jet')
+        im = hv.Image(np.random.rand(10, 10))
+        imopts = hv.opts.Image(interpolation="nearest", cmap="jet")
         styled_im = im.options(imopts)
-        assert self.lookup_options(im, 'plot').options == {}
-        assert self.lookup_options(styled_im, 'style').options == dict(cmap='jet', interpolation='nearest')
+        assert self.lookup_options(im, "plot").options == {}
+        assert self.lookup_options(styled_im, "style").options == dict(
+            cmap="jet", interpolation="nearest"
+        )
 
     def test_plot_options_two_object(self):
-        im = hv.Image(np.random.rand(10,10))
-        imopts1 = hv.opts.Image(interpolation='nearest')
-        imopts2 = hv.opts.Image(cmap='hsv')
-        styled_im = im.options(imopts1,imopts2)
-        assert self.lookup_options(im, 'plot').options == {}
-        assert self.lookup_options(styled_im, 'style').options == dict(cmap='hsv', interpolation='nearest')
+        im = hv.Image(np.random.rand(10, 10))
+        imopts1 = hv.opts.Image(interpolation="nearest")
+        imopts2 = hv.opts.Image(cmap="hsv")
+        styled_im = im.options(imopts1, imopts2)
+        assert self.lookup_options(im, "plot").options == {}
+        assert self.lookup_options(styled_im, "style").options == dict(
+            cmap="hsv", interpolation="nearest"
+        )
 
     def test_plot_options_object_list(self):
-        im = hv.Image(np.random.rand(10,10))
-        imopts1 = hv.opts.Image(interpolation='nearest')
-        imopts2 = hv.opts.Image(cmap='summer')
-        styled_im = im.options([imopts1,imopts2])
-        assert self.lookup_options(im, 'plot').options == {}
-        assert self.lookup_options(styled_im, 'style').options == dict(cmap='summer', interpolation='nearest')
+        im = hv.Image(np.random.rand(10, 10))
+        imopts1 = hv.opts.Image(interpolation="nearest")
+        imopts2 = hv.opts.Image(cmap="summer")
+        styled_im = im.options([imopts1, imopts2])
+        assert self.lookup_options(im, "plot").options == {}
+        assert self.lookup_options(styled_im, "style").options == dict(
+            cmap="summer", interpolation="nearest"
+        )
 
 
 @mpl_skip
 class TestOptsMethod:
-
     def setup_method(self):
-        self.backend = 'matplotlib'
+        self.backend = "matplotlib"
         hv.Store.set_current_backend(self.backend)
-        self.store_copy = OptionTree(sorted(hv.Store.options().items()),
-                                     groups=hv.Options._option_groups)
+        self.store_copy = OptionTree(
+            sorted(hv.Store.options().items()), groups=hv.Options._option_groups
+        )
 
     def teardown_method(self):
         hv.Store.options(val=self.store_copy)
@@ -579,81 +580,91 @@ class TestOptsMethod:
         return hv.Store.lookup_options(self.backend, obj, group)
 
     def test_simple_clone_disabled(self):
-        im = hv.Image(np.random.rand(10,10))
-        styled_im = im.opts(interpolation='nearest', cmap='jet', clone=False)
+        im = hv.Image(np.random.rand(10, 10))
+        styled_im = im.opts(interpolation="nearest", cmap="jet", clone=False)
 
-        assert self.lookup_options(im, 'plot').options == {}
-        assert self.lookup_options(styled_im, 'plot').options == {}
+        assert self.lookup_options(im, "plot").options == {}
+        assert self.lookup_options(styled_im, "plot").options == {}
 
         assert styled_im is im
-        assert self.lookup_options(im, 'style').options == {'cmap': 'jet', 'interpolation': 'nearest'}
+        assert self.lookup_options(im, "style").options == {
+            "cmap": "jet",
+            "interpolation": "nearest",
+        }
 
     def test_simple_opts_clone_enabled(self):
-        im = hv.Image(np.random.rand(10,10))
-        styled_im = im.opts(interpolation='nearest', cmap='jet', clone=True)
+        im = hv.Image(np.random.rand(10, 10))
+        styled_im = im.opts(interpolation="nearest", cmap="jet", clone=True)
 
-        assert self.lookup_options(im, 'plot').options == {}
-        assert self.lookup_options(styled_im, 'plot').options == {}
+        assert self.lookup_options(im, "plot").options == {}
+        assert self.lookup_options(styled_im, "plot").options == {}
 
         assert styled_im is not im
-        im_lookup = self.lookup_options(im, 'style').options
-        assert im_lookup['cmap'] != 'jet'
-        styled_im_lookup =  self.lookup_options(styled_im, 'style').options
-        assert styled_im_lookup['cmap'] == 'jet'
+        im_lookup = self.lookup_options(im, "style").options
+        assert im_lookup["cmap"] != "jet"
+        styled_im_lookup = self.lookup_options(styled_im, "style").options
+        assert styled_im_lookup["cmap"] == "jet"
 
     def test_opts_method_with_utility(self):
-        im = hv.Image(np.random.rand(10,10))
-        imopts = hv.opts.Image(cmap='Blues')
+        im = hv.Image(np.random.rand(10, 10))
+        imopts = hv.opts.Image(cmap="Blues")
         styled_im = im.opts(imopts)
 
         assert styled_im is im
-        assert self.lookup_options(im, 'style').options == {'cmap': 'Blues', 'interpolation': 'nearest'}
+        assert self.lookup_options(im, "style").options == {
+            "cmap": "Blues",
+            "interpolation": "nearest",
+        }
 
     def test_opts_method_dynamicmap_grouped(self):
-        dmap = hv.DynamicMap(lambda X: hv.Curve([1, 2, X]),
-                          kdims=['X']).redim.range(X=(0, 3))
+        dmap = hv.DynamicMap(lambda X: hv.Curve([1, 2, X]), kdims=["X"]).redim.range(X=(0, 3))
         retval = dmap.opts(padding=1, clone=True)
         assert retval is not dmap
-        assert self.lookup_options(retval[0], 'plot').options == {'padding':1}
+        assert self.lookup_options(retval[0], "plot").options == {"padding": 1}
 
     def test_opts_clear(self):
-        im = hv.Image(np.random.rand(10,10))
-        styled_im = hv.opts.apply_groups(im, style=dict(cmap='jet', interpolation='nearest',
-                                       option1='A', option2='B'), clone=False)
-        expected = {'cmap': 'jet', 'interpolation': 'nearest', 'option1':'A', 'option2':'B'}
-        assert self.lookup_options(im, 'style').options == expected
+        im = hv.Image(np.random.rand(10, 10))
+        styled_im = hv.opts.apply_groups(
+            im,
+            style=dict(cmap="jet", interpolation="nearest", option1="A", option2="B"),
+            clone=False,
+        )
+        expected = {"cmap": "jet", "interpolation": "nearest", "option1": "A", "option2": "B"}
+        assert self.lookup_options(im, "style").options == expected
         assert styled_im is im
         cleared = im.opts.clear()
         assert cleared is im
-        cleared_options = self.lookup_options(cleared, 'style').options
-        assert not any(k in ['option1', 'option2'] for k in cleared_options.keys())
+        cleared_options = self.lookup_options(cleared, "style").options
+        assert not any(k in ["option1", "option2"] for k in cleared_options.keys())
 
     def test_opts_clear_clone(self):
-        im = hv.Image(np.random.rand(10,10))
-        styled_im = hv.opts.apply_groups(im, style=dict(cmap='jet', interpolation='nearest',
-                                       option1='A', option2='B'), clone=False)
-        expected = {'cmap': 'jet', 'interpolation': 'nearest', 'option1':'A', 'option2':'B'}
-        assert self.lookup_options(im, 'style').options == expected
+        im = hv.Image(np.random.rand(10, 10))
+        styled_im = hv.opts.apply_groups(
+            im,
+            style=dict(cmap="jet", interpolation="nearest", option1="A", option2="B"),
+            clone=False,
+        )
+        expected = {"cmap": "jet", "interpolation": "nearest", "option1": "A", "option2": "B"}
+        assert self.lookup_options(im, "style").options == expected
         assert styled_im is im
         cleared = im.opts.clear(clone=True)
         assert cleared is not im
-        assert self.lookup_options(im, 'style').options == expected
-        cleared_options = self.lookup_options(cleared, 'style').options
-        assert not any(k in ['option1', 'option2'] for k in cleared_options.keys())
+        assert self.lookup_options(im, "style").options == expected
+        cleared_options = self.lookup_options(cleared, "style").options
+        assert not any(k in ["option1", "option2"] for k in cleared_options.keys())
 
 
 class TestOptionTreeFind:
-
     def setup_method(self):
         self.original_option_groups = hv.Options._option_groups[:]
-        hv.Options._option_groups = ['group']
-        options = OptionTree(groups=['group'])
-        self.opts1 = hv.Options('group', kw1='value1')
-        self.opts2 = hv.Options('group', kw2='value2')
-        self.opts3 = hv.Options('group', kw3='value3')
-        self.opts4 = hv.Options('group', kw4='value4')
-        self.opts5 = hv.Options('group', kw5='value5')
-        self.opts6 = hv.Options('group', kw6='value6')
+        hv.Options._option_groups = ["group"]
+        options = OptionTree(groups=["group"])
+        self.opts1 = hv.Options("group", kw1="value1")
+        self.opts2 = hv.Options("group", kw2="value2")
+        self.opts3 = hv.Options("group", kw3="value3")
+        self.opts4 = hv.Options("group", kw4="value4")
+        self.opts5 = hv.Options("group", kw5="value5")
+        self.opts6 = hv.Options("group", kw6="value6")
 
         options.MyType = self.opts1
         options.XType = self.opts2
@@ -663,43 +674,50 @@ class TestOptionTreeFind:
         options.XType.Bar = self.opts6
 
         self.options = options
-        self.original_options=hv.Store.options()
-        hv.Store.options(val=OptionTree(groups=['group']))
+        self.original_options = hv.Store.options()
+        hv.Store.options(val=OptionTree(groups=["group"]))
 
     def teardown_method(self):
         hv.Options._option_groups = self.original_option_groups
         hv.Store.options(val=self.original_options)
 
     def test_optiontree_find1(self):
-        assert self.options.find('MyType').options('group').options == dict(kw1='value1')
+        assert self.options.find("MyType").options("group").options == dict(kw1="value1")
 
     def test_optiontree_find2(self):
-        assert self.options.find('XType').options('group').options == dict(kw2='value2')
+        assert self.options.find("XType").options("group").options == dict(kw2="value2")
 
     def test_optiontree_find3(self):
-        assert self.options.find('MyType.Foo').options('group').options == dict(kw1='value1', kw3='value3')
+        assert self.options.find("MyType.Foo").options("group").options == dict(
+            kw1="value1", kw3="value3"
+        )
 
     def test_optiontree_find4(self):
-        assert self.options.find('MyType.Bar').options('group').options == dict(kw1='value1', kw4='value4')
+        assert self.options.find("MyType.Bar").options("group").options == dict(
+            kw1="value1", kw4="value4"
+        )
 
     def test_optiontree_find5(self):
-        assert self.options.find('XType.Foo').options('group').options == dict(kw2='value2', kw5='value5')
+        assert self.options.find("XType.Foo").options("group").options == dict(
+            kw2="value2", kw5="value5"
+        )
 
     def test_optiontree_find6(self):
-        assert self.options.find('XType.Bar').options('group').options == dict(kw2='value2', kw6='value6')
+        assert self.options.find("XType.Bar").options("group").options == dict(
+            kw2="value2", kw6="value6"
+        )
 
     def test_optiontree_find_mismatch1(self):
-        assert self.options.find('MyType.Baz').options('group').options == dict(kw1='value1')
+        assert self.options.find("MyType.Baz").options("group").options == dict(kw1="value1")
 
     def test_optiontree_find_mismatch2(self):
-        assert self.options.find('XType.Baz').options('group').options == dict(kw2='value2')
+        assert self.options.find("XType.Baz").options("group").options == dict(kw2="value2")
 
     def test_optiontree_find_mismatch3(self):
-        assert self.options.find('Baz').options('group').options == {}
+        assert self.options.find("Baz").options("group").options == {}
 
     def test_optiontree_find_mismatch4(self):
-        assert self.options.find('Baz.Baz').options('group').options == {}
-
+        assert self.options.find("Baz.Baz").options("group").options == {}
 
 
 @mpl_skip
@@ -710,104 +728,106 @@ class TestCrossBackendOptions:
 
     def setup_method(self):
         # Some tests require that plotly isn't loaded
-        self.plotly_options = hv.Store._options.pop('plotly', None)
+        self.plotly_options = hv.Store._options.pop("plotly", None)
         self.store_mpl = OptionTree(
-            sorted(hv.Store.options(backend='matplotlib').items()),
+            sorted(hv.Store.options(backend="matplotlib").items()),
             groups=hv.Options._option_groups,
-            backend='matplotlib'
+            backend="matplotlib",
         )
         self.store_bokeh = OptionTree(
-            sorted(hv.Store.options(backend='bokeh').items()),
+            sorted(hv.Store.options(backend="bokeh").items()),
             groups=hv.Options._option_groups,
-            backend='bokeh'
+            backend="bokeh",
         )
         self.clear_options()
 
     def clear_options(self):
         # Clear global options..
-        hv.Store.options(val=OptionTree(groups=['plot', 'style'], backend='matplotlib'),
-                      backend='matplotlib')
-        hv.Store.options(val=OptionTree(groups=['plot', 'style'], backend='bokeh'),
-                      backend='bokeh')
+        hv.Store.options(
+            val=OptionTree(groups=["plot", "style"], backend="matplotlib"), backend="matplotlib"
+        )
+        hv.Store.options(
+            val=OptionTree(groups=["plot", "style"], backend="bokeh"), backend="bokeh"
+        )
         # ... and custom options
-        hv.Store.custom_options({}, backend='matplotlib')
-        hv.Store.custom_options({}, backend='bokeh')
+        hv.Store.custom_options({}, backend="matplotlib")
+        hv.Store.custom_options({}, backend="bokeh")
 
     def teardown_method(self):
-        hv.Store.options(val=self.store_mpl, backend='matplotlib')
-        hv.Store.options(val=self.store_bokeh, backend='bokeh')
-        hv.Store.current_backend = 'matplotlib'
+        hv.Store.options(val=self.store_mpl, backend="matplotlib")
+        hv.Store.options(val=self.store_bokeh, backend="bokeh")
+        hv.Store.current_backend = "matplotlib"
 
         if self.plotly_options is not None:
-            hv.Store._options['plotly'] = self.plotly_options
+            hv.Store._options["plotly"] = self.plotly_options
 
     def test_mpl_bokeh_mpl(self):
-        img = hv.Image(np.random.rand(10,10))
+        img = hv.Image(np.random.rand(10, 10))
         # Use blue in matplotlib
-        hv.Store.current_backend = 'matplotlib'
-        hv.StoreOptions.set_options(img, style={'Image':{'cmap':'Blues'}})
-        mpl_opts = hv.Store.lookup_options('matplotlib', img, 'style').options
-        assert mpl_opts == {'cmap':'Blues'}
+        hv.Store.current_backend = "matplotlib"
+        hv.StoreOptions.set_options(img, style={"Image": {"cmap": "Blues"}})
+        mpl_opts = hv.Store.lookup_options("matplotlib", img, "style").options
+        assert mpl_opts == {"cmap": "Blues"}
         # Use purple in bokeh
-        hv.Store.current_backend = 'bokeh'
-        hv.StoreOptions.set_options(img, style={'Image':{'cmap':'Purple'}})
-        bokeh_opts = hv.Store.lookup_options('bokeh', img, 'style').options
-        assert bokeh_opts == {'cmap':'Purple'}
+        hv.Store.current_backend = "bokeh"
+        hv.StoreOptions.set_options(img, style={"Image": {"cmap": "Purple"}})
+        bokeh_opts = hv.Store.lookup_options("bokeh", img, "style").options
+        assert bokeh_opts == {"cmap": "Purple"}
         # Check it is still blue in matplotlib...
-        hv.Store.current_backend = 'matplotlib'
-        mpl_opts = hv.Store.lookup_options('matplotlib', img, 'style').options
-        assert mpl_opts == {'cmap':'Blues'}
+        hv.Store.current_backend = "matplotlib"
+        mpl_opts = hv.Store.lookup_options("matplotlib", img, "style").options
+        assert mpl_opts == {"cmap": "Blues"}
         # And purple in bokeh..
-        hv.Store.current_backend = 'bokeh'
-        bokeh_opts = hv.Store.lookup_options('bokeh', img, 'style').options
-        assert bokeh_opts == {'cmap':'Purple'}
+        hv.Store.current_backend = "bokeh"
+        bokeh_opts = hv.Store.lookup_options("bokeh", img, "style").options
+        assert bokeh_opts == {"cmap": "Purple"}
 
     def test_mpl_bokeh_offset_mpl(self):
-        img = hv.Image(np.random.rand(10,10))
+        img = hv.Image(np.random.rand(10, 10))
         # Use blue in matplotlib
-        hv.Store.current_backend = 'matplotlib'
-        hv.StoreOptions.set_options(img, style={'Image':{'cmap':'Blues'}})
-        mpl_opts = hv.Store.lookup_options('matplotlib', img, 'style').options
-        assert mpl_opts == {'cmap':'Blues'}
+        hv.Store.current_backend = "matplotlib"
+        hv.StoreOptions.set_options(img, style={"Image": {"cmap": "Blues"}})
+        mpl_opts = hv.Store.lookup_options("matplotlib", img, "style").options
+        assert mpl_opts == {"cmap": "Blues"}
         # Switch to bokeh and style a random object...
-        hv.Store.current_backend = 'bokeh'
-        img2 = hv.Image(np.random.rand(10,10))
-        hv.StoreOptions.set_options(img2, style={'Image':{'cmap':'Reds'}})
-        img2_opts = hv.Store.lookup_options('bokeh', img2, 'style').options
-        assert img2_opts == {'cmap':'Reds'}
+        hv.Store.current_backend = "bokeh"
+        img2 = hv.Image(np.random.rand(10, 10))
+        hv.StoreOptions.set_options(img2, style={"Image": {"cmap": "Reds"}})
+        img2_opts = hv.Store.lookup_options("bokeh", img2, "style").options
+        assert img2_opts == {"cmap": "Reds"}
         # Use purple in bokeh on the object...
-        hv.StoreOptions.set_options(img, style={'Image':{'cmap':'Purple'}})
-        bokeh_opts = hv.Store.lookup_options('bokeh', img, 'style').options
-        assert bokeh_opts == {'cmap':'Purple'}
+        hv.StoreOptions.set_options(img, style={"Image": {"cmap": "Purple"}})
+        bokeh_opts = hv.Store.lookup_options("bokeh", img, "style").options
+        assert bokeh_opts == {"cmap": "Purple"}
         # Check it is still blue in matplotlib...
-        hv.Store.current_backend = 'matplotlib'
-        mpl_opts = hv.Store.lookup_options('matplotlib', img, 'style').options
-        assert mpl_opts == {'cmap':'Blues'}
+        hv.Store.current_backend = "matplotlib"
+        mpl_opts = hv.Store.lookup_options("matplotlib", img, "style").options
+        assert mpl_opts == {"cmap": "Blues"}
         # And purple in bokeh..
-        hv.Store.current_backend = 'bokeh'
-        bokeh_opts = hv.Store.lookup_options('bokeh', img, 'style').options
-        assert bokeh_opts == {'cmap':'Purple'}
+        hv.Store.current_backend = "bokeh"
+        bokeh_opts = hv.Store.lookup_options("bokeh", img, "style").options
+        assert bokeh_opts == {"cmap": "Purple"}
 
     def test_builder_backend_switch_signature(self):
-        hv.Store.options(val=self.store_mpl, backend='matplotlib')
-        hv.Store.options(val=self.store_bokeh, backend='bokeh')
-        hv.Store.set_current_backend('bokeh')
+        hv.Store.options(val=self.store_mpl, backend="matplotlib")
+        hv.Store.options(val=self.store_bokeh, backend="bokeh")
+        hv.Store.set_current_backend("bokeh")
         assert hv.opts.Curve.__signature__ is not None
         sigkeys = hv.opts.Curve.__signature__.parameters
-        assert 'color' in sigkeys
-        assert 'line_width' in sigkeys
-        hv.Store.set_current_backend('matplotlib')
+        assert "color" in sigkeys
+        assert "line_width" in sigkeys
+        hv.Store.set_current_backend("matplotlib")
         assert hv.opts.Curve.__signature__ is not None
         sigkeys = hv.opts.Curve.__signature__.parameters
-        assert 'color' in sigkeys
-        assert 'linewidth' in sigkeys
+        assert "color" in sigkeys
+        assert "linewidth" in sigkeys
 
     def test_builder_cross_backend_validation(self):
-        hv.Store.options(val=self.store_mpl, backend='matplotlib')
-        hv.Store.options(val=self.store_bokeh, backend='bokeh')
-        hv.Store.set_current_backend('bokeh')
-        hv.opts.Curve(line_dash='dotted') # Bokeh keyword
-        hv.opts.Curve(linewidth=10)       # MPL keyword
+        hv.Store.options(val=self.store_mpl, backend="matplotlib")
+        hv.Store.options(val=self.store_bokeh, backend="bokeh")
+        hv.Store.set_current_backend("bokeh")
+        hv.opts.Curve(line_dash="dotted")  # Bokeh keyword
+        hv.opts.Curve(linewidth=10)  # MPL keyword
 
         err = (
             "In opts.Curve(...), keywords supplied are mixed across backends. "
@@ -815,41 +835,44 @@ class TestCrossBackendOptions:
             "'line_dash' are invalid for matplotlib"
         )
         with pytest.raises(ValueError, match=re.escape(err)):
-            hv.opts.Curve(linewidth=10, line_dash='dotted') # Bokeh and MPL
+            hv.opts.Curve(linewidth=10, line_dash="dotted")  # Bokeh and MPL
 
         # Non-existent keyword across backends (bokeh active)
-        err = ("In opts.Curve(...), unexpected option 'foobar' for Curve type "
-               "across all extensions. Similar options for current "
-               "extension ('bokeh') are: ['toolbar'].")
+        err = (
+            "In opts.Curve(...), unexpected option 'foobar' for Curve type "
+            "across all extensions. Similar options for current "
+            "extension ('bokeh') are: ['toolbar']."
+        )
         with pytest.raises(ValueError, match=re.escape(err)):
             hv.opts.Curve(foobar=3)
 
         # Non-existent keyword across backends (matplotlib active)
-        hv.Store.set_current_backend('matplotlib')
+        hv.Store.set_current_backend("matplotlib")
 
-        err = ("In opts.Curve(...), unexpected option 'foobar' for Curve "
-               "type across all extensions. No similar options found.")
+        err = (
+            "In opts.Curve(...), unexpected option 'foobar' for Curve "
+            "type across all extensions. No similar options found."
+        )
         with pytest.raises(ValueError, match=re.escape(err)):
             hv.opts.Curve(foobar=3)
 
     def test_apply_opts_with_non_active_backend(self):
-        hv.Store.options(val=self.store_mpl, backend='matplotlib')
-        hv.Store.options(val=self.store_bokeh, backend='bokeh')
-        hv.Store.set_current_backend('bokeh')
+        hv.Store.options(val=self.store_mpl, backend="matplotlib")
+        hv.Store.options(val=self.store_bokeh, backend="bokeh")
+        hv.Store.set_current_backend("bokeh")
 
         hv.opts.defaults(
             hv.opts.Curve(linewidth=5),
             backend="matplotlib",
         )
 
-        hv.Store.set_current_backend('matplotlib')
+        hv.Store.set_current_backend("matplotlib")
         assert hv.Curve([]).opts.get().kwargs["linewidth"] == 5
 
 
 @mpl_skip
 @plotly_skip
 class TestLookupOptions:
-
     def test_lookup_options_honors_backend(self):
         points = hv.Points([[1, 2], [3, 4]])
 
@@ -857,33 +880,33 @@ class TestLookupOptions:
 
         # Lookup points style options with matplotlib and plotly backends while current
         # backend is bokeh
-        if 'bokeh' in backends:
-            hv.Store.set_current_backend('bokeh')
-            if 'matplotlib' in backends:
+        if "bokeh" in backends:
+            hv.Store.set_current_backend("bokeh")
+            if "matplotlib" in backends:
                 options_matplotlib = hv.Store.lookup_options("matplotlib", points, "style")
-            if 'plotly' in backends:
+            if "plotly" in backends:
                 options_plotly = hv.Store.lookup_options("plotly", points, "style")
 
         # Lookup points style options with bokeh backend while current
         # backend is matplotlib
-        if 'matplotlib' in backends:
-            hv.Store.set_current_backend('matplotlib')
-            if 'bokeh' in backends:
+        if "matplotlib" in backends:
+            hv.Store.set_current_backend("matplotlib")
+            if "bokeh" in backends:
                 options_bokeh = hv.Store.lookup_options("bokeh", points, "style")
 
         # Check matplotlib style options
-        if 'matplotlib' in backends:
+        if "matplotlib" in backends:
             for opt in ["cmap", "color", "marker"]:
                 assert opt in options_matplotlib.keys()
             assert "muted_alpha" not in options_matplotlib.keys()
 
         # Check bokeh style options
-        if 'bokeh' in backends:
+        if "bokeh" in backends:
             for opt in ["cmap", "color", "muted_alpha", "size"]:
                 assert opt in options_bokeh.keys()
 
         # Check plotly style options
-        if 'plotly' in backends:
+        if "plotly" in backends:
             for opt in ["color"]:
                 assert opt in options_plotly.keys()
             assert "muted_alpha" not in options_matplotlib.keys()
@@ -898,195 +921,197 @@ class TestCrossBackendOptionSpecification:
 
     def setup_method(self):
         # Some tests require that plotly isn't loaded
-        self.plotly_options = hv.Store._options.pop('plotly', None)
+        self.plotly_options = hv.Store._options.pop("plotly", None)
         self.store_mpl = OptionTree(
-            sorted(hv.Store.options(backend='matplotlib').items()),
-            groups=hv.Options._option_groups, backend='matplotlib'
+            sorted(hv.Store.options(backend="matplotlib").items()),
+            groups=hv.Options._option_groups,
+            backend="matplotlib",
         )
         self.store_bokeh = OptionTree(
-            sorted(hv.Store.options(backend='bokeh').items()),
-            groups=hv.Options._option_groups, backend='bokeh'
+            sorted(hv.Store.options(backend="bokeh").items()),
+            groups=hv.Options._option_groups,
+            backend="bokeh",
         )
 
     def teardown_method(self):
-        hv.Store.options(val=self.store_mpl, backend='matplotlib')
-        hv.Store.options(val=self.store_bokeh, backend='bokeh')
-        hv.Store.current_backend = 'matplotlib'
+        hv.Store.options(val=self.store_mpl, backend="matplotlib")
+        hv.Store.options(val=self.store_bokeh, backend="bokeh")
+        hv.Store.current_backend = "matplotlib"
 
         if self.plotly_options is not None:
-            hv.Store._options['plotly'] = self.plotly_options
+            hv.Store._options["plotly"] = self.plotly_options
 
     def assert_output_options_group_empty(self, obj):
-        mpl_output_lookup = hv.Store.lookup_options('matplotlib', obj, 'output').options
+        mpl_output_lookup = hv.Store.lookup_options("matplotlib", obj, "output").options
         assert mpl_output_lookup == {}
-        bokeh_output_lookup = hv.Store.lookup_options('bokeh', obj, 'output').options
+        bokeh_output_lookup = hv.Store.lookup_options("bokeh", obj, "output").options
         assert bokeh_output_lookup == {}
 
     def test_mpl_bokeh_mpl_via_option_objects_opts_method(self):
-        img = hv.Image(np.random.rand(10,10))
-        mpl_opts = hv.Options('Image', cmap='Blues', backend='matplotlib')
-        bokeh_opts = hv.Options('Image', cmap='Purple', backend='bokeh')
-        assert mpl_opts.kwargs['backend'] == 'matplotlib'
-        assert bokeh_opts.kwargs['backend'] == 'bokeh'
+        img = hv.Image(np.random.rand(10, 10))
+        mpl_opts = hv.Options("Image", cmap="Blues", backend="matplotlib")
+        bokeh_opts = hv.Options("Image", cmap="Purple", backend="bokeh")
+        assert mpl_opts.kwargs["backend"] == "matplotlib"
+        assert bokeh_opts.kwargs["backend"] == "bokeh"
         img.opts(mpl_opts, bokeh_opts)
-        mpl_lookup = hv.Store.lookup_options('matplotlib', img, 'style').options
-        assert mpl_lookup['cmap'] == 'Blues'
-        bokeh_lookup = hv.Store.lookup_options('bokeh', img, 'style').options
-        assert bokeh_lookup['cmap'] == 'Purple'
+        mpl_lookup = hv.Store.lookup_options("matplotlib", img, "style").options
+        assert mpl_lookup["cmap"] == "Blues"
+        bokeh_lookup = hv.Store.lookup_options("bokeh", img, "style").options
+        assert bokeh_lookup["cmap"] == "Purple"
         self.assert_output_options_group_empty(img)
 
     def test_mpl_bokeh_mpl_via_builders_opts_method(self):
-        img = hv.Image(np.random.rand(10,10))
-        mpl_opts = hv.opts.Image(cmap='Blues', backend='matplotlib')
-        bokeh_opts = hv.opts.Image(cmap='Purple', backend='bokeh')
-        assert mpl_opts.kwargs['backend'] == 'matplotlib'
-        assert bokeh_opts.kwargs['backend'] == 'bokeh'
+        img = hv.Image(np.random.rand(10, 10))
+        mpl_opts = hv.opts.Image(cmap="Blues", backend="matplotlib")
+        bokeh_opts = hv.opts.Image(cmap="Purple", backend="bokeh")
+        assert mpl_opts.kwargs["backend"] == "matplotlib"
+        assert bokeh_opts.kwargs["backend"] == "bokeh"
         img.opts(mpl_opts, bokeh_opts)
-        mpl_lookup = hv.Store.lookup_options('matplotlib', img, 'style').options
-        assert mpl_lookup['cmap'] == 'Blues'
-        bokeh_lookup = hv.Store.lookup_options('bokeh', img, 'style').options
-        assert bokeh_lookup['cmap'] == 'Purple'
+        mpl_lookup = hv.Store.lookup_options("matplotlib", img, "style").options
+        assert mpl_lookup["cmap"] == "Blues"
+        bokeh_lookup = hv.Store.lookup_options("bokeh", img, "style").options
+        assert bokeh_lookup["cmap"] == "Purple"
         self.assert_output_options_group_empty(img)
-
 
     def test_mpl_bokeh_mpl_via_dict_backend_keyword(self):
-        curve = hv.Curve([1,2,3])
-        styled_mpl = curve.opts({'Curve': dict(color='red')}, backend='matplotlib')
-        styled = styled_mpl.opts({'Curve': dict(color='green')}, backend='bokeh')
-        mpl_lookup = hv.Store.lookup_options('matplotlib', styled, 'style')
-        assert mpl_lookup.kwargs['color'] == 'red'
-        bokeh_lookup = hv.Store.lookup_options('bokeh', styled, 'style')
-        assert bokeh_lookup.kwargs['color'] == 'green'
+        curve = hv.Curve([1, 2, 3])
+        styled_mpl = curve.opts({"Curve": dict(color="red")}, backend="matplotlib")
+        styled = styled_mpl.opts({"Curve": dict(color="green")}, backend="bokeh")
+        mpl_lookup = hv.Store.lookup_options("matplotlib", styled, "style")
+        assert mpl_lookup.kwargs["color"] == "red"
+        bokeh_lookup = hv.Store.lookup_options("bokeh", styled, "style")
+        assert bokeh_lookup.kwargs["color"] == "green"
 
     def test_mpl_bokeh_mpl_via_builders_opts_method_implicit_backend(self):
-        img = hv.Image(np.random.rand(10,10))
-        hv.Store.set_current_backend('matplotlib')
-        mpl_opts = hv.opts.Image(cmap='Blues')
-        bokeh_opts = hv.opts.Image(cmap='Purple', backend='bokeh')
-        assert 'backend' not in mpl_opts.kwargs
-        assert bokeh_opts.kwargs['backend'] == 'bokeh'
+        img = hv.Image(np.random.rand(10, 10))
+        hv.Store.set_current_backend("matplotlib")
+        mpl_opts = hv.opts.Image(cmap="Blues")
+        bokeh_opts = hv.opts.Image(cmap="Purple", backend="bokeh")
+        assert "backend" not in mpl_opts.kwargs
+        assert bokeh_opts.kwargs["backend"] == "bokeh"
         img.opts(mpl_opts, bokeh_opts)
-        mpl_lookup = hv.Store.lookup_options('matplotlib', img, 'style').options
-        assert mpl_lookup['cmap'] == 'Blues'
-        bokeh_lookup = hv.Store.lookup_options('bokeh', img, 'style').options
-        assert bokeh_lookup['cmap'] == 'Purple'
+        mpl_lookup = hv.Store.lookup_options("matplotlib", img, "style").options
+        assert mpl_lookup["cmap"] == "Blues"
+        bokeh_lookup = hv.Store.lookup_options("bokeh", img, "style").options
+        assert bokeh_lookup["cmap"] == "Purple"
         self.assert_output_options_group_empty(img)
 
-
     def test_mpl_bokeh_mpl_via_builders_opts_method_literal_implicit_backend(self):
-        img = hv.Image(np.random.rand(10,10))
-        curve = hv.Curve([1,2,3])
+        img = hv.Image(np.random.rand(10, 10))
+        curve = hv.Curve([1, 2, 3])
         overlay = img * curve
-        hv.Store.set_current_backend('matplotlib')
+        hv.Store.set_current_backend("matplotlib")
 
-        literal = {'Curve': dict(color='orange'),
-                   'Image': dict(cmap='jet', backend='bokeh'),
-                   }
+        literal = {
+            "Curve": dict(color="orange"),
+            "Image": dict(cmap="jet", backend="bokeh"),
+        }
         styled = overlay.opts(literal)
-        mpl_curve_lookup = hv.Store.lookup_options('matplotlib', styled.Curve.I, 'style')
-        assert mpl_curve_lookup.kwargs['color'] == 'orange'
+        mpl_curve_lookup = hv.Store.lookup_options("matplotlib", styled.Curve.I, "style")
+        assert mpl_curve_lookup.kwargs["color"] == "orange"
 
-        mpl_img_lookup = hv.Store.lookup_options('matplotlib', styled.Image.I, 'style')
-        assert mpl_img_lookup.kwargs['cmap'] != 'jet'
+        mpl_img_lookup = hv.Store.lookup_options("matplotlib", styled.Image.I, "style")
+        assert mpl_img_lookup.kwargs["cmap"] != "jet"
 
-        bokeh_curve_lookup = hv.Store.lookup_options('bokeh', styled.Curve.I, 'style')
-        assert bokeh_curve_lookup.kwargs['color'] != 'orange'
+        bokeh_curve_lookup = hv.Store.lookup_options("bokeh", styled.Curve.I, "style")
+        assert bokeh_curve_lookup.kwargs["color"] != "orange"
 
-        bokeh_img_lookup = hv.Store.lookup_options('bokeh', styled.Image.I, 'style')
-        assert bokeh_img_lookup.kwargs['cmap'] == 'jet'
-
+        bokeh_img_lookup = hv.Store.lookup_options("bokeh", styled.Image.I, "style")
+        assert bokeh_img_lookup.kwargs["cmap"] == "jet"
 
     def test_mpl_bokeh_mpl_via_builders_opts_method_literal_explicit_backend(self):
-        img = hv.Image(np.random.rand(10,10))
-        curve = hv.Curve([1,2,3])
+        img = hv.Image(np.random.rand(10, 10))
+        curve = hv.Curve([1, 2, 3])
         overlay = img * curve
-        hv.Store.set_current_backend('matplotlib')
+        hv.Store.set_current_backend("matplotlib")
 
-        literal = {'Curve': dict(color='orange', backend='matplotlib'),
-                   'Image': dict(cmap='jet', backend='bokeh')
-                   }
+        literal = {
+            "Curve": dict(color="orange", backend="matplotlib"),
+            "Image": dict(cmap="jet", backend="bokeh"),
+        }
         styled = overlay.opts(literal)
-        mpl_curve_lookup = hv.Store.lookup_options('matplotlib', styled.Curve.I, 'style')
-        assert mpl_curve_lookup.kwargs['color'] == 'orange'
+        mpl_curve_lookup = hv.Store.lookup_options("matplotlib", styled.Curve.I, "style")
+        assert mpl_curve_lookup.kwargs["color"] == "orange"
 
-        mpl_img_lookup = hv.Store.lookup_options('matplotlib', styled.Image.I, 'style')
-        assert mpl_img_lookup.kwargs['cmap'] != 'jet'
+        mpl_img_lookup = hv.Store.lookup_options("matplotlib", styled.Image.I, "style")
+        assert mpl_img_lookup.kwargs["cmap"] != "jet"
 
-        bokeh_curve_lookup = hv.Store.lookup_options('bokeh', styled.Curve.I, 'style')
-        assert bokeh_curve_lookup.kwargs['color'] != 'orange'
+        bokeh_curve_lookup = hv.Store.lookup_options("bokeh", styled.Curve.I, "style")
+        assert bokeh_curve_lookup.kwargs["color"] != "orange"
 
-        bokeh_img_lookup = hv.Store.lookup_options('bokeh', styled.Image.I, 'style')
-        assert bokeh_img_lookup.kwargs['cmap'] == 'jet'
-
+        bokeh_img_lookup = hv.Store.lookup_options("bokeh", styled.Image.I, "style")
+        assert bokeh_img_lookup.kwargs["cmap"] == "jet"
 
     def test_mpl_bokeh_output_options_group_expandable(self):
         original_allowed_kws = hv.Options._output_allowed_kws[:]
-        hv.Options._output_allowed_kws = ['backend', 'file_format_example']
+        hv.Options._output_allowed_kws = ["backend", "file_format_example"]
         # Re-register
-        hv.Store.register({hv.Curve: plotting.mpl.CurvePlot}, 'matplotlib')
-        hv.Store.register({hv.Curve: plotting.bokeh.CurvePlot}, 'bokeh')
+        hv.Store.register({hv.Curve: plotting.mpl.CurvePlot}, "matplotlib")
+        hv.Store.register({hv.Curve: plotting.bokeh.CurvePlot}, "bokeh")
 
-        curve_bk = hv.Options('Curve', backend='bokeh', color='blue')
-        curve_mpl = hv.Options('Curve', backend='matplotlib', color='red',
-                            file_format_example='SVG')
-        c = hv.Curve([1,2,3])
+        curve_bk = hv.Options("Curve", backend="bokeh", color="blue")
+        curve_mpl = hv.Options(
+            "Curve", backend="matplotlib", color="red", file_format_example="SVG"
+        )
+        c = hv.Curve([1, 2, 3])
         styled = c.opts(curve_bk, curve_mpl)
-        assert hv.Store.lookup_options('matplotlib', styled, 'output').kwargs == {'backend':'matplotlib', 'file_format_example':'SVG'}
+        assert hv.Store.lookup_options("matplotlib", styled, "output").kwargs == {
+            "backend": "matplotlib",
+            "file_format_example": "SVG",
+        }
 
-        assert hv.Store.lookup_options('bokeh', styled, 'output').kwargs == {}
+        assert hv.Store.lookup_options("bokeh", styled, "output").kwargs == {}
         hv.Options._output_allowed_kws = original_allowed_kws
 
 
 class TestCrossBackendOptionPickling(TestCrossBackendOptions):
-
     def setup_method(self):
         super().setup_method()
-        self.raw = hv.Image(np.random.rand(10,10))
-        hv.Store.current_backend = 'matplotlib'
-        hv.StoreOptions.set_options(self.raw, style={'Image':{'cmap':'Blues'}})
-        hv.Store.current_backend = 'bokeh'
-        hv.StoreOptions.set_options(self.raw, style={'Image':{'cmap':'Purple'}})
+        self.raw = hv.Image(np.random.rand(10, 10))
+        hv.Store.current_backend = "matplotlib"
+        hv.StoreOptions.set_options(self.raw, style={"Image": {"cmap": "Blues"}})
+        hv.Store.current_backend = "bokeh"
+        hv.StoreOptions.set_options(self.raw, style={"Image": {"cmap": "Purple"}})
 
     def test_raw_pickle(self, tmp_path):
         """
         Test usual pickle saving and loading (no style information preserved)
         """
 
-        fname= tmp_path / 'test_raw_pickle.pkl'
-        with open(fname,'wb') as handle:
+        fname = tmp_path / "test_raw_pickle.pkl"
+        with open(fname, "wb") as handle:
             pickle.dump(self.raw, handle)
         self.clear_options()
-        with open(fname,'rb') as handle:
+        with open(fname, "rb") as handle:
             img = pickle.load(handle)
         # Data should match
         assert_element_equal(self.raw, img)
         # But the styles will be lost without using Store.load/Store.dump
-        pickle.current_backend = 'matplotlib'
-        mpl_opts = hv.Store.lookup_options('matplotlib', img, 'style').options
+        pickle.current_backend = "matplotlib"
+        mpl_opts = hv.Store.lookup_options("matplotlib", img, "style").options
         assert mpl_opts == {}
         # ... across all backends
-        hv.Store.current_backend = 'bokeh'
-        bokeh_opts = hv.Store.lookup_options('bokeh', img, 'style').options
+        hv.Store.current_backend = "bokeh"
+        bokeh_opts = hv.Store.lookup_options("bokeh", img, "style").options
         assert bokeh_opts == {}
-
 
     def test_pickle_mpl_bokeh(self, tmp_path):
         """
         Test pickle saving and loading with Store (style information preserved)
         """
-        fname = tmp_path / 'test_pickle_mpl_bokeh.pkl'
-        with open(fname,'wb') as handle:
+        fname = tmp_path / "test_pickle_mpl_bokeh.pkl"
+        with open(fname, "wb") as handle:
             hv.Store.dump(self.raw, handle)
         self.clear_options()
-        with open(fname,'rb') as handle:
+        with open(fname, "rb") as handle:
             img = hv.Store.load(handle)
         # Data should match
         assert_element_equal(self.raw, img)
         # Check it is still blue in matplotlib...
-        hv.Store.current_backend = 'matplotlib'
-        mpl_opts = hv.Store.lookup_options('matplotlib', img, 'style').options
-        assert mpl_opts == {'cmap':'Blues'}
+        hv.Store.current_backend = "matplotlib"
+        mpl_opts = hv.Store.lookup_options("matplotlib", img, "style").options
+        assert mpl_opts == {"cmap": "Blues"}
         # And purple in bokeh..
-        hv.Store.current_backend = 'bokeh'
-        bokeh_opts = hv.Store.lookup_options('bokeh', img, 'style').options
-        assert bokeh_opts == {'cmap':'Purple'}
+        hv.Store.current_backend = "bokeh"
+        bokeh_opts = hv.Store.lookup_options("bokeh", img, "style").options
+        assert bokeh_opts == {"cmap": "Purple"}

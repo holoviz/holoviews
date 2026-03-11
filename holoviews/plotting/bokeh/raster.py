@@ -48,13 +48,14 @@ class HoverModel(DataModel):
 
 
 class ServerHoverMixin(param.Parameterized):
-
-    selector_in_hovertool = param.Boolean(default=True, doc="""
-        Whether to show the selector in HoverTool.""")
+    selector_in_hovertool = param.Boolean(
+        default=True,
+        doc="Whether to show the selector in HoverTool.",
+    )
 
     def _update_hover(self, element):
-        tool = self.handles['hover']
-        if 'hv_created' in tool.tags and isinstance(tool.tooltips, Div):
+        tool = self.handles["hover"]
+        if "hv_created" in tool.tags and isinstance(tool.tooltips, Div):
             self._hover_data = element.data
             return
         super()._update_hover(element)
@@ -105,48 +106,73 @@ class ServerHoverMixin(param.Parameterized):
         dims = (*coords, *vars)
         dtypes = {**data.coords.dtypes, **data.data_vars.dtypes}
         is_datetime = [dtypes[c].kind == "M" for c in data.coords]
+
         def _create_row(attr):
             kwargs = {
                 "format": "@{custom}",
                 "formatter": CustomJS(
                     args=dict(hover_model=hover_model, attr=attr, fmt=dtypes[attr].kind),
-                    code=HoverModel.code_js
-                )
+                    code=HoverModel.code_js,
+                ),
             }
             return (
-                Span(children=[f"{ht.get(attr, attr)}:"], style={"color": "#26aae1", "text_align": "right"}),
-                Span(children=[ValueOf(obj=hover_model, attr="data", **kwargs)], style={"text_align": "left"}),
+                Span(
+                    children=[f"{ht.get(attr, attr)}:"],
+                    style={"color": "#26aae1", "text_align": "right"},
+                ),
+                Span(
+                    children=[ValueOf(obj=hover_model, attr="data", **kwargs)],
+                    style={"text_align": "left"},
+                ),
             )
+
         children = [el for dim in dims for el in _create_row(dim) if dim != "__index__"]
 
         # Add a horizontal ruler and show the selector if available
         selector_columns = data.attrs["selector_columns"]
-        first_selector = next((i for i, dim in enumerate(dims) if dim in selector_columns and dim != "__index__"), None)
+        first_selector = next(
+            (i for i, dim in enumerate(dims) if dim in selector_columns and dim != "__index__"),
+            None,
+        )
         if first_selector:  # Don't show if first
-            divider = [Div(style={
-                "border": "none",
-                "height": "1px",
-                "background-color": "#ccc",
-                "margin": "4px 0",
-                "grid-column": "span 2",
-            })]
+            divider = [
+                Div(
+                    style={
+                        "border": "none",
+                        "height": "1px",
+                        "background-color": "#ccc",
+                        "margin": "4px 0",
+                        "grid-column": "span 2",
+                    }
+                )
+            ]
         else:
             divider = ()
 
-        if first_selector is not None and data.attrs.get("selector") and self.selector_in_hovertool:
+        if (
+            first_selector is not None
+            and data.attrs.get("selector")
+            and self.selector_in_hovertool
+        ):
             selector_row = (
-                Span(children=["Selector:"], style={"color": "#26aae1", "font-weight": "bold", "text_align": "right"}),
-                Span(children=[data.attrs["selector"]], style={"font-weight": "bold", "text_align": "left"}),
-             )
+                Span(
+                    children=["Selector:"],
+                    style={"color": "#26aae1", "font-weight": "bold", "text_align": "right"},
+                ),
+                Span(
+                    children=[data.attrs["selector"]],
+                    style={"font-weight": "bold", "text_align": "left"},
+                ),
+            )
         else:
             selector_row = ()
 
         first_selector = first_selector or 0
         children = [
-            *children[:first_selector * 2],
+            *children[: first_selector * 2],
             *divider,
             *selector_row,
-            *children[first_selector * 2:],
+            *children[first_selector * 2 :],
         ]
 
         style = Styles(display="grid", grid_template_columns="auto auto", column_gap="10px")
@@ -158,10 +184,12 @@ class ServerHoverMixin(param.Parameterized):
         )
 
         if BOKEH_GE_3_8_0:
-            hover.filters = {"": CustomJS(
-                args=dict(hover_model=hover_model),
-                code="""export default ({hover_model}) => hover_model.data["__index__"] != -1"""
-            )}
+            hover.filters = {
+                "": CustomJS(
+                    args=dict(hover_model=hover_model),
+                    code="""export default ({hover_model}) => hover_model.data["__index__"] != -1""",
+                )
+            }
 
         def on_change(attr, old, new):
             if np.isinf(new).all():
@@ -172,14 +200,13 @@ class ServerHoverMixin(param.Parameterized):
                 new[1] = _EPOCH + np.timedelta64(int(new[1] * 1e6), "ns")
             try:
                 data_sel = self._hover_data.sel(
-                    **dict(zip(self._hover_data.coords, new, strict=True)),
-                    method="nearest"
+                    **dict(zip(self._hover_data.coords, new, strict=True)), method="nearest"
                 ).to_dict()
             except KeyError:
                 # Can happen when a coord is empty, e.g. xlim=(0, 0)
                 return
-            data_coords = {dim: data_sel['coords'][dim]['data'] for dim in coords}
-            data_vars = {dim: data_sel['data_vars'][dim]['data'] for dim in vars}
+            data_coords = {dim: data_sel["coords"][dim]["data"] for dim in coords}
+            data_vars = {dim: data_sel["data_vars"][dim]["data"] for dim in vars}
             with hold(self.document):
                 hover_model.update(data={**data_coords, **data_vars})
                 if self.comm:  # Jupyter Notebook
@@ -191,45 +218,49 @@ class ServerHoverMixin(param.Parameterized):
 
 
 class RasterPlot(ServerHoverMixin, ColorbarPlot):
+    clipping_colors = param.Dict(default={"NaN": "transparent"})
 
-    clipping_colors = param.Dict(default={'NaN': 'transparent'})
-
-    nodata = param.Integer(default=None, doc="""
+    nodata = param.Integer(
+        default=None,
+        doc="""
         Optional missing-data value for integer data.
         If non-None, data with this value will be replaced with NaN so
-        that it is transparent (by default) when plotted.""")
+        that it is transparent (by default) when plotted.""",
+    )
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
-    show_legend = param.Boolean(default=False, doc="""
-        Whether to show legend for the plot.""")
+    show_legend = param.Boolean(
+        default=False,
+        doc="Whether to show legend for the plot.",
+    )
 
-    style_opts = [*base_properties, 'cmap', 'alpha']
+    style_opts = [*base_properties, "cmap", "alpha"]
 
     _nonvectorized_styles = style_opts
 
-    _plot_methods = dict(single='image')
+    _plot_methods = dict(single="image")
 
     selection_display = BokehOverlaySelectionDisplay()
 
     def _hover_opts(self, element):
         xdim, ydim = element.kdims
-        tooltips = [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y')]
+        tooltips = [(xdim.pprint_label, "$x"), (ydim.pprint_label, "$y")]
         vdims = element.vdims
-        tooltips.append((vdims[0].pprint_label, '@image'))
+        tooltips.append((vdims[0].pprint_label, "@image"))
         for vdim in vdims[1:]:
             vname = dimension_sanitizer(vdim.name)
-            tooltips.append((vdim.pprint_label, f'@{{{vname}}}'))
+            tooltips.append((vdim.pprint_label, f"@{{{vname}}}"))
         return tooltips, {}
 
     def _postprocess_hover(self, renderer, source):
         super()._postprocess_hover(renderer, source)
-        hover = self.handles.get('hover')
+        hover = self.handles.get("hover")
         if not (hover and isinstance(hover.tooltips, list)):
             return
 
-        xaxis = self.handles['xaxis']
-        yaxis = self.handles['yaxis']
+        xaxis = self.handles["xaxis"]
+        yaxis = self.handles["yaxis"]
 
         code = """
         var {ax} = special_vars.{ax};
@@ -237,15 +268,15 @@ class RasterPlot(ServerHoverMixin, ColorbarPlot):
         return date.toISOString().slice(0, 19).replace('T', ' ')
         """
         tooltips, formatters = [], dict(hover.formatters)
-        for (name, formatter) in hover.tooltips:
-            if isinstance(xaxis, DatetimeAxis) and formatter == '$x':
-                xhover = CustomJSHover(code=code.format(ax='x'))
-                formatters['$x'] = xhover
-                formatter += '{custom}'
-            if isinstance(yaxis, DatetimeAxis) and formatter == '$y':
-                yhover = CustomJSHover(code=code.format(ax='y'))
-                formatters['$y'] = yhover
-                formatter += '{custom}'
+        for name, formatter in hover.tooltips:
+            if isinstance(xaxis, DatetimeAxis) and formatter == "$x":
+                xhover = CustomJSHover(code=code.format(ax="x"))
+                formatters["$x"] = xhover
+                formatter += "{custom}"
+            if isinstance(yaxis, DatetimeAxis) and formatter == "$y":
+                yhover = CustomJSHover(code=code.format(ax="y"))
+                formatters["$y"] = yhover
+                formatter += "{custom}"
             tooltips.append((name, formatter))
 
         if not BOKEH_GE_3_4_0:  # https://github.com/bokeh/bokeh/issues/13598
@@ -270,11 +301,11 @@ class RasterPlot(ServerHoverMixin, ColorbarPlot):
             self.invert_yaxis = not self.invert_yaxis
 
     def get_data(self, element, ranges, style):
-        mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
+        mapping = dict(image="image", x="x", y="y", dw="dw", dh="dh")
         val_dim = element.vdims[0]
-        style['color_mapper'] = self._get_colormapper(val_dim, element, ranges, style)
-        if 'alpha' in style:
-            style['global_alpha'] = style['alpha']
+        style["color_mapper"] = self._get_colormapper(val_dim, element, ranges, style)
+        if "alpha" in style:
+            style["global_alpha"] = style["alpha"]
 
         if self.static_source:
             return {}, mapping, style
@@ -288,60 +319,57 @@ class RasterPlot(ServerHoverMixin, ColorbarPlot):
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
 
-        dh, dw = t-b, r-l
+        dh, dw = t - b, r - l
         data = dict(x=[l], y=[b], dw=[dw], dh=[dh])
 
         for i, vdim in enumerate(element.vdims, 2):
-            if i > 2 and 'hover' not in self.handles:
+            if i > 2 and "hover" not in self.handles:
                 break
             img = element.dimension_values(i, flat=False)
-            if dtype_kind(img) == 'b':
+            if dtype_kind(img) == "b":
                 img = img.astype(np.int8)
             if 0 in img.shape:
                 img = np.array([[np.nan]])
             if self.invert_axes ^ (type(element) is Raster):
                 img = img.T
-            key = 'image' if i == 2 else dimension_sanitizer(vdim.name)
+            key = "image" if i == 2 else dimension_sanitizer(vdim.name)
             data[key] = [img]
 
         return (data, mapping, style)
 
 
 class SyntheticLegendMixin(LegendPlot):
-
     def _init_glyphs(self, plot, element, ranges, source):
         super()._init_glyphs(plot, element, ranges, source)
-        if not ('holoviews.operation.datashader' in sys.modules and self.show_legend):
+        if not ("holoviews.operation.datashader" in sys.modules and self.show_legend):
             return
         try:
-            cmap = self.lookup_options(element, 'style').options.get("cmap")
+            cmap = self.lookup_options(element, "style").options.get("cmap")
             legend = categorical_legend(
                 element,
                 backend=self.backend,
                 # Only adding if it not None to not overwrite the default
-                **({"cmap": cmap} if cmap else {})
+                **({"cmap": cmap} if cmap else {}),
             )
         except Exception:
             return
         if legend is None:
             return
-        legend_params = {k: v for k, v in self.param.values().items()
-                         if k.startswith('legend')}
+        legend_params = {k: v for k, v in self.param.values().items() if k.startswith("legend")}
         self._legend_plot = PointPlot(legend, keys=[], overlaid=1, **legend_params)
         self._legend_plot.initialize_plot(plot=plot)
-        self._legend_plot.handles['glyph_renderer'].tags.append('hv_legend')
-        self.handles['synthetic_color_mapper'] = self._legend_plot.handles['color_color_mapper']
+        self._legend_plot.handles["glyph_renderer"].tags.append("hv_legend")
+        self.handles["synthetic_color_mapper"] = self._legend_plot.handles["color_color_mapper"]
 
 
 class RGBPlot(ServerHoverMixin, SyntheticLegendMixin):
-
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
-    style_opts = ['alpha', *base_properties]
+    style_opts = ["alpha", *base_properties]
 
     _nonvectorized_styles = style_opts
 
-    _plot_methods = dict(single='image_rgba')
+    _plot_methods = dict(single="image_rgba")
 
     selection_display = BokehOverlaySelectionDisplay()
 
@@ -351,19 +379,17 @@ class RGBPlot(ServerHoverMixin, SyntheticLegendMixin):
 
     def _hover_opts(self, element):
         xdim, ydim = element.kdims
-        return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y'),
-                ('RGBA', '@image')], {}
+        return [(xdim.pprint_label, "$x"), (ydim.pprint_label, "$y"), ("RGBA", "@image")], {}
 
     def get_data(self, element, ranges, style):
-        mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
-        if 'alpha' in style:
-            style['global_alpha'] = style['alpha']
+        mapping = dict(image="image", x="x", y="y", dw="dw", dh="dh")
+        if "alpha" in style:
+            style["global_alpha"] = style["alpha"]
 
         if self.static_source:
             return {}, mapping, style
 
-        img = np.dstack([element.dimension_values(d, flat=False)
-                         for d in element.vdims])
+        img = np.dstack([element.dimension_values(d, flat=False) for d in element.vdims])
 
         nan_mask = np.isnan(img)
         img[nan_mask] = 0
@@ -371,23 +397,25 @@ class RGBPlot(ServerHoverMixin, SyntheticLegendMixin):
         if img.ndim == 3:
             img_max = img.max() if img.size else np.nan
             # Can be 0 to 255 if nodata has been used
-            if dtype_kind(img) == 'f' and img_max <= 1:
-                img = img*255
+            if dtype_kind(img) == "f" and img_max <= 1:
+                img = img * 255
                 # img_max * 255 <- have no effect
             if img.size and (img.min() < 0 or img_max > 255):
-                self.param.warning('Clipping input data to the valid '
-                                   'range for RGB data ([0..1] for '
-                                   'floats or [0..255] for integers).')
+                self.param.warning(
+                    "Clipping input data to the valid "
+                    "range for RGB data ([0..1] for "
+                    "floats or [0..255] for integers)."
+                )
                 img = np.clip(img, 0, 255)
 
-            if img.dtype.name != 'uint8':
+            if img.dtype.name != "uint8":
                 img = img.astype(np.uint8)
-            if img.shape[2] == 3: # alpha channel not included
-                alpha = np.full(img.shape[:2], 255, dtype='uint8')
+            if img.shape[2] == 3:  # alpha channel not included
+                alpha = np.full(img.shape[:2], 255, dtype="uint8")
                 img = np.dstack([img, alpha])
             N, M, _ = img.shape
-            #convert image NxM dtype=uint32
-            if not img.flags['C_CONTIGUOUS']:
+            # convert image NxM dtype=uint32
+            if not img.flags["C_CONTIGUOUS"]:
                 img = img.copy()
             img = img.view(dtype=np.uint32).reshape((N, M))
 
@@ -399,7 +427,7 @@ class RGBPlot(ServerHoverMixin, SyntheticLegendMixin):
             img = img.T
             l, b, r, t = b, l, t, r
 
-        dh, dw = t-b, r-l
+        dh, dw = t - b, r - l
 
         if 0 in img.shape:
             img = np.zeros((1, 1), dtype=np.uint32)
@@ -409,11 +437,13 @@ class RGBPlot(ServerHoverMixin, SyntheticLegendMixin):
 
 
 class ImageStackPlot(RasterPlot, SyntheticLegendMixin):
+    _plot_methods = dict(single="image_stack")
 
-    _plot_methods = dict(single='image_stack')
-
-    cnorm = param.Selector(default='eq_hist', objects=['linear', 'log', 'eq_hist'], doc="""
-        Color normalization to be applied during colormapping.""")
+    cnorm = param.Selector(
+        default="eq_hist",
+        objects=["linear", "log", "eq_hist"],
+        doc="Color normalization to be applied during colormapping.",
+    )
 
     start_alpha = param.Integer(default=0, bounds=(0, 255))
 
@@ -440,8 +470,17 @@ class ImageStackPlot(RasterPlot, SyntheticLegendMixin):
 
         return WeightedStackColorMapper, opts
 
-    def _get_colormapper(self, eldim, element, ranges, style, factors=None,
-                         colors=None, group=None, name='color_mapper'):
+    def _get_colormapper(
+        self,
+        eldim,
+        element,
+        ranges,
+        style,
+        factors=None,
+        colors=None,
+        group=None,
+        name="color_mapper",
+    ):
         indices = None
         vdims = element.vdims
         if isinstance(style.get("cmap"), dict):
@@ -458,8 +497,7 @@ class ImageStackPlot(RasterPlot, SyntheticLegendMixin):
             indices = [keys.index(vd.name) for vd in vdims]
 
         cmapper = super()._get_colormapper(
-            eldim, element, ranges, style, factors=factors,
-            colors=colors, group=group, name=name
+            eldim, element, ranges, style, factors=factors, colors=colors, group=group, name=name
         )
 
         if indices is None:
@@ -476,12 +514,14 @@ class ImageStackPlot(RasterPlot, SyntheticLegendMixin):
 
         mapping["color_mapper"] = self._get_colormapper(z, element, ranges, style)
 
-        img = np.dstack([
-            element.dimension_values(vd, flat=False)
-            if not self.invert_axes
-            else element.dimension_values(vd, flat=False).transpose()
-            for vd in element.vdims
-        ])
+        img = np.dstack(
+            [
+                element.dimension_values(vd, flat=False)
+                if not self.invert_axes
+                else element.dimension_values(vd, flat=False).transpose()
+                for vd in element.vdims
+            ]
+        )
         if 0 in img.shape[:2]:  # Means we don't have any data
             img = np.array([[[np.nan]]])
         # Ensure axis inversions are handled correctly
@@ -510,55 +550,64 @@ class ImageStackPlot(RasterPlot, SyntheticLegendMixin):
         if BOKEH_GE_3_3_0:
             xdim, ydim = element.kdims
             vdim = ", ".join([d.pprint_label for d in element.vdims])
-            return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y'), (vdim, '@image')], {}
+            return [(xdim.pprint_label, "$x"), (ydim.pprint_label, "$y"), (vdim, "@image")], {}
         else:
             xdim, ydim = element.kdims
-            return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y')], {}
+            return [(xdim.pprint_label, "$x"), (ydim.pprint_label, "$y")], {}
 
 
 class HSVPlot(RGBPlot):
-
     def get_data(self, element, ranges, style):
         return super().get_data(element.rgb, ranges, style)
 
 
 class QuadMeshPlot(ColorbarPlot):
+    clipping_colors = param.Dict(default={"NaN": "transparent"})
 
-    clipping_colors = param.Dict(default={'NaN': 'transparent'})
-
-    nodata = param.Integer(default=None, doc="""
+    nodata = param.Integer(
+        default=None,
+        doc="""
         Optional missing-data value for integer data.
         If non-None, data with this value will be replaced with NaN so
-        that it is transparent (by default) when plotted.""")
+        that it is transparent (by default) when plotted.""",
+    )
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
-    show_legend = param.Boolean(default=False, doc="""
-        Whether to show legend for the plot.""")
+    show_legend = param.Boolean(
+        default=False,
+        doc="Whether to show legend for the plot.",
+    )
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = ['cmap', *base_properties, *line_properties, *fill_properties]
+    style_opts = ["cmap", *base_properties, *line_properties, *fill_properties]
 
     _nonvectorized_styles = style_opts
 
-    _plot_methods = dict(single='quad')
+    _plot_methods = dict(single="quad")
 
     def get_data(self, element, ranges, style):
         x, y, z = element.dimensions()[:3]
 
-        if self.invert_axes: x, y = y, x
+        if self.invert_axes:
+            x, y = y, x
         cmapper = self._get_colormapper(z, element, ranges, style)
-        cmapper = {'field': dimension_sanitizer(z.name), 'transform': cmapper}
+        cmapper = {"field": dimension_sanitizer(z.name), "transform": cmapper}
 
-        irregular = (element.interface.irregular(element, x) or
-                     element.interface.irregular(element, y))
+        irregular = element.interface.irregular(element, x) or element.interface.irregular(
+            element, y
+        )
         if irregular:
-            mapping = dict(xs='xs', ys='ys', fill_color=cmapper)
+            mapping = dict(xs="xs", ys="ys", fill_color=cmapper)
         else:
-            mapping = {'left': 'left', 'right': 'right',
-                       'fill_color': cmapper,
-                       'top': 'top', 'bottom': 'bottom'}
+            mapping = {
+                "left": "left",
+                "right": "right",
+                "fill_color": cmapper,
+                "top": "top",
+                "bottom": "bottom",
+            }
 
         if self.static_source:
             return {}, mapping, style
@@ -570,9 +619,9 @@ class QuadMeshPlot(ColorbarPlot):
 
         if irregular:
             dims = element.kdims
-            if self.invert_axes: dims = dims[::-1]
-            X, Y = (element.interface.coords(element, d, expanded=True, edges=True)
-                    for d in dims)
+            if self.invert_axes:
+                dims = dims[::-1]
+            X, Y = (element.interface.coords(element, d, expanded=True, edges=True) for d in dims)
             X, Y = colormesh(X, Y)
             zvals = zdata.T.flatten() if self.invert_axes else zdata.flatten()
             XS, YS = [], []
@@ -584,30 +633,37 @@ class QuadMeshPlot(ColorbarPlot):
                     XS.append(list(xs))
                     YS.append(list(ys))
                     mask.append(True)
-                    if 'hover' in self.handles:
+                    if "hover" in self.handles:
                         xc.append(xs.mean())
                         yc.append(ys.mean())
                 else:
                     mask.append(False)
             mask = np.array(mask)
 
-            data = {'xs': XS, 'ys': YS, dimension_sanitizer(z.name): zvals[mask]}
-            if 'hover' in self.handles:
+            data = {"xs": XS, "ys": YS, dimension_sanitizer(z.name): zvals[mask]}
+            if "hover" in self.handles:
                 if not self.static_source:
                     hover_data = self._collect_hover_data(element, mask, irregular=True)
                 hover_data[x] = np.array(xc)
                 hover_data[y] = np.array(yc)
         else:
-            xc, yc = (element.interface.coords(element, x, edges=True, ordered=True),
-                      element.interface.coords(element, y, edges=True, ordered=True))
+            xc, yc = (
+                element.interface.coords(element, x, edges=True, ordered=True),
+                element.interface.coords(element, y, edges=True, ordered=True),
+            )
 
             x0, y0 = cartesian_product([xc[:-1], yc[:-1]], copy=True)
             x1, y1 = cartesian_product([xc[1:], yc[1:]], copy=True)
             zvals = zdata.flatten() if self.invert_axes else zdata.T.flatten()
-            data = {'left': x0, 'right': x1, dimension_sanitizer(z.name): zvals,
-                    'bottom': y0, 'top': y1}
+            data = {
+                "left": x0,
+                "right": x1,
+                dimension_sanitizer(z.name): zvals,
+                "bottom": y0,
+                "top": y1,
+            }
 
-            if 'hover' in self.handles and not self.static_source:
+            if "hover" in self.handles and not self.static_source:
                 hover_data = self._collect_hover_data(element)
                 hover_data[x] = element.dimension_values(x)
                 hover_data[y] = element.dimension_values(y)
@@ -629,8 +685,7 @@ class QuadMeshPlot(ColorbarPlot):
         transpose = self.invert_axes if irregular else not self.invert_axes
 
         hover_dims = element.dimensions()[3:]
-        hover_vals = [element.dimension_values(hover_dim, flat=False)
-                      for hover_dim in hover_dims]
+        hover_vals = [element.dimension_values(hover_dim, flat=False) for hover_dim in hover_dims]
         hover_data = {}
         for hdim, hvals in zip(hover_dims, hover_vals, strict=None):
             hdat = hvals.T.flatten() if transpose else hvals.flatten()
@@ -638,15 +693,13 @@ class QuadMeshPlot(ColorbarPlot):
         return hover_data
 
     def _init_glyph(self, plot, mapping, properties):
-        """Returns a Bokeh glyph object.
-
-        """
+        """Returns a Bokeh glyph object."""
         properties = mpl_to_bokeh(properties)
         properties = dict(properties, **mapping)
-        if 'xs' in mapping:
+        if "xs" in mapping:
             renderer = plot.patches(**properties)
         else:
             renderer = plot.quad(**properties)
-        if self.colorbar and 'color_mapper' in self.handles:
-            self._draw_colorbar(plot, self.handles['color_mapper'])
+        if self.colorbar and "color_mapper" in self.handles:
+            self._draw_colorbar(plot, self.handles["color_mapper"])
         return renderer, renderer.glyph

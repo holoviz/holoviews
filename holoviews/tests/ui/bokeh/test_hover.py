@@ -15,11 +15,12 @@ pytestmark = pytest.mark.ui
 bokeh_3_7_0 = pytest.mark.skipif(not BOKEH_GE_3_7_0, reason="Added in Bokeh 3.7")
 bokeh_3_8_0 = pytest.mark.skipif(not BOKEH_GE_3_8_0, reason="Added in Bokeh 3.8")
 
+
 @pytest.mark.usefixtures("bokeh_backend")
 def test_hover_tooltips_list(serve_hv):
-    hv_image = hv.Image(
-        np.random.rand(10, 10), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]
-    ).opts(hover_tooltips=["$x", "xc", "@yc", "@z"])
+    hv_image = hv.Image(np.random.rand(10, 10), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]).opts(
+        hover_tooltips=["$x", "xc", "@yc", "@z"]
+    )
 
     page = serve_hv(hv_image)
     hv_plot = page.locator(".bk-events")
@@ -62,9 +63,9 @@ def test_hover_tooltips_unit_format(serve_hv):
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_hover_tooltips_list_mix_tuple_string(serve_hv):
-    hv_image = hv.Image(
-        np.random.rand(10, 10), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]
-    ).opts(hover_tooltips=[("xs", "($x, @xc)"), "yc", "z"])
+    hv_image = hv.Image(np.random.rand(10, 10), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]).opts(
+        hover_tooltips=[("xs", "($x, @xc)"), "yc", "z"]
+    )
 
     page = serve_hv(hv_image)
     hv_plot = page.locator(".bk-events")
@@ -120,9 +121,9 @@ def test_hover_tooltips_label_group(serve_hv):
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_hover_tooltips_missing(serve_hv):
-    hv_image = hv.Image(
-        np.random.rand(10, 10), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]
-    ).opts(hover_tooltips=["abc"])
+    hv_image = hv.Image(np.random.rand(10, 10), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]).opts(
+        hover_tooltips=["abc"]
+    )
 
     page = serve_hv(hv_image)
     hv_plot = page.locator(".bk-events")
@@ -140,9 +141,9 @@ def test_hover_tooltips_missing(serve_hv):
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_hover_tooltips_html_string(serve_hv):
-    hv_image = hv.Image(
-        np.random.rand(10, 10), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]
-    ).opts(hover_tooltips="<b>x</b>: $x<br>y: @yc")
+    hv_image = hv.Image(np.random.rand(10, 10), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]).opts(
+        hover_tooltips="<b>x</b>: $x<br>y: @yc"
+    )
 
     page = serve_hv(hv_image)
     hv_plot = page.locator(".bk-events")
@@ -162,9 +163,7 @@ def test_hover_tooltips_html_string(serve_hv):
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_hover_tooltips_formatters(serve_hv):
-    hv_image = hv.Image(
-        np.random.rand(10, 10), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]
-    ).opts(
+    hv_image = hv.Image(np.random.rand(10, 10), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]).opts(
         hover_tooltips=[("X", "($x, @xc{%0.3f})")], hover_formatters={"@xc": "printf"}
     )
 
@@ -237,14 +236,18 @@ def test_hover_tooltips_rasterize_server_hover(serve_hv, rng):
 
     from holoviews.operation.datashader import rasterize
 
-    df = pd.DataFrame({
-        "x": rng.normal(45, 1, 100),
-        "y": rng.normal(85, 1, 100),
-        "s": 1,
-        "val": 10,
-        "cat": "cat1",
-    })
-    img = rasterize(hv.Points(df), selector=ds.first("val"), width=10, height=10, dynamic=False).opts(tools=["hover"])
+    df = pd.DataFrame(
+        {
+            "x": rng.normal(45, 1, 100),
+            "y": rng.normal(85, 1, 100),
+            "s": 1,
+            "val": 10,
+            "cat": "cat1",
+        }
+    )
+    img = rasterize(
+        hv.Points(df), selector=ds.first("val"), width=10, height=10, dynamic=False
+    ).opts(tools=["hover"])
 
     page = serve_hv(img)
     hv_plot = page.locator(".bk-events")
@@ -277,20 +280,26 @@ def test_hover_tooltips_rasterize_server_hover(serve_hv, rng):
     ids=["default", "only_coords", "reduced_vars", "only_vars"],
 )
 @pytest.mark.parametrize("selector_in_hovertool", [True, False])
-def test_hover_tooltips_rasterize_server_hover_selector_ux(serve_hv, rng, hover_tooltips, selector_in_hovertool):
+def test_hover_tooltips_rasterize_server_hover_selector_ux(
+    serve_hv, rng, hover_tooltips, selector_in_hovertool
+):
     import datashader as ds
 
     from holoviews.operation.datashader import rasterize
 
-    df = pd.DataFrame({
-        "x": rng.normal(45, 1, 100),
-        "y": rng.normal(85, 1, 100),
-        "s": 2,
-        "val": 10,
-        "cat": "cat1",
-    })
+    df = pd.DataFrame(
+        {
+            "x": rng.normal(45, 1, 100),
+            "y": rng.normal(85, 1, 100),
+            "s": 2,
+            "val": 10,
+            "cat": "cat1",
+        }
+    )
     img = rasterize(hv.Points(df), selector=ds.first("val"), width=10, height=10, dynamic=False)
-    img.opts(tools=["hover"], hover_tooltips=hover_tooltips, selector_in_hovertool=selector_in_hovertool)
+    img.opts(
+        tools=["hover"], hover_tooltips=hover_tooltips, selector_in_hovertool=selector_in_hovertool
+    )
 
     page = serve_hv(img)
     hv_plot = page.locator(".bk-events")
@@ -307,7 +316,6 @@ def test_hover_tooltips_rasterize_server_hover_selector_ux(serve_hv, rng, hover_
 
     page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
     page.mouse.up()
-
 
     # Selector test
     if hover_tooltips == ["x", "y"] or not selector_in_hovertool:
@@ -334,18 +342,22 @@ def test_hover_tooltips_rasterize_server_datetime_axis(serve_hv, rng, convert_x,
 
     from holoviews.operation.datashader import rasterize
 
-    df = pd.DataFrame({
-        "x": rng.normal(0, 0.1, 500),
-        "y": rng.normal(0, 0.1, 500),
-        "s": 1,
-        "val": 10,
-        "cat": "cat1",
-    })
+    df = pd.DataFrame(
+        {
+            "x": rng.normal(0, 0.1, 500),
+            "y": rng.normal(0, 0.1, 500),
+            "s": 1,
+            "val": 10,
+            "cat": "cat1",
+        }
+    )
     if convert_x:
-        df['x'] = pd.Timestamp(2020, 1, 1, 12) + (df['x'] * 5e8).apply(pd.Timedelta)
+        df["x"] = pd.Timestamp(2020, 1, 1, 12) + (df["x"] * 5e8).apply(pd.Timedelta)
     if convert_y:
-        df['y'] = pd.Timestamp(2020, 1, 1, 12) + (df['y'] * 5e8).apply(pd.Timedelta)
-    img = rasterize(hv.Points(df), selector=ds.first("val"), width=10, height=10, dynamic=False).opts(tools=["hover"])
+        df["y"] = pd.Timestamp(2020, 1, 1, 12) + (df["y"] * 5e8).apply(pd.Timedelta)
+    img = rasterize(
+        hv.Points(df), selector=ds.first("val"), width=10, height=10, dynamic=False
+    ).opts(tools=["hover"])
 
     page = serve_hv(img)
     hv_plot = page.locator(".bk-events")
@@ -365,9 +377,9 @@ def test_hover_tooltips_rasterize_server_datetime_axis(serve_hv, rng, convert_x,
 
     expect(page.locator(".bk-Tooltip")).to_have_count(1)
     if convert_x:
-        expect(page.locator(".bk-Tooltip")).to_contain_text('x:2020-01-01')
+        expect(page.locator(".bk-Tooltip")).to_contain_text("x:2020-01-01")
     if convert_y:
-        expect(page.locator(".bk-Tooltip")).to_contain_text('y:2020-01-01')
+        expect(page.locator(".bk-Tooltip")).to_contain_text("y:2020-01-01")
 
 
 @bokeh_3_7_0
@@ -381,26 +393,26 @@ def test_hover_tooltips_selector_update_plot(serve_panel):
     x_data = np.random.random((N_OBS, N_OBS))
 
     def get_plot(color_by):
-        if color_by == 'option1':
-            color_data = np.random.choice(['A', 'B', 'C', 'D'], size=N_OBS)
+        if color_by == "option1":
+            color_data = np.random.choice(["A", "B", "C", "D"], size=N_OBS)
         else:
-            color_data = np.random.choice(['a', 'b', 'c', 'd'], size=N_OBS)
+            color_data = np.random.choice(["a", "b", "c", "d"], size=N_OBS)
 
         dataset = hv.Dataset(
             (x_data[:, 0], x_data[:, 1], color_data),
-            ['X', 'Y'],
+            ["X", "Y"],
             color_by,
         )
         plot = dataset.to(hv.Points)
         plot = rasterize(
             plot,
             aggregator=ds.count_cat(color_by),
-            selector=ds.first('X'),
+            selector=ds.first("X"),
         )
         plot = plot.opts(tools=["hover"], title=color_by)
         return plot
 
-    scb = pn.widgets.Select(name="Color By", options=['option1', 'option2'])
+    scb = pn.widgets.Select(name="Color By", options=["option1", "option2"])
     layout = pn.Row(scb, pn.bind(get_plot, scb))
 
     page = serve_panel(layout)
@@ -415,10 +427,10 @@ def test_hover_tooltips_selector_update_plot(serve_panel):
 
     tooltip = page.locator(".bk-Tooltip")
     expect(tooltip).to_have_count(1)
-    expect(tooltip).to_contain_text('A:')
-    expect(tooltip).to_contain_text('B:')
-    expect(tooltip).to_contain_text('C:')
-    expect(tooltip).to_contain_text('D:')
+    expect(tooltip).to_contain_text("A:")
+    expect(tooltip).to_contain_text("B:")
+    expect(tooltip).to_contain_text("C:")
+    expect(tooltip).to_contain_text("D:")
 
     # Change the selector to 'option2'
     scb.value = "option2"
@@ -429,42 +441,37 @@ def test_hover_tooltips_selector_update_plot(serve_panel):
     page.wait_for_timeout(200)
     tooltip = page.locator(".bk-Tooltip")
     expect(tooltip).to_have_count(1)
-    expect(tooltip).to_contain_text('a:')
-    expect(tooltip).to_contain_text('b:')
-    expect(tooltip).to_contain_text('c:')
-    expect(tooltip).to_contain_text('d:')
+    expect(tooltip).to_contain_text("a:")
+    expect(tooltip).to_contain_text("b:")
+    expect(tooltip).to_contain_text("c:")
+    expect(tooltip).to_contain_text("d:")
 
 
 @bokeh_3_8_0
 @pytest.mark.usefixtures("bokeh_backend")
-@pytest.mark.parametrize(
-    "hover_tooltips",
-    [None, ["s"]],
-    ids=["default", "only_vars"]
-)
+@pytest.mark.parametrize("hover_tooltips", [None, ["s"]], ids=["default", "only_vars"])
 def test_hover_tooltips_rasterize_server_hover_filter(serve_hv, rng, hover_tooltips):
     import datashader as ds
 
     from holoviews.operation.datashader import rasterize
 
-    df = pd.DataFrame({
-        "x": rng.normal(45, 1, 100),
-        "y": rng.normal(85, 1, 100),
-        "s": 1,
-        "val": 10,
-        "cat": "cat1",
-    })
+    df = pd.DataFrame(
+        {
+            "x": rng.normal(45, 1, 100),
+            "y": rng.normal(85, 1, 100),
+            "s": 1,
+            "val": 10,
+            "cat": "cat1",
+        }
+    )
 
     hover_models = []
+
     def watch_hook(plot, element):
         hover_models[:] = [plot.handles["hover"].filters[""].args["hover_model"]]
 
     img = rasterize(
-        hv.Points(df),
-        selector=ds.first("val"),
-        width=10,
-        height=10,
-        dynamic=False
+        hv.Points(df), selector=ds.first("val"), width=10, height=10, dynamic=False
     ).opts(tools=["hover"], hover_tooltips=hover_tooltips, hooks=[watch_hook])
 
     page = serve_hv(img)
@@ -497,8 +504,8 @@ def test_hover_tooltips_rasterize_server_hover_filter(serve_hv, rng, hover_toolt
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-@pytest.mark.parametrize("x_axis_type", [int, str, lambda x: x+0.1], ids=["int", "str", "float"])
-@pytest.mark.parametrize("y_axis_type", [int, str, lambda x: x+0.1], ids=["int", "str", "float"])
+@pytest.mark.parametrize("x_axis_type", [int, str, lambda x: x + 0.1], ids=["int", "str", "float"])
+@pytest.mark.parametrize("y_axis_type", [int, str, lambda x: x + 0.1], ids=["int", "str", "float"])
 def test_hover_heatmap_image(serve_hv, x_axis_type, y_axis_type):
     x = list(map(x_axis_type, range(0, 24, 2)))
     y = list(map(y_axis_type, range(10)))
@@ -530,13 +537,17 @@ def test_hover_across_dynamicmaps(serve_panel):
     el = (
         hv.Dataset(data)
         .to(hv.Points, kdims=["x", "y"], groupby="category")
-        .opts(tools=["hover"], size=10, show_legend=False, xlim=(-1, 3), ylim=(-1, 3), hit_dilation=100)
+        .opts(
+            tools=["hover"],
+            size=10,
+            show_legend=False,
+            xlim=(-1, 3),
+            ylim=(-1, 3),
+            hit_dilation=100,
+        )
     )
     widget = pn.widgets.MultiSelect(value=["A"], options=["A", "B"])
-    dmap = hv.DynamicMap(
-        lambda value: el.get(value).overlay(),
-        streams=[widget.param.value]
-    )
+    dmap = hv.DynamicMap(lambda value: el.get(value).overlay(), streams=[widget.param.value])
     col = pn.Column(widget, dmap)
     page = serve_panel(col)
 
@@ -564,12 +575,10 @@ def test_hover_across_dynamicmaps(serve_panel):
 @pytest.mark.usefixtures("bokeh_backend")
 def test_hover_heatmap_categorical_outside_plot_area(serve_hv, caplog):
     # Test for https://github.com/holoviz/holoviews/pull/6438
-    df = pd.DataFrame([
-        [0, "A", 10],
-        [0, "B", 20],
-        [1, "A", 20],
-        [1, "B", 30]
-    ], columns=["key1", "key2", "value"])
+    df = pd.DataFrame(
+        [[0, "A", 10], [0, "B", 20], [1, "A", 20], [1, "B", 30]],
+        columns=["key1", "key2", "value"],
+    )
 
     ds = hv.Dataset(df)
     heatmap = ds.to(hv.HeatMap, kdims=["key1", "key2"], vdims="value").opts(tools=["hover"])

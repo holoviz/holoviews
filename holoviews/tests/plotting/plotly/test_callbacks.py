@@ -50,8 +50,10 @@ def build_callback_set(callback_cls, trace_uids, stream_type, num_streams=2):
         for _ in range(num_streams):
             events = []
             stream = stream_type()
+
             def cb(events=events, **kwargs):
                 events.append(kwargs)
+
             stream.add_subscriber(cb)
             streams.append(stream)
             event_list.append(events)
@@ -66,43 +68,37 @@ def build_callback_set(callback_cls, trace_uids, stream_type, num_streams=2):
 
 
 class TestCallbacks:
-
     def setup_method(self):
-        self.fig_dict = go.Figure({
-            'data': [
-                {'type': 'scatter',
-                 'y': [1, 2, 3],
-                 'uid': 'first'},
-                {'type': 'bar',
-                 'y': [1, 2, 3],
-                 'uid': 'second',
-                 'xaxis': 'x',
-                 'yaxis': 'y'},
-                {'type': 'scatter',
-                 'y': [1, 2, 3],
-                 'uid': 'third',
-                 'xaxis': 'x2',
-                 'yaxis': 'y2'},
-                {'type': 'bar',
-                 'y': [1, 2, 3],
-                 'uid': 'forth',
-                 'xaxis': 'x3',
-                 'yaxis': 'y3'},
-            ],
-            'layout': {
-                'title': {'text': 'Figure Title'}}
-        }).to_dict()
-
-        self.mapbox_fig_dict = go.Figure({
-            'data': [
-                {'type': PLOTLY_SCATTERMAP, 'uid': 'first', 'subplot': PLOTLY_MAP},
-                {'type': PLOTLY_SCATTERMAP, 'uid': 'second', 'subplot': PLOTLY_MAP + '2'},
-                {'type': PLOTLY_SCATTERMAP, 'uid': 'third', 'subplot': PLOTLY_MAP + '3'}
-            ],
-            'layout': {
-                'title': {'text': 'Figure Title'},
+        self.fig_dict = go.Figure(
+            {
+                "data": [
+                    {"type": "scatter", "y": [1, 2, 3], "uid": "first"},
+                    {"type": "bar", "y": [1, 2, 3], "uid": "second", "xaxis": "x", "yaxis": "y"},
+                    {
+                        "type": "scatter",
+                        "y": [1, 2, 3],
+                        "uid": "third",
+                        "xaxis": "x2",
+                        "yaxis": "y2",
+                    },
+                    {"type": "bar", "y": [1, 2, 3], "uid": "forth", "xaxis": "x3", "yaxis": "y3"},
+                ],
+                "layout": {"title": {"text": "Figure Title"}},
             }
-        }).to_dict()
+        ).to_dict()
+
+        self.mapbox_fig_dict = go.Figure(
+            {
+                "data": [
+                    {"type": PLOTLY_SCATTERMAP, "uid": "first", "subplot": PLOTLY_MAP},
+                    {"type": PLOTLY_SCATTERMAP, "uid": "second", "subplot": PLOTLY_MAP + "2"},
+                    {"type": PLOTLY_SCATTERMAP, "uid": "third", "subplot": PLOTLY_MAP + "3"},
+                ],
+                "layout": {
+                    "title": {"text": "Figure Title"},
+                },
+            }
+        ).to_dict()
 
         # Precompute a pair of lat/lon, easting/northing, mapbox coord values
         self.lon_range1, self.lat_range1 = (10, 30), (20, 40)
@@ -116,7 +112,7 @@ class TestCallbacks:
             [self.lon_range1[0], self.lat_range1[1]],
             [self.lon_range1[1], self.lat_range1[1]],
             [self.lon_range1[1], self.lat_range1[0]],
-            [self.lon_range1[0], self.lat_range1[0]]
+            [self.lon_range1[0], self.lat_range1[0]],
         ]
 
         self.lon_range2, self.lat_range2 = (-50, -30), (-70, -40)
@@ -130,7 +126,7 @@ class TestCallbacks:
             [self.lon_range2[0], self.lat_range2[1]],
             [self.lon_range2[1], self.lat_range2[1]],
             [self.lon_range2[1], self.lat_range2[0]],
-            [self.lon_range2[0], self.lat_range2[0]]
+            [self.lon_range2[0], self.lat_range2[0]],
         ]
 
     def testCallbackClassInstanceTracking(self):
@@ -166,53 +162,50 @@ class TestCallbacks:
 
     def testRangeXYCallbackEventData(self):
         for viewport in [
-            {'xaxis.range': [1, 4], 'yaxis.range': [-1, 5]},
-            {'xaxis.range[0]': 1, 'xaxis.range[1]': 4,
-             'yaxis.range[0]': -1, 'yaxis.range[1]': 5},
+            {"xaxis.range": [1, 4], "yaxis.range": [-1, 5]},
+            {"xaxis.range[0]": 1, "xaxis.range[1]": 4, "yaxis.range[0]": -1, "yaxis.range[1]": 5},
         ]:
             event_data = RangeXYCallback.get_event_data_from_property_update(
                 "viewport", viewport, self.fig_dict
             )
 
             assert event_data == {
-                'first': {'x_range': (1, 4), 'y_range': (-1, 5)},
-                'second': {'x_range': (1, 4), 'y_range': (-1, 5)},
+                "first": {"x_range": (1, 4), "y_range": (-1, 5)},
+                "second": {"x_range": (1, 4), "y_range": (-1, 5)},
             }
 
     def testRangeXCallbackEventData(self):
         for viewport in [
-            {'xaxis.range': [1, 4], 'yaxis.range': [-1, 5]},
-            {'xaxis.range[0]': 1, 'xaxis.range[1]': 4,
-             'yaxis.range[0]': -1, 'yaxis.range[1]': 5},
+            {"xaxis.range": [1, 4], "yaxis.range": [-1, 5]},
+            {"xaxis.range[0]": 1, "xaxis.range[1]": 4, "yaxis.range[0]": -1, "yaxis.range[1]": 5},
         ]:
             event_data = RangeXCallback.get_event_data_from_property_update(
                 "viewport", viewport, self.fig_dict
             )
 
             assert event_data == {
-                'first': {'x_range': (1, 4)},
-                'second': {'x_range': (1, 4)},
+                "first": {"x_range": (1, 4)},
+                "second": {"x_range": (1, 4)},
             }
 
     def testRangeYCallbackEventData(self):
         for viewport in [
-            {'xaxis.range': [1, 4], 'yaxis.range': [-1, 5]},
-            {'xaxis.range[0]': 1, 'xaxis.range[1]': 4,
-             'yaxis.range[0]': -1, 'yaxis.range[1]': 5},
+            {"xaxis.range": [1, 4], "yaxis.range": [-1, 5]},
+            {"xaxis.range[0]": 1, "xaxis.range[1]": 4, "yaxis.range[0]": -1, "yaxis.range[1]": 5},
         ]:
             event_data = RangeYCallback.get_event_data_from_property_update(
                 "viewport", viewport, self.fig_dict
             )
 
             assert event_data == {
-                'first': {'y_range': (-1, 5)},
-                'second': {'y_range': (-1, 5)},
+                "first": {"y_range": (-1, 5)},
+                "second": {"y_range": (-1, 5)},
             }
 
     def testMapboxRangeXYCallbackEventData(self):
         relayout_data = {
-            f'{PLOTLY_MAP}._derived': {"coordinates": self.mapbox_coords1},
-            f'{PLOTLY_MAP}3._derived': {"coordinates": self.mapbox_coords2}
+            f"{PLOTLY_MAP}._derived": {"coordinates": self.mapbox_coords1},
+            f"{PLOTLY_MAP}3._derived": {"coordinates": self.mapbox_coords2},
         }
 
         event_data = RangeXYCallback.get_event_data_from_property_update(
@@ -220,14 +213,14 @@ class TestCallbacks:
         )
 
         assert event_data == {
-            'first': {'x_range': self.easting_range1, 'y_range': self.northing_range1},
-            'third': {'x_range': self.easting_range2, 'y_range': self.northing_range2},
+            "first": {"x_range": self.easting_range1, "y_range": self.northing_range1},
+            "third": {"x_range": self.easting_range2, "y_range": self.northing_range2},
         }
 
     def testMapboxRangeXCallbackEventData(self):
         relayout_data = {
-            f'{PLOTLY_MAP}._derived': {"coordinates": self.mapbox_coords1},
-            f'{PLOTLY_MAP}3._derived': {"coordinates": self.mapbox_coords2}
+            f"{PLOTLY_MAP}._derived": {"coordinates": self.mapbox_coords1},
+            f"{PLOTLY_MAP}3._derived": {"coordinates": self.mapbox_coords2},
         }
 
         event_data = RangeXCallback.get_event_data_from_property_update(
@@ -235,14 +228,14 @@ class TestCallbacks:
         )
 
         assert event_data == {
-            'first': {'x_range': self.easting_range1},
-            'third': {'x_range': self.easting_range2},
+            "first": {"x_range": self.easting_range1},
+            "third": {"x_range": self.easting_range2},
         }
 
     def testMapboxRangeYCallbackEventData(self):
         relayout_data = {
-            f'{PLOTLY_MAP}._derived': {"coordinates": self.mapbox_coords1},
-            f'{PLOTLY_MAP}3._derived': {"coordinates": self.mapbox_coords2}
+            f"{PLOTLY_MAP}._derived": {"coordinates": self.mapbox_coords1},
+            f"{PLOTLY_MAP}3._derived": {"coordinates": self.mapbox_coords2},
         }
 
         event_data = RangeYCallback.get_event_data_from_property_update(
@@ -250,8 +243,8 @@ class TestCallbacks:
         )
 
         assert event_data == {
-            'first': {'y_range': self.northing_range1},
-            'third': {'y_range': self.northing_range2},
+            "first": {"y_range": self.northing_range1},
+            "third": {"y_range": self.northing_range2},
         }
 
     def testRangeCallbacks(self):
@@ -260,18 +253,15 @@ class TestCallbacks:
         range_classes = [RangeXYCallback, RangeXCallback, RangeYCallback]
 
         _xyplots, xystreamss, _xycallbacks, xyevents = build_callback_set(
-            RangeXYCallback, ['first', 'second', 'third', 'forth', 'other'],
-            RangeXY, 2
+            RangeXYCallback, ["first", "second", "third", "forth", "other"], RangeXY, 2
         )
 
         _xplots, xstreamss, _xcallbacks, xevents = build_callback_set(
-            RangeXCallback, ['first', 'second', 'third', 'forth', 'other'],
-            RangeX, 2
+            RangeXCallback, ["first", "second", "third", "forth", "other"], RangeX, 2
         )
 
         _yplots, ystreamss, _y_callbacks, yevents = build_callback_set(
-            RangeYCallback, ['first', 'second', 'third', 'forth', 'other'],
-            RangeY, 2
+            RangeYCallback, ["first", "second", "third", "forth", "other"], RangeY, 2
         )
 
         # Sanity check the length of the streams lists
@@ -279,17 +269,16 @@ class TestCallbacks:
             assert len(xystreams) == 2
 
         # Change viewport on first set of axes
-        viewport1 = {'xaxis.range': [1, 4], 'yaxis.range': [-1, 5]}
+        viewport1 = {"xaxis.range": [1, 4], "yaxis.range": [-1, 5]}
         for cb_cls in range_classes:
-            cb_cls.update_streams_from_property_update(
-                "viewport", viewport1, self.fig_dict
-            )
+            cb_cls.update_streams_from_property_update("viewport", viewport1, self.fig_dict)
 
         # Check that all streams attached to 'first' and 'second' plots were triggered
         for xystream, xstream, ystream in zip(
-                xystreamss[0] + xystreamss[1],
-                xstreamss[0] + xstreamss[1],
-                ystreamss[0] + ystreamss[1], strict=None,
+            xystreamss[0] + xystreamss[1],
+            xstreamss[0] + xstreamss[1],
+            ystreamss[0] + ystreamss[1],
+            strict=None,
         ):
             assert xystream.x_range == (1, 4)
             assert xystream.y_range == (-1, 5)
@@ -298,9 +287,10 @@ class TestCallbacks:
 
         # And that no other streams were triggered
         for xystream, xstream, ystream in zip(
-                xystreamss[2] + xystreamss[3],
-                xstreamss[2] + xstreamss[3],
-                ystreamss[2] + ystreamss[3], strict=None,
+            xystreamss[2] + xystreamss[3],
+            xstreamss[2] + xstreamss[3],
+            ystreamss[2] + ystreamss[3],
+            strict=None,
         ):
             assert xystream.x_range is None
             assert xystream.y_range is None
@@ -308,15 +298,13 @@ class TestCallbacks:
             assert ystream.y_range is None
 
         # Change viewport on second set of axes
-        viewport2 = {'xaxis2.range': [2, 5], 'yaxis2.range': [0, 6]}
+        viewport2 = {"xaxis2.range": [2, 5], "yaxis2.range": [0, 6]}
         for cb_cls in range_classes:
-            cb_cls.update_streams_from_property_update(
-                "viewport", viewport2, self.fig_dict
-            )
+            cb_cls.update_streams_from_property_update("viewport", viewport2, self.fig_dict)
 
         # Check that all streams attached to 'third' were triggered
         for xystream, xstream, ystream in zip(
-                xystreamss[2], xstreamss[2], ystreamss[2], strict=None
+            xystreamss[2], xstreamss[2], ystreamss[2], strict=None
         ):
             assert xystream.x_range == (2, 5)
             assert xystream.y_range == (0, 6)
@@ -324,15 +312,13 @@ class TestCallbacks:
             assert ystream.y_range == (0, 6)
 
         # Change viewport on third set of axes
-        viewport3 = {'xaxis3.range': [3, 6], 'yaxis3.range': [1, 7]}
+        viewport3 = {"xaxis3.range": [3, 6], "yaxis3.range": [1, 7]}
         for cb_cls in range_classes:
-            cb_cls.update_streams_from_property_update(
-                "viewport", viewport3, self.fig_dict
-            )
+            cb_cls.update_streams_from_property_update("viewport", viewport3, self.fig_dict)
 
         # Check that all streams attached to 'forth' were triggered
         for xystream, xstream, ystream in zip(
-                xystreamss[3], xstreamss[3], ystreamss[3], strict=None
+            xystreamss[3], xstreamss[3], ystreamss[3], strict=None
         ):
             assert xystream.x_range == (3, 6)
             assert xystream.y_range == (1, 7)
@@ -340,105 +326,120 @@ class TestCallbacks:
             assert ystream.y_range == (1, 7)
 
         # Check that streams attached to a trace not in this plot are not triggered
-        for xyevent, xevent, yevent in zip(
-                xyevents[4], xevents[4], yevents[4], strict=None
-        ):
+        for xyevent, xevent, yevent in zip(xyevents[4], xevents[4], yevents[4], strict=None):
             assert len(xyevent) == 0
             assert len(xevent) == 0
             assert len(yevent) == 0
 
     def testBoundsXYCallbackEventData(self):
-        selected_data1 = {'range': {'x': [1, 4], 'y': [-1, 5]}}
+        selected_data1 = {"range": {"x": [1, 4], "y": [-1, 5]}}
         event_data = BoundsXYCallback.get_event_data_from_property_update(
             "selected_data", selected_data1, self.fig_dict
         )
 
         assert event_data == {
-            'first': {'bounds': (1, -1, 4, 5)},
-            'second': {'bounds': (1, -1, 4, 5)},
-            'third': {'bounds': None},
-            'forth': {'bounds': None}
+            "first": {"bounds": (1, -1, 4, 5)},
+            "second": {"bounds": (1, -1, 4, 5)},
+            "third": {"bounds": None},
+            "forth": {"bounds": None},
         }
 
     def testBoundsXCallbackEventData(self):
-        selected_data1 = {'range': {'x': [1, 4], 'y': [-1, 5]}}
+        selected_data1 = {"range": {"x": [1, 4], "y": [-1, 5]}}
         event_data = BoundsXCallback.get_event_data_from_property_update(
             "selected_data", selected_data1, self.fig_dict
         )
 
         assert event_data == {
-            'first': {'boundsx': (1, 4)},
-            'second': {'boundsx': (1, 4)},
-            'third': {'boundsx': None},
-            'forth': {'boundsx': None}
+            "first": {"boundsx": (1, 4)},
+            "second": {"boundsx": (1, 4)},
+            "third": {"boundsx": None},
+            "forth": {"boundsx": None},
         }
 
     def testBoundsYCallbackEventData(self):
-        selected_data1 = {'range': {'x': [1, 4], 'y': [-1, 5]}}
+        selected_data1 = {"range": {"x": [1, 4], "y": [-1, 5]}}
         event_data = BoundsYCallback.get_event_data_from_property_update(
             "selected_data", selected_data1, self.fig_dict
         )
 
         assert event_data == {
-            'first': {'boundsy': (-1, 5)},
-            'second': {'boundsy': (-1, 5)},
-            'third': {'boundsy': None},
-            'forth': {'boundsy': None}
+            "first": {"boundsy": (-1, 5)},
+            "second": {"boundsy": (-1, 5)},
+            "third": {"boundsy": None},
+            "forth": {"boundsy": None},
         }
 
     def testMapboxBoundsXYCallbackEventData(self):
-        selected_data = {"range": {f'{PLOTLY_MAP}2': [
-            [self.lon_range1[0], self.lat_range1[0]],
-            [self.lon_range1[1], self.lat_range1[1]]
-        ]}}
+        selected_data = {
+            "range": {
+                f"{PLOTLY_MAP}2": [
+                    [self.lon_range1[0], self.lat_range1[0]],
+                    [self.lon_range1[1], self.lat_range1[1]],
+                ]
+            }
+        }
 
         event_data = BoundsXYCallback.get_event_data_from_property_update(
             "selected_data", selected_data, self.mapbox_fig_dict
         )
 
         assert event_data == {
-            'first': {'bounds': None},
-            'second': {'bounds': (
-                self.easting_range1[0], self.northing_range1[0],
-                self.easting_range1[1], self.northing_range1[1]
-            )},
-            'third': {'bounds': None}
+            "first": {"bounds": None},
+            "second": {
+                "bounds": (
+                    self.easting_range1[0],
+                    self.northing_range1[0],
+                    self.easting_range1[1],
+                    self.northing_range1[1],
+                )
+            },
+            "third": {"bounds": None},
         }
 
     def testMapboxBoundsXCallbackEventData(self):
-        selected_data = {"range": {f'{PLOTLY_MAP}': [
-            [self.lon_range1[0], self.lat_range1[0]],
-            [self.lon_range1[1], self.lat_range1[1]]
-        ]}}
+        selected_data = {
+            "range": {
+                f"{PLOTLY_MAP}": [
+                    [self.lon_range1[0], self.lat_range1[0]],
+                    [self.lon_range1[1], self.lat_range1[1]],
+                ]
+            }
+        }
 
         event_data = BoundsXCallback.get_event_data_from_property_update(
             "selected_data", selected_data, self.mapbox_fig_dict
         )
 
         assert event_data == {
-            'first': {'boundsx': (
-                self.easting_range1[0], self.easting_range1[1],
-            )},
-            'second': {'boundsx': None},
-            'third': {'boundsx': None}
+            "first": {
+                "boundsx": (
+                    self.easting_range1[0],
+                    self.easting_range1[1],
+                )
+            },
+            "second": {"boundsx": None},
+            "third": {"boundsx": None},
         }
 
     def testMapboxBoundsYCallbackEventData(self):
-        selected_data = {"range": {f'{PLOTLY_MAP}3': [
-            [self.lon_range1[0], self.lat_range1[0]],
-            [self.lon_range1[1], self.lat_range1[1]]
-        ]}}
+        selected_data = {
+            "range": {
+                f"{PLOTLY_MAP}3": [
+                    [self.lon_range1[0], self.lat_range1[0]],
+                    [self.lon_range1[1], self.lat_range1[1]],
+                ]
+            }
+        }
 
         event_data = BoundsYCallback.get_event_data_from_property_update(
             "selected_data", selected_data, self.mapbox_fig_dict
         )
 
         assert event_data == {
-            'first': {'boundsy': None},
-            'second': {'boundsy': None},
-            'third': {'boundsy': (
-               self.northing_range1[0], self.northing_range1[1]
-            )},
+            "first": {"boundsy": None},
+            "second": {"boundsy": None},
+            "third": {"boundsy": (self.northing_range1[0], self.northing_range1[1])},
         }
 
     def testBoundsCallbacks(self):
@@ -447,22 +448,19 @@ class TestCallbacks:
         bounds_classes = [BoundsXYCallback, BoundsXCallback, BoundsYCallback]
 
         _xyplots, xystreamss, _xycallbacks, xyevents = build_callback_set(
-            BoundsXYCallback, ['first', 'second', 'third', 'forth', 'other'],
-            BoundsXY, 2
+            BoundsXYCallback, ["first", "second", "third", "forth", "other"], BoundsXY, 2
         )
 
         _xplots, xstreamss, _xcallbacks, xevents = build_callback_set(
-            BoundsXCallback, ['first', 'second', 'third', 'forth', 'other'],
-            BoundsX, 2
+            BoundsXCallback, ["first", "second", "third", "forth", "other"], BoundsX, 2
         )
 
         _yplots, ystreamss, _ycallbacks, yevents = build_callback_set(
-            BoundsYCallback, ['first', 'second', 'third', 'forth', 'other'],
-            BoundsY, 2
+            BoundsYCallback, ["first", "second", "third", "forth", "other"], BoundsY, 2
         )
 
         # box selection on first set of axes
-        selected_data1 = {'range': {'x': [1, 4], 'y': [-1, 5]}}
+        selected_data1 = {"range": {"x": [1, 4], "y": [-1, 5]}}
         for cb_cls in bounds_classes:
             cb_cls.update_streams_from_property_update(
                 "selected_data", selected_data1, self.fig_dict
@@ -470,9 +468,10 @@ class TestCallbacks:
 
         # Check that all streams attached to 'first' and 'second' plots were triggered
         for xystream, xstream, ystream in zip(
-                xystreamss[0] + xystreamss[1],
-                xstreamss[0] + xstreamss[1],
-                ystreamss[0] + ystreamss[1], strict=None,
+            xystreamss[0] + xystreamss[1],
+            xstreamss[0] + xstreamss[1],
+            ystreamss[0] + ystreamss[1],
+            strict=None,
         ):
             assert xystream.bounds == (1, -1, 4, 5)
             assert xstream.boundsx == (1, 4)
@@ -481,16 +480,17 @@ class TestCallbacks:
         # Check that streams attached to plots in other subplots are called with None
         # to clear their bounds
         for xystream, xstream, ystream in zip(
-                xystreamss[2] + xystreamss[3],
-                xstreamss[2] + xstreamss[3],
-                ystreamss[2] + ystreamss[3], strict=None,
+            xystreamss[2] + xystreamss[3],
+            xstreamss[2] + xstreamss[3],
+            ystreamss[2] + ystreamss[3],
+            strict=None,
         ):
             assert xystream.bounds is None
             assert xstream.boundsx is None
             assert ystream.boundsy is None
 
         # box select on second set of axes
-        selected_data2 = {'range': {'x2': [2, 5], 'y2': [0, 6]}}
+        selected_data2 = {"range": {"x2": [2, 5], "y2": [0, 6]}}
         for cb_cls in bounds_classes:
             cb_cls.update_streams_from_property_update(
                 "selected_data", selected_data2, self.fig_dict
@@ -498,14 +498,17 @@ class TestCallbacks:
 
         # Check that all streams attached to 'second' were triggered
         for xystream, xstream, ystream in zip(
-                xystreamss[2], xstreamss[2], ystreamss[2], strict=None,
+            xystreamss[2],
+            xstreamss[2],
+            ystreamss[2],
+            strict=None,
         ):
             assert xystream.bounds == (2, 0, 5, 6)
             assert xstream.boundsx == (2, 5)
             assert ystream.boundsy == (0, 6)
 
         # box select on third set of axes
-        selected_data3 = {'range': {'x3': [3, 6], 'y3': [1, 7]}}
+        selected_data3 = {"range": {"x3": [3, 6], "y3": [1, 7]}}
         for cb_cls in bounds_classes:
             cb_cls.update_streams_from_property_update(
                 "selected_data", selected_data3, self.fig_dict
@@ -513,14 +516,17 @@ class TestCallbacks:
 
         # Check that all streams attached to 'third' were triggered
         for xystream, xstream, ystream in zip(
-                xystreamss[3], xstreamss[3], ystreamss[3], strict=None,
+            xystreamss[3],
+            xstreamss[3],
+            ystreamss[3],
+            strict=None,
         ):
             assert xystream.bounds == (3, 1, 6, 7)
             assert xstream.boundsx == (3, 6)
             assert ystream.boundsy == (1, 7)
 
         # lasso select on first set of axes should clear all bounds
-        selected_data_lasso = {'lassoPoints': {'x': [1, 4, 2], 'y': [-1, 5, 2]}}
+        selected_data_lasso = {"lassoPoints": {"x": [1, 4, 2], "y": [-1, 5, 2]}}
         for cb_cls in bounds_classes:
             cb_cls.update_streams_from_property_update(
                 "selected_data", selected_data_lasso, self.fig_dict
@@ -529,66 +535,70 @@ class TestCallbacks:
         # Check that all streams attached to this figure are called with None
         # to clear their bounds
         for xystream, xstream, ystream in zip(
-                xystreamss[0] + xystreamss[1] + xystreamss[2] + xystreamss[3],
-                xstreamss[0] + xstreamss[1] + xstreamss[2] + xstreamss[3],
-                ystreamss[0] + ystreamss[1] + ystreamss[2] + ystreamss[3], strict=None,
+            xystreamss[0] + xystreamss[1] + xystreamss[2] + xystreamss[3],
+            xstreamss[0] + xstreamss[1] + xstreamss[2] + xstreamss[3],
+            ystreamss[0] + ystreamss[1] + ystreamss[2] + ystreamss[3],
+            strict=None,
         ):
             assert xystream.bounds is None
             assert xstream.boundsx is None
             assert ystream.boundsy is None
 
         # Check that streams attached to plots not in this figure are not called
-        for xyevent, xevent, yevent in zip(
-                xyevents[4], xevents[4], yevents[4], strict=None
-        ):
+        for xyevent, xevent, yevent in zip(xyevents[4], xevents[4], yevents[4], strict=None):
             assert xyevent == []
             assert xevent == []
             assert yevent == []
 
     def testSelection1DCallbackEventData(self):
-        selected_data1 = {'points': [
-            {"pointNumber": 0, "curveNumber": 0},
-            {"pointNumber": 2, "curveNumber": 0},
-        ]}
+        selected_data1 = {
+            "points": [
+                {"pointNumber": 0, "curveNumber": 0},
+                {"pointNumber": 2, "curveNumber": 0},
+            ]
+        }
 
         event_data = Selection1DCallback.get_event_data_from_property_update(
             "selected_data", selected_data1, self.fig_dict
         )
 
         assert event_data == {
-            'first': {'index': [0, 2]},
-            'second': {'index': []},
-            'third': {'index': []},
-            'forth': {'index': []}
+            "first": {"index": [0, 2]},
+            "second": {"index": []},
+            "third": {"index": []},
+            "forth": {"index": []},
         }
 
     def testMapboxSelection1DCallbackEventData(self):
-        selected_data1 = {'points': [
-            {"pointNumber": 0, "curveNumber": 1},
-            {"pointNumber": 2, "curveNumber": 1},
-        ]}
+        selected_data1 = {
+            "points": [
+                {"pointNumber": 0, "curveNumber": 1},
+                {"pointNumber": 2, "curveNumber": 1},
+            ]
+        }
 
         event_data = Selection1DCallback.get_event_data_from_property_update(
             "selected_data", selected_data1, self.mapbox_fig_dict
         )
 
         assert event_data == {
-            'first': {'index': []},
-            'second': {'index': [0, 2]},
-            'third': {'index': []},
+            "first": {"index": []},
+            "second": {"index": [0, 2]},
+            "third": {"index": []},
         }
 
     def testSelection1DCallback(self):
         _plots, streamss, _callbacks, sel_events = build_callback_set(
-            Selection1DCallback, ['first', 'second', 'third', 'forth', 'other'],
-            Selection1D, 2
+            Selection1DCallback, ["first", "second", "third", "forth", "other"], Selection1D, 2
         )
 
         # Select points from the 'first' plot (first set of axes)
-        selected_data1 = {'points': [
-            {"pointNumber": 0, "curveNumber": 0},
-            {"pointNumber": 2, "curveNumber": 0},
-        ]}
+        selected_data1 = {
+            "points": [
+                {"pointNumber": 0, "curveNumber": 0},
+                {"pointNumber": 2, "curveNumber": 0},
+            ]
+        }
         Selection1DCallback.update_streams_from_property_update(
             "selected_data", selected_data1, self.fig_dict
         )
@@ -604,12 +614,14 @@ class TestCallbacks:
             assert stream.index == []
 
         # Select points from the 'first' and 'second' plot (first set of axes)
-        selected_data1 = {'points': [
-            {"pointNumber": 0, "curveNumber": 0},
-            {"pointNumber": 1, "curveNumber": 0},
-            {"pointNumber": 1, "curveNumber": 1},
-            {"pointNumber": 2, "curveNumber": 1},
-        ]}
+        selected_data1 = {
+            "points": [
+                {"pointNumber": 0, "curveNumber": 0},
+                {"pointNumber": 1, "curveNumber": 0},
+                {"pointNumber": 1, "curveNumber": 1},
+                {"pointNumber": 2, "curveNumber": 1},
+            ]
+        }
         Selection1DCallback.update_streams_from_property_update(
             "selected_data", selected_data1, self.fig_dict
         )
@@ -628,10 +640,12 @@ class TestCallbacks:
             assert stream.index == []
 
         # Select points from the 'forth' plot (third set of axes)
-        selected_data1 = {'points': [
-            {"pointNumber": 0, "curveNumber": 3},
-            {"pointNumber": 2, "curveNumber": 3},
-        ]}
+        selected_data1 = {
+            "points": [
+                {"pointNumber": 0, "curveNumber": 3},
+                {"pointNumber": 2, "curveNumber": 3},
+            ]
+        }
         Selection1DCallback.update_streams_from_property_update(
             "selected_data", selected_data1, self.fig_dict
         )

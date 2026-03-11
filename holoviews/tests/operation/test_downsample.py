@@ -35,7 +35,9 @@ def test_downsample1d_non_contiguous(algorithm):
     x = np.arange(20)
     y = np.arange(40).reshape(1, 40)[0, ::2]
 
-    downsampled = downsample1d(hv.Curve((x, y), datatype=['array']), dynamic=False, width=10, algorithm=algorithm)
+    downsampled = downsample1d(
+        hv.Curve((x, y), datatype=["array"]), dynamic=False, width=10, algorithm=algorithm
+    )
     assert len(downsampled)
 
 

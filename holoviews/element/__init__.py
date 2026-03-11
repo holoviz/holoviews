@@ -77,21 +77,20 @@ class ElementConversion(DataConversion):
             if self._element.vdims:
                 dim = self._element.vdims[0]
             else:
-                raise Exception('Must supply an explicit value dimension '
-                                'if no value dimensions are defined ')
+                raise Exception(
+                    "Must supply an explicit value dimension if no value dimensions are defined "
+                )
         if groupby:
             reindexed = self._element.reindex(groupby, [dim])
-            kwargs['kdims'] = dim
-            kwargs['vdims'] = None
+            kwargs["kdims"] = dim
+            kwargs["vdims"] = None
             return reindexed.groupby(groupby, HoloMap, Distribution, **kwargs)
         else:
             element = self._element
-            params = dict(kdims=[element.get_dimension(dim)],
-                          label=element.label)
-            if element.group != element.param['group'].default:
-                params['group'] = element.group
-            return Distribution((element.dimension_values(dim),),
-                                **dict(params, **kwargs))
+            params = dict(kdims=[element.get_dimension(dim)], label=element.label)
+            if element.group != element.param["group"].default:
+                params["group"] = element.group
+            return Distribution((element.dimension_values(dim),), **dict(params, **kwargs))
 
     def heatmap(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(HeatMap, kdims, vdims, groupby, **kwargs)
@@ -216,7 +215,7 @@ __all__ = [
     "Violin",
     "circular_layout",
     "stamen_sources",
-    "tile_sources"
+    "tile_sources",
 ]
 
 elements_list = sorted(set(__all__) - {"stamen_sources", "tile_sources", "circular_layout"})

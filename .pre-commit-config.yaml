@@ -17,9 +17,10 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: a27a2e47c7751b639d2b5badf0ef6ff11fee893f # frozen: v0.15.4
+    rev: b969e2851312ca2b24bbec879ba4954341d1bd12 # frozen: v0.15.5
     hooks:
       - id: ruff-check
+      - id: ruff-format
   - repo: https://github.com/hoxbro/clean_notebook
     rev: 2e6f506fab3cdfbe16bc18fd0d24e828db773b74 # frozen: v0.2.1
     hooks:
