@@ -3089,8 +3089,15 @@ class ColorbarPlot(ElementPlot):
         if any(isinstance(model, ColorBar) for model in getattr(plot, pos, [])):
             return
 
-        if self.clabel:
+        if self.clabel is not None:
             self.colorbar_opts.update({"title": self.clabel})
+        else:
+            color_dim = self.handles.get(prefix + "color_dim")
+            if color_dim is not None:
+                if isinstance(color_dim, dim):
+                    color_dim = color_dim.dimension
+                if hasattr(color_dim, "pprint_label"):
+                    self.colorbar_opts.update({"title": color_dim.pprint_label})
 
         if self.cformatter is not None:
             self.colorbar_opts.update({"formatter": wrap_formatter(self.cformatter, "c")})
@@ -3136,10 +3143,11 @@ class ColorbarPlot(ElementPlot):
         dim_name = dim_range_key(eldim)
 
         # Attempt to find matching colormapper on the adjoined plot
+        prefix = name.replace("color_mapper", "")
         if self.adjoined:
             cmappers = self.adjoined.traverse(
                 lambda x: (
-                    x.handles.get("color_dim"),
+                    x.handles.get(prefix + "color_dim"),
                     x.handles.get(name),
                     [v for v in x.handles.values() if isinstance(v, ColorMapper)],
                 )
@@ -3236,7 +3244,8 @@ class ColorbarPlot(ElementPlot):
         else:
             cmapper = colormapper(palette=palette, **opts)
             self.handles[name] = cmapper
-            self.handles["color_dim"] = eldim
+            prefix = name.replace("color_mapper", "")
+            self.handles[prefix + "color_dim"] = eldim
         return cmapper
 
     def _get_color_data(
