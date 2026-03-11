@@ -54,5 +54,5 @@ def test_mpl_cycle_colors_are_hex_strings():
                 print(f"{name}[{i}]={c!r}")
     """
 
-    output = check_output([sys.executable, '-c', dedent(check)])
+    output = check_output([sys.executable, "-c", dedent(check)])
     assert output == b""
