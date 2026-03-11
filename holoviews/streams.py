@@ -1793,7 +1793,7 @@ class PlotReset(LinkedStream):
     )
 
     def __init__(self, *args, **params):
-        super().__init__(self, *args, **dict(params, transient=True))
+        super().__init__(*args, **dict(params, transient=True))
 
 
 class CDSStream(LinkedStream):
