@@ -100,12 +100,22 @@ class TestEllipsisRaster:
         sliced = hv.RGB(data)[:, :, "R"]
         assert_data_equal(sliced.data, data[:, :, 0])
 
-    @pytest.mark.xfail(reason="Should raise IndexError like Image")
     def test_rgb_ellipsis_slice_value_missing(self):
         rgb = hv.RGB(np.random.rand(10, 10, 3))
         msg = "'Non-existent' is not an available value dimension"
         with pytest.raises(IndexError, match=msg):
             rgb[..., "Non-existent"]
+
+    def test_rgb_ellipsis_slice_alpha_channel(self):
+        rgba = np.random.rand(10, 10, 4)
+        sliced = hv.RGB(rgba)[..., "A"]
+        assert_data_equal(sliced.data, rgba[:, :, 3])
+
+    def test_rgb_ellipsis_slice_alpha_channel_missing(self):
+        rgba = hv.RGB(np.random.rand(10, 10, 4))
+        msg = "'Non-existent' is not an available value dimension"
+        with pytest.raises(IndexError, match=msg):
+            rgba[..., "Non-existent"]
 
 
 class TestEllipsisDeepIndexing:

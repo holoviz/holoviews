@@ -790,6 +790,16 @@ class RGB(Image):
 
         return False
 
+    def __getitem__(self, slices):
+        wrapped = util.wrap_tuple(slices)
+        if Ellipsis in wrapped:
+            index = wrapped.index(Ellipsis)
+            head = wrapped[:index]
+            tail = wrapped[index + 1 :]
+            padlen = (self.ndims + 1) - (len(head) + len(tail))
+            slices = head + (slice(None),) * max(padlen, 0) + tail
+        return super().__getitem__(slices)
+
 
 class HSV(RGB):
     """HSV represents a regularly spaced 2D grid of an underlying
