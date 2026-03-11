@@ -52,11 +52,9 @@ class BarsComparisonTest:
         assert_element_equal(self.bars3, self.bars3)
 
     def test_bars_unequal_1(self):
-        try:
+        msg = "Arrays are not almost equal"
+        with pytest.raises(AssertionError, match=msg):
             assert_element_equal(self.bars1, self.bars2)
-        except AssertionError as e:
-            if "not almost equal" not in str(e):
-                raise Exception(f"Bars mismatched data error not raised. {e}")
 
     def test_bars_unequal_keydims(self):
         msg = "assert 'Car occupants' == 'Cyclists'"
