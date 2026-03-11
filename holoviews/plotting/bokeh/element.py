@@ -3092,12 +3092,12 @@ class ColorbarPlot(ElementPlot):
         if self.clabel is not None:
             self.colorbar_opts.update({"title": self.clabel})
         else:
-            color_dim = self.handles.get(prefix + 'color_dim')
+            color_dim = self.handles.get(prefix + "color_dim")
             if color_dim is not None:
                 if isinstance(color_dim, dim):
                     color_dim = color_dim.dimension
-                if hasattr(color_dim, 'pprint_label'):
-                    self.colorbar_opts.update({'title': color_dim.pprint_label})
+                if hasattr(color_dim, "pprint_label"):
+                    self.colorbar_opts.update({"title": color_dim.pprint_label})
 
         if self.cformatter is not None:
             self.colorbar_opts.update({"formatter": wrap_formatter(self.cformatter, "c")})
@@ -3143,7 +3143,7 @@ class ColorbarPlot(ElementPlot):
         dim_name = dim_range_key(eldim)
 
         # Attempt to find matching colormapper on the adjoined plot
-        prefix = name.replace('color_mapper', '')
+        prefix = name.replace("color_mapper", "")
         if self.adjoined:
             cmappers = self.adjoined.traverse(
                 lambda x: (

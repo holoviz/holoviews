@@ -1097,29 +1097,28 @@ class TestColorbarPlot(LoggingComparison, TestBokehPlot):
         assert colorbar.major_label_text_font_size == "22px"
 
     def test_colorbar_label_from_dimension(self):
-        img = hv.Image(np.array([[0, 1], [2, 3]]),
-                       vdims=[hv.Dimension('Intensity', unit='counts')]).opts(colorbar=True)
+        img = hv.Image(
+            np.array([[0, 1], [2, 3]]), vdims=[hv.Dimension("Intensity", unit="counts")]
+        ).opts(colorbar=True)
         plot = bokeh_renderer.get_plot(img)
-        colorbar = plot.handles['colorbar']
-        assert colorbar.title == 'Intensity (counts)'
+        colorbar = plot.handles["colorbar"]
+        assert colorbar.title == "Intensity (counts)"
 
     def test_colorbar_label_clabel_override(self):
-        img = hv.Image(np.array([[0, 1], [2, 3]]),
-                       vdims=[hv.Dimension('Intensity', unit='counts')]).opts(
-            colorbar=True, clabel='Custom'
-        )
+        img = hv.Image(
+            np.array([[0, 1], [2, 3]]), vdims=[hv.Dimension("Intensity", unit="counts")]
+        ).opts(colorbar=True, clabel="Custom")
         plot = bokeh_renderer.get_plot(img)
-        colorbar = plot.handles['colorbar']
-        assert colorbar.title == 'Custom'
+        colorbar = plot.handles["colorbar"]
+        assert colorbar.title == "Custom"
 
     def test_colorbar_label_clabel_empty_suppresses(self):
-        img = hv.Image(np.array([[0, 1], [2, 3]]),
-                       vdims=[hv.Dimension('Intensity', unit='counts')]).opts(
-            colorbar=True, clabel=''
-        )
+        img = hv.Image(
+            np.array([[0, 1], [2, 3]]), vdims=[hv.Dimension("Intensity", unit="counts")]
+        ).opts(colorbar=True, clabel="")
         plot = bokeh_renderer.get_plot(img)
-        colorbar = plot.handles['colorbar']
-        assert colorbar.title == ''
+        colorbar = plot.handles["colorbar"]
+        assert colorbar.title == ""
 
     def test_explicit_categorical_cmap_on_integer_data(self):
         explicit_mapping = dict([(0, "blue"), (1, "red"), (2, "green"), (3, "purple")])
