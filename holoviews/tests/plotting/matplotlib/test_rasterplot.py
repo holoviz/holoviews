@@ -9,73 +9,68 @@ from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestRasterPlot(TestMPLPlot):
-
     def test_raster_invert_axes(self):
         arr = np.array([[0, 1, 2], [3, 4, 5]])
         raster = hv.Raster(arr).opts(invert_axes=True)
         plot = mpl_renderer.get_plot(raster)
-        artist = plot.handles['artist']
+        artist = plot.handles["artist"]
         np.testing.assert_equal(artist.get_array().data, arr.T[::-1])
         assert artist.get_extent() == [0, 2, 0, 3]
 
     def test_raster_nodata(self):
         arr = np.array([[0, 1, 2], [3, 4, 5]])
-        expected = np.array([[3, 4, 5],
-                             [np.nan, 1, 2]])
+        expected = np.array([[3, 4, 5], [np.nan, 1, 2]])
 
         raster = hv.Raster(arr).opts(nodata=0)
         plot = mpl_renderer.get_plot(raster)
-        artist = plot.handles['artist']
+        artist = plot.handles["artist"]
         np.testing.assert_equal(artist.get_array().data, expected)
 
     def test_raster_nodata_uint(self):
-        arr = np.array([[0, 1, 2], [3, 4, 5]], dtype='uint32')
-        expected = np.array([[3, 4, 5],
-                             [np.nan, 1, 2]])
+        arr = np.array([[0, 1, 2], [3, 4, 5]], dtype="uint32")
+        expected = np.array([[3, 4, 5], [np.nan, 1, 2]])
 
         raster = hv.Raster(arr).opts(nodata=0)
         plot = mpl_renderer.get_plot(raster)
-        artist = plot.handles['artist']
+        artist = plot.handles["artist"]
         np.testing.assert_equal(artist.get_array().data, expected)
-
 
     def test_image_invert_axes(self):
         arr = np.array([[0, 1, 2], [3, 4, 5]])
         raster = hv.Image(arr).opts(invert_axes=True)
         plot = mpl_renderer.get_plot(raster)
-        artist = plot.handles['artist']
+        artist = plot.handles["artist"]
         np.testing.assert_equal(artist.get_array().data, arr.T[::-1, ::-1])
         assert artist.get_extent() == [-0.5, 0.5, -0.5, 0.5]
 
     def test_image_listed_cmap(self):
-        colors = ['#ffffff','#000000']
+        colors = ["#ffffff", "#000000"]
         img = hv.Image(np.array([[0, 1, 2], [3, 4, 5]])).opts(cmap=colors)
         plot = mpl_renderer.get_plot(img)
-        artist = plot.handles['artist']
+        artist = plot.handles["artist"]
         cmap = artist.get_cmap()
         assert isinstance(cmap, ListedColormap)
         assert cmap.colors == colors
 
     def test_image_cbar_extend_both(self):
-        img = hv.Image(np.array([[0, 1], [2, 3]])).redim(z=dict(range=(1,2)))
+        img = hv.Image(np.array([[0, 1], [2, 3]])).redim(z=dict(range=(1, 2)))
         plot = mpl_renderer.get_plot(img.opts(colorbar=True))
-        assert plot.handles['cbar'].extend == 'both'
+        assert plot.handles["cbar"].extend == "both"
 
     def test_image_cbar_extend_min(self):
         img = hv.Image(np.array([[0, 1], [2, 3]])).redim(z=dict(range=(1, None)))
         plot = mpl_renderer.get_plot(img.opts(colorbar=True))
-        assert plot.handles['cbar'].extend == 'min'
+        assert plot.handles["cbar"].extend == "min"
 
     def test_image_cbar_extend_max(self):
         img = hv.Image(np.array([[0, 1], [2, 3]])).redim(z=dict(range=(None, 2)))
         plot = mpl_renderer.get_plot(img.opts(colorbar=True))
-        assert plot.handles['cbar'].extend == 'max'
+        assert plot.handles["cbar"].extend == "max"
 
     def test_image_cbar_extend_clim(self):
-        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(
-            clim=(np.nan, np.nan), colorbar=True)
+        img = hv.Image(np.array([[0, 1], [2, 3]])).opts(clim=(np.nan, np.nan), colorbar=True)
         plot = mpl_renderer.get_plot(img)
-        assert plot.handles['cbar'].extend == 'neither'
+        assert plot.handles["cbar"].extend == "neither"
 
     def test_image_stack(self):
         pytest.importorskip("datashader")
@@ -88,7 +83,7 @@ class TestRasterPlot(TestMPLPlot):
 
         img_stack = hv.ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = mpl_renderer.get_plot(img_stack)
-        artist = plot.handles['artist']
+        artist = plot.handles["artist"]
         array = artist.get_array().data
         assert array.shape == (3, 3, 4)
         assert artist.get_extent() == [-0.5, 2.5, 4.5, 7.5]

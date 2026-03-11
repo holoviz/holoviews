@@ -65,80 +65,78 @@ if BOKEH_GE_3_8_0:
 
 
 TOOL_TYPES = {
-    'pan': tools.PanTool,
-    'xpan': tools.PanTool,
-    'ypan': tools.PanTool,
-    'xwheel_pan': tools.WheelPanTool,
-    'ywheel_pan': tools.WheelPanTool,
-    'wheel_zoom': tools.WheelZoomTool,
-    'xwheel_zoom': tools.WheelZoomTool,
-    'ywheel_zoom': tools.WheelZoomTool,
-    'zoom_in': tools.ZoomInTool,
-    'xzoom_in': tools.ZoomInTool,
-    'yzoom_in': tools.ZoomInTool,
-    'zoom_out': tools.ZoomOutTool,
-    'xzoom_out': tools.ZoomOutTool,
-    'yzoom_out': tools.ZoomOutTool,
-    'click': tools.TapTool,
-    'tap': tools.TapTool,
-    'doubletap': tools.TapTool,
-    'crosshair': tools.CrosshairTool,
-    'xcrosshair': tools.CrosshairTool,
-    'ycrosshair': tools.CrosshairTool,
-    'box_select': tools.BoxSelectTool,
-    'xbox_select': tools.BoxSelectTool,
-    'ybox_select': tools.BoxSelectTool,
-    'poly_select': tools.PolySelectTool,
-    'lasso_select': tools.LassoSelectTool,
-    'auto_box_zoom': tools.BoxZoomTool,
-    'box_zoom': tools.BoxZoomTool,
-    'xbox_zoom': tools.BoxZoomTool,
-    'ybox_zoom': tools.BoxZoomTool,
-    'hover': tools.HoverTool,
-    'save': tools.SaveTool,
-    'undo': tools.UndoTool,
-    'redo': tools.RedoTool,
-    'reset': tools.ResetTool,
-    'help': tools.HelpTool,
-    'box_edit': tools.BoxEditTool,
-    'point_draw': tools.PointDrawTool,
-    'poly_draw': tools.PolyDrawTool,
-    'poly_edit': tools.PolyEditTool,
-    'freehand_draw': tools.FreehandDrawTool,
-    'copy': tools.CopyTool,
-    'examine': tools.ExamineTool,
-    'fullscreen': tools.FullscreenTool,
-    'line_edit': tools.LineEditTool,
+    "pan": tools.PanTool,
+    "xpan": tools.PanTool,
+    "ypan": tools.PanTool,
+    "xwheel_pan": tools.WheelPanTool,
+    "ywheel_pan": tools.WheelPanTool,
+    "wheel_zoom": tools.WheelZoomTool,
+    "xwheel_zoom": tools.WheelZoomTool,
+    "ywheel_zoom": tools.WheelZoomTool,
+    "zoom_in": tools.ZoomInTool,
+    "xzoom_in": tools.ZoomInTool,
+    "yzoom_in": tools.ZoomInTool,
+    "zoom_out": tools.ZoomOutTool,
+    "xzoom_out": tools.ZoomOutTool,
+    "yzoom_out": tools.ZoomOutTool,
+    "click": tools.TapTool,
+    "tap": tools.TapTool,
+    "doubletap": tools.TapTool,
+    "crosshair": tools.CrosshairTool,
+    "xcrosshair": tools.CrosshairTool,
+    "ycrosshair": tools.CrosshairTool,
+    "box_select": tools.BoxSelectTool,
+    "xbox_select": tools.BoxSelectTool,
+    "ybox_select": tools.BoxSelectTool,
+    "poly_select": tools.PolySelectTool,
+    "lasso_select": tools.LassoSelectTool,
+    "auto_box_zoom": tools.BoxZoomTool,
+    "box_zoom": tools.BoxZoomTool,
+    "xbox_zoom": tools.BoxZoomTool,
+    "ybox_zoom": tools.BoxZoomTool,
+    "hover": tools.HoverTool,
+    "save": tools.SaveTool,
+    "undo": tools.UndoTool,
+    "redo": tools.RedoTool,
+    "reset": tools.ResetTool,
+    "help": tools.HelpTool,
+    "box_edit": tools.BoxEditTool,
+    "point_draw": tools.PointDrawTool,
+    "poly_draw": tools.PolyDrawTool,
+    "poly_edit": tools.PolyEditTool,
+    "freehand_draw": tools.FreehandDrawTool,
+    "copy": tools.CopyTool,
+    "examine": tools.ExamineTool,
+    "fullscreen": tools.FullscreenTool,
+    "line_edit": tools.LineEditTool,
 }
 
 if BOKEH_GE_3_6_0:
-    TOOL_TYPES.update({
-        'pan_down': tools.ClickPanTool,
-        'pan_east': tools.ClickPanTool,
-        'pan_left': tools.ClickPanTool,
-        'pan_north': tools.ClickPanTool,
-        'pan_right': tools.ClickPanTool,
-        'pan_south': tools.ClickPanTool,
-        'pan_up': tools.ClickPanTool,
-        'pan_west': tools.ClickPanTool,
-    })
+    TOOL_TYPES.update(
+        {
+            "pan_down": tools.ClickPanTool,
+            "pan_east": tools.ClickPanTool,
+            "pan_left": tools.ClickPanTool,
+            "pan_north": tools.ClickPanTool,
+            "pan_right": tools.ClickPanTool,
+            "pan_south": tools.ClickPanTool,
+            "pan_up": tools.ClickPanTool,
+            "pan_west": tools.ClickPanTool,
+        }
+    )
 
 
 def convert_timestamp(timestamp):
-    """Converts bokehJS timestamp to datetime64.
-
-    """
-    datetime = dt.datetime.fromtimestamp(timestamp/1000, tz=dt.timezone.utc)
+    """Converts bokehJS timestamp to datetime64."""
+    datetime = dt.datetime.fromtimestamp(timestamp / 1000, tz=dt.timezone.utc)
     return np.datetime64(datetime.replace(tzinfo=None))
 
 
 def prop_is_none(value):
-    """Checks if property value is None.
-
-    """
-    return (value is None or
-            (isinstance(value, dict) and 'value' in value
-             and value['value'] is None))
+    """Checks if property value is None."""
+    return value is None or (
+        isinstance(value, dict) and "value" in value and value["value"] is None
+    )
 
 
 def decode_bytes(array):
@@ -146,9 +144,9 @@ def decode_bytes(array):
     bokeh serialization errors
 
     """
-    if (not len(array) or (isinstance(array, arraylike_types) and dtype_kind(array) != 'O')):
+    if not len(array) or (isinstance(array, arraylike_types) and dtype_kind(array) != "O"):
         return array
-    decoded = [v.decode('utf-8') if isinstance(v, bytes) else v for v in array]
+    decoded = [v.decode("utf-8") if isinstance(v, bytes) else v for v in array]
     if isinstance(array, np.ndarray):
         return np.asarray(decoded)
     elif isinstance(array, tuple):
@@ -157,9 +155,7 @@ def decode_bytes(array):
 
 
 def layout_padding(plots, renderer):
-    """Pads Nones in a list of lists of plots with empty plots.
-
-    """
+    """Pads Nones in a list of lists of plots with empty plots."""
     widths, heights = defaultdict(int), defaultdict(int)
     for r, row in enumerate(plots):
         for c, p in enumerate(row):
@@ -174,7 +170,7 @@ def layout_padding(plots, renderer):
         for c, p in enumerate(row):
             if p is None:
                 p = empty_plot(widths[c], heights[r])
-            elif hasattr(p, 'width') and p.width == 0 and p.height == 0:
+            elif hasattr(p, "width") and p.width == 0 and p.height == 0:
                 p.width = widths[c]
                 p.height = heights[r]
             expanded_plots[r].append(p)
@@ -187,9 +183,9 @@ def compute_plot_size(plot):
 
     """
     if isinstance(plot, (GridBox, GridPlot)):
-        ndmapping = NdMapping({(x, y): fig for fig, y, x in plot.children}, kdims=['x', 'y'])
-        cols = ndmapping.groupby('x')
-        rows = ndmapping.groupby('y')
+        ndmapping = NdMapping({(x, y): fig for fig, y, x in plot.children}, kdims=["x", "y"])
+        cols = ndmapping.groupby("x")
+        rows = ndmapping.groupby("y")
         width = sum([max([compute_plot_size(f)[0] for f in col]) for col in cols])
         height = sum([max([compute_plot_size(f)[1] for f in row]) for row in rows])
         return width, height
@@ -197,8 +193,11 @@ def compute_plot_size(plot):
         # Cannot compute size for Div or Toolbar
         return 0, 0
     elif isinstance(plot, (Row, Column, Tabs)):
-        if not plot.children: return 0, 0
-        if isinstance(plot, Row) or (isinstance(plot, tools.Toolbar) and plot.toolbar_location not in ['right', 'left']):
+        if not plot.children:
+            return 0, 0
+        if isinstance(plot, Row) or (
+            isinstance(plot, tools.Toolbar) and plot.toolbar_location not in ["right", "left"]
+        ):
             w_agg, h_agg = (np.sum, np.max)
         elif isinstance(plot, Tabs):
             w_agg, h_agg = (np.max, np.max)
@@ -223,9 +222,18 @@ def compute_plot_size(plot):
 
 
 def compute_layout_properties(
-        width, height, frame_width, frame_height, explicit_width,
-        explicit_height, aspect, data_aspect, responsive, size_multiplier,
-        logger=None):
+    width,
+    height,
+    frame_width,
+    frame_height,
+    explicit_width,
+    explicit_height,
+    aspect,
+    data_aspect,
+    responsive,
+    size_multiplier,
+    logger=None,
+):
     """Utility to compute the aspect, plot width/height and sizing_mode
     behavior.
 
@@ -259,19 +267,19 @@ def compute_layout_properties(
     Returns two dictionaries one for the aspect and sizing modes,
     and another for the plot dimensions.
     """
-    fixed_width = (explicit_width or frame_width)
-    fixed_height = (explicit_height or frame_height)
+    fixed_width = explicit_width or frame_width
+    fixed_height = explicit_height or frame_height
     fixed_aspect = aspect or data_aspect
-    if aspect == 'square':
+    if aspect == "square":
         aspect = 1
-    elif aspect == 'equal':
+    elif aspect == "equal":
         data_aspect = 1
 
     # Plot dimensions
-    height = None if height is None else int(height*size_multiplier)
-    width = None if width is None else int(width*size_multiplier)
-    frame_height = None if frame_height is None else int(frame_height*size_multiplier)
-    frame_width = None if frame_width is None else int(frame_width*size_multiplier)
+    height = None if height is None else int(height * size_multiplier)
+    width = None if width is None else int(width * size_multiplier)
+    frame_height = None if frame_height is None else int(frame_height * size_multiplier)
+    frame_width = None if frame_width is None else int(frame_width * size_multiplier)
     actual_width = frame_width or width
     actual_height = frame_height or height
 
@@ -280,50 +288,55 @@ def compute_layout_properties(
     if frame_height is not None:
         height = None
 
-    sizing_mode = 'fixed'
+    sizing_mode = "fixed"
     if responsive:
         if fixed_height and fixed_width:
             responsive = False
             if logger:
-                logger.warning("responsive mode could not be enabled "
-                               "because fixed width and height were "
-                               "specified.")
+                logger.warning(
+                    "responsive mode could not be enabled "
+                    "because fixed width and height were "
+                    "specified."
+                )
         elif fixed_width:
             height = None
-            sizing_mode = 'fixed' if fixed_aspect else 'stretch_height'
+            sizing_mode = "fixed" if fixed_aspect else "stretch_height"
         elif fixed_height:
             width = None
-            sizing_mode = 'fixed' if fixed_aspect else 'stretch_width'
+            sizing_mode = "fixed" if fixed_aspect else "stretch_width"
         else:
             width, height = None, None
             if fixed_aspect:
-                if responsive == 'width':
-                    sizing_mode = 'scale_width'
-                elif responsive == 'height':
-                    sizing_mode = 'scale_height'
+                if responsive == "width":
+                    sizing_mode = "scale_width"
+                elif responsive == "height":
+                    sizing_mode = "scale_height"
                 else:
-                    sizing_mode = 'scale_both'
-            elif responsive == 'width':
-                sizing_mode = 'stretch_both'
-            elif responsive == 'height':
-                sizing_mode = 'stretch_height'
+                    sizing_mode = "scale_both"
+            elif responsive == "width":
+                sizing_mode = "stretch_both"
+            elif responsive == "height":
+                sizing_mode = "stretch_height"
             else:
-                sizing_mode = 'stretch_both'
-
+                sizing_mode = "stretch_both"
 
     if fixed_aspect:
-        if ((explicit_width and not frame_width) != (explicit_height and not frame_height)) and logger:
-            logger.warning('Due to internal constraints, when aspect and '
-                           'width/height is set, the bokeh backend uses '
-                           'those values as frame_width/frame_height instead. '
-                           'This ensures the aspect is respected, but means '
-                           'that the plot might be slightly larger than '
-                           'anticipated. Set the frame_width/frame_height '
-                           'explicitly to suppress this warning.')
+        if (
+            (explicit_width and not frame_width) != (explicit_height and not frame_height)
+        ) and logger:
+            logger.warning(
+                "Due to internal constraints, when aspect and "
+                "width/height is set, the bokeh backend uses "
+                "those values as frame_width/frame_height instead. "
+                "This ensures the aspect is respected, but means "
+                "that the plot might be slightly larger than "
+                "anticipated. Set the frame_width/frame_height "
+                "explicitly to suppress this warning."
+            )
 
-        aspect_type = 'data_aspect' if data_aspect else 'aspect'
+        aspect_type = "data_aspect" if data_aspect else "aspect"
         if fixed_width and fixed_height and aspect:
-            if aspect == 'equal':
+            if aspect == "equal":
                 data_aspect = 1
             elif not data_aspect:
                 aspect = None
@@ -333,43 +346,50 @@ def compute_layout_properties(
                         "height values were provided. Either supply "
                         "explicit frame_width and frame_height to achieve "
                         "desired aspect OR supply a combination of width "
-                        "or height and an aspect value.")
+                        "or height and an aspect value."
+                    )
         elif fixed_width and responsive:
             height = None
             responsive = False
             if logger:
-                logger.warning("responsive mode could not be enabled "
-                               "because fixed width and aspect were "
-                               "specified.")
+                logger.warning(
+                    "responsive mode could not be enabled "
+                    "because fixed width and aspect were "
+                    "specified."
+                )
         elif fixed_height and responsive:
             width = None
             responsive = False
             if logger:
-                logger.warning("responsive mode could not be enabled "
-                               "because fixed height and aspect were "
-                               "specified.")
-        elif responsive == 'width':
-            sizing_mode = 'scale_width'
-        elif responsive == 'height':
-            sizing_mode = 'scale_height'
+                logger.warning(
+                    "responsive mode could not be enabled "
+                    "because fixed height and aspect were "
+                    "specified."
+                )
+        elif responsive == "width":
+            sizing_mode = "scale_width"
+        elif responsive == "height":
+            sizing_mode = "scale_height"
 
-    if responsive == 'width' and fixed_width:
+    if responsive == "width" and fixed_width:
         responsive = False
         if logger:
-            logger.warning("responsive width mode could not be enabled "
-                           "because a fixed width was defined.")
-    if responsive == 'height' and fixed_height:
+            logger.warning(
+                "responsive width mode could not be enabled because a fixed width was defined."
+            )
+    if responsive == "height" and fixed_height:
         responsive = False
         if logger:
-            logger.warning("responsive height mode could not be enabled "
-                           "because a fixed height was defined.")
+            logger.warning(
+                "responsive height mode could not be enabled because a fixed height was defined."
+            )
 
     match_aspect = False
     aspect_scale = 1
     aspect_ratio = None
     if data_aspect:
         match_aspect = True
-        if (fixed_width and fixed_height):
+        if fixed_width and fixed_height:
             frame_width, frame_height = frame_width or width, frame_height or height
         elif fixed_width or not fixed_height:
             height = None
@@ -377,39 +397,39 @@ def compute_layout_properties(
             width = None
 
         aspect_scale = data_aspect
-        if aspect == 'equal':
+        if aspect == "equal":
             aspect_scale = 1
         elif responsive:
             aspect_ratio = aspect
-    elif (fixed_width and fixed_height):
+    elif fixed_width and fixed_height:
         pass
     elif isnumeric(aspect):
         if responsive:
             aspect_ratio = aspect
         elif fixed_width:
             frame_width = actual_width
-            frame_height = int(actual_width/aspect)
+            frame_height = int(actual_width / aspect)
             width, height = None, None
         else:
-            frame_width = int(actual_height*aspect)
+            frame_width = int(actual_height * aspect)
             frame_height = actual_height
             width, height = None, None
     elif aspect is not None and logger:
-        logger.warning('aspect value of type %s not recognized, '
-                       'provide a numeric value, \'equal\' or '
-                       '\'square\'.')
+        logger.warning(
+            "aspect value of type %s not recognized, provide a numeric value, 'equal' or 'square'."
+        )
 
     aspect_info = {
-        'aspect_ratio': aspect_ratio,
-        'aspect_scale': aspect_scale,
-        'match_aspect': match_aspect,
-        'sizing_mode' : sizing_mode
+        "aspect_ratio": aspect_ratio,
+        "aspect_scale": aspect_scale,
+        "match_aspect": match_aspect,
+        "sizing_mode": sizing_mode,
     }
-    dimension_info =  {
-        'frame_width' : frame_width,
-        'frame_height': frame_height,
-        'height' : height,
-        'width'  : width
+    dimension_info = {
+        "frame_width": frame_width,
+        "frame_height": frame_height,
+        "height": height,
+        "width": width,
     }
 
     return aspect_info, dimension_info
@@ -428,19 +448,21 @@ def merge_tools(plot_grid, *, disambiguation_properties=None, hide_toolbar=False
             if isinstance(item, LayoutDOM):
                 for p in item.select(dict(type=Plot)):
                     plot_tools.extend(p.toolbar.tools)
-            if hide_toolbar and hasattr(item, 'toolbar_location'):
+            if hide_toolbar and hasattr(item, "toolbar_location"):
                 item.toolbar_location = None
             if isinstance(item, GridPlot):
                 item.toolbar_location = None
 
     def merge(tool, group):
-        if issubclass(tool, (tools.SaveTool, tools.CopyTool, tools.ExamineTool, tools.FullscreenTool)):
+        if issubclass(
+            tool, (tools.SaveTool, tools.CopyTool, tools.ExamineTool, tools.FullscreenTool)
+        ):
             return tool()
         else:
             return None
 
     if not disambiguation_properties:
-        disambiguation_properties = {'name', 'icon', 'tags', 'description'}
+        disambiguation_properties = {"name", "icon", "tags", "description"}
 
     ignore = set()
     for tool in plot_tools:
@@ -537,9 +559,7 @@ def select_legends(holoviews_layout, figure_index=None, legend_position="top_rig
 
 @contextmanager
 def silence_warnings(*warnings):
-    """Context manager for silencing bokeh validation warnings.
-
-    """
+    """Context manager for silencing bokeh validation warnings."""
     silenced = set()
     for warning in warnings:
         if not is_silenced(warning):
@@ -553,17 +573,13 @@ def silence_warnings(*warnings):
 
 
 def empty_plot(width, height):
-    """Creates an empty and invisible plot of the specified size.
-
-    """
+    """Creates an empty and invisible plot of the specified size."""
     return Spacer(width=width, height=height)
 
 
 def remove_legend(plot, legend):
-    """Removes a legend from a bokeh plot.
-
-    """
-    valid_places = ['left', 'right', 'above', 'below', 'center']
+    """Removes a legend from a bokeh plot."""
+    valid_places = ["left", "right", "above", "below", "center"]
     plot.legend[:] = [l for l in plot.legend if l is not legend]
     for place in valid_places:
         place = getattr(plot, place)
@@ -572,22 +588,29 @@ def remove_legend(plot, legend):
 
 
 def font_size_to_pixels(size):
-    """Convert a fontsize to a pixel value
-
-    """
+    """Convert a fontsize to a pixel value"""
     if size is None or not isinstance(size, str):
         return
-    conversions = {'em': 16, 'pt': 16/12.}
-    val = re.findall(r'\d+', size)
-    unit = re.findall('[a-z]+', size)
-    if (val and not unit) or (val and unit[0] == 'px'):
+    conversions = {"em": 16, "pt": 16 / 12.0}
+    val = re.findall(r"\d+", size)
+    unit = re.findall("[a-z]+", size)
+    if (val and not unit) or (val and unit[0] == "px"):
         return int(val[0])
     elif val and unit[0] in conversions:
-        return (int(int(val[0]) * conversions[unit[0]]))
+        return int(int(val[0]) * conversions[unit[0]])
 
 
-def make_axis(axis, size, factors, dim, flip=False, rotation=0,
-              label_size=None, tick_size=None, axis_height=35):
+def make_axis(
+    axis,
+    size,
+    factors,
+    dim,
+    flip=False,
+    rotation=0,
+    label_size=None,
+    tick_size=None,
+    axis_height=35,
+):
     factors = list(map(dim.pprint_value, factors))
     nchars = np.max([len(f) for f in factors])
     ranges = FactorRange(factors=factors)
@@ -595,13 +618,13 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
     axis_label = dim_axis_label(dim)
     reset = "range.setv({start: 0, end: range.factors.length})"
     customjs = CustomJS(args=dict(range=ranges), code=reset)
-    ranges.js_on_change('start', customjs)
+    ranges.js_on_change("start", customjs)
 
     axis_props = {}
     if label_size:
-        axis_props['axis_label_text_font_size'] = label_size
+        axis_props["axis_label_text_font_size"] = label_size
     if tick_size:
-        axis_props['major_label_text_font_size'] = tick_size
+        axis_props["major_label_text_font_size"] = tick_size
 
     tick_px = font_size_to_pixels(tick_size)
     if tick_px is None:
@@ -611,28 +634,40 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
         label_px = 10
 
     rotation = np.radians(rotation)
-    if axis == 'x':
-        align = 'center'
+    if axis == "x":
+        align = "center"
         # Adjust height to compensate for label rotation
-        height = int(axis_height + np.abs(np.sin(rotation)) *
-                     ((nchars*tick_px)*0.82)) + tick_px + label_px
-        opts = dict(x_axis_type='auto', x_axis_label=axis_label,
-                    x_range=ranges, y_range=ranges2, height=height,
-                    width=size)
+        height = (
+            int(axis_height + np.abs(np.sin(rotation)) * ((nchars * tick_px) * 0.82))
+            + tick_px
+            + label_px
+        )
+        opts = dict(
+            x_axis_type="auto",
+            x_axis_label=axis_label,
+            x_range=ranges,
+            y_range=ranges2,
+            height=height,
+            width=size,
+        )
     else:
         # Adjust width to compensate for label rotation
-        align = 'left' if flip else 'right'
-        width = int(axis_height + np.abs(np.cos(rotation)) *
-                    ((nchars*tick_px)*0.82)) + tick_px + label_px
-        opts = dict(y_axis_label=axis_label, x_range=ranges2,
-                    y_range=ranges, height=size, width=width)
+        align = "left" if flip else "right"
+        width = (
+            int(axis_height + np.abs(np.cos(rotation)) * ((nchars * tick_px) * 0.82))
+            + tick_px
+            + label_px
+        )
+        opts = dict(
+            y_axis_label=axis_label, x_range=ranges2, y_range=ranges, height=size, width=width
+        )
 
     p = figure(toolbar_location=None, tools=[], **opts)
     p.outline_line_alpha = 0
     p.grid.grid_line_alpha = 0
 
-    if axis == 'x':
-        p.align = 'end'
+    if axis == "x":
+        p.align = "end"
         p.yaxis.visible = False
         axis = p.xaxis[0]
         if flip:
@@ -648,7 +683,7 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
             p.yaxis[:] = p.right
     axis.major_label_orientation = rotation
     axis.major_label_text_align = align
-    axis.major_label_text_baseline = 'middle'
+    axis.major_label_text_baseline = "middle"
     axis.update(**axis_props)
     return p
 
@@ -660,25 +695,25 @@ def hsv_to_rgb(hsv):
     """
     h, s, v = (hsv[..., i] for i in range(3))
     shape = h.shape
-    i = np.int_(h*6.)
-    f = h*6.-i
+    i = np.int_(h * 6.0)
+    f = h * 6.0 - i
 
     q = f
-    t = 1.-f
+    t = 1.0 - f
     i = np.ravel(i)
     f = np.ravel(f)
-    i%=6
+    i %= 6
 
     t = np.ravel(t)
     q = np.ravel(q)
     s = np.ravel(s)
     v = np.ravel(v)
 
-    clist = (1-s*np.vstack([np.zeros_like(f),np.ones_like(f),q,t]))*v
+    clist = (1 - s * np.vstack([np.zeros_like(f), np.ones_like(f), q, t])) * v
 
-    #0:v 1:p 2:q 3:t
-    order = np.array([[0,3,1],[2,0,1],[1,0,3],[1,2,0],[3,1,0],[0,1,2]])
-    rgb = clist[order[i], np.arange(np.prod(shape))[:,None]]
+    # 0:v 1:p 2:q 3:t
+    order = np.array([[0, 3, 1], [2, 0, 1], [1, 0, 3], [1, 2, 0], [3, 1, 0], [0, 1, 2]])
+    rgb = clist[order[i], np.arange(np.prod(shape))[:, None]]
 
     return rgb.reshape((*shape, 3))
 
@@ -699,10 +734,10 @@ def pad_width(model, table_padding=0.85, tabs_padding=1.2):
         width = np.max([v for v in vals if v is not None])
         for submodel in model.tabs:
             submodel.width = width
-            width = int(tabs_padding*width)
+            width = int(tabs_padding * width)
     elif isinstance(model, DataTable):
         width = model.width
-        model.width = int(table_padding*width)
+        model.width = int(table_padding * width)
     elif isinstance(model, Div):
         width = model.width
     elif model:
@@ -726,8 +761,13 @@ def pad_plots(plots):
             row_widths.append(width)
         widths.append(row_widths)
 
-    plots = [[Column(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
-              for p, w in zip(row, ws, strict=None)] for row, ws in zip(plots, widths, strict=None)]
+    plots = [
+        [
+            Column(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
+            for p, w in zip(row, ws, strict=None)
+        ]
+        for row, ws in zip(plots, widths, strict=None)
+    ]
     return plots
 
 
@@ -738,11 +778,14 @@ def filter_toolboxes(plots):
     """
     if isinstance(plots, list):
         plots = [filter_toolboxes(plot) for plot in plots]
-    elif hasattr(plots, 'toolbar'):
+    elif hasattr(plots, "toolbar"):
         plots.toolbar_location = None
-    elif hasattr(plots, 'children'):
-        plots.children = [filter_toolboxes(child) for child in plots.children
-                          if not isinstance(child, tools.Toolbar)]
+    elif hasattr(plots, "children"):
+        plots.children = [
+            filter_toolboxes(child)
+            for child in plots.children
+            if not isinstance(child, tools.Toolbar)
+        ]
     return plots
 
 
@@ -756,23 +799,22 @@ def get_tab_title(key, frame, overlay):
             title = []
             if frame.label:
                 title.append(frame.label)
-                if frame.group != frame.param.objects('existing')['group'].default:
+                if frame.group != frame.param.objects("existing")["group"].default:
                     title.append(frame.group)
             else:
                 title.append(frame.group)
         else:
             title = key
-        title = ' '.join(title)
+        title = " ".join(title)
     else:
-        title = ' | '.join([d.pprint_value_string(k) for d, k in
-                            zip(overlay.kdims, key, strict=None)])
+        title = " | ".join(
+            [d.pprint_value_string(k) for d, k in zip(overlay.kdims, key, strict=None)]
+        )
     return title
 
 
 def get_default(model, name, theme=None):
-    """Looks up the default value for a bokeh model property.
-
-    """
+    """Looks up the default value for a bokeh model property."""
     overrides = None
     if theme is not None:
         if isinstance(theme, str):
@@ -789,10 +831,10 @@ def filter_batched_data(data, mapping):
 
     """
     for k, v in list(mapping.items()):
-        if isinstance(v, dict) and 'field' in v:
-            if 'transform' in v:
+        if isinstance(v, dict) and "field" in v:
+            if "transform" in v:
                 continue
-            v = v['field']
+            v = v["field"]
         elif not isinstance(v, str):
             continue
         values = data[v]
@@ -803,14 +845,16 @@ def filter_batched_data(data, mapping):
         except Exception:
             pass
 
+
 def cds_column_replace(source, data):
     """Determine if the CDS.data requires a full replacement or simply
     needs to be updated. A replacement is required if untouched
     columns are not the same length as the columns being updated.
 
     """
-    current_length = [len(v) for v in source.data.values()
-                      if isinstance(v, (list, *arraylike_types))]
+    current_length = [
+        len(v) for v in source.data.values() if isinstance(v, (list, *arraylike_types))
+    ]
     new_length = [len(v) for v in data.values() if isinstance(v, (list, np.ndarray))]
     untouched = [k for k in source.data if k not in data]
     return bool(untouched and current_length and new_length and current_length[0] != new_length[0])
@@ -818,9 +862,7 @@ def cds_column_replace(source, data):
 
 @contextmanager
 def hold_policy(document, policy, server=False):
-    """Context manager to temporary override the hold policy.
-
-    """
+    """Context manager to temporary override the hold policy."""
     old_policy = document.callbacks.hold_value
     document.callbacks._hold = policy
     try:
@@ -850,13 +892,13 @@ def recursive_model_update(model, props):
                 try:
                     setattr(model, k, v)
                 except Exception as e:
-                    if isinstance(v, dict) and 'value' in v:
-                        setattr(model, k, v['value'])
+                    if isinstance(v, dict) and "value" in v:
+                        setattr(model, k, v["value"])
                     else:
                         raise e
         elif k in valid_properties and v != valid_properties[k]:
-            if isinstance(v, dict) and 'value' in v:
-                v = v['value']
+            if isinstance(v, dict) and "value" in v:
+                v = v["value"]
             updates[k] = v
     model.update(**updates)
 
@@ -869,9 +911,10 @@ def update_shared_sources(f):
     each source in the plots handles.
 
     """
+
     def wrapper(self, *args, **kwargs):
-        source_cols = self.handles.get('source_cols', {})
-        shared_sources = self.handles.get('shared_sources', [])
+        source_cols = self.handles.get("source_cols", {})
+        shared_sources = self.handles.get("shared_sources", [])
         doc = self.document
         for source in shared_sources:
             source.data.clear()
@@ -888,6 +931,7 @@ def update_shared_sources(f):
             patch = {c: empty for c in expected if c not in source.data}
             source.data.update(patch)
         return ret
+
     return wrapper
 
 
@@ -896,6 +940,7 @@ def hold_render(f):
     the method has been called.
 
     """
+
     def wrapper(self, *args, **kwargs):
         hold = self.state.hold_render
         doc = self.state.document
@@ -911,6 +956,7 @@ def hold_render(f):
                 return f(self, *args, **kwargs)
             finally:
                 self.state.hold_render = hold
+
     return wrapper
 
 
@@ -946,18 +992,20 @@ class periodic:
     def start(self):
         self._start_time = time.time()
         if self.document is None:
-            raise RuntimeError('periodic was registered to be run on bokeh'
-                               'server but no document was found.')
+            raise RuntimeError(
+                "periodic was registered to be run on bokehserver but no document was found."
+            )
         self._pcb = self.document.add_periodic_callback(self._periodic_callback, self.period)
 
     def __call__(self, period, count, callback, timeout=None, block=False):
         if isinstance(count, int):
-            if count < 0: raise ValueError('Count value must be positive')
+            if count < 0:
+                raise ValueError("Count value must be positive")
         elif type(count) is not type(None):
-            raise ValueError('Count value must be a positive integer or None')
+            raise ValueError("Count value must be a positive integer or None")
 
         self.callback = callback
-        self.period = period*1000.
+        self.period = period * 1000.0
         self.timeout = timeout
         self.count = count
         self.counter = 0
@@ -968,7 +1016,7 @@ class periodic:
         self.counter += 1
 
         if self.timeout is not None:
-            dt = (time.time() - self._start_time)
+            dt = time.time() - self._start_time
             if dt > self.timeout:
                 self.stop()
         if self.counter == self.count:
@@ -979,23 +1027,24 @@ class periodic:
         self.timeout = None
         try:
             self.document.remove_periodic_callback(self._pcb)
-        except ValueError: # Already stopped
+        except ValueError:  # Already stopped
             pass
         self._pcb = None
 
     def __repr__(self):
-        return f'periodic({self.period}, {self.count}, {callable_name(self.callback)})'
+        return f"periodic({self.period}, {self.count}, {callable_name(self.callback)})"
+
     def __str__(self):
         return repr(self)
 
 
 def attach_periodic(plot):
-    """Attaches plot refresh to all streams on the object.
+    """Attaches plot refresh to all streams on the object."""
 
-    """
     def append_refresh(dmap):
         for subdmap in get_nested_dmaps(dmap):
             subdmap.periodic._periodic_util = periodic(plot.document)
+
     return plot.hmap.traverse(append_refresh, [DynamicMap])
 
 
@@ -1016,6 +1065,7 @@ def date_to_integer(date):
     Milliseconds since 1970-01-01 00:00:00
     """
     import pandas as pd
+
     if isinstance(date, pd.Timestamp):
         try:
             date = date.to_datetime64()
@@ -1023,14 +1073,14 @@ def date_to_integer(date):
             date = date.to_datetime()
 
     if isinstance(date, np.datetime64):
-        return date.astype('datetime64[ms]').astype(float)
+        return date.astype("datetime64[ms]").astype(float)
     elif isinstance(date, cftime_types):
-        return cftime_to_timestamp(date, 'ms')
+        return cftime_to_timestamp(date, "ms")
 
-    if hasattr(date, 'timetuple'):
-        dt_int = calendar.timegm(date.timetuple())*1000
+    if hasattr(date, "timetuple"):
+        dt_int = calendar.timegm(date.timetuple()) * 1000
     else:
-        raise ValueError('Datetime type not recognized')
+        raise ValueError("Datetime type not recognized")
     return dt_int
 
 
@@ -1045,10 +1095,13 @@ def glyph_order(keys, draw_order=None):
     if draw_order is None:
         draw_order = []
     keys = sorted(keys)
+
     def order_fn(glyph):
         matches = [item for item in draw_order if glyph.startswith(item)]
-        return ((draw_order.index(matches[0]), glyph) if matches else
-                (1e9+keys.index(glyph), glyph))
+        return (
+            (draw_order.index(matches[0]), glyph) if matches else (1e9 + keys.index(glyph), glyph)
+        )
+
     return sorted(keys, key=order_fn)
 
 
@@ -1073,9 +1126,9 @@ def colormesh(X, Y):
 
 def theme_attr_json(theme, attr):
     if isinstance(theme, str) and theme in built_in_themes:
-        return built_in_themes[theme]._json['attrs'].get(attr, {})
+        return built_in_themes[theme]._json["attrs"].get(attr, {})
     elif isinstance(theme, Theme):
-        return theme._json['attrs'].get(attr, {})
+        return theme._json["attrs"].get(attr, {})
     else:
         return {}
 
@@ -1093,11 +1146,11 @@ def multi_polygons_data(element):
         xhs = [[h[:, 0] for h in hole] for hole in multi_hole]
         yhs = [[h[:, 1] for h in hole] for hole in multi_hole]
         array = np.column_stack([x, y])
-        splits = np.where(np.isnan(array[:, :2].astype('float')).sum(axis=1))[0]
-        arrays = np.split(array, splits+1) if len(splits) else [array]
+        splits = np.where(np.isnan(array[:, :2].astype("float")).sum(axis=1))[0]
+        arrays = np.split(array, splits + 1) if len(splits) else [array]
         multi_xs, multi_ys = [], []
         for i, (path, hx, hy) in enumerate(zip(arrays, xhs, yhs, strict=None)):
-            if i != (len(arrays)-1):
+            if i != (len(arrays) - 1):
                 path = path[:-1]
             multi_xs.append([path[:, 0], *hx])
             multi_ys.append([path[:, 1], *hy])
@@ -1127,7 +1180,14 @@ def match_dim_specs(specs1, specs2):
 
 
 def get_scale(range_input, axis_type):
-    if isinstance(range_input, (DataRange1d, Range1d)) and axis_type in ["linear", "datetime", "mercator", "auto", "timedelta", None]:
+    if isinstance(range_input, (DataRange1d, Range1d)) and axis_type in [
+        "linear",
+        "datetime",
+        "mercator",
+        "auto",
+        "timedelta",
+        None,
+    ]:
         return LinearScale()
     elif isinstance(range_input, (DataRange1d, Range1d)) and axis_type == "log":
         return LogScale()
@@ -1137,7 +1197,7 @@ def get_scale(range_input, axis_type):
         raise ValueError(f"Unable to determine proper scale for: '{range_input}'")
 
 
-def get_axis_class(axis_type, range_input, dim): # Copied from bokeh
+def get_axis_class(axis_type, range_input, dim):  # Copied from bokeh
     if axis_type is None:
         return None, {}
     elif axis_type == "linear":
@@ -1149,7 +1209,7 @@ def get_axis_class(axis_type, range_input, dim): # Copied from bokeh
     elif BOKEH_GE_3_8_0 and axis_type == "timedelta":
         return TimedeltaAxis, {}
     elif axis_type == "mercator":
-        return MercatorAxis, dict(dimension='lon' if dim == 0 else 'lat')
+        return MercatorAxis, dict(dimension="lon" if dim == 0 else "lat")
     elif axis_type == "auto":
         if isinstance(range_input, FactorRange):
             return CategoricalAxis, {}
@@ -1170,27 +1230,23 @@ def get_axis_class(axis_type, range_input, dim): # Copied from bokeh
 
 
 def match_ax_type(ax, range_type):
-    """Ensure the range_type matches the axis model being matched.
-
-    """
+    """Ensure the range_type matches the axis model being matched."""
     if isinstance(ax, CategoricalAxis):
-        return range_type == 'categorical'
+        return range_type == "categorical"
     elif isinstance(ax, DatetimeAxis):
-        return range_type == 'datetime'
+        return range_type == "datetime"
     elif BOKEH_GE_3_8_0 and isinstance(ax, TimedeltaAxis):
-        return range_type == 'timedelta'
+        return range_type == "timedelta"
     else:
-        return range_type in ('auto', 'log')
+        return range_type in ("auto", "log")
 
 
 def match_yaxis_type_to_range(yax, range_type, range_name):
-    """Apply match_ax_type to the y-axis found by the given range name
-
-    """
+    """Apply match_ax_type to the y-axis found by the given range name"""
     for axis in yax:
         if axis.y_range_name == range_name:
             return match_ax_type(axis, range_type)
-    raise ValueError('No axis with given range found')
+    raise ValueError("No axis with given range found")
 
 
 def wrap_formatter(formatter, axis):
@@ -1206,9 +1262,7 @@ def wrap_formatter(formatter, axis):
 
 
 def property_to_dict(x):
-    """Convert Bokeh's property Field and Value to a dictionary
-
-    """
+    """Convert Bokeh's property Field and Value to a dictionary"""
     try:
         from bokeh.core.property.vectorization import Field, Unspecified, Value
 
@@ -1243,23 +1297,21 @@ def get_ticker_axis_props(ticker):
     if isinstance(ticker, np.ndarray):
         ticker = list(ticker)
     if isinstance(ticker, Ticker):
-        axis_props['ticker'] = ticker
+        axis_props["ticker"] = ticker
     elif isinstance(ticker, int):
-        axis_props['ticker'] = BasicTicker(desired_num_ticks=ticker)
+        axis_props["ticker"] = BasicTicker(desired_num_ticks=ticker)
     elif isinstance(ticker, (tuple, list)):
         if all(isinstance(t, tuple) for t in ticker):
             ticks, labels = zip(*ticker, strict=None)
             # Ensure floats which are integers are serialized as ints
             # because in JS the lookup fails otherwise
-            ticks = [int(t) if isinstance(t, float) and t.is_integer() else t
-                        for t in ticks]
-            labels = [l if isinstance(l, str) else str(l)
-                        for l in labels]
+            ticks = [int(t) if isinstance(t, float) and t.is_integer() else t for t in ticks]
+            labels = [l if isinstance(l, str) else str(l) for l in labels]
         else:
             ticks, labels = ticker, None
         if ticks and util.isdatetime(ticks[0]):
-            ticks = [util.dt_to_int(tick, 'ms') for tick in ticks]
-        axis_props['ticker'] = FixedTicker(ticks=ticks)
+            ticks = [util.dt_to_int(tick, "ms") for tick in ticks]
+        axis_props["ticker"] = FixedTicker(ticks=ticks)
         if labels is not None:
-            axis_props['major_label_overrides'] = dict(zip(ticks, labels, strict=None))
+            axis_props["major_label_overrides"] = dict(zip(ticks, labels, strict=None))
     return axis_props

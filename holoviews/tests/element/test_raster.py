@@ -10,7 +10,6 @@ from holoviews.testing import assert_data_equal, assert_element_equal
 
 
 class TestRaster:
-
     def setup_method(self):
         self.array1 = np.array([(0, 1, 2), (3, 4, 5)])
 
@@ -23,19 +22,19 @@ class TestRaster:
 
     def test_raster_sample(self):
         raster = hv.Raster(self.array1)
-        assert_element_equal(raster.sample(y=0),
-                         hv.Curve(np.array([(0, 0), (1, 1), (2, 2)]),
-                               kdims=['x'], vdims=['z']))
+        assert_element_equal(
+            raster.sample(y=0),
+            hv.Curve(np.array([(0, 0), (1, 1), (2, 2)]), kdims=["x"], vdims=["z"]),
+        )
 
     def test_raster_range_masked(self):
-        arr = np.random.rand(10,10)-0.5
-        arr = np.ma.masked_where(arr<=0, arr)
+        arr = np.random.rand(10, 10) - 0.5
+        arr = np.ma.masked_where(arr <= 0, arr)
         rrange = hv.Raster(arr).range(2)
         assert rrange == (np.min(arr), np.max(arr))
 
 
 class TestRGB:
-
     def setup_method(self):
         self.rgb_array = np.random.randint(0, 255, (3, 3, 4))
 
@@ -48,17 +47,16 @@ class TestRGB:
         assert len(rgb.vdims) == 4
 
     def test_construct_from_xarray_dataset_with_alpha(self):
-        xr = pytest.importorskip('xarray')
+        xr = pytest.importorskip("xarray")
         xr_dataset = xr.DataArray(
-            data=self.rgb_array,
-            coords={"y": [0, 1, 2], "x": [0, 1, 2], "band": list("RGBA")}
+            data=self.rgb_array, coords={"y": [0, 1, 2], "x": [0, 1, 2], "band": list("RGBA")}
         ).to_dataset(dim="band")
         rgb = hv.RGB(xr_dataset)
         assert str(rgb.alpha_dimension) in xr_dataset.data_vars
         assert len(rgb.vdims) == 4
 
     def test_construct_from_dict_with_alpha(self):
-        rgb = hv.RGB({'x': [1, 2, 3], 'y': [1, 2, 3], ('R', 'G', 'B', 'A'): self.rgb_array})
+        rgb = hv.RGB({"x": [1, 2, 3], "y": [1, 2, 3], ("R", "G", "B", "A"): self.rgb_array})
         assert len(rgb.vdims) == 4
 
     def test_not_using_class_variables_vdims(self):
@@ -83,29 +81,29 @@ class TestRGB:
         assert sum(np.isnan(rgb_n["G"])) == 0
         assert sum(np.isnan(rgb_n["B"])) == 0
 
-class TestHSV:
 
+class TestHSV:
     def setup_method(self):
         self.hsv_array = np.random.randint(0, 255, (3, 3, 4))
 
     def test_not_using_class_variables_vdims(self):
-            init_vdims = hv.HSV(self.hsv_array).vdims
-            cls_vdims = hv.HSV.vdims
-            assert len(init_vdims) == 4
-            assert len(cls_vdims) == 3
-            for i, c in zip(init_vdims, cls_vdims, strict=False):
-                assert i is not c
-                assert i == c
+        init_vdims = hv.HSV(self.hsv_array).vdims
+        cls_vdims = hv.HSV.vdims
+        assert len(init_vdims) == 4
+        assert len(cls_vdims) == 3
+        for i, c in zip(init_vdims, cls_vdims, strict=False):
+            assert i is not c
+            assert i == c
+
 
 class TestQuadMesh:
-
     def setup_method(self):
         self.array1 = np.array([(0, 1, 2), (3, 4, 5)])
 
     def test_cast_image_to_quadmesh(self):
-        img = hv.Image(self.array1, kdims=['a', 'b'], vdims=['c'], group='A', label='B')
+        img = hv.Image(self.array1, kdims=["a", "b"], vdims=["c"], group="A", label="B")
         qmesh = hv.QuadMesh(img)
-        assert_data_equal(qmesh.dimension_values(0, False), np.array([-0.333333, 0., 0.333333]))
+        assert_data_equal(qmesh.dimension_values(0, False), np.array([-0.333333, 0.0, 0.333333]))
         assert_data_equal(qmesh.dimension_values(1, False), np.array([-0.25, 0.25]))
         assert_data_equal(qmesh.dimension_values(2, flat=False), self.array1[::-1])
         assert qmesh.kdims == img.kdims
@@ -116,16 +114,30 @@ class TestQuadMesh:
     def test_quadmesh_to_trimesh(self):
         qmesh = hv.QuadMesh(([0, 1], [0, 1], np.array([[0, 1], [2, 3]])))
         trimesh = qmesh.trimesh()
-        simplices = np.array([[0, 1, 3, 0],
-                              [1, 2, 4, 2],
-                              [3, 4, 6, 1],
-                              [4, 5, 7, 3],
-                              [4, 3, 1, 0],
-                              [5, 4, 2, 2],
-                              [7, 6, 4, 1],
-                              [8, 7, 5, 3]])
-        vertices = np.array([(-0.5, -0.5), (-0.5, 0.5), (-0.5, 1.5),
-                             (0.5, -0.5), (0.5, 0.5), (0.5, 1.5),
-                             (1.5, -0.5), (1.5, 0.5), (1.5, 1.5)])
+        simplices = np.array(
+            [
+                [0, 1, 3, 0],
+                [1, 2, 4, 2],
+                [3, 4, 6, 1],
+                [4, 5, 7, 3],
+                [4, 3, 1, 0],
+                [5, 4, 2, 2],
+                [7, 6, 4, 1],
+                [8, 7, 5, 3],
+            ]
+        )
+        vertices = np.array(
+            [
+                (-0.5, -0.5),
+                (-0.5, 0.5),
+                (-0.5, 1.5),
+                (0.5, -0.5),
+                (0.5, 0.5),
+                (0.5, 1.5),
+                (1.5, -0.5),
+                (1.5, 0.5),
+                (1.5, 1.5),
+            ]
+        )
         assert_data_equal(trimesh.array(), simplices)
         assert_data_equal(trimesh.nodes.array([0, 1]), vertices)

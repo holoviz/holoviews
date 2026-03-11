@@ -20,7 +20,6 @@ from holoviews.streams import PointerX
 
 
 class TestOverlayableZorders:
-
     def test_compute_overlayable_zorders_holomap(self):
         hmap = hv.HoloMap({0: hv.Points([])})
         sources = compute_overlayable_zorders(hmap)
@@ -30,14 +29,14 @@ class TestOverlayableZorders:
         points = hv.Points([])
         hmap = hv.HoloMap({0: points})
         curve = hv.Curve([])
-        combined = hmap*curve
+        combined = hmap * curve
         sources = compute_overlayable_zorders(combined)
         assert sources[0] == [points, combined.last, combined]
 
     def test_dynamic_compute_overlayable_zorders_two_mixed_layers(self):
         area = hv.Area(range(10))
         dmap = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
-        combined = area*dmap
+        combined = area * dmap
         combined[()]
         sources = compute_overlayable_zorders(combined)
         assert sources[0] == [area]
@@ -46,7 +45,7 @@ class TestOverlayableZorders:
     def test_dynamic_compute_overlayable_zorders_two_mixed_layers_reverse(self):
         area = hv.Area(range(10))
         dmap = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
-        combined = dmap*area
+        combined = dmap * area
         combined[()]
         sources = compute_overlayable_zorders(combined)
         assert sources[0] == [dmap]
@@ -55,7 +54,7 @@ class TestOverlayableZorders:
     def test_dynamic_compute_overlayable_zorders_two_dynamic_layers(self):
         area = hv.DynamicMap(lambda: hv.Area(range(10)), kdims=[])
         dmap = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
-        combined = area*dmap
+        combined = area * dmap
         combined[()]
         sources = compute_overlayable_zorders(combined)
         assert sources[0] == [area]
@@ -64,9 +63,9 @@ class TestOverlayableZorders:
     def test_dynamic_compute_overlayable_zorders_two_deep_dynamic_layers(self):
         area = hv.DynamicMap(lambda: hv.Area(range(10)), kdims=[])
         curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
-        area_redim = area.redim(x='x2')
-        curve_redim = curve.redim(x='x2')
-        combined = area_redim*curve_redim
+        area_redim = area.redim(x="x2")
+        curve_redim = curve.redim(x="x2")
+        combined = area_redim * curve_redim
         combined[()]
         sources = compute_overlayable_zorders(combined)
         assert area_redim in sources[0]
@@ -82,11 +81,11 @@ class TestOverlayableZorders:
         area = hv.DynamicMap(lambda: hv.Area(range(10)), kdims=[])
         curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
         curve2 = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
-        area_redim = area.redim(x='x2')
-        curve_redim = curve.redim(x='x2')
-        curve2_redim = curve2.redim(x='x3')
-        combined = area_redim*curve_redim
-        combined1 = (combined*curve2_redim)
+        area_redim = area.redim(x="x2")
+        curve_redim = curve.redim(x="x2")
+        curve2_redim = curve2.redim(x="x3")
+        combined = area_redim * curve_redim
+        combined1 = combined * curve2_redim
         combined1[()]
         sources = compute_overlayable_zorders(combined1)
         assert area_redim in sources[0]
@@ -114,11 +113,11 @@ class TestOverlayableZorders:
         area = hv.DynamicMap(lambda: hv.Area(range(10)), kdims=[])
         curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
         curve2 = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
-        area_redim = area.redim(x='x2')
-        curve_redim = curve.redim(x='x2')
-        curve2_redim = curve2.redim(x='x3')
-        combined = area_redim*curve_redim
-        combined1 = (combined*curve2_redim).redim(y='y2')
+        area_redim = area.redim(x="x2")
+        curve_redim = curve.redim(x="x2")
+        curve2_redim = curve2.redim(x="x3")
+        combined = area_redim * curve_redim
+        combined1 = (combined * curve2_redim).redim(y="y2")
         combined1[()]
         sources = compute_overlayable_zorders(combined1)
 
@@ -143,13 +142,15 @@ class TestOverlayableZorders:
         assert curve_redim not in sources[2]
         assert curve not in sources[2]
 
-    def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_non_dynamic_overlays_reverse(self):
+    def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_non_dynamic_overlays_reverse(
+        self,
+    ):
         area1 = hv.Area(range(10))
         area2 = hv.Area(range(10))
         overlay = area1 * area2
         curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
-        curve_redim = curve.redim(x='x2')
-        combined = curve_redim*overlay
+        curve_redim = curve.redim(x="x2")
+        combined = curve_redim * overlay
         combined[()]
         sources = compute_overlayable_zorders(combined)
 
@@ -168,10 +169,10 @@ class TestOverlayableZorders:
         assert curve not in sources[2]
 
     def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_non_dynamic_ndoverlays(self):
-        ndoverlay = hv.NdOverlay({i: hv.Area(range(10+i)) for i in range(2)})
+        ndoverlay = hv.NdOverlay({i: hv.Area(range(10 + i)) for i in range(2)})
         curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
-        curve_redim = curve.redim(x='x2')
-        combined = ndoverlay*curve_redim
+        curve_redim = curve.redim(x="x2")
+        combined = ndoverlay * curve_redim
         combined[()]
         sources = compute_overlayable_zorders(combined)
 
@@ -190,19 +191,28 @@ class TestOverlayableZorders:
         assert ndoverlay not in sources[2]
 
     def test_dynamic_compute_overlayable_zorders_ndoverlays_as_input(self):
-        ndoverlay1 = hv.NdOverlay({i: hv.Area(range(10+i)) for i in range(2)}).apply(lambda el: el.get(0), dynamic=True)
-        ndoverlay2 = hv.NdOverlay({i: hv.Area((range(15, 25+i), range(10+i))) for i in range(2)}).apply(lambda el: el.get(0), dynamic=True)
-        combined = ndoverlay1*ndoverlay2
+        ndoverlay1 = hv.NdOverlay({i: hv.Area(range(10 + i)) for i in range(2)}).apply(
+            lambda el: el.get(0), dynamic=True
+        )
+        ndoverlay2 = hv.NdOverlay(
+            {i: hv.Area((range(15, 25 + i), range(10 + i))) for i in range(2)}
+        ).apply(lambda el: el.get(0), dynamic=True)
+        combined = ndoverlay1 * ndoverlay2
         combined[()]
         sources = compute_overlayable_zorders(combined)
         assert len(sources) == 2
 
-    def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_dynamic_ndoverlay_with_streams(self):
-        ndoverlay = hv.DynamicMap(lambda x: hv.NdOverlay({i: hv.Area(range(10+i)) for i in range(2)}),
-                               kdims=[], streams=[PointerX()])
+    def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_dynamic_ndoverlay_with_streams(
+        self,
+    ):
+        ndoverlay = hv.DynamicMap(
+            lambda x: hv.NdOverlay({i: hv.Area(range(10 + i)) for i in range(2)}),
+            kdims=[],
+            streams=[PointerX()],
+        )
         curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
-        curve_redim = curve.redim(x='x2')
-        combined = ndoverlay*curve_redim
+        curve_redim = curve.redim(x="x2")
+        combined = ndoverlay * curve_redim
         combined[()]
         sources = compute_overlayable_zorders(combined)
 
@@ -218,12 +228,17 @@ class TestOverlayableZorders:
         assert curve in sources[2]
         assert ndoverlay not in sources[2]
 
-    def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_dynamic_ndoverlay_with_streams_cloned(self):
-        ndoverlay = hv.DynamicMap(lambda x: hv.NdOverlay({i: hv.Area(range(10+i)) for i in range(2)}),
-                               kdims=[], streams=[PointerX()])
+    def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_dynamic_ndoverlay_with_streams_cloned(
+        self,
+    ):
+        ndoverlay = hv.DynamicMap(
+            lambda x: hv.NdOverlay({i: hv.Area(range(10 + i)) for i in range(2)}),
+            kdims=[],
+            streams=[PointerX()],
+        )
         curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
-        curve_redim = curve.redim(x='x2')
-        combined = ndoverlay*curve_redim
+        curve_redim = curve.redim(x="x2")
+        combined = ndoverlay * curve_redim
         combined[()]
         sources = compute_overlayable_zorders(combined.clone())
 
@@ -239,11 +254,13 @@ class TestOverlayableZorders:
         assert curve in sources[2]
         assert ndoverlay not in sources[2]
 
-    def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_non_dynamic_ndoverlays_reverse(self):
-        ndoverlay = hv.NdOverlay({i: hv.Area(range(10+i)) for i in range(2)})
+    def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_non_dynamic_ndoverlays_reverse(
+        self,
+    ):
+        ndoverlay = hv.NdOverlay({i: hv.Area(range(10 + i)) for i in range(2)})
         curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
-        curve_redim = curve.redim(x='x2')
-        combined = curve_redim*ndoverlay
+        curve_redim = curve.redim(x="x2")
+        combined = curve_redim * ndoverlay
         combined[()]
         sources = compute_overlayable_zorders(combined)
 
@@ -265,11 +282,11 @@ class TestOverlayableZorders:
         area = hv.DynamicMap(lambda: hv.Area(range(10)), kdims=[])
         curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
         curve2 = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
-        area_redim = area.redim(x='x2')
-        curve_redim = curve.redim(x='x2')
-        curve2_redim = curve2.redim(x='x3')
-        combined = (area_redim*curve_redim).map(lambda x: x.get(0), hv.Overlay)
-        combined1 = combined*curve2_redim
+        area_redim = area.redim(x="x2")
+        curve_redim = curve.redim(x="x2")
+        curve2_redim = curve2.redim(x="x3")
+        combined = (area_redim * curve_redim).map(lambda x: x.get(0), hv.Overlay)
+        combined1 = combined * curve2_redim
         combined1[()]
         sources = compute_overlayable_zorders(combined1)
 
@@ -287,17 +304,20 @@ class TestOverlayableZorders:
         assert curve_redim not in sources[1]
         assert curve not in sources[1]
 
-
-    def test_dynamic_compute_overlayable_zorders_three_deep_dynamic_layers_reduced_layers_by_one(self):
+    def test_dynamic_compute_overlayable_zorders_three_deep_dynamic_layers_reduced_layers_by_one(
+        self,
+    ):
         area = hv.DynamicMap(lambda: hv.Area(range(10)), kdims=[])
         area2 = hv.DynamicMap(lambda: hv.Area(range(10)), kdims=[])
         curve = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
         curve2 = hv.DynamicMap(lambda: hv.Curve(range(10)), kdims=[])
-        area_redim = area.redim(x='x2')
-        curve_redim = curve.redim(x='x2')
-        curve2_redim = curve2.redim(x='x3')
-        combined = (area_redim*curve_redim*area2).map(lambda x: x.clone(x.items()[:2]), hv.Overlay)
-        combined1 = combined*curve2_redim
+        area_redim = area.redim(x="x2")
+        curve_redim = curve.redim(x="x2")
+        curve2_redim = curve2.redim(x="x3")
+        combined = (area_redim * curve_redim * area2).map(
+            lambda x: x.clone(x.items()[:2]), hv.Overlay
+        )
+        combined1 = combined * curve2_redim
         combined1[()]
         sources = compute_overlayable_zorders(combined1)
 
@@ -325,19 +345,17 @@ class TestOverlayableZorders:
 
 
 class TestInitializeDynamic:
-
     def test_dynamicmap_default_initializes(self):
-        dims = [hv.Dimension('N', default=5, range=(0, 10))]
+        dims = [hv.Dimension("N", default=5, range=(0, 10))]
         dmap = hv.DynamicMap(lambda N: hv.Curve([1, N, 5]), kdims=dims)
         initialize_dynamic(dmap)
         assert dmap.keys() == [5]
 
     def test_dynamicmap_numeric_values_initializes(self):
-        dims = [hv.Dimension('N', values=[10, 5, 0])]
+        dims = [hv.Dimension("N", values=[10, 5, 0])]
         dmap = hv.DynamicMap(lambda N: hv.Curve([1, N, 5]), kdims=dims)
         initialize_dynamic(dmap)
         assert dmap.keys() == [0]
-
 
 
 class TestSplitDynamicMapOverlay:
@@ -348,7 +366,9 @@ class TestSplitDynamicMapOverlay:
     def setup_method(self):
         self.dmap_element = hv.DynamicMap(lambda: hv.Image([]))
         self.dmap_overlay = hv.DynamicMap(lambda: hv.Overlay([hv.Curve([]), hv.Points([])]))
-        self.dmap_ndoverlay = hv.DynamicMap(lambda: hv.NdOverlay({0: hv.Curve([]), 1: hv.Curve([])}))
+        self.dmap_ndoverlay = hv.DynamicMap(
+            lambda: hv.NdOverlay({0: hv.Curve([]), 1: hv.Curve([])})
+        )
         self.element = hv.Scatter([])
         self.el1, self.el2 = hv.Path([]), hv.HLine(0)
         self.overlay = hv.Overlay([self.el1, self.el2])
@@ -415,12 +435,25 @@ class TestSplitDynamicMapOverlay:
         assert split_dmap_overlay(test)[0] == layers
 
     def test_dmap_all_combinations(self):
-        test = (self.dmap_overlay * self.element * self.dmap_ndoverlay *
-                self.overlay * self.dmap_element * self.ndoverlay)
+        test = (
+            self.dmap_overlay
+            * self.element
+            * self.dmap_ndoverlay
+            * self.overlay
+            * self.dmap_element
+            * self.ndoverlay
+        )
         initialize_dynamic(test)
-        layers = [self.dmap_overlay, self.dmap_overlay, self.element,
-                  self.dmap_ndoverlay, self.el1, self.el2, self.dmap_element,
-                  self.ndoverlay]
+        layers = [
+            self.dmap_overlay,
+            self.dmap_overlay,
+            self.element,
+            self.dmap_ndoverlay,
+            self.el1,
+            self.el2,
+            self.dmap_element,
+            self.ndoverlay,
+        ]
         assert split_dmap_overlay(test)[0] == layers
 
     def test_dmap_overlay_operation_mul_dmap_ndoverlay(self):
@@ -446,189 +479,209 @@ class TestSplitDynamicMapOverlay:
 
 
 class TestPlotColorUtils:
-
     def test_process_cmap_list_cycle(self):
-        colors = process_cmap(['#ffffff', '#959595', '#000000'], 4)
-        assert colors == ['#ffffff', '#959595', '#000000', '#ffffff']
+        colors = process_cmap(["#ffffff", "#959595", "#000000"], 4)
+        assert colors == ["#ffffff", "#959595", "#000000", "#ffffff"]
 
     def test_process_cmap_cycle(self):
-        colors = process_cmap(hv.Cycle(values=['#ffffff', '#959595', '#000000']), 4)
-        assert colors == ['#ffffff', '#959595', '#000000', '#ffffff']
+        colors = process_cmap(hv.Cycle(values=["#ffffff", "#959595", "#000000"]), 4)
+        assert colors == ["#ffffff", "#959595", "#000000", "#ffffff"]
 
     def test_process_cmap_invalid_str(self):
         with pytest.raises(ValueError):  # noqa: PT011
-            process_cmap('NonexistentColorMap', 3)
+            process_cmap("NonexistentColorMap", 3)
 
     def test_process_cmap_invalid_type(self):
         with pytest.raises(TypeError):
-            process_cmap({'A', 'B', 'C'}, 3)
+            process_cmap({"A", "B", "C"}, 3)
 
 
 @pytest.mark.usefixtures("mpl_backend")
 class TestMPLColormapUtils:
-
     def test_mpl_colormap_fire(self):
-        colors = process_cmap('fire', 3, provider='matplotlib')
-        assert colors == ['#000000', '#ed1400', '#ffffff']
+        colors = process_cmap("fire", 3, provider="matplotlib")
+        assert colors == ["#000000", "#ed1400", "#ffffff"]
 
     def test_mpl_colormap_fire_r(self):
-        colors = process_cmap('fire_r', 3, provider='matplotlib')
-        assert colors == ['#ffffff', '#eb1300', '#000000']
+        colors = process_cmap("fire_r", 3, provider="matplotlib")
+        assert colors == ["#ffffff", "#eb1300", "#000000"]
 
     def test_mpl_colormap_name_palette(self):
-        colors = process_cmap('Greys', 3, provider='matplotlib')
-        assert colors == ['#ffffff', '#959595', '#000000']
+        colors = process_cmap("Greys", 3, provider="matplotlib")
+        assert colors == ["#ffffff", "#959595", "#000000"]
 
     def test_mpl_colormap_instance(self):
         try:
             from matplotlib import colormaps
-            cmap = colormaps.get('Greys')
+
+            cmap = colormaps.get("Greys")
         except ImportError:
             # This will stop working and can be removed
             # when we only support Matplotlib >= 3.5
             from matplotlib.cm import get_cmap
-            cmap = get_cmap('Greys')
 
-        colors = process_cmap(cmap, 3, provider='matplotlib')
-        assert colors == ['#ffffff', '#959595', '#000000']
+            cmap = get_cmap("Greys")
+
+        colors = process_cmap(cmap, 3, provider="matplotlib")
+        assert colors == ["#ffffff", "#959595", "#000000"]
 
     def test_mpl_colormap_categorical(self):
-        colors = mplcmap_to_palette('Category20', 3)
-        assert colors == ['#1f77b4', '#c5b0d5', '#9edae5']
+        colors = mplcmap_to_palette("Category20", 3)
+        assert colors == ["#1f77b4", "#c5b0d5", "#9edae5"]
 
     def test_mpl_colormap_categorical_reverse(self):
-        colors = mplcmap_to_palette('Category20_r', 3)
-        assert colors == ['#1f77b4', '#8c564b', '#9edae5'][::-1]
+        colors = mplcmap_to_palette("Category20_r", 3)
+        assert colors == ["#1f77b4", "#8c564b", "#9edae5"][::-1]
 
     def test_mpl_colormap_sequential(self):
-        colors = mplcmap_to_palette('YlGn', 3)
-        assert colors == ['#ffffe5', '#77c578', '#004529']
+        colors = mplcmap_to_palette("YlGn", 3)
+        assert colors == ["#ffffe5", "#77c578", "#004529"]
 
     def test_mpl_colormap_sequential_reverse(self):
-        colors = mplcmap_to_palette('YlGn_r', 3)
-        assert colors == ['#ffffe5', '#78c679', '#004529'][::-1]
+        colors = mplcmap_to_palette("YlGn_r", 3)
+        assert colors == ["#ffffe5", "#78c679", "#004529"][::-1]
 
     def test_mpl_colormap_diverging(self):
-        colors = mplcmap_to_palette('RdBu', 3)
-        assert colors == ['#67001f', '#f6f6f6', '#053061']
+        colors = mplcmap_to_palette("RdBu", 3)
+        assert colors == ["#67001f", "#f6f6f6", "#053061"]
 
     def test_mpl_colormap_diverging_reverse(self):
-        colors = mplcmap_to_palette('RdBu_r', 3)
-        assert colors == ['#67001f', '#f7f6f6', '#053061'][::-1]
+        colors = mplcmap_to_palette("RdBu_r", 3)
+        assert colors == ["#67001f", "#f7f6f6", "#053061"][::-1]
 
     def test_mpl_colormap_perceptually_uniform(self):
-        colors = mplcmap_to_palette('viridis', 4)
-        assert colors == ['#440154', '#30678d', '#35b778', '#fde724']
+        colors = mplcmap_to_palette("viridis", 4)
+        assert colors == ["#440154", "#30678d", "#35b778", "#fde724"]
 
     def test_mpl_colormap_perceptually_uniform_reverse(self):
-        colors = mplcmap_to_palette('viridis_r', 4)
-        assert colors == ['#440154', '#30678d', '#35b778', '#fde724'][::-1]
+        colors = mplcmap_to_palette("viridis_r", 4)
+        assert colors == ["#440154", "#30678d", "#35b778", "#fde724"][::-1]
 
 
 @pytest.mark.usefixtures("bokeh_backend")
 class TestBokehPaletteUtils:
-
     def test_bokeh_palette_categorical_palettes_not_interpolated(self):
         # Ensure categorical palettes are not expanded
-        categorical = ('accent', 'category20', 'dark2', 'colorblind', 'pastel1',
-                       'pastel2', 'set1', 'set2', 'set3', 'paired')
+        categorical = (
+            "accent",
+            "category20",
+            "dark2",
+            "colorblind",
+            "pastel1",
+            "pastel2",
+            "set1",
+            "set2",
+            "set3",
+            "paired",
+        )
         for cat in categorical:
             assert len(set(bokeh_palette_to_palette(cat))) <= 20
 
     def test_bokeh_colormap_fire(self):
-        colors = process_cmap('fire', 3, provider='bokeh')
-        assert colors == ['#000000', '#eb1300', '#ffffff']
+        colors = process_cmap("fire", 3, provider="bokeh")
+        assert colors == ["#000000", "#eb1300", "#ffffff"]
 
     def test_bokeh_colormap_fire_r(self):
-        colors = process_cmap('fire_r', 3, provider='bokeh')
-        assert colors == ['#ffffff', '#ed1400', '#000000']
+        colors = process_cmap("fire_r", 3, provider="bokeh")
+        assert colors == ["#ffffff", "#ed1400", "#000000"]
 
     def test_bokeh_palette_categorical(self):
-        colors = bokeh_palette_to_palette('Category20', 3)
-        assert colors == ['#1f77b4', '#c5b0d5', '#9edae5']
+        colors = bokeh_palette_to_palette("Category20", 3)
+        assert colors == ["#1f77b4", "#c5b0d5", "#9edae5"]
 
     def test_bokeh_palette_categorical_reverse(self):
-        colors = bokeh_palette_to_palette('Category20_r', 3)
-        assert colors == ['#1f77b4', '#8c564b', '#9edae5'][::-1]
+        colors = bokeh_palette_to_palette("Category20_r", 3)
+        assert colors == ["#1f77b4", "#8c564b", "#9edae5"][::-1]
 
     def test_bokeh_palette_sequential(self):
-        colors = bokeh_palette_to_palette('YlGn', 3)
-        assert colors == ['#ffffe5', '#78c679', '#004529']
+        colors = bokeh_palette_to_palette("YlGn", 3)
+        assert colors == ["#ffffe5", "#78c679", "#004529"]
 
     def test_bokeh_palette_sequential_reverse(self):
-        colors = bokeh_palette_to_palette('YlGn_r', 3)
-        assert colors == ['#ffffe5', '#78c679', '#004529'][::-1]
+        colors = bokeh_palette_to_palette("YlGn_r", 3)
+        assert colors == ["#ffffe5", "#78c679", "#004529"][::-1]
 
     def test_bokeh_palette_diverging(self):
-        colors = bokeh_palette_to_palette('RdBu', 3)
-        assert colors == ['#67001f', '#f7f7f7', '#053061']
+        colors = bokeh_palette_to_palette("RdBu", 3)
+        assert colors == ["#67001f", "#f7f7f7", "#053061"]
 
     def test_bokeh_palette_diverging_reverse(self):
-        colors = bokeh_palette_to_palette('RdBu_r', 3)
-        assert colors == ['#67001f', '#f7f7f7', '#053061'][::-1]
+        colors = bokeh_palette_to_palette("RdBu_r", 3)
+        assert colors == ["#67001f", "#f7f7f7", "#053061"][::-1]
 
     def test_bokeh_palette_uniform_interpolated(self):
-        colors = bokeh_palette_to_palette('Viridis', 4)
-        assert colors == ['#440154', '#30678D', '#35B778', '#FDE724']
+        colors = bokeh_palette_to_palette("Viridis", 4)
+        assert colors == ["#440154", "#30678D", "#35B778", "#FDE724"]
 
     def test_bokeh_palette_perceptually_uniform(self):
-        colors = bokeh_palette_to_palette('viridis', 4)
-        assert colors == ['#440154', '#30678D', '#35B778', '#FDE724']
+        colors = bokeh_palette_to_palette("viridis", 4)
+        assert colors == ["#440154", "#30678D", "#35B778", "#FDE724"]
 
     def test_bokeh_palette_perceptually_uniform_reverse(self):
-        colors = bokeh_palette_to_palette('viridis_r', 4)
-        assert colors == ['#440154', '#30678D', '#35B778', '#FDE724'][::-1]
+        colors = bokeh_palette_to_palette("viridis_r", 4)
+        assert colors == ["#440154", "#30678D", "#35B778", "#FDE724"][::-1]
 
     def test_color_intervals(self):
         levels = [0, 38, 73, 95, 110, 130, 156]
-        colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20']
+        colors = ["#5ebaff", "#00faf4", "#ffffcc", "#ffe775", "#ffc140", "#ff8f20"]
         cmap, _lims = color_intervals(colors, levels, N=10)
-        assert cmap == ['#5ebaff', '#5ebaff', '#00faf4',
-                                '#00faf4', '#ffffcc', '#ffe775',
-                                '#ffc140', '#ff8f20', '#ff8f20']
+        assert cmap == [
+            "#5ebaff",
+            "#5ebaff",
+            "#00faf4",
+            "#00faf4",
+            "#ffffcc",
+            "#ffe775",
+            "#ffc140",
+            "#ff8f20",
+            "#ff8f20",
+        ]
 
     def test_color_intervals_clipped(self):
         levels = [0, 38, 73, 95, 110, 130, 156, 999]
-        colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
+        colors = ["#5ebaff", "#00faf4", "#ffffcc", "#ffe775", "#ffc140", "#ff8f20", "#ff6060"]
         cmap, lims = color_intervals(colors, levels, clip=(10, 90), N=100)
-        assert cmap == ['#5ebaff', '#5ebaff', '#5ebaff', '#00faf4', '#00faf4',
-                                '#00faf4', '#00faf4', '#ffffcc', '#ffffcc']
+        assert cmap == [
+            "#5ebaff",
+            "#5ebaff",
+            "#5ebaff",
+            "#00faf4",
+            "#00faf4",
+            "#00faf4",
+            "#00faf4",
+            "#ffffcc",
+            "#ffffcc",
+        ]
         assert lims == (10, 90)
 
 
 class TestPlotUtils:
-
     def test_get_min_distance_float32_type(self):
-        xs, ys = (np.arange(0, 2., .2, dtype='float32'),
-                  np.arange(0, 2., .2, dtype='float32'))
+        xs, ys = (np.arange(0, 2.0, 0.2, dtype="float32"), np.arange(0, 2.0, 0.2, dtype="float32"))
         X, Y = np.meshgrid(xs, ys)
         dist = get_min_distance(hv.Points((X.flatten(), Y.flatten())))
         assert np.isclose(dist, 0.2)
 
     def test_get_min_distance_int32_type(self):
-        xs, ys = (np.arange(0, 10, dtype='int32'),
-                  np.arange(0, 10, dtype='int32'))
+        xs, ys = (np.arange(0, 10, dtype="int32"), np.arange(0, 10, dtype="int32"))
         X, Y = np.meshgrid(xs, ys)
         dist = get_min_distance(hv.Points((X.flatten(), Y.flatten())))
         assert dist == 1.0
 
     def test_get_min_distance_float32_type_no_scipy(self):
-        xs, ys = (np.arange(0, 2., .2, dtype='float32'),
-                  np.arange(0, 2., .2, dtype='float32'))
+        xs, ys = (np.arange(0, 2.0, 0.2, dtype="float32"), np.arange(0, 2.0, 0.2, dtype="float32"))
         X, Y = np.meshgrid(xs, ys)
         dist = _get_min_distance_numpy(hv.Points((X.flatten(), Y.flatten())))
-        assert np.isclose(dist,np.float32(0.2))
+        assert np.isclose(dist, np.float32(0.2))
 
     def test_get_min_distance_int32_type_no_scipy(self):
-        xs, ys = (np.arange(0, 10, dtype='int32'),
-                  np.arange(0, 10, dtype='int32'))
+        xs, ys = (np.arange(0, 10, dtype="int32"), np.arange(0, 10, dtype="int32"))
         X, Y = np.meshgrid(xs, ys)
         dist = _get_min_distance_numpy(hv.Points((X.flatten(), Y.flatten())))
         assert dist == 1.0
 
 
 class TestRangeUtilities:
-
     def test_get_axis_padding_scalar(self):
         padding = get_axis_padding(0.1)
         assert padding == (0.1, 0.1, 0.1)
@@ -642,7 +695,7 @@ class TestRangeUtilities:
         assert padding == (0.1, 0.2, 0.3)
 
     def test_get_range_from_element(self):
-        dim = hv.Dimension('y', soft_range=(0, 3), range=(0, 2))
+        dim = hv.Dimension("y", soft_range=(0, 3), range=(0, 2))
         element = hv.Scatter([1, 2, 3], vdims=dim)
         drange, srange, hrange = get_range(element, {}, dim)
         assert drange == (1, 3)
@@ -650,9 +703,9 @@ class TestRangeUtilities:
         assert hrange == (0, 2)
 
     def test_get_range_from_ranges(self):
-        dim = hv.Dimension('y', soft_range=(0, 3), range=(0, 2))
+        dim = hv.Dimension("y", soft_range=(0, 3), range=(0, 2))
         element = hv.Scatter([1, 2, 3], vdims=dim)
-        ranges = {'y': {'soft': (-1, 4), 'hard': (-1, 3), 'data': (-0.5, 2.5)}}
+        ranges = {"y": {"soft": (-1, 4), "hard": (-1, 3), "data": (-0.5, 2.5)}}
         drange, srange, hrange = get_range(element, ranges, dim)
         assert drange == (-0.5, 2.5)
         assert srange == (-1, 4)

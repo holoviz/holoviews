@@ -69,9 +69,7 @@ class TestCoordinateConversion:
                 np.testing.assert_array_almost_equal(northing, new_northing, decimal=2)
 
     def check_array_type_preserved(self, constructor, array_type, check):
-        lons, lats = np.meshgrid(
-            np.linspace(-180, 180, 100), np.linspace(-85, 85, 100)
-        )
+        lons, lats = np.meshgrid(np.linspace(-180, 180, 100), np.linspace(-85, 85, 100))
         lons = lons.flatten()
         lats = lats.flatten()
 
@@ -81,15 +79,11 @@ class TestCoordinateConversion:
         assert isinstance(array_lons, array_type)
         assert isinstance(array_lats, array_type)
 
-        eastings, northings = hv.Tiles.lon_lat_to_easting_northing(
-            array_lons, array_lats
-        )
+        eastings, northings = hv.Tiles.lon_lat_to_easting_northing(array_lons, array_lats)
         assert isinstance(eastings, array_type)
         assert isinstance(northings, array_type)
 
-        new_lons, new_lats = hv.Tiles.easting_northing_to_lon_lat(
-            eastings, northings
-        )
+        new_lons, new_lats = hv.Tiles.easting_northing_to_lon_lat(eastings, northings)
         assert isinstance(new_lons, array_type)
         assert isinstance(new_lats, array_type)
 
@@ -98,14 +92,18 @@ class TestCoordinateConversion:
 
     def test_check_numpy_array(self):
         self.check_array_type_preserved(
-            np.array, np.ndarray,
-            lambda a, b: np.testing.assert_array_almost_equal(a, b, decimal=2)
+            np.array,
+            np.ndarray,
+            lambda a, b: np.testing.assert_array_almost_equal(a, b, decimal=2),
         )
 
     def test_pandas_series(self):
         self.check_array_type_preserved(
-            pd.Series, pd.Series,
+            pd.Series,
+            pd.Series,
             lambda a, b: pd.testing.assert_series_equal(
-                a, b, check_exact=False,
-            )
+                a,
+                b,
+                check_exact=False,
+            ),
         )

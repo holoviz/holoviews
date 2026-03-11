@@ -21,11 +21,11 @@ class MultiInterface(Interface):
 
     types = ()
 
-    datatype = 'multitabular'
+    datatype = "multitabular"
 
-    subtypes = ['dictionary', 'dataframe', 'array', 'dask', 'narwhals']
+    subtypes = ["dictionary", "dataframe", "array", "dask", "narwhals"]
 
-    geom_types = ['Polygon', 'Ring', 'Line', 'Point']
+    geom_types = ["Polygon", "Ring", "Line", "Point"]
 
     multi = True
 
@@ -34,45 +34,58 @@ class MultiInterface(Interface):
         from ...element import Path, Polygons
 
         new_data = []
-        dims = {'kdims': eltype.kdims, 'vdims': eltype.vdims}
+        dims = {"kdims": eltype.kdims, "vdims": eltype.vdims}
         if kdims is not None:
-            dims['kdims'] = kdims
+            dims["kdims"] = kdims
         if vdims is not None:
-            dims['vdims'] = vdims
+            dims["vdims"] = vdims
 
-        if (isinstance(data, list) and len(data) and
-            all(isinstance(d, tuple) and all(util.isscalar(v) for v in d) for d in data)):
+        if (
+            isinstance(data, list)
+            and len(data)
+            and all(isinstance(d, tuple) and all(util.isscalar(v) for v in d) for d in data)
+        ):
             data = [data]
         elif not isinstance(data, list):
-            interface  = [Interface.interfaces.get(st).applies(data)
-                          for st in cls.subtypes if st in Interface.interfaces]
+            interface = [
+                Interface.interfaces.get(st).applies(data)
+                for st in cls.subtypes
+                if st in Interface.interfaces
+            ]
             if (interface or isinstance(data, tuple)) and issubclass(eltype, Path):
                 data = [data]
             else:
-                raise ValueError('MultiInterface data must be a list of tabular data types.')
+                raise ValueError("MultiInterface data must be a list of tabular data types.")
         prev_interface, prev_dims = None, None
         for d in data:
             datatype = cls.subtypes
             if isinstance(d, dict):
                 if Polygons._hole_key in d:
-                    datatype = [dt for dt in datatype
-                                if hasattr(Interface.interfaces.get(dt), 'has_holes')]
-                geom_type = d.get('geom_type')
+                    datatype = [
+                        dt for dt in datatype if hasattr(Interface.interfaces.get(dt), "has_holes")
+                    ]
+                geom_type = d.get("geom_type")
                 if geom_type is not None and geom_type not in cls.geom_types:
-                    raise DataError(f"Geometry type '{geom_type}' not recognized, "
-                                    f"must be one of {cls.geom_types}.")
+                    raise DataError(
+                        f"Geometry type '{geom_type}' not recognized, "
+                        f"must be one of {cls.geom_types}."
+                    )
                 else:
-                    datatype = [dt for dt in datatype
-                                if hasattr(Interface.interfaces.get(dt), 'geom_type')]
-            d, interface, dims, _ = Interface.initialize(eltype, d, kdims, vdims,
-                                                         datatype=datatype)
+                    datatype = [
+                        dt for dt in datatype if hasattr(Interface.interfaces.get(dt), "geom_type")
+                    ]
+            d, interface, dims, _ = Interface.initialize(
+                eltype, d, kdims, vdims, datatype=datatype
+            )
             if prev_interface:
                 if prev_interface != interface:
-                    raise DataError('MultiInterface subpaths must all have matching datatype.', cls)
-                if dims['kdims'] != prev_dims['kdims']:
-                    raise DataError('MultiInterface subpaths must all have matching kdims.', cls)
-                if dims['vdims'] != prev_dims['vdims']:
-                    raise DataError('MultiInterface subpaths must all have matching vdims.', cls)
+                    raise DataError(
+                        "MultiInterface subpaths must all have matching datatype.", cls
+                    )
+                if dims["kdims"] != prev_dims["kdims"]:
+                    raise DataError("MultiInterface subpaths must all have matching kdims.", cls)
+                if dims["vdims"] != prev_dims["vdims"]:
+                    raise DataError("MultiInterface subpaths must all have matching vdims.", cls)
             new_data.append(d)
             prev_interface, prev_dims = interface, dims
         return new_data, dims, {}
@@ -83,6 +96,7 @@ class MultiInterface(Interface):
             return
 
         from holoviews.element import Polygons
+
         ds = cls._inner_dataset_template(dataset, validate_vdims=vdims)
         for d in dataset.data:
             ds.data = d
@@ -90,34 +104,37 @@ class MultiInterface(Interface):
             if isinstance(dataset, Polygons) and ds.interface is DictInterface:
                 holes = ds.interface.holes(ds)
                 if not isinstance(holes, list):
-                    raise DataError('Polygons holes must be declared as a list-of-lists.', cls)
+                    raise DataError("Polygons holes must be declared as a list-of-lists.", cls)
                 subholes = holes[0]
                 coords = ds.data[ds.kdims[0].name]
-                splits = np.isnan(coords.astype('float')).sum()
-                if len(subholes) != (splits+1):
-                    raise DataError('Polygons with holes containing multi-geometries '
-                                    'must declare a list of holes for each geometry.', cls)
-
+                splits = np.isnan(coords.astype("float")).sum()
+                if len(subholes) != (splits + 1):
+                    raise DataError(
+                        "Polygons with holes containing multi-geometries "
+                        "must declare a list of holes for each geometry.",
+                        cls,
+                    )
 
     @classmethod
     def geom_type(cls, dataset):
         from holoviews.element import Path, Points, Polygons
+
         if isinstance(dataset, type):
             eltype = dataset
         else:
             eltype = type(dataset)
             if isinstance(dataset.data, list):
                 ds = cls._inner_dataset_template(dataset)
-                if hasattr(ds.interface, 'geom_type'):
+                if hasattr(ds.interface, "geom_type"):
                     geom_type = ds.interface.geom_type(ds)
                     if geom_type is not None:
                         return geom_type
         if issubclass(eltype, Polygons):
-            return 'Polygon'
+            return "Polygon"
         elif issubclass(eltype, Path):
-            return 'Line'
+            return "Line"
         elif issubclass(eltype, Points):
-            return 'Point'
+            return "Point"
 
     @classmethod
     def _inner_dataset_template(cls, dataset, validate_vdims=True):
@@ -126,10 +143,15 @@ class MultiInterface(Interface):
 
         """
         from . import Dataset
-        vdims = dataset.vdims if getattr(dataset, 'level', None) is None else []
-        return Dataset(dataset.data[0], datatype=cls.subtypes,
-                       kdims=dataset.kdims, vdims=vdims,
-                       _validate_vdims=validate_vdims)
+
+        vdims = dataset.vdims if getattr(dataset, "level", None) is None else []
+        return Dataset(
+            dataset.data[0],
+            datatype=cls.subtypes,
+            kdims=dataset.kdims,
+            vdims=vdims,
+            _validate_vdims=validate_vdims,
+        )
 
     @classmethod
     def assign(cls, dataset, new_data):
@@ -137,7 +159,7 @@ class MultiInterface(Interface):
         assigned = []
         for i, d in enumerate(dataset.data):
             ds.data = d
-            new = ds.interface.assign(ds, {k: v[i:i+1] for k, v in new_data.items()})
+            new = ds.interface.assign(ds, {k: v[i : i + 1] for k, v in new_data.items()})
             assigned.append(new)
         return assigned
 
@@ -159,7 +181,7 @@ class MultiInterface(Interface):
         ds = cls._inner_dataset_template(dataset)
 
         # Backward compatibility for Contours/Polygons level
-        level = getattr(dataset, 'level', None)
+        level = getattr(dataset, "level", None)
         dim = dataset.get_dimension(dim)
         if level is not None and dim is dataset.vdims[0]:
             return (level, level)
@@ -193,9 +215,7 @@ class MultiInterface(Interface):
 
     @classmethod
     def isscalar(cls, dataset, dim, per_geom=False):
-        """Tests if dimension is scalar in each subpath.
-
-        """
+        """Tests if dimension is scalar in each subpath."""
         if not dataset.data:
             return True
         geom_type = cls.geom_type(dataset)
@@ -207,7 +227,7 @@ class MultiInterface(Interface):
             unique = list(util.unique_iterator(values))
             if len(unique) > 1:
                 return False
-            elif per_geom and geom_type != 'Point':
+            elif per_geom and geom_type != "Point":
                 continue
             unique = unique[0]
             if unique not in combined:
@@ -218,17 +238,16 @@ class MultiInterface(Interface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
-        """Applies selectiong on all the subpaths.
-
-        """
+        """Applies selectiong on all the subpaths."""
         from ...element import Polygons
+
         if not dataset.data:
             return dataset.data
         elif selection_mask is not None:
             return [d for b, d in zip(selection_mask, dataset.data, strict=None) if b]
         ds = cls._inner_dataset_template(dataset)
         skipped = (Polygons._hole_key,)
-        if hasattr(ds.interface, 'geo_column'):
+        if hasattr(ds.interface, "geo_column"):
             skipped += (ds.interface.geo_column(ds),)
         data = []
         for d in dataset.data:
@@ -236,18 +255,21 @@ class MultiInterface(Interface):
             selection_mask = ds.interface.select_mask(ds, selection)
             sel = ds.interface.select(ds, selection_mask)
             is_dict = isinstance(sel, dict)
-            if ((not len(sel) and not is_dict) or
-                (is_dict and any(False if util.isscalar(v) else len(v) == 0
-                                 for k, v in sel.items() if k not in skipped))):
+            if (not len(sel) and not is_dict) or (
+                is_dict
+                and any(
+                    False if util.isscalar(v) else len(v) == 0
+                    for k, v in sel.items()
+                    if k not in skipped
+                )
+            ):
                 continue
             data.append(sel)
         return data
 
     @classmethod
     def select_paths(cls, dataset, index):
-        """Allows selecting paths with usual NumPy slicing index.
-
-        """
+        """Allows selecting paths with usual NumPy slicing index."""
         selection = np.array([{0: p} for p in dataset.data])[index]
         if isinstance(selection, dict):
             return [selection[0]]
@@ -255,7 +277,7 @@ class MultiInterface(Interface):
 
     @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
-        raise NotImplementedError('Aggregation currently not implemented')
+        raise NotImplementedError("Aggregation currently not implemented")
 
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
@@ -265,25 +287,28 @@ class MultiInterface(Interface):
 
         # Update the kwargs appropriately for Element group types
         group_kwargs = {}
-        group_type = list if group_type == 'raw' else group_type
+        group_type = list if group_type == "raw" else group_type
         if issubclass(group_type, Element):
             group_kwargs.update(util.get_param_values(dataset))
-            group_kwargs['kdims'] = kdims
+            group_kwargs["kdims"] = kdims
         group_kwargs.update(kwargs)
 
         # Find all the keys along supplied dimensions
         values = []
         for d in dimensions:
             if not cls.isscalar(dataset, d, True):
-                raise ValueError('MultiInterface can only apply groupby '
-                                 f'on scalar dimensions, {d} dimension '
-                                 'is not scalar')
+                raise ValueError(
+                    "MultiInterface can only apply groupby "
+                    f"on scalar dimensions, {d} dimension "
+                    "is not scalar"
+                )
             vals = cls.values(dataset, d, False, True)
             values.append(vals)
         values = tuple(values)
 
         # Iterate over the unique entries applying selection masks
         from . import Dataset
+
         ds = Dataset(values, dimensions)
         keys = (tuple(vals[i] for vals in values) for i in range(len(vals)))
         grouped_data = []
@@ -303,7 +328,7 @@ class MultiInterface(Interface):
     def sample(cls, dataset, samples=None):
         if samples is None:
             samples = []
-        raise NotImplementedError('Sampling operation on subpaths not supported')
+        raise NotImplementedError("Sampling operation on subpaths not supported")
 
     @classmethod
     def shape(cls, dataset):
@@ -313,7 +338,7 @@ class MultiInterface(Interface):
         """
         if not dataset.data:
             return (0, len(dataset.dimensions()))
-        elif cls.geom_type(dataset) != 'Point':
+        elif cls.geom_type(dataset) != "Point":
             return (len(dataset.data), len(dataset.dimensions()))
 
         rows, cols = 0, 0
@@ -333,7 +358,7 @@ class MultiInterface(Interface):
         """
         if not dataset.data:
             return 0
-        elif cls.geom_type(dataset) != 'Point':
+        elif cls.geom_type(dataset) != "Point":
             return len(dataset.data)
         length = 0
         ds = cls._inner_dataset_template(dataset)
@@ -345,7 +370,7 @@ class MultiInterface(Interface):
     @classmethod
     def dtype(cls, dataset, dimension):
         if not dataset.data:
-            return np.dtype('float')
+            return np.dtype("float")
         ds = cls._inner_dataset_template(dataset)
         return ds.interface.dtype(ds, dimension)
 
@@ -386,8 +411,7 @@ class MultiInterface(Interface):
         return new_data
 
     @classmethod
-    def values(cls, dataset, dimension, expanded=True, flat=True,
-               compute=True, keep_index=False):
+    def values(cls, dataset, dimension, expanded=True, flat=True, compute=True, keep_index=False):
         """Returns a single concatenated array of all subpaths separated
         by NaN values. If expanded keyword is False an array of arrays
         is returned.
@@ -399,21 +423,23 @@ class MultiInterface(Interface):
         all_scalar = True
         ds = cls._inner_dataset_template(dataset)
         geom_type = cls.geom_type(dataset)
-        is_points = geom_type == 'Point'
+        is_points = geom_type == "Point"
         is_geom = dimension in dataset.kdims[:2]
         for d in dataset.data:
             ds.data = d
-            dvals = ds.interface.values(
-                ds, dimension, True, flat, compute, keep_index
-            )
+            dvals = ds.interface.values(ds, dimension, True, flat, compute, keep_index)
             scalar = len(util.unique_array(dvals)) == 1 and not is_geom
-            gt = ds.interface.geom_type(ds) if hasattr(ds.interface, 'geom_type') else None
+            gt = ds.interface.geom_type(ds) if hasattr(ds.interface, "geom_type") else None
 
             if gt is None:
                 gt = geom_type
 
-            if (gt in ('Polygon', 'Ring') and (not scalar or expanded) and
-                not geom_type == 'Points' and len(dvals)):
+            if (
+                gt in ("Polygon", "Ring")
+                and (not scalar or expanded)
+                and not geom_type == "Points"
+                and len(dvals)
+            ):
                 gvals = ds.array([0, 1])
                 dvals = ensure_ring(gvals, dvals)
             if scalar and not expanded:
@@ -446,7 +472,7 @@ class MultiInterface(Interface):
         """
         objs = []
         if datatype is None:
-            for d in dataset.data[start: end]:
+            for d in dataset.data[start:end]:
                 objs.append(dataset.clone([d]))
             return objs
         elif not dataset.data:
@@ -456,26 +482,25 @@ class MultiInterface(Interface):
         ds = dataset.clone([])
         for d in dataset.data[start:end]:
             ds.data = [d]
-            if datatype == 'array':
+            if datatype == "array":
                 obj = ds.array(**kwargs)
-            elif datatype == 'dataframe':
+            elif datatype == "dataframe":
                 obj = ds.dframe(**kwargs)
-            elif datatype in ('columns', 'dictionary'):
-                if hasattr(ds.interface, 'geom_type'):
+            elif datatype in ("columns", "dictionary"):
+                if hasattr(ds.interface, "geom_type"):
                     gt = ds.interface.geom_type(ds)
                 if gt is None:
                     gt = geom_type
                 if isinstance(ds.data[0], dict):
                     obj = dict(ds.data[0])
                     xd, yd = ds.kdims
-                    if (geom_type in ('Polygon', 'Ring') or
-                        xd not in obj or yd not in obj):
+                    if geom_type in ("Polygon", "Ring") or xd not in obj or yd not in obj:
                         obj[xd.name] = ds.interface.values(ds, xd)
                         obj[yd.name] = ds.interface.values(ds, yd)
                 else:
                     obj = ds.columns()
                 if gt is not None:
-                    obj['geom_type'] = gt
+                    obj["geom_type"] = gt
             else:
                 raise ValueError(f"{datatype} datatype not support")
             objs.append(obj)
@@ -486,14 +511,15 @@ class MultiInterface(Interface):
         if not len(dataset.data):
             return dataset.data
         elif values is None or util.isscalar(values):
-            values = [values]*len(dataset.data)
+            values = [values] * len(dataset.data)
         elif not len(values) == len(dataset.data):
-            raise ValueError('Added dimension values must be scalar or '
-                             'match the length of the data.')
+            raise ValueError(
+                "Added dimension values must be scalar or match the length of the data."
+            )
 
         new_data = []
         template = cls._inner_dataset_template(dataset)
-        array_type = template.interface.datatype == 'array'
+        array_type = template.interface.datatype == "array"
         for d, v in zip(dataset.data, values, strict=None):
             template.data = d
             if array_type:
@@ -509,7 +535,7 @@ class MultiInterface(Interface):
         scalar = np.isscalar(cols) and np.isscalar(rows)
 
         template = cls._inner_dataset_template(dataset)
-        if cls.geom_type(dataset) != 'Point':
+        if cls.geom_type(dataset) != "Point":
             geoms = cls.select_paths(dataset, rows)
             new_data = []
             for d in geoms:
@@ -523,23 +549,25 @@ class MultiInterface(Interface):
             template.data = d
             length = len(template)
             if np.isscalar(rows):
-                if (count+length) > rows >= count:
-                    data = template.iloc[rows-count, cols]
+                if (count + length) > rows >= count:
+                    data = template.iloc[rows - count, cols]
                     return data if scalar else [data.data]
             elif isinstance(rows, slice):
-                if rows.start is not None and rows.start > (count+length):
+                if rows.start is not None and rows.start > (count + length):
                     continue
                 elif rows.stop is not None and rows.stop < count:
                     break
                 start = None if rows.start is None else max(rows.start - count, 0)
                 stop = None if rows.stop is None else min(rows.stop - count, length)
                 if rows.step is not None:
-                    dataset.param.warning(".iloc step slicing currently not supported for"
-                                          "the multi-tabular data format.")
+                    dataset.param.warning(
+                        ".iloc step slicing currently not supported for"
+                        "the multi-tabular data format."
+                    )
                 slc = slice(start, stop)
                 new_data.append(template.iloc[slc, cols].data)
             else:
-                sub_rows = [r-count for r in rows if 0 <= (r-count) < (count+length)]
+                sub_rows = [r - count for r in rows if 0 <= (r - count) < (count + length)]
                 new = template.iloc[sub_rows, cols]
                 if len(new):
                     new_data.append(new.data)
@@ -571,12 +599,11 @@ def ensure_ring(geom, values=None):
     if values is None:
         values = geom
 
-    breaks = np.where(np.isnan(geom.astype('float')).sum(axis=1))[0]
+    breaks = np.where(np.isnan(geom.astype("float")).sum(axis=1))[0]
     starts = [0, *(breaks + 1)]
     ends = [*(breaks - 1), len(geom) - 1]
     zipped = zip(geom[starts], geom[ends], ends, values[starts], strict=None)
-    unpacked = tuple(zip(*[(v, i+1) for s, e, i, v in zipped
-                     if (s!=e).any()], strict=None))
+    unpacked = tuple(zip(*[(v, i + 1) for s, e, i, v in zipped if (s != e).any()], strict=None))
     if not unpacked:
         return values
     inserts, inds = unpacked

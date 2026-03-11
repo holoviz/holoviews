@@ -26,9 +26,11 @@ except ImportError:  # before Matplotlib 3.4.0
 
 try:
     from nc_time_axis import CalendarDateTime, NetCDFTimeConverter
+
     nc_axis_available = True
 except ImportError:
     from matplotlib.dates import DateConverter
+
     NetCDFTimeConverter = DateConverter
     nc_axis_available = False
 
@@ -44,9 +46,7 @@ MPL_GE_3_10_1 = MPL_VERSION >= (3, 10, 1)
 
 
 def is_color(color):
-    """Checks if supplied object is a valid color spec.
-
-    """
+    """Checks if supplied object is a valid color spec."""
     if not isinstance(color, str):
         return False
     elif RGB_HEX_REGEX.match(color):
@@ -57,39 +57,42 @@ def is_color(color):
         return True
     return False
 
+
 validators = {
-    'alpha': lambda x: is_number(x) and (0 <= x <= 1),
-    'capstyle': validate_capstyle,
-    'color': is_color,
-    'fontsize': validate_fontsize,
-    'fonttype': validate_fonttype,
-    'hatch': validate_hatch,
-    'joinstyle': validate_joinstyle,
-    'marker': lambda x: (
+    "alpha": lambda x: is_number(x) and (0 <= x <= 1),
+    "capstyle": validate_capstyle,
+    "color": is_color,
+    "fontsize": validate_fontsize,
+    "fonttype": validate_fonttype,
+    "hatch": validate_hatch,
+    "joinstyle": validate_joinstyle,
+    "marker": lambda x: (
         x in Line2D.markers
         or isinstance(x, (MarkerStyle, Path))
-        or (isinstance(x, str) and x.startswith('$') and x.endswith('$'))
+        or (isinstance(x, str) and x.startswith("$") and x.endswith("$"))
     ),
-    's': lambda x: is_number(x) and (x >= 0)
+    "s": lambda x: is_number(x) and (x >= 0),
 }
+
 
 def get_old_rcparams():
     deprecated_rcparams = [
-        'text.latex.unicode',
-        'examples.directory',
-        'savefig.frameon', # deprecated in MPL 3.1, to be removed in 3.3
-        'verbose.level', # deprecated in MPL 3.1, to be removed in 3.3
-        'verbose.fileo', # deprecated in MPL 3.1, to be removed in 3.3
-        'datapath', # deprecated in MPL 3.2.1, to be removed in 3.3
-        'text.latex.preview', # deprecated in MPL 3.3.1
-        'animation.avconv_args', # deprecated in MPL 3.3.1
-        'animation.avconv_path', # deprecated in MPL 3.3.1
-        'animation.html_args', # deprecated in MPL 3.3.1
-        'keymap.all_axes', # deprecated in MPL 3.3.1
-        'savefig.jpeg_quality' # deprecated in MPL 3.3.1
+        "text.latex.unicode",
+        "examples.directory",
+        "savefig.frameon",  # deprecated in MPL 3.1, to be removed in 3.3
+        "verbose.level",  # deprecated in MPL 3.1, to be removed in 3.3
+        "verbose.fileo",  # deprecated in MPL 3.1, to be removed in 3.3
+        "datapath",  # deprecated in MPL 3.2.1, to be removed in 3.3
+        "text.latex.preview",  # deprecated in MPL 3.3.1
+        "animation.avconv_args",  # deprecated in MPL 3.3.1
+        "animation.avconv_path",  # deprecated in MPL 3.3.1
+        "animation.html_args",  # deprecated in MPL 3.3.1
+        "keymap.all_axes",  # deprecated in MPL 3.3.1
+        "savefig.jpeg_quality",  # deprecated in MPL 3.3.1
     ]
     old_rcparams = {
-        k: v for k, v in mpl.rcParams.items()
+        k: v
+        for k, v in mpl.rcParams.items()
         if MPL_VERSION < (3, 0, 0) or k not in deprecated_rcparams
     }
     return old_rcparams
@@ -107,16 +110,16 @@ def validate(style, value, vectorized=True):
     Parameters
     ----------
     style : str
-       The style to validate (e.g. 'color', 'size' or 'marker')
+        The style to validate (e.g. 'color', 'size' or 'marker')
     value :
-       The style value to validate
+        The style value to validate
     vectorized : bool
-       Whether validator should allow vectorized setting
+        Whether validator should allow vectorized setting
 
     Returns
     -------
     valid : boolean or None
-       If validation is supported returns boolean, otherwise None
+        If validation is supported returns boolean, otherwise None
     """
     validator = get_validator(style)
     if validator is None:
@@ -153,17 +156,16 @@ def filter_styles(style, group, other_groups, blacklist=None):
     """
     if blacklist is None:
         blacklist = []
-    group = group+'_'
+    group = group + "_"
     filtered = {}
     for k, v in style.items():
-        if (any(k.startswith(p) for p in other_groups)
-            or k.startswith(group) or k in blacklist):
+        if any(k.startswith(p) for p in other_groups) or k.startswith(group) or k in blacklist:
             continue
         filtered[k] = v
     for k, v in style.items():
         if not k.startswith(group) or k in blacklist:
             continue
-        filtered[k[len(group):]] = v
+        filtered[k[len(group) :]] = v
     return filtered
 
 
@@ -175,18 +177,20 @@ def wrap_formatter(formatter):
     if isinstance(formatter, ticker.Formatter):
         return formatter
     elif callable(formatter):
-        args = [arg for arg in inspect.getfullargspec(formatter).args
-                if arg != 'self']
+        args = [arg for arg in inspect.getfullargspec(formatter).args if arg != "self"]
         wrapped = formatter
         if len(args) == 1:
+
             def wrapped(val, pos=None):
                 return formatter(val)
+
         return ticker.FuncFormatter(wrapped)
     elif isinstance(formatter, str):
         if re.findall(r"\{(\w+)\}", formatter):
             return ticker.StrMethodFormatter(formatter)
         else:
             return ticker.FormatStrFormatter(formatter)
+
 
 def unpack_adjoints(ratios):
     new_ratios = {}
@@ -198,21 +202,23 @@ def unpack_adjoints(ratios):
             for i in range(num):
                 unpacked[i].append(r[i] if i < nr else np.nan)
         for i, r in enumerate(unpacked):
-            new_ratios[k+i+offset] = r
-        offset += num-1
+            new_ratios[k + i + offset] = r
+        offset += num - 1
     return new_ratios
+
 
 def normalize_ratios(ratios):
     normalized = {}
     for i, v in enumerate(zip(*ratios.values(), strict=None)):
         arr = np.array(v)
-        normalized[i] = arr/float(np.nanmax(arr))
+        normalized[i] = arr / float(np.nanmax(arr))
     return normalized
+
 
 def compute_ratios(ratios, normalized=True):
     unpacked = unpack_adjoints(ratios)
     with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+        warnings.filterwarnings("ignore", r"All-NaN (slice|axis) encountered")
         if normalized:
             unpacked = normalize_ratios(unpacked)
         sorted_ratios = sorted(unpacked.items())
@@ -220,9 +226,7 @@ def compute_ratios(ratios, normalized=True):
 
 
 def axis_overlap(ax1, ax2):
-    """Tests whether two axes overlap vertically
-
-    """
+    """Tests whether two axes overlap vertically"""
     b1, t1 = ax1.get_position().intervaly
     b2, t2 = ax2.get_position().intervaly
     return t1 > b2 and b1 < t2
@@ -238,8 +242,7 @@ def resolve_rows(rows):
     for row in rows:
         overlap = False
         for mrow in merged_rows:
-            if any(axis_overlap(ax1, ax2) for ax1 in row
-                   for ax2 in mrow):
+            if any(axis_overlap(ax1, ax2) for ax1 in row for ax2 in mrow):
                 mrow += row
                 overlap = True
                 break
@@ -251,8 +254,7 @@ def resolve_rows(rows):
         return resolve_rows(merged_rows)
 
 
-def fix_aspect(fig, nrows, ncols, title=None, extra_artists=None,
-               vspace=0.2, hspace=0.2):
+def fix_aspect(fig, nrows, ncols, title=None, extra_artists=None, vspace=0.2, hspace=0.2):
     """Calculate heights and widths of axes and adjust
     the size of the figure to match the aspect.
 
@@ -272,31 +274,28 @@ def fix_aspect(fig, nrows, ncols, title=None, extra_artists=None,
             bbox = ax.get_tightbbox(fig.canvas.get_renderer())
             heights[c].append(bbox.height)
             widths[r].append(bbox.width)
-    height = (max([sum(c) for c in heights])) + nrows*vspace*fig.dpi
-    width = (max([sum(r) for r in widths])) + ncols*hspace*fig.dpi
+    height = (max([sum(c) for c in heights])) + nrows * vspace * fig.dpi
+    width = (max([sum(r) for r in widths])) + ncols * hspace * fig.dpi
 
     # Compute aspect and set new size (in inches)
-    aspect = height/width
+    aspect = height / width
     offset = 0
     if title and title.get_text():
-        offset = title.get_window_extent().height/fig.dpi
-    fig.set_size_inches(w, (w*aspect)+offset)
+        offset = title.get_window_extent().height / fig.dpi
+    fig.set_size_inches(w, (w * aspect) + offset)
 
     # Redraw and adjust title position if defined
     fig.canvas.draw()
     if title and title.get_text():
-        extra_artists = [a for a in extra_artists
-                         if a is not title]
+        extra_artists = [a for a in extra_artists if a is not title]
         bbox = get_tight_bbox(fig, extra_artists)
         top = bbox.intervaly[1]
         if title and title.get_text():
-            title.set_y(top/(w*aspect))
+            title.set_y(top / (w * aspect))
 
 
 def get_tight_bbox(fig, bbox_extra_artists=None, pad=None):
-    """Compute a tight bounding box around all the artists in the figure.
-
-    """
+    """Compute a tight bounding box around all the artists in the figure."""
     if bbox_extra_artists is None:
         bbox_extra_artists = []
     renderer = fig.canvas.get_renderer()
@@ -315,13 +314,8 @@ def get_tight_bbox(fig, bbox_extra_artists=None, pad=None):
             clip_path = a.get_clip_path()
             if clip_path is not None and bbox is not None:
                 clip_path = clip_path.get_fully_transformed_path()
-                bbox = Bbox.intersection(bbox,
-                                         clip_path.get_extents())
-        if (
-            bbox is not None and
-            (bbox.width != 0 or bbox.height != 0) and
-            np.isfinite(bbox).all()
-        ):
+                bbox = Bbox.intersection(bbox, clip_path.get_extents())
+        if bbox is not None and (bbox.width != 0 or bbox.height != 0) and np.isfinite(bbox).all():
             bbox_filtered.append(bbox)
     if bbox_filtered:
         _bbox = Bbox.union(bbox_filtered)
@@ -332,13 +326,10 @@ def get_tight_bbox(fig, bbox_extra_artists=None, pad=None):
 
 
 def get_raster_array(image):
-    """Return the array data from any Raster or Image type
-
-    """
+    """Return the array data from any Raster or Image type"""
     if isinstance(image, RGB):
         rgb = image.rgb
-        data = np.dstack([np.flipud(rgb.dimension_values(d, flat=False))
-                          for d in rgb.vdims])
+        data = np.dstack([np.flipud(rgb.dimension_values(d, flat=False)) for d in rgb.vdims])
     else:
         data = image.dimension_values(2, flat=False)
         if type(image) is Raster:
@@ -368,45 +359,44 @@ def polygons_to_path_patches(element):
     (multi-)polygon.
 
     """
-    paths = element.split(datatype='array', dimensions=element.kdims)
+    paths = element.split(datatype="array", dimensions=element.kdims)
     has_holes = isinstance(element, Polygons) and element.interface.has_holes(element)
     holes = element.interface.holes(element) if has_holes else None
     mpl_paths = []
     for i, path in enumerate(paths):
-        splits = np.where(np.isnan(path[:, :2].astype('float')).sum(axis=1))[0]
-        arrays = np.split(path, splits+1) if len(splits) else [path]
+        splits = np.where(np.isnan(path[:, :2].astype("float")).sum(axis=1))[0]
+        arrays = np.split(path, splits + 1) if len(splits) else [path]
         subpath = []
         for j, array in enumerate(arrays):
-            if j != (len(arrays)-1):
+            if j != (len(arrays) - 1):
                 array = array[:-1]
             if (array[0] != array[-1]).any():
                 array = np.append(array, array[:1], axis=0)
             interiors = []
-            for interior in (holes[i][j] if has_holes else []):
+            for interior in holes[i][j] if has_holes else []:
                 if (interior[0] != interior[-1]).any():
                     interior = np.append(interior, interior[:1], axis=0)
                 interiors.append(interior)
             vertices = np.concatenate([array, *interiors])
-            codes = np.concatenate([ring_coding(array)]+
-                                   [ring_coding(h) for h in interiors])
+            codes = np.concatenate([ring_coding(array)] + [ring_coding(h) for h in interiors])
             subpath.append(PathPatch(Path(vertices, codes)))
         mpl_paths.append(subpath)
     return mpl_paths
 
 
 class CFTimeConverter(NetCDFTimeConverter):
-    """Defines conversions for cftime types by extending nc_time_axis.
-
-    """
+    """Defines conversions for cftime types by extending nc_time_axis."""
 
     @classmethod
     def convert(cls, value, unit, axis):
         if not nc_axis_available:
-            raise ValueError('In order to display cftime types with '
-                             'matplotlib install the nc_time_axis '
-                             'library using pip or from conda-forge '
-                             'using:\n\tconda install -c conda-forge '
-                             'nc_time_axis')
+            raise ValueError(
+                "In order to display cftime types with "
+                "matplotlib install the nc_time_axis "
+                "library using pip or from conda-forge "
+                "using:\n\tconda install -c conda-forge "
+                "nc_time_axis"
+            )
         if isinstance(value, cftime_types):
             value = CalendarDateTime(value.datetime, value.calendar)
         elif isinstance(value, np.ndarray):
@@ -415,52 +405,61 @@ class CFTimeConverter(NetCDFTimeConverter):
 
 
 class EqHistNormalize(Normalize):
-
-    def __init__(self, vmin=None, vmax=None, clip=False, rescale_discrete_levels=True, nbins=256**2, ncolors=256):
+    def __init__(
+        self,
+        vmin=None,
+        vmax=None,
+        clip=False,
+        rescale_discrete_levels=True,
+        nbins=256**2,
+        ncolors=256,
+    ):
         super().__init__(vmin, vmax, clip)
         self._nbins = nbins
         self._bin_edges = None
         self._ncolors = ncolors
-        self._color_bins = np.linspace(0, 1, ncolors+1)
+        self._color_bins = np.linspace(0, 1, ncolors + 1)
         self._rescale = rescale_discrete_levels
 
     def binning(self, data, n=256):
         low = data.min() if self.vmin is None else self.vmin
         high = data.max() if self.vmax is None else self.vmax
         nbins = self._nbins
-        eq_bin_edges = np.linspace(low, high, nbins+1)
+        eq_bin_edges = np.linspace(low, high, nbins + 1)
         full_hist, _ = np.histogram(data, eq_bin_edges)
 
         # Remove zeros, leaving extra element at beginning for rescale_discrete_levels
         nonzero = np.nonzero(full_hist)[0]
         nhist = len(nonzero)
         if nhist > 1:
-            hist = np.zeros(nhist+1)
+            hist = np.zeros(nhist + 1)
             hist[1:] = full_hist[nonzero]
-            eq_bin_centers = np.concatenate([[0.], (eq_bin_edges[nonzero] + eq_bin_edges[nonzero+1]) / 2.])
-            eq_bin_centers[0] = 2*eq_bin_centers[1] - eq_bin_centers[-1]
+            eq_bin_centers = np.concatenate(
+                [[0.0], (eq_bin_edges[nonzero] + eq_bin_edges[nonzero + 1]) / 2.0]
+            )
+            eq_bin_centers[0] = 2 * eq_bin_centers[1] - eq_bin_centers[-1]
         else:
             hist = full_hist
-            eq_bin_centers = np.convolve(eq_bin_edges, [0.5, 0.5], mode='valid')
+            eq_bin_centers = np.convolve(eq_bin_edges, [0.5, 0.5], mode="valid")
 
         # CDF scaled from 0 to 1 except for first value
         cdf = np.cumsum(hist)
         lo = cdf[1]
         diff = cdf[-1] - lo
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             cdf = (cdf - lo) / diff
         cdf[0] = -1.0
 
         lower_span = 0
         if self._rescale:
             discrete_levels = nhist
-            m = -0.5/98.0
-            c = 1.5 - 2*m
-            multiple = m*discrete_levels + c
-            if (multiple > 1):
+            m = -0.5 / 98.0
+            c = 1.5 - 2 * m
+            multiple = m * discrete_levels + c
+            if multiple > 1:
                 lower_span = 1 - multiple
 
-        cdf_bins = np.linspace(lower_span, 1, n+1)
+        cdf_bins = np.linspace(lower_span, 1, n + 1)
         binning = np.interp(cdf_bins, cdf, eq_bin_centers)
         if not self._rescale:
             binning[0] = low

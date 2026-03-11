@@ -26,7 +26,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
     Tests for xarray interface
     """
 
-    datatype = 'xarray'
+    datatype = "xarray"
 
     __test__ = True
 
@@ -40,14 +40,14 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         y = np.arange(2, 12, 2) * multiplier
         da = xr.DataArray(
             data=[np.arange(100).reshape(5, 20)],
-            coords=dict([('band', [1]), ('x', x), ('y', y)]),
-            dims=['band', 'y','x'],
-            attrs={'transform': (3, 0, 2, 0, -2, -2)})
-        xs, ys = (np.tile(x[:, np.newaxis], len(y)).T,
-                  np.tile(y[:, np.newaxis], len(x)))
+            coords=dict([("band", [1]), ("x", x), ("y", y)]),
+            dims=["band", "y", "x"],
+            attrs={"transform": (3, 0, 2, 0, -2, -2)},
+        )
+        xs, ys = (np.tile(x[:, np.newaxis], len(y)).T, np.tile(y[:, np.newaxis], len(x)))
         return da.assign_coords(
-            xc=xr.DataArray(xs, dims=('y','x')),
-            yc=xr.DataArray(ys, dims=('y','x')),
+            xc=xr.DataArray(xs, dims=("y", "x")),
+            yc=xr.DataArray(ys, dims=("y", "x")),
         )
 
     def get_multi_dim_irregular_dataset(self):
@@ -55,21 +55,35 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         precip = 10 * np.random.rand(2, 2, 4, 3)
         lon = [[-99.83, -99.32], [-99.79, -99.23]]
         lat = [[42.25, 42.21], [42.63, 42.59]]
-        return xr.Dataset({'temperature': (['x', 'y', 'z', 'time'],  temp),
-                         'precipitation': (['x', 'y', 'z', 'time'], precip)},
-                        coords={'lon': (['x', 'y'], lon),
-                                'lat': (['x', 'y'], lat),
-                                'z': np.arange(4),
-                                'time': pd.date_range('2014-09-06', periods=3),
-                                'reference_time': pd.Timestamp('2014-09-05')})
+        return xr.Dataset(
+            {
+                "temperature": (["x", "y", "z", "time"], temp),
+                "precipitation": (["x", "y", "z", "time"], precip),
+            },
+            coords={
+                "lon": (["x", "y"], lon),
+                "lat": (["x", "y"], lat),
+                "z": np.arange(4),
+                "time": pd.date_range("2014-09-06", periods=3),
+                "reference_time": pd.Timestamp("2014-09-05"),
+            },
+        )
 
     def test_ignore_dependent_dimensions_if_not_specified(self):
-        coords = dict([('time', [0, 1]), ('lat', [0, 1]), ('lon', [0, 1])])
-        da = xr.DataArray(np.arange(8).reshape((2, 2, 2)),
-                          coords, ['time', 'lat', 'lon']).assign_coords(
-                              lat1=xr.DataArray([2,3], dims=['lat']))
-        assert hv.Dataset(da, ['time', 'lat', 'lon'], vdims='value').kdims == ['time', 'lat', 'lon']
-        assert hv.Dataset(da, ['time', 'lat1', 'lon'], vdims='value').kdims == ['time', 'lat1', 'lon']
+        coords = dict([("time", [0, 1]), ("lat", [0, 1]), ("lon", [0, 1])])
+        da = xr.DataArray(
+            np.arange(8).reshape((2, 2, 2)), coords, ["time", "lat", "lon"]
+        ).assign_coords(lat1=xr.DataArray([2, 3], dims=["lat"]))
+        assert hv.Dataset(da, ["time", "lat", "lon"], vdims="value").kdims == [
+            "time",
+            "lat",
+            "lon",
+        ]
+        assert hv.Dataset(da, ["time", "lat1", "lon"], vdims="value").kdims == [
+            "time",
+            "lat1",
+            "lon",
+        ]
 
     def test_xarray_dataset_irregular_shape(self):
         ds = hv.Dataset(self.get_multi_dim_irregular_dataset())
@@ -78,16 +92,16 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
 
     def test_xarray_irregular_dataset_values(self):
         ds = hv.Dataset(self.get_multi_dim_irregular_dataset())
-        values = ds.dimension_values('z', expanded=False)
+        values = ds.dimension_values("z", expanded=False)
         assert_data_equal(values, np.array([0, 1, 2, 3]))
 
     def test_xarray_dataset_with_scalar_dim_canonicalize(self):
         xs = [0, 1]
         ys = [0.1, 0.2, 0.3]
         zs = np.array([[[0, 1], [2, 3], [4, 5]]])
-        xrarr = xr.DataArray(zs, coords={'x': xs, 'y': ys, 't': [1]}, dims=['t', 'y', 'x'])
-        xrds = xr.Dataset({'v': xrarr})
-        ds = hv.Dataset(xrds, kdims=['x', 'y'], vdims=['v'], datatype=['xarray'])
+        xrarr = xr.DataArray(zs, coords={"x": xs, "y": ys, "t": [1]}, dims=["t", "y", "x"])
+        xrds = xr.Dataset({"v": xrarr})
+        ds = hv.Dataset(xrds, kdims=["x", "y"], vdims=["v"], datatype=["xarray"])
         canonical = ds.dimension_values(2, flat=False)
         assert canonical.ndim == 2
         expected = np.array([[0, 1], [2, 3], [4, 5]])
@@ -97,36 +111,46 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         xs = [0.1, 0.2, 0.3]
         ys = [0, 1]
         zs = np.array([[0, 1], [2, 3], [4, 5]])
-        da = xr.DataArray(zs, coords=[('x_dim', xs), ('y_dim', ys)], name="data_name", dims=['y_dim', 'x_dim'])
-        da.attrs['long_name'] = "data long name"
-        da.attrs['units'] = "array_unit"
-        da.x_dim.attrs['units'] = "x_unit"
-        da.y_dim.attrs['long_name'] = "y axis long name"
+        da = xr.DataArray(
+            zs, coords=[("x_dim", xs), ("y_dim", ys)], name="data_name", dims=["y_dim", "x_dim"]
+        )
+        da.attrs["long_name"] = "data long name"
+        da.attrs["units"] = "array_unit"
+        da.x_dim.attrs["units"] = "x_unit"
+        da.y_dim.attrs["long_name"] = "y axis long name"
         dataset = hv.Dataset(da)
         assert_element_equal(dataset.get_dimension("x_dim"), hv.Dimension("x_dim", unit="x_unit"))
-        assert_element_equal(dataset.get_dimension("y_dim"), hv.Dimension("y_dim", label="y axis long name"))
-        assert_element_equal(dataset.get_dimension("data_name"),
-                         hv.Dimension("data_name", label="data long name", unit="array_unit"))
+        assert_element_equal(
+            dataset.get_dimension("y_dim"), hv.Dimension("y_dim", label="y axis long name")
+        )
+        assert_element_equal(
+            dataset.get_dimension("data_name"),
+            hv.Dimension("data_name", label="data long name", unit="array_unit"),
+        )
 
     def test_xarray_dataset_dataarray_vs_dataset(self):
         xs = [0.1, 0.2, 0.3]
         ys = [0, 1]
         zs = np.array([[0, 1], [2, 3], [4, 5]])
-        da = xr.DataArray(zs, coords=[('x_dim', xs), ('y_dim', ys)], name="data_name", dims=['y_dim', 'x_dim'])
-        da.attrs['long_name'] = "data long name"
-        da.attrs['units'] = "array_unit"
-        da.x_dim.attrs['units'] = "x_unit"
-        da.y_dim.attrs['long_name'] = "y axis long name"
+        da = xr.DataArray(
+            zs, coords=[("x_dim", xs), ("y_dim", ys)], name="data_name", dims=["y_dim", "x_dim"]
+        )
+        da.attrs["long_name"] = "data long name"
+        da.attrs["units"] = "array_unit"
+        da.x_dim.attrs["units"] = "x_unit"
+        da.y_dim.attrs["long_name"] = "y axis long name"
         ds = da.to_dataset()
         dataset_from_da = hv.Dataset(da)
         dataset_from_ds = hv.Dataset(ds)
         assert_element_equal(dataset_from_da, dataset_from_ds)
         # same with reversed names:
-        da_rev = xr.DataArray(zs, coords=[('x_dim', xs), ('y_dim', ys)], name="data_name", dims=['x_dim', 'y_dim'])
-        da_rev.attrs['long_name'] = "data long name"
-        da_rev.attrs['units'] = "array_unit"
-        da_rev.x_dim.attrs['units'] = "x_unit"
-        da_rev.y_dim.attrs['long_name'] = "y axis long name"
+        da_rev = xr.DataArray(
+            zs, coords=[("x_dim", xs), ("y_dim", ys)], name="data_name", dims=["x_dim", "y_dim"]
+        )
+        da_rev.attrs["long_name"] = "data long name"
+        da_rev.attrs["units"] = "array_unit"
+        da_rev.x_dim.attrs["units"] = "x_unit"
+        da_rev.y_dim.attrs["long_name"] = "y axis long name"
         ds_rev = da_rev.to_dataset()
         dataset_from_da_rev = hv.Dataset(da_rev)
         dataset_from_ds_rev = hv.Dataset(ds_rev)
@@ -136,11 +160,13 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         xs = [0.1, 0.2, 0.3]
         ys = [0, 1]
         zs = np.array([[0, 1], [2, 3], [4, 5]])
-        da = xr.DataArray(zs, coords=[('x_dim', xs), ('y_dim', ys)], name="data_name", dims=['y_dim', 'x_dim'])
-        da.attrs['long_name'] = "data long name"
-        da.attrs['units'] = "array_unit"
-        da.x_dim.attrs['units'] = "x_unit"
-        da.y_dim.attrs['long_name'] = "y axis long name"
+        da = xr.DataArray(
+            zs, coords=[("x_dim", xs), ("y_dim", ys)], name="data_name", dims=["y_dim", "x_dim"]
+        )
+        da.attrs["long_name"] = "data long name"
+        da.attrs["units"] = "array_unit"
+        da.x_dim.attrs["units"] = "x_unit"
+        da.y_dim.attrs["long_name"] = "y axis long name"
         ds = hv.Dataset(da, kdims=["x_dim", "y_dim"], vdims=["z_dim"])
         x_dim = hv.Dimension("x_dim")
         y_dim = hv.Dimension("y_dim")
@@ -155,67 +181,72 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         assert_element_equal(ds_from_ds.vdims[0], data_dim)
 
     def test_xarray_coord_ordering(self):
-        data = np.zeros((3,4,5))
-        coords = dict([('b', range(3)), ('c', range(4)), ('a', range(5))])
-        darray = xr.DataArray(data, coords=coords, dims=['b', 'c', 'a'])
-        dataset = xr.Dataset({'value': darray}, coords=coords)
+        data = np.zeros((3, 4, 5))
+        coords = dict([("b", range(3)), ("c", range(4)), ("a", range(5))])
+        darray = xr.DataArray(data, coords=coords, dims=["b", "c", "a"])
+        dataset = xr.Dataset({"value": darray}, coords=coords)
         ds = hv.Dataset(dataset)
-        assert ds.kdims == ['b', 'c', 'a']
+        assert ds.kdims == ["b", "c", "a"]
 
     def test_irregular_and_regular_coordinate_inference(self):
         data = self.get_irregular_dataarray()
-        ds = hv.Dataset(data, vdims='Value')
-        assert ds.kdims == [hv.Dimension('band'), hv.Dimension('x'), hv.Dimension('y')]
-        assert_data_equal(ds.dimension_values(3, flat=False), data.values[:, ::-1].transpose([1, 2, 0]))
+        ds = hv.Dataset(data, vdims="Value")
+        assert ds.kdims == [hv.Dimension("band"), hv.Dimension("x"), hv.Dimension("y")]
+        assert_data_equal(
+            ds.dimension_values(3, flat=False), data.values[:, ::-1].transpose([1, 2, 0])
+        )
 
     def test_irregular_and_regular_coordinate_inference_inverted(self):
         data = self.get_irregular_dataarray(False)
-        ds = hv.Dataset(data, vdims='Value')
-        assert ds.kdims == [hv.Dimension('band'), hv.Dimension('x'), hv.Dimension('y')]
+        ds = hv.Dataset(data, vdims="Value")
+        assert ds.kdims == [hv.Dimension("band"), hv.Dimension("x"), hv.Dimension("y")]
         assert_data_equal(ds.dimension_values(3, flat=False), data.values.transpose([1, 2, 0]))
+
     def test_irregular_and_regular_coordinate_explicit_regular_coords(self):
         data = self.get_irregular_dataarray()
-        ds = hv.Dataset(data, ['x', 'y'], vdims='Value')
-        assert ds.kdims == [hv.Dimension('x'), hv.Dimension('y')]
+        ds = hv.Dataset(data, ["x", "y"], vdims="Value")
+        assert ds.kdims == [hv.Dimension("x"), hv.Dimension("y")]
         assert_data_equal(ds.dimension_values(2, flat=False), data.values[0, ::-1])
 
     def test_irregular_and_regular_coordinate_explicit_regular_coords_inverted(self):
         data = self.get_irregular_dataarray(False)
-        ds = hv.Dataset(data, ['x', 'y'], vdims='Value')
-        assert ds.kdims == [hv.Dimension('x'), hv.Dimension('y')]
+        ds = hv.Dataset(data, ["x", "y"], vdims="Value")
+        assert ds.kdims == [hv.Dimension("x"), hv.Dimension("y")]
         assert_data_equal(ds.dimension_values(2, flat=False), data.values[0])
 
     def test_irregular_and_regular_coordinate_explicit_irregular_coords(self):
         data = self.get_irregular_dataarray()
-        ds = hv.Dataset(data, ['xc', 'yc'], vdims='Value')
-        assert ds.kdims == [hv.Dimension('xc'), hv.Dimension('yc')]
+        ds = hv.Dataset(data, ["xc", "yc"], vdims="Value")
+        assert ds.kdims == [hv.Dimension("xc"), hv.Dimension("yc")]
         assert_data_equal(ds.dimension_values(2, flat=False), data.values[0])
 
     def test_irregular_and_regular_coordinate_explicit_irregular_coords_inverted(self):
         data = self.get_irregular_dataarray(False)
-        ds = hv.Dataset(data, ['xc', 'yc'], vdims='Value')
-        assert ds.kdims == [hv.Dimension('xc'), hv.Dimension('yc')]
+        ds = hv.Dataset(data, ["xc", "yc"], vdims="Value")
+        assert ds.kdims == [hv.Dimension("xc"), hv.Dimension("yc")]
         assert_data_equal(ds.dimension_values(2, flat=False), data.values[0])
 
     def test_concat_grid_3d_shape_mismatch(self):
         arr1 = np.random.rand(3, 2)
         arr2 = np.random.rand(2, 3)
-        ds1 = hv.Dataset(([0, 1], [1, 2, 3], arr1), ['x', 'y'], 'z')
-        ds2 = hv.Dataset(([0, 1, 2], [1, 2], arr2), ['x', 'y'], 'z')
+        ds1 = hv.Dataset(([0, 1], [1, 2, 3], arr1), ["x", "y"], "z")
+        ds2 = hv.Dataset(([0, 1, 2], [1, 2], arr2), ["x", "y"], "z")
         hmap = hv.HoloMap({1: ds1, 2: ds2})
         arr = np.full((3, 3, 2), np.nan)
         arr[:, :2, 0] = arr1
         arr[:2, :, 1] = arr2
-        ds = hv.Dataset(([1, 2], [0, 1, 2], [1, 2, 3], arr), ['Default', 'x', 'y'], 'z')
+        ds = hv.Dataset(([1, 2], [0, 1, 2], [1, 2, 3], arr), ["Default", "x", "y"], "z")
         assert_element_equal(concat(hmap), ds)
 
     def test_zero_sized_coordinates_range(self):
-        da = xr.DataArray(np.empty((2, 0)), dims=('y', 'x'), coords={'x': [], 'y': [0 ,1]}, name='A')
+        da = xr.DataArray(
+            np.empty((2, 0)), dims=("y", "x"), coords={"x": [], "y": [0, 1]}, name="A"
+        )
         ds = hv.Dataset(da)
-        x0, x1 = ds.range('x')
+        x0, x1 = ds.range("x")
         assert np.isnan(x0)
         assert np.isnan(x1)
-        z0, z1 = ds.range('A')
+        z0, z1 = ds.range("A")
         assert np.isnan(z0)
         assert np.isnan(z1)
 
@@ -224,31 +255,37 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         ys = np.arange(10)
         array = np.random.rand(10, 10)
         ds = hv.QuadMesh((xs, ys, array))
-        assert ds.interface.datatype == 'xarray'
-        expected = (np.datetime64(dt.datetime(2017, 12, 31, 12, 0)),
-                    np.datetime64(dt.datetime(2018, 1, 10, 12, 0)))
-        assert ds.range('x') == expected
+        assert ds.interface.datatype == "xarray"
+        expected = (
+            np.datetime64(dt.datetime(2017, 12, 31, 12, 0)),
+            np.datetime64(dt.datetime(2018, 1, 10, 12, 0)),
+        )
+        assert ds.range("x") == expected
 
     def test_datetime64_bins_range(self):
         xs = list(
             np.arange(
-                dt.datetime(2018, 1, 1),
-                dt.datetime(2018, 1, 11),
-                dt.timedelta(days=1)
+                dt.datetime(2018, 1, 1), dt.datetime(2018, 1, 11), dt.timedelta(days=1)
             ).astype("datetime64[ns]")
         )
         ys = np.arange(10)
         array = np.random.rand(10, 10)
         ds = hv.QuadMesh((xs, ys, array))
-        assert ds.interface.datatype == 'xarray'
-        expected = (np.datetime64(dt.datetime(2017, 12, 31, 12, 0)),
-                    np.datetime64(dt.datetime(2018, 1, 10, 12, 0)))
-        assert ds.range('x') == expected
+        assert ds.interface.datatype == "xarray"
+        expected = (
+            np.datetime64(dt.datetime(2017, 12, 31, 12, 0)),
+            np.datetime64(dt.datetime(2018, 1, 10, 12, 0)),
+        )
+        assert ds.range("x") == expected
 
     def test_select_dropped_dimensions_restoration(self):
         d = np.random.randn(3, 8)
-        da = xr.DataArray(d, name='stuff', dims=['chain', 'value'],
-            coords=dict(chain=range(d.shape[0]), value=range(d.shape[1])))
+        da = xr.DataArray(
+            d,
+            name="stuff",
+            dims=["chain", "value"],
+            coords=dict(chain=range(d.shape[0]), value=range(d.shape[1])),
+        )
         ds = hv.Dataset(da)
         t = ds.select(chain=0)
         if hasattr(t.data, "sizes"):
@@ -264,9 +301,9 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
 
     def test_mask_2d_array_transposed(self):
         array = np.random.rand(4, 3)
-        da = xr.DataArray(array.T, coords={'x': [0, 1, 2], 'y': [0, 1, 2, 3]}, dims=['x', 'y'])
-        ds = hv.Dataset(da, ['x', 'y'], 'z')
-        mask = np.array([[1, 1, 0], [1, 0, 1], [0, 1, 1], [1, 0, 1]], dtype='bool')
+        da = xr.DataArray(array.T, coords={"x": [0, 1, 2], "y": [0, 1, 2, 3]}, dims=["x", "y"])
+        ds = hv.Dataset(da, ["x", "y"], "z")
+        mask = np.array([[1, 1, 0], [1, 0, 1], [0, 1, 1], [1, 0, 1]], dtype="bool")
         masked = ds.clone(ds.interface.mask(ds, mask))
         masked_array = masked.dimension_values(2, flat=False)
         expected = array.copy()
@@ -347,7 +384,6 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         pytest.skip("Not supported")
 
 
-
 @dask_skip
 class DaskXArrayInterfaceTest(XArrayInterfaceTests):
     """
@@ -358,35 +394,37 @@ class DaskXArrayInterfaceTest(XArrayInterfaceTests):
         self.xs = np.array(range(11))
         self.xs_2 = self.xs**2
 
-        self.y_ints = self.xs*2
+        self.y_ints = self.xs * 2
         dask_y = da.from_array(np.array(self.y_ints), 2)
-        self.dataset_hm = hv.Dataset((self.xs, dask_y),
-                                  kdims=['x'], vdims=['y'])
-        self.dataset_hm_alias = hv.Dataset((self.xs, dask_y),
-                                        kdims=[('x', 'X')], vdims=[('y', 'Y')])
+        self.dataset_hm = hv.Dataset((self.xs, dask_y), kdims=["x"], vdims=["y"])
+        self.dataset_hm_alias = hv.Dataset(
+            (self.xs, dask_y), kdims=[("x", "X")], vdims=[("y", "Y")]
+        )
 
     def init_grid_data(self):
         self.grid_xs = [0, 1]
         self.grid_ys = [0.1, 0.2, 0.3]
         self.grid_zs = np.array([[0, 1], [2, 3], [4, 5]])
         dask_zs = da.from_array(self.grid_zs, 2)
-        self.dataset_grid = self.element((self.grid_xs, self.grid_ys,
-                                         dask_zs), kdims=['x', 'y'],
-                                        vdims=['z'])
-        self.dataset_grid_alias = self.element((self.grid_xs, self.grid_ys,
-                                               dask_zs), kdims=[('x', 'X'), ('y', 'Y')],
-                                              vdims=[('z', 'Z')])
-        self.dataset_grid_inv = self.element((self.grid_xs[::-1], self.grid_ys[::-1],
-                                             dask_zs), kdims=['x', 'y'],
-                                            vdims=['z'])
+        self.dataset_grid = self.element(
+            (self.grid_xs, self.grid_ys, dask_zs), kdims=["x", "y"], vdims=["z"]
+        )
+        self.dataset_grid_alias = self.element(
+            (self.grid_xs, self.grid_ys, dask_zs),
+            kdims=[("x", "X"), ("y", "Y")],
+            vdims=[("z", "Z")],
+        )
+        self.dataset_grid_inv = self.element(
+            (self.grid_xs[::-1], self.grid_ys[::-1], dask_zs), kdims=["x", "y"], vdims=["z"]
+        )
 
     def test_xarray_dataset_with_scalar_dim_canonicalize(self):
         xs = [0, 1]
         ys = [0.1, 0.2, 0.3]
         zs = da.from_array(np.array([[[0, 1], [2, 3], [4, 5]]]), 2)
-        xrarr = xr.DataArray(zs, coords={'x': xs, 'y': ys, 't': [1]}, dims=['t', 'y', 'x'])
-        xrds = xr.Dataset({'v': xrarr})
-        ds = hv.Dataset(xrds, kdims=['x', 'y'], vdims=['v'], datatype=['xarray'])
+        xrarr = xr.DataArray(zs, coords={"x": xs, "y": ys, "t": [1]}, dims=["t", "y", "x"])
+        xrds = xr.Dataset({"v": xrarr})
+        ds = hv.Dataset(xrds, kdims=["x", "y"], vdims=["v"], datatype=["xarray"])
         canonical = ds.dimension_values(2, flat=False)
         assert canonical.ndim == 2
         expected = np.array([[0, 1], [2, 3], [4, 5]])
@@ -405,12 +443,12 @@ class GPUXArrayInterfaceTest(XArrayInterfaceTests):
         self.xs = np.array(range(11))
         self.xs_2 = self.xs**2
 
-        self.y_ints = self.xs*2
+        self.y_ints = self.xs * 2
         cupy_y = cp.array(self.y_ints)
-        self.dataset_hm = hv.Dataset((self.xs, cupy_y),
-                                  kdims=['x'], vdims=['y'])
-        self.dataset_hm_alias = hv.Dataset((self.xs, cupy_y),
-                                        kdims=[('x', 'X')], vdims=[('y', 'Y')])
+        self.dataset_hm = hv.Dataset((self.xs, cupy_y), kdims=["x"], vdims=["y"])
+        self.dataset_hm_alias = hv.Dataset(
+            (self.xs, cupy_y), kdims=[("x", "X")], vdims=[("y", "Y")]
+        )
 
     def init_grid_data(self):
         import cupy as cp
@@ -419,21 +457,22 @@ class GPUXArrayInterfaceTest(XArrayInterfaceTests):
         self.grid_ys = [0.1, 0.2, 0.3]
         self.grid_zs = np.array([[0, 1], [2, 3], [4, 5]])
         cupy_zs = cp.array(self.grid_zs)
-        self.dataset_grid = self.element((self.grid_xs, self.grid_ys,
-                                         cupy_zs), kdims=['x', 'y'],
-                                        vdims=['z'])
-        self.dataset_grid_alias = self.element((self.grid_xs, self.grid_ys,
-                                               cupy_zs), kdims=[('x', 'X'), ('y', 'Y')],
-                                              vdims=[('z', 'Z')])
-        self.dataset_grid_inv = self.element((self.grid_xs[::-1], self.grid_ys[::-1],
-                                             cupy_zs), kdims=['x', 'y'],
-                                            vdims=['z'])
+        self.dataset_grid = self.element(
+            (self.grid_xs, self.grid_ys, cupy_zs), kdims=["x", "y"], vdims=["z"]
+        )
+        self.dataset_grid_alias = self.element(
+            (self.grid_xs, self.grid_ys, cupy_zs),
+            kdims=[("x", "X"), ("y", "Y")],
+            vdims=[("z", "Z")],
+        )
+        self.dataset_grid_inv = self.element(
+            (self.grid_xs[::-1], self.grid_ys[::-1], cupy_zs), kdims=["x", "y"], vdims=["z"]
+        )
 
 
 @xr_skip
 class ImageElement_XArrayInterfaceTests(BaseImageElementInterfaceTests):
-
-    datatype = 'xarray'
+    datatype = "xarray"
 
     __test__ = True
 
@@ -448,65 +487,64 @@ class ImageElement_XArrayInterfaceTests(BaseImageElementInterfaceTests):
     def test_dataarray_dimension_order(self):
         x = np.linspace(-3, 7, 53)
         y = np.linspace(-5, 8, 89)
-        z = np.exp(-1*(x**2 + y[:, np.newaxis]**2))
-        array = xr.DataArray(z, coords=[y, x], dims=['x', 'y'])
+        z = np.exp(-1 * (x**2 + y[:, np.newaxis] ** 2))
+        array = xr.DataArray(z, coords=[y, x], dims=["x", "y"])
         img = hv.Image(array)
-        assert img.kdims == [hv.Dimension('x'), hv.Dimension('y')]
+        assert img.kdims == [hv.Dimension("x"), hv.Dimension("y")]
 
     def test_dataarray_shape(self):
         x = np.linspace(-3, 7, 53)
         y = np.linspace(-5, 8, 89)
-        z = np.exp(-1*(x**2 + y[:, np.newaxis]**2))
-        array = xr.DataArray(z, coords=[y, x], dims=['x', 'y'])
-        img = hv.Image(array, ['x', 'y'])
+        z = np.exp(-1 * (x**2 + y[:, np.newaxis] ** 2))
+        array = xr.DataArray(z, coords=[y, x], dims=["x", "y"])
+        img = hv.Image(array, ["x", "y"])
         assert img.interface.shape(img, gridded=True) == (53, 89)
 
     def test_dataarray_shape_transposed(self):
         x = np.linspace(-3, 7, 53)
         y = np.linspace(-5, 8, 89)
-        z = np.exp(-1*(x**2 + y[:, np.newaxis]**2))
-        array = xr.DataArray(z, coords=[y, x], dims=['x', 'y'])
-        img = hv.Image(array, ['y', 'x'])
+        z = np.exp(-1 * (x**2 + y[:, np.newaxis] ** 2))
+        array = xr.DataArray(z, coords=[y, x], dims=["x", "y"])
+        img = hv.Image(array, ["y", "x"])
         assert img.interface.shape(img, gridded=True) == (89, 53)
 
     def test_select_on_transposed_dataarray(self):
         x = np.linspace(-3, 7, 53)
         y = np.linspace(-5, 8, 89)
-        z = np.exp(-1*(x**2 + y[:, np.newaxis]**2))
-        array = xr.DataArray(z, coords=[y, x], dims=['x', 'y'])
+        z = np.exp(-1 * (x**2 + y[:, np.newaxis] ** 2))
+        array = xr.DataArray(z, coords=[y, x], dims=["x", "y"])
         img = hv.Image(array)[1:3]
-        assert_data_equal(img['z'], hv.Image(array.sel(x=slice(1, 3)))['z'])
+        assert_data_equal(img["z"], hv.Image(array.sel(x=slice(1, 3)))["z"])
 
     def test_dataarray_with_no_coords(self):
         expected_xs = list(range(2))
         expected_ys = list(range(3))
         zs = np.arange(6).reshape(2, 3)
-        xrarr = xr.DataArray(zs, dims=('x','y'))
+        xrarr = xr.DataArray(zs, dims=("x", "y"))
 
         img = hv.Image(xrarr)
         assert all(img.data.x == expected_xs)
         assert all(img.data.y == expected_ys)
 
-        img = hv.Image(xrarr, kdims=['x', 'y'])
+        img = hv.Image(xrarr, kdims=["x", "y"])
         assert all(img.data.x == expected_xs)
         assert all(img.data.y == expected_ys)
 
     def test_dataarray_with_some_coords(self):
         xs = [4.2, 1]
         zs = np.arange(6).reshape(2, 3)
-        xrarr = xr.DataArray(zs, dims=('x','y'), coords={'x': xs})
+        xrarr = xr.DataArray(zs, dims=("x", "y"), coords={"x": xs})
 
         with pytest.raises(ValueError):  # noqa: PT011
             hv.Image(xrarr)
 
         with pytest.raises(ValueError):  # noqa: PT011
-            hv.Image(xrarr, kdims=['x', 'y'])
+            hv.Image(xrarr, kdims=["x", "y"])
 
 
 @xr_skip
 class RGBElement_XArrayInterfaceTests(BaseRGBElementInterfaceTests):
-
-    datatype = 'xarray'
+    datatype = "xarray"
 
     __test__ = True
 
@@ -515,14 +553,20 @@ class RGBElement_XArrayInterfaceTests(BaseRGBElementInterfaceTests):
         return xr.Dataset
 
     def init_data(self):
-        self.rgb = hv.RGB((self.xs, self.ys, self.rgb_array[:, :, 0],
-                        self.rgb_array[:, :, 1], self.rgb_array[:, :, 2]))
+        self.rgb = hv.RGB(
+            (
+                self.xs,
+                self.ys,
+                self.rgb_array[:, :, 0],
+                self.rgb_array[:, :, 1],
+                self.rgb_array[:, :, 2],
+            )
+        )
 
 
 @xr_skip
 class RGBElement_PackedXArrayInterfaceTests(BaseRGBElementInterfaceTests):
-
-    datatype = 'xarray'
+    datatype = "xarray"
     __test__ = True
 
     @property
@@ -535,8 +579,7 @@ class RGBElement_PackedXArrayInterfaceTests(BaseRGBElementInterfaceTests):
 
 @xr_skip
 class HSVElement_XArrayInterfaceTest(BaseHSVElementInterfaceTests):
-
-    datatype = 'xarray'
+    datatype = "xarray"
 
     __test__ = True
 
@@ -545,5 +588,12 @@ class HSVElement_XArrayInterfaceTest(BaseHSVElementInterfaceTests):
         return xr.Dataset
 
     def init_data(self):
-        self.hsv = hv.HSV((self.xs, self.ys, self.hsv_array[:, :, 0],
-                        self.hsv_array[:, :, 1], self.hsv_array[:, :, 2]))
+        self.hsv = hv.HSV(
+            (
+                self.xs,
+                self.ys,
+                self.hsv_array[:, :, 0],
+                self.hsv_array[:, :, 1],
+                self.hsv_array[:, :, 2],
+            )
+        )

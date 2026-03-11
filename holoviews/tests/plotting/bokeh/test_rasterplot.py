@@ -31,9 +31,7 @@ class TestRasterPlot(TestBokehPlot):
         source = plot.handles["source"]
         assert cmapper.low == 1
         assert cmapper.high == 2
-        np.testing.assert_equal(
-            source.data["image"][0], np.array([[2, np.nan], [np.nan, 1]])
-        )
+        np.testing.assert_equal(source.data["image"][0], np.array([[2, np.nan], [np.nan, 1]]))
 
     def test_nodata_array_uint(self):
         img = hv.Image(np.array([[0, 1], [2, 0]], dtype="uint32")).opts(nodata=0)
@@ -42,9 +40,7 @@ class TestRasterPlot(TestBokehPlot):
         source = plot.handles["source"]
         assert cmapper.low == 1
         assert cmapper.high == 2
-        np.testing.assert_equal(
-            source.data["image"][0], np.array([[2, np.nan], [np.nan, 1]])
-        )
+        np.testing.assert_equal(source.data["image"][0], np.array([[2, np.nan], [np.nan, 1]]))
 
     def test_nodata_rgb(self):
         N = 2
@@ -156,13 +152,15 @@ class TestRasterPlot(TestBokehPlot):
     def test_image_hover_with_custom_js(self):
         # Regression for https://github.com/holoviz/holoviews/issues/6101
         hover_tool = HoverTool(
-            tooltips=[("x", "$x{custom}")], formatters={"x": CustomJSHover(code="return value + '2'")}
+            tooltips=[("x", "$x{custom}")],
+            formatters={"x": CustomJSHover(code="return value + '2'")},
         )
         img = hv.Image(np.ones(100).reshape(10, 10)).opts(tools=[hover_tool])
         plot = bokeh_renderer.get_plot(img)
 
         hover = plot.handles["hover"]
         assert hover.formatters == hover_tool.formatters
+
 
 class _ImageStackBase(TestRasterPlot):
     __test__ = False
@@ -445,9 +443,7 @@ class TestImageStackUneven1(_ImageStackBase):
     __test__ = True
 
     def setup_method(self):
-        self.a = np.array(
-            [[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3, [np.nan] * 3]
-        )
+        self.a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3, [np.nan] * 3])
         self.b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3, [np.nan] * 3])
         self.c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1], [np.nan] * 3])
         self.ysize = 4
@@ -475,29 +471,30 @@ class TestSyntheticLegendPlot(TestBokehPlot):
         super().setup_method()
 
         from holoviews.operation.datashader import datashade, rasterize
-        points = hv.Points([(0, 0, 'A'), (1, 1, 'B'), (2, 2, 'C')], vdims=['Label'])
-        kwargs = dict(aggregator=ds.by('Label'), dynamic=False, width=10, height=10)
+
+        points = hv.Points([(0, 0, "A"), (1, 1, "B"), (2, 2, "C")], vdims=["Label"])
+        kwargs = dict(aggregator=ds.by("Label"), dynamic=False, width=10, height=10)
         self.img_stack = rasterize(points, **kwargs).opts(show_legend=True)
         self.rgb = datashade(points, **kwargs).opts(show_legend=True)
 
     def test_image_stack_legend(self):
         plot = bokeh_renderer.get_plot(self.img_stack)
-        mapper = plot.handles['synthetic_color_mapper']
-        assert mapper.factors == ['A', 'B', 'C']
-        glyph = plot._legend_plot.handles['glyph']
-        assert glyph.fill_color.field == 'color'
+        mapper = plot.handles["synthetic_color_mapper"]
+        assert mapper.factors == ["A", "B", "C"]
+        glyph = plot._legend_plot.handles["glyph"]
+        assert glyph.fill_color.field == "color"
         assert glyph.fill_color.transform is mapper
 
     def test_image_stack_legend_with_cmap(self):
         self.img_stack.opts(cmap=["red"])
         plot = bokeh_renderer.get_plot(self.img_stack)
-        mapper = plot.handles['synthetic_color_mapper']
+        mapper = plot.handles["synthetic_color_mapper"]
         assert mapper.palette == ["red", "red", "red"]
 
     def test_rgb_legend(self):
         plot = bokeh_renderer.get_plot(self.rgb)
-        mapper = plot.handles['synthetic_color_mapper']
-        assert mapper.factors == ['A', 'B', 'C']
-        glyph = plot._legend_plot.handles['glyph']
-        assert glyph.fill_color.field == 'color'
+        mapper = plot.handles["synthetic_color_mapper"]
+        assert mapper.factors == ["A", "B", "C"]
+        glyph = plot._legend_plot.handles["glyph"]
+        assert glyph.fill_color.field == "color"
         assert glyph.fill_color.transform is mapper

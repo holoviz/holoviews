@@ -8,58 +8,74 @@ from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestLayoutPlot(LoggingComparison, TestMPLPlot):
-
     def test_layout_instantiate_subplots(self):
-        layout = (hv.Curve(range(10)) + hv.Curve(range(10)) + hv.Image(np.random.rand(10,10)) +
-                  hv.Curve(range(10)) + hv.Curve(range(10)))
+        layout = (
+            hv.Curve(range(10))
+            + hv.Curve(range(10))
+            + hv.Image(np.random.rand(10, 10))
+            + hv.Curve(range(10))
+            + hv.Curve(range(10))
+        )
         plot = mpl_renderer.get_plot(layout)
         positions = [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0)]
         assert sorted(plot.subplots.keys()) == positions
         for i, pos in enumerate(positions):
             adjoint = plot.subplots[pos]
-            if 'main' in adjoint.subplots:
-                assert adjoint.subplots['main'].layout_num == i+1
+            if "main" in adjoint.subplots:
+                assert adjoint.subplots["main"].layout_num == i + 1
 
     def test_layout_empty_subplots(self):
-        layout = hv.Curve(range(10)) + hv.NdOverlay() + hv.HoloMap() + hv.HoloMap({1: hv.Image(np.random.rand(10,10))})
+        layout = (
+            hv.Curve(range(10))
+            + hv.NdOverlay()
+            + hv.HoloMap()
+            + hv.HoloMap({1: hv.Image(np.random.rand(10, 10))})
+        )
         plot = mpl_renderer.get_plot(layout)
         assert len(plot.subplots.values()) == 2
-        self.log_handler.assert_contains('WARNING', 'skipping subplot')
-        self.log_handler.assert_contains('WARNING', 'skipping subplot')
+        self.log_handler.assert_contains("WARNING", "skipping subplot")
+        self.log_handler.assert_contains("WARNING", "skipping subplot")
 
     def test_layout_instantiate_subplots_transposed(self):
-        layout = (hv.Curve(range(10)) + hv.Curve(range(10)) + hv.Image(np.random.rand(10,10)) +
-                  hv.Curve(range(10)) + hv.Curve(range(10)))
+        layout = (
+            hv.Curve(range(10))
+            + hv.Curve(range(10))
+            + hv.Image(np.random.rand(10, 10))
+            + hv.Curve(range(10))
+            + hv.Curve(range(10))
+        )
         plot = mpl_renderer.get_plot(layout.opts(transpose=True))
         positions = [(0, 0), (0, 1), (1, 0), (2, 0), (3, 0)]
         assert sorted(plot.subplots.keys()) == positions
         nums = [1, 5, 2, 3, 4]
         for pos, num in zip(positions, nums, strict=True):
             adjoint = plot.subplots[pos]
-            if 'main' in adjoint.subplots:
-                assert adjoint.subplots['main'].layout_num == num
+            if "main" in adjoint.subplots:
+                assert adjoint.subplots["main"].layout_num == num
 
     def test_layout_dimensioned_stream_title_update(self):
-        stream = Stream.define('Test', test=0)()
-        dmap = hv.DynamicMap(lambda test: hv.Curve([]), kdims=['test'], streams=[stream])
+        stream = Stream.define("Test", test=0)()
+        dmap = hv.DynamicMap(lambda test: hv.Curve([]), kdims=["test"], streams=[stream])
         layout = dmap + hv.Curve([])
         plot = mpl_renderer.get_plot(layout)
-        assert 'test: 0' in plot.handles['title'].get_text()
+        assert "test: 0" in plot.handles["title"].get_text()
         stream.event(test=1)
-        assert 'test: 1' in plot.handles['title'].get_text()
+        assert "test: 1" in plot.handles["title"].get_text()
         plot.cleanup()
         assert stream._subscribers == []
 
     def test_layout_shared_axes_disabled(self):
         from holoviews.plotting.mpl import CurvePlot
+
         layout = (hv.Curve([1, 2, 3]) + hv.Curve([10, 20, 30])).opts(shared_axes=False)
         plot = mpl_renderer.get_plot(layout)
         cp1, cp2 = plot.traverse(lambda x: x, [CurvePlot])
-        assert cp1.handles['axis'].get_ylim() == (1, 3)
-        assert cp2.handles['axis'].get_ylim() == (10, 30)
+        assert cp1.handles["axis"].get_ylim() == (1, 3)
+        assert cp2.handles["axis"].get_ylim() == (10, 30)
 
     def test_layout_sublabel_offset(self):
         from holoviews.plotting.mpl import CurvePlot
+
         layout = hv.Curve([]) + hv.Curve([]) + hv.Curve([]) + hv.Curve([])
         layout.opts(sublabel_offset=1)
         plot = mpl_renderer.get_plot(layout)
@@ -71,6 +87,7 @@ class TestLayoutPlot(LoggingComparison, TestMPLPlot):
 
     def test_layout_sublabel_skip(self):
         from holoviews.plotting.mpl import CurvePlot
+
         layout = hv.Curve([]) + hv.Curve([]) + hv.Curve([]) + hv.Curve([])
         layout.opts(sublabel_skip=[1, 3])
         plot = mpl_renderer.get_plot(layout)

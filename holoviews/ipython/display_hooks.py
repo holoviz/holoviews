@@ -1,6 +1,5 @@
-"""Definition and registration of display hooks for the IPython Notebook.
+"""Definition and registration of display hooks for the IPython Notebook."""
 
-"""
 import sys
 import traceback
 from contextlib import contextmanager
@@ -33,9 +32,9 @@ from ..util.settings import OutputSettings
 FULL_TRACEBACK = None
 ABBREVIATE_TRACEBACKS = True
 
-#==================#
+# ==================#
 # Helper functions #
-#==================#
+# ==================#
 
 
 def max_frame_warning(max_frames):
@@ -55,16 +54,14 @@ def render(obj, **kwargs):
     renderer = Store.renderers[backend]
 
     # Drop back to png if pdf selected, notebook PDF rendering is buggy
-    if renderer.fig == 'pdf':
-        renderer = renderer.instance(fig='png')
+    if renderer.fig == "pdf":
+        renderer = renderer.instance(fig="png")
 
     return renderer.components(obj, **kwargs)
 
 
 def single_frame_plot(obj):
-    """Returns plot, renderer and format for single frame export.
-
-    """
+    """Returns plot, renderer and format for single frame export."""
     obj = Layout(obj) if isinstance(obj, AdjointLayout) else obj
 
     backend = Store.current_backend
@@ -72,46 +69,48 @@ def single_frame_plot(obj):
 
     plot_cls = renderer.plotting_class(obj)
     plot = plot_cls(obj, **renderer.plot_options(obj, renderer.size))
-    fmt = (renderer.param.objects('existing')['fig'].objects[0]
-           if renderer.fig == 'auto' else renderer.fig)
+    fmt = (
+        renderer.param.objects("existing")["fig"].objects[0]
+        if renderer.fig == "auto"
+        else renderer.fig
+    )
     return plot, renderer, fmt
 
 
 def first_frame(obj):
-    """Only display the first frame of an animated plot
-
-    """
+    """Only display the first frame of an animated plot"""
     plot, renderer, fmt = single_frame_plot(obj)
     plot.update(0)
-    return {'text/html': renderer.html(plot, fmt)}
+    return {"text/html": renderer.html(plot, fmt)}
+
 
 def middle_frame(obj):
-    """Only display the (approximately) middle frame of an animated plot
-
-    """
+    """Only display the (approximately) middle frame of an animated plot"""
     plot, renderer, fmt = single_frame_plot(obj)
     middle_frame = int(len(plot) / 2)
     plot.update(middle_frame)
-    return {'text/html': renderer.html(plot, fmt)}
+    return {"text/html": renderer.html(plot, fmt)}
+
 
 def last_frame(obj):
-    """Only display the last frame of an animated plot
-
-    """
+    """Only display the last frame of an animated plot"""
     plot, renderer, fmt = single_frame_plot(obj)
     plot.update(len(plot))
-    return {'text/html': renderer.html(plot, fmt)}
+    return {"text/html": renderer.html(plot, fmt)}
 
-#===============#
+
+# ===============#
 # Display hooks #
-#===============#
+# ===============#
+
 
 def dynamic_optstate(element, state=None):
     # Temporary fix to avoid issues with DynamicMap traversal
     DynamicMap._deep_indexable = False
-    optstate = StoreOptions.state(element,state=state)
+    optstate = StoreOptions.state(element, state=state)
     DynamicMap._deep_indexable = True
     return optstate
+
 
 @contextmanager
 def option_state(element):
@@ -121,6 +120,7 @@ def option_state(element):
     except Exception:
         dynamic_optstate(element, state=optstate)
         raise
+
 
 def _render_jupyter_exception(e):
     import html
@@ -179,6 +179,7 @@ def display_hook(fn):
     files specified with the output magic and handles tracebacks.
 
     """
+
     @wraps(fn)
     def wrapped(element):
         global FULL_TRACEBACK  # noqa: PLW0603
@@ -186,22 +187,23 @@ def display_hook(fn):
             return {}, {}
 
         try:
-            max_frames = OutputSettings.options['max_frames']
+            max_frames = OutputSettings.options["max_frames"]
             mimebundle = fn(element, max_frames=max_frames)
             if mimebundle is None:
                 return {}, {}
             mime_data, mime_metadata = mimebundle
             from ..plotting.renderer import MIME_TYPES
-            if MIME_TYPES['js'] in mime_data:
-                mime_data['text/html'] = mimebundle_to_html(mime_data)
-                del mime_data[MIME_TYPES['js']]
+
+            if MIME_TYPES["js"] in mime_data:
+                mime_data["text/html"] = mimebundle_to_html(mime_data)
+                del mime_data[MIME_TYPES["js"]]
 
             # Only want to add to the archive for one display hook...
-            disabled_suffixes = ['png_display', 'svg_display']
+            disabled_suffixes = ["png_display", "svg_display"]
             if not any(fn.__name__.endswith(suffix) for suffix in disabled_suffixes):
-                if type(hv.archive) is not FileArchive and 'text/html' in mime_data:
-                    hv.archive.add(element, html=mime_data['text/html'])
-            filename = OutputSettings.options['filename']
+                if type(hv.archive) is not FileArchive and "text/html" in mime_data:
+                    hv.archive.add(element, html=mime_data["text/html"])
+            filename = OutputSettings.options["filename"]
             if filename:
                 Store.renderers[Store.current_backend].save(element, filename)
             return mime_data, mime_metadata
@@ -210,10 +212,11 @@ def display_hook(fn):
                 sys.stderr.write(str(e))
             return {}, {}
         except AbbreviatedException as e:
-            FULL_TRACEBACK = '\n'.join(traceback.format_exception(e.etype, e.value, e.traceback))
+            FULL_TRACEBACK = "\n".join(traceback.format_exception(e.etype, e.value, e.traceback))
             return _render_jupyter_exception(e), {}
         except Exception:
             raise
+
     return wrapped
 
 
@@ -228,7 +231,8 @@ def element_display(element, max_frames):
 
 @display_hook
 def map_display(vmap, max_frames):
-    if not isinstance(vmap, (HoloMap, DynamicMap)): return None
+    if not isinstance(vmap, (HoloMap, DynamicMap)):
+        return None
 
     if len(vmap) == 0 and not isinstance(vmap, DynamicMap):
         return None
@@ -243,8 +247,9 @@ def map_display(vmap, max_frames):
 @display_hook
 def layout_display(layout, max_frames):
     if isinstance(layout, AdjointLayout):
-        layout = Layout(layout).opts(layout.opts.get('plot'))
-    if not isinstance(layout, (Layout, NdLayout)): return None
+        layout = Layout(layout).opts(layout.opts.get("plot"))
+    if not isinstance(layout, (Layout, NdLayout)):
+        return None
 
     nframes = len(unique_dimkeys(layout)[1])
     if nframes > max_frames:
@@ -256,7 +261,8 @@ def layout_display(layout, max_frames):
 
 @display_hook
 def grid_display(grid, max_frames):
-    if not isinstance(grid, GridSpace): return None
+    if not isinstance(grid, GridSpace):
+        return None
 
     nframes = len(unique_dimkeys(grid)[1])
     if nframes > max_frames:
@@ -273,9 +279,11 @@ def display(obj, raw_output=False, **kwargs):
 
     """
     if not Store.loaded_backends() and isinstance(obj, Dimensioned):
-        raise RuntimeError('To use display on a HoloViews object ensure '
-                           'a backend is loaded using the holoviews '
-                           'extension.')
+        raise RuntimeError(
+            "To use display on a HoloViews object ensure "
+            "a backend is loaded using the holoviews "
+            "extension."
+        )
 
     from ..plotting import Plot
 
@@ -298,7 +306,7 @@ def display(obj, raw_output=False, **kwargs):
         output = ({}, {})
     else:
         output = obj
-        raw = kwargs.pop('raw', False)
+        raw = kwargs.pop("raw", False)
 
     if raw_output:
         return output
@@ -310,12 +318,12 @@ def display(obj, raw_output=False, **kwargs):
 
 
 def pprint_display(obj):
-    if 'html' not in Store.display_formats:
+    if "html" not in Store.display_formats:
         return None
 
     # If pretty printing is off, return None (fallback to next display format)
     ip = get_ipython()
-    if not ip.display_formatter.formatters['text/plain'].pprint:
+    if not ip.display_formatter.formatters["text/plain"].pprint:
         return None
     return display(obj, raw_output=True)
 
@@ -334,32 +342,29 @@ def image_display(element, max_frames, fmt):
     plot = renderer.get_plot(element)
 
     # Current renderer does not support the image format
-    if fmt not in renderer.param.objects('existing')['fig'].objects:
+    if fmt not in renderer.param.objects("existing")["fig"].objects:
         return None
 
     data, info = renderer(plot, fmt=fmt)
-    return {info['mime_type']: data}, {}
+    return {info["mime_type"]: data}, {}
 
 
 @display_hook
 def png_display(element, max_frames):
-    """Used to render elements to PNG if requested in the display formats.
-
-    """
-    return image_display(element, max_frames, fmt='png')
+    """Used to render elements to PNG if requested in the display formats."""
+    return image_display(element, max_frames, fmt="png")
 
 
 @display_hook
 def svg_display(element, max_frames):
-    """Used to render elements to SVG if requested in the display formats.
-
-    """
-    return image_display(element, max_frames, fmt='svg')
+    """Used to render elements to SVG if requested in the display formats."""
+    return image_display(element, max_frames, fmt="svg")
 
 
 # display_video output by default, but may be set to first_frame,
 # middle_frame or last_frame (e.g. for testing purposes)
 render_anim = None
+
 
 def plot_display(plot):
     return plot.renderer.components(plot)

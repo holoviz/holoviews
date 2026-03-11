@@ -16,27 +16,25 @@ from holoviews.plotting.bokeh.callbacks import Callback
 from holoviews.plotting.bokeh.element import ElementPlot
 from holoviews.streams import Pipe
 
-bokeh_renderer = hv.Store.renderers['bokeh']
+bokeh_renderer = hv.Store.renderers["bokeh"]
 
 from .. import option_intersections
 
 
 class TestPlotDefinitions:
-
     known_clashes = []
 
     def test_bokeh_option_definitions(self):
         # Check option definitions do not introduce new clashes
-        assert option_intersections('bokeh') == self.known_clashes
+        assert option_intersections("bokeh") == self.known_clashes
 
 
 class TestBokehPlot:
-
     def setup_method(self):
         self.previous_backend = hv.Store.current_backend
         self.comm_manager = bokeh_renderer.comm_manager
         bokeh_renderer.comm_manager = comms.CommManager
-        hv.Store.set_current_backend('bokeh')
+        hv.Store.set_current_backend("bokeh")
         self._padding = {}
         for plot in concrete_descendents(ElementPlot).values():
             self._padding[plot] = plot.padding
@@ -49,24 +47,25 @@ class TestBokehPlot:
         for plot, padding in self._padding.items():
             plot.padding = padding
 
-    def _test_colormapping(self, element, dim, log=False, prefix=''):
+    def _test_colormapping(self, element, dim, log=False, prefix=""):
         plot = bokeh_renderer.get_plot(element)
         plot.initialize_plot()
-        cmapper = plot.handles[f'{prefix}color_mapper']
+        cmapper = plot.handles[f"{prefix}color_mapper"]
         low, high = element.range(dim)
         assert cmapper.low == low
         assert cmapper.high == high
         mapper_type = LogColorMapper if log else LinearColorMapper
         assert isinstance(cmapper, mapper_type)
 
-    def _test_hover_info(self, element, tooltips, line_policy='nearest', formatters=None):
+    def _test_hover_info(self, element, tooltips, line_policy="nearest", formatters=None):
         if formatters is None:
             formatters = {}
         plot = bokeh_renderer.get_plot(element)
         plot.initialize_plot()
         fig = plot.state
-        renderers = [r for r in plot.traverse(lambda x: x.handles.get('glyph_renderer'))
-                     if r is not None]
+        renderers = [
+            r for r in plot.traverse(lambda x: x.handles.get("glyph_renderer")) if r is not None
+        ]
         hover = fig.select(dict(type=HoverTool))
         assert len(hover)
         assert hover[0].tooltips == tooltips
@@ -223,23 +222,26 @@ def test_autohide_toolbar_layout():
     # Test with autohide_toolbar=False (default)
     plot = bokeh_renderer.get_plot(layout)
     assert plot.autohide_toolbar is False
-    grid = plot.handles['plot']
+    grid = plot.handles["plot"]
     for child, *_ in grid.children:
         assert child.toolbar.autohide is False
 
     # Test with autohide_toolbar=True
     plot = bokeh_renderer.get_plot(layout.opts(autohide_toolbar=True))
     assert plot.autohide_toolbar is True
-    grid = plot.handles['plot']
+    grid = plot.handles["plot"]
     assert grid.toolbar.autohide is True
+
 
 def test_autohide_toolbar_nested():
     overlay = hv.Curve([1, 2, 3]) * hv.Curve([2, 3, 4])
 
     # Test with different settings for components
-    mixed_layout = overlay.opts(autohide_toolbar=True) + hv.Curve([3, 4, 5]).opts(autohide_toolbar=False)
+    mixed_layout = overlay.opts(autohide_toolbar=True) + hv.Curve([3, 4, 5]).opts(
+        autohide_toolbar=False
+    )
     plot = bokeh_renderer.get_plot(mixed_layout)
-    grid = plot.handles['plot']
+    grid = plot.handles["plot"]
     child1, child2 = [child for child, *_ in grid.children]
     assert child1.toolbar.autohide is True
     assert child2.toolbar.autohide is False

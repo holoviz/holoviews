@@ -8,26 +8,24 @@ from holoviews.plotting.mpl.element import ElementPlot
 
 from .. import option_intersections
 
-mpl_renderer = hv.Store.renderers['matplotlib']
+mpl_renderer = hv.Store.renderers["matplotlib"]
 MPL_GE_3_4_0 = MPL_VERSION >= (3, 4, 0)
 MPL_GE_3_8_0 = MPL_VERSION >= (3, 8, 0)
 
 
 class TestPlotDefinitions:
-
-    known_clashes = [(('Arrow',), {'fontsize'})]
+    known_clashes = [(("Arrow",), {"fontsize"})]
 
     def test_matplotlib_plot_definitions(self):
-        assert option_intersections('matplotlib') == self.known_clashes
+        assert option_intersections("matplotlib") == self.known_clashes
 
 
 class TestMPLPlot:
-
     def setup_method(self):
         self.previous_backend = hv.Store.current_backend
         self.comm_manager = mpl_renderer.comm_manager
         mpl_renderer.comm_manager = comms.CommManager
-        hv.Store.set_current_backend('matplotlib')
+        hv.Store.set_current_backend("matplotlib")
         self._padding = {}
         for plot in concrete_descendents(ElementPlot).values():
             self._padding[plot] = plot.padding

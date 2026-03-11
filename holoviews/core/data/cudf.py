@@ -23,25 +23,26 @@ class cuDFInterface(PandasInterface):
     The cuDFInterface covers almost the complete API exposed
     by the PandasInterface with two notable exceptions:
 
-    1. Aggregation and groupby do not have a consistent sort order
-       (see https://github.com/rapidsai/cudf/issues/4237)
-    2. Not all functions can be easily applied to a cuDF so
-       some functions applied with aggregate and reduce will not work.
+    1) Aggregation and groupby do not have a consistent sort order, see
+    https://github.com/rapidsai/cudf/issues/4237
+    2) Not all functions can be easily applied to a cuDF so some functions
+    applied with aggregate and reduce will not work.
     """
 
-    datatype = 'cuDF'
+    datatype = "cuDF"
 
     types = ()
 
     @classmethod
     def loaded(cls):
-        return 'cudf' in sys.modules
+        return "cudf" in sys.modules
 
     @classmethod
     def applies(cls, obj):
         if not cls.loaded():
             return False
         import cudf
+
         return isinstance(obj, (cudf.DataFrame, cudf.Series))
 
     @classmethod
@@ -50,8 +51,8 @@ class cuDFInterface(PandasInterface):
         import pandas as pd
 
         element_params = eltype.param.objects()
-        kdim_param = element_params['kdims']
-        vdim_param = element_params['vdims']
+        kdim_param = element_params["kdims"]
+        vdim_param = element_params["vdims"]
 
         if isinstance(data, (cudf.Series, pd.Series)):
             data = data.to_frame()
@@ -64,7 +65,7 @@ class cuDFInterface(PandasInterface):
         ncols = len(columns)
         index_names = [data.index.name]
         if index_names == [None]:
-            index_names = ['index']
+            index_names = ["index"]
         if eltype._auto_indexable_1d and ncols == 1 and kdims is None:
             kdims = list(index_names)
 
@@ -80,23 +81,26 @@ class cuDFInterface(PandasInterface):
         elif kdims is None:
             kdims = list(columns[:ndim])
             if vdims is None:
-                vdims = [d for d in columns[ndim:((ndim+nvdim) if nvdim else None)]
-                         if d not in kdims]
+                vdims = [
+                    d
+                    for d in columns[ndim : ((ndim + nvdim) if nvdim else None)]
+                    if d not in kdims
+                ]
         elif kdims == [] and vdims is None:
-            vdims = list(columns[:nvdim if nvdim else None])
+            vdims = list(columns[: nvdim if nvdim else None])
 
         # Handle reset of index if kdims reference index by name
         for kd in kdims:
             kd = dimension_name(kd)
             if kd in columns:
                 continue
-            if any(kd == ('index' if name is None else name)
-                   for name in index_names):
+            if any(kd == ("index" if name is None else name) for name in index_names):
                 data = data.reset_index()
                 break
-        if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):
-            raise DataError("cudf DataFrame column names used as dimensions "
-                            "must be strings not integers.", cls)
+        if any(isinstance(d, (np.int64, int)) for d in kdims + vdims):
+            raise DataError(
+                "cudf DataFrame column names used as dimensions must be strings not integers.", cls
+            )
 
         if kdims:
             kdim = dimension_name(kdims[0])
@@ -104,15 +108,17 @@ class cuDFInterface(PandasInterface):
                 data = data.copy()
                 data.insert(0, kdim, np.arange(len(data)))
 
-        for d in kdims+vdims:
+        for d in kdims + vdims:
             d = dimension_name(d)
             if len([c for c in columns if c == d]) > 1:
-                raise DataError('Dimensions may not reference duplicated DataFrame '
-                                f'columns (found duplicate {d!r} columns). If you want to plot '
-                                'a column against itself simply declare two dimensions '
-                                'with the same name.', cls)
-        return data, {'kdims':kdims, 'vdims':vdims}, {}
-
+                raise DataError(
+                    "Dimensions may not reference duplicated DataFrame "
+                    f"columns (found duplicate {d!r} columns). If you want to plot "
+                    "a column against itself simply declare two dimensions "
+                    "with the same name.",
+                    cls,
+                )
+        return data, {"kdims": kdims, "vdims": vdims}, {}
 
     @classmethod
     def range(cls, dataset, dimension):
@@ -120,15 +126,13 @@ class cuDFInterface(PandasInterface):
         column = dataset.data[dimension.name]
         if dimension.nodata is not None:
             column = cls.replace_value(column, dimension.nodata)
-        if dtype_kind(column) == 'O':
+        if dtype_kind(column) == "O":
             return np.nan, np.nan
         else:
             return finite_range(column, column.min(), column.max())
 
-
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True, compute=True,
-               keep_index=False):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
         dim = dataset.get_dimension(dim, strict=True)
         data = dataset.data[dim.name]
         if not expanded:
@@ -151,14 +155,14 @@ class cuDFInterface(PandasInterface):
 
         # Update the kwargs appropriately for Element group types
         group_kwargs = {}
-        group_type = dict if group_type == 'raw' else group_type
+        group_type = dict if group_type == "raw" else group_type
         if issubclass(group_type, Element):
             group_kwargs.update(util.get_param_values(dataset))
-            group_kwargs['kdims'] = kdims
+            group_kwargs["kdims"] = kdims
         group_kwargs.update(kwargs)
 
         # Propagate dataset
-        group_kwargs['dataset'] = dataset.dataset
+        group_kwargs["dataset"] = dataset.dataset
 
         # Find all the keys along supplied dimensions
         keys = product(*(dataset.data[dimensions[0]].unique().values_host for d in dimensions))
@@ -178,7 +182,6 @@ class cuDFInterface(PandasInterface):
                 return container_type(grouped_data, kdims=kdims)
         else:
             return container_type(grouped_data)
-
 
     @classmethod
     def select_mask(cls, dataset, selection):
@@ -202,7 +205,7 @@ class cuDFInterface(PandasInterface):
             new_masks = []
             if isinstance(sel, slice):
                 with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore', r'invalid value encountered')
+                    warnings.filterwarnings("ignore", r"invalid value encountered")
                     if sel.start is not None:
                         # Comparison has to be in this order due to issues with datetime comparison (see #6407)
                         new_masks.append(arr >= sel.start)
@@ -215,7 +218,7 @@ class cuDFInterface(PandasInterface):
                     new_mask &= imask
             elif isinstance(sel, (set, list)):
                 for v in sel:
-                    new_masks.append(arr==v)
+                    new_masks.append(arr == v)
                 if not new_masks:
                     continue
                 new_mask = new_masks[0]
@@ -243,7 +246,7 @@ class cuDFInterface(PandasInterface):
 
         """
         mask = cls.select_mask(dataset, selection).to_cupy()
-        extra = (mask[1:] ^ mask[:-1])
+        extra = mask[1:] ^ mask[:-1]
         mask[1:] |= extra
         mask[:-1] |= extra
         return mask
@@ -264,6 +267,7 @@ class cuDFInterface(PandasInterface):
     @classmethod
     def concat_fn(cls, dataframes, **kwargs):
         import cudf
+
         return cudf.concat(dataframes, **kwargs)
 
     @classmethod
@@ -280,33 +284,38 @@ class cuDFInterface(PandasInterface):
 
         data = dataset.data
         cols = [d.name for d in dataset.kdims if d in dimensions]
-        vdims = dataset.dimensions('value', label='name')
-        reindexed = data[cols+vdims]
+        vdims = dataset.dimensions("value", label="name")
+        reindexed = data[cols + vdims]
         agg = function.__name__
         if len(dimensions):
-            agg_map = {'amin': 'min', 'amax': 'max'}
+            agg_map = {"amin": "min", "amax": "max"}
             agg = agg_map.get(agg, agg)
             grouped = reindexed.groupby(cols, sort=False)
             if not hasattr(grouped, agg):
-                raise ValueError(f'{agg} aggregation is not supported on cudf DataFrame.')
+                raise ValueError(f"{agg} aggregation is not supported on cudf DataFrame.")
             numeric_cols = [
-                c for c, d in zip(reindexed.columns, reindexed.dtypes, strict=True)
+                c
+                for c, d in zip(reindexed.columns, reindexed.dtypes, strict=True)
                 if is_numeric_dtype(d) and c not in cols
             ]
             df = getattr(grouped[numeric_cols], agg)().reset_index()
         else:
-            agg_map = {'amin': 'min', 'amax': 'max', 'size': 'count'}
+            agg_map = {"amin": "min", "amax": "max", "size": "count"}
             agg = agg_map.get(agg, agg)
             if not hasattr(reindexed, agg):
-                raise ValueError(f'{agg} aggregation is not supported on cudf DataFrame.')
+                raise ValueError(f"{agg} aggregation is not supported on cudf DataFrame.")
             agg = getattr(reindexed, agg)()
             try:
-                data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_numpy(), strict=True)}
+                data = {
+                    col: [v] for col, v in zip(agg.index.values_host, agg.to_numpy(), strict=True)
+                }
             except Exception:
                 # Give FutureWarning: 'The to_array method will be removed in a future cuDF release.
                 # Consider using `to_numpy` instead.'
                 # Seen in cudf=21.12.01
-                data = {col: [v] for col, v in zip(agg.index.values_host, agg.to_array(), strict=True)}
+                data = {
+                    col: [v] for col, v in zip(agg.index.values_host, agg.to_array(), strict=True)
+                }
             df = pd.DataFrame(data, columns=list(agg.index.values_host))
 
         dropped = []
@@ -314,7 +323,6 @@ class cuDFInterface(PandasInterface):
             if vd not in df.columns:
                 dropped.append(vd)
         return df, dropped
-
 
     @classmethod
     def iloc(cls, dataset, index):
@@ -347,14 +355,12 @@ class cuDFInterface(PandasInterface):
                 result = result.to_frame().T
         return result
 
-
     @classmethod
     def sort(cls, dataset, by=None, reverse=False):
         if by is None:
             by = []
         cols = [dataset.get_dimension(d, strict=True).name for d in by]
         return dataset.data.sort_values(by=cols, ascending=not reverse)
-
 
     @classmethod
     def dframe(cls, dataset, dimensions):

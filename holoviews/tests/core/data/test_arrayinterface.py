@@ -12,38 +12,37 @@ class ArrayDatasetTest(HomogeneousColumnTests, InterfaceTests):
     Test of the ArrayDataset interface.
     """
 
-    datatype = 'array'
+    datatype = "array"
     data_type = np.ndarray
 
     __test__ = True
 
     def test_dataset_empty_list_init_dtypes(self):
-        dataset = hv.Dataset([], kdims=['x'], vdims=['y'])
-        for d in 'xy':
+        dataset = hv.Dataset([], kdims=["x"], vdims=["y"])
+        for d in "xy":
             assert dataset.dimension_values(d).dtype == np.float64
 
     def test_dataset_empty_list_dtypes(self):
-        dataset = hv.Dataset([], kdims=['x'], vdims=['y'])
-        for d in 'xy':
+        dataset = hv.Dataset([], kdims=["x"], vdims=["y"])
+        for d in "xy":
             assert dataset.interface.dtype(dataset, d) == np.float64
 
     def test_dataset_simple_dict_sorted(self):
-        dataset = hv.Dataset({2: 2, 1: 1, 3: 3}, kdims=['x'], vdims=['y'])
-        assert_element_equal(dataset, hv.Dataset([(i, i) for i in range(1, 4)],
-                                          kdims=['x'], vdims=['y']))
+        dataset = hv.Dataset({2: 2, 1: 1, 3: 3}, kdims=["x"], vdims=["y"])
+        assert_element_equal(
+            dataset, hv.Dataset([(i, i) for i in range(1, 4)], kdims=["x"], vdims=["y"])
+        )
 
     def test_dataset_sort_hm(self):
-        ds = hv.Dataset(([2, 2, 1], [2,1,2], [1, 2, 3]),
-                     kdims=['x', 'y'], vdims=['z']).sort()
-        ds_sorted = hv.Dataset(([1, 2, 2], [2, 1, 2], [3, 2, 1]),
-                            kdims=['x', 'y'], vdims=['z'])
+        ds = hv.Dataset(([2, 2, 1], [2, 1, 2], [1, 2, 3]), kdims=["x", "y"], vdims=["z"]).sort()
+        ds_sorted = hv.Dataset(([1, 2, 2], [2, 1, 2], [3, 2, 1]), kdims=["x", "y"], vdims=["z"])
         assert_element_equal(ds.sort(), ds_sorted)
 
     def test_dataset_sort_reverse_hm(self):
-        ds = hv.Dataset(([2, 1, 2, 1], [2, 2, 1, 1], [0, 1, 2, 3]),
-                     kdims=['x', 'y'], vdims=['z'])
-        ds_sorted = hv.Dataset(([2, 2, 1, 1], [2, 1, 2, 1], [0, 2, 1, 3]),
-                            kdims=['x', 'y'], vdims=['z'])
+        ds = hv.Dataset(([2, 1, 2, 1], [2, 2, 1, 1], [0, 1, 2, 3]), kdims=["x", "y"], vdims=["z"])
+        ds_sorted = hv.Dataset(
+            ([2, 2, 1, 1], [2, 1, 2, 1], [0, 2, 1, 3]), kdims=["x", "y"], vdims=["z"]
+        )
         assert_element_equal(ds.sort(reverse=True), ds_sorted)
 
     def test_dataset_transform_replace_hm(self):

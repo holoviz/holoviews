@@ -29,7 +29,11 @@ def watch_hook(dim, pos):
         ({"logy": True}, watch_hook("y", "start"), "down"),
         ({"logx": True, "invert_axes": True}, watch_hook("x", "start"), "right"),
         ({"logy": True, "invert_yaxis": True}, watch_hook("y", "end"), "up"),
-        ({"logx": True, "invert_axes": True, "invert_xaxis": True}, watch_hook("x", "end"), "left"),
+        (
+            {"logx": True, "invert_axes": True, "invert_xaxis": True},
+            watch_hook("x", "end"),
+            "left",
+        ),
     ],
     ids=["logy", "logx", "logy-invert", "logx-invert"],
 )

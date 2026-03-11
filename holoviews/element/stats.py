@@ -22,32 +22,31 @@ class StatisticsElement(Dataset, Element2D):
     _auto_indexable_1d = False
 
     def __init__(self, data, kdims=None, vdims=None, **params):
-        if (isinstance(data, Element) and
-                data.interface.datatype != "dataframe"):
+        if isinstance(data, Element) and data.interface.datatype != "dataframe":
             params.update(get_param_values(data))
-            kdims = kdims or data.dimensions()[:len(self.kdims)]
+            kdims = kdims or data.dimensions()[: len(self.kdims)]
             data = tuple(data.dimension_values(d) for d in kdims)
         params.update(dict(kdims=kdims, vdims=[], _validate_vdims=False))
         super().__init__(data, **params)
         if not vdims:
             with param.edit_constant(self):
-                self.vdims = [Dimension('Density')]
+                self.vdims = [Dimension("Density")]
         elif len(vdims) > 1:
             raise ValueError(f"{type(self).__name__} expects at most one vdim.")
         else:
             with param.edit_constant(self):
-                self.vdims = process_dimensions(None, vdims)['vdims']
+                self.vdims = process_dimensions(None, vdims)["vdims"]
 
     @property
     def dataset(self):
-        """The Dataset that this object was created from
-
-        """
+        """The Dataset that this object was created from"""
         from ..core.data import Dataset
+
         if self._dataset is None:
-            datatype = list(unique_iterator(self.datatype+Dataset.datatype))
-            dataset = Dataset(self, dataset=None, pipeline=None, transforms=None,
-                              vdims=[], datatype=datatype)
+            datatype = list(unique_iterator(self.datatype + Dataset.datatype))
+            dataset = Dataset(
+                self, dataset=None, pipeline=None, transforms=None, vdims=[], datatype=datatype
+            )
             return dataset
         elif not isinstance(self._dataset, Dataset):
             return Dataset(self, _validate_vdims=False, **self._dataset)
@@ -127,9 +126,11 @@ class StatisticsElement(Dataset, Element2D):
             dimensions = self.kdims
         vdims = [d for d in dimensions if d in self.vdims]
         if vdims:
-            raise ValueError('{} element does not hold data for value '
-                             'dimensions. Could not return data for {} '
-                             'dimension(s).'.format(type(self).__name__, ', '.join([d.name for d in vdims])))
+            raise ValueError(
+                "{} element does not hold data for value "
+                "dimensions. Could not return data for {} "
+                "dimension(s).".format(type(self).__name__, ", ".join([d.name for d in vdims]))
+            )
         return super().dframe(dimensions, False)
 
     def columns(self, dimensions=None):
@@ -153,9 +154,11 @@ class StatisticsElement(Dataset, Element2D):
             dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
         vdims = [d for d in dimensions if d in self.vdims]
         if vdims:
-            raise ValueError('{} element does not hold data for value '
-                             'dimensions. Could not return data for {} '
-                             'dimension(s).'.format(type(self).__name__, ', '.join([d.name for d in vdims])))
+            raise ValueError(
+                "{} element does not hold data for value "
+                "dimensions. Could not return data for {} "
+                "dimension(s).".format(type(self).__name__, ", ".join([d.name for d in vdims]))
+            )
         return dict([(d.name, self.dimension_values(d)) for d in dimensions])
 
 
@@ -168,10 +171,9 @@ class Bivariate(Selection2DExpr, StatisticsElement):
 
     group = param.String(default="Bivariate", constant=True)
 
-    kdims = param.List(default=[Dimension('x'), Dimension('y')],
-                       bounds=(2, 2))
+    kdims = param.List(default=[Dimension("x"), Dimension("y")], bounds=(2, 2))
 
-    vdims = param.List(default=[Dimension('Density')], bounds=(0,1))
+    vdims = param.List(default=[Dimension("Density")], bounds=(0, 1))
 
 
 class Distribution(Selection1DExpr, StatisticsElement):
@@ -182,11 +184,11 @@ class Distribution(Selection1DExpr, StatisticsElement):
 
     """
 
-    group = param.String(default='Distribution', constant=True)
+    group = param.String(default="Distribution", constant=True)
 
-    kdims = param.List(default=[Dimension('Value')], bounds=(1, 1))
+    kdims = param.List(default=[Dimension("Value")], bounds=(1, 1))
 
-    vdims = param.List(default=[Dimension('Density')], bounds=(0, 1))
+    vdims = param.List(default=[Dimension("Density")], bounds=(0, 1))
 
 
 class BoxWhisker(Selection1DExpr, Dataset, Element2D):
@@ -197,11 +199,11 @@ class BoxWhisker(Selection1DExpr, Dataset, Element2D):
 
     """
 
-    group = param.String(default='BoxWhisker', constant=True)
+    group = param.String(default="BoxWhisker", constant=True)
 
     kdims = param.List(default=[], bounds=(0, None))
 
-    vdims = param.List(default=[Dimension('y')], bounds=(1,1))
+    vdims = param.List(default=[Dimension("y")], bounds=(1, 1))
 
     _inverted_expr = True
 
@@ -214,7 +216,7 @@ class Violin(BoxWhisker):
 
     """
 
-    group = param.String(default='Violin', constant=True)
+    group = param.String(default="Violin", constant=True)
 
 
 class HexTiles(Selection2DExpr, Dataset, Element2D):
@@ -226,7 +228,6 @@ class HexTiles(Selection2DExpr, Dataset, Element2D):
 
     """
 
-    group = param.String(default='HexTiles', constant=True)
+    group = param.String(default="HexTiles", constant=True)
 
-    kdims = param.List(default=[Dimension('x'), Dimension('y')],
-                       bounds=(2, 2))
+    kdims = param.List(default=[Dimension("x"), Dimension("y")], bounds=(2, 2))

@@ -1,6 +1,7 @@
 """
 Unit tests of the helper functions in core.utils
 """
+
 import datetime
 import math
 import os
@@ -16,7 +17,7 @@ import pytest
 import holoviews as hv
 from holoviews.core import util
 from holoviews.core.util import (
-     _minmax_finite,
+    _minmax_finite,
     closest_match,
     compute_density,
     compute_edges,
@@ -54,12 +55,14 @@ def with_pandas(request, monkeypatch):
     if request.param:
         pytest.importorskip("pandas")
     else:
-        monkeypatch.setattr(util, 'pd', None)
+        monkeypatch.setattr(util, "pd", None)
 
 
 def with_and_without_pandas(func):
     """Decorator to test both with and without pandas"""
-    return pytest.mark.parametrize("with_pandas", [True, False], indirect=True, ids=["with_pandas", "without_pandas"])(func)
+    return pytest.mark.parametrize(
+        "with_pandas", [True, False], indirect=True, ids=["with_pandas", "without_pandas"]
+    )(func)
 
 
 class TestDeepHash:
@@ -68,126 +71,148 @@ class TestDeepHash:
     """
 
     def test_deephash_list_equality(self):
-        assert deephash([1,2,3]) == deephash([1,2,3])
+        assert deephash([1, 2, 3]) == deephash([1, 2, 3])
 
     def test_deephash_list_inequality(self):
-        obj1 = [1,2,3]
-        obj2 = [1,2,3,4]
+        obj1 = [1, 2, 3]
+        obj2 = [1, 2, 3, 4]
         assert deephash(obj1) != deephash(obj2)
 
     def test_deephash_set_equality(self):
-        assert deephash({1,2,3}) == deephash({1,3,2})
+        assert deephash({1, 2, 3}) == deephash({1, 3, 2})
 
     def test_deephash_set_inequality(self):
-        assert deephash({1,2,3}) != deephash({1,3,4})
+        assert deephash({1, 2, 3}) != deephash({1, 3, 4})
 
     def test_deephash_dict_equality_v1(self):
-        assert deephash({1:'a',2:'b'}) == deephash({2:'b', 1:'a'})
+        assert deephash({1: "a", 2: "b"}) == deephash({2: "b", 1: "a"})
 
     def test_deephash_dict_equality_v2(self):
-        assert deephash({1:'a',2:'b'}) != deephash({2:'b', 1:'c'})
+        assert deephash({1: "a", 2: "b"}) != deephash({2: "b", 1: "c"})
 
     def test_deephash_odict_equality_v1(self):
-        odict1 = dict([(1,'a'), (2,'b')])
-        odict2 = dict([(1,'a'), (2,'b')])
+        odict1 = dict([(1, "a"), (2, "b")])
+        odict2 = dict([(1, "a"), (2, "b")])
         assert deephash(odict1) == deephash(odict2)
 
     def test_deephash_odict_equality_v2(self):
-        odict1 = dict([(1,'a'), (2,'b')])
-        odict2 = dict([(1,'a'), (2,'c')])
+        odict1 = dict([(1, "a"), (2, "b")])
+        odict2 = dict([(1, "a"), (2, "c")])
         assert deephash(odict1) != deephash(odict2)
 
     def test_deephash_numpy_equality(self):
-        assert deephash(np.array([1,2,3])) == deephash(np.array([1,2,3]))
+        assert deephash(np.array([1, 2, 3])) == deephash(np.array([1, 2, 3]))
 
     def test_deephash_numpy_inequality(self):
-        arr1 = np.array([1,2,3])
-        arr2 = np.array([1,2,4])
+        arr1 = np.array([1, 2, 3])
+        arr2 = np.array([1, 2, 4])
         assert deephash(arr1) != deephash(arr2)
 
     def test_deephash_dataframe_equality(self):
-        obj1 = deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]}))
-        obj2 = deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]}))
+        obj1 = deephash(pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}))
+        obj2 = deephash(pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}))
         assert obj1 == obj2
 
     def test_deephash_dataframe_column_inequality(self):
-        obj1 = deephash(pd.DataFrame({'a':[1, 2, 3], 'b':[4, 5, 6]}))
-        obj2 = deephash(pd.DataFrame({'a':[1, 2, 3], 'c':[4, 5, 6]}))
+        obj1 = deephash(pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}))
+        obj2 = deephash(pd.DataFrame({"a": [1, 2, 3], "c": [4, 5, 6]}))
         assert obj1 != obj2
 
     def test_deephash_dataframe_index_inequality(self):
-        obj1 = deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]}))
+        obj1 = deephash(pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}))
         obj2 = deephash(
-            pd.DataFrame({'a':[1, 2, 3], 'b':[4, 5, 6]}, index=pd.Series([0, 1, 2], name='Index'))
+            pd.DataFrame(
+                {"a": [1, 2, 3], "b": [4, 5, 6]}, index=pd.Series([0, 1, 2], name="Index")
+            )
         )
         assert obj1 != obj2
 
     def test_deephash_dataframe_inequality(self):
-        obj1 = deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]}))
-        obj2 = deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,8]}))
+        obj1 = deephash(pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}))
+        obj2 = deephash(pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 8]}))
         assert obj1 != obj2
 
     def test_deephash_series_equality(self):
-        assert deephash(pd.Series([1,2,3])) == deephash(pd.Series([1,2,3]))
+        assert deephash(pd.Series([1, 2, 3])) == deephash(pd.Series([1, 2, 3]))
 
     def test_deephash_series_name_inequality(self):
-        obj1 = deephash(pd.Series([1,2,3], name='Foo'))
-        obj2 = deephash(pd.Series([1,2,3], name='Bar'))
+        obj1 = deephash(pd.Series([1, 2, 3], name="Foo"))
+        obj2 = deephash(pd.Series([1, 2, 3], name="Bar"))
         assert obj1 != obj2
 
     def test_deephash_series_index_inequality(self):
-        obj1 = deephash(pd.Series([1,2,3], index=pd.Series([0, 1, 2], name='Index')))
-        obj2 = deephash(pd.Series([1,2,3], index=pd.Series([2, 1, 0], name='Index')))
+        obj1 = deephash(pd.Series([1, 2, 3], index=pd.Series([0, 1, 2], name="Index")))
+        obj2 = deephash(pd.Series([1, 2, 3], index=pd.Series([2, 1, 0], name="Index")))
         assert obj1 != obj2
 
     def test_deephash_series_index_name_inequality(self):
-        obj1 = deephash(pd.Series([1,2,3], index=pd.Series([0, 1, 2], name='Foo')))
-        obj2 = deephash(pd.Series([1,2,3], index=pd.Series([0, 1, 2], name='Bar')))
+        obj1 = deephash(pd.Series([1, 2, 3], index=pd.Series([0, 1, 2], name="Foo")))
+        obj2 = deephash(pd.Series([1, 2, 3], index=pd.Series([0, 1, 2], name="Bar")))
         assert obj1 != obj2
 
     def test_deephash_series_inequality(self):
         assert deephash(pd.Series([1, 2, 3])) != deephash(pd.Series([1, 2, 7]))
 
     def test_deephash_datetime_equality(self):
-        dt1 = datetime.datetime(1,2,3)
-        dt2 = datetime.datetime(1,2,3)
+        dt1 = datetime.datetime(1, 2, 3)
+        dt2 = datetime.datetime(1, 2, 3)
         assert deephash(dt1) == deephash(dt2)
 
     def test_deephash_datetime_inequality(self):
-        dt1 = datetime.datetime(1,2,3)
-        dt2 = datetime.datetime(1,2,5)
+        dt1 = datetime.datetime(1, 2, 3)
+        dt2 = datetime.datetime(1, 2, 5)
         assert deephash(dt1) != deephash(dt2)
 
     def test_deephash_nested_native_equality(self):
-        obj1 = [[1,2], (3,6,7, [True]), 'a', 9.2, 42, {1:3,2:'c'}]
-        obj2 = [[1,2], (3,6,7, [True]), 'a', 9.2, 42, {1:3,2:'c'}]
+        obj1 = [[1, 2], (3, 6, 7, [True]), "a", 9.2, 42, {1: 3, 2: "c"}]
+        obj2 = [[1, 2], (3, 6, 7, [True]), "a", 9.2, 42, {1: 3, 2: "c"}]
         assert deephash(obj1) == deephash(obj2)
 
     def test_deephash_nested_native_inequality(self):
-        obj1 = [[1,2], (3,6,7, [False]), 'a', 9.2, 42, {1:3,2:'c'}]
-        obj2 = [[1,2], (3,6,7, [True]), 'a', 9.2, 42, {1:3,2:'c'}]
+        obj1 = [[1, 2], (3, 6, 7, [False]), "a", 9.2, 42, {1: 3, 2: "c"}]
+        obj2 = [[1, 2], (3, 6, 7, [True]), "a", 9.2, 42, {1: 3, 2: "c"}]
         assert deephash(obj1) != deephash(obj2)
 
     def test_deephash_nested_mixed_equality(self):
-        obj1 = [datetime.datetime(1,2,3), {1,2,3},
-                pd.DataFrame({'a':[1,2],'b':[3,4]}),
-                np.array([1,2,3]), {'a':'b', '1':True},
-                dict([(1,'a'),(2,'b')]), np.int64(34)]
-        obj2 = [datetime.datetime(1,2,3), {1,2,3},
-                pd.DataFrame({'a':[1,2],'b':[3,4]}),
-                np.array([1,2,3]), {'a':'b', '1':True},
-                dict([(1,'a'),(2,'b')]), np.int64(34)]
+        obj1 = [
+            datetime.datetime(1, 2, 3),
+            {1, 2, 3},
+            pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
+            np.array([1, 2, 3]),
+            {"a": "b", "1": True},
+            dict([(1, "a"), (2, "b")]),
+            np.int64(34),
+        ]
+        obj2 = [
+            datetime.datetime(1, 2, 3),
+            {1, 2, 3},
+            pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
+            np.array([1, 2, 3]),
+            {"a": "b", "1": True},
+            dict([(1, "a"), (2, "b")]),
+            np.int64(34),
+        ]
         assert deephash(obj1) == deephash(obj2)
 
     def test_deephash_nested_mixed_inequality(self):
-        obj1 = [datetime.datetime(1,2,3), {1,2,3},
-                pd.DataFrame({'a':[1,2],'b':[3,4]}),
-                np.array([1,2,3]), {'a':'b', '2':True},
-                dict([(1,'a'),(2,'b')]), np.int64(34)]
-        obj2 = [datetime.datetime(1,2,3), {1,2,3},
-                pd.DataFrame({'a':[1,2],'b':[3,4]}),
-                np.array([1,2,3]), {'a':'b', '1':True},
-                dict([(1,'a'),(2,'b')]), np.int64(34)]
+        obj1 = [
+            datetime.datetime(1, 2, 3),
+            {1, 2, 3},
+            pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
+            np.array([1, 2, 3]),
+            {"a": "b", "2": True},
+            dict([(1, "a"), (2, "b")]),
+            np.int64(34),
+        ]
+        obj2 = [
+            datetime.datetime(1, 2, 3),
+            {1, 2, 3},
+            pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
+            np.array([1, 2, 3]),
+            {"a": "b", "1": True},
+            dict([(1, "a"), (2, "b")]),
+            np.int64(34),
+        ]
         assert deephash(obj1) != deephash(obj2)
 
 
@@ -197,119 +222,118 @@ class TestAllowablePrefix:
     """
 
     def test_allowable_false_1(self):
-        assert not sanitize_identifier.allowable('trait_names')
+        assert not sanitize_identifier.allowable("trait_names")
 
     def test_allowable_false_2(self):
-        assert not sanitize_identifier.allowable('_repr_png_')
+        assert not sanitize_identifier.allowable("_repr_png_")
 
     def test_allowable_false_3(self):
-        assert not sanitize_identifier.allowable('_ipython_display_')
+        assert not sanitize_identifier.allowable("_ipython_display_")
 
     def test_allowable_false_underscore(self):
-        assert not sanitize_identifier.allowable('_foo', True)
+        assert not sanitize_identifier.allowable("_foo", True)
 
     def test_allowable_true(self):
-        assert sanitize_identifier.allowable('some_string')
+        assert sanitize_identifier.allowable("some_string")
 
     def test_prefix_test1(self):
-        prefixed = sanitize_identifier.prefixed('_some_string')
+        prefixed = sanitize_identifier.prefixed("_some_string")
         assert prefixed
 
     def test_prefix_test2(self):
-        prefixed = sanitize_identifier.prefixed('some_string')
+        prefixed = sanitize_identifier.prefixed("some_string")
         assert not prefixed
 
     def test_prefix_test3(self):
-        prefixed = sanitize_identifier.prefixed('۵some_string')
+        prefixed = sanitize_identifier.prefixed("۵some_string")
         assert prefixed
 
 
 class TestTreeAttribute:
-
     def test_simple_lowercase_string(self):
-        assert not tree_attribute('lowercase')
+        assert not tree_attribute("lowercase")
 
     def test_simple_uppercase_string(self):
-        assert tree_attribute('UPPERCASE')
+        assert tree_attribute("UPPERCASE")
 
     def test_underscore_string(self):
-        assert not tree_attribute('_underscore')
-
+        assert not tree_attribute("_underscore")
 
 
 class TestSanitization:
     """
     Tests of sanitize_identifier
     """
+
     def test_simple_pound_sanitized(self):
-        sanitized = sanitize_identifier('£')
-        assert sanitized == 'pound'
+        sanitized = sanitize_identifier("£")
+        assert sanitized == "pound"
 
     def test_simple_digit_sanitized(self):
-        sanitized = sanitize_identifier('0')
-        assert sanitized == 'A_0'
+        sanitized = sanitize_identifier("0")
+        assert sanitized == "A_0"
 
     def test_simple_underscore_sanitized(self):
-        sanitized = sanitize_identifier('_test')
-        assert sanitized == 'A__test'
+        sanitized = sanitize_identifier("_test")
+        assert sanitized == "A__test"
 
     def test_simple_alpha_sanitized(self):
-        sanitized = sanitize_identifier('α')
-        assert sanitized == 'α'
+        sanitized = sanitize_identifier("α")
+        assert sanitized == "α"
 
     def test_simple_a_pound_sanitized(self):
-        sanitized = sanitize_identifier('a £')
-        assert sanitized == 'A_pound'
+        sanitized = sanitize_identifier("a £")
+        assert sanitized == "A_pound"
 
     def test_capital_delta_sanitized(self):
-        sanitized = sanitize_identifier('Δ')
-        assert sanitized == 'Δ'
+        sanitized = sanitize_identifier("Δ")
+        assert sanitized == "Δ"
 
     def test_lowercase_delta_sanitized(self):
-        sanitized = sanitize_identifier('δ')
-        assert sanitized == 'δ'
+        sanitized = sanitize_identifier("δ")
+        assert sanitized == "δ"
 
     def test_simple_alpha_beta_sanitized(self):
-        sanitized = sanitize_identifier('α β')
-        assert sanitized == 'α_β'
+        sanitized = sanitize_identifier("α β")
+        assert sanitized == "α_β"
 
     def test_simple_alpha_beta_underscore_sanitized(self):
-        sanitized = sanitize_identifier('α_β')
-        assert sanitized == 'α_β'
+        sanitized = sanitize_identifier("α_β")
+        assert sanitized == "α_β"
 
     def test_simple_alpha_beta_double_underscore_sanitized(self):
-        sanitized = sanitize_identifier('α__β')
-        assert sanitized == 'α__β'
+        sanitized = sanitize_identifier("α__β")
+        assert sanitized == "α__β"
 
     def test_simple_alpha_beta_mixed_underscore_space_sanitized(self):
-        sanitized = sanitize_identifier('α__  β')
-        assert sanitized == 'α__β'
+        sanitized = sanitize_identifier("α__  β")
+        assert sanitized == "α__β"
 
     def test_alpha_times_two(self):
-        sanitized = sanitize_identifier('α*2')
-        assert sanitized == 'α_times_2'
+        sanitized = sanitize_identifier("α*2")
+        assert sanitized == "α_times_2"
 
     def test_urdu_a_five_sanitized(self):
         """
         Note: There would be a clash if you mixed the languages of
         your digits! E.g. arabic ٥ five and urdu ۵ five
         """
-        sanitized = sanitize_identifier('a ۵')
-        assert sanitized == 'A_۵'
+        sanitized = sanitize_identifier("a ۵")
+        assert sanitized == "A_۵"
 
     def test_umlaut_sanitized(self):
-        sanitized = sanitize_identifier('Festkörperphysik')
-        assert sanitized == 'Festkörperphysik'
+        sanitized = sanitize_identifier("Festkörperphysik")
+        assert sanitized == "Festkörperphysik"
 
     def test_power_umlaut_sanitized(self):
-        sanitized = sanitize_identifier('^Festkörperphysik')
-        assert sanitized == 'power_Festkörperphysik'
+        sanitized = sanitize_identifier("^Festkörperphysik")
+        assert sanitized == "power_Festkörperphysik"
 
     def test_custom_dollar_removal_py2(self):
-        sanitize_identifier.eliminations.extend(['dollar'])
-        sanitized = sanitize_identifier('$E$')
-        assert sanitized == 'E'
-        sanitize_identifier.eliminations.remove('dollar')
+        sanitize_identifier.eliminations.extend(["dollar"])
+        sanitized = sanitize_identifier("$E$")
+        assert sanitized == "E"
+        sanitize_identifier.eliminations.remove("dollar")
 
 
 class TestFindRange:
@@ -333,7 +357,7 @@ class TestFindRange:
         assert find_range(self.nan_floats) == (-0.32, 1.42)
 
     def test_str_range(self):
-        assert find_range(self.str_vals) == ("Aardvark",  "Zebra")
+        assert find_range(self.str_vals) == ("Aardvark", "Zebra")
 
     def test_soft_range(self):
         assert find_range(self.float_vals, soft_range=(np.nan, 100)) == (-0.1424, 100)
@@ -345,19 +369,25 @@ class TestDimensionRange:
     """
 
     def setup_method(self):
-        self.date_range = (np.datetime64(datetime.datetime(2017, 1, 1)),
-                           np.datetime64(datetime.datetime(2017, 1, 2)))
-        self.date_range2 = (np.datetime64(datetime.datetime(2016, 12, 31)),
-                            np.datetime64(datetime.datetime(2017, 1, 3)))
+        self.date_range = (
+            np.datetime64(datetime.datetime(2017, 1, 1)),
+            np.datetime64(datetime.datetime(2017, 1, 2)),
+        )
+        self.date_range2 = (
+            np.datetime64(datetime.datetime(2016, 12, 31)),
+            np.datetime64(datetime.datetime(2017, 1, 3)),
+        )
 
     def test_dimension_range_date_hard_range(self):
-        drange = dimension_range(self.date_range2[0], self.date_range2[1],
-                                 self.date_range, (None, None))
+        drange = dimension_range(
+            self.date_range2[0], self.date_range2[1], self.date_range, (None, None)
+        )
         assert drange == self.date_range
 
     def test_dimension_range_date_soft_range(self):
-        drange = dimension_range(self.date_range[0], self.date_range[1],
-                                 (None, None), self.date_range2)
+        drange = dimension_range(
+            self.date_range[0], self.date_range[1], (None, None), self.date_range2
+        )
         assert drange == self.date_range2
 
     def test_both_hard_finite_short_circuits(self):
@@ -367,8 +397,10 @@ class TestDimensionRange:
     def test_both_hard_finite_np_scalars(self):
         """hard_range from max_range output contains numpy scalars."""
         result = dimension_range(
-            np.float64(0.0), np.float64(100.0),
-            (np.float64(10.0), np.float64(90.0)), (None, None),
+            np.float64(0.0),
+            np.float64(100.0),
+            (np.float64(10.0), np.float64(90.0)),
+            (None, None),
         )
         assert result == (np.float64(10.0), np.float64(90.0))
 
@@ -377,8 +409,7 @@ class TestDimensionRange:
         assert result == (10.0, 90.0)
 
     def test_both_hard_finite_ignores_padding(self):
-        result = dimension_range(0.0, 100.0, (10.0, 90.0), (None, None),
-                                 padding=(0.1, 0.1))
+        result = dimension_range(0.0, 100.0, (10.0, 90.0), (None, None), padding=(0.1, 0.1))
         assert result == (10.0, 90.0)
 
     def test_one_hard_bound_does_not_short_circuit(self):
@@ -466,7 +497,7 @@ class TestMaxRange:
 
     def test_max_range3(self):
         periods = [(pd.Period("1990", freq="M"), pd.Period("1991", freq="M"))]
-        expected = (np.datetime64("1990", 'ns'), np.datetime64("1991", 'ns'))
+        expected = (np.datetime64("1990", "ns"), np.datetime64("1991", "ns"))
         assert max_range(periods) == expected
 
     # ── Numeric fast path ─────────────────────────────────────────
@@ -506,13 +537,18 @@ class TestMaxRange:
         assert max_range([(float("inf"), float("inf"))]) == (float("inf"), float("inf"))
 
     def test_neg_inf(self):
-        assert max_range([(float("-inf"), float("inf"))], combined=False) == (float("-inf"), float("inf"))
+        assert max_range([(float("-inf"), float("inf"))], combined=False) == (
+            float("-inf"),
+            float("inf"),
+        )
 
     def test_np_int64(self):
         assert max_range([(np.int64(1), np.int64(5))]) == (1.0, 5.0)
 
     def test_np_int64_uncombined(self):
-        result = max_range([(np.int64(1), np.int64(10)), (np.int64(3), np.int64(7))], combined=False)
+        result = max_range(
+            [(np.int64(1), np.int64(10)), (np.int64(3), np.int64(7))], combined=False
+        )
         assert result == (1.0, 10.0)
 
     def test_np_float64(self):
@@ -574,158 +610,155 @@ class TestMaxRange:
 
 
 class TestWrapTupleStreams:
-
-
     def test_no_streams(self):
-        result = wrap_tuple_streams((1,2), [],[])
-        assert result == (1,2)
+        result = wrap_tuple_streams((1, 2), [], [])
+        assert result == (1, 2)
 
     def test_no_streams_two_kdims(self):
-        result = wrap_tuple_streams((1,2),
-                                    [hv.Dimension('x'), hv.Dimension('y')],
-                                    [])
-        assert result == (1,2)
+        result = wrap_tuple_streams((1, 2), [hv.Dimension("x"), hv.Dimension("y")], [])
+        assert result == (1, 2)
 
     def test_no_streams_none_value(self):
-        result = wrap_tuple_streams((1,None),
-                                    [hv.Dimension('x'), hv.Dimension('y')],
-                                    [])
-        assert result == (1,None)
+        result = wrap_tuple_streams((1, None), [hv.Dimension("x"), hv.Dimension("y")], [])
+        assert result == (1, None)
 
     def test_no_streams_one_stream_substitution(self):
-        result = wrap_tuple_streams((None,3),
-                                    [hv.Dimension('x'), hv.Dimension('y')],
-                                    [PointerXY(x=-5,y=10)])
-        assert result == (-5,3)
+        result = wrap_tuple_streams(
+            (None, 3), [hv.Dimension("x"), hv.Dimension("y")], [PointerXY(x=-5, y=10)]
+        )
+        assert result == (-5, 3)
 
     def test_no_streams_two_stream_substitution(self):
-        result = wrap_tuple_streams((None,None),
-                                    [hv.Dimension('x'), hv.Dimension('y')],
-                                    [PointerXY(x=0,y=5)])
-        assert result == (0,5)
+        result = wrap_tuple_streams(
+            (None, None), [hv.Dimension("x"), hv.Dimension("y")], [PointerXY(x=0, y=5)]
+        )
+        assert result == (0, 5)
 
 
 class TestMergeDimensions:
-
     def test_merge_dimensions(self):
-        dimensions = merge_dimensions([[hv.Dimension('A')], [hv.Dimension('A'), hv.Dimension('B')]])
-        assert dimensions == [hv.Dimension('A'), hv.Dimension('B')]
+        dimensions = merge_dimensions(
+            [[hv.Dimension("A")], [hv.Dimension("A"), hv.Dimension("B")]]
+        )
+        assert dimensions == [hv.Dimension("A"), hv.Dimension("B")]
 
     def test_merge_dimensions_with_values(self):
-        dimensions = merge_dimensions([[hv.Dimension('A', values=[0, 1])],
-                                       [hv.Dimension('A', values=[1, 2]), hv.Dimension('B')]])
-        assert dimensions == [hv.Dimension('A'), hv.Dimension('B')]
+        dimensions = merge_dimensions(
+            [
+                [hv.Dimension("A", values=[0, 1])],
+                [hv.Dimension("A", values=[1, 2]), hv.Dimension("B")],
+            ]
+        )
+        assert dimensions == [hv.Dimension("A"), hv.Dimension("B")]
         assert dimensions[0].values == [0, 1, 2]
 
 
 class TestTreePathUtils:
-
     def test_get_path_with_label(self):
-        path = get_path(hv.Element('Test', label='A'))
-        assert path == ('Element', 'A')
+        path = get_path(hv.Element("Test", label="A"))
+        assert path == ("Element", "A")
 
     def test_get_path_without_label(self):
-        path = get_path(hv.Element('Test'))
-        assert path == ('Element',)
+        path = get_path(hv.Element("Test"))
+        assert path == ("Element",)
 
     def test_get_path_with_custom_group(self):
-        path = get_path(hv.Element('Test', group='Custom Group'))
-        assert path == ('Custom_Group',)
+        path = get_path(hv.Element("Test", group="Custom Group"))
+        assert path == ("Custom_Group",)
 
     def test_get_path_with_custom_group_and_label(self):
-        path = get_path(hv.Element('Test', group='Custom Group', label='A'))
-        assert path == ('Custom_Group', 'A')
+        path = get_path(hv.Element("Test", group="Custom Group", label="A"))
+        assert path == ("Custom_Group", "A")
 
     def test_get_path_from_item_with_custom_group(self):
-        path = get_path((('Custom',), hv.Element('Test')))
-        assert path == ('Custom',)
+        path = get_path((("Custom",), hv.Element("Test")))
+        assert path == ("Custom",)
 
     def test_get_path_from_item_with_custom_group_and_label(self):
-        path = get_path((('Custom', 'Path'), hv.Element('Test')))
-        assert path == ('Custom',)
+        path = get_path((("Custom", "Path"), hv.Element("Test")))
+        assert path == ("Custom",)
 
     def test_get_path_from_item_with_custom_group_and_matching_label(self):
-        path = get_path((('Custom', 'Path'), hv.Element('Test', label='Path')))
-        assert path == ('Custom', 'Path')
+        path = get_path((("Custom", "Path"), hv.Element("Test", label="Path")))
+        assert path == ("Custom", "Path")
 
     def test_make_path_unique_no_clash(self):
-        path = ('Element', 'A')
+        path = ("Element", "A")
         new_path = make_path_unique(path, {}, True)
         assert new_path == path
 
     def test_make_path_unique_clash_without_label(self):
-        path = ('Element',)
+        path = ("Element",)
         new_path = make_path_unique(path, {path: 1}, True)
-        assert new_path == (*path, 'I')
+        assert new_path == (*path, "I")
 
     def test_make_path_unique_clash_with_label(self):
-        path = ('Element', 'A')
+        path = ("Element", "A")
         new_path = make_path_unique(path, {path: 1}, True)
-        assert new_path == (*path, 'I')
+        assert new_path == (*path, "I")
 
     def test_make_path_unique_no_clash_old(self):
-        path = ('Element', 'A')
+        path = ("Element", "A")
         new_path = make_path_unique(path, {}, False)
         assert new_path == path
 
     def test_make_path_unique_clash_without_label_old(self):
-        path = ('Element',)
+        path = ("Element",)
         new_path = make_path_unique(path, {path: 1}, False)
-        assert new_path == (*path, 'I')
+        assert new_path == (*path, "I")
 
     def test_make_path_unique_clash_with_label_old(self):
-        path = ('Element', 'A')
+        path = ("Element", "A")
         new_path = make_path_unique(path, {path: 1}, False)
-        assert new_path == (*path[:-1], 'I')
+        assert new_path == (*path[:-1], "I")
 
 
 class TestDatetimeUtils:
-
     def test_compute_density_float(self):
         assert compute_density(0, 1, 10) == 10
 
     def test_compute_us_density_1s_datetime(self):
         start = np.datetime64(datetime.datetime.today())
-        end = start+np.timedelta64(1, 's')
+        end = start + np.timedelta64(1, "s")
         assert compute_density(start, end, 10) == 1e-5
 
     def test_compute_us_density_10s_datetime(self):
         start = np.datetime64(datetime.datetime.today())
-        end = start+np.timedelta64(10, 's')
+        end = start + np.timedelta64(10, "s")
         assert compute_density(start, end, 10) == 1e-6
 
     def test_compute_s_density_1s_datetime(self):
         start = np.datetime64(datetime.datetime.today())
-        end = start+np.timedelta64(1, 's')
-        assert compute_density(start, end, 10, 's') == 10
+        end = start + np.timedelta64(1, "s")
+        assert compute_density(start, end, 10, "s") == 10
 
     def test_compute_s_density_10s_datetime(self):
         start = np.datetime64(datetime.datetime.today())
-        end = start+np.timedelta64(10, 's')
-        assert compute_density(start, end, 10, 's') == 1
+        end = start + np.timedelta64(10, "s")
+        assert compute_density(start, end, 10, "s") == 1
 
     def test_datetime_to_us_int(self):
         dt = datetime.datetime(2017, 1, 1)
         assert dt_to_int(dt) == 1483228800000000.0
 
     def test_datetime64_s_to_ns_int(self):
-        dt = np.datetime64(datetime.datetime(2017, 1, 1), 's')
-        assert dt_to_int(dt, 'ns') == 1483228800000000000.0
+        dt = np.datetime64(datetime.datetime(2017, 1, 1), "s")
+        assert dt_to_int(dt, "ns") == 1483228800000000000.0
 
     def test_datetime64_us_to_ns_int(self):
-        dt = np.datetime64(datetime.datetime(2017, 1, 1), 'us')
-        assert dt_to_int(dt, 'ns') == 1483228800000000000.0
+        dt = np.datetime64(datetime.datetime(2017, 1, 1), "us")
+        assert dt_to_int(dt, "ns") == 1483228800000000000.0
 
     def test_datetime64_to_ns_int(self):
         dt = np.datetime64(datetime.datetime(2017, 1, 1))
-        assert dt_to_int(dt, 'ns') == 1483228800000000000.0
+        assert dt_to_int(dt, "ns") == 1483228800000000000.0
 
     def test_datetime64_us_to_us_int(self):
-        dt = np.datetime64(datetime.datetime(2017, 1, 1), 'us')
+        dt = np.datetime64(datetime.datetime(2017, 1, 1), "us")
         assert dt_to_int(dt) == 1483228800000000.0
 
     def test_datetime64_s_to_us_int(self):
-        dt = np.datetime64(datetime.datetime(2017, 1, 1), 's')
+        dt = np.datetime64(datetime.datetime(2017, 1, 1), "s")
         assert dt_to_int(dt) == 1483228800000000.0
 
     def test_timestamp_to_us_int(self):
@@ -734,37 +767,37 @@ class TestDatetimeUtils:
 
     def test_datetime_to_s_int(self):
         dt = datetime.datetime(2017, 1, 1)
-        assert dt_to_int(dt, 's') == 1483228800.0
+        assert dt_to_int(dt, "s") == 1483228800.0
 
     def test_datetime64_to_s_int(self):
         dt = np.datetime64(datetime.datetime(2017, 1, 1))
-        assert dt_to_int(dt, 's') == 1483228800.0
+        assert dt_to_int(dt, "s") == 1483228800.0
 
     def test_datetime64_us_to_s_int(self):
-        dt = np.datetime64(datetime.datetime(2017, 1, 1), 'us')
-        assert dt_to_int(dt, 's') == 1483228800.0
+        dt = np.datetime64(datetime.datetime(2017, 1, 1), "us")
+        assert dt_to_int(dt, "s") == 1483228800.0
 
     def test_datetime64_s_to_s_int(self):
-        dt = np.datetime64(datetime.datetime(2017, 1, 1), 's')
-        assert dt_to_int(dt, 's') == 1483228800.0
+        dt = np.datetime64(datetime.datetime(2017, 1, 1), "s")
+        assert dt_to_int(dt, "s") == 1483228800.0
 
     def test_timestamp_to_s_int(self):
         dt = pd.Timestamp(datetime.datetime(2017, 1, 1))
-        assert dt_to_int(dt, 's') == 1483228800.0
+        assert dt_to_int(dt, "s") == 1483228800.0
 
     def test_date_range_1_hour(self):
         start = np.datetime64(datetime.datetime(2017, 1, 1))
-        end = start+np.timedelta64(1, 'h')
+        end = start + np.timedelta64(1, "h")
         drange = date_range(start, end, 6)
-        assert drange[0] == start+np.timedelta64(5, 'm')
-        assert drange[-1] == end-np.timedelta64(5, 'm')
+        assert drange[0] == start + np.timedelta64(5, "m")
+        assert drange[-1] == end - np.timedelta64(5, "m")
 
     def test_date_range_1_sec(self):
         start = np.datetime64(datetime.datetime(2017, 1, 1))
-        end = start+np.timedelta64(1, 's')
+        end = start + np.timedelta64(1, "s")
         drange = date_range(start, end, 10)
-        assert drange[0] == start+np.timedelta64(50, 'ms')
-        assert drange[-1] == end-np.timedelta64(50, 'ms')
+        assert drange[0] == start + np.timedelta64(50, "ms")
+        assert drange[-1] == end - np.timedelta64(50, "ms")
 
     def test_timezone_to_int(self):
         timezone = ZoneInfo("Europe/Copenhagen")
@@ -782,16 +815,16 @@ class TestDatetimeUtils:
             x2 = dt_to_int(pd.to_datetime(value))
             assert x1 == x2
 
-class TestNumericUtilities:
 
+class TestNumericUtilities:
     def test_isfinite_none(self):
         assert not isfinite(None)
 
     def test_isfinite_nan(self):
-        assert not isfinite(float('NaN'))
+        assert not isfinite(float("NaN"))
 
     def test_isfinite_inf(self):
-        assert not isfinite(float('inf'))
+        assert not isfinite(float("inf"))
 
     def test_isfinite_float(self):
         assert isfinite(1.2)
@@ -813,54 +846,54 @@ class TestNumericUtilities:
         assert isfinite(dt64)
 
     def test_isfinite_datetime64_nat(self):
-        dt64 = np.datetime64('NaT')
+        dt64 = np.datetime64("NaT")
         assert not isfinite(dt64)
 
     def test_isfinite_timedelta64_nat(self):
-        dt64 = np.timedelta64('NaT')
+        dt64 = np.timedelta64("NaT")
         assert not isfinite(dt64)
 
     def test_isfinite_pandas_timestamp_nat(self):
-        dt64 = pd.Timestamp('NaT')
+        dt64 = pd.Timestamp("NaT")
         assert not isfinite(dt64)
 
     def test_isfinite_pandas_period_nat(self):
-        dt64 = pd.Period('NaT')
+        dt64 = pd.Period("NaT")
         assert not isfinite(dt64)
 
     def test_isfinite_pandas_period_index(self):
-        daily = pd.date_range('2017-1-1', '2017-1-3', freq='D').to_period('D')
+        daily = pd.date_range("2017-1-1", "2017-1-3", freq="D").to_period("D")
         assert_data_equal(isfinite(daily), np.array([True, True, True]))
 
     def test_isfinite_pandas_period_series(self):
-        daily = pd.date_range('2017-1-1', '2017-1-3', freq='D').to_period('D').to_series()
+        daily = pd.date_range("2017-1-1", "2017-1-3", freq="D").to_period("D").to_series()
         assert_data_equal(isfinite(daily), np.array([True, True, True]))
 
     def test_isfinite_pandas_period_index_nat(self):
-        daily = pd.date_range('2017-1-1', '2017-1-3', freq='D').to_period('D')
+        daily = pd.date_range("2017-1-1", "2017-1-3", freq="D").to_period("D")
         daily = pd.PeriodIndex([*daily, pd.NaT])
         assert_data_equal(isfinite(daily), np.array([True, True, True, False]))
 
     def test_isfinite_pandas_period_series_nat(self):
-        daily = pd.date_range('2017-1-1', '2017-1-3', freq='D').to_period('D')
+        daily = pd.date_range("2017-1-1", "2017-1-3", freq="D").to_period("D")
         daily = pd.Series([*daily, pd.NaT])
         assert_data_equal(isfinite(daily), np.array([True, True, True, False]))
 
     def test_isfinite_pandas_timestamp_index(self):
-        daily = pd.date_range('2017-1-1', '2017-1-3', freq='D')
+        daily = pd.date_range("2017-1-1", "2017-1-3", freq="D")
         assert_data_equal(isfinite(daily), np.array([True, True, True]))
 
     def test_isfinite_pandas_timestamp_series(self):
-        daily = pd.date_range('2017-1-1', '2017-1-3', freq='D').to_series()
+        daily = pd.date_range("2017-1-1", "2017-1-3", freq="D").to_series()
         assert_data_equal(isfinite(daily), np.array([True, True, True]))
 
     def test_isfinite_pandas_timestamp_index_nat(self):
-        daily = pd.date_range('2017-1-1', '2017-1-3', freq='D')
+        daily = pd.date_range("2017-1-1", "2017-1-3", freq="D")
         daily = pd.DatetimeIndex([*daily, pd.NaT])
         assert_data_equal(isfinite(daily), np.array([True, True, True, False]))
 
     def test_isfinite_pandas_timestamp_series_nat(self):
-        daily = pd.date_range('2017-1-1', '2017-1-3', freq='D')
+        daily = pd.date_range("2017-1-1", "2017-1-3", freq="D")
         daily = pd.Series([*daily, pd.NaT])
         assert_data_equal(isfinite(daily), np.array([True, True, True, False]))
 
@@ -870,7 +903,7 @@ class TestNumericUtilities:
 
     def test_isfinite_datetime64_array_with_nat(self):
         dts = [np.datetime64(datetime.datetime(2017, 1, i)) for i in range(1, 4)]
-        dt64 = np.array([*dts, np.datetime64('NaT')])
+        dt64 = np.array([*dts, np.datetime64("NaT")])
         assert_data_equal(isfinite(dt64), np.array([True, True, True, False]))
 
     def test_isfinite_masked_numpy(self):
@@ -890,30 +923,26 @@ class TestComputeEdges:
     """
 
     def setup_method(self):
-        self.array1 = [.5, 1.5, 2.5]
-        self.array2 = [.5, 1.0000001, 1.5]
+        self.array1 = [0.5, 1.5, 2.5]
+        self.array2 = [0.5, 1.0000001, 1.5]
         self.array3 = [1, 2, 4]
 
     def test_simple_edges(self):
-        assert_data_equal(compute_edges(self.array1),
-                         np.array([0, 1, 2, 3]))
+        assert_data_equal(compute_edges(self.array1), np.array([0, 1, 2, 3]))
 
     def test_close_edges(self):
-        assert_data_equal(compute_edges(self.array2),
-                         np.array([0.25, 0.75, 1.25, 1.75]))
+        assert_data_equal(compute_edges(self.array2), np.array([0.25, 0.75, 1.25, 1.75]))
 
     def test_uneven_edges(self):
-        assert_data_equal(compute_edges(self.array3),
-                         np.array([0.5, 1.5, 3.0, 5.0]))
+        assert_data_equal(compute_edges(self.array3), np.array([0.5, 1.5, 3.0, 5.0]))
 
 
 class TestCrossIndex:
-
     def setup_method(self):
-        self.values1 = ['A', 'B', 'C']
+        self.values1 = ["A", "B", "C"]
         self.values2 = [1, 2, 3, 4]
-        self.values3 = ['?', '!']
-        self.values4 = ['x']
+        self.values3 = ["?", "!"]
+        self.values4 = ["x"]
 
     def test_cross_index_full_product(self):
         values = [self.values1, self.values2, self.values3, self.values4]
@@ -940,68 +969,80 @@ class TestCrossIndex:
             assert cross_index(values, i) == p
 
     def test_cross_index_large(self):
-        values = [[chr(65+i) for i in range(26)], list(range(500)),
-                  [chr(97+i) for i in range(26)], [chr(48+i) for i in range(10)]]
-        assert cross_index(values, 50001) == ('A', 192, 'i', '1')
-        assert cross_index(values, 500001) == ('D', 423, 'c', '1')
+        values = [
+            [chr(65 + i) for i in range(26)],
+            list(range(500)),
+            [chr(97 + i) for i in range(26)],
+            [chr(48 + i) for i in range(10)],
+        ]
+        assert cross_index(values, 50001) == ("A", 192, "i", "1")
+        assert cross_index(values, 500001) == ("D", 423, "c", "1")
 
 
 class TestClosestMatch:
-
     def test_complete_match_overlay(self):
-        specs = [(0, ('Curve', 'Curve', 'I')), (1, ('Points', 'Points', 'I'))]
-        spec = ('Curve', 'Curve', 'I')
+        specs = [(0, ("Curve", "Curve", "I")), (1, ("Points", "Points", "I"))]
+        spec = ("Curve", "Curve", "I")
         assert closest_match(spec, specs) == 0
-        spec = ('Points', 'Curve', 'I')
+        spec = ("Points", "Curve", "I")
         assert closest_match(spec, specs) == 1
 
     def test_partial_match_overlay(self):
-        specs = [(0, ('Curve', 'Curve', 'I')), (1, ('Points', 'Points', 'I'))]
-        spec = ('Curve', 'Curve')
+        specs = [(0, ("Curve", "Curve", "I")), (1, ("Points", "Points", "I"))]
+        spec = ("Curve", "Curve")
         assert closest_match(spec, specs) == 0
-        spec = ('Points', 'Points')
+        spec = ("Points", "Points")
         assert closest_match(spec, specs) == 1
 
     def test_partial_mismatch_overlay(self):
-        specs = [(0, ('Curve', 'Curve', 'I')), (1, ('Points', 'Points', 'I'))]
-        spec = ('Curve', 'Foo', 'II')
+        specs = [(0, ("Curve", "Curve", "I")), (1, ("Points", "Points", "I"))]
+        spec = ("Curve", "Foo", "II")
         assert closest_match(spec, specs) == 0
-        spec = ('Points', 'Bar', 'III')
+        spec = ("Points", "Bar", "III")
         assert closest_match(spec, specs) == 1
 
     def test_no_match_overlay(self):
-        specs = [(0, ('Curve', 'Curve', 'I')), (1, ('Points', 'Points', 'I'))]
-        spec = ('Scatter', 'Points', 'II')
+        specs = [(0, ("Curve", "Curve", "I")), (1, ("Points", "Points", "I"))]
+        spec = ("Scatter", "Points", "II")
         assert closest_match(spec, specs) is None
-        spec = ('Path', 'Curve', 'III')
+        spec = ("Path", "Curve", "III")
         assert closest_match(spec, specs) is None
 
     def test_complete_match_ndoverlay(self):
-        spec = ('Points', 'Points', '', 1)
-        specs = [(0, ('Points', 'Points', '', 0)), (1, ('Points', 'Points', '', 1)),
-                 (2, ('Points', 'Points', '', 2))]
+        spec = ("Points", "Points", "", 1)
+        specs = [
+            (0, ("Points", "Points", "", 0)),
+            (1, ("Points", "Points", "", 1)),
+            (2, ("Points", "Points", "", 2)),
+        ]
         assert closest_match(spec, specs) == 1
-        spec = ('Points', 'Points', '', 2)
+        spec = ("Points", "Points", "", 2)
         assert closest_match(spec, specs) == 2
 
     def test_partial_match_ndoverlay(self):
-        spec = ('Points', 'Points', '', 5)
-        specs = [(0, ('Points', 'Points', '', 0)), (1, ('Points', 'Points', '', 1)),
-                 (2, ('Points', 'Points', '', 2))]
+        spec = ("Points", "Points", "", 5)
+        specs = [
+            (0, ("Points", "Points", "", 0)),
+            (1, ("Points", "Points", "", 1)),
+            (2, ("Points", "Points", "", 2)),
+        ]
         assert closest_match(spec, specs) == 2
-        spec = ('Points', 'Points', 'Bar', 5)
+        spec = ("Points", "Points", "Bar", 5)
         assert closest_match(spec, specs) == 0
-        spec = ('Points', 'Foo', 'Bar', 5)
+        spec = ("Points", "Foo", "Bar", 5)
         assert closest_match(spec, specs) == 0
 
     def test_no_match_ndoverlay(self):
-        specs = [(0, ('Points', 'Points', '', 0)), (1, ('Points', 'Points', '', 1)),
-                 (2, ('Points', 'Points', '', 2))]
-        spec = ('Scatter', 'Points', '', 5)
+        specs = [
+            (0, ("Points", "Points", "", 0)),
+            (1, ("Points", "Points", "", 1)),
+            (2, ("Points", "Points", "", 2)),
+        ]
+        spec = ("Scatter", "Points", "", 5)
         assert closest_match(spec, specs) is None
-        spec = ('Scatter', 'Bar', 'Foo', 5)
+        spec = ("Scatter", "Bar", "Foo", 5)
         assert closest_match(spec, specs) is None
-        spec = ('Scatter', 'Foo', 'Bar', 5)
+        spec = ("Scatter", "Foo", "Bar", 5)
         assert closest_match(spec, specs) is None
 
 
@@ -1054,48 +1095,60 @@ def test_is_null_or_na_scalar_polars():
     assert not is_null_or_na_scalar(pl.LazyFrame([1, 2]))
 
 
-@pytest.mark.parametrize(("data", "dtype", "expected_kind"), [
-    # Boolean
-    ([True, False, True], 'bool', 'b'),
-
-    # Integer types
-    ([1, 2, 3], 'int8', 'i'),
-    ([1, 2, 3], 'int16', 'i'),
-    ([1, 2, 3], 'int32', 'i'),
-    ([1, 2, 3], 'int64', 'i'),
-    ([1, 2, 3], 'uint8', 'u'),
-    ([1, 2, 3], 'uint16', 'u'),
-    ([1, 2, 3], 'uint32', 'u'),
-    ([1, 2, 3], 'uint64', 'u'),
-
-    # Float types
-    pytest.param([1.1, 2.2, 3.3], 'float16', 'f', marks=pytest.mark.xfail(reason="narwhals don't support float16")),
-    ([1.1, 2.2, 3.3], 'float32', 'f'),
-    ([1.1, 2.2, 3.3], 'float64', 'f'),
-
-    # Datetime and timedelta
-    (pd.to_datetime(['2021-01-01', '2021-01-02', '2021-01-03']), None, 'M'),
-    (pd.to_timedelta(['1 days', '2 days', '3 days']), None, 'm'),
-
-    # Categorical
-    (pd.Categorical(['A', 'B', 'A']), None, 'O'),
-
-    # Object (mixed types)
-    ([1, 'a', None], None, 'O'),
-
-    # String types
-    pytest.param(['x', 'y', 'z'], 'string[python]', 'U', marks=pytest.mark.xfail(reason="pandas dtype is object")),
-    pytest.param(['x', 'y', 'z'], 'object', 'O', marks=pytest.mark.xfail(reason="narwhals dtype is string")),
-])
+@pytest.mark.parametrize(
+    ("data", "dtype", "expected_kind"),
+    [
+        # Boolean
+        ([True, False, True], "bool", "b"),
+        # Integer types
+        ([1, 2, 3], "int8", "i"),
+        ([1, 2, 3], "int16", "i"),
+        ([1, 2, 3], "int32", "i"),
+        ([1, 2, 3], "int64", "i"),
+        ([1, 2, 3], "uint8", "u"),
+        ([1, 2, 3], "uint16", "u"),
+        ([1, 2, 3], "uint32", "u"),
+        ([1, 2, 3], "uint64", "u"),
+        # Float types
+        pytest.param(
+            [1.1, 2.2, 3.3],
+            "float16",
+            "f",
+            marks=pytest.mark.xfail(reason="narwhals don't support float16"),
+        ),
+        ([1.1, 2.2, 3.3], "float32", "f"),
+        ([1.1, 2.2, 3.3], "float64", "f"),
+        # Datetime and timedelta
+        (pd.to_datetime(["2021-01-01", "2021-01-02", "2021-01-03"]), None, "M"),
+        (pd.to_timedelta(["1 days", "2 days", "3 days"]), None, "m"),
+        # Categorical
+        (pd.Categorical(["A", "B", "A"]), None, "O"),
+        # Object (mixed types)
+        ([1, "a", None], None, "O"),
+        # String types
+        pytest.param(
+            ["x", "y", "z"],
+            "string[python]",
+            "U",
+            marks=pytest.mark.xfail(reason="pandas dtype is object"),
+        ),
+        pytest.param(
+            ["x", "y", "z"],
+            "object",
+            "O",
+            marks=pytest.mark.xfail(reason="narwhals dtype is string"),
+        ),
+    ],
+)
 def test_dtype_kind_pandas_narwhals_consistency(data, dtype, expected_kind):
     """Test dtype_kind gives same results for pandas and narwhals DataFrames"""
-    pd_df = pd.DataFrame({'col': data})
+    pd_df = pd.DataFrame({"col": data})
     if dtype is not None:
-        pd_df = pd_df.astype({'col': dtype})
+        pd_df = pd_df.astype({"col": dtype})
     nw_df = nw.from_native(pd_df)
 
-    pd_kind = dtype_kind(pd_df['col'])
-    nw_kind = dtype_kind(nw_df['col'])
+    pd_kind = dtype_kind(pd_df["col"])
+    nw_kind = dtype_kind(nw_df["col"])
 
     assert pd_kind == expected_kind
     assert nw_kind == expected_kind
@@ -1104,19 +1157,19 @@ def test_dtype_kind_pandas_narwhals_consistency(data, dtype, expected_kind):
 def test_dtype_kind_usage_count():
     holoviews_path = Path(__file__).parents[2]
     file_counts = {}
-    for py_file in holoviews_path.rglob('*.py'):
+    for py_file in holoviews_path.rglob("*.py"):
         rel_path = py_file.relative_to(holoviews_path)
-        if '__pycache__' in rel_path.parts or 'tests' in rel_path.parts:
+        if "__pycache__" in rel_path.parts or "tests" in rel_path.parts:
             continue
 
-        with open(py_file, encoding='utf-8') as f:
+        with open(py_file, encoding="utf-8") as f:
             content = f.read()
-            count = content.count('dtype.kind')
+            count = content.count("dtype.kind")
 
         if count > 0:
             file_counts[str(rel_path).replace(os.sep, "/")] = count
 
-    expected_files = {'core/util/__init__.py': 1}
+    expected_files = {"core/util/__init__.py": 1}
     assert file_counts == expected_files, "Don't use dtype.kind, use dtype_kind"
 
 
@@ -1128,50 +1181,62 @@ def test_dtype_kind_usage_count():
         (np.array([1, 2, 3, 4, 5]), np.array([1, 2, 3, 4, 5])),
         (np.array([5, 5, 5, 5]), np.array([5])),
         (np.array([42]), np.array([42])),
-        (np.array(['b', 'a', 'c', 'a', 'b']), np.array(['b', 'a', 'c'])),
+        (np.array(["b", "a", "c", "a", "b"]), np.array(["b", "a", "c"])),
         (np.array([1.5, 2.3, 1.5, 3.7, 2.3]), np.array([1.5, 2.3, 3.7])),
-        (np.array([1, 'a', 2, 'a', 1, 'b'], dtype=object), np.array([1, 'a', 2, 'b'], dtype=object)),
+        (
+            np.array([1, "a", 2, "a", 1, "b"], dtype=object),
+            np.array([1, "a", 2, "b"], dtype=object),
+        ),
         (np.array([]), np.array([])),
-], ids=[
-    "numeric_with_duplicates",
-    "already_unique",
-    "all_same",
-    "single_element",
-    "string_array",
-    "float_array",
-    "object_array_mixed_types",
-    "empty_array",
-])
+    ],
+    ids=[
+        "numeric_with_duplicates",
+        "already_unique",
+        "all_same",
+        "single_element",
+        "string_array",
+        "float_array",
+        "object_array_mixed_types",
+        "empty_array",
+    ],
+)
 def test_unique(test_input, expected_output, with_pandas, monkeypatch):
     result = util._unique(test_input)
     np.testing.assert_array_equal(result, expected_output)
 
 
 @with_and_without_pandas
-@pytest.mark.parametrize(("test_input", "expected_output"), [
-    (np.datetime64('2023-01-15T12:30:45'), np.datetime64('2023-01-15T12:30:45')),
-    (datetime.datetime(2023, 1, 15, 12, 30, 45), np.datetime64('2023-01-15T12:30:45', 'ns')),
-    (datetime.date(2023, 1, 15), np.datetime64('2023-01-15T00:00:00', 'ns')),
-    ('2023-01-15T12:30:45', np.datetime64('2023-01-15T12:30:45', 'ns')),
-    ('2023-01-15', np.datetime64('2023-01-15T00:00:00', 'ns')),
-    ('2023/01/15', np.datetime64('2023-01-15T00:00:00', 'ns')),
-    (datetime.datetime(2023, 1, 15, 12, 30, 45, tzinfo=datetime.timezone.utc), np.datetime64('2023-01-15T12:30:45', 'ns')),
-    (
-        datetime.datetime(
-            2023, 1, 15, 17, 30, 45, tzinfo=datetime.timezone(datetime.timedelta(hours=5))
+@pytest.mark.parametrize(
+    ("test_input", "expected_output"),
+    [
+        (np.datetime64("2023-01-15T12:30:45"), np.datetime64("2023-01-15T12:30:45")),
+        (datetime.datetime(2023, 1, 15, 12, 30, 45), np.datetime64("2023-01-15T12:30:45", "ns")),
+        (datetime.date(2023, 1, 15), np.datetime64("2023-01-15T00:00:00", "ns")),
+        ("2023-01-15T12:30:45", np.datetime64("2023-01-15T12:30:45", "ns")),
+        ("2023-01-15", np.datetime64("2023-01-15T00:00:00", "ns")),
+        ("2023/01/15", np.datetime64("2023-01-15T00:00:00", "ns")),
+        (
+            datetime.datetime(2023, 1, 15, 12, 30, 45, tzinfo=datetime.timezone.utc),
+            np.datetime64("2023-01-15T12:30:45", "ns"),
         ),
-        np.datetime64('2023-01-15T12:30:45', 'ns'),
-    )],
+        (
+            datetime.datetime(
+                2023, 1, 15, 17, 30, 45, tzinfo=datetime.timezone(datetime.timedelta(hours=5))
+            ),
+            np.datetime64("2023-01-15T12:30:45", "ns"),
+        ),
+    ],
     ids=[
-    "numpy_datetime64",
-    "python_datetime",
-    "python_date",
-    "string_iso_format",
-    "string_simple_date",
-    "string_slash_format",
-    "timezone_aware",
-    "timezone_conversion",
-])
+        "numpy_datetime64",
+        "python_datetime",
+        "python_date",
+        "string_iso_format",
+        "string_simple_date",
+        "string_slash_format",
+        "timezone_aware",
+        "timezone_conversion",
+    ],
+)
 def test_parse_datetime(test_input, expected_output, with_pandas, monkeypatch):
     result = util.parse_datetime(test_input)
     assert isinstance(result, np.datetime64)

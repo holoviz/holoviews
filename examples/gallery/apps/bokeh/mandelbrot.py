@@ -11,7 +11,8 @@ import holoviews as hv
 from holoviews import opts
 from holoviews.streams import RangeXY
 
-renderer = hv.renderer('bokeh')
+renderer = hv.renderer("bokeh")
+
 
 @jit
 def mandel(x, y, max_iters):
@@ -21,14 +22,15 @@ def mandel(x, y, max_iters):
     set given a fixed number of iterations.
     """
     i = 0
-    c = complex(x,y)
+    c = complex(x, y)
     z = 0.0j
     for i in range(max_iters):
-        z = z*z + c
-        if (z.real*z.real + z.imag*z.imag) >= 4:
+        z = z * z + c
+        if (z.real * z.real + z.imag * z.imag) >= 4:
             return i
 
     return 255
+
 
 @jit
 def create_fractal(min_x, max_x, min_y, max_y, image, iters):
@@ -46,25 +48,27 @@ def create_fractal(min_x, max_x, min_y, max_y, image, iters):
 
     return image
 
+
 def get_fractal(x_range, y_range):
     (x0, x1), (y0, y1) = x_range, y_range
     image = np.zeros((600, 600), dtype=np.uint8)
-    return hv.Image(create_fractal(x0, x1, -y1, -y0, image, 200),
-                    bounds=(x0, y0, x1, y1))
+    return hv.Image(create_fractal(x0, x1, -y1, -y0, image, 200), bounds=(x0, y0, x1, y1))
+
 
 # Define stream linked to axis XY-range
-range_stream = RangeXY(x_range=(-1., 1.), y_range=(-1., 1.))
+range_stream = RangeXY(x_range=(-1.0, 1.0), y_range=(-1.0, 1.0))
 
 # Create DynamicMap to compute fractal per zoom range and
 # adjoin a logarithmic histogram
-dmap = hv.DynamicMap(get_fractal, label='Manderbrot Explorer',
-                     streams=[range_stream]).hist(log=True)
+dmap = hv.DynamicMap(get_fractal, label="Manderbrot Explorer", streams=[range_stream]).hist(
+    log=True
+)
 
 # Apply options
 dmap.opts(
     opts.Histogram(framewise=True, logy=True, width=200, xlim=(1, None)),
-    opts.Image(cmap='fire', logz=True, height=600, width=600,
-               xaxis=None, yaxis=None))
+    opts.Image(cmap="fire", logz=True, height=600, width=600, xaxis=None, yaxis=None),
+)
 
 doc = renderer.server_doc(dmap)
-doc.title = 'Mandelbrot Explorer'
+doc.title = "Mandelbrot Explorer"

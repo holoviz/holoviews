@@ -13,7 +13,7 @@ class ParamLogStream:
     def __enter__(self):
         self.stream = StringIO()
         self._handler = logging.StreamHandler(self.stream)
-        self._logger = logging.getLogger('testlogger')
+        self._logger = logging.getLogger("testlogger")
         for handler in self._logger.handlers:
             self._logger.removeHandler(handler)
         self._logger.addHandler(self._handler)
