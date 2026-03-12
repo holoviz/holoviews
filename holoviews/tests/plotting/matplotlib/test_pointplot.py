@@ -13,38 +13,6 @@ from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestPointPlot(TestMPLPlot):
-    def test_points_non_numeric_size_warning(self):
-        data = (np.arange(10), np.arange(10), list(map(chr, range(94, 104))))
-        points = hv.Points(data, vdims=["z"]).opts(size_index=2)
-        with ParamLogStream() as log:
-            mpl_renderer.get_plot(points)
-        log_msg = log.stream.read()
-        warning = (
-            "The `size_index` parameter is deprecated in favor of size style mapping, e.g. "
-            "`size=dim('size')**2`.\nz dimension is not numeric, cannot use to scale Points size.\n"
-        )
-        assert log_msg == warning
-
-    def test_points_cbar_extend_both(self):
-        img = hv.Points(([0, 1], [0, 3])).redim(y=dict(range=(1, 2)))
-        plot = mpl_renderer.get_plot(img.opts(colorbar=True, color_index=1))
-        assert plot.handles["cbar"].extend == "both"
-
-    def test_points_cbar_extend_min(self):
-        img = hv.Points(([0, 1], [0, 3])).redim(y=dict(range=(1, None)))
-        plot = mpl_renderer.get_plot(img.opts(colorbar=True, color_index=1))
-        assert plot.handles["cbar"].extend == "min"
-
-    def test_points_cbar_extend_max(self):
-        img = hv.Points(([0, 1], [0, 3])).redim(y=dict(range=(None, 2)))
-        plot = mpl_renderer.get_plot(img.opts(colorbar=True, color_index=1))
-        assert plot.handles["cbar"].extend == "max"
-
-    def test_points_cbar_extend_clim(self):
-        img = hv.Points(([0, 1], [0, 3])).opts(clim=(None, None))
-        plot = mpl_renderer.get_plot(img.opts(colorbar=True, color_index=1))
-        assert plot.handles["cbar"].extend == "neither"
-
     def test_points_rcparams_do_not_persist(self):
         opts = dict(fig_rcparams={"text.usetex": True})
         points = hv.Points(([0, 1], [0, 3])).opts(**opts)
@@ -346,31 +314,3 @@ class TestPointPlot(TestMPLPlot):
             style = dict(subplot.style[subplot.cyclic_index])
             style = subplot._apply_transforms(subplot.current_frame, {}, style)
             assert style["marker"] == marker
-
-    def test_point_color_index_color_clash(self):
-        points = hv.Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)], vdims="color").opts(
-            color="color", color_index="color"
-        )
-        with ParamLogStream() as log:
-            mpl_renderer.get_plot(points)
-        log_msg = log.stream.read()
-        warning = (
-            "The `color_index` parameter is deprecated in favor of color style mapping, e.g. "
-            "`color=dim('color')` or `line_color=dim('color')`\nCannot declare style mapping "
-            "for 'color' option and declare a color_index; ignoring the color_index.\n"
-        )
-        assert log_msg == warning
-
-    def test_point_size_index_size_clash(self):
-        points = hv.Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)], vdims="size").opts(
-            s="size", size_index="size"
-        )
-        with ParamLogStream() as log:
-            mpl_renderer.get_plot(points)
-        log_msg = log.stream.read()
-        warning = (
-            "The `size_index` parameter is deprecated in favor of size style mapping, e.g. "
-            "`size=dim('size')**2`.\nCannot declare style mapping for 's' option and declare a "
-            "size_index; ignoring the size_index.\n"
-        )
-        assert log_msg == warning

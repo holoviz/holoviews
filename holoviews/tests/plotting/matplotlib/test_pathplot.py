@@ -318,15 +318,6 @@ class TestPolygonPlot(TestMPLPlot):
 
 
 class TestContoursPlot(TestMPLPlot):
-    def test_contours_categorical_color(self):
-        path = hv.Contours(
-            [{("x", "y"): np.random.rand(10, 2), "z": cat} for cat in ("B", "A", "B")], vdims="z"
-        ).opts(color_index="z")
-        plot = mpl_renderer.get_plot(path)
-        artist = plot.handles["artist"]
-        assert_data_equal(np.asarray(artist.get_array()), np.array([0, 1, 0]))
-        assert artist.get_clim() == (0, 1)
-
     def test_contours_color_op(self):
         contours = hv.Contours(
             [
