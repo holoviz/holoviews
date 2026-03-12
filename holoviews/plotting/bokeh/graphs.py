@@ -68,22 +68,6 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         doc="A list of plugin tools to use on the plot.",
     )
 
-    # Deprecated options
-
-    color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of color style mapping, e.g. `node_color=dim('color')`",
-    )
-
-    edge_color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of color style mapping, e.g. `edge_color=dim('color')`",
-    )
-
     # Map each glyph to a style group
     _style_groups = {"scatter": "node", "multi_line": "edge", "patches": "edge", "bezier": "edge"}
 
@@ -128,53 +112,7 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         return dims, {}
 
     def _get_edge_colors(self, element, ranges, edge_data, edge_mapping, style):
-        cdim = element.get_dimension(self.edge_color_index)
-        if not cdim:
-            return
-        elstyle = self.lookup_options(element, "style")
-        cycle = elstyle.kwargs.get("edge_color")
-        if not isinstance(cycle, Cycle):
-            cycle = None
-
-        idx = element.get_dimension_index(cdim)
-        field = dimension_sanitizer(cdim.name)
-        cvals = element.dimension_values(cdim)
-        if idx in self._node_columns:
-            factors = element.nodes.dimension_values(2, expanded=False)
-        elif idx == 2 and dtype_kind(cvals) in "uif":
-            factors = None
-        else:
-            factors = unique_array(cvals)
-
-        default_cmap = "viridis" if factors is None else "tab20"
-        cmap = style.get("edge_cmap", style.get("cmap", default_cmap))
-        nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
-        if factors is None or (dtype_kind(factors) in "uif" and idx not in self._node_columns):
-            colors, factors = None, None
-        else:
-            if dtype_kind(factors) == "f":
-                cvals = cvals.astype(np.int32)
-                factors = factors.astype(np.int32)
-            if dtype_kind(factors) not in "SU":
-                field += "_str__"
-                cvals = [str(f) for f in cvals]
-                factors = (str(f) for f in factors)
-            factors = list(factors)
-            if isinstance(cmap, dict):
-                colors = [cmap.get(f, nan_colors.get("NaN", self._default_nan)) for f in factors]
-            else:
-                colors = process_cmap(cycle or cmap, len(factors))
-        if field not in edge_data:
-            edge_data[field] = cvals
-        edge_style = dict(style, cmap=cmap)
-        mapper = self._get_colormapper(
-            cdim, element, ranges, edge_style, factors, colors, "edge", "edge_colormapper"
-        )
-        transform = {"field": field, "transform": mapper}
-        color_type = "fill_color" if self.filled else "line_color"
-        edge_mapping["edge_" + color_type] = transform
-        edge_mapping["edge_nonselection_" + color_type] = transform
-        edge_mapping["edge_selection_" + color_type] = transform
+        pass
 
     def _get_edge_paths(self, element, ranges):
         path_data, mapping = {}, {}
@@ -553,7 +491,7 @@ class TriMeshPlot(GraphPlot):
         style = self.style[self.cyclic_index]
         edge_color = style.get("edge_color")
         if edge_color not in element.nodes:
-            edge_color = self.edge_color_index
+            edge_color = None
         simplex_dim = element.get_dimension(edge_color)
         vertex_dim = element.nodes.get_dimension(edge_color)
         if vertex_dim and not simplex_dim:

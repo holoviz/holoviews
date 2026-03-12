@@ -1355,14 +1355,6 @@ class GenericElementPlot(DimensionedPlot):
     v17_option_propagation = True
 
     _deprecations = {
-        "color_index": (
-            "The `color_index` parameter is deprecated in favor of color "
-            "style mapping, e.g. `color=dim('color')` or `line_color=dim('color')`"
-        ),
-        "size_index": (
-            "The `size_index` parameter is deprecated in favor of size "
-            "style mapping, e.g. `size=dim('size')**2`."
-        ),
         "scaling_method": (
             "The `scaling_method` parameter is deprecated in favor of size "
             "style mapping, e.g. `size=dim('size')**2` for area scaling."

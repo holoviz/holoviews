@@ -38,15 +38,6 @@ class PathPlot(LegendPlot, ColorbarPlot):
         doc="Whether to show legend for the plot.",
     )
 
-    # Deprecated options
-
-    color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of color style mapping, e.g. `color=dim('color')`",
-    )
-
     style_opts = base_properties + line_properties + ["cmap"]
 
     _plot_methods = dict(single="multi_line", batched="multi_line")
@@ -77,13 +68,10 @@ class PathPlot(LegendPlot, ColorbarPlot):
         return np.concatenate(transformed)
 
     def _hover_opts(self, element):
-        cdim = element.get_dimension(self.color_index)
         if self.batched:
             dims = list(self.hmap.last.kdims) + self.hmap.last.last.vdims
         else:
             dims = list(self.overlay_dims.keys()) + self.hmap.last.vdims
-        if cdim not in dims and cdim is not None:
-            dims.append(cdim)
         return dims, {}
 
     def _get_hover_data(self, data, element):
@@ -104,8 +92,6 @@ class PathPlot(LegendPlot, ColorbarPlot):
         elif isinstance(color, Dimension):
             # Handle hv.Dimension() objects directly
             cdim = element.get_dimension(color.name) if color.name in element else color
-        elif self.color_index is not None:
-            cdim = element.get_dimension(self.color_index)
 
         scalar = element.interface.isunique(element, cdim, per_geom=True) if cdim else False
         style_mapping = {
@@ -271,15 +257,6 @@ class ContourPlot(PathPlot):
         doc="Whether to show legend for the plot.",
     )
 
-    # Deprecated options
-
-    color_index = param.ClassSelector(
-        default=0,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of color style mapping, e.g. `color=dim('color')`",
-    )
-
     _color_style = "line_color"
     _nonvectorized_styles = [*base_properties, "cmap"]
 
@@ -354,8 +331,7 @@ class ContourPlot(PathPlot):
         ):
             cdim = None
         else:
-            cidx = self.color_index + 2 if isinstance(self.color_index, int) else self.color_index
-            cdim = element.get_dimension(cidx)
+            cdim = element.get_dimension(2) if element.vdims else None
 
         if cdim is None:
             return data, mapping, style
