@@ -145,29 +145,6 @@ class PointPlot(SizebarMixin, ColorbarPlot):
         to the selected items.""",
     )
 
-    scaling_method = param.Selector(
-        default="area",
-        objects=["width", "area"],
-        doc="""
-        Deprecated in favor of size style mapping, e.g.
-        size=dim('size')**2.""",
-    )
-
-    scaling_factor = param.Number(
-        default=1,
-        bounds=(0, None),
-        doc="""
-        Scaling factor which is applied to either the width or area
-        of each point, depending on the value of `scaling_method`.""",
-    )
-
-    size_fn = param.Callable(
-        default=np.abs,
-        doc="""
-        Function applied to size values before applying scaling,
-        to remove values lower than zero.""",
-    )
-
     selection_display = BokehOverlaySelectionDisplay()
 
     style_opts = [

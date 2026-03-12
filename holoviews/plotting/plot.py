@@ -1354,21 +1354,6 @@ class GenericElementPlot(DimensionedPlot):
     _propagate_options = []
     v17_option_propagation = True
 
-    _deprecations = {
-        "scaling_method": (
-            "The `scaling_method` parameter is deprecated in favor of size "
-            "style mapping, e.g. `size=dim('size')**2` for area scaling."
-        ),
-        "scaling_factor": (
-            "The `scaling_factor` parameter is deprecated in favor of size "
-            "style mapping, e.g. `size=dim('size')*10`."
-        ),
-        "size_fn": (
-            "The `size_fn` parameter is deprecated in favor of size "
-            "style mapping, e.g. `size=abs(dim('size'))`."
-        ),
-    }
-
     _selection_display = NoOpSelectionDisplay()
 
     _multi_y_propagation = False
@@ -1436,9 +1421,6 @@ class GenericElementPlot(DimensionedPlot):
             plot_opts.update(**{k: v[0] for k, v in inherited.items() if k not in plot_opts})
 
         applied_params = dict(params, **plot_opts)
-        for p, pval in applied_params.items():
-            if p in self.param and p in self._deprecations and pval is not None:
-                self.param.warning(self._deprecations[p])
         super().__init__(keys=keys, dimensions=dimensions, dynamic=dynamic, **applied_params)
         self.batched = batched
         self.streams = get_nested_streams(self.hmap) if streams is None else streams

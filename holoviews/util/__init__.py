@@ -101,9 +101,6 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
     # Keywords not to be tab-completed (helps with deprecation)
     _no_completion = [
         "title_format",
-        "scaling_factor",
-        "scaling_method",
-        "size_fn",
         "normalize_lengths",
         "group_index",
         "category_index",
