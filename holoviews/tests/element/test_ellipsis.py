@@ -106,6 +106,12 @@ class TestEllipsisRaster:
         with pytest.raises(IndexError, match=msg):
             rgb[..., "Non-existent"]
 
+    def test_rgb_ellipsis_slice_multiple_ellipsis(self):
+        rgb = hv.RGB(np.random.rand(10, 10, 3))
+        msg = "Only a single ellipsis is allowed"
+        with pytest.raises(ValueError, match=msg):
+            rgb[..., ..., "R"]
+
     def test_rgb_ellipsis_slice_alpha_channel(self):
         rgba = np.random.rand(10, 10, 4)
         sliced = hv.RGB(rgba)[..., "A"]

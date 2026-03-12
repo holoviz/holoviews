@@ -793,11 +793,14 @@ class RGB(Image):
     def __getitem__(self, slices):
         wrapped = util.wrap_tuple(slices)
         if Ellipsis in wrapped:
+            if wrapped.count(Ellipsis) > 1:
+                msg = "Only a single ellipsis is allowed"
+                raise ValueError(msg)
             index = wrapped.index(Ellipsis)
             head = wrapped[:index]
             tail = wrapped[index + 1 :]
-            padlen = (self.ndims + 1) - (len(head) + len(tail))
-            slices = head + (slice(None),) * max(padlen, 0) + tail
+            padlen = max(self.ndims + 1 - len(head) - len(tail), 0)
+            slices = head + (slice(None),) * padlen + tail
         return super().__getitem__(slices)
 
 
