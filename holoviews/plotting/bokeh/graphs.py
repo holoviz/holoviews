@@ -16,7 +16,7 @@ from bokeh.models import (
 )
 
 from ...core.data import Dataset
-from ...core.options import Cycle, abbreviated_exception
+from ...core.options import abbreviated_exception
 from ...core.util import dimension_sanitizer, dtype_kind
 from ...util.transform import dim
 from ..mixins import ChordMixin, GraphMixin
@@ -110,9 +110,6 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
             dims = []
         return dims, {}
 
-    def _get_edge_colors(self, element, ranges, edge_data, edge_mapping, style):
-        pass
-
     def _get_edge_paths(self, element, ranges):
         path_data, mapping = {}, {}
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
@@ -169,30 +166,9 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
 
         # Handle node colors
         fixed_color = style.pop("node_color", None)
-        cycle = self.lookup_options(element, "style").kwargs.get("node_color")
-        if isinstance(cycle, Cycle) and "cmap" not in style:
-            colors = cycle
-        else:
-            colors = None
-        cdata, cmapping = self._get_color_data(
-            element.nodes,
-            ranges,
-            style,
-            name="node_fill_color",
-            colors=colors,
-            int_categories=True,
-        )
-        if fixed_color is not None and not cdata:
+        if fixed_color is not None:
             style["node_color"] = fixed_color
-        point_data.update(cdata)
-        point_mapping = cmapping
-        if "node_fill_color" in point_mapping:
-            style = {
-                k: v
-                for k, v in style.items()
-                if k not in ["node_fill_color", "node_nonselection_fill_color"]
-            }
-            point_mapping["node_nonselection_fill_color"] = point_mapping["node_fill_color"]
+        point_mapping = {}
 
         # Handle edge colors
         edge_mapping = {}
@@ -204,7 +180,6 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
             start = np.array([node_indices.get(x, nan_node) for x in start], dtype=np.int32)
             end = np.array([node_indices.get(y, nan_node) for y in end], dtype=np.int32)
         path_data = dict(start=start, end=end)
-        self._get_edge_colors(element, ranges, path_data, edge_mapping, style)
         if not static:
             pdata, pmapping = self._get_edge_paths(element, ranges)
             path_data.update(pdata)

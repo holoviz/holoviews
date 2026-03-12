@@ -3271,11 +3271,6 @@ class ColorbarPlot(ElementPlot):
             self.handles[prefix + "color_dim"] = eldim
         return cmapper
 
-    def _get_color_data(
-        self, element, ranges, style, name="color", factors=None, colors=None, int_categories=False
-    ):
-        return {}, {}
-
     def _get_cmapper_opts(self, low, high, factors, colors):
         if factors is None:
             opts = {}

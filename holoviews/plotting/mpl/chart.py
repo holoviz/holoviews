@@ -667,17 +667,10 @@ class PointPlot(ChartPlot, ColorbarPlot, LegendPlot):
 
     def get_data(self, element, ranges, style):
         xs, ys = (element.dimension_values(i) for i in range(2))
-        self._compute_styles(element, ranges, style)
+        style["edgecolors"] = style.pop("edgecolors", style.pop("edgecolor", "none"))
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
         return (ys, xs) if self.invert_axes else (xs, ys), style, {}
-
-    def _compute_styles(self, element, ranges, style):
-        color = style.pop("color", None)
-        if color is not None:
-            style["color"] = color
-        style["edgecolors"] = style.pop("edgecolors", style.pop("edgecolor", "none"))
-        style["edgecolors"] = style.pop("edgecolors", "none")
 
     def update_handles(self, key, axis, element, ranges, style):
         paths = self.handles["artist"]

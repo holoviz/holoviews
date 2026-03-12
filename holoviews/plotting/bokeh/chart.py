@@ -833,9 +833,6 @@ class SpikesPlot(SpikesMixin, ColorbarPlot):
         else:
             mapping = {"x0": "x", "x1": "x", "y0": "y0", "y1": "y1"}
 
-        cdata, cmapping = self._get_color_data(element, ranges, dict(style))
-        data.update(cdata)
-        mapping.update(cmapping)
         self._get_hover_data(data, element)
 
         return data, mapping, style
