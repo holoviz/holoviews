@@ -95,9 +95,6 @@ class PathPlot(ColorbarPlot):
         if self.invert_axes:
             paths = [p[::-1] for p in paths]
         if not (style_mapping or cdim):
-            if cdim:
-                style["array"] = style.pop("c")
-                style["clim"] = style.pop("vmin", None), style.pop("vmax", None)
             return (paths,), style, {"dimensions": dims}
         if cdim:
             self._norm_kwargs(element, ranges, style, cdim)
