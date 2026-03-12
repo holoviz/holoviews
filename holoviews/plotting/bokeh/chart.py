@@ -1154,7 +1154,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 xdiff = np.abs(np.diff(xvals[xslice]))
                 diff_size = len(np.unique(xdiff))
                 if diff_size == 0 or (diff_size == 1 and xdiff[0] == 0):
-                    xdiff = 1
+                    xdiff = np.array([np.timedelta64(1, "D")]) if is_dt else np.array([1])
                 if is_dt:
                     width *= xdiff.astype("timedelta64[ms]").astype(np.int64)
                 else:
