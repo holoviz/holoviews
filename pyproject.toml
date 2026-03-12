@@ -208,17 +208,15 @@ extend-unsafe-fixes = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F403"]
 "holoviews/tests/*" = [
     "RUF001", # Ambiguous unicode character
     "RUF002", # Ambiguous unicode character
     "RUF003", # Ambiguous unicode character
     "NPY002", # Replace legacy `np.random.rand` call with Generator
-    "B904", # Within an `except` clause, raise exceptions with from err or None
     "D", # pydocstyle
 ]
 "examples/*" = [
-    "B905", # zip zip-without-explicit-strict
+    "B905", # zip-without-explicit-strict
     "NPY002", # Replace legacy `np.random.rand` call with Generator
     "PLW0603", # Using global statement
     "RUF001", # Ambiguous unicode character
@@ -226,7 +224,7 @@ extend-unsafe-fixes = [
     "RUF003", # Ambiguous unicode character
 ]
 "holoviews/element/comparison.py" = ["PT009"]
-"holoviews/tests/element/test_comparison*.py" = ["PT009", "PT027"]
+"holoviews/tests/element/test_comparison*.py" = ["B904", "PT009", "PT027"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["holoviews"]

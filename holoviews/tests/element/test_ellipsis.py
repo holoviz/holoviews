@@ -26,11 +26,9 @@ class TestEllipsisCharts:
         hv.Scatter(range(10))[..., "y"]
 
     def test_scatter_ellipsis_value_missing(self):
-        try:
+        msg = "'Non-existent' is not an available value dimension"
+        with pytest.raises(IndexError, match=msg):
             hv.Scatter(range(10))[..., "Non-existent"]
-        except Exception as e:
-            if str(e) != "'Non-existent' is not an available value dimension":
-                raise AssertionError("Incorrect exception raised.")
 
     def test_points_ellipsis_slice_y(self):
         sliced = hv.Points([(i, 2 * i) for i in range(10)])[..., 3:9]
@@ -82,11 +80,9 @@ class TestEllipsisRaster:
 
     def test_raster_ellipsis_slice_value_missing(self):
         data = np.random.rand(10, 10)
-        try:
+        msg = r"'z' is the only selectable value dimension"
+        with pytest.raises(KeyError, match=msg):
             hv.Raster(data)[..., "Non-existent"]
-        except Exception as e:
-            if "'z' is the only selectable value dimension" not in str(e):
-                raise AssertionError("Unexpected exception.")
 
     def test_image_ellipsis_slice_value(self):
         data = np.random.rand(10, 10)
@@ -95,11 +91,9 @@ class TestEllipsisRaster:
 
     def test_image_ellipsis_slice_value_missing(self):
         data = np.random.rand(10, 10)
-        try:
+        msg = "'Non-existent' is not an available value dimension"
+        with pytest.raises(IndexError, match=msg):
             hv.Image(data)[..., "Non-existent"]
-        except Exception as e:
-            if str(e) != "'Non-existent' is not an available value dimension":
-                raise AssertionError("Unexpected exception.")
 
     def test_rgb_ellipsis_slice_value(self):
         data = np.random.rand(10, 10, 3)
@@ -108,11 +102,26 @@ class TestEllipsisRaster:
 
     def test_rgb_ellipsis_slice_value_missing(self):
         rgb = hv.RGB(np.random.rand(10, 10, 3))
-        try:
+        msg = "'Non-existent' is not an available value dimension"
+        with pytest.raises(IndexError, match=msg):
             rgb[..., "Non-existent"]
-        except Exception as e:
-            if str(e) != repr("'Non-existent' is not an available value dimension"):
-                raise AssertionError("Incorrect exception raised.")
+
+    def test_rgb_ellipsis_slice_multiple_ellipsis(self):
+        rgb = hv.RGB(np.random.rand(10, 10, 3))
+        msg = "Only a single ellipsis is allowed"
+        with pytest.raises(ValueError, match=msg):
+            rgb[..., ..., "R"]
+
+    def test_rgb_ellipsis_slice_alpha_channel(self):
+        rgba = np.random.rand(10, 10, 4)
+        sliced = hv.RGB(rgba)[..., "A"]
+        assert_data_equal(sliced.data, rgba[:, :, 3])
+
+    def test_rgb_ellipsis_slice_alpha_channel_missing(self):
+        rgba = hv.RGB(np.random.rand(10, 10, 4))
+        msg = "'Non-existent' is not an available value dimension"
+        with pytest.raises(IndexError, match=msg):
+            rgba[..., "Non-existent"]
 
 
 class TestEllipsisDeepIndexing:
