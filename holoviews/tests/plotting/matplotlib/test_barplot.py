@@ -40,6 +40,18 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
         assert ax.get_xticklabels()[0].get_text() == "01"
         assert ax.get_xticklabels()[-1].get_text() == "10"
 
+    def test_bars_continuous_datetime_single(self):
+        bars = hv.Bars([(pd.Timestamp("2024-01-01"), 5)])
+        plot = mpl_renderer.get_plot(bars)
+        ax = plot.handles["axis"]
+        assert ax.patches[0].get_width() == 0.8
+
+    def test_bars_continuous_datetime_duplicates(self):
+        bars = hv.Bars([(pd.Timestamp("2024-01-01"), 5), (pd.Timestamp("2024-01-01"), 3)])
+        plot = mpl_renderer.get_plot(bars)
+        ax = plot.handles["axis"]
+        assert ax.patches[0].get_width() == 0.8
+
     def test_bars_not_continuous_data_list(self):
         bars = hv.Bars([("A", 1), ("B", 2), ("C", 3)])
         plot = mpl_renderer.get_plot(bars)
