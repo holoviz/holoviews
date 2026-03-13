@@ -1101,7 +1101,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             xdiff = np.abs(np.diff(xvals))
             diff_size = len(np.unique(xdiff))
             if diff_size == 0 or (diff_size == 1 and xdiff[0] == 0):
-                xdiff = 1
+                xdiff = np.timedelta64(1, "D") if is_dt else 1
             else:
                 xdiff = np.min(xdiff)
             width = (1 - self.bar_padding) * (

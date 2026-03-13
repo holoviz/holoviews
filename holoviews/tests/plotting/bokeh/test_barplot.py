@@ -348,6 +348,16 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(bars)
         np.testing.assert_almost_equal(plot.handles["glyph"].width, 69120000.0)
 
+    def test_bars_continuous_datetime_single(self):
+        bars = hv.Bars([(pd.Timestamp("2024-01-01"), 5)])
+        plot = bokeh_renderer.get_plot(bars)
+        np.testing.assert_almost_equal(plot.handles["glyph"].width, 69120000.0)
+
+    def test_bars_continuous_datetime_duplicates(self):
+        bars = hv.Bars([(pd.Timestamp("2024-01-01"), 5), (pd.Timestamp("2024-01-01"), 3)])
+        plot = bokeh_renderer.get_plot(bars)
+        np.testing.assert_almost_equal(plot.handles["glyph"].width, 69120000.0)
+
     def test_bars_continuous_datetime_timezone_in_overlay(self):
         # See: https://github.com/holoviz/holoviews/issues/6364
         bars = hv.Bars((pd.date_range("1/1/2000", periods=10, tz="UTC"), np.random.rand(10)))
