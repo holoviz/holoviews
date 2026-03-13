@@ -164,10 +164,6 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
 
         point_data = {"index": index}
 
-        # Handle node colors
-        fixed_color = style.pop("node_color", None)
-        if fixed_color is not None:
-            style["node_color"] = fixed_color
         point_mapping = {}
 
         # Handle edge colors

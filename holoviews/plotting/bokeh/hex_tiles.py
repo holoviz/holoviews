@@ -136,26 +136,6 @@ class HexTilesPlot(ColorbarPlot):
         doc="The orientation of hexagon bins. By default the pointy side is on top.",
     )
 
-    max_scale = param.Number(
-        default=0.9,
-        bounds=(0, None),
-        doc="""
-        The maximum size of each bin relative to uniform tile size, i.e.
-        for a value of 1, the largest bin will match the size of bins when
-        scaling is disabled. Setting value larger than 1 will result in
-        overlapping bins.""",
-    )
-
-    min_scale = param.Number(
-        default=0,
-        bounds=(0, None),
-        doc="""
-        The minimum size of each bin relative to uniform tile size, i.e.
-        for a value of 1, the smallest bin will match the size of bins when
-        scaling is disabled. Setting value larger than 1 will result in
-        overlapping bins.""",
-    )
-
     selection_display = BokehOverlaySelectionDisplay()
 
     style_opts = base_properties + line_properties + fill_properties + ["cmap", "scale"]
