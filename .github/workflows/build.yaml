@@ -15,7 +15,7 @@ defaults:
     shell: bash -e {0}
 
 env:
-  PYTHON_VERSION: "3.11"
+  PYTHON_VERSION: "3.10"
   PACKAGE: "holoviews"
 
 jobs:
