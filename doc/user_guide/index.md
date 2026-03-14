@@ -79,7 +79,7 @@ concepts in HoloViews:
 [Interactive Hover for Big Data]
 
 : Use the `selector` with Datashader to enable fast, interactive hover tooltips that
-  reveal individual data points without sacrificing aggregation.
+reveal individual data points without sacrificing aggregation.
 
 [Working with Streaming Data]
 

@@ -112,7 +112,7 @@ callback function, and so there is no way for it to fully implement
 is the default in HoloViews). Thus, as a special case, a DynamicMap
 (whether created specifically or as the return value of various
 operations that accept a `dynamic=True` argument) will by default
-compute its ranges *using data from the first frame only*. If that is not
+compute its ranges _using data from the first frame only_. If that is not
 the behavior you want, you can either set `framewise=True` on it to enable
 normalization on every frame independently, or you can manually
 determine the appropriate axis range yourself and set that, e.g. with
@@ -310,7 +310,7 @@ curve = curve.redim.range(**bounds)
 **A:** HoloViews typically uses pandas and xarray objects in its examples,
 but it can accept standard Python data structures as well.
 Whatever data type is used, it needs to be provided to the first
-argument of the Element as *a single object*, so if you are using a
+argument of the Element as _a single object_, so if you are using a
 pair of lists, be sure to pass them as a tuple, not as two separate
 arguments.
 
@@ -328,7 +328,7 @@ user guide.
 **Q: Why are my .options(), .relabel(), .redim(), and similar settings not having any effect?**
 
 **A:** By default, HoloViews object methods like .options and
-.redim return a *copy* of your object,
+.redim return a _copy_ of your object,
 rather than modifying your original object. In HoloViews,
 making a copy of the object is cheap, because only the metadata
 is copied, not the data, and returning a copy makes it simple
@@ -347,7 +347,7 @@ to the return value of that cell, if it's a HoloViews object. So, if you
 want a given object to get customized, you need to make sure it is
 returned from the cell, or the options won't ever be applied, and you
 should only access it after it has been returned, or the options won't
-*yet* have been applied. For instance, if you use `renderer.save()`
+_yet_ have been applied. For instance, if you use `renderer.save()`
 to export an object and only then return that object as the output of
 a cell, the exported object won't have the options applied, because
 they don't get applied until the object is returned
@@ -422,7 +422,7 @@ them 'outside in' (fitting plot components into a given overall size).
 Thus there is not currently any way to specify sizes in a way that is
 comparable between the two backends.
 
-**Q: Why don't you let me pass** *matplotlib_option* **as a style through to matplotlib?**
+**Q: Why don't you let me pass** _matplotlib_option_ **as a style through to matplotlib?**
 
 **A:** We have selected a subset of default allowable style options
 that are most commonly useful in order to hide the more arcane
