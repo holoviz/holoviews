@@ -67,6 +67,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: false
       - name: anaconda setup
         run: |
           anaconda() { uvx --from anaconda-client binstar "$@"; }
