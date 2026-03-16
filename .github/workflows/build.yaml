@@ -15,8 +15,8 @@ defaults:
     shell: bash -e {0}
 
 env:
-  PYTHON_VERSION: "3.10"
   PACKAGE: "holoviews"
+  PYTHON_VERSION: "3.10"
 
 jobs:
   waiting_room:
@@ -59,33 +59,28 @@ jobs:
     runs-on: ubuntu-latest
     needs: [conda_build, waiting_room]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-    defaults:
-      run:
-        shell: bash -el {0}
     steps:
       - uses: actions/download-artifact@v8
         with:
           name: artifacts-conda
           path: dist/
-      - name: Set environment variables
-        run: |
-          echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-          echo "CONDA_FILE=$(ls dist/*.conda)" >> $GITHUB_ENV
-      - uses: conda-incubator/setup-miniconda@v3
+      - uses: astral-sh/setup-uv@v7
         with:
-          miniconda-version: "latest"
-          channels: "conda-forge"
-      - name: conda setup
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: anaconda setup
         run: |
-          conda install -y anaconda-client
-      - name: conda dev upload
-        if: contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')
+          anaconda() { uvx --from anaconda-client binstar "$@"; }
+          anaconda --version
+      - name: anaconda dev upload
+        if: contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc')
         run: |
-          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev $CONDA_FILE
-      - name: conda main upload
-        if: (!(contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')))
+          anaconda() { uvx --from anaconda-client binstar "$@"; }
+          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev dist/*.conda
+      - name: anaconda upload
+        if: (!(contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc')))
         run: |
-          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main $CONDA_FILE
+          anaconda() { uvx --from anaconda-client binstar "$@"; }
+          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main dist/*.conda
 
   pip_build:
     name: Build PyPI
@@ -148,6 +143,8 @@ jobs:
     permissions:
       contents: write
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    env:
+      TAG: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/download-artifact@v8
@@ -155,9 +152,6 @@ jobs:
           pattern: artifacts-*
           path: artifacts/
           merge-multiple: true
-      - name: Set environment variable
-        run: |
-          echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - name: Extract changelog section
         run: |
           awk -v ver="### Version ${TAG#v}" '
@@ -166,7 +160,7 @@ jobs:
             flag && !/^(\*\*.*\*\*)$/
           ' doc/releases.md | tee RELEASE_BODY.md
       - name: Create draft GitHub release with dist artifacts
-        if: (!(contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')))
+        if: (!(contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc')))
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
