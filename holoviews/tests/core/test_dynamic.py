@@ -495,11 +495,11 @@ class TestDynamicMapMethods:
             dmaps[1][1]
 
     @pytest.mark.parametrize(
-        ('kdims', 'keys'),
+        ("kdims", "keys"),
         [
-            ([Dimension("x", values=[1, 2]), "y"], {(1, 0.5)}),
-            ([Dimension("x", values=["1", "2"]), "y"], {("1", 0.5)}),
-            ([Dimension("x", range=(1, 5)), "y"], {(1, 0.5)}),
+            ([hv.Dimension("x", values=[1, 2]), "y"], {(1, 0.5)}),
+            ([hv.Dimension("x", values=["1", "2"]), "y"], {("1", 0.5)}),
+            ([hv.Dimension("x", range=(1, 5)), "y"], {(1, 0.5)}),
         ],
         ids=["int_values", "str_values", "no_values"],
     )
@@ -508,9 +508,9 @@ class TestDynamicMapMethods:
 
         def callback(x, y):
             call_count[0] += 1
-            return Curve([x, y])
+            return hv.Curve([x, y])
 
-        dmap = DynamicMap(callback, kdims=kdims)
+        dmap = hv.DynamicMap(callback, kdims=kdims)
         result = dmap[keys]
         assert len(result) == len(keys)
         for key in keys:
@@ -521,6 +521,7 @@ class TestDynamicMapMethods:
         # Check we hit cache
         result = dmap[keys]
         assert call_count[0] == 1
+
 
 class DynamicMapOptionsTests(CustomBackendTestCase):
     def test_dynamic_options(self):
