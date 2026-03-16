@@ -57,8 +57,9 @@ jobs:
   conda_publish:
     name: Publish Conda
     runs-on: ubuntu-latest
-    needs: [conda_build, waiting_room]
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    # needs: [conda_build, waiting_room]
+    # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    needs: [conda_build]
     defaults:
       run:
         shell: bash -el {0}
@@ -69,23 +70,26 @@ jobs:
           path: dist/
       - name: Set environment variables
         run: |
-          echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-          echo "CONDA_FILE=$(ls dist/*.conda)" >> $GITHUB_ENV
-      - uses: conda-incubator/setup-miniconda@v3
+          echo "TAG=${GITHUB_REF#refs/*/}" | tee -a $GITHUB_ENV
+          echo "CONDA_FILE=$(ls dist/*.conda)" | tee -a $GITHUB_ENV
+          echo ${{ github.ref_name }}
+      - uses: astral-sh/setup-uv@v7
         with:
-          miniconda-version: "latest"
-          channels: "conda-forge"
-      - name: conda setup
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: anaconda setup
         run: |
-          conda install -y anaconda-client
+          alias anaconda='uvx --from anaconda-client binstar'
+          anaconda --version
       - name: conda dev upload
         if: contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')
         run: |
-          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev $CONDA_FILE
+          alias anaconda='uvx --from anaconda-client binstar'
+          # anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev $CONDA_FILE
       - name: conda main upload
         if: (!(contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')))
         run: |
-          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main $CONDA_FILE
+          alias anaconda='uvx --from anaconda-client binstar'
+          # anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main $CONDA_FILE
 
   pip_build:
     name: Build PyPI
