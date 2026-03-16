@@ -218,6 +218,12 @@ class MultiDimensionalMapping(Dimensioned):
         elif key == ():
             return (), ()
 
+        # If a single set/list of full-key tuples, expand into per-dimension sets
+        if len(key) == 1 and isinstance(key[0], (set, list)) and len(key[0]) > 0:
+            items = list(key[0])
+            if all(isinstance(item, tuple) and len(item) == self.ndims for item in items):
+                key = tuple([item[i] for item in items] for i in range(self.ndims))
+
         if key[0] is Ellipsis:
             num_pad = self.ndims - len(key) + 1
             key = (slice(None),) * num_pad + key[1:]
@@ -712,7 +718,7 @@ class NdMapping(MultiDimensionalMapping):
 
         """
         conditions = []
-        for idx, (dim, dim_slice) in enumerate(zip(self.kdims, map_slice, strict=False)):
+        for dim, dim_slice in zip(self.kdims, map_slice, strict=False):
             if isinstance(dim_slice, slice):
                 start, stop = dim_slice.start, dim_slice.stop
                 if dim.values:
@@ -729,10 +735,8 @@ class NdMapping(MultiDimensionalMapping):
                     conditions.append(self._range_condition(dim_slice))
             elif isinstance(dim_slice, (set, list)):
                 if dim.values:
-                    dim_slice = [
-                        dim.values.index(dim_val[idx] if isinstance(dim_val, tuple) else dim_val)
-                        for dim_val in dim_slice
-                    ]
+                    dim_slice = [dim.values.index(dim_val)
+                                 for dim_val in dim_slice]
                 conditions.append(self._values_condition(dim_slice))
             elif dim_slice is Ellipsis:
                 conditions.append(self._all_condition())
