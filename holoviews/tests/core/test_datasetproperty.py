@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from holoviews import Curve, Dataset, Dimension, Distribution, Scatter
+import holoviews as hv
 from holoviews.core import Apply, Redim
 from holoviews.operation import function, histogram
 from holoviews.testing import assert_element_equal
@@ -20,50 +20,51 @@ if dask:
 
 
 class DatasetPropertyTestCase:
-
     def setup_method(self):
-        self.df = pd.DataFrame({
-            'a': [1, 1, 3, 3, 2, 2, 0, 0],
-            'b': [10, 20, 30, 40, 10, 20, 30, 40],
-            'c': ['A', 'A', 'B', 'B', 'C', 'C', 'D', 'D'],
-            'd': [-1, -2, -3, -4, -5, -6, -7, -8]
-        })
-
-        self.ds = Dataset(
-            self.df,
-            kdims=[
-                Dimension('a', label="The a Column"),
-                Dimension('b', label="The b Column"),
-                Dimension('c', label="The c Column"),
-                Dimension('d', label="The d Column"),
-            ]
+        self.df = pd.DataFrame(
+            {
+                "a": [1, 1, 3, 3, 2, 2, 0, 0],
+                "b": [10, 20, 30, 40, 10, 20, 30, 40],
+                "c": ["A", "A", "B", "B", "C", "C", "D", "D"],
+                "d": [-1, -2, -3, -4, -5, -6, -7, -8],
+            }
         )
 
-        self.ds2 = Dataset(
+        self.ds = hv.Dataset(
+            self.df,
+            kdims=[
+                hv.Dimension("a", label="The a Column"),
+                hv.Dimension("b", label="The b Column"),
+                hv.Dimension("c", label="The c Column"),
+                hv.Dimension("d", label="The d Column"),
+            ],
+        )
+
+        self.ds2 = hv.Dataset(
             self.df.iloc[2:],
             kdims=[
-                Dimension('a', label="The a Column"),
-                Dimension('b', label="The b Column"),
-                Dimension('c', label="The c Column"),
-                Dimension('d', label="The d Column"),
-            ]
+                hv.Dimension("a", label="The a Column"),
+                hv.Dimension("b", label="The b Column"),
+                hv.Dimension("c", label="The c Column"),
+                hv.Dimension("d", label="The d Column"),
+            ],
         )
 
 
 class ConstructorTestCase(DatasetPropertyTestCase):
     def test_constructors_dataset(self):
-        ds = Dataset(self.df)
+        ds = hv.Dataset(self.df)
         assert ds is ds.dataset
 
         # Check pipeline
         ops = ds.pipeline.operations
         assert len(ops) == 1
-        assert ops[0].output_type is Dataset
+        assert ops[0].output_type is hv.Dataset
         assert_element_equal(ds, ds.pipeline(ds.dataset))
 
     def test_constructor_curve(self):
-        element = Curve(self.df)
-        expected = Dataset(
+        element = hv.Curve(self.df)
+        expected = hv.Dataset(
             self.df,
             kdims=self.df.columns[0],
             vdims=self.df.columns[1:].tolist(),
@@ -73,46 +74,41 @@ class ConstructorTestCase(DatasetPropertyTestCase):
         # Check pipeline
         pipeline = element.pipeline
         assert len(pipeline.operations) == 1
-        assert pipeline.operations[0].output_type is Curve
+        assert pipeline.operations[0].output_type is hv.Curve
         assert_element_equal(element, element.pipeline(element.dataset))
 
 
 class ToTestCase(DatasetPropertyTestCase):
-
     def test_to_element(self):
-        curve = self.ds.to(Curve, 'a', 'b', groupby=[])
-        curve2 = self.ds2.to(Curve, 'a', 'b', groupby=[])
+        curve = self.ds.to(hv.Curve, "a", "b", groupby=[])
+        curve2 = self.ds2.to(hv.Curve, "a", "b", groupby=[])
         with pytest.raises(AssertionError):
             assert_element_equal(curve, curve2)
 
         assert_element_equal(curve.dataset, self.ds)
 
-        scatter = curve.to(Scatter)
+        scatter = curve.to(hv.Scatter)
         assert_element_equal(scatter.dataset, self.ds)
 
         # Check pipeline
         ops = curve.pipeline.operations
         assert len(ops) == 2
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
 
         # Execute pipeline
         assert_element_equal(curve.pipeline(curve.dataset), curve)
-        assert_element_equal(
-            curve.pipeline(self.ds2), curve2
-        )
+        assert_element_equal(curve.pipeline(self.ds2), curve2)
 
     def test_to_holomap(self):
-        curve_hmap = self.ds.to(Curve, 'a', 'b', groupby=['c'])
+        curve_hmap = self.ds.to(hv.Curve, "a", "b", groupby=["c"])
 
         # Check HoloMap element datasets
         for v in self.df.c.drop_duplicates():
             curve = curve_hmap.data[(v,)]
 
             # check dataset
-            assert_element_equal(
-                curve.dataset, self.ds
-            )
+            assert_element_equal(curve.dataset, self.ds)
 
             # execute pipeline
             assert_element_equal(curve.pipeline(curve.dataset), curve)
@@ -121,24 +117,22 @@ class ToTestCase(DatasetPropertyTestCase):
     def test_to_holomap_dask(self):
         with dask.config.set({"dataframe.convert-string": False}):
             ddf = dd.from_pandas(self.df, npartitions=2)
-        dds = Dataset(
+        dds = hv.Dataset(
             ddf,
             kdims=[
-                Dimension('a', label="The a Column"),
-                Dimension('b', label="The b Column"),
-                Dimension('c', label="The c Column"),
-                Dimension('d', label="The d Column"),
-            ]
+                hv.Dimension("a", label="The a Column"),
+                hv.Dimension("b", label="The b Column"),
+                hv.Dimension("c", label="The c Column"),
+                hv.Dimension("d", label="The d Column"),
+            ],
         )
 
-        curve_hmap = dds.to(Curve, 'a', 'b', groupby=['c'])
+        curve_hmap = dds.to(hv.Curve, "a", "b", groupby=["c"])
 
         # Check HoloMap element datasets
         for v in self.df.c.drop_duplicates():
             curve = curve_hmap.data[(v,)]
-            assert_element_equal(
-                curve.dataset, self.ds
-            )
+            assert_element_equal(curve.dataset, self.ds)
 
             # Execute pipeline
             assert_element_equal(curve.pipeline(curve.dataset), curve)
@@ -150,12 +144,9 @@ class CloneTestCase(DatasetPropertyTestCase):
         assert_element_equal(self.ds.clone().dataset, self.ds)
 
         # Curve
-        curve = self.ds.to.curve('a', 'b', groupby=[])
+        curve = self.ds.to.curve("a", "b", groupby=[])
         curve_clone = curve.clone()
-        assert_element_equal(
-            curve_clone.dataset,
-            self.ds
-        )
+        assert_element_equal(curve_clone.dataset, self.ds)
 
         # Check pipeline carried over
         assert curve.pipeline.operations == curve_clone.pipeline.operations[:2]
@@ -177,8 +168,8 @@ class CloneTestCase(DatasetPropertyTestCase):
 
 class ReindexTestCase(DatasetPropertyTestCase):
     def test_reindex_dataset(self):
-        ds_ab = self.ds.reindex(kdims=['a'], vdims=['b'])
-        ds2_ab = self.ds2.reindex(kdims=['a'], vdims=['b'])
+        ds_ab = self.ds.reindex(kdims=["a"], vdims=["b"])
+        ds2_ab = self.ds2.reindex(kdims=["a"], vdims=["b"])
         with pytest.raises(AssertionError):
             assert_element_equal(ds_ab, ds2_ab)
 
@@ -187,24 +178,18 @@ class ReindexTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_ab.pipeline.operations
         assert len(ops) == 2
-        assert ops[0].output_type is Dataset
-        assert ops[1].method_name == 'reindex'
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].method_name == "reindex"
         assert ops[1].args == []
-        assert ops[1].kwargs == dict(kdims=['a'], vdims=['b'])
+        assert ops[1].kwargs == dict(kdims=["a"], vdims=["b"])
 
         # Execute pipeline
         assert_element_equal(ds_ab.pipeline(ds_ab.dataset), ds_ab)
-        assert_element_equal(
-            ds_ab.pipeline(self.ds2), ds2_ab
-        )
+        assert_element_equal(ds_ab.pipeline(self.ds2), ds2_ab)
 
     def test_double_reindex_dataset(self):
-        ds_ab = (self.ds
-                 .reindex(kdims=['a'], vdims=['b', 'c'])
-                 .reindex(kdims=['a'], vdims=['b']))
-        ds2_ab = (self.ds2
-                  .reindex(kdims=['a'], vdims=['b', 'c'])
-                  .reindex(kdims=['a'], vdims=['b']))
+        ds_ab = self.ds.reindex(kdims=["a"], vdims=["b", "c"]).reindex(kdims=["a"], vdims=["b"])
+        ds2_ab = self.ds2.reindex(kdims=["a"], vdims=["b", "c"]).reindex(kdims=["a"], vdims=["b"])
 
         with pytest.raises(AssertionError):
             assert_element_equal(ds_ab, ds2_ab)
@@ -214,25 +199,21 @@ class ReindexTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_ab.pipeline.operations
         assert len(ops) == 3
-        assert ops[0].output_type is Dataset
-        assert ops[1].method_name == 'reindex'
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].method_name == "reindex"
         assert ops[1].args == []
-        assert ops[1].kwargs == dict(kdims=['a'], vdims=['b', 'c'])
-        assert ops[2].method_name == 'reindex'
+        assert ops[1].kwargs == dict(kdims=["a"], vdims=["b", "c"])
+        assert ops[2].method_name == "reindex"
         assert ops[2].args == []
-        assert ops[2].kwargs == dict(kdims=['a'], vdims=['b'])
+        assert ops[2].kwargs == dict(kdims=["a"], vdims=["b"])
 
         # Execute pipeline
         assert_element_equal(ds_ab.pipeline(ds_ab.dataset), ds_ab)
         assert_element_equal(ds_ab.pipeline(self.ds2), ds2_ab)
 
     def test_reindex_curve(self):
-        curve_ba = self.ds.to(
-            Curve, 'a', 'b', groupby=[]
-        ).reindex(kdims='b', vdims='a')
-        curve2_ba = self.ds2.to(
-            Curve, 'a', 'b', groupby=[]
-        ).reindex(kdims='b', vdims='a')
+        curve_ba = self.ds.to(hv.Curve, "a", "b", groupby=[]).reindex(kdims="b", vdims="a")
+        curve2_ba = self.ds2.to(hv.Curve, "a", "b", groupby=[]).reindex(kdims="b", vdims="a")
 
         with pytest.raises(AssertionError):
             assert_element_equal(curve_ba, curve2_ba)
@@ -241,23 +222,27 @@ class ReindexTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve_ba.pipeline.operations
         assert len(ops) == 3
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
-        assert ops[2].method_name == 'reindex'
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
+        assert ops[2].method_name == "reindex"
         assert ops[2].args == []
-        assert ops[2].kwargs == dict(kdims='b', vdims='a')
+        assert ops[2].kwargs == dict(kdims="b", vdims="a")
 
         # Execute pipeline
         assert_element_equal(curve_ba.pipeline(curve_ba.dataset), curve_ba)
         assert_element_equal(curve_ba.pipeline(self.ds2), curve2_ba)
 
     def test_double_reindex_curve(self):
-        curve_ba = self.ds.to(
-            Curve, 'a', ['b', 'c'], groupby=[]
-        ).reindex(kdims='a', vdims='b').reindex(kdims='b', vdims='a')
-        curve2_ba = self.ds2.to(
-            Curve, 'a', ['b', 'c'], groupby=[]
-        ).reindex(kdims='a', vdims='b').reindex(kdims='b', vdims='a')
+        curve_ba = (
+            self.ds.to(hv.Curve, "a", ["b", "c"], groupby=[])
+            .reindex(kdims="a", vdims="b")
+            .reindex(kdims="b", vdims="a")
+        )
+        curve2_ba = (
+            self.ds2.to(hv.Curve, "a", ["b", "c"], groupby=[])
+            .reindex(kdims="a", vdims="b")
+            .reindex(kdims="b", vdims="a")
+        )
 
         with pytest.raises(AssertionError):
             assert_element_equal(curve_ba, curve2_ba)
@@ -267,14 +252,14 @@ class ReindexTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve_ba.pipeline.operations
         assert len(ops) == 4
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
-        assert ops[2].method_name == 'reindex'
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
+        assert ops[2].method_name == "reindex"
         assert ops[2].args == []
-        assert ops[2].kwargs == dict(kdims='a', vdims='b')
-        assert ops[3].method_name == 'reindex'
+        assert ops[2].kwargs == dict(kdims="a", vdims="b")
+        assert ops[3].method_name == "reindex"
         assert ops[3].args == []
-        assert ops[3].kwargs == dict(kdims='b', vdims='a')
+        assert ops[3].kwargs == dict(kdims="b", vdims="a")
 
         # Execute pipeline
         assert_element_equal(curve_ba.pipeline(curve_ba.dataset), curve_ba)
@@ -294,8 +279,8 @@ class IlocTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_iloc.pipeline.operations
         assert len(ops) == 2
-        assert ops[0].output_type is Dataset
-        assert ops[1].method_name == '_perform_getitem'
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].method_name == "_perform_getitem"
         assert ops[1].args == [[0, 2]]
         assert ops[1].kwargs == {}
 
@@ -305,8 +290,8 @@ class IlocTestCase(DatasetPropertyTestCase):
 
     def test_iloc_curve(self):
         # Curve
-        curve_iloc = self.ds.to.curve('a', 'b', groupby=[]).iloc[[0, 2]]
-        curve2_iloc = self.ds2.to.curve('a', 'b', groupby=[]).iloc[[0, 2]]
+        curve_iloc = self.ds.to.curve("a", "b", groupby=[]).iloc[[0, 2]]
+        curve2_iloc = self.ds2.to.curve("a", "b", groupby=[]).iloc[[0, 2]]
 
         with pytest.raises(AssertionError):
             assert_element_equal(curve_iloc, curve2_iloc)
@@ -316,9 +301,9 @@ class IlocTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve_iloc.pipeline.operations
         assert len(ops) == 3
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
-        assert ops[2].method_name == '_perform_getitem'
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
+        assert ops[2].method_name == "_perform_getitem"
         assert ops[2].args == [[0, 2]]
         assert ops[2].kwargs == {}
 
@@ -328,27 +313,18 @@ class IlocTestCase(DatasetPropertyTestCase):
 
 
 class NdlocTestCase(DatasetPropertyTestCase):
-
     def setup_method(self):
         super().setup_method()
-        self.ds_grid = Dataset(
-            (np.arange(4),
-             np.arange(3),
-             np.array([[1, 2, 3, 4],
-                       [5, 6, 7, 8],
-                       [9, 10, 11, 12]])),
-            kdims=['x', 'y'],
-            vdims='z'
+        self.ds_grid = hv.Dataset(
+            (np.arange(4), np.arange(3), np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])),
+            kdims=["x", "y"],
+            vdims="z",
         )
 
-        self.ds2_grid = Dataset(
-            (np.arange(3),
-             np.arange(3),
-             np.array([[1, 2, 4],
-                       [5, 6, 8],
-                       [9, 10, 12]])),
-            kdims=['x', 'y'],
-            vdims='z'
+        self.ds2_grid = hv.Dataset(
+            (np.arange(3), np.arange(3), np.array([[1, 2, 4], [5, 6, 8], [9, 10, 12]])),
+            kdims=["x", "y"],
+            vdims="z",
         )
 
     def test_ndloc_dataset(self):
@@ -359,26 +335,24 @@ class NdlocTestCase(DatasetPropertyTestCase):
             assert_element_equal(ds_grid_ndloc, ds2_grid_ndloc)
 
         # Dataset
-        assert_element_equal(
-            ds_grid_ndloc.dataset,
-            self.ds_grid
-        )
+        assert_element_equal(ds_grid_ndloc.dataset, self.ds_grid)
 
         # Check pipeline
         ops = ds_grid_ndloc.pipeline.operations
         assert len(ops) == 2
-        assert ops[0].output_type is Dataset
-        assert ops[1].method_name == '_perform_getitem'
-        assert ops[1].args == [(slice(0, 2, None), slice(1, 3, None),)]
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].method_name == "_perform_getitem"
+        assert ops[1].args == [
+            (
+                slice(0, 2, None),
+                slice(1, 3, None),
+            )
+        ]
         assert ops[1].kwargs == {}
 
         # Execute pipeline
-        assert_element_equal(
-            ds_grid_ndloc.pipeline(ds_grid_ndloc.dataset), ds_grid_ndloc
-        )
-        assert_element_equal(
-            ds_grid_ndloc.pipeline(self.ds2_grid), ds2_grid_ndloc
-        )
+        assert_element_equal(ds_grid_ndloc.pipeline(ds_grid_ndloc.dataset), ds_grid_ndloc)
+        assert_element_equal(ds_grid_ndloc.pipeline(self.ds2_grid), ds2_grid_ndloc)
 
 
 class SelectTestCase(DatasetPropertyTestCase):
@@ -395,18 +369,18 @@ class SelectTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_select.pipeline.operations
         assert len(ops) == 2
-        assert ops[0].output_type is Dataset
-        assert ops[1].method_name == 'select'
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].method_name == "select"
         assert ops[1].args == []
-        assert ops[1].kwargs == {'b': 10}
+        assert ops[1].kwargs == {"b": 10}
 
         # Execute pipeline
         assert_element_equal(ds_select.pipeline(ds_select.dataset), ds_select)
         assert_element_equal(ds_select.pipeline(self.ds2), ds2_select)
 
     def test_select_curve(self):
-        curve_select = self.ds.to.curve('a', 'b', groupby=[]).select(b=10)
-        curve2_select = self.ds2.to.curve('a', 'b', groupby=[]).select(b=10)
+        curve_select = self.ds.to.curve("a", "b", groupby=[]).select(b=10)
+        curve2_select = self.ds2.to.curve("a", "b", groupby=[]).select(b=10)
         with pytest.raises(AssertionError):
             assert_element_equal(curve_select, curve2_select)
 
@@ -416,25 +390,21 @@ class SelectTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve_select.pipeline.operations
         assert len(ops) == 3
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
-        assert ops[2].method_name == 'select'
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
+        assert ops[2].method_name == "select"
         assert ops[2].args == []
-        assert ops[2].kwargs == {'b': 10}
+        assert ops[2].kwargs == {"b": 10}
 
         # Execute pipeline
-        assert_element_equal(
-            curve_select.pipeline(curve_select.dataset), curve_select
-        )
-        assert_element_equal(
-            curve_select.pipeline(self.ds2), curve2_select
-        )
+        assert_element_equal(curve_select.pipeline(curve_select.dataset), curve_select)
+        assert_element_equal(curve_select.pipeline(self.ds2), curve2_select)
 
 
 class SortTestCase(DatasetPropertyTestCase):
     def test_sort_curve(self):
-        curve_sorted = self.ds.to.curve('a', 'b', groupby=[]).sort('a')
-        curve_sorted2 = self.ds2.to.curve('a', 'b', groupby=[]).sort('a')
+        curve_sorted = self.ds.to.curve("a", "b", groupby=[]).sort("a")
+        curve_sorted2 = self.ds2.to.curve("a", "b", groupby=[]).sort("a")
 
         with pytest.raises(AssertionError):
             assert_element_equal(curve_sorted, curve_sorted2)
@@ -445,25 +415,21 @@ class SortTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve_sorted.pipeline.operations
         assert len(ops) == 3
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
-        assert ops[2].method_name == 'sort'
-        assert ops[2].args == ['a']
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
+        assert ops[2].method_name == "sort"
+        assert ops[2].args == ["a"]
         assert ops[2].kwargs == {}
 
         # Execute pipeline
-        assert_element_equal(
-            curve_sorted.pipeline(curve_sorted.dataset), curve_sorted
-        )
-        assert_element_equal(
-            curve_sorted.pipeline(self.ds2), curve_sorted2
-        )
+        assert_element_equal(curve_sorted.pipeline(curve_sorted.dataset), curve_sorted)
+        assert_element_equal(curve_sorted.pipeline(self.ds2), curve_sorted2)
 
 
 class SampleTestCase(DatasetPropertyTestCase):
     def test_sample_curve(self):
-        curve_sampled = self.ds.to.curve('a', 'b', groupby=[]).sample([1, 2])
-        curve_sampled2 = self.ds2.to.curve('a', 'b', groupby=[]).sample([1, 2])
+        curve_sampled = self.ds.to.curve("a", "b", groupby=[]).sample([1, 2])
+        curve_sampled2 = self.ds2.to.curve("a", "b", groupby=[]).sample([1, 2])
 
         with pytest.raises(AssertionError):
             assert_element_equal(curve_sampled, curve_sampled2)
@@ -474,30 +440,26 @@ class SampleTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve_sampled.pipeline.operations
         assert len(ops) == 3
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
-        assert ops[2].method_name == 'sample'
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
+        assert ops[2].method_name == "sample"
         assert ops[2].args == [[1, 2]]
         assert ops[2].kwargs == {}
 
         # Execute pipeline
-        assert_element_equal(
-            curve_sampled.pipeline(curve_sampled.dataset), curve_sampled
-        )
-        assert_element_equal(
-            curve_sampled.pipeline(self.ds2), curve_sampled2
-        )
+        assert_element_equal(curve_sampled.pipeline(curve_sampled.dataset), curve_sampled)
+        assert_element_equal(curve_sampled.pipeline(self.ds2), curve_sampled2)
 
 
 class ReduceTestCase(DatasetPropertyTestCase):
     def test_reduce_dataset(self):
-        ds_reduced = self.ds.reindex(
-            kdims=['b', 'c'], vdims=['a', 'd']
-        ).reduce('c', function=np.sum)
+        ds_reduced = self.ds.reindex(kdims=["b", "c"], vdims=["a", "d"]).reduce(
+            "c", function=np.sum
+        )
 
-        ds2_reduced = self.ds2.reindex(
-            kdims=['b', 'c'], vdims=['a', 'd']
-        ).reduce('c', function=np.sum)
+        ds2_reduced = self.ds2.reindex(kdims=["b", "c"], vdims=["a", "d"]).reduce(
+            "c", function=np.sum
+        )
 
         with pytest.raises(AssertionError):
             assert_element_equal(ds_reduced, ds2_reduced)
@@ -507,11 +469,11 @@ class ReduceTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_reduced.pipeline.operations
         assert len(ops) == 3
-        assert ops[0].output_type is Dataset
-        assert ops[1].method_name == 'reindex'
-        assert ops[2].method_name == 'reduce'
-        assert ops[2].args == ['c']
-        assert ops[2].kwargs == {'function': np.sum}
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].method_name == "reindex"
+        assert ops[2].method_name == "reduce"
+        assert ops[2].args == ["c"]
+        assert ops[2].kwargs == {"function": np.sum}
 
         # Execute pipeline
         assert_element_equal(ds_reduced.pipeline(ds_reduced.dataset), ds_reduced)
@@ -520,13 +482,13 @@ class ReduceTestCase(DatasetPropertyTestCase):
 
 class AggregateTestCase(DatasetPropertyTestCase):
     def test_aggregate_dataset(self):
-        ds_aggregated = self.ds.reindex(
-            kdims=['b', 'c'], vdims=['a', 'd']
-        ).aggregate('b', function=np.sum)
+        ds_aggregated = self.ds.reindex(kdims=["b", "c"], vdims=["a", "d"]).aggregate(
+            "b", function=np.sum
+        )
 
-        ds2_aggregated = self.ds2.reindex(
-            kdims=['b', 'c'], vdims=['a', 'd']
-        ).aggregate('b', function=np.sum)
+        ds2_aggregated = self.ds2.reindex(kdims=["b", "c"], vdims=["a", "d"]).aggregate(
+            "b", function=np.sum
+        )
 
         with pytest.raises(AssertionError):
             assert_element_equal(ds_aggregated, ds2_aggregated)
@@ -537,30 +499,22 @@ class AggregateTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_aggregated.pipeline.operations
         assert len(ops) == 3
-        assert ops[0].output_type is Dataset
-        assert ops[1].method_name == 'reindex'
-        assert ops[2].method_name == 'aggregate'
-        assert ops[2].args == ['b']
-        assert ops[2].kwargs == {'function': np.sum}
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].method_name == "reindex"
+        assert ops[2].method_name == "aggregate"
+        assert ops[2].args == ["b"]
+        assert ops[2].kwargs == {"function": np.sum}
 
         # Execute pipeline
-        assert_element_equal(
-            ds_aggregated.pipeline(ds_aggregated.dataset), ds_aggregated
-        )
-        assert_element_equal(
-            ds_aggregated.pipeline(self.ds2), ds2_aggregated
-        )
+        assert_element_equal(ds_aggregated.pipeline(ds_aggregated.dataset), ds_aggregated)
+        assert_element_equal(ds_aggregated.pipeline(self.ds2), ds2_aggregated)
 
 
 class GroupbyTestCase(DatasetPropertyTestCase):
     def test_groupby_dataset(self):
-        ds_groups = self.ds.reindex(
-            kdims=['b', 'c'], vdims=['a', 'd']
-        ).groupby('b')
+        ds_groups = self.ds.reindex(kdims=["b", "c"], vdims=["a", "d"]).groupby("b")
 
-        ds2_groups = self.ds2.reindex(
-            kdims=['b', 'c'], vdims=['a', 'd']
-        ).groupby('b')
+        ds2_groups = self.ds2.reindex(kdims=["b", "c"], vdims=["a", "d"]).groupby("b")
 
         with pytest.raises(AssertionError):
             assert_element_equal(ds_groups, ds2_groups)
@@ -572,11 +526,11 @@ class GroupbyTestCase(DatasetPropertyTestCase):
             # Check pipeline
             ops = ds_group.pipeline.operations
             assert len(ops) == 4
-            assert ops[0].output_type is Dataset
-            assert ops[1].method_name == 'reindex'
-            assert ops[2].method_name == 'groupby'
-            assert ops[2].args == ['b']
-            assert ops[3].method_name == '__getitem__'
+            assert ops[0].output_type is hv.Dataset
+            assert ops[1].method_name == "reindex"
+            assert ops[2].method_name == "groupby"
+            assert ops[2].args == ["b"]
+            assert ops[3].method_name == "__getitem__"
             assert ops[3].args == [k]
 
             # Execute pipeline
@@ -586,8 +540,8 @@ class GroupbyTestCase(DatasetPropertyTestCase):
 
 class AddDimensionTestCase(DatasetPropertyTestCase):
     def test_add_dimension_dataset(self):
-        ds_dim_added = self.ds.add_dimension('new', 1, 17)
-        ds2_dim_added = self.ds2.add_dimension('new', 1, 17)
+        ds_dim_added = self.ds.add_dimension("new", 1, 17)
+        ds2_dim_added = self.ds2.add_dimension("new", 1, 17)
 
         with pytest.raises(AssertionError):
             assert_element_equal(ds_dim_added, ds2_dim_added)
@@ -599,27 +553,25 @@ class AddDimensionTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = ds_dim_added.pipeline.operations
         assert len(ops) == 2
-        assert ops[0].output_type is Dataset
-        assert ops[1].method_name == 'add_dimension'
-        assert ops[1].args == ['new', 1, 17]
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].method_name == "add_dimension"
+        assert ops[1].args == ["new", 1, 17]
         assert ops[1].kwargs == {}
 
         # Execute pipeline
+        assert_element_equal(ds_dim_added.pipeline(ds_dim_added.dataset), ds_dim_added)
         assert_element_equal(
-            ds_dim_added.pipeline(ds_dim_added.dataset), ds_dim_added
-        )
-        assert_element_equal(
-            ds_dim_added.pipeline(self.ds2), ds2_dim_added,
+            ds_dim_added.pipeline(self.ds2),
+            ds2_dim_added,
         )
 
 
 # Add execute pipeline test for each method, using a different dataset (ds2)
 #
 class HistogramTestCase(DatasetPropertyTestCase):
-
     def setup_method(self):
         super().setup_method()
-        self.hist = self.ds.hist('a', adjoin=False, normed=False)
+        self.hist = self.ds.hist("a", adjoin=False, normed=False)
 
     def test_construction(self):
         assert_element_equal(self.hist.dataset, self.ds)
@@ -634,13 +586,13 @@ class HistogramTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = sub_hist.pipeline.operations
         assert len(ops) == 4
-        assert ops[0].output_type is Dataset
+        assert ops[0].output_type is hv.Dataset
         assert ops[1].output_type is Apply
-        assert ops[2].method_name == '__call__'
+        assert ops[2].method_name == "__call__"
         assert isinstance(ops[2].args[0], histogram)
-        assert ops[3].method_name == 'select'
+        assert ops[3].method_name == "select"
         assert ops[3].args == []
-        assert ops[3].kwargs == {'a': (1, None)}
+        assert ops[3].kwargs == {"a": (1, None)}
 
         # Execute pipeline
         assert_element_equal(sub_hist.pipeline(sub_hist.dataset), sub_hist)
@@ -653,7 +605,14 @@ class HistogramTestCase(DatasetPropertyTestCase):
 
         with pytest.raises(AssertionError):
             assert_element_equal(
-                sub_hist.dataset, self.ds.select(a=(1, None,), b=100)
+                sub_hist.dataset,
+                self.ds.select(
+                    a=(
+                        1,
+                        None,
+                    ),
+                    b=100,
+                ),
             )
 
         # Check dataset unchanged
@@ -662,13 +621,13 @@ class HistogramTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = sub_hist.pipeline.operations
         assert len(ops) == 4
-        assert ops[0].output_type is Dataset
+        assert ops[0].output_type is hv.Dataset
         assert ops[1].output_type is Apply
-        assert ops[2].method_name == '__call__'
+        assert ops[2].method_name == "__call__"
         assert isinstance(ops[2].args[0], histogram)
-        assert ops[3].method_name == 'select'
+        assert ops[3].method_name == "select"
         assert ops[3].args == []
-        assert ops[3].kwargs == {'a': (1, None), 'b': 100}
+        assert ops[3].kwargs == {"a": (1, None), "b": 100}
 
         # Execute pipeline
         assert_element_equal(sub_hist.pipeline(sub_hist.dataset), sub_hist)
@@ -680,21 +639,20 @@ class HistogramTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve.pipeline.operations
         assert len(ops) == 4
-        assert ops[0].output_type is Dataset
+        assert ops[0].output_type is hv.Dataset
         assert ops[1].output_type is Apply
-        assert ops[2].method_name == '__call__'
+        assert ops[2].method_name == "__call__"
         assert isinstance(ops[2].args[0], histogram)
-        assert ops[3].output_type is Curve
+        assert ops[3].output_type is hv.Curve
 
         # Execute pipeline
         assert_element_equal(curve.pipeline(curve.dataset), curve)
 
 
 class DistributionTestCase(DatasetPropertyTestCase):
-
     def setup_method(self):
         super().setup_method()
-        self.distribution = self.ds.to(Distribution, kdims='a', groupby=[])
+        self.distribution = self.ds.to(hv.Distribution, kdims="a", groupby=[])
 
     def test_distribution_dataset(self):
         assert_element_equal(self.distribution.dataset, self.ds)
@@ -708,14 +666,9 @@ class DistributionTestCase(DatasetPropertyTestCase):
 
 @ds_skip
 class DatashaderTestCase(DatasetPropertyTestCase):
-
     def test_rasterize_curve(self):
-        img = rasterize(
-            self.ds.to(Curve, 'a', 'b', groupby=[]), dynamic=False
-        )
-        img2 = rasterize(
-            self.ds2.to(Curve, 'a', 'b', groupby=[]), dynamic=False
-        )
+        img = rasterize(self.ds.to(hv.Curve, "a", "b", groupby=[]), dynamic=False)
+        img2 = rasterize(self.ds2.to(hv.Curve, "a", "b", groupby=[]), dynamic=False)
         with pytest.raises(AssertionError):
             assert_element_equal(img, img2)
 
@@ -725,8 +678,8 @@ class DatashaderTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = img.pipeline.operations
         assert len(ops) == 3
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
         assert isinstance(ops[2], rasterize)
 
         # Execute pipeline
@@ -734,12 +687,12 @@ class DatashaderTestCase(DatasetPropertyTestCase):
         assert_element_equal(img.pipeline(self.ds2), img2)
 
     def test_datashade_curve(self):
-        rgb = dynspread(datashade(
-            self.ds.to(Curve, 'a', 'b', groupby=[]), dynamic=False
-        ), dynamic=False)
-        rgb2 = dynspread(datashade(
-            self.ds2.to(Curve, 'a', 'b', groupby=[]), dynamic=False
-        ), dynamic=False)
+        rgb = dynspread(
+            datashade(self.ds.to(hv.Curve, "a", "b", groupby=[]), dynamic=False), dynamic=False
+        )
+        rgb2 = dynspread(
+            datashade(self.ds2.to(hv.Curve, "a", "b", groupby=[]), dynamic=False), dynamic=False
+        )
 
         with pytest.raises(AssertionError):
             assert_element_equal(rgb, rgb2)
@@ -750,8 +703,8 @@ class DatashaderTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = rgb.pipeline.operations
         assert len(ops) == 4
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
         assert isinstance(ops[2], datashade)
         assert isinstance(ops[3], dynspread)
 
@@ -762,11 +715,11 @@ class DatashaderTestCase(DatasetPropertyTestCase):
 
 class AccessorTestCase(DatasetPropertyTestCase):
     def test_apply_curve(self):
-        curve = self.ds.to.curve('a', 'b', groupby=[]).apply(
-            lambda c: Scatter(c.select(b=(20, None)).data)
+        curve = self.ds.to.curve("a", "b", groupby=[]).apply(
+            lambda c: hv.Scatter(c.select(b=(20, None)).data)
         )
-        curve2 = self.ds2.to.curve('a', 'b', groupby=[]).apply(
-            lambda c: Scatter(c.select(b=(20, None)).data)
+        curve2 = self.ds2.to.curve("a", "b", groupby=[]).apply(
+            lambda c: hv.Scatter(c.select(b=(20, None)).data)
         )
         with pytest.raises(AssertionError):
             assert_element_equal(curve, curve2)
@@ -774,35 +727,31 @@ class AccessorTestCase(DatasetPropertyTestCase):
         # Check pipeline
         ops = curve.pipeline.operations
         assert len(ops) == 4
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
         assert ops[2].output_type is Apply
-        assert ops[2].kwargs == {'mode': None}
-        assert ops[3].method_name == '__call__'
+        assert ops[2].kwargs == {"mode": None}
+        assert ops[3].method_name == "__call__"
 
         # Execute pipeline
         assert_element_equal(curve.pipeline(curve.dataset), curve)
         assert_element_equal(curve.pipeline(self.ds2), curve2)
 
     def test_redim_curve(self):
-        curve = self.ds.to.curve('a', 'b', groupby=[]).redim.unit(
-            a='kg', b='m'
-        )
+        curve = self.ds.to.curve("a", "b", groupby=[]).redim.unit(a="kg", b="m")
 
-        curve2 = self.ds2.to.curve('a', 'b', groupby=[]).redim.unit(
-            a='kg', b='m'
-        )
+        curve2 = self.ds2.to.curve("a", "b", groupby=[]).redim.unit(a="kg", b="m")
         with pytest.raises(AssertionError):
             assert_element_equal(curve, curve2)
 
         # Check pipeline
         ops = curve.pipeline.operations
         assert len(ops) == 4
-        assert ops[0].output_type is Dataset
-        assert ops[1].output_type is Curve
+        assert ops[0].output_type is hv.Dataset
+        assert ops[1].output_type is hv.Curve
         assert ops[2].output_type is Redim
-        assert ops[2].kwargs == {'mode': 'dataset'}
-        assert ops[3].method_name == '__call__'
+        assert ops[2].kwargs == {"mode": "dataset"}
+        assert ops[3].method_name == "__call__"
 
         # Execute pipeline
         assert_element_equal(curve.pipeline(curve.dataset), curve)
@@ -811,16 +760,12 @@ class AccessorTestCase(DatasetPropertyTestCase):
 
 class OperationTestCase(DatasetPropertyTestCase):
     def test_propagate_dataset(self):
-        op = function.instance(
-            fn=lambda ds: ds.iloc[:5].clone(dataset=None, pipeline=None)
-        )
+        op = function.instance(fn=lambda ds: ds.iloc[:5].clone(dataset=None, pipeline=None))
         new_ds = op(self.ds)
         assert_element_equal(new_ds.dataset, self.ds)
 
     def test_do_not_propagate_dataset(self):
-        op = function.instance(
-            fn=lambda ds: ds.iloc[:5].clone(dataset=None, pipeline=None)
-        )
+        op = function.instance(fn=lambda ds: ds.iloc[:5].clone(dataset=None, pipeline=None))
         # Disable dataset propagation
         op._propagate_dataset = False
         new_ds = op(self.ds)

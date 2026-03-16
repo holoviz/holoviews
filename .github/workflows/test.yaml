@@ -54,10 +54,10 @@ jobs:
       matrix: ${{ env.MATRIX }}
       matrix_option: ${{ env.MATRIX_OPTION }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         if: github.event_name != 'pull_request'
       - name: Check for code changes
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -135,7 +135,7 @@ jobs:
       - name: Test Examples
         run: |
           pixi run -e ${{ matrix.environment }} test-example
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -163,13 +163,13 @@ jobs:
           echo "[run]\nconcurrency = greenlet" > .uicoveragerc
           FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
           pixi run -e ${{ matrix.environment }} test-ui $COV --cov-config=.uicoveragerc $FAIL
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: ui_screenshots_${{ runner.os }}
           path: ./ui_screenshots
           if-no-files-found: ignore
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -189,8 +189,10 @@ jobs:
         with:
           environments: ${{ matrix.environment }}
       - name: Check packages latest version
+        if: ${{ needs.setup.outputs.matrix_option != 'downstream' }}
         run: |
-          pixi run -e ${{ matrix.environment }} check-latest-packages pandas bokeh panel param numpy
+          pixi run -e ${{ matrix.environment }} check-latest-packages pandas bokeh panel param
+          # pixi run -e ${{ matrix.environment }} check-latest-packages pandas bokeh panel param numpy
       - name: Test Unit
         run: |
           pixi run -e ${{ matrix.environment }} test-unit

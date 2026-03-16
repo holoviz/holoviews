@@ -5,9 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from holoviews.core.dimension import Dimension
-from holoviews.core.spaces import DynamicMap
-from holoviews.element import Curve, Path3D, QuadMesh, Scatter, Scatter3D
+import holoviews as hv
 from holoviews.streams import PointerX
 from holoviews.testing import assert_data_equal
 
@@ -15,188 +13,192 @@ from .test_plot import TestPlotlyPlot, plotly_renderer
 
 
 class TestElementPlot(TestPlotlyPlot):
-
     def test_stream_callback_single_call(self):
         history = deque(maxlen=10)
+
         def history_callback(x):
             history.append(x)
-            return Curve(list(history))
+            return hv.Curve(list(history))
+
         stream = PointerX(x=0)
-        dmap = DynamicMap(history_callback, kdims=[], streams=[stream])
+        dmap = hv.DynamicMap(history_callback, kdims=[], streams=[stream])
         plot = plotly_renderer.get_plot(dmap)
         plotly_renderer(dmap)
         for i in range(20):
             stream.event(x=i)
         state = plot.state
-        assert_data_equal(state['data'][0]['x'], np.arange(10))
-        assert_data_equal(state['data'][0]['y'], np.arange(10, 20))
+        assert_data_equal(state["data"][0]["x"], np.arange(10))
+        assert_data_equal(state["data"][0]["y"], np.arange(10, 20))
 
     def test_element_hooks(self):
         def hook(plot, element):
-            plot.state['layout']['title'] = 'Called'
-        curve = Curve(range(10), label='Not Called').opts(hooks=[hook])
+            plot.state["layout"]["title"] = "Called"
+
+        curve = hv.Curve(range(10), label="Not Called").opts(hooks=[hook])
         plot = plotly_renderer.get_plot(curve)
-        assert plot.state['layout']['title'] == 'Called'
+        assert plot.state["layout"]["title"] == "Called"
 
     def test_title_fontsize(self):
-        curve = Curve([1, 2, 3]).opts(title='Test',fontsize={'title': 42})
+        curve = hv.Curve([1, 2, 3]).opts(title="Test", fontsize={"title": 42})
         plot = plotly_renderer.get_plot(curve)
         assert plot.state["layout"]["title"]["font"]["size"] == 42
 
     ### Axis labelling ###
 
     def test_element_plot_xlabel(self):
-        curve = Curve([(10, 1), (100, 2), (1000, 3)]).opts(xlabel='X-Axis')
+        curve = hv.Curve([(10, 1), (100, 2), (1000, 3)]).opts(xlabel="X-Axis")
         state = self._get_plot_state(curve)
-        assert state['layout']['xaxis']['title']['text'] == 'X-Axis'
+        assert state["layout"]["xaxis"]["title"]["text"] == "X-Axis"
 
     def test_element_plot_ylabel(self):
-        curve = Curve([(10, 1), (100, 2), (1000, 3)]).opts(ylabel='Y-Axis')
+        curve = hv.Curve([(10, 1), (100, 2), (1000, 3)]).opts(ylabel="Y-Axis")
         state = self._get_plot_state(curve)
-        assert state['layout']['yaxis']['title']['text'] == 'Y-Axis'
+        assert state["layout"]["yaxis"]["title"]["text"] == "Y-Axis"
 
     def test_element_plot_zlabel(self):
-        scatter = Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).opts(zlabel='Z-Axis')
+        scatter = hv.Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).opts(zlabel="Z-Axis")
         state = self._get_plot_state(scatter)
-        assert state['layout']['scene']['zaxis']['title']['text'] == 'Z-Axis'
+        assert state["layout"]["scene"]["zaxis"]["title"]["text"] == "Z-Axis"
 
     ### Axis ranges ###
 
     def test_element_plot_xrange(self):
-        curve = Curve([(10, 1), (100, 2), (1000, 3)])
+        curve = hv.Curve([(10, 1), (100, 2), (1000, 3)])
         state = self._get_plot_state(curve)
-        assert state['layout']['xaxis']['range'] == [10, 1000]
+        assert state["layout"]["xaxis"]["range"] == [10, 1000]
 
     def test_element_plot_xlim(self):
-        curve = Curve([(1, 1), (2, 10), (3, 100)]).opts(xlim=(0, 1010))
+        curve = hv.Curve([(1, 1), (2, 10), (3, 100)]).opts(xlim=(0, 1010))
         state = self._get_plot_state(curve)
-        assert state['layout']['xaxis']['range'] == [0, 1010]
+        assert state["layout"]["xaxis"]["range"] == [0, 1010]
 
     def test_element_plot_invert_xaxis(self):
-        curve = Curve([(1, 1), (2, 10), (3, 100)]).opts(invert_xaxis=True)
+        curve = hv.Curve([(1, 1), (2, 10), (3, 100)]).opts(invert_xaxis=True)
         state = self._get_plot_state(curve)
-        assert state['layout']['xaxis']['range'] == [3, 1]
+        assert state["layout"]["xaxis"]["range"] == [3, 1]
 
     def test_element_plot_yrange(self):
-        curve = Curve([(10, 1), (100, 2), (1000, 3)])
+        curve = hv.Curve([(10, 1), (100, 2), (1000, 3)])
         state = self._get_plot_state(curve)
-        assert state['layout']['yaxis']['range'] == [1, 3]
+        assert state["layout"]["yaxis"]["range"] == [1, 3]
 
     def test_element_plot_ylim(self):
-        curve = Curve([(1, 1), (2, 10), (3, 100)]).opts(ylim=(0, 8))
+        curve = hv.Curve([(1, 1), (2, 10), (3, 100)]).opts(ylim=(0, 8))
         state = self._get_plot_state(curve)
-        assert state['layout']['yaxis']['range'] == [0, 8]
+        assert state["layout"]["yaxis"]["range"] == [0, 8]
 
     def test_element_plot_invert_yaxis(self):
-        curve = Curve([(1, 1), (2, 10), (3, 100)]).opts(invert_yaxis=True)
+        curve = hv.Curve([(1, 1), (2, 10), (3, 100)]).opts(invert_yaxis=True)
         state = self._get_plot_state(curve)
-        assert state['layout']['yaxis']['range'] == [100, 1]
+        assert state["layout"]["yaxis"]["range"] == [100, 1]
 
     def test_element_plot_zrange(self):
-        scatter = Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)])
+        scatter = hv.Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)])
         state = self._get_plot_state(scatter)
-        assert state['layout']['scene']['zaxis']['range'] == [2, 5]
+        assert state["layout"]["scene"]["zaxis"]["range"] == [2, 5]
 
     def test_element_plot_zlim(self):
-        scatter = Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).opts(zlim=(1, 6))
+        scatter = hv.Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).opts(zlim=(1, 6))
         state = self._get_plot_state(scatter)
-        assert state['layout']['scene']['zaxis']['range'] == [1, 6]
+        assert state["layout"]["scene"]["zaxis"]["range"] == [1, 6]
 
     def test_element_plot_invert_zaxis(self):
-        scatter = Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).opts(invert_zaxis=True)
+        scatter = hv.Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).opts(invert_zaxis=True)
         state = self._get_plot_state(scatter)
-        assert state['layout']['scene']['zaxis']['range'] == [5, 2]
+        assert state["layout"]["scene"]["zaxis"]["range"] == [5, 2]
 
     def test_element_plot_xpadding(self):
-        curve = Curve([(0, 1), (1, 2), (2, 3)]).opts(padding=(0.1, 0))
+        curve = hv.Curve([(0, 1), (1, 2), (2, 3)]).opts(padding=(0.1, 0))
         state = self._get_plot_state(curve)
-        assert state['layout']['xaxis']['range'] == [-0.2, 2.2]
-        assert state['layout']['yaxis']['range'] == [1, 3]
+        assert state["layout"]["xaxis"]["range"] == [-0.2, 2.2]
+        assert state["layout"]["yaxis"]["range"] == [1, 3]
 
     def test_element_plot_ypadding(self):
-        curve = Curve([(0, 1), (1, 2), (2, 3)]).opts(padding=(0, 0.1))
+        curve = hv.Curve([(0, 1), (1, 2), (2, 3)]).opts(padding=(0, 0.1))
         state = self._get_plot_state(curve)
-        assert state['layout']['xaxis']['range'] == [0, 2]
-        assert state['layout']['yaxis']['range'] == [0.8, 3.2]
+        assert state["layout"]["xaxis"]["range"] == [0, 2]
+        assert state["layout"]["yaxis"]["range"] == [0.8, 3.2]
 
     def test_element_plot_zpadding(self):
-        scatter = Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).opts(padding=(0, 0, 0.1))
+        scatter = hv.Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).opts(padding=(0, 0, 0.1))
         state = self._get_plot_state(scatter)
-        assert state['layout']['scene']['zaxis']['range'] == [1.7, 5.3]
+        assert state["layout"]["scene"]["zaxis"]["range"] == [1.7, 5.3]
 
     def test_element_plot_padding(self):
-        curve = Curve([(0, 1), (1, 2), (2, 3)]).opts(padding=0.1)
+        curve = hv.Curve([(0, 1), (1, 2), (2, 3)]).opts(padding=0.1)
         state = self._get_plot_state(curve)
-        assert state['layout']['xaxis']['range'] == [-0.2, 2.2]
-        assert state['layout']['yaxis']['range'] == [0.8, 3.2]
+        assert state["layout"]["xaxis"]["range"] == [-0.2, 2.2]
+        assert state["layout"]["yaxis"]["range"] == [0.8, 3.2]
 
     def test_element_plot3d_padding(self):
-        scatter = Scatter3D([(0, 1, 2), (1, 2, 3), (2, 3, 5)]).opts(padding=0.1)
+        scatter = hv.Scatter3D([(0, 1, 2), (1, 2, 3), (2, 3, 5)]).opts(padding=0.1)
         state = self._get_plot_state(scatter)
-        assert state['layout']['scene']['xaxis']['range'] == [-0.2, 2.2]
-        assert state['layout']['scene']['yaxis']['range'] == [0.8, 3.2]
-        assert state['layout']['scene']['zaxis']['range'] == [1.7, 5.3]
+        assert state["layout"]["scene"]["xaxis"]["range"] == [-0.2, 2.2]
+        assert state["layout"]["scene"]["yaxis"]["range"] == [0.8, 3.2]
+        assert state["layout"]["scene"]["zaxis"]["range"] == [1.7, 5.3]
 
     ### Axis log ###
 
     def test_element_plot_logx(self):
-        curve = Curve([(10, 1), (100, 2), (1000, 3)]).opts(logx=True)
+        curve = hv.Curve([(10, 1), (100, 2), (1000, 3)]).opts(logx=True)
         state = self._get_plot_state(curve)
-        assert state['layout']['xaxis']['type'] == 'log'
+        assert state["layout"]["xaxis"]["type"] == "log"
 
     def test_element_plot_logy(self):
-        curve = Curve([(1, 1), (2, 10), (3, 100)]).opts(logy=True)
+        curve = hv.Curve([(1, 1), (2, 10), (3, 100)]).opts(logy=True)
         state = self._get_plot_state(curve)
-        assert state['layout']['yaxis']['type'] == 'log'
+        assert state["layout"]["yaxis"]["type"] == "log"
 
     def test_element_plot_logz(self):
-        scatter = Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]).opts(logz=True)
+        scatter = hv.Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]).opts(logz=True)
         state = self._get_plot_state(scatter)
-        assert state['layout']['scene']['zaxis']['type'] == 'log'
+        assert state["layout"]["scene"]["zaxis"]["type"] == "log"
 
     ### Axis ticks ###
 
     def test_element_plot_xticks_values(self):
-        curve = Curve([(1, 1), (5, 2), (10, 3)]).opts(xticks=[1, 5, 10])
+        curve = hv.Curve([(1, 1), (5, 2), (10, 3)]).opts(xticks=[1, 5, 10])
         state = self._get_plot_state(curve)
-        assert state['layout']['xaxis']['tickvals'] == [1, 5, 10]
+        assert state["layout"]["xaxis"]["tickvals"] == [1, 5, 10]
 
     def test_element_plot_yticks_values(self):
-        curve = Curve([(1, 1), (5, 2), (10, 3)]).opts(yticks=[1, 1.5, 2.5, 3])
+        curve = hv.Curve([(1, 1), (5, 2), (10, 3)]).opts(yticks=[1, 1.5, 2.5, 3])
         state = self._get_plot_state(curve)
-        assert state['layout']['yaxis']['tickvals'] == [1, 1.5, 2.5, 3]
+        assert state["layout"]["yaxis"]["tickvals"] == [1, 1.5, 2.5, 3]
 
     def test_element_plot_zticks_values(self):
-        scatter = Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]).opts(zticks=[0, 500, 1000])
+        scatter = hv.Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]).opts(zticks=[0, 500, 1000])
         state = self._get_plot_state(scatter)
-        assert state['layout']['scene']['zaxis']['tickvals'] == [0, 500, 1000]
+        assert state["layout"]["scene"]["zaxis"]["tickvals"] == [0, 500, 1000]
 
     def test_element_plot_xticks_items(self):
-        curve = Curve([(1, 1), (5, 2), (10, 3)]).opts(xticks=[(1, 'A'), (5, 'B'), (10, 'C')])
+        curve = hv.Curve([(1, 1), (5, 2), (10, 3)]).opts(xticks=[(1, "A"), (5, "B"), (10, "C")])
         state = self._get_plot_state(curve)
-        assert state['layout']['xaxis']['tickvals'] == [1, 5, 10]
-        assert state['layout']['xaxis']['ticktext'] == ['A', 'B', 'C']
+        assert state["layout"]["xaxis"]["tickvals"] == [1, 5, 10]
+        assert state["layout"]["xaxis"]["ticktext"] == ["A", "B", "C"]
 
     def test_element_plot_yticks_items(self):
-        curve = Curve([(1, 1), (5, 2), (10, 3)]).opts(
-            yticks=[(1, 'A'), (1.5, 'B'), (2.5, 'C'), (3, 'D')])
+        curve = hv.Curve([(1, 1), (5, 2), (10, 3)]).opts(
+            yticks=[(1, "A"), (1.5, "B"), (2.5, "C"), (3, "D")]
+        )
         state = self._get_plot_state(curve)
-        assert state['layout']['yaxis']['tickvals'] == [1, 1.5, 2.5, 3]
-        assert state['layout']['yaxis']['ticktext'] == ['A', 'B', 'C', 'D']
+        assert state["layout"]["yaxis"]["tickvals"] == [1, 1.5, 2.5, 3]
+        assert state["layout"]["yaxis"]["ticktext"] == ["A", "B", "C", "D"]
 
     def test_element_plot_zticks_items(self):
-        scatter = Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]).opts(
-            zticks=[(0, 'A'), (500, 'B'), (1000, 'C')])
+        scatter = hv.Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]).opts(
+            zticks=[(0, "A"), (500, "B"), (1000, "C")]
+        )
         state = self._get_plot_state(scatter)
-        assert state['layout']['scene']['zaxis']['tickvals'] == [0, 500, 1000]
-        assert state['layout']['scene']['zaxis']['ticktext'] == ['A', 'B', 'C']
+        assert state["layout"]["scene"]["zaxis"]["tickvals"] == [0, 500, 1000]
+        assert state["layout"]["scene"]["zaxis"]["ticktext"] == ["A", "B", "C"]
 
     ### Aspect ratio ###
     def test_aspect_non_matching_types(self):
         X = pd.date_range(start="1/1/2018", end="1/08/2018", periods=100)
         Y = np.linspace(1, 100, 100)
         Z = np.random.randn(100, 100)
-        qm = QuadMesh((X, Y, Z)).opts(aspect='equal')
+        qm = hv.QuadMesh((X, Y, Z)).opts(aspect="equal")
         msg = (
             "The aspect is set to 'equal', but the axes does not have the same type: "
             "x-axis timedelta64 and y-axis float64. "
@@ -208,96 +210,98 @@ class TestElementPlot(TestPlotlyPlot):
 
 
 class TestOverlayPlot(TestPlotlyPlot):
-
     def test_overlay_state(self):
-        layout = Curve([1, 2, 3]) * Curve([2, 4, 6])
+        layout = hv.Curve([1, 2, 3]) * hv.Curve([2, 4, 6])
         state = self._get_plot_state(layout)
-        assert_data_equal(state['data'][0]['y'], np.array([1, 2, 3]))
-        assert_data_equal(state['data'][1]['y'], np.array([2, 4, 6]))
-        assert state['layout']['yaxis']['range'] == [1, 6]
+        assert_data_equal(state["data"][0]["y"], np.array([1, 2, 3]))
+        assert_data_equal(state["data"][1]["y"], np.array([2, 4, 6]))
+        assert state["layout"]["yaxis"]["range"] == [1, 6]
 
     ### Axis log ###
 
     def test_overlay_plot_logx(self):
-        curve = (Curve([(10, 1), (100, 2), (1000, 3)]) * Curve([])).opts(logx=True)
+        curve = (hv.Curve([(10, 1), (100, 2), (1000, 3)]) * hv.Curve([])).opts(logx=True)
         state = self._get_plot_state(curve)
-        assert state['layout']['xaxis']['type'] == 'log'
+        assert state["layout"]["xaxis"]["type"] == "log"
 
     def test_overlay_plot_logy(self):
-        curve = (Curve([(1, 1), (2, 10), (3, 100)]) * Curve([])).opts(logy=True)
+        curve = (hv.Curve([(1, 1), (2, 10), (3, 100)]) * hv.Curve([])).opts(logy=True)
         state = self._get_plot_state(curve)
-        assert state['layout']['yaxis']['type'] == 'log'
+        assert state["layout"]["yaxis"]["type"] == "log"
 
     def test_overlay_plot_logz(self):
-        scatter = (Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]) * Path3D([])).opts(logz=True)
+        scatter = (hv.Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]) * hv.Path3D([])).opts(
+            logz=True
+        )
         state = self._get_plot_state(scatter)
-        assert state['layout']['scene']['zaxis']['type'] == 'log'
+        assert state["layout"]["scene"]["zaxis"]["type"] == "log"
 
     ### Axis labelling ###
 
     def test_overlay_plot_xlabel(self):
-        overlay = Curve([]) * Curve([(10, 1), (100, 2), (1000, 3)]).opts(xlabel='X-Axis')
+        overlay = hv.Curve([]) * hv.Curve([(10, 1), (100, 2), (1000, 3)]).opts(xlabel="X-Axis")
         state = self._get_plot_state(overlay)
-        assert state['layout']['xaxis']['title']['text'] == 'X-Axis'
+        assert state["layout"]["xaxis"]["title"]["text"] == "X-Axis"
 
     def test_overlay_plot_ylabel(self):
-        overlay = Curve([]) * Curve([(10, 1), (100, 2), (1000, 3)]).opts(ylabel='Y-Axis')
+        overlay = hv.Curve([]) * hv.Curve([(10, 1), (100, 2), (1000, 3)]).opts(ylabel="Y-Axis")
         state = self._get_plot_state(overlay)
-        assert state['layout']['yaxis']['title']['text'] == 'Y-Axis'
+        assert state["layout"]["yaxis"]["title"]["text"] == "Y-Axis"
 
     def test_overlay_plot_zlabel(self):
-        scatter = Path3D([]) * Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).opts(zlabel='Z-Axis')
+        scatter = hv.Path3D([]) * hv.Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).opts(
+            zlabel="Z-Axis"
+        )
         state = self._get_plot_state(scatter)
-        assert state['layout']['scene']['zaxis']['title']['text'] == 'Z-Axis'
+        assert state["layout"]["scene"]["zaxis"]["title"]["text"] == "Z-Axis"
+
 
 class TestColorbarPlot(TestPlotlyPlot):
-
     def test_base(self):
         df = pd.DataFrame(np.random.random((10, 4)), columns=list("XYZT"))
-        scatter = Scatter3D(data=df)
+        scatter = hv.Scatter3D(data=df)
         state = self._get_plot_state(scatter)
         assert "colorbar" not in state["data"][0]["marker"]
 
     def test_colorbar(self):
         df = pd.DataFrame(np.random.random((10, 4)), columns=list("XYZT"))
-        scatter = Scatter3D(data=df).opts(color="T", colorbar=True)
+        scatter = hv.Scatter3D(data=df).opts(color="T", colorbar=True)
         state = self._get_plot_state(scatter)
         assert "colorbar" in state["data"][0]["marker"]
         assert state["data"][0]["marker"]["colorbar"]["title"]["text"] == "T"
 
     def test_colorbar_opts_title(self):
         df = pd.DataFrame(np.random.random((10, 4)), columns=list("XYZT"))
-        scatter = Scatter3D(data=df).opts(
-            color="T",
-            colorbar=True,
-            colorbar_opts={"title": "some-title"}
+        scatter = hv.Scatter3D(data=df).opts(
+            color="T", colorbar=True, colorbar_opts={"title": "some-title"}
         )
         state = self._get_plot_state(scatter)
         assert "colorbar" in state["data"][0]["marker"]
         assert state["data"][0]["marker"]["colorbar"]["title"]["text"] == "some-title"
 
     def test_style_map_dimension_object(self):
-        x = Dimension("x")
-        y = Dimension("y")
-        scatter = Scatter([1, 2, 3], kdims=[x], vdims=[y]).opts(color=x)
+        x = hv.Dimension("x")
+        y = hv.Dimension("y")
+        scatter = hv.Scatter([1, 2, 3], kdims=[x], vdims=[y]).opts(color=x)
         state = self._get_plot_state(scatter)
         assert state["data"][0]["marker"]["cmin"] == 0
         assert state["data"][0]["marker"]["cmax"] == 2
 
     def test_categorical_colorbar_ticks(self):
-        scatter = Scatter([
-            (0, 1, 'Category A'), (1, 2, 'Category B'), (2, 3, 'Category C')
-        ], vdims=['y', 'category']).opts(color='category', colorbar=True)
+        scatter = hv.Scatter(
+            [(0, 1, "Category A"), (1, 2, "Category B"), (2, 3, "Category C")],
+            vdims=["y", "category"],
+        ).opts(color="category", colorbar=True)
         state = self._get_plot_state(scatter)
 
-        np.testing.assert_array_equal(state['data'][0]['marker']['color'], [0, 1, 2])
+        np.testing.assert_array_equal(state["data"][0]["marker"]["color"], [0, 1, 2])
 
-        assert 'colorbar' in state['data'][0]['marker']
-        colorbar = state['data'][0]['marker']['colorbar']
-        assert colorbar['tickmode'] == 'array'
-        assert colorbar['tickvals'] == [0, 1, 2]
-        assert colorbar['ticktext'] == ['Category A', 'Category B', 'Category C']
+        assert "colorbar" in state["data"][0]["marker"]
+        colorbar = state["data"][0]["marker"]["colorbar"]
+        assert colorbar["tickmode"] == "array"
+        assert colorbar["tickvals"] == [0, 1, 2]
+        assert colorbar["ticktext"] == ["Category A", "Category B", "Category C"]
 
-        assert state['data'][0]['marker']['cmin'] == 0
-        assert state['data'][0]['marker']['cmax'] == 2
-        assert state['data'][0]['marker']['cauto'] is False
+        assert state["data"][0]["marker"]["cmin"] == 0
+        assert state["data"][0]["marker"]["cmax"] == 2
+        assert state["data"][0]["marker"]["cauto"] is False

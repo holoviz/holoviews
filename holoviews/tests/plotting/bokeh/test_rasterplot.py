@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 from bokeh.models import CustomJSHover, HoverTool
 
-from holoviews.element import RGB, Image, ImageStack, Points, Raster
+import holoviews as hv
 from holoviews.plotting.bokeh.raster import ImageStackPlot
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0
 
@@ -12,11 +12,11 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 class TestRasterPlot(TestBokehPlot):
     def test_image_colormapping(self):
-        img = Image(np.random.rand(10, 10)).opts(logz=True)
+        img = hv.Image(np.random.rand(10, 10)).opts(logz=True)
         self._test_colormapping(img, 2, True)
 
     def test_image_boolean_array(self):
-        img = Image(np.array([[True, False], [False, True]]))
+        img = hv.Image(np.array([[True, False], [False, True]]))
         plot = bokeh_renderer.get_plot(img)
         cmapper = plot.handles["color_mapper"]
         source = plot.handles["source"]
@@ -25,38 +25,34 @@ class TestRasterPlot(TestBokehPlot):
         np.testing.assert_equal(source.data["image"][0], np.array([[0, 1], [1, 0]]))
 
     def test_nodata_array(self):
-        img = Image(np.array([[0, 1], [2, 0]])).opts(nodata=0)
+        img = hv.Image(np.array([[0, 1], [2, 0]])).opts(nodata=0)
         plot = bokeh_renderer.get_plot(img)
         cmapper = plot.handles["color_mapper"]
         source = plot.handles["source"]
         assert cmapper.low == 1
         assert cmapper.high == 2
-        np.testing.assert_equal(
-            source.data["image"][0], np.array([[2, np.nan], [np.nan, 1]])
-        )
+        np.testing.assert_equal(source.data["image"][0], np.array([[2, np.nan], [np.nan, 1]]))
 
     def test_nodata_array_uint(self):
-        img = Image(np.array([[0, 1], [2, 0]], dtype="uint32")).opts(nodata=0)
+        img = hv.Image(np.array([[0, 1], [2, 0]], dtype="uint32")).opts(nodata=0)
         plot = bokeh_renderer.get_plot(img)
         cmapper = plot.handles["color_mapper"]
         source = plot.handles["source"]
         assert cmapper.low == 1
         assert cmapper.high == 2
-        np.testing.assert_equal(
-            source.data["image"][0], np.array([[2, np.nan], [np.nan, 1]])
-        )
+        np.testing.assert_equal(source.data["image"][0], np.array([[2, np.nan], [np.nan, 1]]))
 
     def test_nodata_rgb(self):
         N = 2
         rgb_d = np.linspace(0, 1, N * N * 3).reshape(N, N, 3)
-        rgb = RGB(rgb_d).redim.nodata(R=0)
+        rgb = hv.RGB(rgb_d).redim.nodata(R=0)
         plot = bokeh_renderer.get_plot(rgb)
         image_data = plot.handles["source"].data["image"][0]
         assert (image_data == 0).sum() == 1
 
     def test_raster_invert_axes(self):
         arr = np.array([[0, 1, 2], [3, 4, 5]])
-        raster = Raster(arr).opts(invert_axes=True)
+        raster = hv.Raster(arr).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(raster)
         source = plot.handles["source"]
 
@@ -68,7 +64,7 @@ class TestRasterPlot(TestBokehPlot):
 
     def test_image_invert_axes(self):
         arr = np.array([[0, 1, 2], [3, 4, 5]])
-        raster = Image(arr).opts(invert_axes=True)
+        raster = hv.Image(arr).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(raster)
         source = plot.handles["source"]
         np.testing.assert_equal(source.data["image"][0], np.rot90(arr)[::-1, ::-1])
@@ -79,7 +75,7 @@ class TestRasterPlot(TestBokehPlot):
 
     def test_image_invert_xaxis(self):
         arr = np.random.rand(10, 10)
-        img = Image(arr).opts(invert_xaxis=True)
+        img = hv.Image(arr).opts(invert_xaxis=True)
         plot = bokeh_renderer.get_plot(img)
         x_range = plot.handles["x_range"]
         assert x_range.start == 0.5
@@ -94,7 +90,7 @@ class TestRasterPlot(TestBokehPlot):
 
     def test_image_invert_yaxis(self):
         arr = np.random.rand(10, 10)
-        img = Image(arr).opts(invert_yaxis=True)
+        img = hv.Image(arr).opts(invert_yaxis=True)
         plot = bokeh_renderer.get_plot(img)
         y_range = plot.handles["y_range"]
         assert y_range.start == 0.5
@@ -108,7 +104,7 @@ class TestRasterPlot(TestBokehPlot):
         np.testing.assert_equal(cdata["image"][0], arr[::-1])
 
     def test_rgb_invert_xaxis(self):
-        rgb = RGB(np.random.rand(10, 10, 3)).opts(invert_xaxis=True)
+        rgb = hv.RGB(np.random.rand(10, 10, 3)).opts(invert_xaxis=True)
         plot = bokeh_renderer.get_plot(rgb)
         x_range = plot.handles["x_range"]
         assert x_range.start == 0.5
@@ -120,7 +116,7 @@ class TestRasterPlot(TestBokehPlot):
         assert cdata["x"] == [-0.5]
 
     def test_rgb_invert_yaxis(self):
-        rgb = RGB(np.random.rand(10, 10, 3)).opts(invert_yaxis=True)
+        rgb = hv.RGB(np.random.rand(10, 10, 3)).opts(invert_yaxis=True)
         plot = bokeh_renderer.get_plot(rgb)
         y_range = plot.handles["y_range"]
         assert y_range.start == 0.5
@@ -141,7 +137,7 @@ class TestRasterPlot(TestBokehPlot):
                 "Timestamp": (["y", "x"], [[ts, pd.NaT], [ts, ts]]),
             },
         )
-        img = Image(data).opts(tools=["hover"])
+        img = hv.Image(data).opts(tools=["hover"])
         plot = bokeh_renderer.get_plot(img)
 
         hover = plot.handles["hover"]
@@ -156,13 +152,15 @@ class TestRasterPlot(TestBokehPlot):
     def test_image_hover_with_custom_js(self):
         # Regression for https://github.com/holoviz/holoviews/issues/6101
         hover_tool = HoverTool(
-            tooltips=[("x", "$x{custom}")], formatters={"x": CustomJSHover(code="return value + '2'")}
+            tooltips=[("x", "$x{custom}")],
+            formatters={"x": CustomJSHover(code="return value + '2'")},
         )
-        img = Image(np.ones(100).reshape(10, 10)).opts(tools=[hover_tool])
+        img = hv.Image(np.ones(100).reshape(10, 10)).opts(tools=[hover_tool])
         plot = bokeh_renderer.get_plot(img)
 
         hover = plot.handles["hover"]
         assert hover.formatters == hover_tool.formatters
+
 
 class _ImageStackBase(TestRasterPlot):
     __test__ = False
@@ -171,7 +169,7 @@ class _ImageStackBase(TestRasterPlot):
         x = np.arange(self.xsize)
         y = np.arange(self.ysize) + 5
         a, b, c = self.a, self.b, self.c
-        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
+        img_stack = hv.ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
         np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
@@ -188,7 +186,7 @@ class _ImageStackBase(TestRasterPlot):
         y = np.arange(self.ysize) + 5
         a, b, c = self.a, self.b, self.c
 
-        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"])
+        img_stack = hv.ImageStack((x, y, a, b, c), kdims=["x", "y"])
         assert img_stack.vdims == ["level_0", "level_1", "level_2"]
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
@@ -207,7 +205,7 @@ class _ImageStackBase(TestRasterPlot):
         a, b, c = self.a, self.b, self.c
 
         ds = {"x": x, "y": y, "a": a, "b": b, "c": c}
-        img_stack = ImageStack(ds, kdims=["x", "y"], vdims=["a", "b", "c"])
+        img_stack = hv.ImageStack(ds, kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
         np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
@@ -225,7 +223,7 @@ class _ImageStackBase(TestRasterPlot):
         a, b, c = self.a, self.b, self.c
 
         ds = {"x": x, "y": y, "a": a, "b": b, "c": c}
-        img_stack = ImageStack(ds)
+        img_stack = hv.ImageStack(ds)
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
         np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
@@ -241,7 +239,7 @@ class _ImageStackBase(TestRasterPlot):
         a, b, c = self.a, self.b, self.c
 
         ds = {"a": a, "b": b, "c": c}
-        img_stack = ImageStack(ds)
+        img_stack = hv.ImageStack(ds)
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
         np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
@@ -257,7 +255,7 @@ class _ImageStackBase(TestRasterPlot):
         a, b, c = self.a, self.b, self.c
 
         ds = [a, b, c]
-        img_stack = ImageStack(ds)
+        img_stack = hv.ImageStack(ds)
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
         np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
@@ -280,7 +278,7 @@ class _ImageStackBase(TestRasterPlot):
             {"a": (["y", "x"], a), "b": (["y", "x"], b), "c": (["y", "x"], c)},
             coords={"x": x, "y": y},
         )
-        img_stack = ImageStack(ds, kdims=["x", "y"])
+        img_stack = hv.ImageStack(ds, kdims=["x", "y"])
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
         np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
@@ -303,7 +301,7 @@ class _ImageStackBase(TestRasterPlot):
             {"a": (["y", "x"], a), "b": (["y", "x"], b), "c": (["y", "x"], c)},
             coords={"x": x, "y": y},
         ).to_array("level")
-        img_stack = ImageStack(da, vdims=["level"])
+        img_stack = hv.ImageStack(da, vdims=["level"])
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
         np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
@@ -320,7 +318,7 @@ class _ImageStackBase(TestRasterPlot):
         y = np.arange(self.ysize) + 5
         a, b, c = self.a, self.b, self.c
 
-        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
+        img_stack = hv.ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack.opts(invert_xaxis=True))
         source = plot.handles["source"]
         np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
@@ -336,7 +334,7 @@ class _ImageStackBase(TestRasterPlot):
         y = np.arange(self.ysize) + 5
         a, b, c = self.a, self.b, self.c
 
-        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
+        img_stack = hv.ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack.opts(invert_yaxis=True))
         source = plot.handles["source"]
         np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
@@ -352,7 +350,7 @@ class _ImageStackBase(TestRasterPlot):
         y = np.arange(self.ysize) + 5
         a, b, c = self.a, self.b, self.c
 
-        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
+        img_stack = hv.ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack.opts(invert_axes=True))
         source = plot.handles["source"]
 
@@ -369,7 +367,7 @@ class _ImageStackBase(TestRasterPlot):
 
         data = np.dstack((a, b, c))
 
-        img_stack = ImageStack(data, kdims=["x", "y"], vdims=["a", "b", "c"])
+        img_stack = hv.ImageStack(data, kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
         np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
@@ -388,7 +386,7 @@ class _ImageStackBase(TestRasterPlot):
 
         data = (x, y, np.dstack((a, b, c)))
 
-        img_stack = ImageStack(data, kdims=["x", "y"], vdims=["a", "b", "c"])
+        img_stack = hv.ImageStack(data, kdims=["x", "y"], vdims=["a", "b", "c"])
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
         np.testing.assert_equal(source.data["image"][0][:, :, 0], a)
@@ -407,7 +405,7 @@ class _ImageStackBase(TestRasterPlot):
         b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
         c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
 
-        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["b", "a", "c"])
+        img_stack = hv.ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["b", "a", "c"])
         img_stack.opts(cmap={"c": "yellow", "a": "red", "b": "green"})
         plot = bokeh_renderer.get_plot(img_stack)
         source = plot.handles["source"]
@@ -423,7 +421,7 @@ class _ImageStackBase(TestRasterPlot):
         b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3])
         c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1]])
 
-        img_stack = ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["b", "a", "c"])
+        img_stack = hv.ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["b", "a", "c"])
         img_stack.opts(cmap={"c": "yellow", "a": "red"})
         with pytest.raises(ValueError, match="must have the same value dimensions"):
             bokeh_renderer.get_plot(img_stack)
@@ -445,9 +443,7 @@ class TestImageStackUneven1(_ImageStackBase):
     __test__ = True
 
     def setup_method(self):
-        self.a = np.array(
-            [[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3, [np.nan] * 3]
-        )
+        self.a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3, [np.nan] * 3])
         self.b = np.array([[np.nan] * 3, [1, 1, np.nan], [np.nan] * 3, [np.nan] * 3])
         self.c = np.array([[np.nan] * 3, [np.nan] * 3, [1, 1, 1], [np.nan] * 3])
         self.ysize = 4
@@ -475,29 +471,30 @@ class TestSyntheticLegendPlot(TestBokehPlot):
         super().setup_method()
 
         from holoviews.operation.datashader import datashade, rasterize
-        points = Points([(0, 0, 'A'), (1, 1, 'B'), (2, 2, 'C')], vdims=['Label'])
-        kwargs = dict(aggregator=ds.by('Label'), dynamic=False, width=10, height=10)
+
+        points = hv.Points([(0, 0, "A"), (1, 1, "B"), (2, 2, "C")], vdims=["Label"])
+        kwargs = dict(aggregator=ds.by("Label"), dynamic=False, width=10, height=10)
         self.img_stack = rasterize(points, **kwargs).opts(show_legend=True)
         self.rgb = datashade(points, **kwargs).opts(show_legend=True)
 
     def test_image_stack_legend(self):
         plot = bokeh_renderer.get_plot(self.img_stack)
-        mapper = plot.handles['synthetic_color_mapper']
-        assert mapper.factors == ['A', 'B', 'C']
-        glyph = plot._legend_plot.handles['glyph']
-        assert glyph.fill_color.field == 'color'
+        mapper = plot.handles["synthetic_color_mapper"]
+        assert mapper.factors == ["A", "B", "C"]
+        glyph = plot._legend_plot.handles["glyph"]
+        assert glyph.fill_color.field == "color"
         assert glyph.fill_color.transform is mapper
 
     def test_image_stack_legend_with_cmap(self):
         self.img_stack.opts(cmap=["red"])
         plot = bokeh_renderer.get_plot(self.img_stack)
-        mapper = plot.handles['synthetic_color_mapper']
+        mapper = plot.handles["synthetic_color_mapper"]
         assert mapper.palette == ["red", "red", "red"]
 
     def test_rgb_legend(self):
         plot = bokeh_renderer.get_plot(self.rgb)
-        mapper = plot.handles['synthetic_color_mapper']
-        assert mapper.factors == ['A', 'B', 'C']
-        glyph = plot._legend_plot.handles['glyph']
-        assert glyph.fill_color.field == 'color'
+        mapper = plot.handles["synthetic_color_mapper"]
+        assert mapper.factors == ["A", "B", "C"]
+        glyph = plot._legend_plot.handles["glyph"]
+        assert glyph.fill_color.field == "color"
         assert glyph.fill_color.transform is mapper

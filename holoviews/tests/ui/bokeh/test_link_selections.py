@@ -1,9 +1,7 @@
-
 import pytest
 
 import holoviews as hv
 from holoviews.plotting.bokeh.renderer import BokehRenderer
-from holoviews.selection import link_selections
 
 from .. import expect
 
@@ -24,7 +22,7 @@ def test_link_selections_programmatic_clear_removes_region(serve_hv):
                 continue
         return cnt
 
-    ls = link_selections.instance()
+    ls = hv.link_selections.instance()
     linked = ls(points).opts(active_tools=["box_select"])
 
     page = serve_hv(linked)
@@ -53,7 +51,9 @@ def test_link_selections_programmatic_clear_removes_region(serve_hv):
     assert ls.selection_expr is not None
 
     # Ensure at least one new region renderer was created by the interaction
-    post_select_count = count_highlighted_region_renderers(BokehRenderer.get_plot(linked[()]).state)
+    post_select_count = count_highlighted_region_renderers(
+        BokehRenderer.get_plot(linked[()]).state
+    )
     assert post_select_count == initial_count + 1
 
     ls.selection_expr = None

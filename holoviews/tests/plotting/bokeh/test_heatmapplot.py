@@ -9,7 +9,7 @@ from bokeh.models import (
     Rect as bkRect,
 )
 
-from holoviews.element import HeatMap, Image, Points
+import holoviews as hv
 from holoviews.plotting.bokeh.heatmap import HeatMapPlot
 from holoviews.testing import assert_data_equal
 
@@ -17,132 +17,137 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestHeatMapPlot(TestBokehPlot):
-
     def test_heatmap_hover_ensure_kdims_sanitized(self):
-        hm = HeatMap([(1,1,1), (2,2,0)], kdims=['x with space', 'y with $pecial symbol'])
-        hm = hm.opts(tools=['hover'])
-        self._test_hover_info(hm, [('x with space', '@{x_with_space}'),
-                                   ('y with $pecial symbol', '@{y_with_pecial_symbol}'),
-                                   ('z', '@{z}')])
+        hm = hv.HeatMap([(1, 1, 1), (2, 2, 0)], kdims=["x with space", "y with $pecial symbol"])
+        hm = hm.opts(tools=["hover"])
+        self._test_hover_info(
+            hm,
+            [
+                ("x with space", "@{x_with_space}"),
+                ("y with $pecial symbol", "@{y_with_pecial_symbol}"),
+                ("z", "@{z}"),
+            ],
+        )
 
     def test_heatmap_custom_string_tooltip_hover(self):
         tooltips = "<div><h1>Test</h1></div>"
         custom_hover = HoverTool(tooltips=tooltips)
-        hm = HeatMap([(1,1,1), (2,2,0)], kdims=['x with space', 'y with $pecial symbol'])
+        hm = hv.HeatMap([(1, 1, 1), (2, 2, 0)], kdims=["x with space", "y with $pecial symbol"])
         hm = hm.opts(tools=[custom_hover])
         plot = bokeh_renderer.get_plot(hm)
-        hover = plot.handles['hover']
+        hover = plot.handles["hover"]
         assert hover.tooltips == tooltips
-        assert hover.renderers == [plot.handles['glyph_renderer']]
+        assert hover.renderers == [plot.handles["glyph_renderer"]]
 
     def test_heatmap_hover_ensure_vdims_sanitized(self):
-        hm = HeatMap([(1,1,1), (2,2,0)], vdims=['z with $pace']).opts(tools=['hover'])
-        self._test_hover_info(hm, [('x', '@{x}'), ('y', '@{y}'),
-                                   ('z with $pace', '@{z_with_pace}')])
+        hm = hv.HeatMap([(1, 1, 1), (2, 2, 0)], vdims=["z with $pace"]).opts(tools=["hover"])
+        self._test_hover_info(
+            hm, [("x", "@{x}"), ("y", "@{y}"), ("z with $pace", "@{z_with_pace}")]
+        )
 
     def test_heatmap_colormapping(self):
-        hm = HeatMap([(1,1,1), (2,2,0)])
+        hm = hv.HeatMap([(1, 1, 1), (2, 2, 0)])
         self._test_colormapping(hm, 2)
 
     def test_heatmap_categorical_axes_string_int(self):
-        hmap = HeatMap([('A', 1, 1), ('B', 2, 2)])
+        hmap = hv.HeatMap([("A", 1, 1), ("B", 2, 2)])
         plot = bokeh_renderer.get_plot(hmap)
-        x_range = plot.handles['x_range']
-        y_range = plot.handles['y_range']
+        x_range = plot.handles["x_range"]
+        y_range = plot.handles["y_range"]
         assert isinstance(x_range, FactorRange)
-        assert x_range.factors == ['A', 'B']
+        assert x_range.factors == ["A", "B"]
         assert isinstance(y_range, Range1d)
         assert y_range.start == 0.5
         assert y_range.end == 2.5
 
     def test_heatmap_categorical_axes_string_int_invert_xyaxis(self):
         opts = dict(invert_xaxis=True, invert_yaxis=True)
-        hmap = HeatMap([('A', 1, 1), ('B', 2, 2)]).opts(**opts)
+        hmap = hv.HeatMap([("A", 1, 1), ("B", 2, 2)]).opts(**opts)
         plot = bokeh_renderer.get_plot(hmap)
-        x_range = plot.handles['x_range']
-        y_range = plot.handles['y_range']
+        x_range = plot.handles["x_range"]
+        y_range = plot.handles["y_range"]
         assert isinstance(x_range, FactorRange)
-        assert x_range.factors == ['A', 'B'][::-1]
+        assert x_range.factors == ["A", "B"][::-1]
         assert isinstance(y_range, Range1d)
         assert y_range.start == 2.5
         assert y_range.end == 0.5
 
     def test_heatmap_categorical_axes_string_int_inverted(self):
-        hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).opts(invert_axes=True)
+        hmap = hv.HeatMap([("A", 1, 1), ("B", 2, 2)]).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(hmap)
-        x_range = plot.handles['x_range']
-        y_range = plot.handles['y_range']
+        x_range = plot.handles["x_range"]
+        y_range = plot.handles["y_range"]
         assert isinstance(x_range, Range1d)
         assert x_range.start == 0.5
         assert x_range.end == 2.5
         assert isinstance(y_range, FactorRange)
-        assert y_range.factors == ['A', 'B']
+        assert y_range.factors == ["A", "B"]
 
     def test_heatmap_points_categorical_axes_string_int(self):
-        hmap = HeatMap([('A', 1, 1), ('B', 2, 2)])
-        points = Points([('A', 2), ('B', 1),  ('C', 3)])
-        plot = bokeh_renderer.get_plot(hmap*points)
-        x_range = plot.handles['x_range']
-        y_range = plot.handles['y_range']
+        hmap = hv.HeatMap([("A", 1, 1), ("B", 2, 2)])
+        points = hv.Points([("A", 2), ("B", 1), ("C", 3)])
+        plot = bokeh_renderer.get_plot(hmap * points)
+        x_range = plot.handles["x_range"]
+        y_range = plot.handles["y_range"]
         assert isinstance(x_range, FactorRange)
-        assert x_range.factors == ['A', 'B', 'C']
+        assert x_range.factors == ["A", "B", "C"]
         assert isinstance(y_range, Range1d)
         assert y_range.start == 0.5
         assert y_range.end == 3
 
     def test_heatmap_points_categorical_axes_string_int_inverted(self):
-        hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).opts(invert_axes=True)
-        points = Points([('A', 2), ('B', 1),  ('C', 3)])
-        plot = bokeh_renderer.get_plot(hmap*points)
-        x_range = plot.handles['x_range']
-        y_range = plot.handles['y_range']
+        hmap = hv.HeatMap([("A", 1, 1), ("B", 2, 2)]).opts(invert_axes=True)
+        points = hv.Points([("A", 2), ("B", 1), ("C", 3)])
+        plot = bokeh_renderer.get_plot(hmap * points)
+        x_range = plot.handles["x_range"]
+        y_range = plot.handles["y_range"]
         assert isinstance(x_range, Range1d)
         assert x_range.start == 0.5
         assert x_range.end == 3
         assert isinstance(y_range, FactorRange)
-        assert y_range.factors == ['A', 'B', 'C']
+        assert y_range.factors == ["A", "B", "C"]
 
     def test_heatmap_invert_axes(self):
-        arr = np.array([[0, 1, 2], [3, 4,  5]])
-        hm = HeatMap(Image(arr)).opts(invert_axes=True)
+        arr = np.array([[0, 1, 2], [3, 4, 5]])
+        hm = hv.HeatMap(hv.Image(arr)).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(hm)
         assert plot._is_contiguous_gridded is True
         assert isinstance(plot.handles["glyph"], bkImage)
 
-        data = plot.handles['source'].data
-        np.testing.assert_equal(data['image'][0], hm.dimension_values(2, flat=False).T)
+        data = plot.handles["source"].data
+        np.testing.assert_equal(data["image"][0], hm.dimension_values(2, flat=False).T)
         assert data["x"] == [-0.5]
         assert data["y"] == [-0.5]
         assert data["dw"] == [1]
         assert data["dh"] == [1]
 
     def test_heatmap_dilate(self):
-        hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).opts(dilate=True)
+        hmap = hv.HeatMap([("A", 1, 1), ("B", 2, 2)]).opts(dilate=True)
         plot = bokeh_renderer.get_plot(hmap)
-        glyph = plot.handles['glyph']
+        glyph = plot.handles["glyph"]
         assert glyph.dilate
 
     def test_heatmap_single_x_value(self):
-        hmap = HeatMap(([1], ['A', 'B'], np.array([[1], [2]])))
+        hmap = hv.HeatMap(([1], ["A", "B"], np.array([[1], [2]])))
         plot = bokeh_renderer.get_plot(hmap)
         assert plot._is_contiguous_gridded is True
         assert isinstance(plot.handles["glyph"], bkImage)
 
-        data = plot.handles['cds'].data
-        assert data['x'] == [0.5]
-        assert data['y'] == [0]
+        data = plot.handles["cds"].data
+        assert data["x"] == [0.5]
+        assert data["y"] == [0]
         assert data["dw"] == [1]
         assert data["dh"] == [2]
 
     def test_heatmap_single_y_value(self):
-        hmap = HeatMap((['A', 'B'], [1], np.array([[1, 2]])))
+        hmap = hv.HeatMap((["A", "B"], [1], np.array([[1, 2]])))
         plot = bokeh_renderer.get_plot(hmap)
         assert plot._is_contiguous_gridded is True
         assert isinstance(plot.handles["glyph"], bkImage)
 
-        data = plot.handles['cds'].data
-        assert data['x'] == [0]
-        assert data['y'] == [0.5]
+        data = plot.handles["cds"].data
+        assert data["x"] == [0]
+        assert data["y"] == [0.5]
         assert data["dw"] == [2]
         assert data["dh"] == [1]
 
@@ -151,25 +156,53 @@ class TestHeatMapPlot(TestBokehPlot):
             "row": [1, 2, 1, 2],
             "col": [1, 2, 2, 1],
             "alpha": [0, 0, 0, 1],
-            "val": [.5, .6, .2, .1]
+            "val": [0.5, 0.6, 0.2, 0.1],
         }
-        hm = HeatMap(data, kdims=["col", "row"], vdims=["val", "alpha"]).opts(alpha="alpha")
+        hm = hv.HeatMap(data, kdims=["col", "row"], vdims=["val", "alpha"]).opts(alpha="alpha")
         plot = bokeh_renderer.get_plot(hm)
-        cds = plot.handles['cds']
-        assert_data_equal(cds.data['row'], np.array([1, 2, 1, 2]))
-        assert_data_equal(cds.data['col'], np.array([1, 1, 2, 2]))
-        assert_data_equal(cds.data['alpha'], np.array([0, 1, 0, 0]))
-        assert_data_equal(cds.data['zvalues'], np.array([0.5, 0.1, 0.2, 0.6]))
+        cds = plot.handles["cds"]
+        assert_data_equal(cds.data["row"], np.array([1, 2, 1, 2]))
+        assert_data_equal(cds.data["col"], np.array([1, 1, 2, 2]))
+        assert_data_equal(cds.data["alpha"], np.array([0, 1, 0, 0]))
+        assert_data_equal(cds.data["zvalues"], np.array([0.5, 0.1, 0.2, 0.6]))
 
     def test_heatmap_pandas_categorial(self):
         # Test for https://github.com/holoviz/holoviews/issues/6313
-        df = pd.DataFrame({
-            'X': pd.Series(['a', 'a', 'a', 'b', 'b', 'b', 'c', 'c', 'c',], dtype='category'),
-            'Y': pd.Series(['O', 'P', 'Q', 'O', 'P', 'Q', 'O', 'P', 'Q',], dtype='category'),
-            'Z': [1, 2, 3, 4, 5, 6, 7, 8, 9],
-        })
+        df = pd.DataFrame(
+            {
+                "X": pd.Series(
+                    [
+                        "a",
+                        "a",
+                        "a",
+                        "b",
+                        "b",
+                        "b",
+                        "c",
+                        "c",
+                        "c",
+                    ],
+                    dtype="category",
+                ),
+                "Y": pd.Series(
+                    [
+                        "O",
+                        "P",
+                        "Q",
+                        "O",
+                        "P",
+                        "Q",
+                        "O",
+                        "P",
+                        "Q",
+                    ],
+                    dtype="category",
+                ),
+                "Z": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+            }
+        )
 
-        hm = HeatMap(df, ['X', 'Y'], 'Z').aggregate(function=np.mean)
+        hm = hv.HeatMap(df, ["X", "Y"], "Z").aggregate(function=np.mean)
         plot = bokeh_renderer.get_plot(hm)
         data = plot.handles["cds"].data
         np.testing.assert_array_equal(data["X"], df["X"])
@@ -178,22 +211,22 @@ class TestHeatMapPlot(TestBokehPlot):
 
     def test_heatmap_pandas_multiindex(self):
         df = pd.DataFrame(
-            data={'C': [5, 2, -1, 5]},
-            index=pd.MultiIndex.from_product([(0, 1), (0, 1)], names=['A', 'B']),
+            data={"C": [5, 2, -1, 5]},
+            index=pd.MultiIndex.from_product([(0, 1), (0, 1)], names=["A", "B"]),
         )
-        hm = HeatMap(df, ['A', 'B'], 'C')
+        hm = hv.HeatMap(df, ["A", "B"], "C")
         plot = bokeh_renderer.get_plot(hm)
         data = plot.handles["cds"].data
-        np.testing.assert_array_equal(data['A'], df.index.get_level_values('A'))
-        np.testing.assert_array_equal(data['B'], df.index.get_level_values('B'))
-        np.testing.assert_array_equal(data['zvalues'], df['C'])
+        np.testing.assert_array_equal(data["A"], df.index.get_level_values("A"))
+        np.testing.assert_array_equal(data["B"], df.index.get_level_values("B"))
+        np.testing.assert_array_equal(data["zvalues"], df["C"])
 
     def test_heatmap_gridded_nonequidistant(self):
         x = np.arange(12)
         x[4:] += 5
         y = [chr(65 + i) for i in range(10)]
         arr = np.ones((10, 12)) * np.arange(12) * np.atleast_2d(np.arange(10)).T
-        hm = HeatMap((x, y, arr))
+        hm = hv.HeatMap((x, y, arr))
 
         plot = bokeh_renderer.get_plot(hm)
         assert isinstance(plot.handles["glyph"], bkRect)
@@ -207,28 +240,28 @@ class TestHeatMapPlot(TestBokehPlot):
 @pytest.mark.parametrize("optimized_gridded", [True, False])
 @pytest.mark.parametrize("style_name", sorted(HeatMapPlot.style_opts))
 def test_heatmap_style_opts(optimized_gridded, style_name):
-    if style_name == 'cmap':
-        style_value = 'viridis'
-    elif 'color' in style_name:
-        style_value = 'red'
-    elif 'alpha' in style_name:
+    if style_name == "cmap":
+        style_value = "viridis"
+    elif "color" in style_name:
+        style_value = "red"
+    elif "alpha" in style_name:
         style_value = 0.5
-    elif 'width' in style_name:
+    elif "width" in style_name:
         style_value = 2
-    elif style_name in ('visible', 'muted', 'dilate'):
+    elif style_name in ("visible", "muted", "dilate"):
         style_value = True
-    elif 'dash' in style_name and 'offset' not in style_name:
-        style_value = 'solid'
-    elif 'join' in style_name:
-        style_value = 'miter'
-    elif 'cap' in style_name:
-        style_value = 'butt'
-    elif 'offset' in style_name:
+    elif "dash" in style_name and "offset" not in style_name:
+        style_value = "solid"
+    elif "join" in style_name:
+        style_value = "miter"
+    elif "cap" in style_name:
+        style_value = "butt"
+    elif "offset" in style_name:
         style_value = 0
     else:
         style_value = 1
 
-    fig = HeatMap(([1,2,3,4], [1,2], [[1,2,3,4], [1,2,3,4]]))
+    fig = hv.HeatMap(([1, 2, 3, 4], [1, 2], [[1, 2, 3, 4], [1, 2, 3, 4]]))
     styled = fig.opts(optimize_gridded=optimized_gridded, **{style_name: style_value})
 
     plot = bokeh_renderer.get_plot(styled)

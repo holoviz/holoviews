@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from holoviews.element import RGB, Bounds, Points, Tiles
+import holoviews as hv
 from holoviews.element.tiles import _ATTRIBUTIONS, StamenTerrain
 from holoviews.plotting.plotly.util import (
     PLOTLY_GE_6_0_0,
@@ -24,17 +24,17 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         self.x_center = sum(self.x_range) / 2.0
         self.y_range = (-3000000, 2000000)
         self.y_center = sum(self.y_range) / 2.0
-        self.lon_range, self.lat_range = Tiles.easting_northing_to_lon_lat(self.x_range, self.y_range)
-        self.lon_centers, self.lat_centers = Tiles.easting_northing_to_lon_lat(
+        self.lon_range, self.lat_range = hv.Tiles.easting_northing_to_lon_lat(
+            self.x_range, self.y_range
+        )
+        self.lon_centers, self.lat_centers = hv.Tiles.easting_northing_to_lon_lat(
             [self.x_center], [self.y_center]
         )
         self.lon_center, self.lat_center = self.lon_centers[0], self.lat_centers[0]
-        self.lons, self.lats = Tiles.easting_northing_to_lon_lat(self.xs, self.ys)
+        self.lons, self.lats = hv.Tiles.easting_northing_to_lon_lat(self.xs, self.ys)
 
     def test_mapbox_tiles_defaults(self):
-        tiles = Tiles("").redim.range(
-            x=self.x_range, y=self.y_range
-        )
+        tiles = hv.Tiles("").redim.range(x=self.x_range, y=self.y_range)
 
         fig_dict = plotly_renderer.get_plot_state(tiles)
 
@@ -49,7 +49,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         # Check mapbox subplot
         subplot = fig_dict["layout"][PLOTLY_MAP]
         assert subplot["style"] == "white-bg"
-        assert subplot['center'] == {'lat': self.lat_center, 'lon': self.lon_center}
+        assert subplot["center"] == {"lat": self.lat_center, "lon": self.lon_center}
 
         # Check that xaxis and yaxis entries are not created
         assert "xaxis" not in fig_dict["layout"]
@@ -61,8 +61,12 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         assert len(layers) == 0
 
     def test_styled_mapbox_tiles(self):
-        opts = dict(mapstyle="dark") if PLOTLY_GE_6_0_0 else dict(mapboxstyle="dark", accesstoken="token-str")
-        tiles = Tiles().opts(**opts).redim.range(x=self.x_range, y=self.y_range)
+        opts = (
+            dict(mapstyle="dark")
+            if PLOTLY_GE_6_0_0
+            else dict(mapboxstyle="dark", accesstoken="token-str")
+        )
+        tiles = hv.Tiles().opts(**opts).redim.range(x=self.x_range, y=self.y_range)
 
         fig_dict = plotly_renderer.get_plot_state(tiles)
 
@@ -71,12 +75,14 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         assert subplot["style"] == "dark"
         if not PLOTLY_GE_6_0_0:
             assert subplot["accesstoken"] == "token-str"
-        assert subplot['center'] == {'lat': self.lat_center, 'lon': self.lon_center}
+        assert subplot["center"] == {"lat": self.lat_center, "lon": self.lon_center}
 
     def test_raster_layer(self):
-        tiles = StamenTerrain().redim.range(
-            x=self.x_range, y=self.y_range
-        ).opts(alpha=0.7, min_zoom=3, max_zoom=7)
+        tiles = (
+            StamenTerrain()
+            .redim.range(x=self.x_range, y=self.y_range)
+            .opts(alpha=0.7, min_zoom=3, max_zoom=7)
+        )
 
         fig_dict = plotly_renderer.get_plot_state(tiles)
 
@@ -91,7 +97,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         # Check mapbox subplot
         subplot = fig_dict["layout"][PLOTLY_MAP]
         assert subplot["style"] == "white-bg"
-        assert subplot['center'] == {'lat': self.lat_center, 'lon': self.lon_center}
+        assert subplot["center"] == {"lat": self.lat_center, "lon": self.lon_center}
 
         # Check for raster layer
         layers = fig_dict["layout"][PLOTLY_MAP].get("layers", [])
@@ -102,15 +108,13 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         assert layer["sourcetype"] == "raster"
         assert layer["minzoom"] == 3
         assert layer["maxzoom"] == 7
-        assert layer["sourceattribution"] == _ATTRIBUTIONS[('stamen', 'png')]
+        assert layer["sourceattribution"] == _ATTRIBUTIONS[("stamen", "png")]
 
     # xyzservices input
     def test_xyzservices_tileprovider(self):
         xyzservices = pytest.importorskip("xyzservices")
         osm = xyzservices.providers.OpenStreetMap.Mapnik
-        tiles = Tiles(osm, name="xyzservices").redim.range(
-            x=self.x_range, y=self.y_range
-        )
+        tiles = hv.Tiles(osm, name="xyzservices").redim.range(x=self.x_range, y=self.y_range)
 
         fig_dict = plotly_renderer.get_plot_state(tiles)
         # Check mapbox subplot
@@ -123,28 +127,27 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
 
     def test_overlay(self):
         # Base layer is mapbox vector layer
-        opts = dict(mapstyle="dark") if PLOTLY_GE_6_0_0 else dict(mapboxstyle="dark", accesstoken="token-str")
-        tiles = Tiles("").opts(**opts)
+        opts = (
+            dict(mapstyle="dark")
+            if PLOTLY_GE_6_0_0
+            else dict(mapboxstyle="dark", accesstoken="token-str")
+        )
+        tiles = hv.Tiles("").opts(**opts)
 
         # Raster tile layer
         stamen_raster = StamenTerrain().opts(alpha=0.7)
 
         # RGB layer
         rgb_data = np.random.rand(10, 10, 3)
-        rgb = RGB(
-            rgb_data,
-            bounds=(self.x_range[0], self.y_range[0], self.x_range[1], self.y_range[1])
-        ).opts(
-            opacity=0.5
-        )
+        rgb = hv.RGB(
+            rgb_data, bounds=(self.x_range[0], self.y_range[0], self.x_range[1], self.y_range[1])
+        ).opts(opacity=0.5)
 
         # Points layer
-        points = Points([(0, 0), (self.x_range[1], self.y_range[1])]).opts(
-            show_legend=True
-        )
+        points = hv.Points([(0, 0), (self.x_range[1], self.y_range[1])]).opts(show_legend=True)
 
         # Bounds
-        bounds = Bounds((self.x_range[0], self.y_range[0], 0, 0))
+        bounds = hv.Bounds((self.x_range[0], self.y_range[0], 0, 0))
 
         # Overlay
         overlay = (tiles * stamen_raster * rgb * points * bounds).redim.range(
@@ -172,7 +175,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         assert subplot["style"] == "dark"
         if not PLOTLY_GE_6_0_0:
             assert subplot["accesstoken"] == "token-str"
-        assert subplot['center'] == {'lat': self.lat_center, 'lon': self.lon_center}
+        assert subplot["center"] == {"lat": self.lat_center, "lon": self.lon_center}
 
         # Check raster layer
         dummy_trace = traces[1]
@@ -205,7 +208,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
             [self.lon_range[0], self.lat_range[1]],
             [self.lon_range[1], self.lat_range[1]],
             [self.lon_range[1], self.lat_range[0]],
-            [self.lon_range[0], self.lat_range[0]]
+            [self.lon_range[0], self.lat_range[0]],
         ]
 
         # Check Points layer
@@ -219,12 +222,14 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         # Check Bounds layer
         bounds_trace = traces[4]
         assert bounds_trace["type"] == PLOTLY_SCATTERMAP
-        assert_data_equal(bounds_trace["lon"], np.array([
-            self.lon_range[0], self.lon_range[0], 0, 0, self.lon_range[0]
-        ]))
-        assert_data_equal(bounds_trace["lat"], np.array([
-            self.lat_range[0], 0, 0, self.lat_range[0], self.lat_range[0]
-        ]))
+        assert_data_equal(
+            bounds_trace["lon"],
+            np.array([self.lon_range[0], self.lon_range[0], 0, 0, self.lon_range[0]]),
+        )
+        assert_data_equal(
+            bounds_trace["lat"],
+            np.array([self.lat_range[0], 0, 0, self.lat_range[0], self.lat_range[0]]),
+        )
         assert bounds_trace["mode"] == "lines"
         assert points_trace["showlegend"] is True
 

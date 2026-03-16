@@ -9,12 +9,12 @@ from dash.exceptions import PreventUpdate
 
 # Holoviews imports
 import holoviews as hv
+from holoviews.core import DynamicMap
 from holoviews.core.decollate import (
     expr_to_fn_of_stream_contents,
-    initialize_dynamic,
     to_expr_extract_streams,
 )
-from holoviews.plotting.plotly import DynamicMap, PlotlyRenderer
+from holoviews.plotting.plotly import PlotlyRenderer
 from holoviews.plotting.plotly.callbacks import (
     BoundsXCallback,
     BoundsXYCallback,
@@ -25,6 +25,7 @@ from holoviews.plotting.plotly.callbacks import (
     Selection1DCallback,
 )
 from holoviews.plotting.plotly.util import clean_internal_figure_properties
+from holoviews.plotting.util import initialize_dynamic
 from holoviews.streams import Derived, History
 
 # Dash imports
@@ -44,35 +45,31 @@ hv.extension("plotly")
 
 # Named tuples definitions
 StreamCallback = namedtuple("StreamCallback", ["input_ids", "fn", "output_id"])
-DashComponents = namedtuple(
-    "DashComponents", ["graphs", "kdims", "store", "resets", "children"]
-)
+DashComponents = namedtuple("DashComponents", ["graphs", "kdims", "store", "resets", "children"])
 HoloViewsFunctionSpec = namedtuple("HoloViewsFunctionSpec", ["fn", "kdims", "streams"])
 
 
 def get_layout_ranges(plot):
     layout_ranges = {}
     fig_dict = plot.state
-    for k in fig_dict['layout']:
+    for k in fig_dict["layout"]:
         if k.startswith(("xaxis", "yaxis")):
-            if "range" in fig_dict['layout'][k]:
-                layout_ranges[k] = {"range": fig_dict['layout'][k]["range"]}
+            if "range" in fig_dict["layout"][k]:
+                layout_ranges[k] = {"range": fig_dict["layout"][k]["range"]}
 
-        if k.startswith('mapbox'):
+        if k.startswith("mapbox"):
             mapbox_ranges = {}
-            if "center" in fig_dict['layout'][k]:
-                mapbox_ranges["center"] = fig_dict['layout'][k]["center"]
-            if "zoom" in fig_dict['layout'][k]:
-                mapbox_ranges["zoom"] = fig_dict['layout'][k]["zoom"]
+            if "center" in fig_dict["layout"][k]:
+                mapbox_ranges["center"] = fig_dict["layout"][k]["center"]
+            if "zoom" in fig_dict["layout"][k]:
+                mapbox_ranges["zoom"] = fig_dict["layout"][k]["zoom"]
             if mapbox_ranges:
                 layout_ranges[k] = mapbox_ranges
 
     return layout_ranges
 
 
-def plot_to_figure(
-        plot, reset_nclicks=0, layout_ranges=None, responsive=True, use_ranges=True
-):
+def plot_to_figure(plot, reset_nclicks=0, layout_ranges=None, responsive=True, use_ranges=True):
     """Convert a HoloViews plotly plot to a plotly.py Figure.
 
     Parameters
@@ -91,26 +88,26 @@ def plot_to_figure(
 
     # Enable uirevision to preserve user-interaction state
     # Don't use reset_nclicks directly because 0 is treated as no revision
-    fig_dict['layout']['uirevision'] = "reset-" + str(reset_nclicks)
+    fig_dict["layout"]["uirevision"] = "reset-" + str(reset_nclicks)
 
     # Remove range specification so plotly.js autorange + uirevision is in control
     if layout_ranges and use_ranges:
-        for k in fig_dict['layout']:
+        for k in fig_dict["layout"]:
             if k.startswith(("xaxis", "yaxis")):
-                fig_dict['layout'][k].pop('range', None)
-            if k.startswith('mapbox'):
-                fig_dict['layout'][k].pop('zoom', None)
-                fig_dict['layout'][k].pop('center', None)
+                fig_dict["layout"][k].pop("range", None)
+            if k.startswith("mapbox"):
+                fig_dict["layout"][k].pop("zoom", None)
+                fig_dict["layout"][k].pop("center", None)
 
     # Remove figure width height, let container decide
     if responsive:
-        fig_dict['layout'].pop('autosize', None)
+        fig_dict["layout"].pop("autosize", None)
 
     if responsive is True or responsive == "width":
-        fig_dict['layout'].pop('width', None)
+        fig_dict["layout"].pop("width", None)
 
     if responsive is True or responsive == "height":
-        fig_dict['layout'].pop('height', None)
+        fig_dict["layout"].pop("height", None)
 
     # Pass to figure constructor to expand magic underscore notation
     fig = go.Figure(fig_dict)
@@ -141,18 +138,18 @@ def to_function_spec(hvobj):
     streams = []
     stream_mapping = {}
     initialize_dynamic(hvobj)
-    expr = to_expr_extract_streams(
-        hvobj, kdims_list, streams, original_streams, stream_mapping
-    )
+    expr = to_expr_extract_streams(hvobj, kdims_list, streams, original_streams, stream_mapping)
     expr_fn = expr_to_fn_of_stream_contents(expr, nkdims=len(kdims_list))
 
     # Check for unbounded dimensions
     if isinstance(hvobj, DynamicMap) and hvobj.unbounded:
-        dims = ', '.join(f'{dim!r}' for dim in hvobj.unbounded)
-        msg = ('DynamicMap cannot be displayed without explicit indexing '
-               'as {dims} dimension(s) are unbounded. '
-               '\nSet dimensions bounds with the DynamicMap redim.range '
-               'or redim.values methods.')
+        dims = ", ".join(f"{dim!r}" for dim in hvobj.unbounded)
+        msg = (
+            "DynamicMap cannot be displayed without explicit indexing "
+            "as {dims} dimension(s) are unbounded. "
+            "\nSet dimensions bounds with the DynamicMap redim.range "
+            "or redim.values methods."
+        )
         raise ValueError(msg.format(dims=dims))
 
     # Build mapping from kdims to values/range
@@ -166,9 +163,7 @@ def to_function_spec(hvobj):
     return HoloViewsFunctionSpec(fn=expr_fn, kdims=kdims, streams=original_streams)
 
 
-def populate_store_with_stream_contents(
-        store_data, streams
-):
+def populate_store_with_stream_contents(store_data, streams):
     """Add contents of streams to the store dictionary
 
     Parameters
@@ -210,9 +205,7 @@ def build_derived_callback(derived_stream):
     def derived_callback(*stream_values):
         return transform(stream_values=stream_values, constants=constants)
 
-    return StreamCallback(
-        input_ids=input_ids, fn=derived_callback, output_id=id(derived_stream)
-    )
+    return StreamCallback(input_ids=input_ids, fn=derived_callback, output_id=id(derived_stream))
 
 
 def build_history_callback(history_stream):
@@ -236,9 +229,7 @@ def build_history_callback(history_stream):
         return new_value
 
     return StreamCallback(
-        input_ids=[history_id, input_stream_id],
-        fn=history_callback,
-        output_id=history_id
+        input_ids=[history_id, input_stream_id], fn=history_callback, output_id=history_id
     )
 
 
@@ -309,8 +300,13 @@ def decode_store_data(store_data):
 
 
 def to_dash(
-        app, hvobjs, reset_button=False, graph_class=dcc.Graph,
-        button_class=html.Button, responsive="width", use_ranges=True,
+    app,
+    hvobjs,
+    reset_button=False,
+    graph_class=dcc.Graph,
+    button_class=html.Button,
+    responsive="width",
+    use_ranges=True,
 ):
     """Build Dash components and callbacks from a collection of HoloViews objects
 
@@ -382,15 +378,19 @@ def to_dash(
 
     # Plotly stream types
     plotly_stream_types = [
-        RangeXYCallback, RangeXCallback, RangeYCallback, Selection1DCallback,
-        BoundsXYCallback, BoundsXCallback, BoundsYCallback
+        RangeXYCallback,
+        RangeXCallback,
+        RangeYCallback,
+        Selection1DCallback,
+        BoundsXYCallback,
+        BoundsXCallback,
+        BoundsYCallback,
     ]
 
     # Layout ranges
     layout_ranges = []
 
     for i, hvobj in enumerate(hvobjs):
-
         fn_spec = to_function_spec(hvobj)
 
         fig_to_fn_stream[i] = fn_spec
@@ -403,13 +403,16 @@ def to_dash(
 
         layout_ranges.append(get_layout_ranges(plot))
         fig = plot_to_figure(
-            plot, reset_nclicks=0, layout_ranges=layout_ranges[-1],
-            responsive=responsive, use_ranges=use_ranges,
+            plot,
+            reset_nclicks=0,
+            layout_ranges=layout_ranges[-1],
+            responsive=responsive,
+            use_ranges=use_ranges,
         ).to_dict()
         initial_fig_dicts.append(fig)
 
         # Build graphs
-        graph_id = 'graph-' + str(uuid.uuid4())
+        graph_id = "graph-" + str(uuid.uuid4())
         graph_ids.append(graph_id)
         graph = graph_class(
             id=graph_id,
@@ -423,28 +426,29 @@ def to_dash(
         for plotly_stream_type in plotly_stream_types:
             for t in fig["data"]:
                 if t.get("uid", None) in plotly_stream_type.instances:
-                    plotly_streams.setdefault(plotly_stream_type, {})[t["uid"]] = \
+                    plotly_streams.setdefault(plotly_stream_type, {})[t["uid"]] = (
                         plotly_stream_type.instances[t["uid"]]
+                    )
 
         # Build dict from trace uid to list of connected HoloViews streams
         for plotly_stream_type, streams_for_type in plotly_streams.items():
             for uid, cb in streams_for_type.items():
-                uid_to_stream_ids.setdefault(
-                    plotly_stream_type, {}
-                ).setdefault(uid, []).extend(
+                uid_to_stream_ids.setdefault(plotly_stream_type, {}).setdefault(uid, []).extend(
                     [id(stream) for stream in cb.streams]
                 )
 
-        outputs.append(Output(component_id=graph_id, component_property='figure'))
-        inputs.extend([
-            Input(component_id=graph_id, component_property='selectedData'),
-            Input(component_id=graph_id, component_property='relayoutData')
-        ])
+        outputs.append(Output(component_id=graph_id, component_property="figure"))
+        inputs.extend(
+            [
+                Input(component_id=graph_id, component_property="selectedData"),
+                Input(component_id=graph_id, component_property="relayoutData"),
+            ]
+        )
 
     # Build Store and State list
     store_data = {"streams": {}}
-    store_id = 'store-' + str(uuid.uuid4())
-    states.append(State(store_id, 'data'))
+    store_id = "store-" + str(uuid.uuid4())
+    states.append(State(store_id, "data"))
 
     # Store holds mapping from id(stream) -> stream.contents for:
     #   - All extracted streams (including derived)
@@ -471,7 +475,7 @@ def to_dash(
         id=store_id,
         data=encode_store_data(store_data),
     )
-    outputs.append(Output(store_id, 'data'))
+    outputs.append(Output(store_id, "data"))
 
     # Save copy of initial stream contents
     initial_stream_contents = copy.deepcopy(store_data["streams"])
@@ -487,45 +491,45 @@ def to_dash(
         html_label = html.Label(id=slider_label_id, children=kdim_label)
         if isinstance(kdim_range, list):
             # list of slider values
-            slider = html.Div(children=[
-                html_label,
-                dcc.Slider(
-                    id=slider_id,
-                    min=kdim_range[0],
-                    max=kdim_range[-1],
-                    step=None,
-                    marks={
-                        m: "" for m in kdim_range
-                    },
-                    value=kdim_range[0]
-            )])
+            slider = html.Div(
+                children=[
+                    html_label,
+                    dcc.Slider(
+                        id=slider_id,
+                        min=kdim_range[0],
+                        max=kdim_range[-1],
+                        step=None,
+                        marks={m: "" for m in kdim_range},
+                        value=kdim_range[0],
+                    ),
+                ]
+            )
         else:
             # Range of slider values
-            slider = html.Div(children=[
-                html_label,
-                dcc.Slider(
-                    id=slider_id,
-                    min=kdim_range[0],
-                    max=kdim_range[-1],
-                    step=(kdim_range[-1] - kdim_range[0]) / 11.0,
-                    value=kdim_range[0]
-            )])
+            slider = html.Div(
+                children=[
+                    html_label,
+                    dcc.Slider(
+                        id=slider_id,
+                        min=kdim_range[0],
+                        max=kdim_range[-1],
+                        step=(kdim_range[-1] - kdim_range[0]) / 11.0,
+                        value=kdim_range[0],
+                    ),
+                ]
+            )
         kdim_components[kdim_name] = slider
         inputs.append(Input(component_id=slider_id, component_property="value"))
 
     # Add reset button
     if reset_button:
-        reset_id = 'reset-' + str(uuid.uuid4())
+        reset_id = "reset-" + str(uuid.uuid4())
         reset_button = button_class(id=reset_id, children="Reset")
-        inputs.append(Input(
-            component_id=reset_id, component_property='n_clicks'
-        ))
+        inputs.append(Input(component_id=reset_id, component_property="n_clicks"))
         reset_components.append(reset_button)
 
     # Register Graphs/Store callback
-    @app.callback(
-        outputs, inputs, states
-    )
+    @app.callback(outputs, inputs, states)
     def update_figure(*args):
         triggered_prop_ids = {entry["prop_id"] for entry in callback_context.triggered}
 
@@ -556,8 +560,7 @@ def to_dash(
         # Get kdim values
         store_data.setdefault("kdims", {})
         for i, kdim in zip(
-                range(num_figs * 2, num_figs * 2 + len(all_kdims)),
-                all_kdims, strict=None
+            range(num_figs * 2, num_figs * 2 + len(all_kdims)), all_kdims, strict=None
         ):
             if kdim not in store_data["kdims"] or store_data["kdims"][kdim] != args[i]:
                 store_data["kdims"][kdim] = args[i]
@@ -574,36 +577,51 @@ def to_dash(
                             # Only update selectedData values that just changed.
                             # This way we don't save values that may have been cleared
                             # from the store above by the reset button.
-                            stream_event_data = plotly_stream_type.get_event_data_from_property_update(
-                                panel_prop, selected_dicts[fig_ind], initial_fig_dicts[fig_ind]
+                            stream_event_data = (
+                                plotly_stream_type.get_event_data_from_property_update(
+                                    panel_prop, selected_dicts[fig_ind], initial_fig_dicts[fig_ind]
+                                )
                             )
-                            any_change = update_stream_values_for_type(
-                                store_data, stream_event_data, uid_to_streams_for_type
-                            ) or any_change
+                            any_change = (
+                                update_stream_values_for_type(
+                                    store_data, stream_event_data, uid_to_streams_for_type
+                                )
+                                or any_change
+                            )
 
                     elif panel_prop == "viewport":
                         if graph_id + ".relayoutData" in triggered_prop_ids:
-                            stream_event_data = plotly_stream_type.get_event_data_from_property_update(
-                                panel_prop, relayout_dicts[fig_ind], initial_fig_dicts[fig_ind]
+                            stream_event_data = (
+                                plotly_stream_type.get_event_data_from_property_update(
+                                    panel_prop, relayout_dicts[fig_ind], initial_fig_dicts[fig_ind]
+                                )
                             )
 
                             stream_event_data = {
                                 uid: event_data
                                 for uid, event_data in stream_event_data.items()
                                 if event_data["x_range"] is not None
-                                or event_data[ "y_range"] is not None
+                                or event_data["y_range"] is not None
                             }
-                            any_change = update_stream_values_for_type(
-                                store_data, stream_event_data, uid_to_streams_for_type
-                            ) or any_change
+                            any_change = (
+                                update_stream_values_for_type(
+                                    store_data, stream_event_data, uid_to_streams_for_type
+                                )
+                                or any_change
+                            )
                     elif panel_prop == "relayout_data":
                         if graph_id + ".relayoutData" in triggered_prop_ids:
-                            stream_event_data = plotly_stream_type.get_event_data_from_property_update(
-                                panel_prop, relayout_dicts[fig_ind], initial_fig_dicts[fig_ind]
+                            stream_event_data = (
+                                plotly_stream_type.get_event_data_from_property_update(
+                                    panel_prop, relayout_dicts[fig_ind], initial_fig_dicts[fig_ind]
+                                )
                             )
-                            any_change = update_stream_values_for_type(
-                                store_data, stream_event_data, uid_to_streams_for_type
-                            ) or any_change
+                            any_change = (
+                                update_stream_values_for_type(
+                                    store_data, stream_event_data, uid_to_streams_for_type
+                                )
+                                or any_change
+                            )
 
         if not any_change:
             raise PreventUpdate
@@ -622,14 +640,14 @@ def to_dash(
         figs = [None] * num_figs
         for fig_ind, (fn, stream_ids) in fig_to_fn_stream_ids.items():
             fig_kdim_values = [store_data["kdims"][kd] for kd in kdims_per_fig[fig_ind]]
-            stream_values = [
-                store_data["streams"][stream_id] for stream_id in stream_ids
-            ]
+            stream_values = [store_data["streams"][stream_id] for stream_id in stream_ids]
             hvobj = fn(*(fig_kdim_values + stream_values))
             plot = PlotlyRenderer.get_plot(hvobj)
             fig = plot_to_figure(
-                plot, reset_nclicks=reset_nclicks,
-                layout_ranges=layout_ranges[fig_ind], responsive=responsive,
+                plot,
+                reset_nclicks=reset_nclicks,
+                layout_ranges=layout_ranges[fig_ind],
+                responsive=responsive,
                 use_ranges=use_ranges,
             ).to_dict()
             figs[fig_ind] = fig
@@ -645,7 +663,7 @@ def to_dash(
 
         @app.callback(
             Output(component_id=kdim_label_id, component_property="children"),
-            [Input(component_id=kdim_slider_id, component_property="value")]
+            [Input(component_id=kdim_slider_id, component_property="value")],
         )
         def update_kdim_label(value, kdim_label=kdim_label):
             return f"{kdim_label}: {value:.2f}"
@@ -656,12 +674,7 @@ def to_dash(
         kdims=kdim_components,
         resets=reset_components,
         store=store,
-        children=(
-                graph_components +
-                list(kdim_components.values()) +
-                reset_components +
-                [store]
-        )
+        children=(graph_components + list(kdim_components.values()) + reset_components + [store]),
     )
 
     return components
@@ -690,8 +703,10 @@ def update_stream_values_for_type(store_data, stream_event_data, uid_to_streams_
     for uid, event_data in stream_event_data.items():
         if uid in uid_to_streams_for_type:
             for stream_id in uid_to_streams_for_type[uid]:
-                if stream_id not in store_data["streams"] or \
-                        store_data["streams"][stream_id] != event_data:
+                if (
+                    stream_id not in store_data["streams"]
+                    or store_data["streams"][stream_id] != event_data
+                ):
                     store_data["streams"][stream_id] = event_data
                     any_change = True
     return any_change

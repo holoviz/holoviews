@@ -2,21 +2,20 @@ import plotly.graph_objs as go
 import pyviz_comms as comms
 from param import concrete_descendents
 
-from holoviews.core import DynamicMap, Store
-from holoviews.element import Curve
+import holoviews as hv
 from holoviews.plotting.plotly.element import ElementPlot
 from holoviews.plotting.plotly.util import figure_grid
 from holoviews.streams import Pipe
 
 from .. import option_intersections
 
-plotly_renderer = Store.renderers['plotly']
+plotly_renderer = hv.Store.renderers["plotly"]
 
 
 def test_element_plot_stream_cleanup():
     stream = Pipe()
 
-    dmap = DynamicMap(Curve, streams=[stream])
+    dmap = hv.DynamicMap(hv.Curve, streams=[stream])
 
     plot = plotly_renderer.get_plot(dmap)
 
@@ -31,8 +30,8 @@ def test_overlay_plot_stream_cleanup():
     stream1 = Pipe()
     stream2 = Pipe()
 
-    dmap1 = DynamicMap(Curve, streams=[stream1])
-    dmap2 = DynamicMap(Curve, streams=[stream2])
+    dmap1 = hv.DynamicMap(hv.Curve, streams=[stream1])
+    dmap2 = hv.DynamicMap(hv.Curve, streams=[stream2])
 
     plot = plotly_renderer.get_plot(dmap1 * dmap2)
 
@@ -49,8 +48,8 @@ def test_layout_plot_stream_cleanup():
     stream1 = Pipe()
     stream2 = Pipe()
 
-    dmap1 = DynamicMap(Curve, streams=[stream1])
-    dmap2 = DynamicMap(Curve, streams=[stream2])
+    dmap1 = hv.DynamicMap(hv.Curve, streams=[stream1])
+    dmap2 = hv.DynamicMap(hv.Curve, streams=[stream2])
 
     plot = plotly_renderer.get_plot(dmap1 + dmap2)
 
@@ -64,10 +63,9 @@ def test_layout_plot_stream_cleanup():
 
 
 class TestPlotlyPlot:
-
     def setup_method(self):
-        self.previous_backend = Store.current_backend
-        Store.set_current_backend('plotly')
+        self.previous_backend = hv.Store.current_backend
+        hv.Store.set_current_backend("plotly")
         self.comm_manager = plotly_renderer.comm_manager
         plotly_renderer.comm_manager = comms.CommManager
         self._padding = {}
@@ -76,7 +74,7 @@ class TestPlotlyPlot:
             plot.padding = 0
 
     def teardown_method(self):
-        Store.current_backend = self.previous_backend
+        hv.Store.current_backend = self.previous_backend
         plotly_renderer.comm_manager = self.comm_manager
         for plot, padding in self._padding.items():
             plot.padding = padding
@@ -101,7 +99,7 @@ class TestPlotlyPlot:
         """
 
         for prop, val in props.items():
-            prop_parts = prop.split('_')
+            prop_parts = prop.split("_")
             prop_parent = obj
             for prop_part in prop_parts[:-1]:
                 prop_parent = prop_parent.get(prop_part, {})
@@ -110,407 +108,474 @@ class TestPlotlyPlot:
 
 
 class TestPlotDefinitions(TestPlotlyPlot):
-
     known_clashes = []
 
     def test_plotly_option_definitions(self):
         # Check option definitions do not introduce new clashes
-        assert option_intersections('plotly') == self.known_clashes
+        assert option_intersections("plotly") == self.known_clashes
 
 
 class TestPlotlyFigureGrid(TestPlotlyPlot):
-
     def test_figure_grid_solo_traces(self):
 
-        fig = figure_grid([[
-            {'data': [{'type': 'table',
-                       'header': {'values': [['One', 'Two']]}}],
-             'layout': {
-                 'width': 400,
-                 'height': 1000,
-             }},
-            {'data': [{'type': 'parcoords',
-                       'dimensions': [{'values': [1, 2]}]}],
-             'layout': {
-                 'width': 600,
-                 'height': 1000,
-             }}
-        ]], row_spacing=0, column_spacing=0)
+        fig = figure_grid(
+            [
+                [
+                    {
+                        "data": [{"type": "table", "header": {"values": [["One", "Two"]]}}],
+                        "layout": {
+                            "width": 400,
+                            "height": 1000,
+                        },
+                    },
+                    {
+                        "data": [{"type": "parcoords", "dimensions": [{"values": [1, 2]}]}],
+                        "layout": {
+                            "width": 600,
+                            "height": 1000,
+                        },
+                    },
+                ]
+            ],
+            row_spacing=0,
+            column_spacing=0,
+        )
 
         # Validate resulting figure object
         go.Figure(fig)
 
         # Check domains
-        assert fig['data'][0]['type'] == 'table'
-        assert fig['data'][0]['domain'] == {'x': [0, 0.4], 'y': [0.0, 1.0]}
+        assert fig["data"][0]["type"] == "table"
+        assert fig["data"][0]["domain"] == {"x": [0, 0.4], "y": [0.0, 1.0]}
 
-        assert fig['data'][1]['type'] == 'parcoords'
-        assert fig['data'][1]['domain'] == {'x': [0.4, 1.0], 'y': [0, 1.0]}
+        assert fig["data"][1]["type"] == "parcoords"
+        assert fig["data"][1]["domain"] == {"x": [0.4, 1.0], "y": [0, 1.0]}
 
         # Check width and height
-        assert fig['layout']['width'] == 1000
-        assert fig['layout']['height'] == 1000
+        assert fig["layout"]["width"] == 1000
+        assert fig["layout"]["height"] == 1000
 
     def test_figure_grid_solo_traces_fig_width_height(self):
 
-        fig = figure_grid([[
-            {'data': [{'type': 'table',
-                       'header': {'values': [['One', 'Two']]}}],
-             'layout': {'width': 400, 'height': 1000}
-             },
-            {'data': [{'type': 'parcoords',
-                       'dimensions': [{'values': [1, 2]}]}],
-             'layout': {'width': 600, 'height': 1000}}
-        ]], column_spacing=0)
+        fig = figure_grid(
+            [
+                [
+                    {
+                        "data": [{"type": "table", "header": {"values": [["One", "Two"]]}}],
+                        "layout": {"width": 400, "height": 1000},
+                    },
+                    {
+                        "data": [{"type": "parcoords", "dimensions": [{"values": [1, 2]}]}],
+                        "layout": {"width": 600, "height": 1000},
+                    },
+                ]
+            ],
+            column_spacing=0,
+        )
 
         # Validate resulting figure object
         go.Figure(fig)
 
         # Check domains
-        assert fig['data'][0]['type'] == 'table'
-        assert fig['data'][0]['domain'] == {'x': [0, 0.4], 'y': [0, 1.0]}
+        assert fig["data"][0]["type"] == "table"
+        assert fig["data"][0]["domain"] == {"x": [0, 0.4], "y": [0, 1.0]}
 
-        assert fig['data'][1]['type'] == 'parcoords'
-        assert fig['data'][1]['domain'] == {'x': [0.4, 1.0], 'y': [0, 1.0]}
+        assert fig["data"][1]["type"] == "parcoords"
+        assert fig["data"][1]["domain"] == {"x": [0.4, 1.0], "y": [0, 1.0]}
 
         # Check width and height
-        assert fig['layout']['width'] == 1000
-        assert fig['layout']['height'] == 1000
+        assert fig["layout"]["width"] == 1000
+        assert fig["layout"]["height"] == 1000
 
     def test_figure_grid_polar_subplots(self):
-        fig = figure_grid([[
-            {'data': [{'type': 'scatterpolar',
-                       'theta': [0, 90], 'r': [0.5, 1.0]}],
-             'layout': {
-                 'width': 450,
-                 'height': 450,
-             }}
-        ], [
-            {'data': [{'type': 'barpolar',
-                       'theta': [90, 180], 'r': [1.0, 10.0]}],
-             'layout': {
-                 'width': 450,
-                 'height': 450,
-                 'polar': {'radialaxis': {'title': 'radial'}}
-             }}
-        ]], row_spacing=100)
+        fig = figure_grid(
+            [
+                [
+                    {
+                        "data": [{"type": "scatterpolar", "theta": [0, 90], "r": [0.5, 1.0]}],
+                        "layout": {
+                            "width": 450,
+                            "height": 450,
+                        },
+                    }
+                ],
+                [
+                    {
+                        "data": [{"type": "barpolar", "theta": [90, 180], "r": [1.0, 10.0]}],
+                        "layout": {
+                            "width": 450,
+                            "height": 450,
+                            "polar": {"radialaxis": {"title": "radial"}},
+                        },
+                    }
+                ],
+            ],
+            row_spacing=100,
+        )
 
         # Validate resulting figure object
         go.Figure(fig)
 
         # Check domains
-        assert fig['data'][0]['type'] == 'scatterpolar'
-        assert fig['data'][0]['subplot'] == 'polar'
-        assert fig['layout']['polar']['domain'] == {'y': [0, 0.45], 'x': [0, 1.0]}
+        assert fig["data"][0]["type"] == "scatterpolar"
+        assert fig["data"][0]["subplot"] == "polar"
+        assert fig["layout"]["polar"]["domain"] == {"y": [0, 0.45], "x": [0, 1.0]}
 
-        assert fig['data'][1]['type'] == 'barpolar'
-        assert fig['data'][1]['subplot'] == 'polar2'
-        assert fig['layout']['polar2']['domain'] == {'y': [0.55, 1.0], 'x': [0, 1.0]}
+        assert fig["data"][1]["type"] == "barpolar"
+        assert fig["data"][1]["subplot"] == "polar2"
+        assert fig["layout"]["polar2"]["domain"] == {"y": [0.55, 1.0], "x": [0, 1.0]}
 
         # Check width and height
-        assert fig['layout']['width'] == 450
-        assert fig['layout']['height'] == 1000
+        assert fig["layout"]["width"] == 450
+        assert fig["layout"]["height"] == 1000
 
         # Check that radial axis title stayed with the barpolar trace's polar
         # subplot
-        assert fig['layout']['polar2']['radialaxis'] == {'title': 'radial'}
+        assert fig["layout"]["polar2"]["radialaxis"] == {"title": "radial"}
 
     def test_titles_converted_to_annotations(self):
-        fig = figure_grid([[
-            {'data': [{'type': 'scatter',
-                       'y': [1, 3, 2]}],
-             'layout': {
-                 'width': 400,
-                 'height': 400,
-                 'title': 'Scatter!'
-             }}
-        ], [
-            {'data': [{'type': 'bar',
-                       'y': [2, 3, 1]}],
-             'layout': {
-                 'width': 400,
-                 'height': 400,
-                 'title': 'Bar!'
-             }}
-        ]], row_spacing=100)
+        fig = figure_grid(
+            [
+                [
+                    {
+                        "data": [{"type": "scatter", "y": [1, 3, 2]}],
+                        "layout": {"width": 400, "height": 400, "title": "Scatter!"},
+                    }
+                ],
+                [
+                    {
+                        "data": [{"type": "bar", "y": [2, 3, 1]}],
+                        "layout": {"width": 400, "height": 400, "title": "Bar!"},
+                    }
+                ],
+            ],
+            row_spacing=100,
+        )
 
         # Validate resulting figure object
         go.Figure(fig)
 
-        assert 'title' not in fig['layout']
-        assert len(fig['layout']['annotations']) == 2
-        assert fig['layout']['annotations'][0]['text'] == 'Scatter!'
-        assert fig['layout']['annotations'][1]['text'] == 'Bar!'
+        assert "title" not in fig["layout"]
+        assert len(fig["layout"]["annotations"]) == 2
+        assert fig["layout"]["annotations"][0]["text"] == "Scatter!"
+        assert fig["layout"]["annotations"][1]["text"] == "Bar!"
 
         # Check width and height
-        assert fig['layout']['width'] == 400
-        assert fig['layout']['height'] == 900
+        assert fig["layout"]["width"] == 400
+        assert fig["layout"]["height"] == 900
 
     def test_annotations_stick_with_axis(self):
-        fig = figure_grid([[
-            {'data': [{'type': 'scatter',
-                       'y': [1, 3, 2]}],
-             'layout': {
-                 'width': 400,
-                 'height': 400,
-                 'annotations': [
-                     {'text': 'One',
-                      'xref': 'x', 'yref': 'y',
-                      'x': 0, 'y': 0},
-                     {'text': 'Two',
-                      'xref': 'x', 'yref': 'y',
-                      'x': 1, 'y': 0}
-                 ]}}
-            ,
-            {'data': [{'type': 'bar',
-                       'y': [2, 3, 1]}],
-             'layout': {
-                 'width': 400,
-                 'height': 400,
-                 'annotations': [
-                     {'text': 'Three',
-                      'xref': 'x', 'yref': 'y',
-                      'x': 2, 'y': 0},
-                     {'text': 'Four',
-                      'xref': 'x', 'yref': 'y',
-                      'x': 3, 'y': 0}
-                 ]}}
-        ]])
+        fig = figure_grid(
+            [
+                [
+                    {
+                        "data": [{"type": "scatter", "y": [1, 3, 2]}],
+                        "layout": {
+                            "width": 400,
+                            "height": 400,
+                            "annotations": [
+                                {"text": "One", "xref": "x", "yref": "y", "x": 0, "y": 0},
+                                {"text": "Two", "xref": "x", "yref": "y", "x": 1, "y": 0},
+                            ],
+                        },
+                    },
+                    {
+                        "data": [{"type": "bar", "y": [2, 3, 1]}],
+                        "layout": {
+                            "width": 400,
+                            "height": 400,
+                            "annotations": [
+                                {"text": "Three", "xref": "x", "yref": "y", "x": 2, "y": 0},
+                                {"text": "Four", "xref": "x", "yref": "y", "x": 3, "y": 0},
+                            ],
+                        },
+                    },
+                ]
+            ]
+        )
 
         # Validate resulting figure object
         go.Figure(fig)
 
-        annotations = fig['layout']['annotations']
+        annotations = fig["layout"]["annotations"]
         assert len(annotations) == 4
-        assert annotations[0]['text'] == 'One'
-        assert annotations[0]['xref'] == 'x'
-        assert annotations[0]['yref'] == 'y'
+        assert annotations[0]["text"] == "One"
+        assert annotations[0]["xref"] == "x"
+        assert annotations[0]["yref"] == "y"
 
-        assert annotations[1]['text'] == 'Two'
-        assert annotations[1]['xref'] == 'x'
-        assert annotations[1]['yref'] == 'y'
+        assert annotations[1]["text"] == "Two"
+        assert annotations[1]["xref"] == "x"
+        assert annotations[1]["yref"] == "y"
 
-        assert annotations[2]['text'] == 'Three'
-        assert annotations[2]['xref'] == 'x2'
-        assert annotations[2]['yref'] == 'y2'
+        assert annotations[2]["text"] == "Three"
+        assert annotations[2]["xref"] == "x2"
+        assert annotations[2]["yref"] == "y2"
 
-        assert annotations[3]['text'] == 'Four'
-        assert annotations[3]['xref'] == 'x2'
-        assert annotations[3]['yref'] == 'y2'
+        assert annotations[3]["text"] == "Four"
+        assert annotations[3]["xref"] == "x2"
+        assert annotations[3]["yref"] == "y2"
 
     def test_shapes_stick_with_axis(self):
-        fig = figure_grid([[
-            {'data': [{'type': 'scatter',
-                       'y': [1, 3, 2]}],
-             'layout': {
-                 'width': 400,
-                 'height': 400,
-                 'shapes': [
-                     {'type': 'rect',
-                      'xref': 'x', 'yref': 'y',
-                      'x0': 0, 'y0': 0, 'x1': 1, 'y1': 1},
-                     {'type': 'circle',
-                      'xref': 'x', 'yref': 'y',
-                      'x0': 1, 'y0': 1, 'x1': 2, 'y1': 2}
-                 ]}}
-            ,
-            {'data': [{'type': 'bar',
-                       'y': [2, 3, 1]}],
-             'layout': {
-                 'width': 400,
-                 'height': 400,
-                 'shapes': [
-                     {'type': 'line',
-                      'xref': 'x', 'yref': 'y',
-                      'x0': 2, 'y0': 0, 'x1': 1, 'y1': 3},
-                     {'type': 'path',
-                      'xref': 'x', 'yref': 'y',
-                      'x0': 3, 'y0': 0, 'x1': 3, 'y1': 6}
-                 ]}}
-        ]])
+        fig = figure_grid(
+            [
+                [
+                    {
+                        "data": [{"type": "scatter", "y": [1, 3, 2]}],
+                        "layout": {
+                            "width": 400,
+                            "height": 400,
+                            "shapes": [
+                                {
+                                    "type": "rect",
+                                    "xref": "x",
+                                    "yref": "y",
+                                    "x0": 0,
+                                    "y0": 0,
+                                    "x1": 1,
+                                    "y1": 1,
+                                },
+                                {
+                                    "type": "circle",
+                                    "xref": "x",
+                                    "yref": "y",
+                                    "x0": 1,
+                                    "y0": 1,
+                                    "x1": 2,
+                                    "y1": 2,
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        "data": [{"type": "bar", "y": [2, 3, 1]}],
+                        "layout": {
+                            "width": 400,
+                            "height": 400,
+                            "shapes": [
+                                {
+                                    "type": "line",
+                                    "xref": "x",
+                                    "yref": "y",
+                                    "x0": 2,
+                                    "y0": 0,
+                                    "x1": 1,
+                                    "y1": 3,
+                                },
+                                {
+                                    "type": "path",
+                                    "xref": "x",
+                                    "yref": "y",
+                                    "x0": 3,
+                                    "y0": 0,
+                                    "x1": 3,
+                                    "y1": 6,
+                                },
+                            ],
+                        },
+                    },
+                ]
+            ]
+        )
 
         # Validate resulting figure object
         go.Figure(fig)
 
-        shapes = fig['layout']['shapes']
+        shapes = fig["layout"]["shapes"]
         assert len(shapes) == 4
-        assert shapes[0]['type'] == 'rect'
-        assert shapes[0]['xref'] == 'x'
-        assert shapes[0]['yref'] == 'y'
+        assert shapes[0]["type"] == "rect"
+        assert shapes[0]["xref"] == "x"
+        assert shapes[0]["yref"] == "y"
 
-        assert shapes[1]['type'] == 'circle'
-        assert shapes[1]['xref'] == 'x'
-        assert shapes[1]['yref'] == 'y'
+        assert shapes[1]["type"] == "circle"
+        assert shapes[1]["xref"] == "x"
+        assert shapes[1]["yref"] == "y"
 
-        assert shapes[2]['type'] == 'line'
-        assert shapes[2]['xref'] == 'x2'
-        assert shapes[2]['yref'] == 'y2'
+        assert shapes[2]["type"] == "line"
+        assert shapes[2]["xref"] == "x2"
+        assert shapes[2]["yref"] == "y2"
 
-        assert shapes[3]['type'] == 'path'
-        assert shapes[3]['xref'] == 'x2'
-        assert shapes[3]['yref'] == 'y2'
+        assert shapes[3]["type"] == "path"
+        assert shapes[3]["xref"] == "x2"
+        assert shapes[3]["yref"] == "y2"
 
     def test_images_stick_with_axis(self):
-        fig = figure_grid([[
-            {'data': [{'type': 'scatter',
-                       'y': [1, 3, 2]}],
-             'layout': {
-                 'width': 400,
-                 'height': 400,
-                 'images': [
-                     {'source': 'One.png',
-                      'xref': 'x', 'yref': 'y',
-                      'x': 0, 'y': 0},
-                     {'source': 'Two.png',
-                      'xref': 'x', 'yref': 'y',
-                      'x': 1, 'y': 0}
-                 ]}
-             }
-            ,
-            {'data': [{'type': 'bar',
-                       'y': [2, 3, 1]}],
-             'layout': {
-                 'width': 400,
-                 'height': 400,
-                 'images': [
-                         {'source': 'Three.png',
-                          'xref': 'x', 'yref': 'y',
-                          'x': 2, 'y': 0},
-                         {'source': 'Four.png',
-                          'xref': 'x', 'yref': 'y',
-                          'x': 3, 'y': 0}
-                 ]}}
-        ]])
+        fig = figure_grid(
+            [
+                [
+                    {
+                        "data": [{"type": "scatter", "y": [1, 3, 2]}],
+                        "layout": {
+                            "width": 400,
+                            "height": 400,
+                            "images": [
+                                {"source": "One.png", "xref": "x", "yref": "y", "x": 0, "y": 0},
+                                {"source": "Two.png", "xref": "x", "yref": "y", "x": 1, "y": 0},
+                            ],
+                        },
+                    },
+                    {
+                        "data": [{"type": "bar", "y": [2, 3, 1]}],
+                        "layout": {
+                            "width": 400,
+                            "height": 400,
+                            "images": [
+                                {"source": "Three.png", "xref": "x", "yref": "y", "x": 2, "y": 0},
+                                {"source": "Four.png", "xref": "x", "yref": "y", "x": 3, "y": 0},
+                            ],
+                        },
+                    },
+                ]
+            ]
+        )
 
         # Validate resulting figure object
         go.Figure(fig)
 
-        images = fig['layout']['images']
+        images = fig["layout"]["images"]
         assert len(images) == 4
-        assert images[0]['source'] == 'One.png'
-        assert images[0]['xref'] == 'x'
-        assert images[0]['yref'] == 'y'
+        assert images[0]["source"] == "One.png"
+        assert images[0]["xref"] == "x"
+        assert images[0]["yref"] == "y"
 
-        assert images[1]['source'] == 'Two.png'
-        assert images[1]['xref'] == 'x'
-        assert images[1]['yref'] == 'y'
+        assert images[1]["source"] == "Two.png"
+        assert images[1]["xref"] == "x"
+        assert images[1]["yref"] == "y"
 
-        assert images[2]['source'] == 'Three.png'
-        assert images[2]['xref'] == 'x2'
-        assert images[2]['yref'] == 'y2'
+        assert images[2]["source"] == "Three.png"
+        assert images[2]["xref"] == "x2"
+        assert images[2]["yref"] == "y2"
 
-        assert images[3]['source'] == 'Four.png'
-        assert images[3]['xref'] == 'x2'
-        assert images[3]['yref'] == 'y2'
+        assert images[3]["source"] == "Four.png"
+        assert images[3]["xref"] == "x2"
+        assert images[3]["yref"] == "y2"
 
     def test_width_height_with_spacing(self):
-        fig = figure_grid([[
-            {'data': [{'type': 'scatter',
-                       'y': [1, 3, 2]}],
-             'layout': {
-                 'width': 380,
-                 'height': 380}}
-            ,
-            {'data': [{'type': 'bar',
-                       'y': [2, 3, 1]}],
-             'layout': {
-                 'width': 380,
-                 'height': 380}}
-        ], [
-            {'data': [{'type': 'scatterpolar',
-                       'theta': [0, 90], 'r': [0.5, 1.0]}],
-             'layout': {
-                 'width': 380,
-                 'height': 1140,
-             }},
-            {'data': [{'type': 'table',
-                       'header': {'values': [['One', 'Two']]}}],
-             'layout': {
-                 'width': 380,
-                 'height': 1140}
-             }
-        ]], column_spacing=40, row_spacing=80,
-            width=400, height=800)
+        fig = figure_grid(
+            [
+                [
+                    {
+                        "data": [{"type": "scatter", "y": [1, 3, 2]}],
+                        "layout": {"width": 380, "height": 380},
+                    },
+                    {
+                        "data": [{"type": "bar", "y": [2, 3, 1]}],
+                        "layout": {"width": 380, "height": 380},
+                    },
+                ],
+                [
+                    {
+                        "data": [{"type": "scatterpolar", "theta": [0, 90], "r": [0.5, 1.0]}],
+                        "layout": {
+                            "width": 380,
+                            "height": 1140,
+                        },
+                    },
+                    {
+                        "data": [{"type": "table", "header": {"values": [["One", "Two"]]}}],
+                        "layout": {"width": 380, "height": 1140},
+                    },
+                ],
+            ],
+            column_spacing=40,
+            row_spacing=80,
+            width=400,
+            height=800,
+        )
 
         # Check domains
         expected_x_domains = [[0, 0.45], [0.55, 1]]
         expected_y_domains = [[0, 0.225], [0.325, 1]]
 
         # scatter
-        assert fig['layout']['xaxis']['domain'] == expected_x_domains[0]
-        assert fig['layout']['yaxis']['domain'] == expected_y_domains[0]
+        assert fig["layout"]["xaxis"]["domain"] == expected_x_domains[0]
+        assert fig["layout"]["yaxis"]["domain"] == expected_y_domains[0]
 
         # bar
-        assert fig['layout']['xaxis2']['domain'] == expected_x_domains[1]
-        assert fig['layout']['yaxis2']['domain'] == expected_y_domains[0]
+        assert fig["layout"]["xaxis2"]["domain"] == expected_x_domains[1]
+        assert fig["layout"]["yaxis2"]["domain"] == expected_y_domains[0]
 
         # scatterpolar
-        assert fig['layout']['polar']['domain']['x'] == expected_x_domains[0]
-        assert fig['layout']['polar']['domain']['y'] == expected_y_domains[1]
+        assert fig["layout"]["polar"]["domain"]["x"] == expected_x_domains[0]
+        assert fig["layout"]["polar"]["domain"]["y"] == expected_y_domains[1]
 
         # table
-        assert fig['data'][3]['domain']['x'] == expected_x_domains[1]
-        assert fig['data'][3]['domain']['y'] == expected_y_domains[1]
+        assert fig["data"][3]["domain"]["x"] == expected_x_domains[1]
+        assert fig["data"][3]["domain"]["y"] == expected_y_domains[1]
 
         # Check width and height
-        assert fig['layout']['width'] == 400
-        assert fig['layout']['height'] == 800
+        assert fig["layout"]["width"] == 400
+        assert fig["layout"]["height"] == 800
 
     def test_axis_matching_offset(self):
-        fig = figure_grid([[
-            {'data': [{'type': 'scatter',
-                       'y': [1, 3, 2],
-                       'xaxis': 'x',
-                       'yaxis': 'y'},
-                      {'type': 'bar',
-                       'y': [2, 3, 1],
-                       'xaxis': 'x2',
-                       'yaxis': 'y2',
-                       }],
-             'layout': {
-                 'width': 400,
-                 'height': 400,
-                 'xaxis2': {'matches': 'x'},
-                 'yaxis2': {'matches': 'y'},
-             }},
-        ], [
-            {'data': [{'type': 'scatter',
-                       'y': [1, 3, 2],
-                       'xaxis': 'x',
-                       'yaxis': 'y',
-                       },
-                      {'type': 'bar',
-                       'y': [2, 3, 1],
-                       'xaxis': 'x2',
-                       'yaxis': 'y2',
-                       }],
-             'layout': {
-                 'width': 400,
-                 'height': 400,
-                 'xaxis2': {'matches': 'y'},
-                 'yaxis2': {'matches': 'x'},
-             }},
-        ]], column_spacing=0, row_spacing=0)
+        fig = figure_grid(
+            [
+                [
+                    {
+                        "data": [
+                            {"type": "scatter", "y": [1, 3, 2], "xaxis": "x", "yaxis": "y"},
+                            {
+                                "type": "bar",
+                                "y": [2, 3, 1],
+                                "xaxis": "x2",
+                                "yaxis": "y2",
+                            },
+                        ],
+                        "layout": {
+                            "width": 400,
+                            "height": 400,
+                            "xaxis2": {"matches": "x"},
+                            "yaxis2": {"matches": "y"},
+                        },
+                    },
+                ],
+                [
+                    {
+                        "data": [
+                            {
+                                "type": "scatter",
+                                "y": [1, 3, 2],
+                                "xaxis": "x",
+                                "yaxis": "y",
+                            },
+                            {
+                                "type": "bar",
+                                "y": [2, 3, 1],
+                                "xaxis": "x2",
+                                "yaxis": "y2",
+                            },
+                        ],
+                        "layout": {
+                            "width": 400,
+                            "height": 400,
+                            "xaxis2": {"matches": "y"},
+                            "yaxis2": {"matches": "x"},
+                        },
+                    },
+                ],
+            ],
+            column_spacing=0,
+            row_spacing=0,
+        )
 
         # Check axes that traces are associated with
-        assert fig['data'][0]['xaxis'] == 'x'
-        assert fig['data'][0]['yaxis'] == 'y'
+        assert fig["data"][0]["xaxis"] == "x"
+        assert fig["data"][0]["yaxis"] == "y"
 
-        assert fig['data'][1]['xaxis'] == 'x2'
-        assert fig['data'][1]['yaxis'] == 'y2'
+        assert fig["data"][1]["xaxis"] == "x2"
+        assert fig["data"][1]["yaxis"] == "y2"
 
-        assert fig['data'][2]['xaxis'] == 'x3'
-        assert fig['data'][2]['yaxis'] == 'y3'
+        assert fig["data"][2]["xaxis"] == "x3"
+        assert fig["data"][2]["yaxis"] == "y3"
 
-        assert fig['data'][3]['xaxis'] == 'x4'
-        assert fig['data'][3]['yaxis'] == 'y4'
+        assert fig["data"][3]["xaxis"] == "x4"
+        assert fig["data"][3]["yaxis"] == "y4"
 
         # Check matches references
-        assert fig['layout']['xaxis'].get('matches', None) is None
-        assert fig['layout']['yaxis'].get('matches', None) is None
-        assert fig['layout']['xaxis2'].get('matches', None) == 'x'
-        assert fig['layout']['yaxis2'].get('matches', None) == 'y'
-        assert fig['layout']['xaxis3'].get('matches', None) is None
-        assert fig['layout']['yaxis3'].get('matches', None) is None
-        assert fig['layout']['xaxis4'].get('matches', None) == 'y3'
-        assert fig['layout']['yaxis4'].get('matches', None) == 'x3'
+        assert fig["layout"]["xaxis"].get("matches", None) is None
+        assert fig["layout"]["yaxis"].get("matches", None) is None
+        assert fig["layout"]["xaxis2"].get("matches", None) == "x"
+        assert fig["layout"]["yaxis2"].get("matches", None) == "y"
+        assert fig["layout"]["xaxis3"].get("matches", None) is None
+        assert fig["layout"]["yaxis3"].get("matches", None) is None
+        assert fig["layout"]["xaxis4"].get("matches", None) == "y3"
+        assert fig["layout"]["yaxis4"].get("matches", None) == "x3"

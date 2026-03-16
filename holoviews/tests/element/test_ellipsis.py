@@ -1,6 +1,7 @@
 """
 Unit tests of Ellipsis (...) in __getitem__
 """
+
 import numpy as np
 import pytest
 
@@ -9,36 +10,33 @@ from holoviews.testing import assert_data_equal
 
 
 class TestEllipsisCharts:
-
     def test_curve_ellipsis_slice_x(self):
-        sliced = hv.Curve([(i,2*i) for i in range(10)])[2:7,...]
-        assert sliced.range('x') == (2,6)
+        sliced = hv.Curve([(i, 2 * i) for i in range(10)])[2:7, ...]
+        assert sliced.range("x") == (2, 6)
 
     def test_curve_ellipsis_slice_y(self):
-        sliced = hv.Curve([(i,2*i) for i in range(10)])[..., 3:9]
-        assert sliced.range('y') == (4,8)
+        sliced = hv.Curve([(i, 2 * i) for i in range(10)])[..., 3:9]
+        assert sliced.range("y") == (4, 8)
 
     def test_points_ellipsis_slice_x(self):
-         sliced = hv.Points([(i,2*i) for i in range(10)])[2:7,...]
-         assert sliced.range('x') == (2,6)
+        sliced = hv.Points([(i, 2 * i) for i in range(10)])[2:7, ...]
+        assert sliced.range("x") == (2, 6)
 
     def test_scatter_ellipsis_value(self):
-        hv.Scatter(range(10))[...,'y']
+        hv.Scatter(range(10))[..., "y"]
 
     def test_scatter_ellipsis_value_missing(self):
-        try:
-            hv.Scatter(range(10))[...,'Non-existent']
-        except Exception as e:
-            if str(e) != "'Non-existent' is not an available value dimension":
-                raise AssertionError("Incorrect exception raised.")
+        msg = "'Non-existent' is not an available value dimension"
+        with pytest.raises(IndexError, match=msg):
+            hv.Scatter(range(10))[..., "Non-existent"]
 
     def test_points_ellipsis_slice_y(self):
-        sliced = hv.Points([(i,2*i) for i in range(10)])[..., 3:9]
-        assert sliced.range('y') == (4,8)
+        sliced = hv.Points([(i, 2 * i) for i in range(10)])[..., 3:9]
+        assert sliced.range("y") == (4, 8)
 
     def test_histogram_ellipsis_slice_value(self):
         frequencies, edges = np.histogram(range(20), 20)
-        sliced = hv.Histogram((frequencies, edges))[..., 'Frequency']
+        sliced = hv.Histogram((frequencies, edges))[..., "Frequency"]
         assert len(sliced.dimension_values(0)) == 20
 
     def test_histogram_ellipsis_slice_range(self):
@@ -46,98 +44,98 @@ class TestEllipsisCharts:
         sliced = hv.Histogram((edges, frequencies))[0:5, ...]
         assert len(sliced.dimension_values(0)) == 5
 
-
     def test_histogram_ellipsis_slice_value_missing(self):
         frequencies, edges = np.histogram(range(20), 20)
         with pytest.raises(IndexError):
-            hv.Histogram((frequencies, edges))[..., 'Non-existent']
+            hv.Histogram((frequencies, edges))[..., "Non-existent"]
 
 
 class TestEllipsisTable:
-
     def setup_method(self):
-        keys =   [('M',10), ('M',16), ('F',12)]
+        keys = [("M", 10), ("M", 16), ("F", 12)]
         values = [(15, 0.8), (18, 0.6), (10, 0.8)]
-        self.table =hv.Table(zip(keys,values, strict=True),
-                             kdims = ['Gender', 'Age'],
-                             vdims=['Weight', 'Height'])
+        self.table = hv.Table(
+            zip(keys, values, strict=True), kdims=["Gender", "Age"], vdims=["Weight", "Height"]
+        )
 
     def test_table_ellipsis_slice_value_weight(self):
-        sliced = self.table[..., 'Weight']
-        assert sliced.vdims==['Weight']
+        sliced = self.table[..., "Weight"]
+        assert sliced.vdims == ["Weight"]
 
     def test_table_ellipsis_slice_value_height(self):
-        sliced = self.table[..., 'Height']
-        assert sliced.vdims==['Height']
+        sliced = self.table[..., "Height"]
+        assert sliced.vdims == ["Height"]
 
     def test_table_ellipsis_slice_key_gender(self):
-        sliced = self.table['M',...]
-        if not all(el=='M' for el in sliced.dimension_values('Gender')):
+        sliced = self.table["M", ...]
+        if not all(el == "M" for el in sliced.dimension_values("Gender")):
             raise AssertionError("Table key slicing on 'Gender' failed.")
 
 
-
 class TestEllipsisRaster:
-
     def test_raster_ellipsis_slice_value(self):
-        data = np.random.rand(10,10)
-        sliced = hv.Raster(data)[...,'z']
+        data = np.random.rand(10, 10)
+        sliced = hv.Raster(data)[..., "z"]
         assert_data_equal(sliced.data, data)
 
     def test_raster_ellipsis_slice_value_missing(self):
-        data = np.random.rand(10,10)
-        try:
-            hv.Raster(data)[...,'Non-existent']
-        except Exception as e:
-            if "\'z\' is the only selectable value dimension" not in str(e):
-                raise AssertionError("Unexpected exception.")
+        data = np.random.rand(10, 10)
+        msg = r"'z' is the only selectable value dimension"
+        with pytest.raises(KeyError, match=msg):
+            hv.Raster(data)[..., "Non-existent"]
 
     def test_image_ellipsis_slice_value(self):
-        data = np.random.rand(10,10)
-        sliced = hv.Image(data)[...,'z']
+        data = np.random.rand(10, 10)
+        sliced = hv.Image(data)[..., "z"]
         assert_data_equal(sliced.data, data)
 
     def test_image_ellipsis_slice_value_missing(self):
-        data = np.random.rand(10,10)
-        try:
-            hv.Image(data)[...,'Non-existent']
-        except Exception as e:
-            if str(e) != "'Non-existent' is not an available value dimension":
-                raise AssertionError("Unexpected exception.")
+        data = np.random.rand(10, 10)
+        msg = "'Non-existent' is not an available value dimension"
+        with pytest.raises(IndexError, match=msg):
+            hv.Image(data)[..., "Non-existent"]
 
     def test_rgb_ellipsis_slice_value(self):
-        data = np.random.rand(10,10,3)
-        sliced = hv.RGB(data)[:,:,'R']
-        assert_data_equal(sliced.data, data[:,:,0])
+        data = np.random.rand(10, 10, 3)
+        sliced = hv.RGB(data)[:, :, "R"]
+        assert_data_equal(sliced.data, data[:, :, 0])
 
     def test_rgb_ellipsis_slice_value_missing(self):
-        rgb = hv.RGB(np.random.rand(10,10,3))
-        try:
-            rgb[...,'Non-existent']
-        except Exception as e:
-            if str(e) != repr("'Non-existent' is not an available value dimension"):
-                raise AssertionError("Incorrect exception raised.")
+        rgb = hv.RGB(np.random.rand(10, 10, 3))
+        msg = "'Non-existent' is not an available value dimension"
+        with pytest.raises(IndexError, match=msg):
+            rgb[..., "Non-existent"]
 
+    def test_rgb_ellipsis_slice_multiple_ellipsis(self):
+        rgb = hv.RGB(np.random.rand(10, 10, 3))
+        msg = "Only a single ellipsis is allowed"
+        with pytest.raises(ValueError, match=msg):
+            rgb[..., ..., "R"]
+
+    def test_rgb_ellipsis_slice_alpha_channel(self):
+        rgba = np.random.rand(10, 10, 4)
+        sliced = hv.RGB(rgba)[..., "A"]
+        assert_data_equal(sliced.data, rgba[:, :, 3])
+
+    def test_rgb_ellipsis_slice_alpha_channel_missing(self):
+        rgba = hv.RGB(np.random.rand(10, 10, 4))
+        msg = "'Non-existent' is not an available value dimension"
+        with pytest.raises(IndexError, match=msg):
+            rgba[..., "Non-existent"]
 
 
 class TestEllipsisDeepIndexing:
-
     def test_deep_ellipsis_curve_slicing_1(self):
-        hmap = hv.HoloMap({i:hv.Curve([(j,j) for j in range(10)])
-                   for i in range(10)})
-        sliced = hmap[2:5,...]
+        hmap = hv.HoloMap({i: hv.Curve([(j, j) for j in range(10)]) for i in range(10)})
+        sliced = hmap[2:5, ...]
         assert sliced.keys() == [2, 3, 4]
 
-
     def test_deep_ellipsis_curve_slicing_2(self):
-        hmap = hv.HoloMap({i:hv.Curve([(j,j) for j in range(10)])
-                   for i in range(10)})
-        sliced = hmap[2:5,1:8,...]
-        assert sliced.last.range('x') == (1,7)
-
+        hmap = hv.HoloMap({i: hv.Curve([(j, j) for j in range(10)]) for i in range(10)})
+        sliced = hmap[2:5, 1:8, ...]
+        assert sliced.last.range("x") == (1, 7)
 
     def test_deep_ellipsis_curve_slicing_3(self):
-        hmap = hv.HoloMap({i:hv.Curve([(j,2*j) for j in range(10)])
-                   for i in range(10)})
-        sliced = hmap[...,2:5]
-        assert sliced.last.range('y') == (2, 4)
+        hmap = hv.HoloMap({i: hv.Curve([(j, 2 * j) for j in range(10)]) for i in range(10)})
+        sliced = hmap[..., 2:5]
+        assert sliced.last.range("y") == (2, 4)

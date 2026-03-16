@@ -17,30 +17,25 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 1a1f58ba4c35362efe8fed2279715a905baee93d # frozen: v0.14.8
+    rev: b969e2851312ca2b24bbec879ba4954341d1bd12 # frozen: v0.15.5
     hooks:
       - id: ruff-check
+      - id: ruff-format
   - repo: https://github.com/hoxbro/clean_notebook
-    rev: 9f524ec87ccbde34b35dbab058b45024cdb41887 # frozen: v0.1.17
+    rev: 2e6f506fab3cdfbe16bc18fd0d24e828db773b74 # frozen: v0.2.1
     hooks:
       - id: clean-notebook
         args: [--strip-trailing-newlines]
   - repo: https://github.com/crate-ci/typos
-    rev: 24c5854966d17070a3b25e2c2dfc63ec5bc94cf4 # frozen: v1.40.0
+    rev: 631208b7aac2daa8b707f55e7331f9112b0e062d # frozen: v1.44.0
     hooks:
       - id: typos
-  - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: 3a6eb0fadf60b3cccfd80bad9dbb6fae7e47b316 # frozen: v1.10.0
-    hooks:
-      - id: rst-backticks
-      - id: rst-directive-colons
-      - id: rst-inline-touching-normal
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: 745eface02aef23e168a8afb6b5737818efbea95 # frozen: v0.11.0.1
     hooks:
       - id: shellcheck
   - repo: https://github.com/hoxbro/prettier-pre-commit
-    rev: bae77de89db2ee6b2052f9647b14246e9ee19cd1 # frozen: v3.7.4
+    rev: 86ff8f664c20f581d71c90a6ea0073c1bcafe1e5 # frozen: v3.8.1
     hooks:
       - id: prettier
         exclude: conda.recipe/meta.yaml

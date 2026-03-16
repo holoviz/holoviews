@@ -2,43 +2,45 @@
 Unit tests of the StoreOptions class used to control custom options on
 Store as used by the %opts magic.
 """
+
 import numpy as np
 
-from holoviews import Curve, HoloMap, Image, Overlay
-from holoviews.core.options import Store, StoreOptions
+import holoviews as hv
 from holoviews.plotting import bokeh  # noqa: F401
 
 from ..utils import optional_dependencies
 
 mpl, mpl_skip = optional_dependencies("matplotlib")
 if mpl:
-    import holoviews.plotting.mpl  # noqa: F401
+    import holoviews.plotting.mpl
 
 
 @mpl_skip
 class TestStoreOptionsMerge:
-
     def setup_method(self):
-        Store.current_backend = 'matplotlib'
-        self.expected = {'Image': {'plot': {'fig_size': 150},
-                                   'style': {'cmap': 'Blues'}}}
+        hv.Store.current_backend = "matplotlib"
+        self.expected = {"Image": {"plot": {"fig_size": 150}, "style": {"cmap": "Blues"}}}
 
     def test_full_spec_format(self):
-        out = StoreOptions.merge_options(['plot', 'style'],
-               options={ 'Image':{'plot':dict(fig_size=150),
-                                  'style': dict(cmap='Blues')}})
+        out = hv.StoreOptions.merge_options(
+            ["plot", "style"],
+            options={"Image": {"plot": dict(fig_size=150), "style": dict(cmap="Blues")}},
+        )
         assert out == self.expected
 
     def test_options_partitioned_format(self):
-        out = StoreOptions.merge_options(['plot', 'style'],
-            options = dict(plot={'Image':dict(fig_size=150)},
-                           style={'Image':dict(cmap='Blues')}))
+        out = hv.StoreOptions.merge_options(
+            ["plot", "style"],
+            options=dict(plot={"Image": dict(fig_size=150)}, style={"Image": dict(cmap="Blues")}),
+        )
         assert out == self.expected
 
     def test_partitioned_format(self):
-        out = StoreOptions.merge_options(['plot', 'style'],
-            plot={'Image':dict(fig_size=150)},
-            style={'Image':dict(cmap='Blues')})
+        out = hv.StoreOptions.merge_options(
+            ["plot", "style"],
+            plot={"Image": dict(fig_size=150)},
+            style={"Image": dict(cmap="Blues")},
+        )
         assert out == self.expected
 
 
@@ -50,62 +52,61 @@ class TestStoreOptsMethod:
     """
 
     def setup_method(self):
-        Store.current_backend = 'matplotlib'
+        hv.Store.current_backend = "matplotlib"
 
     def test_overlay_options_partitioned(self):
         """
         The new style introduced in #73
         """
-        data = [zip(range(10),range(10), strict=True), zip(range(5),range(5), strict=True)]
-        o = Overlay([Curve(c) for c in data]).opts(
-            {'Curve.Curve': {'show_grid': False, 'color':'k'}}
+        data = [zip(range(10), range(10), strict=True), zip(range(5), range(5), strict=True)]
+        o = hv.Overlay([hv.Curve(c) for c in data]).opts(
+            {"Curve.Curve": {"show_grid": False, "color": "k"}}
         )
 
-        assert not Store.lookup_options('matplotlib', o.Curve.I, 'plot').kwargs['show_grid']
-        assert not Store.lookup_options('matplotlib', o.Curve.II, 'plot').kwargs['show_grid']
-        assert Store.lookup_options('matplotlib', o.Curve.I, 'style').kwargs['color'] == 'k'
-        assert Store.lookup_options('matplotlib', o.Curve.II, 'style').kwargs['color'] == 'k'
+        assert not hv.Store.lookup_options("matplotlib", o.Curve.I, "plot").kwargs["show_grid"]
+        assert not hv.Store.lookup_options("matplotlib", o.Curve.II, "plot").kwargs["show_grid"]
+        assert hv.Store.lookup_options("matplotlib", o.Curve.I, "style").kwargs["color"] == "k"
+        assert hv.Store.lookup_options("matplotlib", o.Curve.II, "style").kwargs["color"] == "k"
 
     def test_overlay_options_complete(self):
         """
         Complete specification style.
         """
-        data = [zip(range(10),range(10), strict=True), zip(range(5),range(5), strict=True)]
-        o = Overlay([Curve(c) for c in data]).opts(
-            {'Curve.Curve': {'show_grid':True, 'color':'b'}})
+        data = [zip(range(10), range(10), strict=True), zip(range(5), range(5), strict=True)]
+        o = hv.Overlay([hv.Curve(c) for c in data]).opts(
+            {"Curve.Curve": {"show_grid": True, "color": "b"}}
+        )
 
-        assert Store.lookup_options('matplotlib', o.Curve.I, 'plot').kwargs['show_grid']
-        assert Store.lookup_options('matplotlib', o.Curve.II, 'plot').kwargs['show_grid']
-        assert Store.lookup_options('matplotlib', o.Curve.I, 'style').kwargs['color'] == 'b'
-        assert Store.lookup_options('matplotlib', o.Curve.II, 'style').kwargs['color'] == 'b'
+        assert hv.Store.lookup_options("matplotlib", o.Curve.I, "plot").kwargs["show_grid"]
+        assert hv.Store.lookup_options("matplotlib", o.Curve.II, "plot").kwargs["show_grid"]
+        assert hv.Store.lookup_options("matplotlib", o.Curve.I, "style").kwargs["color"] == "b"
+        assert hv.Store.lookup_options("matplotlib", o.Curve.II, "style").kwargs["color"] == "b"
 
     def test_layout_options_short_style(self):
         """
         Short __call__ syntax.
         """
-        im = Image(np.random.rand(10,10))
-        layout = (im + im).opts({'Layout':dict({'hspace':5})})
-        assert Store.lookup_options('matplotlib', layout, 'plot').kwargs['hspace'] == 5
+        im = hv.Image(np.random.rand(10, 10))
+        layout = (im + im).opts({"Layout": dict({"hspace": 5})})
+        assert hv.Store.lookup_options("matplotlib", layout, "plot").kwargs["hspace"] == 5
 
     def test_layout_options_long_style(self):
         """
         The old (longer) syntax in __call__
         """
-        im = Image(np.random.rand(10,10))
-        layout = (im + im).opts({'Layout':dict({'hspace':10})})
-        assert Store.lookup_options('matplotlib',
-            layout, 'plot').kwargs['hspace'] == 10
+        im = hv.Image(np.random.rand(10, 10))
+        layout = (im + im).opts({"Layout": dict({"hspace": 10})})
+        assert hv.Store.lookup_options("matplotlib", layout, "plot").kwargs["hspace"] == 10
 
     def test_holomap_opts(self):
-        hmap = HoloMap({0: Image(np.random.rand(10,10))}).opts(xaxis=None)
-        opts = Store.lookup_options('matplotlib', hmap.last, 'plot')
-        assert opts.kwargs['xaxis'] is None
+        hmap = hv.HoloMap({0: hv.Image(np.random.rand(10, 10))}).opts(xaxis=None)
+        opts = hv.Store.lookup_options("matplotlib", hmap.last, "plot")
+        assert opts.kwargs["xaxis"] is None
 
     def test_holomap_options(self):
-        hmap = HoloMap({0: Image(np.random.rand(10,10))}).options(xaxis=None)
-        opts = Store.lookup_options('matplotlib', hmap.last, 'plot')
-        assert opts.kwargs['xaxis'] is None
-
+        hmap = hv.HoloMap({0: hv.Image(np.random.rand(10, 10))}).options(xaxis=None)
+        opts = hv.Store.lookup_options("matplotlib", hmap.last, "plot")
+        assert opts.kwargs["xaxis"] is None
 
     def test_holomap_options_empty_no_exception(self):
-        HoloMap({0: Image(np.random.rand(10,10))}).options()
+        hv.HoloMap({0: hv.Image(np.random.rand(10, 10))}).options()

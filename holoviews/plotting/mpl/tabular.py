@@ -15,32 +15,49 @@ class TablePlot(ElementPlot):
 
     """
 
-    border = param.Number(default=0.05, bounds=(0.0, 0.5), doc="""
+    border = param.Number(
+        default=0.05,
+        bounds=(0.0, 0.5),
+        doc="""
         The fraction of the plot that should be empty around the
-        edges.""")
+        edges.""",
+    )
 
-    float_precision = param.Integer(default=3, doc="""
+    float_precision = param.Integer(
+        default=3,
+        doc="""
         The floating point precision to use when printing float
-        numeric data types.""")
+        numeric data types.""",
+    )
 
-    max_value_len = param.Integer(default=20, doc="""
+    max_value_len = param.Integer(
+        default=20,
+        doc="""
         The maximum allowable string length of a value shown in any
         table cell. Any strings longer than this length will be
-        truncated.""")
+        truncated.""",
+    )
 
-    max_font_size = param.Integer(default=12, doc="""
+    max_font_size = param.Integer(
+        default=12,
+        doc="""
         The largest allowable font size for the text in each table
-        cell.""")
+        cell.""",
+    )
 
-    max_rows = param.Integer(default=15, doc="""
+    max_rows = param.Integer(
+        default=15,
+        doc="""
         The maximum number of Table rows before the table is
-        summarized.""")
+        summarized.""",
+    )
 
-    font_types = param.Dict(default={'heading': FontProperties(weight='bold',
-                            family='DejaVu Sans')}, doc="""
-        The font style used for heading labels used for emphasis.""")
+    font_types = param.Dict(
+        default={"heading": FontProperties(weight="bold", family="DejaVu Sans")},
+        doc="The font style used for heading labels used for emphasis.",
+    )
 
-    style_opts = ['alpha', 'sketch_params']
+    style_opts = ["alpha", "sketch_params"]
 
     # Disable axes handling for Table plots
     _has_axes = False
@@ -64,7 +81,7 @@ class TablePlot(ElementPlot):
     def _update_cell_widths(self, element, cell_widths):
         # Mapping from the cell coordinates to the dictionary key.
         summarize = element.rows > self.max_rows
-        half_rows = self.max_rows//2
+        half_rows = self.max_rows // 2
         rows = min([self.max_rows, element.rows])
         for row in range(rows):
             adjusted_row = row
@@ -73,33 +90,33 @@ class TablePlot(ElementPlot):
                     cell_text = "..."
                 else:
                     if summarize and row > half_rows:
-                        adjusted_row = (element.rows - self.max_rows + row)
+                        adjusted_row = element.rows - self.max_rows + row
                     cell_text = element.pprint_cell(adjusted_row, col)
                     if len(cell_text) > self.max_value_len:
-                        cell_text = cell_text[:(self.max_value_len-3)]+'...'
+                        cell_text = cell_text[: (self.max_value_len - 3)] + "..."
                 cell_widths[col] = max(len(cell_text) + 2, cell_widths[col])
 
     def _cell_value(self, element, row, col):
         summarize = element.rows > self.max_rows
-        half_rows = self.max_rows//2
+        half_rows = self.max_rows // 2
         if summarize and row == half_rows:
             cell_text = "..."
         else:
             if summarize and row > half_rows:
-                row = (element.rows - self.max_rows + row)
+                row = element.rows - self.max_rows + row
             cell_text = element.pprint_cell(row, col)
             if len(cell_text) > self.max_value_len:
-                cell_text = cell_text[:(self.max_value_len-3)]+'...'
+                cell_text = cell_text[: (self.max_value_len - 3)] + "..."
         return cell_text
 
     @mpl_rc_context
     def initialize_plot(self, ranges=None):
 
         # Render table
-        axes = self.handles['axis']
+        axes = self.handles["axis"]
         element = self.hmap.last
         table = self._render_table(element, axes)
-        self.handles['artist'] = table
+        self.handles["artist"] = table
 
         # Add to axes
         axes.set_axis_off()
@@ -113,33 +130,33 @@ class TablePlot(ElementPlot):
         else:
             cell_widths = self.cell_widths
 
-        size_factor = (1.0 - 2*self.border)
-        table = mpl_Table(axes, bbox=[self.border, self.border,
-                                      size_factor, size_factor])
+        size_factor = 1.0 - 2 * self.border
+        table = mpl_Table(axes, bbox=[self.border, self.border, size_factor, size_factor])
         total_width = sum(cell_widths.values())
         height = size_factor / element.rows
 
         summarize = element.rows > self.max_rows
-        half_rows = self.max_rows/2
+        half_rows = self.max_rows / 2
         rows = min([self.max_rows, element.rows])
         for row in range(rows):
             adjusted_row = row
             for col in range(element.cols):
                 if summarize and row > half_rows:
-                    adjusted_row = (element.rows - self.max_rows + row)
+                    adjusted_row = element.rows - self.max_rows + row
                 cell_value = self._cell_value(element, row, col)
-                cellfont = self.font_types.get(element.cell_type(adjusted_row,col), None)
+                cellfont = self.font_types.get(element.cell_type(adjusted_row, col), None)
                 width = cell_widths[col] / float(total_width)
                 font_kwargs = dict(fontproperties=cellfont) if cellfont else {}
-                table.add_cell(row, col, width, height, text=cell_value,  loc='center',
-                               **font_kwargs)
+                table.add_cell(
+                    row, col, width, height, text=cell_value, loc="center", **font_kwargs
+                )
         table.set_fontsize(self.max_font_size)
         table.auto_set_font_size(True)
         return table
 
     def update_handles(self, key, axes, element, ranges, style):
         table = self._render_table(element, axes)
-        self.handles['artist'].remove()
+        self.handles["artist"].remove()
         axes.add_table(table)
-        self.handles['artist'] = table
+        self.handles["artist"] = table
         return {}

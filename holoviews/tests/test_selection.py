@@ -3,10 +3,7 @@ import panel as pn
 import pytest
 
 import holoviews as hv
-from holoviews.core.options import Cycle, Store
-from holoviews.element import ErrorBars, Points, Rectangles, Table, VSpan
 from holoviews.plotting.util import linear_gradient
-from holoviews.selection import link_selections
 from holoviews.streams import SelectionXY
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 
@@ -21,17 +18,18 @@ unselected_color = "#ff0000"
 box_region_color = linear_gradient(unselected_color, "#000000", 9)[3]
 hist_region_color = linear_gradient(unselected_color, "#000000", 9)[1]
 
-class TestLinkSelections:
 
+class TestLinkSelections:
     __test__ = False
 
     def setup_method(self):
         self.data = pd.DataFrame(
-            {'x': [1, 2, 3],
-             'y': [0, 3, 2],
-             'e': [1, 1.5, 2],
+            {
+                "x": [1, 2, 3],
+                "y": [0, 3, 2],
+                "e": [1, 1.5, 2],
             },
-            columns=['x', 'y', 'e']
+            columns=["x", "y", "e"],
         )
 
     def element_color(self, element):
@@ -47,8 +45,7 @@ class TestLinkSelections:
     @staticmethod
     def get_value_with_key_type(d, hvtype):
         for k, v in d.items():
-            if isinstance(k, hvtype) or \
-                    isinstance(k, hv.DynamicMap) and k.type == hvtype:
+            if isinstance(k, hvtype) or isinstance(k, hv.DynamicMap) and k.type == hvtype:
                 return v
 
         raise KeyError(f"No key with type {hvtype}")
@@ -58,24 +55,27 @@ class TestLinkSelections:
         if lnk_sel.selected_color is not None:
             expected_color = lnk_sel.selected_color
         else:
-            expected_color = element.opts.get(group='style')[0].get('color')
+            expected_color = element.opts.get(group="style")[0].get("color")
         return expected_color
 
     def check_overlay_points_like(self, overlay_points, lnk_sel, data):
-        assert self.element_color(overlay_points) == self.expected_selection_color(overlay_points, lnk_sel)
+        assert self.element_color(overlay_points) == self.expected_selection_color(
+            overlay_points, lnk_sel
+        )
 
         assert_data_equal(overlay_points.data, data)
 
     @pytest.mark.parametrize("dynamic", [True, False])
     @pytest.mark.parametrize("show_regions", [True, False])
     def test_points_selection(self, dynamic, show_regions):
-        points = Points(self.data)
+        points = hv.Points(self.data)
         if dynamic:
             # Convert points to DynamicMap that returns the element
             points = hv.util.Dynamic(points)
 
-        lnk_sel = link_selections.instance(show_regions=show_regions,
-                                           unselected_color='#ff0000')
+        lnk_sel = hv.link_selections.instance(
+            show_regions=show_regions, unselected_color="#ff0000"
+        )
         linked = lnk_sel(points)
         current_obj = linked[()]
 
@@ -90,9 +90,11 @@ class TestLinkSelections:
         self.check_overlay_points_like(selected, lnk_sel, self.data)
 
         # Perform selection of second and third point
-        selectionxy = TestLinkSelections.get_value_with_key_type(
-            lnk_sel._selection_expr_streams, hv.Points
-        ).input_streams[0].input_stream.input_streams[0]
+        selectionxy = (
+            TestLinkSelections.get_value_with_key_type(lnk_sel._selection_expr_streams, hv.Points)
+            .input_streams[0]
+            .input_stream.input_streams[0]
+        )
 
         assert isinstance(selectionxy, hv.streams.SelectionXY)
         selectionxy.event(bounds=(0, 1, 5, 5))
@@ -105,65 +107,56 @@ class TestLinkSelections:
         self.check_overlay_points_like(selected, lnk_sel, self.data.iloc[1:])
 
         if show_regions:
-            assert_element_equal(region, Rectangles([(0, 1, 5, 5)]))
+            assert_element_equal(region, hv.Rectangles([(0, 1, 5, 5)]))
         else:
-            assert_element_equal(region, Rectangles([]))
+            assert_element_equal(region, hv.Rectangles([]))
 
     def test_layout_selection_points_table(self):
-        points = Points(self.data)
-        table = Table(self.data)
-        lnk_sel = link_selections.instance(
-            selected_color="#aa0000", unselected_color='#ff0000'
-        )
+        points = hv.Points(self.data)
+        table = hv.Table(self.data)
+        lnk_sel = hv.link_selections.instance(selected_color="#aa0000", unselected_color="#ff0000")
         linked = lnk_sel(points + table)
 
         current_obj = linked[()]
 
         # Check initial base points
-        self.check_base_points_like(
-            current_obj[0][()].Points.I,
-            lnk_sel
-        )
+        self.check_base_points_like(current_obj[0][()].Points.I, lnk_sel)
 
         # Check initial selection points
-        self.check_overlay_points_like(current_obj[0][()].Points.II, lnk_sel,
-                                        self.data)
+        self.check_overlay_points_like(current_obj[0][()].Points.II, lnk_sel, self.data)
 
         # Check initial table
         assert self.element_color(current_obj[1][()]) == [lnk_sel.selected_color] * len(self.data)
 
         # Select first and third point
-        selectionxy = TestLinkSelections.get_value_with_key_type(
-            lnk_sel._selection_expr_streams, hv.Points
-        ).input_streams[0].input_stream.input_streams[0]
+        selectionxy = (
+            TestLinkSelections.get_value_with_key_type(lnk_sel._selection_expr_streams, hv.Points)
+            .input_streams[0]
+            .input_stream.input_streams[0]
+        )
 
         selectionxy.event(bounds=(0, 0, 4, 2))
         current_obj = linked[()]
 
         # Check base points
-        self.check_base_points_like(
-            current_obj[0][()].Points.I,
-            lnk_sel
-        )
+        self.check_base_points_like(current_obj[0][()].Points.I, lnk_sel)
 
         # Check selection points
-        self.check_overlay_points_like(current_obj[0][()].Points.II, lnk_sel,
-                                        self.data.iloc[[0, 2]])
+        self.check_overlay_points_like(
+            current_obj[0][()].Points.II, lnk_sel, self.data.iloc[[0, 2]]
+        )
 
         # Check selected table
         assert self.element_color(current_obj[1][()]) == [
-                lnk_sel.selected_color,
-                lnk_sel.unselected_color,
-                lnk_sel.selected_color,
-            ]
+            lnk_sel.selected_color,
+            lnk_sel.unselected_color,
+            lnk_sel.selected_color,
+        ]
 
     def test_select_expr_show_regions(self):
-        lnk_sel = link_selections.instance()
+        lnk_sel = hv.link_selections.instance()
         assert lnk_sel.show_regions
-        se = (
-            (hv.dim('x') >= 0) & (hv.dim('x') <= 1) &
-            (hv.dim('y') >= 0) & (hv.dim('y') <= 1)
-        )
+        se = (hv.dim("x") >= 0) & (hv.dim("x") <= 1) & (hv.dim("y") >= 0) & (hv.dim("y") <= 1)
         lnk_sel.selection_expr = se
         assert not lnk_sel.show_regions
         lnk_sel.selection_expr = None
@@ -173,9 +166,9 @@ class TestLinkSelections:
 
     @pytest.mark.parametrize("dynamic", [True, False])
     def test_overlay_points_errorbars(self, dynamic):
-        points = Points(self.data)
-        error = ErrorBars(self.data, kdims='x', vdims=['y', 'e'])
-        lnk_sel = link_selections.instance(unselected_color='#ff0000')
+        points = hv.Points(self.data)
+        error = hv.ErrorBars(self.data, kdims="x", vdims=["y", "e"])
+        lnk_sel = hv.link_selections.instance(unselected_color="#ff0000")
         overlay = points * error
 
         if dynamic:
@@ -193,9 +186,11 @@ class TestLinkSelections:
         self.check_overlay_points_like(current_obj.ErrorBars.II, lnk_sel, self.data)
 
         # Select first and third point
-        selectionxy = TestLinkSelections.get_value_with_key_type(
-            lnk_sel._selection_expr_streams, hv.Points
-        ).input_streams[0].input_stream.input_streams[0]
+        selectionxy = (
+            TestLinkSelections.get_value_with_key_type(lnk_sel._selection_expr_streams, hv.Points)
+            .input_streams[0]
+            .input_stream.input_streams[0]
+        )
         selectionxy.event(bounds=(0, 0, 4, 2))
 
         current_obj = linked[()]
@@ -205,17 +200,15 @@ class TestLinkSelections:
         self.check_base_points_like(current_obj.ErrorBars.I, lnk_sel)
 
         # Check selected layers
-        self.check_overlay_points_like(current_obj.Points.II, lnk_sel,
-                                        self.data.iloc[[0, 2]])
-        self.check_overlay_points_like(current_obj.ErrorBars.II, lnk_sel,
-                                        self.data.iloc[[0, 2]])
+        self.check_overlay_points_like(current_obj.Points.II, lnk_sel, self.data.iloc[[0, 2]])
+        self.check_overlay_points_like(current_obj.ErrorBars.II, lnk_sel, self.data.iloc[[0, 2]])
 
     @ds_skip
     def test_datashade_selection(self):
-        points = Points(self.data)
+        points = hv.Points(self.data)
         layout = points + dynspread(datashade(points))
 
-        lnk_sel = link_selections.instance(unselected_color='#ff0000')
+        lnk_sel = hv.link_selections.instance(unselected_color="#ff0000")
         linked = lnk_sel(layout)
         current_obj = linked[()]
 
@@ -228,23 +221,21 @@ class TestLinkSelections:
         # Check RGB base layer
         assert_element_equal(
             current_obj[1][()].RGB.I,
-            dynspread(
-                datashade(points, cmap=lnk_sel.unselected_cmap, alpha=255)
-            )[()]
+            dynspread(datashade(points, cmap=lnk_sel.unselected_cmap, alpha=255))[()],
         )
 
         # Check RGB selection layer
         assert_element_equal(
             current_obj[1][()].RGB.II,
-            dynspread(
-                datashade(points, cmap=lnk_sel.selected_cmap, alpha=255)
-            )[()]
+            dynspread(datashade(points, cmap=lnk_sel.selected_cmap, alpha=255))[()],
         )
 
         # Perform selection of second and third point
-        selectionxy = TestLinkSelections.get_value_with_key_type(
-            lnk_sel._selection_expr_streams, hv.Points
-        ).input_streams[0].input_stream.input_streams[0]
+        selectionxy = (
+            TestLinkSelections.get_value_with_key_type(lnk_sel._selection_expr_streams, hv.Points)
+            .input_streams[0]
+            .input_stream.input_streams[0]
+        )
 
         assert isinstance(selectionxy, SelectionXY)
         selectionxy.event(bounds=(0, 1, 5, 5))
@@ -254,33 +245,26 @@ class TestLinkSelections:
         self.check_base_points_like(current_obj[0][()].Points.I, lnk_sel)
 
         # Check points selection layer
-        self.check_overlay_points_like(current_obj[0][()].Points.II, lnk_sel,
-                                        self.data.iloc[1:])
+        self.check_overlay_points_like(current_obj[0][()].Points.II, lnk_sel, self.data.iloc[1:])
 
         # Check that base RGB layer is unchanged
         assert_element_equal(
             current_obj[1][()].RGB.I,
-            dynspread(
-                datashade(points, cmap=lnk_sel.unselected_cmap, alpha=255)
-            )[()]
+            dynspread(datashade(points, cmap=lnk_sel.unselected_cmap, alpha=255))[()],
         )
 
         # Check selection RGB layer
         assert_element_equal(
             current_obj[1][()].RGB.II,
-            dynspread(
-                datashade(
-                    points.iloc[1:], cmap=lnk_sel.selected_cmap, alpha=255
-                )
-            )[()]
+            dynspread(datashade(points.iloc[1:], cmap=lnk_sel.selected_cmap, alpha=255))[()],
         )
 
     @ds_skip
     def test_datashade_in_overlay_selection(self):
-        points = Points(self.data)
+        points = hv.Points(self.data)
         layout = points * dynspread(datashade(points))
 
-        lnk_sel = link_selections.instance(unselected_color='#ff0000')
+        lnk_sel = hv.link_selections.instance(unselected_color="#ff0000")
         linked = lnk_sel(layout)
         current_obj = linked[()]
 
@@ -293,23 +277,21 @@ class TestLinkSelections:
         # Check RGB base layer
         assert_element_equal(
             current_obj[()].RGB.I,
-            dynspread(
-                datashade(points, cmap=lnk_sel.unselected_cmap, alpha=255)
-            )[()]
+            dynspread(datashade(points, cmap=lnk_sel.unselected_cmap, alpha=255))[()],
         )
 
         # Check RGB selection layer
         assert_element_equal(
             current_obj[()].RGB.II,
-            dynspread(
-                datashade(points, cmap=lnk_sel.selected_cmap, alpha=255)
-            )[()]
+            dynspread(datashade(points, cmap=lnk_sel.selected_cmap, alpha=255))[()],
         )
 
         # Perform selection of second and third point
-        selectionxy = TestLinkSelections.get_value_with_key_type(
-            lnk_sel._selection_expr_streams, hv.Points
-        ).input_streams[0].input_stream.input_streams[0]
+        selectionxy = (
+            TestLinkSelections.get_value_with_key_type(lnk_sel._selection_expr_streams, hv.Points)
+            .input_streams[0]
+            .input_stream.input_streams[0]
+        )
 
         assert isinstance(selectionxy, SelectionXY)
         selectionxy.event(bounds=(0, 1, 5, 5))
@@ -319,70 +301,72 @@ class TestLinkSelections:
         self.check_base_points_like(current_obj[()].Points.I, lnk_sel)
 
         # Check points selection layer
-        self.check_overlay_points_like(current_obj[()].Points.II, lnk_sel,
-                                       self.data.iloc[1:])
+        self.check_overlay_points_like(current_obj[()].Points.II, lnk_sel, self.data.iloc[1:])
 
         # Check that base RGB layer is unchanged
         assert_element_equal(
             current_obj[()].RGB.I,
-            dynspread(
-                datashade(points, cmap=lnk_sel.unselected_cmap, alpha=255)
-            )[()]
+            dynspread(datashade(points, cmap=lnk_sel.unselected_cmap, alpha=255))[()],
         )
 
         # Check selection RGB layer
         assert_element_equal(
             current_obj[()].RGB.II,
-            dynspread(
-                datashade(
-                    points.iloc[1:], cmap=lnk_sel.selected_cmap, alpha=255
-                )
-            )[()]
+            dynspread(datashade(points.iloc[1:], cmap=lnk_sel.selected_cmap, alpha=255))[()],
         )
 
     def test_points_selection_streaming(self):
         buffer = hv.streams.Buffer(self.data.iloc[:2], index=False)
-        points = hv.DynamicMap(Points, streams=[buffer])
-        lnk_sel = link_selections.instance(unselected_color='#ff0000')
+        points = hv.DynamicMap(hv.Points, streams=[buffer])
+        lnk_sel = hv.link_selections.instance(unselected_color="#ff0000")
         linked = lnk_sel(points)
 
         # Perform selection of first and (future) third point
-        selectionxy = TestLinkSelections.get_value_with_key_type(
-            lnk_sel._selection_expr_streams, hv.Points
-        ).input_streams[0].input_stream.input_streams[0]
+        selectionxy = (
+            TestLinkSelections.get_value_with_key_type(lnk_sel._selection_expr_streams, hv.Points)
+            .input_streams[0]
+            .input_stream.input_streams[0]
+        )
         assert isinstance(selectionxy, hv.streams.SelectionXY)
         selectionxy.event(bounds=(0, 0, 4, 2))
         current_obj = linked[()]
 
         # Check initial base layer
-        self.check_base_points_like(
-            current_obj.Points.I, lnk_sel, self.data.iloc[:2]
-        )
+        self.check_base_points_like(current_obj.Points.I, lnk_sel, self.data.iloc[:2])
 
         # Check selection layer
-        self.check_overlay_points_like(current_obj.Points.II, lnk_sel,
-                                        self.data.iloc[[0]])
+        self.check_overlay_points_like(current_obj.Points.II, lnk_sel, self.data.iloc[[0]])
 
         # Now stream third point to the DynamicMap
         buffer.send(self.data.iloc[[2]])
         current_obj = linked[()]
 
         # Check initial base layer
-        self.check_base_points_like(
-            current_obj.Points.I, lnk_sel, self.data
-        )
+        self.check_base_points_like(current_obj.Points.I, lnk_sel, self.data)
 
         # Check selection layer
-        self.check_overlay_points_like(current_obj.Points.II, lnk_sel,
-                                        self.data.iloc[[0, 2]])
+        self.check_overlay_points_like(current_obj.Points.II, lnk_sel, self.data.iloc[[0, 2]])
 
     def do_crossfilter_points_histogram(
-            self, selection_mode, cross_filter_mode, selected1, selected2,
-            selected3, selected4, points_region1, points_region2,
-            points_region3, points_region4, hist_region2, hist_region3,
-            hist_region4, show_regions=True, dynamic=False):
-        points = Points(self.data)
-        hist = points.hist('x', adjoin=False, normed=False, num_bins=5)
+        self,
+        selection_mode,
+        cross_filter_mode,
+        selected1,
+        selected2,
+        selected3,
+        selected4,
+        points_region1,
+        points_region2,
+        points_region3,
+        points_region4,
+        hist_region2,
+        hist_region3,
+        hist_region4,
+        show_regions=True,
+        dynamic=False,
+    ):
+        points = hv.Points(self.data)
+        hist = points.hist("x", adjoin=False, normed=False, num_bins=5)
 
         if dynamic:
             # Convert points to DynamicMap that returns the element
@@ -391,25 +375,21 @@ class TestLinkSelections:
         else:
             hist_orig = hist
 
-        lnk_sel = link_selections.instance(
+        lnk_sel = hv.link_selections.instance(
             selection_mode=selection_mode,
             cross_filter_mode=cross_filter_mode,
             show_regions=show_regions,
-            selected_color='#00ff00',
-            unselected_color='#ff0000'
+            selected_color="#00ff00",
+            unselected_color="#ff0000",
         )
         linked = lnk_sel(points + hist)
         current_obj = linked[()]
 
         # Check initial base points
-        self.check_base_points_like(
-            current_obj[0][()].Points.I,
-            lnk_sel
-        )
+        self.check_base_points_like(current_obj[0][()].Points.I, lnk_sel)
 
         # Check initial selection overlay points
-        self.check_overlay_points_like(current_obj[0][()].Points.II, lnk_sel,
-                                        self.data)
+        self.check_overlay_points_like(current_obj[0][()].Points.II, lnk_sel, self.data)
 
         # Initial region bounds all None
         assert len(current_obj[0][()].Curve.I) == 0
@@ -421,7 +401,9 @@ class TestLinkSelections:
 
         # Check initial selection overlay Histogram
         selection_hist = current_obj[1][()].Histogram.II
-        assert self.element_color(selection_hist) == self.expected_selection_color(selection_hist, lnk_sel)
+        assert self.element_color(selection_hist) == self.expected_selection_color(
+            selection_hist, lnk_sel
+        )
         assert_element_equal(selection_hist, base_hist)
 
         # No selection region
@@ -429,9 +411,11 @@ class TestLinkSelections:
         assert region_hist.data == [None, None]
 
         # (1) Perform selection on points of points [1, 2]
-        points_selectionxy = TestLinkSelections.get_value_with_key_type(
-            lnk_sel._selection_expr_streams, hv.Points
-        ).input_streams[0].input_stream.input_streams[0]
+        points_selectionxy = (
+            TestLinkSelections.get_value_with_key_type(lnk_sel._selection_expr_streams, hv.Points)
+            .input_streams[0]
+            .input_stream.input_streams[0]
+        )
         assert isinstance(points_selectionxy, SelectionXY)
         points_selectionxy.event(bounds=(1, 1, 4, 4))
 
@@ -439,26 +423,28 @@ class TestLinkSelections:
         current_obj = linked[()]
 
         # Check base points unchanged
-        self.check_base_points_like(
-            current_obj[0][()].Points.I,
-            lnk_sel
-        )
+        self.check_base_points_like(current_obj[0][()].Points.I, lnk_sel)
 
         # Check points selection overlay
-        self.check_overlay_points_like(current_obj[0][()].Points.II, lnk_sel,
-                                       self.data.iloc[selected1])
+        self.check_overlay_points_like(
+            current_obj[0][()].Points.II, lnk_sel, self.data.iloc[selected1]
+        )
 
         # Check points region bounds
         region_bounds = current_obj[0][()].Rectangles.I
-        assert_element_equal(region_bounds, Rectangles(points_region1))
+        assert_element_equal(region_bounds, hv.Rectangles(points_region1))
 
         if show_regions:
             assert self.element_color(region_bounds) == box_region_color
 
         # (2) Perform selection on histogram bars [0, 1]
-        hist_selectionxy = TestLinkSelections.get_value_with_key_type(
-            lnk_sel._selection_expr_streams, hv.Histogram
-        ).input_streams[0].input_stream.input_streams[0]
+        hist_selectionxy = (
+            TestLinkSelections.get_value_with_key_type(
+                lnk_sel._selection_expr_streams, hv.Histogram
+            )
+            .input_streams[0]
+            .input_stream.input_streams[0]
+        )
 
         assert isinstance(hist_selectionxy, SelectionXY)
         hist_selectionxy.event(bounds=(0, 0, 2.5, 2))
@@ -468,7 +454,7 @@ class TestLinkSelections:
         # Check points selection overlay
         self.check_overlay_points_like(points_sel, lnk_sel, self.data.iloc[selected2])
 
-        assert_element_equal(points_region, Rectangles(points_region2))
+        assert_element_equal(points_region, hv.Rectangles(points_region2))
 
         # Check base histogram unchanged
         base_hist, region_hist, sel_hist = current_obj[1][()].values()
@@ -478,7 +464,7 @@ class TestLinkSelections:
         # Check selection region covers first and second bar
         if show_regions:
             assert self.element_color(region_hist.last) == hist_region_color
-        if not len(hist_region2) and lnk_sel.selection_mode != 'inverse':
+        if not len(hist_region2) and lnk_sel.selection_mode != "inverse":
             assert len(region_hist) == 1
         else:
             assert region_hist.last.data == [0, 2.5]
@@ -490,20 +476,23 @@ class TestLinkSelections:
         )
 
         # (3) Perform selection on points points [0, 2]
-        points_selectionxy = TestLinkSelections.get_value_with_key_type(
-            lnk_sel._selection_expr_streams, hv.Points
-        ).input_streams[0].input_stream.input_streams[0]
+        points_selectionxy = (
+            TestLinkSelections.get_value_with_key_type(lnk_sel._selection_expr_streams, hv.Points)
+            .input_streams[0]
+            .input_stream.input_streams[0]
+        )
 
         assert isinstance(points_selectionxy, SelectionXY)
         points_selectionxy.event(bounds=(0, 0, 4, 2.5))
 
         # Check selection overlay points contains only second point
-        self.check_overlay_points_like(current_obj[0][()].Points.II, lnk_sel,
-                                        self.data.iloc[selected3])
+        self.check_overlay_points_like(
+            current_obj[0][()].Points.II, lnk_sel, self.data.iloc[selected3]
+        )
 
         # Check points region bounds
         region_bounds = current_obj[0][()].Rectangles.I
-        assert_element_equal(region_bounds, Rectangles(points_region3))
+        assert_element_equal(region_bounds, hv.Rectangles(points_region3))
 
         # Check second and third histogram bars selected
         selection_hist = current_obj[1][()].Histogram.II
@@ -513,160 +502,221 @@ class TestLinkSelections:
 
         # Check selection region covers first and second bar
         region_hist = current_obj[1][()].NdOverlay.I.last
-        if not len(hist_region3) and lnk_sel.selection_mode != 'inverse':
+        if not len(hist_region3) and lnk_sel.selection_mode != "inverse":
             assert len(region_hist) == 1
         else:
             assert region_hist.data == [0, 2.5]
 
         # (4) Perform selection of bars [1, 2]
-        hist_selectionxy = TestLinkSelections.get_value_with_key_type(
-            lnk_sel._selection_expr_streams, hv.Histogram
-        ).input_streams[0].input_stream.input_streams[0]
+        hist_selectionxy = (
+            TestLinkSelections.get_value_with_key_type(
+                lnk_sel._selection_expr_streams, hv.Histogram
+            )
+            .input_streams[0]
+            .input_stream.input_streams[0]
+        )
 
         assert isinstance(hist_selectionxy, SelectionXY)
         hist_selectionxy.event(bounds=(1.5, 0, 3.5, 2))
 
         # Check points selection overlay
-        self.check_overlay_points_like(current_obj[0][()].Points.II, lnk_sel,
-                                       self.data.iloc[selected4])
+        self.check_overlay_points_like(
+            current_obj[0][()].Points.II, lnk_sel, self.data.iloc[selected4]
+        )
 
         # Check points region bounds
         region_bounds = current_obj[0][()].Rectangles.I
-        assert_element_equal(region_bounds, Rectangles(points_region4))
+        assert_element_equal(region_bounds, hv.Rectangles(points_region4))
 
         # Check bar selection region
         region_hist = current_obj[1][()].NdOverlay.I.last
         if show_regions:
             assert self.element_color(region_hist) == hist_region_color
-        if not len(hist_region4) and lnk_sel.selection_mode != 'inverse':
+        if not len(hist_region4) and lnk_sel.selection_mode != "inverse":
             assert len(region_hist) == 1
-        elif (lnk_sel.cross_filter_mode != 'overwrite' and not
-              (lnk_sel.cross_filter_mode == 'intersect' and lnk_sel.selection_mode == 'overwrite')):
+        elif lnk_sel.cross_filter_mode != "overwrite" and not (
+            lnk_sel.cross_filter_mode == "intersect" and lnk_sel.selection_mode == "overwrite"
+        ):
             assert region_hist.data == [0, 3.5]
         else:
             assert region_hist.data == [1.5, 3.5]
 
         # Check bar selection overlay
         selection_hist = current_obj[1][()].Histogram.II
-        assert self.element_color(selection_hist) == self.expected_selection_color(selection_hist, lnk_sel)
-        assert_dict_equal(selection_hist.data, hist_orig.pipeline(hist_orig.dataset.iloc[selected4]).data)
+        assert self.element_color(selection_hist) == self.expected_selection_color(
+            selection_hist, lnk_sel
+        )
+        assert_dict_equal(
+            selection_hist.data, hist_orig.pipeline(hist_orig.dataset.iloc[selected4]).data
+        )
 
     #  cross_filter_mode="overwrite"
     @pytest.mark.parametrize("dynamic", [True, False])
     def test_points_histogram_overwrite_overwrite(self, dynamic):
         self.do_crossfilter_points_histogram(
-            selection_mode="overwrite", cross_filter_mode="overwrite",
-            selected1=[1, 2], selected2=[0, 1], selected3=[0, 2], selected4=[1, 2],
+            selection_mode="overwrite",
+            cross_filter_mode="overwrite",
+            selected1=[1, 2],
+            selected2=[0, 1],
+            selected3=[0, 2],
+            selected4=[1, 2],
             points_region1=[(1, 1, 4, 4)],
             points_region2=[],
             points_region3=[(0, 0, 4, 2.5)],
             points_region4=[],
-            hist_region2=[0, 1], hist_region3=[], hist_region4=[1, 2],
-            dynamic=dynamic
+            hist_region2=[0, 1],
+            hist_region3=[],
+            hist_region4=[1, 2],
+            dynamic=dynamic,
         )
 
     @pytest.mark.parametrize("dynamic", [True, False])
     def test_points_histogram_intersect_overwrite(self, dynamic):
         self.do_crossfilter_points_histogram(
-            selection_mode="intersect", cross_filter_mode="overwrite",
-            selected1=[1, 2], selected2=[0, 1], selected3=[0, 2], selected4=[1, 2],
+            selection_mode="intersect",
+            cross_filter_mode="overwrite",
+            selected1=[1, 2],
+            selected2=[0, 1],
+            selected3=[0, 2],
+            selected4=[1, 2],
             points_region1=[(1, 1, 4, 4)],
             points_region2=[],
             points_region3=[(0, 0, 4, 2.5)],
             points_region4=[],
-            hist_region2=[0, 1], hist_region3=[], hist_region4=[1, 2],
-            dynamic=dynamic
+            hist_region2=[0, 1],
+            hist_region3=[],
+            hist_region4=[1, 2],
+            dynamic=dynamic,
         )
 
     @pytest.mark.parametrize("dynamic", [True, False])
     def test_points_histogram_union_overwrite(self, dynamic):
         self.do_crossfilter_points_histogram(
-            selection_mode="union", cross_filter_mode="overwrite",
-            selected1=[1, 2], selected2=[0, 1], selected3=[0, 2], selected4=[1, 2],
+            selection_mode="union",
+            cross_filter_mode="overwrite",
+            selected1=[1, 2],
+            selected2=[0, 1],
+            selected3=[0, 2],
+            selected4=[1, 2],
             points_region1=[(1, 1, 4, 4)],
             points_region2=[],
             points_region3=[(0, 0, 4, 2.5)],
             points_region4=[],
-            hist_region2=[0, 1], hist_region3=[], hist_region4=[1, 2],
-            dynamic=dynamic
+            hist_region2=[0, 1],
+            hist_region3=[],
+            hist_region4=[1, 2],
+            dynamic=dynamic,
         )
 
     #  cross_filter_mode="intersect"
     @pytest.mark.parametrize("dynamic", [True, False])
     def test_points_histogram_overwrite_intersect(self, dynamic):
         self.do_crossfilter_points_histogram(
-            selection_mode="overwrite", cross_filter_mode="intersect",
-            selected1=[1, 2], selected2=[1], selected3=[0], selected4=[2],
+            selection_mode="overwrite",
+            cross_filter_mode="intersect",
+            selected1=[1, 2],
+            selected2=[1],
+            selected3=[0],
+            selected4=[2],
             points_region1=[(1, 1, 4, 4)],
             points_region2=[(1, 1, 4, 4)],
             points_region3=[(0, 0, 4, 2.5)],
             points_region4=[(0, 0, 4, 2.5)],
-            hist_region2=[0, 1], hist_region3=[0, 1], hist_region4=[1, 2],
-            dynamic=dynamic
+            hist_region2=[0, 1],
+            hist_region3=[0, 1],
+            hist_region4=[1, 2],
+            dynamic=dynamic,
         )
 
     @pytest.mark.parametrize("dynamic", [True, False])
     def test_points_histogram_overwrite_intersect_hide_region(self, dynamic):
         self.do_crossfilter_points_histogram(
-            selection_mode="overwrite", cross_filter_mode="intersect",
-            selected1=[1, 2], selected2=[1], selected3=[0], selected4=[2],
+            selection_mode="overwrite",
+            cross_filter_mode="intersect",
+            selected1=[1, 2],
+            selected2=[1],
+            selected3=[0],
+            selected4=[2],
             points_region1=[],
             points_region2=[],
             points_region3=[],
             points_region4=[],
-            hist_region2=[], hist_region3=[], hist_region4=[],
-            show_regions=False, dynamic=dynamic
+            hist_region2=[],
+            hist_region3=[],
+            hist_region4=[],
+            show_regions=False,
+            dynamic=dynamic,
         )
 
     @pytest.mark.parametrize("dynamic", [True, False])
     def test_points_histogram_intersect_intersect(self, dynamic):
         self.do_crossfilter_points_histogram(
-            selection_mode="intersect", cross_filter_mode="intersect",
-            selected1=[1, 2], selected2=[1], selected3=[], selected4=[],
+            selection_mode="intersect",
+            cross_filter_mode="intersect",
+            selected1=[1, 2],
+            selected2=[1],
+            selected3=[],
+            selected4=[],
             points_region1=[(1, 1, 4, 4)],
             points_region2=[(1, 1, 4, 4)],
             points_region3=[(1, 1, 4, 4), (0, 0, 4, 2.5)],
             points_region4=[(1, 1, 4, 4), (0, 0, 4, 2.5)],
-            hist_region2=[0, 1], hist_region3=[0, 1], hist_region4=[1],
-            dynamic=dynamic
+            hist_region2=[0, 1],
+            hist_region3=[0, 1],
+            hist_region4=[1],
+            dynamic=dynamic,
         )
 
     @pytest.mark.parametrize("dynamic", [True, False])
     def test_points_histogram_union_intersect(self, dynamic):
         self.do_crossfilter_points_histogram(
-            selection_mode="union", cross_filter_mode="intersect",
-            selected1=[1, 2], selected2=[1], selected3=[0, 1], selected4=[0, 1, 2],
+            selection_mode="union",
+            cross_filter_mode="intersect",
+            selected1=[1, 2],
+            selected2=[1],
+            selected3=[0, 1],
+            selected4=[0, 1, 2],
             points_region1=[(1, 1, 4, 4)],
             points_region2=[(1, 1, 4, 4)],
             points_region3=[(1, 1, 4, 4), (0, 0, 4, 2.5)],
             points_region4=[(1, 1, 4, 4), (0, 0, 4, 2.5)],
-            hist_region2=[0, 1], hist_region3=[0, 1], hist_region4=[0, 1, 2],
-            dynamic=dynamic
+            hist_region2=[0, 1],
+            hist_region3=[0, 1],
+            hist_region4=[0, 1, 2],
+            dynamic=dynamic,
         )
 
     @pytest.mark.parametrize("dynamic", [True, False])
     def test_points_histogram_inverse_intersect(self, dynamic):
         self.do_crossfilter_points_histogram(
-            selection_mode="inverse", cross_filter_mode="intersect",
-            selected1=[0], selected2=[], selected3=[], selected4=[],
+            selection_mode="inverse",
+            cross_filter_mode="intersect",
+            selected1=[0],
+            selected2=[],
+            selected3=[],
+            selected4=[],
             points_region1=[(1, 1, 4, 4)],
             points_region2=[(1, 1, 4, 4)],
             points_region3=[(1, 1, 4, 4), (0, 0, 4, 2.5)],
             points_region4=[(1, 1, 4, 4), (0, 0, 4, 2.5)],
-            hist_region2=[], hist_region3=[], hist_region4=[],
-            dynamic=dynamic
+            hist_region2=[],
+            hist_region3=[],
+            hist_region4=[],
+            dynamic=dynamic,
         )
 
     def test_unlink_points(self):
-        points = Points(self.data)
-        lnk_sel = link_selections.instance(unselected_color='#ff0000')
+        points = hv.Points(self.data)
+        lnk_sel = hv.link_selections.instance(unselected_color="#ff0000")
         linked = lnk_sel(points)
 
         current_obj = linked[()]
         assert isinstance(current_obj, hv.Overlay)
-        selectionxy = TestLinkSelections.get_value_with_key_type(
-            lnk_sel._selection_expr_streams, hv.Points
-        ).input_streams[0].input_stream.input_streams[0]
+        selectionxy = (
+            TestLinkSelections.get_value_with_key_type(lnk_sel._selection_expr_streams, hv.Points)
+            .input_streams[0]
+            .input_stream.input_streams[0]
+        )
         selectionxy.event(bounds=(0, 1, 5, 5))
         _unselected, selected, _region, _region2 = linked[()].values()
         self.check_overlay_points_like(selected, lnk_sel, self.data.iloc[1:])
@@ -688,19 +738,19 @@ class TestLinkSelections:
         assert len(lnk_sel._cross_filter_stream.input_streams[0].history_stream.values) == 0
 
     def test_unlink_layout_one_object(self):
-        points = Points(self.data)
-        table = Table(self.data)
-        lnk_sel = link_selections.instance(
-            selected_color="#aa0000", unselected_color='#ff0000'
-        )
+        points = hv.Points(self.data)
+        table = hv.Table(self.data)
+        lnk_sel = hv.link_selections.instance(selected_color="#aa0000", unselected_color="#ff0000")
         layout = points + table
         linked = lnk_sel(layout)
 
         current_obj = linked[()]
         assert isinstance(current_obj[0][()], hv.Overlay)
-        selectionxy = TestLinkSelections.get_value_with_key_type(
-            lnk_sel._selection_expr_streams, hv.Points
-        ).input_streams[0].input_stream.input_streams[0]
+        selectionxy = (
+            TestLinkSelections.get_value_with_key_type(lnk_sel._selection_expr_streams, hv.Points)
+            .input_streams[0]
+            .input_stream.input_streams[0]
+        )
         selectionxy.event(bounds=(0, 0, 4, 2))
 
         assert points in lnk_sel._streams
@@ -716,17 +766,19 @@ class TestLinkSelections:
         assert len(lnk_sel._plot_reset_streams) == 1
 
     def test_unlink_dynamic(self):
-        points = Points(self.data)
+        points = hv.Points(self.data)
         points_dynamic = hv.util.Dynamic(points)
 
-        lnk_sel = link_selections.instance(unselected_color='#ff0000')
+        lnk_sel = hv.link_selections.instance(unselected_color="#ff0000")
         linked = lnk_sel(points_dynamic)
 
         current_obj = linked[()]
         assert isinstance(current_obj, hv.Overlay)
-        selectionxy = TestLinkSelections.get_value_with_key_type(
-            lnk_sel._selection_expr_streams, hv.Points
-        ).input_streams[0].input_stream.input_streams[0]
+        selectionxy = (
+            TestLinkSelections.get_value_with_key_type(lnk_sel._selection_expr_streams, hv.Points)
+            .input_streams[0]
+            .input_stream.input_streams[0]
+        )
         selectionxy.event(bounds=(0, 1, 5, 5))
 
         assert points_dynamic in lnk_sel._streams
@@ -740,10 +792,10 @@ class TestLinkSelections:
         assert len(lnk_sel._plot_reset_streams) == 0
 
     def test_unlink_multiple_objects(self):
-        points1 = Points(self.data)
-        points2 = Points(self.data)
+        points1 = hv.Points(self.data)
+        points2 = hv.Points(self.data)
 
-        lnk_sel = link_selections.instance(unselected_color='#ff0000')
+        lnk_sel = hv.link_selections.instance(unselected_color="#ff0000")
         lnk_sel(points1)
         lnk_sel(points2)
 
@@ -767,10 +819,10 @@ class TestLinkSelections:
         assert len(lnk_sel._plot_reset_streams) == 0
 
     def test_unlink_nonexistent_object_no_error(self):
-        points1 = Points(self.data)
-        points2 = Points(self.data)
+        points1 = hv.Points(self.data)
+        points2 = hv.Points(self.data)
 
-        lnk_sel = link_selections.instance(unselected_color='#ff0000')
+        lnk_sel = hv.link_selections.instance(unselected_color="#ff0000")
         lnk_sel(points1)
 
         lnk_sel.unlink(points2)
@@ -781,47 +833,46 @@ class TestLinkSelections:
 # Backend implementations
 @plotly_skip
 class TestLinkSelectionsPlotly(TestLinkSelections):
-
     __test__ = True
 
     def setup_method(self):
         super().setup_method()
-        self._backend = Store.current_backend
-        Store.set_current_backend('plotly')
+        self._backend = hv.Store.current_backend
+        hv.Store.set_current_backend("plotly")
 
     def teardown_method(self):
-        Store.current_backend = self._backend
+        hv.Store.current_backend = self._backend
 
     def element_color(self, element, color_prop=None):
 
-        if isinstance(element, Table):
-            color = element.opts.get('style').kwargs['fill']
-        elif isinstance(element, (Rectangles, VSpan)):
-            color = element.opts.get('style').kwargs['line_color']
+        if isinstance(element, hv.Table):
+            color = element.opts.get("style").kwargs["fill"]
+        elif isinstance(element, (hv.Rectangles, hv.VSpan)):
+            color = element.opts.get("style").kwargs["line_color"]
         else:
-            color = element.opts.get('style').kwargs['color']
+            color = element.opts.get("style").kwargs["color"]
 
-        if isinstance(color, (Cycle, str)):
+        if isinstance(color, (hv.Cycle, str)):
             return color
         else:
             return list(color)
 
 
 class TestLinkSelectionsBokeh(TestLinkSelections):
-
     __test__ = True
 
     def setup_method(self):
-        import holoviews.plotting.bokeh # noqa
+        import holoviews.plotting.bokeh  # noqa
+
         super().setup_method()
-        self._backend = Store.current_backend
-        Store.set_current_backend('bokeh')
+        self._backend = hv.Store.current_backend
+        hv.Store.set_current_backend("bokeh")
 
     def teardown_method(self):
-        Store.current_backend = self._backend
+        hv.Store.current_backend = self._backend
 
     def element_color(self, element):
-        color = element.opts.get('style').kwargs['color']
+        color = element.opts.get("style").kwargs["color"]
 
         if isinstance(color, str):
             return color
@@ -844,14 +895,14 @@ class TestLinkSelectionsBokeh(TestLinkSelections):
         # Test for https://github.com/holoviz/holoviews/issues/6106
         df = pd.DataFrame({"x": [1, 2], "y": [1, 2], "cat": ["A", "B"]})
 
-        checkboxes = pn.widgets.CheckBoxGroup(options=['A', 'B'])
+        checkboxes = pn.widgets.CheckBoxGroup(options=["A", "B"])
 
         def func(check):
-            return hv.Scatter(df[df['cat'].isin(check)])
+            return hv.Scatter(df[df["cat"].isin(check)])
 
         ls = hv.link_selections.instance()
         a = ls(hv.DynamicMap(pn.bind(func, checkboxes)))
         b = ls(hv.DynamicMap(pn.bind(func, checkboxes)))
 
-        hv.renderer('bokeh').get_plot(a + b)
-        checkboxes.value = ['A']
+        hv.renderer("bokeh").get_plot(a + b)
+        checkboxes.value = ["A"]

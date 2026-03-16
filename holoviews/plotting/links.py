@@ -35,9 +35,9 @@ class Link(param.Parameterized):
 
     def __init__(self, source, target=None, **params):
         if source is None:
-            raise ValueError(f'{type(self).__name__} must define a source')
+            raise ValueError(f"{type(self).__name__} must define a source")
         if self._requires_target and target is None:
-            raise ValueError(f'{type(self).__name__} must define a target.')
+            raise ValueError(f"{type(self).__name__} must define a target.")
 
         # Source is stored as a weakref to allow it to be garbage collected
         self._source = None if source is None else weakref.ref(source)
@@ -62,27 +62,25 @@ class Link(param.Parameterized):
         return self._target() if self._target else None
 
     def link(self):
-        """Registers the Link
-
-        """
+        """Registers the Link"""
         if self.source in self.registry:
             links = self.registry[self.source]
-            params = {
-                k: v for k, v in self.param.values().items() if k != 'name'}
+            params = {k: v for k, v in self.param.values().items() if k != "name"}
             for link in links:
-                link_params = {
-                    k: v for k, v in link.param.values().items() if k != 'name'}
-                if (type(link) is type(self) and link.source is self.source
-                    and link.target is self.target and params == link_params):
+                link_params = {k: v for k, v in link.param.values().items() if k != "name"}
+                if (
+                    type(link) is type(self)
+                    and link.source is self.source
+                    and link.target is self.target
+                    and params == link_params
+                ):
                     return
             self.registry[self.source].append(self)
         else:
             self.registry[self.source] = [self]
 
     def unlink(self):
-        """Unregisters the Link
-
-        """
+        """Unregisters the Link"""
         links = self.registry.get(self.source)
         if self in links:
             links.pop(links.index(self))
@@ -100,32 +98,56 @@ class RangeToolLink(Link):
 
     """
 
-    axes = param.ListSelector(default=['x'], objects=['x', 'y'], doc="""
-        Which axes to link the tool to.""")
+    axes = param.ListSelector(
+        default=["x"],
+        objects=["x", "y"],
+        doc="Which axes to link the tool to.",
+    )
 
-    boundsx = param.Tuple(default=None, length=2, doc="""
-        (start, end) bounds for the x-axis""")
+    boundsx = param.Tuple(
+        default=None,
+        length=2,
+        doc="(start, end) bounds for the x-axis",
+    )
 
-    boundsy = param.Tuple(default=None, length=2, doc="""
-        (start, end) bounds for the y-axis""")
+    boundsy = param.Tuple(
+        default=None,
+        length=2,
+        doc="(start, end) bounds for the y-axis",
+    )
 
-    intervalsx = param.Tuple(default=None, length=2, doc="""
-        (min, max) intervals for the x-axis""")
+    intervalsx = param.Tuple(
+        default=None,
+        length=2,
+        doc="(min, max) intervals for the x-axis",
+    )
 
-    intervalsy = param.Tuple(default=None, length=2, doc="""
-        (min, max) intervals for the y-axis""")
+    intervalsy = param.Tuple(
+        default=None,
+        length=2,
+        doc="(min, max) intervals for the y-axis",
+    )
 
-    use_handles = param.Boolean(default=True, doc="""
-        Whether to display handles. Only available from Bokeh 3.5 onwards.""")
+    use_handles = param.Boolean(
+        default=True,
+        doc="Whether to display handles. Only available from Bokeh 3.5 onwards.",
+    )
 
-    start_gesture = param.Selector(default='tap', objects=['pan', 'tap', 'none'],
-         doc="Gesture to start a range selection. Only available from Bokeh 3.5 onwards.")
+    start_gesture = param.Selector(
+        default="tap",
+        objects=["pan", "tap", "none"],
+        doc="Gesture to start a range selection. Only available from Bokeh 3.5 onwards.",
+    )
 
-    inverted = param.Boolean(default=True, doc="""
-         Whether to invert the highlighting of the range selection.
-         Only available from Bokeh 3.5 onwards.""")
+    inverted = param.Boolean(
+        default=True,
+        doc="""
+        Whether to invert the highlighting of the range selection.
+        Only available from Bokeh 3.5 onwards.""",
+    )
 
     _requires_target = True
+
 
 class DataLink(Link):
     """DataLink defines a link in the data between two objects allowing
@@ -138,9 +160,7 @@ class DataLink(Link):
 
 
 class SelectionLink(Link):
-    """Links the selection between two glyph renderers.
-
-    """
+    """Links the selection between two glyph renderers."""
 
     _requires_target = True
 
@@ -156,15 +176,13 @@ class VertexTableLink(Link):
     _requires_target = True
 
     def __init__(self, source, target, **params):
-        if 'vertex_columns' not in params:
+        if "vertex_columns" not in params:
             dimensions = [dimension_sanitizer(d.name) for d in target.dimensions()[:2]]
-            params['vertex_columns'] = dimensions
+            params["vertex_columns"] = dimensions
         super().__init__(source, target, **params)
 
 
 class RectanglesTableLink(Link):
-    """Links a Rectangles element to a Table.
-
-    """
+    """Links a Rectangles element to a Table."""
 
     _requires_target = True

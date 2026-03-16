@@ -1,35 +1,23 @@
 import numpy as np
 
-from holoviews.element import (
-    Bounds,
-    Box,
-    HLine,
-    Path,
-    Rectangles,
-    Segments,
-    Tiles,
-    VLine,
-)
+import holoviews as hv
 from holoviews.plotting.plotly.util import PLOTLY_MAP, PLOTLY_SCATTERMAP
 from holoviews.testing import assert_data_equal
 
 from .test_plot import TestPlotlyPlot
 
-default_shape_color = '#2a3f5f'
+default_shape_color = "#2a3f5f"
+
 
 class TestShape(TestPlotlyPlot):
     def assert_shape_element_styling(self, element):
         props = dict(
-            fillcolor='orange',
-            line_color='yellow',
-            line_dash='dot',
-            line_width=5,
-            opacity=0.7
+            fillcolor="orange", line_color="yellow", line_dash="dot", line_width=5, opacity=0.7
         )
 
         element = element.clone().opts(**props)
         state = self._get_plot_state(element)
-        shapes = state['layout']['shapes']
+        shapes = state["layout"]["shapes"]
         self.assert_property_values(shapes[0], props)
 
 
@@ -44,111 +32,123 @@ class TestMapboxShape(TestPlotlyPlot):
         self.x_center = sum(self.x_range) / 2.0
         self.y_range = (-3000000, 2000000)
         self.y_center = sum(self.y_range) / 2.0
-        self.lon_range, self.lat_range = Tiles.easting_northing_to_lon_lat(self.x_range, self.y_range)
-        self.lon_centers, self.lat_centers = Tiles.easting_northing_to_lon_lat(
+        self.lon_range, self.lat_range = hv.Tiles.easting_northing_to_lon_lat(
+            self.x_range, self.y_range
+        )
+        self.lon_centers, self.lat_centers = hv.Tiles.easting_northing_to_lon_lat(
             [self.x_center], [self.y_center]
         )
         self.lon_center, self.lat_center = self.lon_centers[0], self.lat_centers[0]
-        self.lons, self.lats = Tiles.easting_northing_to_lon_lat(self.xs, self.ys)
+        self.lons, self.lats = hv.Tiles.easting_northing_to_lon_lat(self.xs, self.ys)
 
 
 class TestVLineHLine(TestShape):
+    def assert_vline(self, shape, x, xref="x", ydomain=(0, 1)):
+        assert shape["type"] == "line"
+        assert shape["x0"] == x
+        assert shape["x1"] == x
+        assert shape["xref"] == xref
 
-    def assert_vline(self, shape, x, xref='x', ydomain=(0, 1)):
-        assert shape['type'] == 'line'
-        assert shape['x0'] == x
-        assert shape['x1'] == x
-        assert shape['xref'] == xref
+        assert shape["y0"] == ydomain[0]
+        assert shape["y1"] == ydomain[1]
+        assert shape["yref"] == "paper"
 
-        assert shape['y0'] == ydomain[0]
-        assert shape['y1'] == ydomain[1]
-        assert shape['yref'] == 'paper'
+    def assert_hline(self, shape, y, yref="y", xdomain=(0, 1)):
+        assert shape["type"] == "line"
+        assert shape["y0"] == y
+        assert shape["y1"] == y
+        assert shape["yref"] == yref
 
-    def assert_hline(self, shape, y, yref='y', xdomain=(0, 1)):
-        assert shape['type'] == 'line'
-        assert shape['y0'] == y
-        assert shape['y1'] == y
-        assert shape['yref'] == yref
-
-        assert shape['x0'] == xdomain[0]
-        assert shape['x1'] == xdomain[1]
-        assert shape['xref'] == 'paper'
+        assert shape["x0"] == xdomain[0]
+        assert shape["x1"] == xdomain[1]
+        assert shape["xref"] == "paper"
 
     def test_single_vline(self):
-        vline = VLine(3)
+        vline = hv.VLine(3)
         state = self._get_plot_state(vline)
 
-        shapes = state['layout']['shapes']
+        shapes = state["layout"]["shapes"]
         assert len(shapes) == 1
         self.assert_vline(shapes[0], 3)
 
     def test_single_hline(self):
-        hline = HLine(3)
+        hline = hv.HLine(3)
         state = self._get_plot_state(hline)
 
-        shapes = state['layout']['shapes']
+        shapes = state["layout"]["shapes"]
         assert len(shapes) == 1
         self.assert_hline(shapes[0], 3)
 
     def test_vline_layout(self):
-        layout = (VLine(1) + VLine(2) +
-                  VLine(3) + VLine(4)).cols(2).opts(vspacing=0, hspacing=0)
+        layout = (
+            (hv.VLine(1) + hv.VLine(2) + hv.VLine(3) + hv.VLine(4))
+            .cols(2)
+            .opts(vspacing=0, hspacing=0)
+        )
         state = self._get_plot_state(layout)
 
-        shapes = state['layout']['shapes']
+        shapes = state["layout"]["shapes"]
         assert len(shapes) == 4
 
         # Check shapes
-        self.assert_vline(shapes[0], 3, xref='x', ydomain=[0.0, 0.5])
-        self.assert_vline(shapes[1], 4, xref='x2', ydomain=[0.0, 0.5])
-        self.assert_vline(shapes[2], 1, xref='x3', ydomain=[0.5, 1.0])
-        self.assert_vline(shapes[3], 2, xref='x4', ydomain=[0.5, 1.0])
+        self.assert_vline(shapes[0], 3, xref="x", ydomain=[0.0, 0.5])
+        self.assert_vline(shapes[1], 4, xref="x2", ydomain=[0.0, 0.5])
+        self.assert_vline(shapes[2], 1, xref="x3", ydomain=[0.5, 1.0])
+        self.assert_vline(shapes[3], 2, xref="x4", ydomain=[0.5, 1.0])
 
     def test_hline_layout(self):
-        layout = (HLine(1) + HLine(2) +
-                  HLine(3) + HLine(4)).cols(2).opts(vspacing=0, hspacing=0)
+        layout = (
+            (hv.HLine(1) + hv.HLine(2) + hv.HLine(3) + hv.HLine(4))
+            .cols(2)
+            .opts(vspacing=0, hspacing=0)
+        )
         state = self._get_plot_state(layout)
 
-        shapes = state['layout']['shapes']
+        shapes = state["layout"]["shapes"]
         assert len(shapes) == 4
 
         # Check shapes
-        self.assert_hline(shapes[0], 3, yref='y', xdomain=[0.0, 0.5])
-        self.assert_hline(shapes[1], 4, yref='y2', xdomain=[0.5, 1.0])
-        self.assert_hline(shapes[2], 1, yref='y3', xdomain=[0.0, 0.5])
-        self.assert_hline(shapes[3], 2, yref='y4', xdomain=[0.5, 1.0])
+        self.assert_hline(shapes[0], 3, yref="y", xdomain=[0.0, 0.5])
+        self.assert_hline(shapes[1], 4, yref="y2", xdomain=[0.5, 1.0])
+        self.assert_hline(shapes[2], 1, yref="y3", xdomain=[0.0, 0.5])
+        self.assert_hline(shapes[3], 2, yref="y4", xdomain=[0.5, 1.0])
 
     def test_vline_styling(self):
-        self.assert_shape_element_styling(VLine(3))
+        self.assert_shape_element_styling(hv.VLine(3))
 
     def test_hline_styling(self):
-        self.assert_shape_element_styling(HLine(3))
+        self.assert_shape_element_styling(hv.HLine(3))
 
 
 class TestPathShape(TestShape):
-    def assert_path_shape_element(self, shape, element, xref='x', yref='y'):
+    def assert_path_shape_element(self, shape, element, xref="x", yref="y"):
         # Check type
-        assert shape['type'] == 'path'
+        assert shape["type"] == "path"
 
         # Check svg path
-        expected_path = 'M' + 'L'.join([
-            f'{x} {y}' for x, y in
-            zip(
-                element.dimension_values(0),
-                element.dimension_values(1),
-                strict=True
-            )]) + 'Z'
+        expected_path = (
+            "M"
+            + "L".join(
+                [
+                    f"{x} {y}"
+                    for x, y in zip(
+                        element.dimension_values(0), element.dimension_values(1), strict=True
+                    )
+                ]
+            )
+            + "Z"
+        )
 
-        assert shape['path'] == expected_path
+        assert shape["path"] == expected_path
 
         # Check axis references
-        assert shape['xref'] == xref
-        assert shape['yref'] == yref
+        assert shape["xref"] == xref
+        assert shape["yref"] == yref
 
     def test_simple_path(self):
-        path = Path([(0, 0), (1, 1), (0, 1), (0, 0)])
+        path = hv.Path([(0, 0), (1, 1), (0, 1), (0, 0)])
         state = self._get_plot_state(path)
-        shapes = state['layout']['shapes']
+        shapes = state["layout"]["shapes"]
         assert len(shapes) == 1
         self.assert_path_shape_element(shapes[0], path)
         self.assert_shape_element_styling(path)
@@ -156,252 +156,317 @@ class TestPathShape(TestShape):
 
 class TestMapboxPathShape(TestMapboxShape):
     def test_simple_path(self):
-        path = Tiles("") * Path([
-            (self.x_range[0], self.y_range[0]),
-            (self.x_range[1], self.y_range[1]),
-            (self.x_range[0], self.y_range[1]),
-            (self.x_range[0], self.y_range[0]),
-        ]).redim.range(
-            x=self.x_range, y=self.y_range
-        )
+        path = hv.Tiles("") * hv.Path(
+            [
+                (self.x_range[0], self.y_range[0]),
+                (self.x_range[1], self.y_range[1]),
+                (self.x_range[0], self.y_range[1]),
+                (self.x_range[0], self.y_range[0]),
+            ]
+        ).redim.range(x=self.x_range, y=self.y_range)
 
         state = self._get_plot_state(path)
         assert state["data"][1]["type"] == PLOTLY_SCATTERMAP
         assert state["data"][1]["mode"] == "lines"
-        assert_data_equal(state["data"][1]["lon"], np.array([
-            self.lon_range[i] for i in (0, 1, 0, 0)
-        ] + [np.nan]))
-        assert_data_equal(state["data"][1]["lat"], np.array([
-            self.lat_range[i] for i in (0, 1, 1, 0)
-        ] + [np.nan]))
+        assert_data_equal(
+            state["data"][1]["lon"], np.array([self.lon_range[i] for i in (0, 1, 0, 0)] + [np.nan])
+        )
+        assert_data_equal(
+            state["data"][1]["lat"], np.array([self.lat_range[i] for i in (0, 1, 1, 0)] + [np.nan])
+        )
         assert state["data"][1]["showlegend"] is False
         assert state["data"][1]["line"]["color"] == default_shape_color
-        assert state['layout'][PLOTLY_MAP]['center'] == {
-                'lat': self.lat_center, 'lon': self.lon_center
-            }
+        assert state["layout"][PLOTLY_MAP]["center"] == {
+            "lat": self.lat_center,
+            "lon": self.lon_center,
+        }
 
 
 class TestBounds(TestPathShape):
-
     def test_single_bounds(self):
-        bounds = Bounds((1, 2, 3, 4))
+        bounds = hv.Bounds((1, 2, 3, 4))
 
         state = self._get_plot_state(bounds)
 
-        shapes = state['layout']['shapes']
+        shapes = state["layout"]["shapes"]
         assert len(shapes) == 1
         self.assert_path_shape_element(shapes[0], bounds)
 
     def test_bounds_layout(self):
-        bounds1 = Bounds((0, 0, 1, 1))
-        bounds2 = Bounds((0, 0, 2, 2))
-        bounds3 = Bounds((0, 0, 3, 3))
-        bounds4 = Bounds((0, 0, 4, 4))
+        bounds1 = hv.Bounds((0, 0, 1, 1))
+        bounds2 = hv.Bounds((0, 0, 2, 2))
+        bounds3 = hv.Bounds((0, 0, 3, 3))
+        bounds4 = hv.Bounds((0, 0, 4, 4))
 
-        layout = (bounds1 + bounds2 +
-                  bounds3 + bounds4).cols(2)
+        layout = (bounds1 + bounds2 + bounds3 + bounds4).cols(2)
 
         state = self._get_plot_state(layout)
 
-        shapes = state['layout']['shapes']
+        shapes = state["layout"]["shapes"]
         assert len(shapes) == 4
 
         # Check shapes
-        self.assert_path_shape_element(shapes[0], bounds3, xref='x', yref='y')
-        self.assert_path_shape_element(shapes[1], bounds4, xref='x2', yref='y2')
-        self.assert_path_shape_element(shapes[2], bounds1, xref='x3', yref='y3')
-        self.assert_path_shape_element(shapes[3], bounds2, xref='x4', yref='y4')
+        self.assert_path_shape_element(shapes[0], bounds3, xref="x", yref="y")
+        self.assert_path_shape_element(shapes[1], bounds4, xref="x2", yref="y2")
+        self.assert_path_shape_element(shapes[2], bounds1, xref="x3", yref="y3")
+        self.assert_path_shape_element(shapes[3], bounds2, xref="x4", yref="y4")
 
     def test_bounds_styling(self):
-        self.assert_shape_element_styling(Bounds((1, 2, 3, 4)))
+        self.assert_shape_element_styling(hv.Bounds((1, 2, 3, 4)))
 
 
 class TestMapboxBounds(TestMapboxShape):
     def test_single_bounds(self):
-        bounds = Tiles("") * Bounds(
+        bounds = hv.Tiles("") * hv.Bounds(
             (self.x_range[0], self.y_range[0], self.x_range[1], self.y_range[1])
-        ).redim.range(
-            x=self.x_range, y=self.y_range
-        )
+        ).redim.range(x=self.x_range, y=self.y_range)
 
         state = self._get_plot_state(bounds)
         assert state["data"][1]["type"] == PLOTLY_SCATTERMAP
         assert state["data"][1]["mode"] == "lines"
-        assert_data_equal(state["data"][1]["lon"], np.array([
-            self.lon_range[i] for i in (0, 0, 1, 1, 0)
-        ]))
-        assert_data_equal(state["data"][1]["lat"], np.array([
-            self.lat_range[i] for i in (0, 1, 1, 0, 0)
-        ]))
+        assert_data_equal(
+            state["data"][1]["lon"], np.array([self.lon_range[i] for i in (0, 0, 1, 1, 0)])
+        )
+        assert_data_equal(
+            state["data"][1]["lat"], np.array([self.lat_range[i] for i in (0, 1, 1, 0, 0)])
+        )
         assert state["data"][1]["showlegend"] is False
         assert state["data"][1]["line"]["color"] == default_shape_color
-        assert state['layout'][PLOTLY_MAP]['center'] == {
-                'lat': self.lat_center, 'lon': self.lon_center
-            }
+        assert state["layout"][PLOTLY_MAP]["center"] == {
+            "lat": self.lat_center,
+            "lon": self.lon_center,
+        }
 
     def test_bounds_layout(self):
-        bounds1 = Bounds((0, 0, 1, 1))
-        bounds2 = Bounds((0, 0, 2, 2))
-        bounds3 = Bounds((0, 0, 3, 3))
-        bounds4 = Bounds((0, 0, 4, 4))
+        bounds1 = hv.Bounds((0, 0, 1, 1))
+        bounds2 = hv.Bounds((0, 0, 2, 2))
+        bounds3 = hv.Bounds((0, 0, 3, 3))
+        bounds4 = hv.Bounds((0, 0, 4, 4))
 
-        layout = (Tiles("") * bounds1 + Tiles("") * bounds2 +
-                  Tiles("") * bounds3 + Tiles("") * bounds4).cols(2)
+        layout = (
+            hv.Tiles("") * bounds1
+            + hv.Tiles("") * bounds2
+            + hv.Tiles("") * bounds3
+            + hv.Tiles("") * bounds4
+        ).cols(2)
 
         state = self._get_plot_state(layout)
-        assert state['data'][1]["subplot"] == PLOTLY_MAP
-        assert state['data'][3]["subplot"] == PLOTLY_MAP + "2"
-        assert state['data'][5]["subplot"] == PLOTLY_MAP + "3"
-        assert state['data'][7]["subplot"] == PLOTLY_MAP + "4"
-        assert "xaxis" not in state['layout']
-        assert "yaxis" not in state['layout']
+        assert state["data"][1]["subplot"] == PLOTLY_MAP
+        assert state["data"][3]["subplot"] == PLOTLY_MAP + "2"
+        assert state["data"][5]["subplot"] == PLOTLY_MAP + "3"
+        assert state["data"][7]["subplot"] == PLOTLY_MAP + "4"
+        assert "xaxis" not in state["layout"]
+        assert "yaxis" not in state["layout"]
 
 
 class TestBox(TestPathShape):
-
     def test_single_box(self):
-        box = Box(0, 0, (1, 2), orientation=1)
+        box = hv.Box(0, 0, (1, 2), orientation=1)
         state = self._get_plot_state(box)
-        shapes = state['layout']['shapes']
+        shapes = state["layout"]["shapes"]
         assert len(shapes) == 1
         self.assert_path_shape_element(shapes[0], box)
 
     def test_bounds_layout(self):
-        box1 = Box(0, 0, (1, 1), orientation=0)
-        box2 = Box(0, 0, (2, 2), orientation=0.5)
-        box3 = Box(0, 0, (3, 3), orientation=1.0)
-        box4 = Box(0, 0, (4, 4), orientation=1.5)
+        box1 = hv.Box(0, 0, (1, 1), orientation=0)
+        box2 = hv.Box(0, 0, (2, 2), orientation=0.5)
+        box3 = hv.Box(0, 0, (3, 3), orientation=1.0)
+        box4 = hv.Box(0, 0, (4, 4), orientation=1.5)
 
-        layout = (box1 + box2 +
-                  box3 + box4).cols(2)
+        layout = (box1 + box2 + box3 + box4).cols(2)
 
         state = self._get_plot_state(layout)
 
-        shapes = state['layout']['shapes']
+        shapes = state["layout"]["shapes"]
         assert len(shapes) == 4
 
         # Check shapes
-        self.assert_path_shape_element(shapes[0], box3, xref='x', yref='y')
-        self.assert_path_shape_element(shapes[1], box4, xref='x2', yref='y2')
-        self.assert_path_shape_element(shapes[2], box1, xref='x3', yref='y3')
-        self.assert_path_shape_element(shapes[3], box2, xref='x4', yref='y4')
+        self.assert_path_shape_element(shapes[0], box3, xref="x", yref="y")
+        self.assert_path_shape_element(shapes[1], box4, xref="x2", yref="y2")
+        self.assert_path_shape_element(shapes[2], box1, xref="x3", yref="y3")
+        self.assert_path_shape_element(shapes[3], box2, xref="x4", yref="y4")
 
     def test_box_styling(self):
-        self.assert_shape_element_styling(Box(0, 0, (1, 1)))
+        self.assert_shape_element_styling(hv.Box(0, 0, (1, 1)))
 
 
 class TestMapboxBox(TestMapboxShape):
     def test_single_box(self):
-        box = Tiles("") * Box(0, 0, (1000000, 2000000)).redim.range(
+        box = hv.Tiles("") * hv.Box(0, 0, (1000000, 2000000)).redim.range(
             x=self.x_range, y=self.y_range
         )
 
         x_box_range = [-500000, 500000]
         y_box_range = [-1000000, 1000000]
-        lon_box_range, lat_box_range = Tiles.easting_northing_to_lon_lat(x_box_range, y_box_range)
+        lon_box_range, lat_box_range = hv.Tiles.easting_northing_to_lon_lat(
+            x_box_range, y_box_range
+        )
 
         state = self._get_plot_state(box)
         assert state["data"][1]["type"] == PLOTLY_SCATTERMAP
         assert state["data"][1]["mode"] == "lines"
         assert state["data"][1]["showlegend"] is False
         assert state["data"][1]["line"]["color"] == default_shape_color
-        assert_data_equal(state["data"][1]["lon"], np.array([
-            lon_box_range[i] for i in (0, 0, 1, 1, 0)
-        ]))
-        assert_data_equal(state["data"][1]["lat"], np.array([
-            lat_box_range[i] for i in (0, 1, 1, 0, 0)
-        ]))
+        assert_data_equal(
+            state["data"][1]["lon"], np.array([lon_box_range[i] for i in (0, 0, 1, 1, 0)])
+        )
+        assert_data_equal(
+            state["data"][1]["lat"], np.array([lat_box_range[i] for i in (0, 1, 1, 0, 0)])
+        )
 
-        assert state['layout'][PLOTLY_MAP]['center'] == {
-                'lat': self.lat_center, 'lon': self.lon_center
-            }
+        assert state["layout"][PLOTLY_MAP]["center"] == {
+            "lat": self.lat_center,
+            "lon": self.lon_center,
+        }
 
 
 class TestRectangles(TestPathShape):
-
     def test_boxes_simple(self):
-        boxes = Rectangles([(0, 0, 1, 1), (2, 2, 4, 3)])
+        boxes = hv.Rectangles([(0, 0, 1, 1), (2, 2, 4, 3)])
         state = self._get_plot_state(boxes)
-        shapes = state['layout']['shapes']
+        shapes = state["layout"]["shapes"]
         assert len(shapes) == 2
-        assert shapes[0] == {'type': 'rect', 'x0': 0, 'y0': 0, 'x1': 1,
-                                     'y1': 1, 'xref': 'x', 'yref': 'y', 'name': '',
-                                     'line': {'color': default_shape_color}}
-        assert shapes[1] == {'type': 'rect', 'x0': 2, 'y0': 2, 'x1': 4,
-                                     'y1': 3, 'xref': 'x', 'yref': 'y', 'name': '',
-                                     'line': {'color': default_shape_color}}
-        assert state['layout']['xaxis']['range'] == [0, 4]
-        assert state['layout']['yaxis']['range'] == [0, 3]
+        assert shapes[0] == {
+            "type": "rect",
+            "x0": 0,
+            "y0": 0,
+            "x1": 1,
+            "y1": 1,
+            "xref": "x",
+            "yref": "y",
+            "name": "",
+            "line": {"color": default_shape_color},
+        }
+        assert shapes[1] == {
+            "type": "rect",
+            "x0": 2,
+            "y0": 2,
+            "x1": 4,
+            "y1": 3,
+            "xref": "x",
+            "yref": "y",
+            "name": "",
+            "line": {"color": default_shape_color},
+        }
+        assert state["layout"]["xaxis"]["range"] == [0, 4]
+        assert state["layout"]["yaxis"]["range"] == [0, 3]
 
 
 class TestMapboxRectangles(TestMapboxShape):
     def test_rectangles_simple(self):
-        rectangles = Tiles("") * Rectangles([
-            (0, 0, self.x_range[1], self.y_range[1]),
-            (self.x_range[0], self.y_range[0], 0, 0),
-        ]).redim.range(
-            x=self.x_range, y=self.y_range
-        )
+        rectangles = hv.Tiles("") * hv.Rectangles(
+            [
+                (0, 0, self.x_range[1], self.y_range[1]),
+                (self.x_range[0], self.y_range[0], 0, 0),
+            ]
+        ).redim.range(x=self.x_range, y=self.y_range)
 
         state = self._get_plot_state(rectangles)
         assert state["data"][1]["type"] == PLOTLY_SCATTERMAP
         assert state["data"][1]["mode"] == "lines"
         assert state["data"][1]["showlegend"] is False
         assert state["data"][1]["line"]["color"] == default_shape_color
-        assert_data_equal(state["data"][1]["lon"], np.array([
-            0, 0, self.lon_range[1], self.lon_range[1], 0, np.nan,
-            self.lon_range[0], self.lon_range[0], 0, 0, self.lon_range[0], np.nan
-        ]))
-        assert_data_equal(state["data"][1]["lat"], np.array([
-            0, self.lat_range[1], self.lat_range[1], 0, 0, np.nan,
-            self.lat_range[0], 0, 0, self.lat_range[0], self.lat_range[0], np.nan
-        ]))
+        assert_data_equal(
+            state["data"][1]["lon"],
+            np.array(
+                [
+                    0,
+                    0,
+                    self.lon_range[1],
+                    self.lon_range[1],
+                    0,
+                    np.nan,
+                    self.lon_range[0],
+                    self.lon_range[0],
+                    0,
+                    0,
+                    self.lon_range[0],
+                    np.nan,
+                ]
+            ),
+        )
+        assert_data_equal(
+            state["data"][1]["lat"],
+            np.array(
+                [
+                    0,
+                    self.lat_range[1],
+                    self.lat_range[1],
+                    0,
+                    0,
+                    np.nan,
+                    self.lat_range[0],
+                    0,
+                    0,
+                    self.lat_range[0],
+                    self.lat_range[0],
+                    np.nan,
+                ]
+            ),
+        )
 
-        assert state['layout'][PLOTLY_MAP]['center'] == {
-                'lat': self.lat_center, 'lon': self.lon_center
-            }
+        assert state["layout"][PLOTLY_MAP]["center"] == {
+            "lat": self.lat_center,
+            "lon": self.lon_center,
+        }
 
 
 class TestSegments(TestPathShape):
-
     def test_segments_simple(self):
-        boxes = Segments([(0, 0, 1, 1), (2, 2, 4, 3)])
+        boxes = hv.Segments([(0, 0, 1, 1), (2, 2, 4, 3)])
         state = self._get_plot_state(boxes)
-        shapes = state['layout']['shapes']
+        shapes = state["layout"]["shapes"]
         assert len(shapes) == 2
-        assert shapes[0] == {'type': 'line', 'x0': 0, 'y0': 0, 'x1': 1,
-                                     'y1': 1, 'xref': 'x', 'yref': 'y', 'name': '',
-                                     'line': {'color': default_shape_color}}
-        assert shapes[1] == {'type': 'line', 'x0': 2, 'y0': 2, 'x1': 4,
-                                     'y1': 3, 'xref': 'x', 'yref': 'y', 'name': '',
-                                     'line': {'color': default_shape_color}}
-        assert state['layout']['xaxis']['range'] == [0, 4]
-        assert state['layout']['yaxis']['range'] == [0, 3]
+        assert shapes[0] == {
+            "type": "line",
+            "x0": 0,
+            "y0": 0,
+            "x1": 1,
+            "y1": 1,
+            "xref": "x",
+            "yref": "y",
+            "name": "",
+            "line": {"color": default_shape_color},
+        }
+        assert shapes[1] == {
+            "type": "line",
+            "x0": 2,
+            "y0": 2,
+            "x1": 4,
+            "y1": 3,
+            "xref": "x",
+            "yref": "y",
+            "name": "",
+            "line": {"color": default_shape_color},
+        }
+        assert state["layout"]["xaxis"]["range"] == [0, 4]
+        assert state["layout"]["yaxis"]["range"] == [0, 3]
 
 
 class TestMapboxSegments(TestMapboxShape):
     def test_segments_simple(self):
-        rectangles = Tiles("") * Segments([
-            (0, 0, self.x_range[1], self.y_range[1]),
-            (self.x_range[0], self.y_range[0], 0, 0),
-        ]).redim.range(
-            x=self.x_range, y=self.y_range
-        )
+        rectangles = hv.Tiles("") * hv.Segments(
+            [
+                (0, 0, self.x_range[1], self.y_range[1]),
+                (self.x_range[0], self.y_range[0], 0, 0),
+            ]
+        ).redim.range(x=self.x_range, y=self.y_range)
 
         state = self._get_plot_state(rectangles)
         assert state["data"][1]["type"] == PLOTLY_SCATTERMAP
         assert state["data"][1]["mode"] == "lines"
         assert state["data"][1]["showlegend"] is False
         assert state["data"][1]["line"]["color"] == default_shape_color
-        assert_data_equal(state["data"][1]["lon"], np.array([
-            0, self.lon_range[1], np.nan,
-            self.lon_range[0], 0, np.nan
-        ]))
-        assert_data_equal(state["data"][1]["lat"], np.array([
-            0, self.lat_range[1], np.nan,
-            self.lat_range[0], 0, np.nan
-        ]))
+        assert_data_equal(
+            state["data"][1]["lon"],
+            np.array([0, self.lon_range[1], np.nan, self.lon_range[0], 0, np.nan]),
+        )
+        assert_data_equal(
+            state["data"][1]["lat"],
+            np.array([0, self.lat_range[1], np.nan, self.lat_range[0], 0, np.nan]),
+        )
 
-        assert state['layout'][PLOTLY_MAP]['center'] == {
-                'lat': self.lat_center, 'lon': self.lon_center
-            }
+        assert state["layout"][PLOTLY_MAP]["center"] == {
+            "lat": self.lat_center,
+            "lon": self.lon_center,
+        }

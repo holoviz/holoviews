@@ -17,7 +17,6 @@ from .util import BOKEH_GE_3_4_0, BOKEH_GE_3_5_0
 
 
 class LinkCallback:
-
     source_model = None
     target_model = None
     source_handles = []
@@ -39,21 +38,22 @@ class LinkCallback:
         self.target_plot = target_plot
         self.validate()
 
-        references = {k: v for k, v in link.param.values().items()
-                      if k not in ('source', 'target', 'name')}
+        references = {
+            k: v for k, v in link.param.values().items() if k not in ("source", "target", "name")
+        }
 
         for sh in [*self.source_handles, self.source_model]:
-            key = f'source_{sh}'
+            key = f"source_{sh}"
             references[key] = source_plot.handles[sh]
 
         for p, value in link.param.values().items():
-            if p in ('name', 'source', 'target'):
+            if p in ("name", "source", "target"):
                 continue
             references[p] = value
 
         if target_plot is not None:
             for sh in [*self.target_handles, self.target_model]:
-                key = f'target_{sh}'
+                key = f"target_{sh}"
                 references[key] = target_plot.handles[sh]
 
         if self.source_model in source_plot.handles:
@@ -67,7 +67,11 @@ class LinkCallback:
         else:
             self.src_cb = None
 
-        if target_plot is not None and self.target_model in target_plot.handles and self.target_code:
+        if (
+            target_plot is not None
+            and self.target_model in target_plot.handles
+            and self.target_code
+        ):
             tgt_model = target_plot.handles[self.target_model]
             tgt_cb = CustomJS(args=references, code=self.target_code)
             for ch in self.on_target_changes:
@@ -118,7 +122,7 @@ class LinkCallback:
         -------
         A tuple containing the matched plot and list of matching Links.
         """
-        attr = 'target' if target else 'source'
+        attr = "target" if target else "source"
         if link is None:
             candidates = list(Link.registry.items())
         else:
@@ -153,16 +157,16 @@ class RangeToolLinkCallback(LinkCallback):
     """
 
     def __init__(self, root_model, link, source_plot, target_plot):
-        toolbars = list(root_model.select({'type': Toolbar}))
+        toolbars = list(root_model.select({"type": Toolbar}))
         axes = {}
 
-        for axis in ('x', 'y'):
+        for axis in ("x", "y"):
             if axis not in link.axes:
                 continue
 
-            range_name = f'{axis}_range'
-            if f'subcoordinate_{axis}_range' in target_plot.handles:
-                target_range_name = f'subcoordinate_{range_name}'
+            range_name = f"{axis}_range"
+            if f"subcoordinate_{axis}_range" in target_plot.handles:
+                target_range_name = f"subcoordinate_{range_name}"
             else:
                 target_range_name = range_name
             axes[range_name] = ax = target_plot.handles[target_range_name]
@@ -174,7 +178,7 @@ class RangeToolLinkCallback(LinkCallback):
                 setattr(source_plot.handles["plot"], range_name, new_ax)
                 # So it is not re-linked by pn.pane.HoloViews(..., linked_axes=True)
                 new_ax.tags = []
-            interval = getattr(link, f'intervals{axis}', None)
+            interval = getattr(link, f"intervals{axis}", None)
             if interval is not None and BOKEH_GE_3_4_0:
                 min, max = interval
                 if min is not None:
@@ -183,7 +187,7 @@ class RangeToolLinkCallback(LinkCallback):
                     ax.max_interval = max
                     self._set_range_for_interval(ax, max)
 
-            bounds = getattr(link, f'bounds{axis}', None)
+            bounds = getattr(link, f"bounds{axis}", None)
             if bounds is not None:
                 start, end = bounds
                 if start is not None:
@@ -196,9 +200,9 @@ class RangeToolLinkCallback(LinkCallback):
         tool = RangeTool(**axes)
 
         if BOKEH_GE_3_5_0:
-            use_handles = getattr(link, 'use_handles', True)
-            start_gesture = getattr(link, 'start_gesture', 'tap')
-            inverted = getattr(link, 'inverted', True)
+            use_handles = getattr(link, "use_handles", True)
+            start_gesture = getattr(link, "start_gesture", "tap")
+            inverted = getattr(link, "inverted", True)
 
             tool.overlay.use_handles = use_handles
             tool.start_gesture = start_gesture
@@ -226,6 +230,7 @@ class RangeToolLinkCallback(LinkCallback):
                 # Likely a better way to do this
                 try:
                     import pandas as pd
+
                     end = (pd.array([start]) + pd.array([max]))[0]
                 except Exception:
                     raise e from None
@@ -233,22 +238,22 @@ class RangeToolLinkCallback(LinkCallback):
 
 
 class DataLinkCallback(LinkCallback):
-    """Merges the source and target ColumnDataSource
-
-    """
+    """Merges the source and target ColumnDataSource"""
 
     def __init__(self, root_model, link, source_plot, target_plot):
-        src_cds = source_plot.handles['source']
-        tgt_cds = target_plot.handles['source']
+        src_cds = source_plot.handles["source"]
+        tgt_cds = target_plot.handles["source"]
         if src_cds is tgt_cds:
             return
 
         src_len = [len(v) for v in src_cds.data.values()]
         tgt_len = [len(v) for v in tgt_cds.data.values()]
         if src_len and tgt_len and (src_len[0] != tgt_len[0]):
-            raise ValueError('DataLink source data length must match target '
-                            f'data length, found source length of {src_len[0]} and '
-                            f'target length of {tgt_len[0]}.')
+            raise ValueError(
+                "DataLink source data length must match target "
+                f"data length, found source length of {src_len[0]} and "
+                f"target length of {tgt_len[0]}."
+            )
 
         # Ensure the data sources are compatible (i.e. overlapping columns are equal)
         for k, v in tgt_cds.data.items():
@@ -257,38 +262,41 @@ class DataLinkCallback(LinkCallback):
             v = np.asarray(v)
             col = np.asarray(src_cds.data[k])
             if len(v) and isinstance(v[0], np.ndarray):
-                continue # Skip ragged arrays
-            if not ((isscalar(v) and v == col) or
-                    (dtype_kind(v) not in 'iufc' and (v==col).all()) or
-                    np.allclose(v, np.asarray(src_cds.data[k]), equal_nan=True)):
-                raise ValueError('DataLink can only be applied if overlapping '
-                                 f'dimension values are equal, {k} column on source '
-                                 'does not match target')
+                continue  # Skip ragged arrays
+            if not (
+                (isscalar(v) and v == col)
+                or (dtype_kind(v) not in "iufc" and (v == col).all())
+                or np.allclose(v, np.asarray(src_cds.data[k]), equal_nan=True)
+            ):
+                raise ValueError(
+                    "DataLink can only be applied if overlapping "
+                    f"dimension values are equal, {k} column on source "
+                    "does not match target"
+                )
 
         src_cds.data.update(tgt_cds.data)
-        renderer = target_plot.handles.get('glyph_renderer')
+        renderer = target_plot.handles.get("glyph_renderer")
         if renderer is None:
             pass
-        elif 'data_source' in renderer.properties():
+        elif "data_source" in renderer.properties():
             renderer.update(data_source=src_cds)
         else:
             renderer.update(source=src_cds)
-        target_plot.handles['source'] = src_cds
-        target_plot.handles['cds'] = src_cds
+        target_plot.handles["source"] = src_cds
+        target_plot.handles["cds"] = src_cds
         for callback in target_plot.callbacks:
-            callback.initialize(plot_id=root_model.ref['id'])
+            callback.initialize(plot_id=root_model.ref["id"])
 
 
 class SelectionLinkCallback(LinkCallback):
+    source_model = "selected"
+    target_model = "selected"
 
-    source_model = 'selected'
-    target_model = 'selected'
+    on_source_changes = ["indices"]
+    on_target_changes = ["indices"]
 
-    on_source_changes = ['indices']
-    on_target_changes = ['indices']
-
-    source_handles = ['cds']
-    target_handles = ['cds']
+    source_handles = ["cds"]
+    target_handles = ["cds"]
 
     source_code = """
     target_selected.indices = source_selected.indices
@@ -300,15 +308,15 @@ class SelectionLinkCallback(LinkCallback):
     source_cds.properties.selected.change.emit()
     """
 
+
 class RectanglesTableLinkCallback(DataLinkCallback):
+    source_model = "cds"
+    target_model = "cds"
 
-    source_model = 'cds'
-    target_model = 'cds'
+    source_handles = ["glyph"]
 
-    source_handles = ['glyph']
-
-    on_source_changes = ['selected', 'data']
-    on_target_changes = ['patching']
+    on_source_changes = ["selected", "data"]
+    on_target_changes = ["patching"]
 
     source_code = """
     target_cds.data[columns[0]] = source_cds.data[source_glyph.left.field]
@@ -328,17 +336,16 @@ class RectanglesTableLinkCallback(DataLinkCallback):
         DataLinkCallback.__init__(self, root_model, link, source_plot, target_plot)
         LinkCallback.__init__(self, root_model, link, source_plot, target_plot)
         columns = [kd.name for kd in source_plot.current_frame.kdims]
-        self.src_cb.args['columns'] = columns
-        self.tgt_cb.args['columns'] = columns
+        self.src_cb.args["columns"] = columns
+        self.tgt_cb.args["columns"] = columns
 
 
 class VertexTableLinkCallback(LinkCallback):
+    source_model = "cds"
+    target_model = "cds"
 
-    source_model = 'cds'
-    target_model = 'cds'
-
-    on_source_changes = ['selected', 'data', 'patching']
-    on_target_changes = ['data', 'patching']
+    on_source_changes = ["selected", "data", "patching"]
+    on_target_changes = ["data", "patching"]
 
     source_code = """
     var index = source_cds.selected.indices[0];
@@ -440,7 +447,7 @@ class VertexTableLinkCallback(LinkCallback):
     """
 
 
-callbacks = Link._callbacks['bokeh']
+callbacks = Link._callbacks["bokeh"]
 
 callbacks[RangeToolLink] = RangeToolLinkCallback
 callbacks[DataLink] = DataLinkCallback

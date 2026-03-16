@@ -3,8 +3,7 @@ from itertools import product
 import numpy as np
 from bokeh.models import ColorBar
 
-from holoviews.core.spaces import HoloMap
-from holoviews.element.raster import HeatMap
+import holoviews as hv
 from holoviews.plotting.bokeh import RadialHeatMapPlot
 from holoviews.testing import assert_data_equal, assert_dict_equal
 
@@ -12,7 +11,6 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class BokehRadialHeatMapPlotTests(TestBokehPlot):
-
     def setup_method(self):
         super().setup_method()
         # set up dummy data for convenient tests
@@ -21,30 +19,23 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         self.z = list(range(4))
         self.x, self.y = zip(*product(x, y), strict=True)
 
-        self.ann_bins = {"o1": np.array([0.5, 0.75]),
-                         "o2": np.array([0.75, 1])}
+        self.ann_bins = {"o1": np.array([0.5, 0.75]), "o2": np.array([0.75, 1])}
 
-        self.seg_bins = {"o1": np.array([0, np.pi]),
-                         "o2": np.array([np.pi, 2*np.pi])}
+        self.seg_bins = {"o1": np.array([0, np.pi]), "o2": np.array([np.pi, 2 * np.pi])}
 
         # set up plot options for convenient tests
-        plot_opts = dict(start_angle=0,
-                         max_radius=1,
-                         radius_inner=0.5,
-                         radius_outer=0.2,
-                         radial=True)
+        plot_opts = dict(
+            start_angle=0, max_radius=1, radius_inner=0.5, radius_outer=0.2, radial=True
+        )
 
         opts = dict(HeatMap=plot_opts)
 
         # provide element and plot instances for tests
-        self.element = HeatMap((self.x, self.y, self.z)).opts(opts)
+        self.element = hv.HeatMap((self.x, self.y, self.z)).opts(opts)
         self.plot = bokeh_renderer.get_plot(self.element)
 
-
     def test_radius_bin_computation(self):
-        """Test computation of bins for radius/annulars.
-
-        """
+        """Test computation of bins for radius/annulars."""
 
         order = sorted(self.ann_bins.keys())
         values = self.plot._get_bins("radius", order)
@@ -58,9 +49,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         assert_data_equal(values["o2"], self.ann_bins["o1"])
 
     def test_angle_bin_computation(self):
-        """Test computation of bins for radiants/segments.
-
-        """
+        """Test computation of bins for radiants/segments."""
         order = sorted(self.seg_bins.keys())
         values = self.plot._get_bins("angle", order)
         assert values.keys() == self.seg_bins.keys()
@@ -73,17 +62,13 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         assert_data_equal(values["o2"], self.seg_bins["o1"])
 
     def test_plot_extents(self):
-        """Test correct computation of extents.
-
-        """
+        """Test correct computation of extents."""
 
         extents = self.plot.get_extents("", "")
         assert extents == (-0.2, -0.2, 2.2, 2.2)
 
     def test_get_bounds(self):
-        """Test boundary computation function.
-
-        """
+        """Test boundary computation function."""
 
         order = ["o2", "o1", "o1"]
         start, end = self.plot._get_bounds(self.ann_bins, order)
@@ -160,33 +145,27 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         assert all([x in glyphs_plain for x in glyphs])
 
     def test_get_seg_labels_data(self):
-        """Test correct computation of a single segment label data point.
-
-        """
+        """Test correct computation of a single segment label data point."""
 
         radiant = np.pi / 2
         x = np.cos(radiant) + 1
         y = np.sin(radiant) + 1
         angle = 1.5 * np.pi + radiant
 
-        test_seg_data = dict(x=np.array(x),
-                             y=np.array(y),
-                             text=np.array("o1"),
-                             angle=np.array(angle))
+        test_seg_data = dict(
+            x=np.array(x), y=np.array(y), text=np.array("o1"), angle=np.array(angle)
+        )
 
         cmp_seg_data = self.plot._get_seg_labels_data(["o1"], self.seg_bins)
 
         assert test_seg_data == cmp_seg_data
 
     def test_get_ann_labels_data(self):
-        """Test correct computation of a single annular label data point.
+        """Test correct computation of a single annular label data point."""
 
-        """
-
-        test_ann_data = dict(x=np.array(1),
-                             y=np.array(self.ann_bins["o1"][0]+1),
-                             text=np.array("o1"),
-                             angle=[0])
+        test_ann_data = dict(
+            x=np.array(1), y=np.array(self.ann_bins["o1"][0] + 1), text=np.array("o1"), angle=[0]
+        )
 
         cmp_ann_data = self.plot._get_ann_labels_data(["o1"], self.ann_bins)
 
@@ -202,7 +181,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
 
         # function type
         test_val = np.array(self.ann_bins["o1"][1])
-        test_input = lambda x: x=="o1"
+        test_input = lambda x: x == "o1"
         assert_data_equal(self.plot._get_markers(test_input, *args), test_val)
 
         # list type
@@ -212,7 +191,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
 
         # tuple type
         test_val = np.array(self.ann_bins["o2"][1])
-        test_input = ("o2", )
+        test_input = ("o2",)
         assert_data_equal(self.plot._get_markers(test_input, *args), test_val)
 
         # integer type
@@ -221,9 +200,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         assert_data_equal(self.plot._get_markers(test_input, *args), test_val)
 
     def test_get_xmarks_data(self):
-        """Test computation of xmarks data for single xmark.
-
-        """
+        """Test computation of xmarks data for single xmark."""
 
         self.plot.xmarks = 1
         test_mark_data = dict(ys=[(1, 1)], xs=[(0.5, 0)])
@@ -234,11 +211,8 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
             for test_value, cmp_value in test_pairs:
                 assert_data_equal(np.array(test_value), np.array(cmp_value))
 
-
     def test_get_ymarks_data(self):
-        """Test computation of ymarks data for single ymark.
-
-        """
+        """Test computation of ymarks data for single ymark."""
 
         self.plot.ymarks = 1
         test_mark_data = dict(radius=self.ann_bins["o1"][1])
@@ -263,31 +237,33 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
             assert all([x in glyphs_plain for x in glyphs])
 
     def test_plot_data_source(self):
-        """Test initialization of ColumnDataSources.
+        """Test initialization of ColumnDataSources."""
 
-        """
-
-        source_ann = self.plot.handles['annular_wedge_1_source'].data
+        source_ann = self.plot.handles["annular_wedge_1_source"].data
 
         assert list(source_ann["x"]) == list(self.x)
         assert list(source_ann["y"]) == list(self.y)
         assert list(source_ann["z"]) == self.z
 
     def test_heatmap_holomap(self):
-        hm = HoloMap({'A': HeatMap(np.random.randint(0, 10, (100, 3))),
-                      'B': HeatMap(np.random.randint(0, 10, (100, 3)))})
+        hm = hv.HoloMap(
+            {
+                "A": hv.HeatMap(np.random.randint(0, 10, (100, 3))),
+                "B": hv.HeatMap(np.random.randint(0, 10, (100, 3))),
+            }
+        )
         plot = bokeh_renderer.get_plot(hm.opts(radial=True))
         assert isinstance(plot, RadialHeatMapPlot)
 
     def test_radial_heatmap_colorbar(self):
-        hm = HeatMap([(0, 0, 1), (0, 1, 2), (1, 0, 3)]).opts(radial=True, colorbar=True)
+        hm = hv.HeatMap([(0, 0, 1), (0, 1, 2), (1, 0, 3)]).opts(radial=True, colorbar=True)
         plot = bokeh_renderer.get_plot(hm)
-        assert isinstance(plot.handles.get('colorbar'), ColorBar)
+        assert isinstance(plot.handles.get("colorbar"), ColorBar)
 
     def test_radial_heatmap_ranges(self):
-        hm = HeatMap([(0, 0, 1), (0, 1, 2), (1, 0, 3)]).opts(radial=True, colorbar=True)
+        hm = hv.HeatMap([(0, 0, 1), (0, 1, 2), (1, 0, 3)]).opts(radial=True, colorbar=True)
         plot = bokeh_renderer.get_plot(hm)
-        assert plot.handles['x_range'].start == -0.05
-        assert plot.handles['x_range'].end == 1.05
-        assert plot.handles['y_range'].start == -0.05
-        assert plot.handles['y_range'].end == 1.05
+        assert plot.handles["x_range"].start == -0.05
+        assert plot.handles["x_range"].end == 1.05
+        assert plot.handles["y_range"].start == -0.05
+        assert plot.handles["y_range"].end == 1.05

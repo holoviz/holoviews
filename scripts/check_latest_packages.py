@@ -44,7 +44,7 @@ def main(*packages):
             if Version(vrelease).is_devrelease or Version(vrelease).is_prerelease:
                 continue
             for info in resp["releases"][vrelease]:
-                if not compare_versions(PY_VERSION, info['requires_python']):
+                if not compare_versions(PY_VERSION, info["requires_python"]):
                     continue
 
                 latest = vrelease
@@ -58,7 +58,7 @@ def main(*packages):
             if found:
                 break
         else:
-            raise RuntimeError('Could not find matching version')
+            raise RuntimeError("Could not find matching version")
 
         current = version(package)
         current_release_date = datetime.fromisoformat(

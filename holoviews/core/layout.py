@@ -22,11 +22,13 @@ class Layoutable:
     def __add__(x, y):
         """Compose objects into a Layout"""
         if any(isinstance(arg, int) for arg in (x, y)):
-            raise TypeError(f"unsupported operand type(s) for +: {x.__class__.__name__} and {y.__class__.__name__}. "
-                            "If you are trying to use a reduction like `sum(elements)` "
-                            "to combine a list of elements, we recommend you use "
-                            "`Layout(elements)` (and similarly `Overlay(elements)` for "
-                            "making an overlay from a list) instead.")
+            raise TypeError(
+                f"unsupported operand type(s) for +: {x.__class__.__name__} and {y.__class__.__name__}. "
+                "If you are trying to use a reduction like `sum(elements)` "
+                "to combine a list of elements, we recommend you use "
+                "`Layout(elements)` (and similarly `Overlay(elements)` for "
+                "making an overlay from a list) instead."
+            )
         try:
             return Layout([x, y])
         except NotImplementedError:
@@ -43,16 +45,13 @@ class Composable(Layoutable):
     """
 
     def __lshift__(self, other):
-        """Compose objects into an AdjointLayout
-
-        """
+        """Compose objects into an AdjointLayout"""
         if isinstance(other, (ViewableElement, NdMapping, Empty)):
             return AdjointLayout([self, other])
         elif isinstance(other, AdjointLayout):
             return AdjointLayout([*other.data.values(), self])
         else:
-            raise TypeError(f'Cannot append {type(other).__name__} to a AdjointLayout')
-
+            raise TypeError(f"Cannot append {type(other).__name__} to a AdjointLayout")
 
 
 class Empty(Dimensioned, Composable):
@@ -63,11 +62,10 @@ class Empty(Dimensioned, Composable):
 
     """
 
-    group = param.String(default='Empty')
+    group = param.String(default="Empty")
 
     def __init__(self, **params):
         super().__init__(None, **params)
-
 
 
 class AdjointLayout(Layoutable, Dimensioned):
@@ -88,24 +86,24 @@ class AdjointLayout(Layoutable, Dimensioned):
 
     """
 
-    kdims = param.List(default=[Dimension('AdjointLayout')], constant=True)
+    kdims = param.List(default=[Dimension("AdjointLayout")], constant=True)
 
-    layout_order = ['main', 'right', 'top']
+    layout_order = ["main", "right", "top"]
 
     _deep_indexable = True
     _auxiliary_component = False
 
     def __init__(self, data, **params):
-        self.main_layer = 0 # The index of the main layer if .main is an overlay
+        self.main_layer = 0  # The index of the main layer if .main is an overlay
         if data and len(data) > 3:
-            raise Exception('AdjointLayout accepts no more than three elements.')
+            raise Exception("AdjointLayout accepts no more than three elements.")
 
         if data is not None and all(isinstance(v, tuple) for v in data):
             data = dict(data)
         if isinstance(data, dict):
             wrong_pos = [k for k in data if k not in self.layout_order]
             if wrong_pos:
-                raise Exception('Wrong AdjointLayout positions provided.')
+                raise Exception("Wrong AdjointLayout positions provided.")
         elif isinstance(data, list):
             data = dict(zip(self.layout_order, data, strict=None))
         else:
@@ -113,17 +111,16 @@ class AdjointLayout(Layoutable, Dimensioned):
 
         super().__init__(data, **params)
 
-
     def __mul__(self, other, reverse=False):
         layer1 = other if reverse else self
         layer2 = self if reverse else other
         adjoined_items = []
         if isinstance(layer1, AdjointLayout) and isinstance(layer2, AdjointLayout):
             adjoined_items = []
-            adjoined_items.append(layer1.main*layer2.main)
+            adjoined_items.append(layer1.main * layer2.main)
             if layer1.right is not None and layer2.right is not None:
                 if layer1.right.dimensions() == layer2.right.dimensions():
-                    adjoined_items.append(layer1.right*layer2.right)
+                    adjoined_items.append(layer1.right * layer2.right)
                 else:
                     adjoined_items += [layer1.right, layer2.right]
             elif layer1.right is not None:
@@ -133,7 +130,7 @@ class AdjointLayout(Layoutable, Dimensioned):
 
             if layer1.top is not None and layer2.top is not None:
                 if layer1.top.dimensions() == layer2.top.dimensions():
-                    adjoined_items.append(layer1.top*layer2.top)
+                    adjoined_items.append(layer1.top * layer2.top)
                 else:
                     adjoined_items += [layer1.top, layer2.top]
             elif layer1.top is not None:
@@ -141,17 +138,17 @@ class AdjointLayout(Layoutable, Dimensioned):
             elif layer2.top is not None:
                 adjoined_items.append(layer2.top)
             if len(adjoined_items) > 3:
-                raise ValueError("AdjointLayouts could not be overlaid, "
-                                 "the dimensions of the adjoined plots "
-                                 "do not match and the AdjointLayout can "
-                                 "hold no more than two adjoined plots.")
+                raise ValueError(
+                    "AdjointLayouts could not be overlaid, "
+                    "the dimensions of the adjoined plots "
+                    "do not match and the AdjointLayout can "
+                    "hold no more than two adjoined plots."
+                )
         elif isinstance(layer1, AdjointLayout):
-            adjoined_items = [layer1.data[o] for o in self.layout_order
-                              if o in layer1.data]
+            adjoined_items = [layer1.data[o] for o in self.layout_order if o in layer1.data]
             adjoined_items[0] = layer1.main * layer2
         elif isinstance(layer2, AdjointLayout):
-            adjoined_items = [layer2.data[o] for o in self.layout_order
-                              if o in layer2.data]
+            adjoined_items = [layer2.data[o] for o in self.layout_order if o in layer2.data]
             adjoined_items[0] = layer1 * layer2.main
 
         if adjoined_items:
@@ -159,35 +156,30 @@ class AdjointLayout(Layoutable, Dimensioned):
         else:
             return NotImplemented
 
-
     def __rmul__(self, other):
         return self.__mul__(other, reverse=True)
 
-
     @property
     def group(self):
-        """Group inherited from main element
-
-        """
+        """Group inherited from main element"""
         if self.main and self.main.group != type(self.main).__name__:
             return self.main.group
         else:
-            return 'AdjointLayout'
+            return "AdjointLayout"
 
     @property
     def label(self):
-        """Label inherited from main element
-
-        """
-        return self.main.label if self.main else ''
-
+        """Label inherited from main element"""
+        return self.main.label if self.main else ""
 
     # Both group and label need empty setters due to param inheritance
     @group.setter
-    def group(self, group): pass
-    @label.setter
-    def label(self, label): pass
+    def group(self, group):
+        pass
 
+    @label.setter
+    def label(self, label):
+        pass
 
     def relabel(self, label=None, group=None, depth=1):
         """Clone object and apply new group and/or label.
@@ -211,7 +203,6 @@ class AdjointLayout(Layoutable, Dimensioned):
         """
         return super().relabel(label=label, group=group, depth=depth)
 
-
     def get(self, key, default=None):
         """Returns the viewable corresponding to the supplied string
         or integer based key.
@@ -231,16 +222,12 @@ class AdjointLayout(Layoutable, Dimensioned):
         """
         return self.data[key] if key in self.data else default
 
-
     def dimension_values(self, dimension, expanded=True, flat=True):
         dimension = self.get_dimension(dimension, strict=True).name
         return self.main.dimension_values(dimension, expanded, flat)
 
-
     def __getitem__(self, key):
-        """Index into the AdjointLayout by index or label
-
-        """
+        """Index into the AdjointLayout by index or label"""
         if key == ():
             return self
 
@@ -250,10 +237,14 @@ class AdjointLayout(Layoutable, Dimensioned):
             key = key[0]
 
         if isinstance(key, int) and key <= len(self):
-            if key == 0:  data = self.main
-            if key == 1:  data = self.right
-            if key == 2:  data = self.top
-            if data_slice: data = data[data_slice]
+            if key == 0:
+                data = self.main
+            if key == 1:
+                data = self.right
+            if key == 2:
+                data = self.top
+            if data_slice:
+                data = data[data_slice]
             return data
         elif isinstance(key, str) and key in self.data:
             if data_slice is None:
@@ -261,29 +252,23 @@ class AdjointLayout(Layoutable, Dimensioned):
             else:
                 self.data[key][data_slice]
         elif isinstance(key, slice) and key.start is None and key.stop is None:
-            return self if data_slice is None else self.clone([el[data_slice]
-                                                               for el in self])
+            return self if data_slice is None else self.clone([el[data_slice] for el in self])
         else:
             raise KeyError(f"Key {key} not found in AdjointLayout.")
 
-
     def __setitem__(self, key, value):
-        if key in ['main', 'right', 'top']:
+        if key in ["main", "right", "top"]:
             if isinstance(value, (ViewableElement, UniformNdMapping, Empty)):
                 self.data[key] = value
             else:
-                raise ValueError('AdjointLayout only accepts Element types.')
+                raise ValueError("AdjointLayout only accepts Element types.")
         else:
-            raise Exception(f'Position {key} not valid in AdjointLayout.')
-
+            raise Exception(f"Position {key} not valid in AdjointLayout.")
 
     def __lshift__(self, other):
-        """Add another plot to the AdjointLayout
-
-        """
+        """Add another plot to the AdjointLayout"""
         views = [self.data.get(k, None) for k in self.layout_order]
         return AdjointLayout([v for v in views if v is not None] + [other])
-
 
     @property
     def ddims(self):
@@ -291,39 +276,29 @@ class AdjointLayout(Layoutable, Dimensioned):
 
     @property
     def main(self):
-        """Returns the main element in the AdjointLayout
-
-        """
-        return self.data.get('main', None)
+        """Returns the main element in the AdjointLayout"""
+        return self.data.get("main", None)
 
     @property
     def right(self):
-        """Returns the right marginal element in the AdjointLayout
-
-        """
-        return self.data.get('right', None)
+        """Returns the right marginal element in the AdjointLayout"""
+        return self.data.get("right", None)
 
     @property
     def top(self):
-        """Returns the top marginal element in the AdjointLayout
-
-        """
-        return self.data.get('top', None)
+        """Returns the top marginal element in the AdjointLayout"""
+        return self.data.get("top", None)
 
     @property
     def last(self):
-        items = [(k, v.last) if isinstance(v, NdMapping) else (k, v)
-                 for k, v in self.data.items()]
+        items = [(k, v.last) if isinstance(v, NdMapping) else (k, v) for k, v in self.data.items()]
         return self.__class__(dict(items))
-
 
     def keys(self):
         return list(self.data.keys())
 
-
     def items(self):
         return list(self.data.items())
-
 
     def __iter__(self):
         i = 0
@@ -332,11 +307,8 @@ class AdjointLayout(Layoutable, Dimensioned):
             i += 1
 
     def __len__(self):
-        """Number of items in the AdjointLayout
-
-        """
+        """Number of items in the AdjointLayout"""
         return len(self.data)
-
 
 
 class NdLayout(Layoutable, UniformNdMapping):
@@ -352,38 +324,34 @@ class NdLayout(Layoutable, UniformNdMapping):
     def __init__(self, initial_items=None, kdims=None, **params):
         self._max_cols = 4
         self._style = None
-        super().__init__(initial_items=initial_items, kdims=kdims,
-                         **params)
-
+        super().__init__(initial_items=initial_items, kdims=kdims, **params)
 
     @property
     def uniform(self):
         return traversal.uniform(self)
 
-
     @property
     def shape(self):
-        """Tuple indicating the number of rows and columns in the NdLayout.
-
-        """
+        """Tuple indicating the number of rows and columns in the NdLayout."""
         num = len(self.keys())
         if num <= self._max_cols:
             return (1, num)
         nrows = num // self._max_cols
         last_row_cols = num % self._max_cols
-        return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
-
+        return nrows + (1 if last_row_cols else 0), min(num, self._max_cols)
 
     def grid_items(self):
         """Compute a dict of {(row,column): (key, value)} elements from the
         current set of items and specified number of columns.
 
         """
-        if list(self.keys()) == []:  return {}
+        if list(self.keys()) == []:
+            return {}
         cols = self._max_cols
-        return {(idx // cols, idx % cols): (key, item)
-                for idx, (key, item) in enumerate(self.data.items())}
-
+        return {
+            (idx // cols, idx % cols): (key, item)
+            for idx, (key, item) in enumerate(self.data.items())
+        }
 
     def cols(self, ncols):
         """Sets the maximum number of columns in the NdLayout.
@@ -407,7 +375,7 @@ class NdLayout(Layoutable, UniformNdMapping):
 
         """
         last_items = []
-        for (k, v) in self.items():
+        for k, v in self.items():
             if isinstance(v, NdMapping):
                 item = (k, v.clone((v.last_key, v.last)))
             elif isinstance(v, AdjointLayout):
@@ -416,7 +384,6 @@ class NdLayout(Layoutable, UniformNdMapping):
                 item = (k, v)
             last_items.append(item)
         return self.clone(last_items)
-
 
     def clone(self, *args, **overrides):
         """Clones the NdLayout, overriding data and parameters.
@@ -458,12 +425,12 @@ class Layout(Layoutable, ViewableTree):
 
     """
 
-    group = param.String(default='Layout', constant=True)
+    group = param.String(default="Layout", constant=True)
 
     _deep_indexable = True
 
     def __init__(self, items=None, identifier=None, parent=None, **kwargs):
-        self.__dict__['_max_cols'] = 4
+        self.__dict__["_max_cols"] = 4
         super().__init__(items, identifier, parent, **kwargs)
 
     def decollate(self):
@@ -483,42 +450,40 @@ class Layout(Layoutable, ViewableTree):
         DynamicMap that returns a Layout
         """
         from .decollate import decollate
+
         return decollate(self)
 
     @property
     def shape(self):
-        """Tuple indicating the number of rows and columns in the Layout.
-
-        """
+        """Tuple indicating the number of rows and columns in the Layout."""
         num = len(self)
         if num <= self._max_cols:
             return (1, num)
         nrows = num // self._max_cols
         last_row_cols = num % self._max_cols
-        return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
-
+        return nrows + (1 if last_row_cols else 0), min(num, self._max_cols)
 
     def __getitem__(self, key):
-        """Allows indexing Layout by row and column or path
-
-        """
+        """Allows indexing Layout by row and column or path"""
         if isinstance(key, int):
             if key < len(self):
                 return list(self.data.values())[key]
             raise KeyError("Element out of range.")
         elif isinstance(key, slice):
-            raise KeyError("A Layout may not be sliced, ensure that you "
-                           "are slicing on a leaf (i.e. not a branch) of the Layout.")
+            raise KeyError(
+                "A Layout may not be sliced, ensure that you "
+                "are slicing on a leaf (i.e. not a branch) of the Layout."
+            )
         if len(key) == 2 and not any([isinstance(k, str) for k in key]):
-            if key == (slice(None), slice(None)): return self
+            if key == (slice(None), slice(None)):
+                return self
             row, col = key
             idx = row * self._max_cols + col
             keys = list(self.data.keys())
             if idx >= len(keys) or col >= self._max_cols:
-                raise KeyError(f'Index {key} is outside available item range')
+                raise KeyError(f"Index {key} is outside available item range")
             key = keys[idx]
         return super().__getitem__(key)
-
 
     def clone(self, *args, **overrides):
         """Clones the Layout, overriding data and parameters.
@@ -543,7 +508,6 @@ class Layout(Layoutable, ViewableTree):
         clone = super().clone(*args, **overrides)
         clone._max_cols = self._max_cols
         return clone
-
 
     def cols(self, ncols):
         """Sets the maximum number of columns in the NdLayout.
@@ -583,14 +547,17 @@ class Layout(Layoutable, ViewableTree):
         return super().relabel(label, group, depth)
 
     def grid_items(self):
-        return {tuple(np.unravel_index(idx, self.shape)): (path, item)
-                for idx, (path, item) in enumerate(self.items())}
+        return {
+            tuple(np.unravel_index(idx, self.shape)): (path, item)
+            for idx, (path, item) in enumerate(self.items())
+        }
 
     def __mul__(self, other, reverse=False):
         from .spaces import HoloMap
+
         if not isinstance(other, (ViewableElement, HoloMap)):
             return NotImplemented
-        layout = Layout([other*v if reverse else v*other for v in self])
+        layout = Layout([other * v if reverse else v * other for v in self])
         layout._max_cols = self._max_cols
         return layout
 
@@ -598,6 +565,14 @@ class Layout(Layoutable, ViewableTree):
         return self.__mul__(other, reverse=True)
 
 
-__all__ = list({_k for _k, _v in locals().items()
-                    if isinstance(_v, type) and (issubclass(_v, Dimensioned)
-                                                 or issubclass(_v, Layout))})
+__all__ = [
+    "AdjointLayout",
+    "Dimensioned",
+    "Empty",
+    "Layout",
+    "NdLayout",
+    "NdMapping",
+    "UniformNdMapping",
+    "ViewableElement",
+    "ViewableTree",
+]

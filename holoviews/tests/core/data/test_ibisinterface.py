@@ -5,9 +5,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from holoviews.core.data import Dataset
+import holoviews as hv
 from holoviews.core.data.ibis import IBIS_VERSION, IbisInterface
-from holoviews.core.spaces import HoloMap
 from holoviews.testing import assert_element_equal
 
 from ...utils import optional_dependencies
@@ -18,6 +17,7 @@ ibis, ibis_skip = optional_dependencies("ibis")
 
 def create_temp_db(df, name, index=False):
     from ibis import sqlite
+
     with NamedTemporaryFile(delete=False) as my_file:
         filename = my_file.name
     con = sqlite3.Connection(filename)
@@ -69,9 +69,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             columns=["Gender", "Age", "Weight", "Height"],
         )
         hetero_db = create_temp_db(hetero_df, "hetero")
-        self.table = Dataset(
-            hetero_db.table("hetero"), kdims=self.kdims, vdims=self.vdims
-        )
+        self.table = hv.Dataset(hetero_db.table("hetero"), kdims=self.kdims, vdims=self.vdims)
 
         # Create table with aliased dimension names
         self.alias_kdims = [("gender", "Gender"), ("age", "Age")]
@@ -86,24 +84,24 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             columns=["gender", "age", "weight", "height"],
         )
         alias_db = create_temp_db(alias_df, "alias")
-        self.alias_table = Dataset(
+        self.alias_table = hv.Dataset(
             alias_db.table("alias"), kdims=self.alias_kdims, vdims=self.alias_vdims
         )
 
         self.xs = np.array(range(11))
-        self.xs_2 = self.xs ** 2
+        self.xs_2 = self.xs**2
         self.y_ints = self.xs * 2
         self.ys = np.linspace(0, 1, 11)
         self.zs = np.sin(self.xs)
 
         ht_df = pd.DataFrame({"x": self.xs, "y": self.ys}, columns=["x", "y"])
         ht_db = create_temp_db(ht_df, "ht")
-        self.dataset_ht = Dataset(ht_db.table("ht"), kdims=["x"], vdims=["y"])
+        self.dataset_ht = hv.Dataset(ht_db.table("ht"), kdims=["x"], vdims=["y"])
 
         hm_df = pd.DataFrame({"x": self.xs, "y": self.y_ints}, columns=["x", "y"])
         hm_db = create_temp_db(hm_df, "hm")
-        self.dataset_hm = Dataset(hm_db.table("hm"), kdims=["x"], vdims=["y"])
-        self.dataset_hm_alias = Dataset(
+        self.dataset_hm = hv.Dataset(hm_db.table("hm"), kdims=["x"], vdims=["y"])
+        self.dataset_hm_alias = hv.Dataset(
             hm_db.table("hm"), kdims=[("x", "X")], vdims=[("y", "Y")]
         )
 
@@ -175,7 +173,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         assert self.dataset_hm.interface.dtype(self.dataset_hm, "y") == int_dtype
 
     def test_dataset_reduce_ht(self):
-        reduced = Dataset(
+        reduced = hv.Dataset(
             {"Age": self.age, "Weight": self.weight, "Height": self.height},
             kdims=self.kdims[1:],
             vdims=self.vdims,
@@ -183,17 +181,15 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         assert_element_equal(self.table.reduce(["Gender"], np.mean).sort(), reduced.sort())
 
     def test_dataset_aggregate_ht(self):
-        aggregated = Dataset(
+        aggregated = hv.Dataset(
             {"Gender": ["M", "F"], "Weight": [16.5, 10], "Height": [0.7, 0.8]},
             kdims=self.kdims[:1],
             vdims=self.vdims,
         )
-        assert_element_equal(
-            self.table.aggregate(["Gender"], np.mean).sort(), aggregated.sort()
-        )
+        assert_element_equal(self.table.aggregate(["Gender"], np.mean).sort(), aggregated.sort())
 
     def test_dataset_aggregate_ht_alias(self):
-        aggregated = Dataset(
+        aggregated = hv.Dataset(
             {"gender": ["M", "F"], "weight": [16.5, 10], "height": [0.7, 0.8]},
             kdims=self.alias_kdims[:1],
             vdims=self.alias_vdims,
@@ -205,24 +201,22 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
     def test_dataset_groupby(self):
         group1 = {"Age": [10, 16], "Weight": [15, 18], "Height": [0.8, 0.6]}
         group2 = {"Age": [12], "Weight": [10], "Height": [0.8]}
-        grouped = HoloMap(
+        grouped = hv.HoloMap(
             [
-                ("M", Dataset(group1, kdims=["Age"], vdims=self.vdims)),
-                ("F", Dataset(group2, kdims=["Age"], vdims=self.vdims)),
+                ("M", hv.Dataset(group1, kdims=["Age"], vdims=self.vdims)),
+                ("F", hv.Dataset(group2, kdims=["Age"], vdims=self.vdims)),
             ],
             kdims=["Gender"],
         )
-        assert_element_equal(
-            self.table.groupby(["Gender"]).apply("sort"), grouped.apply("sort")
-        )
+        assert_element_equal(self.table.groupby(["Gender"]).apply("sort"), grouped.apply("sort"))
 
     def test_dataset_groupby_alias(self):
         group1 = {"age": [10, 16], "weight": [15, 18], "height": [0.8, 0.6]}
         group2 = {"age": [12], "weight": [10], "height": [0.8]}
-        grouped = HoloMap(
+        grouped = hv.HoloMap(
             [
-                ("M", Dataset(group1, kdims=[("age", "Age")], vdims=self.alias_vdims)),
-                ("F", Dataset(group2, kdims=[("age", "Age")], vdims=self.alias_vdims)),
+                ("M", hv.Dataset(group1, kdims=[("age", "Age")], vdims=self.alias_vdims)),
+                ("F", hv.Dataset(group2, kdims=[("age", "Age")], vdims=self.alias_vdims)),
             ],
             kdims=[("gender", "Gender")],
         )
@@ -232,28 +226,37 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         group1 = {"Gender": ["M"], "Weight": [15], "Height": [0.8]}
         group2 = {"Gender": ["M"], "Weight": [18], "Height": [0.6]}
         group3 = {"Gender": ["F"], "Weight": [10], "Height": [0.8]}
-        grouped = HoloMap(
+        grouped = hv.HoloMap(
             [
-                (10, Dataset(group1, kdims=["Gender"], vdims=self.vdims)),
-                (16, Dataset(group2, kdims=["Gender"], vdims=self.vdims)),
-                (12, Dataset(group3, kdims=["Gender"], vdims=self.vdims)),
+                (10, hv.Dataset(group1, kdims=["Gender"], vdims=self.vdims)),
+                (16, hv.Dataset(group2, kdims=["Gender"], vdims=self.vdims)),
+                (12, hv.Dataset(group3, kdims=["Gender"], vdims=self.vdims)),
             ],
             kdims=["Age"],
             sort=True,
         )
         assert_element_equal(self.table.groupby(["Age"]), grouped)
 
-    @pytest.mark.parametrize("agg", [
-         np.min, np.nanmin, np.max, np.nanmax, np.mean, np.nanmean,
-         np.sum, np.nansum, len, np.count_nonzero,
-         # TODO: var-based operations failing this test
-         # np.std, np.nanstd, np.var, np.nanvar
-     ])
+    @pytest.mark.parametrize(
+        "agg",
+        [
+            np.min,
+            np.nanmin,
+            np.max,
+            np.nanmax,
+            np.mean,
+            np.nanmean,
+            np.sum,
+            np.nansum,
+            len,
+            np.count_nonzero,
+            # TODO: var-based operations failing this test
+            # np.std, np.nanstd, np.var, np.nanvar
+        ],
+    )
     def test_aggregation_operations(self, agg):
         data = self.table.dframe()
-        expected = self.table.clone(
-            data=data
-        ).aggregate("Gender", agg).sort()
+        expected = self.table.clone(data=data).aggregate("Gender", agg).sort()
 
         result = self.table.aggregate("Gender", agg).sort()
         assert_element_equal(expected, result)

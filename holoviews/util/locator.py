@@ -3,6 +3,7 @@ levels without having to have Matplotlib installed.
 Taken from Matplotlib 3.8.0.
 
 """
+
 import math
 
 import numpy as np
@@ -42,18 +43,14 @@ class _Edge_integer:
         return abs(ms - edge) < tol
 
     def le(self, x):
-        """Return the largest n: n*step <= x.
-
-        """
+        """Return the largest n: n*step <= x."""
         d, m = divmod(x, self.step)
         if self.closeto(m / self.step, 1):
             return d + 1
         return d
 
     def ge(self, x):
-        """Return the smallest n: n*step >= x.
-
-        """
+        """Return the smallest n: n*step >= x."""
         d, m = divmod(x, self.step)
         if self.closeto(m / self.step, 0):
             return d
@@ -108,8 +105,8 @@ def nonsingular(vmin, vmax, expander=0.001, tiny=1e-15, increasing=True):
             vmin = -expander
             vmax = expander
         else:
-            vmin -= expander*abs(vmin)
-            vmax += expander*abs(vmax)
+            vmin -= expander * abs(vmin)
+            vmax += expander * abs(vmax)
 
     if swapped and not increasing:
         vmin, vmax = vmax, vmin
@@ -128,9 +125,30 @@ def scale_range(vmin, vmax, n=1, threshold=100):
 
 
 class MaxNLocator:
-    _extended_steps = np.array([
-        0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.8,
-        1., 1.5, 2., 2.5, 3., 4., 5., 6., 8., 10., 15.])
+    _extended_steps = np.array(
+        [
+            0.1,
+            0.15,
+            0.2,
+            0.25,
+            0.3,
+            0.4,
+            0.5,
+            0.6,
+            0.8,
+            1.0,
+            1.5,
+            2.0,
+            2.5,
+            3.0,
+            4.0,
+            5.0,
+            6.0,
+            8.0,
+            10.0,
+            15.0,
+        ]
+    )
     _min_n_ticks = 1
 
     def __init__(self, nbins: int = 10):
@@ -144,7 +162,7 @@ class MaxNLocator:
         _vmax = vmax - offset
         steps = self._extended_steps * scale
 
-        raw_step = ((_vmax - _vmin) / self.nbins)
+        raw_step = (_vmax - _vmin) / self.nbins
         large_steps = steps >= raw_step
 
         # Find index of smallest large step
@@ -153,7 +171,7 @@ class MaxNLocator:
         # Start at smallest of the steps greater than the raw step, and check
         # if it provides enough ticks. If not, work backwards through
         # smaller steps until one is found that provides enough ticks.
-        for step in steps[:istep+1][::-1]:
+        for step in steps[: istep + 1][::-1]:
             best_vmin = (_vmin // step) * step
 
             # Find tick locations spanning the vmin-vmax range, taking into

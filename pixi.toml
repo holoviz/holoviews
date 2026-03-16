@@ -45,7 +45,7 @@ features = ["required", "py314", "test-core", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-gpu]
-features = ["required", "py312", "test-core", "optional", "test-gpu"]
+features = ["required", "py313", "test-core", "optional", "test-gpu"]
 no-default-feature = true
 
 [environments.docs]
@@ -220,8 +220,8 @@ platforms = ["linux-64"]
 NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = "0"
 
 [feature.test-gpu.dependencies]
-cuda-version = "12.2.*"
-cudf = "25.12.*"
+cuda-version = "13.1.*"
+cudf = "26.02.*"
 cupy = "*"
 # cuspatial = "*"  # Paused development: https://docs.rapids.ai/notices/rsn0045/
 librmm = { version = "*", channel = "rapidsai" }

@@ -5,17 +5,16 @@ Test cases for the Comparisons class over the Chart elements
 import numpy as np
 import pytest
 
-from holoviews import Bars, Curve, Dimension, Histogram, Points, Scatter, VectorField
+import holoviews as hv
 from holoviews.testing import assert_element_equal
 
 
 class CurveComparisonTest:
-
     def setup_method(self):
         "Variations on the constructors in the Elements notebook"
 
-        self.curve1 = Curve([(0.1*i, np.sin(0.1*i)) for i in range(100)])
-        self.curve2 = Curve([(0.1*i, np.sin(0.1*i)) for i in range(101)])
+        self.curve1 = hv.Curve([(0.1 * i, np.sin(0.1 * i)) for i in range(100)])
+        self.curve2 = hv.Curve([(0.1 * i, np.sin(0.1 * i)) for i in range(101)])
 
     def test_curves_equal(self):
         assert_element_equal(self.curve1, self.curve1)
@@ -27,19 +26,21 @@ class CurveComparisonTest:
 
 
 class BarsComparisonTest:
-
     def setup_method(self):
         "Variations on the constructors in the Elements notebook"
 
-        key_dims1=[Dimension('Car occupants')]
-        key_dims2=[Dimension('Cyclists')]
-        value_dims1=['Count']
-        self.bars1 = Bars([('one',8),('two', 10), ('three', 16)],
-                          kdims=key_dims1, vdims=value_dims1)
-        self.bars2 = Bars([('one',8),('two', 10), ('three', 17)],
-                          kdims=key_dims1, vdims=value_dims1)
-        self.bars3 = Bars([('one',8),('two', 10), ('three', 16)],
-                          kdims=key_dims2, vdims=value_dims1)
+        key_dims1 = [hv.Dimension("Car occupants")]
+        key_dims2 = [hv.Dimension("Cyclists")]
+        value_dims1 = ["Count"]
+        self.bars1 = hv.Bars(
+            [("one", 8), ("two", 10), ("three", 16)], kdims=key_dims1, vdims=value_dims1
+        )
+        self.bars2 = hv.Bars(
+            [("one", 8), ("two", 10), ("three", 17)], kdims=key_dims1, vdims=value_dims1
+        )
+        self.bars3 = hv.Bars(
+            [("one", 8), ("two", 10), ("three", 16)], kdims=key_dims2, vdims=value_dims1
+        )
 
     def test_bars_equal_1(self):
         assert_element_equal(self.bars1, self.bars1)
@@ -51,11 +52,9 @@ class BarsComparisonTest:
         assert_element_equal(self.bars3, self.bars3)
 
     def test_bars_unequal_1(self):
-        try:
+        msg = "Arrays are not almost equal"
+        with pytest.raises(AssertionError, match=msg):
             assert_element_equal(self.bars1, self.bars2)
-        except AssertionError as e:
-            if "not almost equal" not in str(e):
-                raise Exception(f'Bars mismatched data error not raised. {e}')
 
     def test_bars_unequal_keydims(self):
         msg = "assert 'Car occupants' == 'Cyclists'"
@@ -64,18 +63,17 @@ class BarsComparisonTest:
 
 
 class HistogramComparisonTest:
-
     def setup_method(self):
         "Variations on the constructors in the Elements notebook"
 
         np.random.seed(1)
         frequencies1, edges1 = np.histogram([np.random.normal() for i in range(1000)], 20)
-        self.hist1 = Histogram((edges1, frequencies1))
+        self.hist1 = hv.Histogram((edges1, frequencies1))
         np.random.seed(2)
-        frequencies2, edges2 =  np.histogram([np.random.normal() for i in range(1000)], 20)
-        self.hist2 = Histogram((edges2, frequencies2))
-        self.hist3 = Histogram((edges2, frequencies1))
-        self.hist4 = Histogram((edges1, frequencies2))
+        frequencies2, edges2 = np.histogram([np.random.normal() for i in range(1000)], 20)
+        self.hist2 = hv.Histogram((edges2, frequencies2))
+        self.hist3 = hv.Histogram((edges2, frequencies1))
+        self.hist4 = hv.Histogram((edges1, frequencies2))
 
     def test_histograms_equal_1(self):
         assert_element_equal(self.hist1, self.hist1)
@@ -96,16 +94,13 @@ class HistogramComparisonTest:
             assert_element_equal(self.hist1, self.hist4)
 
 
-
 class ScatterComparisonTest:
-
     def setup_method(self):
         "Variations on the constructors in the Elements notebook"
 
-        self.scatter1 = Scatter([(1, i) for i in range(20)])
-        self.scatter2 = Scatter([(1, i) for i in range(21)])
-        self.scatter3 = Scatter([(1, i*2) for i in range(20)])
-
+        self.scatter1 = hv.Scatter([(1, i) for i in range(20)])
+        self.scatter2 = hv.Scatter([(1, i) for i in range(21)])
+        self.scatter3 = hv.Scatter([(1, i * 2) for i in range(20)])
 
     def test_scatter_equal_1(self):
         assert_element_equal(self.scatter1, self.scatter1)
@@ -128,14 +123,12 @@ class ScatterComparisonTest:
 
 
 class PointsComparisonTest:
-
     def setup_method(self):
         "Variations on the constructors in the Elements notebook"
 
-        self.points1 = Points([(1, i) for i in range(20)])
-        self.points2 = Points([(1, i) for i in range(21)])
-        self.points3 = Points([(1, i*2) for i in range(20)])
-
+        self.points1 = hv.Points([(1, i) for i in range(20)])
+        self.points2 = hv.Points([(1, i) for i in range(21)])
+        self.points3 = hv.Points([(1, i * 2) for i in range(20)])
 
     def test_points_equal_1(self):
         assert_element_equal(self.points1, self.points1)
@@ -158,18 +151,16 @@ class PointsComparisonTest:
 
 
 class VectorFieldComparisonTest:
-
     def setup_method(self):
         "Variations on the constructors in the Elements notebook"
 
-        x,y  = np.mgrid[-10:10,-10:10] * 0.25
-        sine_rings  = np.sin(x**2+y**2)*np.pi+np.pi
-        exp_falloff1 = 1/np.exp((x**2+y**2)/8)
-        exp_falloff2 = 1/np.exp((x**2+y**2)/9)
+        x, y = np.mgrid[-10:10, -10:10] * 0.25
+        sine_rings = np.sin(x**2 + y**2) * np.pi + np.pi
+        exp_falloff1 = 1 / np.exp((x**2 + y**2) / 8)
+        exp_falloff2 = 1 / np.exp((x**2 + y**2) / 9)
 
-        self.vfield1 = VectorField([x,y,sine_rings, exp_falloff1])
-        self.vfield2 = VectorField([x,y,sine_rings, exp_falloff2])
-
+        self.vfield1 = hv.VectorField([x, y, sine_rings, exp_falloff1])
+        self.vfield2 = hv.VectorField([x, y, sine_rings, exp_falloff2])
 
     def test_vfield_equal_1(self):
         assert_element_equal(self.vfield1, self.vfield1)

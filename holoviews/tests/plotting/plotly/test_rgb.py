@@ -2,16 +2,14 @@ import numpy as np
 import PIL.Image
 import plotly.graph_objs as go
 
-from holoviews.element import RGB, Tiles
-from holoviews.plotting.plotly.util import (
-    PLOTLY_MAP,
-    PLOTLY_SCATTERMAP,
-)
+import holoviews as hv
+from holoviews.plotting.plotly.util import PLOTLY_MAP, PLOTLY_SCATTERMAP
 
 from .test_plot import TestPlotlyPlot, plotly_renderer
 
 try:
     from PIL.Image import Transpose
+
     FLIP_LEFT_RIGHT = Transpose.FLIP_LEFT_RIGHT
     FLIP_TOP_BOTTOM = Transpose.FLIP_TOP_BOTTOM
     ROTATE_90 = Transpose.ROTATE_90
@@ -23,74 +21,79 @@ except ImportError:
 
 
 class TestRGBPlot(TestPlotlyPlot):
-
     @staticmethod
     def rgb_element_to_pil_img(rgb_data):
-        return PIL.Image.fromarray(np.clip(rgb_data * 255, 0, 255).astype('uint8'))
+        return PIL.Image.fromarray(np.clip(rgb_data * 255, 0, 255).astype("uint8"))
 
     def test_rgb(self):
         rgb_data = np.random.rand(10, 10, 3)
-        rgb = RGB(rgb_data)
+        rgb = hv.RGB(rgb_data)
         fig_dict = plotly_renderer.get_plot_state(rgb)
-        x_range = fig_dict['layout']['xaxis']['range']
+        x_range = fig_dict["layout"]["xaxis"]["range"]
         assert x_range[0] == -0.5
         assert x_range[1] == 0.5
 
-        y_range = fig_dict['layout']['yaxis']['range']
+        y_range = fig_dict["layout"]["yaxis"]["range"]
         assert y_range[0] == -0.5
         assert y_range[1] == 0.5
 
         # Check layout.image object
-        images = fig_dict['layout']['images']
+        images = fig_dict["layout"]["images"]
         assert len(images) == 1
         image = images[0]
 
         # Check location properties
-        self.assert_property_values(image, {
-            'xref': 'x',
-            'yref': 'y',
-            'x': -0.5,
-            'y': 0.5,
-            'sizex': 1.0,
-            'sizey': 1.0,
-            'sizing': 'stretch',
-            'layer': 'above',
-        })
+        self.assert_property_values(
+            image,
+            {
+                "xref": "x",
+                "yref": "y",
+                "x": -0.5,
+                "y": 0.5,
+                "sizex": 1.0,
+                "sizey": 1.0,
+                "sizing": "stretch",
+                "layer": "above",
+            },
+        )
 
         # Check image itself
         pil_img = self.rgb_element_to_pil_img(rgb.data)
         expected_source = go.layout.Image(source=pil_img).source
-        assert image['source'] == expected_source
+        assert image["source"] == expected_source
 
     def test_rgb_invert_xaxis(self):
         rgb_data = np.random.rand(10, 10, 3)
-        rgb = RGB(rgb_data).opts(invert_xaxis=True)
+        rgb = hv.RGB(rgb_data).opts(invert_xaxis=True)
 
         fig_dict = plotly_renderer.get_plot_state(rgb)
-        x_range = fig_dict['layout']['xaxis']['range']
+        x_range = fig_dict["layout"]["xaxis"]["range"]
         assert x_range[0] == 0.5
         assert x_range[1] == -0.5
 
-        y_range = fig_dict['layout']['yaxis']['range']
+        y_range = fig_dict["layout"]["yaxis"]["range"]
         assert y_range[0] == -0.5
         assert y_range[1] == 0.5
 
         # Check layout.image object
-        images = fig_dict['layout']['images']
+        images = fig_dict["layout"]["images"]
         assert len(images) == 1
         image = images[0]
 
         # Check location properties
-        self.assert_property_values(image, {
-            'xref': 'x',
-            'yref': 'y',
-            'x': 0.5,
-            'y': 0.5,
-            'sizex': -1.0,
-            'sizey': 1.0,
-            'sizing': 'stretch',
-            'layer': 'above',
-        })
+        self.assert_property_values(
+            image,
+            {
+                "xref": "x",
+                "yref": "y",
+                "x": 0.5,
+                "y": 0.5,
+                "sizex": -1.0,
+                "sizey": 1.0,
+                "sizing": "stretch",
+                "layer": "above",
+            },
+        )
 
         # Check image itself
         pil_img = self.rgb_element_to_pil_img(rgb.data)
@@ -100,37 +103,40 @@ class TestRGBPlot(TestPlotlyPlot):
 
         expected_source = go.layout.Image(source=pil_img).source
 
-        assert image['source'] == expected_source
+        assert image["source"] == expected_source
 
     def test_rgb_invert_xaxis_and_yaxis(self):
         rgb_data = np.random.rand(10, 10, 3)
-        rgb = RGB(rgb_data).opts(invert_xaxis=True, invert_yaxis=True)
+        rgb = hv.RGB(rgb_data).opts(invert_xaxis=True, invert_yaxis=True)
 
         fig_dict = plotly_renderer.get_plot_state(rgb)
-        x_range = fig_dict['layout']['xaxis']['range']
+        x_range = fig_dict["layout"]["xaxis"]["range"]
         assert x_range[0] == 0.5
         assert x_range[1] == -0.5
 
-        y_range = fig_dict['layout']['yaxis']['range']
+        y_range = fig_dict["layout"]["yaxis"]["range"]
         assert y_range[0] == 0.5
         assert y_range[1] == -0.5
 
         # Check layout.image object
-        images = fig_dict['layout']['images']
+        images = fig_dict["layout"]["images"]
         assert len(images) == 1
         image = images[0]
 
         # Check location properties
-        self.assert_property_values(image, {
-            'xref': 'x',
-            'yref': 'y',
-            'x': 0.5,
-            'y': -0.5,
-            'sizex': -1.0,
-            'sizey': -1.0,
-            'sizing': 'stretch',
-            'layer': 'above',
-        })
+        self.assert_property_values(
+            image,
+            {
+                "xref": "x",
+                "yref": "y",
+                "x": 0.5,
+                "y": -0.5,
+                "sizex": -1.0,
+                "sizey": -1.0,
+                "sizing": "stretch",
+                "layer": "above",
+            },
+        )
 
         # Check image itself
         pil_img = self.rgb_element_to_pil_img(rgb.data)
@@ -140,37 +146,40 @@ class TestRGBPlot(TestPlotlyPlot):
 
         expected_source = go.layout.Image(source=pil_img).source
 
-        assert image['source'] == expected_source
+        assert image["source"] == expected_source
 
     def test_rgb_invert_axes(self):
         rgb_data = np.random.rand(10, 10, 3)
-        rgb = RGB(rgb_data).opts(invert_axes=True)
+        rgb = hv.RGB(rgb_data).opts(invert_axes=True)
 
         fig_dict = plotly_renderer.get_plot_state(rgb)
-        x_range = fig_dict['layout']['xaxis']['range']
+        x_range = fig_dict["layout"]["xaxis"]["range"]
         assert x_range[0] == -0.5
         assert x_range[1] == 0.5
 
-        y_range = fig_dict['layout']['yaxis']['range']
+        y_range = fig_dict["layout"]["yaxis"]["range"]
         assert y_range[0] == -0.5
         assert y_range[1] == 0.5
 
         # Check layout.image object
-        images = fig_dict['layout']['images']
+        images = fig_dict["layout"]["images"]
         assert len(images) == 1
         image = images[0]
 
         # Check location properties
-        self.assert_property_values(image, {
-            'xref': 'x',
-            'yref': 'y',
-            'x': -0.5,
-            'y': 0.5,
-            'sizex': 1.0,
-            'sizey': 1.0,
-            'sizing': 'stretch',
-            'layer': 'above',
-        })
+        self.assert_property_values(
+            image,
+            {
+                "xref": "x",
+                "yref": "y",
+                "x": -0.5,
+                "y": 0.5,
+                "sizex": 1.0,
+                "sizey": 1.0,
+                "sizing": "stretch",
+                "layer": "above",
+            },
+        )
 
         # Check image itself
         pil_img = self.rgb_element_to_pil_img(rgb.data)
@@ -180,37 +189,40 @@ class TestRGBPlot(TestPlotlyPlot):
 
         expected_source = go.layout.Image(source=pil_img).source
 
-        assert image['source'] == expected_source
+        assert image["source"] == expected_source
 
     def test_rgb_invert_xaxis_and_yaxis_and_axes(self):
         rgb_data = np.random.rand(10, 10, 3)
-        rgb = RGB(rgb_data).opts(invert_xaxis=True, invert_yaxis=True, invert_axes=True)
+        rgb = hv.RGB(rgb_data).opts(invert_xaxis=True, invert_yaxis=True, invert_axes=True)
 
         fig_dict = plotly_renderer.get_plot_state(rgb)
-        x_range = fig_dict['layout']['xaxis']['range']
+        x_range = fig_dict["layout"]["xaxis"]["range"]
         assert x_range[0] == 0.5
         assert x_range[1] == -0.5
 
-        y_range = fig_dict['layout']['yaxis']['range']
+        y_range = fig_dict["layout"]["yaxis"]["range"]
         assert y_range[0] == 0.5
         assert y_range[1] == -0.5
 
         # Check layout.image object
-        images = fig_dict['layout']['images']
+        images = fig_dict["layout"]["images"]
         assert len(images) == 1
         image = images[0]
 
         # Check location properties
-        self.assert_property_values(image, {
-            'xref': 'x',
-            'yref': 'y',
-            'x': 0.5,
-            'y': -0.5,
-            'sizex': -1.0,
-            'sizey': -1.0,
-            'sizing': 'stretch',
-            'layer': 'above',
-        })
+        self.assert_property_values(
+            image,
+            {
+                "xref": "x",
+                "yref": "y",
+                "x": 0.5,
+                "y": -0.5,
+                "sizex": -1.0,
+                "sizey": -1.0,
+                "sizing": "stretch",
+                "layer": "above",
+            },
+        )
 
         # Check image itself
         pil_img = self.rgb_element_to_pil_img(rgb.data)
@@ -220,35 +232,38 @@ class TestRGBPlot(TestPlotlyPlot):
 
         expected_source = go.layout.Image(source=pil_img).source
 
-        assert image['source'] == expected_source
+        assert image["source"] == expected_source
 
     def test_rgb_opacity(self):
         rgb_data = np.random.rand(10, 10, 3)
-        rgb = RGB(rgb_data).opts(opacity=0.5)
+        rgb = hv.RGB(rgb_data).opts(opacity=0.5)
         fig_dict = plotly_renderer.get_plot_state(rgb)
 
         # Check layout.image object
-        images = fig_dict['layout']['images']
+        images = fig_dict["layout"]["images"]
         assert len(images) == 1
         image = images[0]
 
         # Check location properties
-        self.assert_property_values(image, {
-            'xref': 'x',
-            'yref': 'y',
-            'x': -0.5,
-            'y': 0.5,
-            'sizex': 1.0,
-            'sizey': 1.0,
-            'sizing': 'stretch',
-            'layer': 'above',
-            'opacity': 0.5,
-        })
+        self.assert_property_values(
+            image,
+            {
+                "xref": "x",
+                "yref": "y",
+                "x": -0.5,
+                "y": 0.5,
+                "sizex": 1.0,
+                "sizey": 1.0,
+                "sizing": "stretch",
+                "layer": "above",
+                "opacity": 0.5,
+            },
+        )
 
         # Check image itself
         pil_img = self.rgb_element_to_pil_img(rgb_data)
         expected_source = go.layout.Image(source=pil_img).source
-        assert image['source'] == expected_source
+        assert image["source"] == expected_source
 
 
 class TestMapboxRGBPlot(TestPlotlyPlot):
@@ -262,21 +277,20 @@ class TestMapboxRGBPlot(TestPlotlyPlot):
         self.x_center = sum(self.x_range) / 2.0
         self.y_range = (-3000000, 2000000)
         self.y_center = sum(self.y_range) / 2.0
-        self.lon_range, self.lat_range = Tiles.easting_northing_to_lon_lat(self.x_range, self.y_range)
-        self.lon_centers, self.lat_centers = Tiles.easting_northing_to_lon_lat(
+        self.lon_range, self.lat_range = hv.Tiles.easting_northing_to_lon_lat(
+            self.x_range, self.y_range
+        )
+        self.lon_centers, self.lat_centers = hv.Tiles.easting_northing_to_lon_lat(
             [self.x_center], [self.y_center]
         )
         self.lon_center, self.lat_center = self.lon_centers[0], self.lat_centers[0]
-        self.lons, self.lats = Tiles.easting_northing_to_lon_lat(self.xs, self.ys)
+        self.lons, self.lats = hv.Tiles.easting_northing_to_lon_lat(self.xs, self.ys)
 
     def test_rgb(self):
         rgb_data = np.random.rand(10, 10, 3)
-        rgb = Tiles("") * RGB(
-            rgb_data,
-            bounds=(self.x_range[0], self.y_range[0], self.x_range[1], self.y_range[1])
-        ).opts(
-            opacity=0.5
-        ).redim.range(x=self.x_range, y=self.y_range)
+        rgb = hv.Tiles("") * hv.RGB(
+            rgb_data, bounds=(self.x_range[0], self.y_range[0], self.x_range[1], self.y_range[1])
+        ).opts(opacity=0.5).redim.range(x=self.x_range, y=self.y_range)
 
         fig_dict = plotly_renderer.get_plot_state(rgb)
         # Check dummy trace
@@ -288,7 +302,7 @@ class TestMapboxRGBPlot(TestPlotlyPlot):
         # Check mapbox subplot
         subplot = fig_dict["layout"][PLOTLY_MAP]
         assert subplot["style"] == "white-bg"
-        assert subplot['center'] == {'lat': self.lat_center, 'lon': self.lon_center}
+        assert subplot["center"] == {"lat": self.lat_center, "lon": self.lon_center}
 
         # Check rgb layer
         layers = fig_dict["layout"][PLOTLY_MAP]["layers"]
@@ -299,7 +313,7 @@ class TestMapboxRGBPlot(TestPlotlyPlot):
             [self.lon_range[0], self.lat_range[1]],
             [self.lon_range[1], self.lat_range[1]],
             [self.lon_range[1], self.lat_range[0]],
-            [self.lon_range[0], self.lat_range[0]]
+            [self.lon_range[0], self.lat_range[0]],
         ]
         assert rgb_layer["source"].startswith("data:image/png;base64,iVBOR")
         assert rgb_layer["opacity"] == 0.5

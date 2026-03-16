@@ -13,7 +13,7 @@ from .graphs import EdgePaths, Graph, Nodes
 from .util import quadratic_bezier
 
 _Y_N_DECIMAL_DIGITS = 6
-_Y_EPS = 10 ** -_Y_N_DECIMAL_DIGITS
+_Y_EPS = 10**-_Y_N_DECIMAL_DIGITS
 
 
 class _layout_sankey(Operation):
@@ -28,17 +28,26 @@ class _layout_sankey(Operation):
 
     bounds = param.NumericTuple(default=(0, 0, 1000, 500))
 
-    node_width = param.Number(default=15, doc="""
-        Width of the nodes.""")
+    node_width = param.Number(
+        default=15,
+        doc="Width of the nodes.",
+    )
 
-    node_padding = param.Integer(default=None, allow_None=True, doc="""
-        Number of pixels of padding relative to the bounds.""")
+    node_padding = param.Integer(
+        default=None,
+        allow_None=True,
+        doc="Number of pixels of padding relative to the bounds.",
+    )
 
-    iterations = param.Integer(default=32, doc="""
-        Number of iterations to run the layout algorithm.""")
+    iterations = param.Integer(
+        default=32,
+        doc="Number of iterations to run the layout algorithm.",
+    )
 
-    node_sort = param.Boolean(default=True, doc="""
-        Sort nodes in ascending breadth.""")
+    node_sort = param.Boolean(
+        default=True,
+        doc="Sort nodes in ascending breadth.",
+    )
 
     def _process(self, element, key=None):
         nodes, edges, graph = self.layout(element, **self.p)
@@ -47,7 +56,7 @@ class _layout_sankey(Operation):
 
     def layout(self, element, **params):
         self.p = param.ParamOverrides(self, params)
-        graph = {'nodes': [], 'links': []}
+        graph = {"nodes": [], "links": []}
         self.computeNodeLinks(element, graph)
         self.computeNodeValues(graph)
         self.computeNodeDepths(graph)
@@ -57,13 +66,15 @@ class _layout_sankey(Operation):
         paths = self.computePaths(graph)
 
         node_data = []
-        for node in graph['nodes']:
-            node_data.append((
-                np.mean([node['x0'], node['x1']]),
-                np.mean([node['y0'], node['y1']]),
-                node['index'],
-                *node['values']
-            ))
+        for node in graph["nodes"]:
+            node_data.append(
+                (
+                    np.mean([node["x0"], node["x1"]]),
+                    np.mean([node["y0"], node["y1"]]),
+                    node["index"],
+                    *node["values"],
+                )
+            )
         if element.nodes.ndims == 3:
             kdims = element.nodes.kdims
         elif element.nodes.ndims:
@@ -83,222 +94,204 @@ class _layout_sankey(Operation):
         index = element.nodes.kdims[-1]
         node_map = {}
         if element.nodes.vdims:
-            values = zip(*(element.nodes.dimension_values(d)
-                           for d in element.nodes.vdims), strict=None)
+            values = zip(
+                *(element.nodes.dimension_values(d) for d in element.nodes.vdims), strict=None
+            )
         else:
             values = cycle([tuple()])
         for idx, vals in zip(element.nodes.dimension_values(index), values, strict=None):
-            node = {'index': idx, 'sourceLinks': [], 'targetLinks': [], 'values': vals}
-            graph['nodes'].append(node)
+            node = {"index": idx, "sourceLinks": [], "targetLinks": [], "values": vals}
+            graph["nodes"].append(node)
             node_map[idx] = node
 
         links = [element.dimension_values(d) for d in element.dimensions()[:3]]
         for i, (src, tgt, value) in enumerate(zip(*links, strict=None)):
             source, target = node_map[src], node_map[tgt]
             link = dict(index=i, source=source, target=target, value=value)
-            graph['links'].append(link)
-            source['sourceLinks'].append(link)
-            target['targetLinks'].append(link)
+            graph["links"].append(link)
+            source["sourceLinks"].append(link)
+            target["targetLinks"].append(link)
 
     @classmethod
     def computeNodeValues(cls, graph):
-        """Compute the value (size) of each node by summing the associated links.
-
-        """
-        for node in graph['nodes']:
-            source_val = np.sum([l['value'] for l in node['sourceLinks']])
-            target_val = np.sum([l['value'] for l in node['targetLinks']])
-            node['value'] = max([source_val, target_val])
+        """Compute the value (size) of each node by summing the associated links."""
+        for node in graph["nodes"]:
+            source_val = np.sum([l["value"] for l in node["sourceLinks"]])
+            target_val = np.sum([l["value"] for l in node["targetLinks"]])
+            node["value"] = max([source_val, target_val])
 
     @classmethod
     def computeNodeDepths(cls, graph):
-        nodes = graph['nodes']
+        nodes = graph["nodes"]
         depth = 0
         while nodes:
             next_nodes = []
             for node in nodes:
-                node['depth'] = depth
-                for link in node['sourceLinks']:
-                    next_nodes.append(link['target'])
+                node["depth"] = depth
+                for link in node["sourceLinks"]:
+                    next_nodes.append(link["target"])
             nodes = next_nodes
             depth += 1
-            if depth > len(graph['nodes']):
-                raise RecursionError('Sankey diagrams only support acyclic graphs.')
+            if depth > len(graph["nodes"]):
+                raise RecursionError("Sankey diagrams only support acyclic graphs.")
         return depth
 
     @classmethod
     def computeNodeHeights(cls, graph):
-        nodes = graph['nodes']
+        nodes = graph["nodes"]
         height = 0
         while nodes:
             next_nodes = []
             for node in nodes:
-                node['height'] = height
-                for link in node['targetLinks']:
-                    next_nodes.append(link['source'])
+                node["height"] = height
+                for link in node["targetLinks"]:
+                    next_nodes.append(link["source"])
             nodes = next_nodes
             height += 1
-            if height > len(graph['nodes']):
-                raise RecursionError('Sankey diagrams only support acyclic graphs.')
+            if height > len(graph["nodes"]):
+                raise RecursionError("Sankey diagrams only support acyclic graphs.")
         return height
 
     def computeNodeColumns(self, graph):
-        depth_upper_bound = max(x['depth'] for x in graph['nodes']) + 1
+        depth_upper_bound = max(x["depth"] for x in graph["nodes"]) + 1
         x0, x1 = self.p.bounds[0], self.p.bounds[2]
         dx = self.p.node_width
         kx = (x1 - x0 - dx) / (depth_upper_bound - 1)
         columns = [[] for _ in range(depth_upper_bound)]
-        for node in graph['nodes']:
-            node['column'] = max(
+        for node in graph["nodes"]:
+            node["column"] = max(
                 0,
                 min(
                     depth_upper_bound - 1,
-                    math.floor(
-                        node['depth']
-                        if node['sourceLinks']
-                        else depth_upper_bound - 1
-                    )
-                )
+                    math.floor(node["depth"] if node["sourceLinks"] else depth_upper_bound - 1),
+                ),
             )
-            node['x0'] = x0 + node['column'] * kx
-            node['x1'] = node['x0'] + dx
-            columns[node['column']].append(node)
+            node["x0"] = x0 + node["column"] * kx
+            node["x1"] = node["x0"] + dx
+            columns[node["column"]].append(node)
         return columns
 
     @classmethod
     def ascendingBreadth(cls, a, b):
-        return int(a['y0'] - b['y0'])
+        return int(a["y0"] - b["y0"])
 
     @classmethod
     def ascendingSourceBreadth(cls, a, b):
         return (
-            (
-                cls.ascendingBreadth(a['source'], b['source'])
-                if 'y0' in a['source'] and 'y0' in b['source']
-                else None
-            )
-            or a['index'] - b['index']
-        )
+            cls.ascendingBreadth(a["source"], b["source"])
+            if "y0" in a["source"] and "y0" in b["source"]
+            else None
+        ) or a["index"] - b["index"]
 
     @classmethod
     def ascendingTargetBreadth(cls, a, b):
         return (
-            (
-                cls.ascendingBreadth(a['target'], b['target'])
-                if 'y0' in a['target'] and 'y0' in b['target']
-                else None
-            )
-            or a['index'] - b['index']
-        )
+            cls.ascendingBreadth(a["target"], b["target"])
+            if "y0" in a["target"] and "y0" in b["target"]
+            else None
+        ) or a["index"] - b["index"]
 
     @classmethod
     def reorderLinks(cls, nodes):
         for x in nodes:
-            x['sourceLinks'].sort(key=cmp_to_key(cls.ascendingTargetBreadth))
-            x['targetLinks'].sort(key=cmp_to_key(cls.ascendingSourceBreadth))
+            x["sourceLinks"].sort(key=cmp_to_key(cls.ascendingTargetBreadth))
+            x["targetLinks"].sort(key=cmp_to_key(cls.ascendingSourceBreadth))
 
     def initializeNodeBreadths(self, columns, py):
         _, y0, _, y1 = self.p.bounds
-        ky = min(
-            (y1 - y0 - (len(c) - 1) * py) / sum(node['value'] for node in c)
-            for c in columns
-        )
+        ky = min((y1 - y0 - (len(c) - 1) * py) / sum(node["value"] for node in c) for c in columns)
         for nodes in columns:
             y = y0
             for node in nodes:
-                node['y0'] = y
-                node['y1'] = y + node['value'] * ky
-                y = node['y1'] + py
-                for link in node['sourceLinks']:
-                    link['width'] = link['value'] * ky
+                node["y0"] = y
+                node["y1"] = y + node["value"] * ky
+                y = node["y1"] + py
+                for link in node["sourceLinks"]:
+                    link["width"] = link["value"] * ky
             y = (y1 - y + py) / (len(nodes) + 1)
             for i, node in enumerate(nodes):
-                node['y0'] += y * (i + 1)
-                node['y1'] += y * (i + 1)
+                node["y0"] += y * (i + 1)
+                node["y1"] += y * (i + 1)
             self.reorderLinks(nodes)
 
     @classmethod
     def sourceTop(cls, source, target, py):
-        y = target['y0'] - (len(target['targetLinks']) - 1) * py / 2
-        for link in target['targetLinks']:
-            if link['source'] is source:
+        y = target["y0"] - (len(target["targetLinks"]) - 1) * py / 2
+        for link in target["targetLinks"]:
+            if link["source"] is source:
                 break
-            y += link['width'] + py
-        for link in source['sourceLinks']:
-            if link['target'] is target:
+            y += link["width"] + py
+        for link in source["sourceLinks"]:
+            if link["target"] is target:
                 break
-            y -= link['width']
+            y -= link["width"]
         return y
 
     @classmethod
     def targetTop(cls, source, target, py):
-        y = source['y0'] - (len(source['sourceLinks']) - 1) * py / 2
-        for link in source['sourceLinks']:
-            if link['target'] is target:
+        y = source["y0"] - (len(source["sourceLinks"]) - 1) * py / 2
+        for link in source["sourceLinks"]:
+            if link["target"] is target:
                 break
-            y += link['width'] + py
-        for link in target['targetLinks']:
-            if link['source'] is source:
+            y += link["width"] + py
+        for link in target["targetLinks"]:
+            if link["source"] is source:
                 break
-            y -= link['width']
+            y -= link["width"]
         return y
 
     @classmethod
     def resolveCollisionsTopToBottom(cls, nodes, y, i, alpha, py):
         for node in nodes[i:]:
-            dy = (y - node['y0']) * alpha
+            dy = (y - node["y0"]) * alpha
             if dy > _Y_EPS:
-                node['y0'] += dy
-                node['y1'] += dy
-            y = node['y1'] + py
+                node["y0"] += dy
+                node["y1"] += dy
+            y = node["y1"] + py
 
     @classmethod
     def resolveCollisionsBottomToTop(cls, nodes, y, i, alpha, py):
         # NOTE: don't change the `while` loop to `for`
         while i >= 0:
             node = nodes[i]
-            dy = (node['y1'] - y) * alpha
+            dy = (node["y1"] - y) * alpha
             if dy > _Y_EPS:
-                node['y0'] -= dy
-                node['y1'] -= dy
-            y = node['y0'] - py
+                node["y0"] -= dy
+                node["y1"] -= dy
+            y = node["y0"] - py
             i -= 1
 
     def resolveCollisions(self, nodes, alpha, py):
         _, y0, _, y1 = self.p.bounds
         i = len(nodes) // 2
         subject = nodes[i]
-        self.resolveCollisionsBottomToTop(nodes, subject['y0'] - py, i - 1, alpha, py)
-        self.resolveCollisionsTopToBottom(nodes, subject['y1'] + py, i + 1, alpha, py)
+        self.resolveCollisionsBottomToTop(nodes, subject["y0"] - py, i - 1, alpha, py)
+        self.resolveCollisionsTopToBottom(nodes, subject["y1"] + py, i + 1, alpha, py)
         self.resolveCollisionsBottomToTop(nodes, y1, len(nodes) - 1, alpha, py)
         self.resolveCollisionsTopToBottom(nodes, y0, 0, alpha, py)
 
     @classmethod
     def reorderNodeLinks(cls, node):
-        for link in node['targetLinks']:
-            link['source']['sourceLinks'].sort(
-                key=cmp_to_key(cls.ascendingTargetBreadth)
-            )
-        for link in node['sourceLinks']:
-            link['target']['targetLinks'].sort(
-                key=cmp_to_key(cls.ascendingSourceBreadth)
-            )
+        for link in node["targetLinks"]:
+            link["source"]["sourceLinks"].sort(key=cmp_to_key(cls.ascendingTargetBreadth))
+        for link in node["sourceLinks"]:
+            link["target"]["targetLinks"].sort(key=cmp_to_key(cls.ascendingSourceBreadth))
 
     def relaxLeftToRight(self, columns, alpha, beta, py):
         for column in columns[1:]:
             for target in column:
                 y = 0
                 w = 0
-                for link in target['targetLinks']:
-                    source = link['source']
-                    v = link['value'] * (target['column'] - source['column'])
+                for link in target["targetLinks"]:
+                    source = link["source"]
+                    v = link["value"] * (target["column"] - source["column"])
                     y += self.targetTop(source, target, py) * v
                     w += v
                 if w <= 0:
                     continue
-                dy = (y / w - target['y0']) * alpha
-                target['y0'] += dy
-                target['y1'] += dy
+                dy = (y / w - target["y0"]) * alpha
+                target["y0"] += dy
+                target["y1"] += dy
                 self.reorderNodeLinks(target)
             if self.p.node_sort:
                 # TODO is the comparison operator valid?
@@ -306,23 +299,21 @@ class _layout_sankey(Operation):
             self.resolveCollisions(column, beta, py)
 
     def relaxRightToLeft(self, columns, alpha, beta, py):
-        """Reposition each node based on its outgoing (source) links.
-
-        """
+        """Reposition each node based on its outgoing (source) links."""
         for column in columns[-2::-1]:
             for source in column:
                 y = 0
                 w = 0
-                for link in source['sourceLinks']:
-                    target = link['target']
-                    v = link['value'] * (target['column'] - source['column'])
+                for link in source["sourceLinks"]:
+                    target = link["target"]
+                    v = link["value"] * (target["column"] - source["column"])
                     y += self.sourceTop(source, target, py) * v
                     w += v
                 if w <= 0:
                     continue
-                dy = (y / w - source['y0']) * alpha
-                source['y0'] += dy
-                source['y1'] += dy
+                dy = (y / w - source["y0"]) * alpha
+                source["y0"] += dy
+                source["y1"] += dy
                 self.reorderNodeLinks(source)
             if self.p.node_sort:
                 column.sort(key=cmp_to_key(self.ascendingBreadth))
@@ -343,55 +334,59 @@ class _layout_sankey(Operation):
         )
         self.initializeNodeBreadths(columns, py)
         for i in range(self.p.iterations):
-            alpha = 0.99 ** i
+            alpha = 0.99**i
             beta = max(1 - alpha, (i + 1) / self.p.iterations)
             self.relaxRightToLeft(columns, alpha, beta, py)
             self.relaxLeftToRight(columns, alpha, beta, py)
-        for node in graph['nodes']:
-            node['y1'] = round(node['y1'], _Y_N_DECIMAL_DIGITS)
+        for node in graph["nodes"]:
+            node["y1"] = round(node["y1"], _Y_N_DECIMAL_DIGITS)
 
     @classmethod
     def computeLinkBreadths(cls, graph):
-        for node in graph['nodes']:
-            node['sourceLinks'].sort(key=cmp_to_key(cls.ascendingTargetBreadth))
-            node['targetLinks'].sort(key=cmp_to_key(cls.ascendingSourceBreadth))
+        for node in graph["nodes"]:
+            node["sourceLinks"].sort(key=cmp_to_key(cls.ascendingTargetBreadth))
+            node["targetLinks"].sort(key=cmp_to_key(cls.ascendingSourceBreadth))
 
-        for node in graph['nodes']:
-            y0 = node['y0']
+        for node in graph["nodes"]:
+            y0 = node["y0"]
             y1 = y0
-            for link in node['sourceLinks']:
-                link['y0'] = y0 + link['width'] / 2
-                y0 += link['width']
-            for link in node['targetLinks']:
-                link['y1'] = y1 + link['width'] / 2
-                y1 += link['width']
+            for link in node["sourceLinks"]:
+                link["y0"] = y0 + link["width"] / 2
+                y0 += link["width"]
+            for link in node["targetLinks"]:
+                link["y1"] = y1 + link["width"] / 2
+                y1 += link["width"]
 
     def computePaths(self, graph):
         paths = []
-        for link in graph['links']:
-            source, target = link['source'], link['target']
-            x0 = source['x1']
-            x1 = target['x0']
+        for link in graph["links"]:
+            source, target = link["source"], link["target"]
+            x0 = source["x1"]
+            x1 = target["x0"]
             xmid = (x0 + x1) / 2
-            y0_upper = link['y0'] + link['width'] / 2
-            y0_lower = link['y0'] - link['width'] / 2
-            y1_upper = link['y1'] + link['width'] / 2
-            y1_lower = link['y1'] - link['width'] / 2
+            y0_upper = link["y0"] + link["width"] / 2
+            y0_lower = link["y0"] - link["width"] / 2
+            y1_upper = link["y1"] + link["width"] / 2
+            y1_lower = link["y1"] - link["width"] / 2
 
-            start = np.array([
-                [x0, y0_upper],
-                [x0, y0_lower],
-            ])
+            start = np.array(
+                [
+                    [x0, y0_upper],
+                    [x0, y0_lower],
+                ]
+            )
             bottom = quadratic_bezier(
                 (x0, y0_lower),
                 (x1, y1_lower),
                 (xmid, y0_lower),
                 (xmid, y1_lower),
             )
-            mid = np.array([
-                [x1, y1_lower],
-                [x1, y1_upper],
-            ])
+            mid = np.array(
+                [
+                    [x1, y1_lower],
+                    [x1, y1_upper],
+                ]
+            )
             top = quadratic_bezier(
                 (x1, y1_upper),
                 (x0, y0_upper),
@@ -409,36 +404,40 @@ class Sankey(Graph):
 
     """
 
-    group = param.String(default='Sankey', constant=True)
+    group = param.String(default="Sankey", constant=True)
 
-    vdims = param.List(default=[Dimension('Value')])
+    vdims = param.List(default=[Dimension("Value")])
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if data is None:
             data = []
         if isinstance(data, tuple):
-            data = data + (None,)*(3-len(data))
+            data = data + (None,) * (3 - len(data))
             edges, nodes, edgepaths = data
         else:
             edges, nodes, edgepaths = data, None, None
-        sankey_graph = params.pop('sankey', None)
-        compute = not (sankey_graph and isinstance(nodes, Nodes) and isinstance(edgepaths, EdgePaths))
+        sankey_graph = params.pop("sankey", None)
+        compute = not (
+            sankey_graph and isinstance(nodes, Nodes) and isinstance(edgepaths, EdgePaths)
+        )
         super(Graph, self).__init__(edges, kdims=kdims, vdims=vdims, **params)
         if compute:
             if nodes is None:
                 src = self.dimension_values(0, expanded=False)
                 tgt = self.dimension_values(1, expanded=False)
                 values = unique_array(np.concatenate([src, tgt]))
-                nodes = Dataset(values, 'index')
+                nodes = Dataset(values, "index")
             elif not isinstance(nodes, Dataset):
                 try:
                     nodes = Dataset(nodes)
                 except Exception:
-                    nodes = Dataset(nodes, 'index')
+                    nodes = Dataset(nodes, "index")
             if not nodes.kdims:
-                raise ValueError('Could not determine index in supplied node data. '
-                                 'Ensure data has at least one key dimension, '
-                                 'which matches the node ids on the edges.')
+                raise ValueError(
+                    "Could not determine index in supplied node data. "
+                    "Ensure data has at least one key dimension, "
+                    "which matches the node ids on the edges."
+                )
             self._nodes = nodes
             nodes, edgepaths, graph = _layout_sankey.instance().layout(self)
             self._nodes = nodes
@@ -454,9 +453,7 @@ class Sankey(Graph):
             self._sankey = sankey_graph
         self._validate()
 
-    def clone(self, data=None, shared_data=True, new_type=None, link=True,
-              *args, **overrides):
+    def clone(self, data=None, shared_data=True, new_type=None, link=True, *args, **overrides):
         if data is None:
-            overrides['sankey'] = self._sankey
-        return super().clone(data, shared_data, new_type, link,
-                             *args, **overrides)
+            overrides["sankey"] = self._sankey
+        return super().clone(data, shared_data, new_type, link, *args, **overrides)

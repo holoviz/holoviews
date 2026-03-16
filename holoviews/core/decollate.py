@@ -2,20 +2,14 @@ from collections import namedtuple
 
 import param
 
-from .. import (
-    Callable,
-    DynamicMap,
-    Element,
-    GridSpace,
-    HoloMap,
-    Layout,
-    NdOverlay,
-    Overlay,
-)
 from ..plotting.util import initialize_dynamic
 from ..streams import Derived, Stream
 from . import AdjointLayout, ViewableTree
+from .element import Element
+from .layout import Layout
 from .operation import OperationCallable
+from .overlay import NdOverlay, Overlay
+from .spaces import Callable, DynamicMap, GridSpace, HoloMap
 
 Expr = namedtuple("HoloviewsExpr", ["fn", "args", "kwargs"])
 StreamIndex = namedtuple("StreamIndex", ["index"])
@@ -23,7 +17,7 @@ KDimIndex = namedtuple("KDim", ["index"])
 
 
 def to_expr_extract_streams(
-        hvobj, kdims, streams, original_streams, stream_mapping, container_key=None
+    hvobj, kdims, streams, original_streams, stream_mapping, container_key=None
 ):
     """Build a HoloViewsExpr expression tree from a potentially nested dynamic
     HoloViews object, extracting the streams and replacing them with StreamIndex
@@ -112,8 +106,12 @@ def to_expr_extract_streams(
 
         for dm_stream in dm_streams:
             stream_arg = to_expr_extract_streams(
-                dm_stream, kdims, streams,  original_streams,
-                stream_mapping, container_key,
+                dm_stream,
+                kdims,
+                streams,
+                original_streams,
+                stream_mapping,
+                container_key,
             )
             if hvobj.positional_stream_args:
                 args.append(stream_arg)
@@ -133,14 +131,16 @@ def to_expr_extract_streams(
             for input_stream in hvobj.input_streams:
                 stream_indexes.append(
                     to_expr_extract_streams(
-                        input_stream, kdims, streams,  original_streams,
-                        stream_mapping, container_key,
+                        input_stream,
+                        kdims,
+                        streams,
+                        original_streams,
+                        stream_mapping,
+                        container_key,
                     )
                 )
             constants = hvobj.constants
-            return Expr(
-                stream_arg_fn, [stream_indexes, constants], []
-            )
+            return Expr(stream_arg_fn, [stream_indexes, constants], [])
         else:
             # Get index for stream
             # Compute stream index
@@ -162,16 +162,12 @@ def to_expr_extract_streams(
         args = []
         data_expr = []
         for i, (key, v) in enumerate(hvobj.data.items()):
-            el = to_expr_extract_streams(
-                v, kdims, streams, original_streams, stream_mapping, i
-            )
+            el = to_expr_extract_streams(v, kdims, streams, original_streams, stream_mapping, i)
 
             # Replace "DynamicMap" with type of the non-dynamic return element
             if isinstance(v, DynamicMap):
                 initialize_dynamic(v)
-                if (v.type is not None and
-                        isinstance(key, tuple) and
-                        isinstance(key[0], str)):
+                if v.type is not None and isinstance(key, tuple) and isinstance(key[0], str):
                     type_str = v.type.__name__
                     key = (key[0].replace("DynamicMap", type_str), "I")
 
@@ -194,8 +190,7 @@ def expr_to_fn_of_stream_contents(expr, nkdims):
         if isinstance(expr, Expr):
             fn = expr.fn
             args = [eval_expr(arg, kdim_values, stream_values) for arg in expr.args]
-            kwargs_list = [eval_expr(kwarg, kdim_values, stream_values) for kwarg in
-                           expr.kwargs]
+            kwargs_list = [eval_expr(kwarg, kdim_values, stream_values) for kwarg in expr.kwargs]
             kwargs = {}
             for kwargs_el in kwargs_list:
                 kwargs.update(**eval_expr(kwargs_el, kdim_values, stream_values))
@@ -245,6 +240,4 @@ def decollate(hvobj):
 
     expr_fn = expr_to_fn_of_stream_contents(expr, nkdims=len(kdims))
     callback = Callable(expr_fn, stream_mapping=stream_mapping)
-    return DynamicMap(
-        callback, kdims=kdims, streams=streams, positional_stream_args=True
-    )
+    return DynamicMap(callback, kdims=kdims, streams=streams, positional_stream_args=True)

@@ -4,12 +4,12 @@ import uuid
 import numpy as np
 import param
 
-from ... import Tiles
 from ...core import util
 from ...core.dimension import Dimension
 from ...core.element import Element
 from ...core.spaces import DynamicMap
 from ...core.util import dtype_kind
+from ...element.tiles import Tiles
 from ...streams import Stream
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -26,83 +26,128 @@ from .util import (
 
 
 class ElementPlot(PlotlyPlot, GenericElementPlot):
-
-    aspect = param.Parameter(default='cube', doc="""
+    aspect = param.Parameter(
+        default="cube",
+        doc="""
         The aspect ratio mode of the plot. By default, a plot may
         select its own appropriate aspect ratio but sometimes it may
         be necessary to force a square aspect ratio (e.g. to display
         the plot as an element of a grid). The modes 'auto' and
         'equal' correspond to the axis modes of the same name in
-        matplotlib, a numeric value may also be passed.""")
+        matplotlib, a numeric value may also be passed.""",
+    )
 
-    bgcolor = param.ClassSelector(class_=(str, tuple), default=None, doc="""
-        If set bgcolor overrides the background color of the axis.""")
+    bgcolor = param.ClassSelector(
+        class_=(str, tuple),
+        default=None,
+        doc="If set bgcolor overrides the background color of the axis.",
+    )
 
-    invert_axes = param.Selector(default=False, doc="""
+    invert_axes = param.Selector(
+        default=False,
+        doc="""
         Inverts the axes of the plot. Note that this parameter may not
         always be respected by all plots but should be respected by
-        adjoined plots when appropriate.""")
+        adjoined plots when appropriate.""",
+    )
 
-    invert_xaxis = param.Boolean(default=False, doc="""
-        Whether to invert the plot x-axis.""")
+    invert_xaxis = param.Boolean(
+        default=False,
+        doc="Whether to invert the plot x-axis.",
+    )
 
-    invert_yaxis = param.Boolean(default=False, doc="""
-        Whether to invert the plot y-axis.""")
+    invert_yaxis = param.Boolean(
+        default=False,
+        doc="Whether to invert the plot y-axis.",
+    )
 
-    invert_zaxis = param.Boolean(default=False, doc="""
-        Whether to invert the plot z-axis.""")
+    invert_zaxis = param.Boolean(
+        default=False,
+        doc="Whether to invert the plot z-axis.",
+    )
 
-    labelled = param.List(default=['x', 'y', 'z'], doc="""
-        Whether to label the 'x' and 'y' axes.""")
+    labelled = param.List(
+        default=["x", "y", "z"],
+        doc="Whether to label the 'x' and 'y' axes.",
+    )
 
-    logx = param.Boolean(default=False, doc="""
-         Whether to apply log scaling to the x-axis of the Chart.""")
+    logx = param.Boolean(
+        default=False,
+        doc="Whether to apply log scaling to the x-axis of the Chart.",
+    )
 
-    logy  = param.Boolean(default=False, doc="""
-         Whether to apply log scaling to the y-axis of the Chart.""")
+    logy = param.Boolean(
+        default=False,
+        doc="Whether to apply log scaling to the y-axis of the Chart.",
+    )
 
-    logz  = param.Boolean(default=False, doc="""
-         Whether to apply log scaling to the y-axis of the Chart.""")
+    logz = param.Boolean(
+        default=False,
+        doc="Whether to apply log scaling to the y-axis of the Chart.",
+    )
 
-    margins = param.NumericTuple(default=(50, 50, 50, 50), doc="""
-         Margins in pixel values specified as a tuple of the form
-         (left, bottom, right, top).""")
+    margins = param.NumericTuple(
+        default=(50, 50, 50, 50),
+        doc="""
+        Margins in pixel values specified as a tuple of the form
+        (left, bottom, right, top).""",
+    )
 
-    responsive = param.Boolean(default=False, doc="""
-         Whether the plot should stretch to fill the available space.""")
+    responsive = param.Boolean(
+        default=False,
+        doc="Whether the plot should stretch to fill the available space.",
+    )
 
-    show_legend = param.Boolean(default=False, doc="""
-        Whether to show legend for the plot.""")
+    show_legend = param.Boolean(
+        default=False,
+        doc="Whether to show legend for the plot.",
+    )
 
-    xaxis = param.Selector(default='bottom',
-                                 objects=['top', 'bottom', 'bare', 'top-bare',
-                                          'bottom-bare', None], doc="""
+    xaxis = param.Selector(
+        default="bottom",
+        objects=["top", "bottom", "bare", "top-bare", "bottom-bare", None],
+        doc="""
         Whether and where to display the xaxis, bare options allow suppressing
         all axis labels including ticks and xlabel. Valid options are 'top',
-        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
+        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""",
+    )
 
-    xticks = param.Parameter(default=None, doc="""
+    xticks = param.Parameter(
+        default=None,
+        doc="""
         Ticks along x-axis specified as an integer, explicit list of
-        tick locations, list of tuples containing the locations.""")
+        tick locations, list of tuples containing the locations.""",
+    )
 
-    yaxis = param.Selector(default='left',
-                                      objects=['left', 'right', 'bare', 'left-bare',
-                                               'right-bare', None], doc="""
+    yaxis = param.Selector(
+        default="left",
+        objects=["left", "right", "bare", "left-bare", "right-bare", None],
+        doc="""
         Whether and where to display the yaxis, bare options allow suppressing
         all axis labels including ticks and ylabel. Valid options are 'left',
-        'right', 'bare' 'left-bare' and 'right-bare'.""")
+        'right', 'bare' 'left-bare' and 'right-bare'.""",
+    )
 
-    yticks = param.Parameter(default=None, doc="""
+    yticks = param.Parameter(
+        default=None,
+        doc="""
         Ticks along y-axis specified as an integer, explicit list of
-        tick locations, list of tuples containing the locations.""")
+        tick locations, list of tuples containing the locations.""",
+    )
 
-    zlabel = param.String(default=None, doc="""
+    zlabel = param.String(
+        default=None,
+        doc="""
         An explicit override of the z-axis label, if set takes precedence
-        over the dimension label.""")
+        over the dimension label.""",
+    )
 
-    zticks = param.Parameter(default=None, doc="""
+    zticks = param.Parameter(
+        default=None,
+        doc="""
         Ticks along z-axis specified as an integer, explicit list of
-        tick locations, list of tuples containing the locations.""")
+        tick locations, list of tuples containing the locations.""",
+    )
 
     _style_key = None
 
@@ -126,9 +171,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         return {}
 
     def initialize_plot(self, ranges=None, is_geo=False):
-        """Initializes a new plot object with the last available frame.
-
-        """
+        """Initializes a new plot object with the last available frame."""
         # Get element key and ranges for frame
         fig = self.generate_plot(self.keys[-1], ranges, is_geo=is_geo)
         self.drawn = True
@@ -139,9 +182,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
         return fig
 
-
     def generate_plot(self, key, ranges, element=None, is_geo=False):
-        self.prev_frame =  self.current_frame
+        self.prev_frame = self.current_frame
         if element is None:
             element = self._get_frame(key)
         else:
@@ -154,26 +196,24 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             )
 
         if element is None:
-            return self.handles['fig']
+            return self.handles["fig"]
 
         # Set plot options
-        plot_opts = self.lookup_options(element, 'plot').options
-        self.param.update(**{k: v for k, v in plot_opts.items()
-                                if k in self.param})
+        plot_opts = self.lookup_options(element, "plot").options
+        self.param.update(**{k: v for k, v in plot_opts.items() if k in self.param})
 
         # Get ranges
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
 
         # Get style
-        self.style = self.lookup_options(element, 'style')
+        self.style = self.lookup_options(element, "style")
         style = self.style[self.cyclic_index]
 
         # Validate style properties are supported in geo mode
         if is_geo:
             unsupported_opts = [
-                style_opt for style_opt in style
-                if style_opt in self.unsupported_geo_style_opts
+                style_opt for style_opt in style if style_opt in self.unsupported_geo_style_opts
             ]
             if unsupported_opts:
                 raise ValueError(
@@ -186,10 +226,10 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         opts = self.graph_options(element, ranges, style, is_geo=is_geo)
 
         components = {
-            'traces': [],
-            'images': [],
-            'annotations': [],
-            'shapes': [],
+            "traces": [],
+            "images": [],
+            "annotations": [],
+            "shapes": [],
         }
 
         for i, d in enumerate(data):
@@ -197,60 +237,60 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             datum_components = self.init_graph(d, opts, index=i, is_geo=is_geo)
 
             # Handle traces
-            traces = datum_components.get('traces', [])
-            components['traces'].extend(traces)
+            traces = datum_components.get("traces", [])
+            components["traces"].extend(traces)
 
             if i == 0 and traces:
                 # Associate element with trace.uid property of the first
                 # plotly trace that is used to render the element. This is
                 # used to associate the element with the trace during callbacks
-                traces[0]['uid'] = self.trace_uid
+                traces[0]["uid"] = self.trace_uid
 
             # Handle images, shapes, annotations
-            for k in ['images', 'shapes', 'annotations']:
+            for k in ["images", "shapes", "annotations"]:
                 components[k].extend(datum_components.get(k, []))
 
             # Handle mapbox
             if PLOTLY_MAP in datum_components:
                 components[PLOTLY_MAP] = datum_components[PLOTLY_MAP]
 
-        self.handles['components'] = components
+        self.handles["components"] = components
 
         # Initialize layout
         layout = self.init_layout(key, element, ranges, is_geo=is_geo)
-        for k in ['images', 'shapes', 'annotations']:
+        for k in ["images", "shapes", "annotations"]:
             layout.setdefault(k, [])
             layout[k].extend(components.get(k, []))
 
         if PLOTLY_MAP in components:
             merge_layout(layout.setdefault(PLOTLY_MAP, {}), components[PLOTLY_MAP])
 
-        self.handles['layout'] = layout
+        self.handles["layout"] = layout
 
         # Create figure and return it
-        layout['autosize'] = self.responsive
-        fig = dict(data=components['traces'], layout=layout, config=dict(responsive=self.responsive))
-        self.handles['fig'] = fig
+        layout["autosize"] = self.responsive
+        fig = dict(
+            data=components["traces"], layout=layout, config=dict(responsive=self.responsive)
+        )
+        self.handles["fig"] = fig
 
         self._execute_hooks(element)
         self.drawn = True
 
         return fig
 
-
     def graph_options(self, element, ranges, style, is_geo=False, **kwargs):
         if self.overlay_dims:
-            legend = ', '.join([d.pprint_value_string(v) for d, v in
-                                self.overlay_dims.items()])
+            legend = ", ".join([d.pprint_value_string(v) for d, v in self.overlay_dims.items()])
         else:
             legend = element.label
 
-        opts = dict(
-            name=legend, **self.trace_kwargs(is_geo=is_geo))
+        opts = dict(name=legend, **self.trace_kwargs(is_geo=is_geo))
 
-        if self.trace_kwargs(is_geo=is_geo).get('type', None) in legend_trace_types:
+        if self.trace_kwargs(is_geo=is_geo).get("type", None) in legend_trace_types:
             opts.update(
-                showlegend=self.show_legend, legendgroup=element.group+'_'+legend) # make legendgroup unique for single trace enable/disable
+                showlegend=self.show_legend, legendgroup=element.group + "_" + legend
+            )  # make legendgroup unique for single trace enable/disable
 
         if self._style_key is not None:
             styles = self._apply_transforms(element, ranges, style)
@@ -258,20 +298,18 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             # If style starts with '{_style_key}_', remove the prefix.  This way
             # a line_color property with self._style_key of 'line' doesn't end up
             # as `line_line_color`
-            key_prefix_re = re.compile('^' + self._style_key + '_')
-            styles = {key_prefix_re.sub('', k): v for k, v in styles.items()}
+            key_prefix_re = re.compile("^" + self._style_key + "_")
+            styles = {key_prefix_re.sub("", k): v for k, v in styles.items()}
 
-            opts[self._style_key] = {STYLE_ALIASES.get(k, k): v
-                                     for k, v in styles.items()}
+            opts[self._style_key] = {STYLE_ALIASES.get(k, k): v for k, v in styles.items()}
 
             # Move certain options from the style key back to root
-            for k in ['selectedpoints', 'visible']:
+            for k in ["selectedpoints", "visible"]:
                 if k in opts.get(self._style_key, {}):
                     opts[k] = opts[self._style_key].pop(k)
 
         else:
-            opts.update({STYLE_ALIASES.get(k, k): v
-                         for k, v in style.items() if k != 'cmap'})
+            opts.update({STYLE_ALIASES.get(k, k): v for k, v in style.items() if k != "cmap"})
         return opts
 
     def init_graph(self, datum, options, index=0, **kwargs):
@@ -303,23 +341,20 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                 trace[k] = v
 
         if self._style_key and self._per_trace:
-            vectorized = {k: v for k, v in options[self._style_key].items()
-                          if isinstance(v, np.ndarray)}
+            vectorized = {
+                k: v for k, v in options[self._style_key].items() if isinstance(v, np.ndarray)
+            }
             trace[self._style_key] = dict(trace[self._style_key])
             for s, val in vectorized.items():
                 trace[self._style_key][s] = val[index]
-        return {'traces': [trace]}
-
+        return {"traces": [trace]}
 
     def get_data(self, element, ranges, style, is_geo=False):
         return []
 
-
     def get_aspect(self, xspan, yspan):
-        """Computes the aspect ratio of the plot
-
-        """
-        if self.aspect == 'equal' and (
+        """Computes the aspect ratio of the plot"""
+        if self.aspect == "equal" and (
             isinstance(xspan, util.datetime_types) ^ isinstance(yspan, util.datetime_types)
             or isinstance(xspan, util.timedelta_types) ^ isinstance(yspan, util.timedelta_types)
         ):
@@ -331,8 +366,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             )
             raise TypeError(msg)
 
-        return self.width/self.height
-
+        return self.width / self.height
 
     def _get_axis_dims(self, element):
         """Returns the dimensions corresponding to each axis.
@@ -343,27 +377,28 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
         """
         dims = element.dimensions()[:3]
-        pad = [None]*max(3-len(dims), 0)
+        pad = [None] * max(3 - len(dims), 0)
         return dims + pad
-
 
     def _apply_transforms(self, element, ranges, style):
         new_style = dict(style)
         for k, v in dict(style).items():
             if isinstance(v, (Dimension, str)):
-                if k == 'marker' and v in 'xsdo':
+                if k == "marker" and v in "xsdo":
                     continue
                 elif v in element:
                     v = dim(element.get_dimension(v))
-                elif any(d==v for d in self.overlay_dims):
-                    v = dim(next(d for d in self.overlay_dims if d==v))
+                elif any(d == v for d in self.overlay_dims):
+                    v = dim(next(d for d in self.overlay_dims if d == v))
 
             if not isinstance(v, dim):
                 continue
-            elif (not v.applies(element) and v.dimension not in self.overlay_dims):
+            elif not v.applies(element) and v.dimension not in self.overlay_dims:
                 new_style.pop(k)
-                self.param.warning(f'Specified {k} dim transform {v!r} could not be applied, as not all '
-                             'dimensions could be resolved.')
+                self.param.warning(
+                    f"Specified {k} dim transform {v!r} could not be applied, as not all "
+                    "dimensions could be resolved."
+                )
                 continue
 
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:
@@ -371,78 +406,76 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             else:
                 val = v.apply(element, ranges=ranges, flat=True)
 
-            if (not util.isscalar(val) and len(util.unique_array(val)) == 1
-                and 'color' not in k):
+            if not util.isscalar(val) and len(util.unique_array(val)) == 1 and "color" not in k:
                 val = val[0]
 
             if not util.isscalar(val):
                 if k in self._nonvectorized_styles:
                     element = type(element).__name__
-                    raise ValueError(f'Mapping a dimension to the "{k}" '
-                                     'style option is not supported by the '
-                                     f'{element} element using the {self.renderer.backend} '
-                                     f'backend. To map the "{v.dimension}" dimension '
-                                     f'to the {k} use a groupby operation '
-                                     'to overlay your data along the dimension.')
+                    raise ValueError(
+                        f'Mapping a dimension to the "{k}" '
+                        "style option is not supported by the "
+                        f"{element} element using the {self.renderer.backend} "
+                        f'backend. To map the "{v.dimension}" dimension '
+                        f"to the {k} use a groupby operation "
+                        "to overlay your data along the dimension."
+                    )
 
             # If color is not valid colorspec add colormapper
-            if 'color' in k and isinstance(val, util.arraylike_types):
-                if dtype_kind(val) in 'uifMm':  # numeric
+            if "color" in k and isinstance(val, util.arraylike_types):
+                if dtype_kind(val) in "uifMm":  # numeric
                     copts = self.get_color_opts(v, element, ranges, style)
-                    new_style.pop('cmap', None)
+                    new_style.pop("cmap", None)
                     new_style.update(copts)
                 else:  # categorical
                     categories, cat_indices = np.unique(val, return_inverse=True)
                     is_plotly_allowed_colors = all(
-                        isinstance(c, str) and (
-                            c.startswith(('#', 'rgb', 'hsl', 'hsv')) or c in _NAMED_CSS_COLORS
-                        ) for c in categories
+                        isinstance(c, str)
+                        and (c.startswith(("#", "rgb", "hsl", "hsv")) or c in _NAMED_CSS_COLORS)
+                        for c in categories
                     )
 
                     if not is_plotly_allowed_colors:
                         val = cat_indices
 
                         copts = self.get_color_opts(v, element, ranges, style)
-                        copts.update({
-                            'cmin': 0,
-                            'cmax': len(categories) - 1,
-                            'cauto': False
-                        })
+                        copts.update({"cmin": 0, "cmax": len(categories) - 1, "cauto": False})
 
-                        if 'colorbar' in copts:
-                            copts['colorbar'].update({
-                                'tickmode': 'array',
-                                'tickvals': list(range(len(categories))),
-                                'ticktext': [v.dimension.pprint_value(c) for c in categories]
-                            })
+                        if "colorbar" in copts:
+                            copts["colorbar"].update(
+                                {
+                                    "tickmode": "array",
+                                    "tickvals": list(range(len(categories))),
+                                    "ticktext": [v.dimension.pprint_value(c) for c in categories],
+                                }
+                            )
 
-                        new_style.pop('cmap', None)
+                        new_style.pop("cmap", None)
                         new_style.update(copts)
 
             new_style[k] = val
         return new_style
 
-    def _format_title(self, key, separator=' '):
-      """Formats the title of the plot.
+    def _format_title(self, key, separator=" "):
+        """Formats the title of the plot."""
+        title = super()._format_title(key, separator)
 
-      """
-      title = super()._format_title(key, separator)
+        if self.fontsize is not None and "title" in self.fontsize:
+            title = {"text": title, "font": {"size": self.fontsize["title"]}}
 
-      if self.fontsize is not None and "title" in self.fontsize:
-          title = {"text": title, "font": {"size": self.fontsize["title"]}}
-
-      return title
+        return title
 
     def init_layout(self, key, element, ranges, is_geo=False):
         el = element.traverse(lambda x: x, [Element])
         el = el[0] if el else element
         layout = dict(
-            title=self._format_title(key, separator=' '),
-            plot_bgcolor=self.bgcolor, uirevision=True
+            title=self._format_title(key, separator=" "),
+            plot_bgcolor=self.bgcolor,
+            uirevision=True,
         )
         if not self.responsive:
-            layout['width'] = self.width
-            layout['height'] = self.height
+            layout["width"] = self.width
+            layout["height"] = self.height
 
         extent = self.get_extents(element, ranges)
 
@@ -469,12 +502,12 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             ydim, xdim = xdim, ydim
             l, b, r, t = b, l, t, r
 
-        if 'x' not in self.labelled:
-            xlabel = ''
-        if 'y' not in self.labelled:
-            ylabel = ''
-        if 'z' not in self.labelled:
-            zlabel = ''
+        if "x" not in self.labelled:
+            xlabel = ""
+        if "y" not in self.labelled:
+            ylabel = ""
+        if "z" not in self.labelled:
+            zlabel = ""
 
         xaxis = {}
         if xdim and not is_geo:
@@ -488,31 +521,30 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             xrange = [r, l] if self.invert_xaxis else [l, r]
             xaxis = dict(range=xrange, title=xlabel)
             if self.logx:
-                xaxis['type'] = 'log'
-                xaxis['range'] = np.log10(xaxis['range'])
+                xaxis["type"] = "log"
+                xaxis["range"] = np.log10(xaxis["range"])
             self._get_ticks(xaxis, self.xticks)
 
-            if self.projection != '3d' and self.xaxis:
-                xaxis['automargin'] = False
+            if self.projection != "3d" and self.xaxis:
+                xaxis["automargin"] = False
 
                 # Create dimension string used to compute matching axes
                 if isinstance(xdim, (list, tuple)):
-                    dim_str = "-".join([f"{d.name}^{d.label}^{d.unit}"
-                                        for d in xdim])
+                    dim_str = "-".join([f"{d.name}^{d.label}^{d.unit}" for d in xdim])
                 else:
                     dim_str = f"{xdim.name}^{xdim.label}^{xdim.unit}"
 
-                xaxis['_dim'] = dim_str
+                xaxis["_dim"] = dim_str
 
-                if 'bare' in self.xaxis:
-                    xaxis['ticks'] = ''
-                    xaxis['showticklabels'] = False
-                    xaxis['title'] = ''
+                if "bare" in self.xaxis:
+                    xaxis["ticks"] = ""
+                    xaxis["showticklabels"] = False
+                    xaxis["title"] = ""
 
-                if 'top' in self.xaxis:
-                    xaxis['side'] = 'top'
+                if "top" in self.xaxis:
+                    xaxis["side"] = "top"
                 else:
-                    xaxis['side'] = 'bottom'
+                    xaxis["side"] = "bottom"
 
         yaxis = {}
         if ydim and not is_geo:
@@ -526,30 +558,29 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             yrange = [t, b] if self.invert_yaxis else [b, t]
             yaxis = dict(range=yrange, title=ylabel)
             if self.logy:
-                yaxis['type'] = 'log'
-                yaxis['range'] = np.log10(yaxis['range'])
+                yaxis["type"] = "log"
+                yaxis["range"] = np.log10(yaxis["range"])
             self._get_ticks(yaxis, self.yticks)
 
-            if self.projection != '3d' and self.yaxis:
-                yaxis['automargin'] = False
+            if self.projection != "3d" and self.yaxis:
+                yaxis["automargin"] = False
 
                 # Create dimension string used to compute matching axes
                 if isinstance(ydim, (list, tuple)):
-                    dim_str = "-".join([f"{d.name}^{d.label}^{d.unit}"
-                                        for d in ydim])
+                    dim_str = "-".join([f"{d.name}^{d.label}^{d.unit}" for d in ydim])
                 else:
                     dim_str = f"{ydim.name}^{ydim.label}^{ydim.unit}"
 
-                yaxis['_dim'] = dim_str,
-                if 'bare' in self.yaxis:
-                    yaxis['ticks'] = ''
-                    yaxis['showticklabels'] = False
-                    yaxis['title'] = ''
+                yaxis["_dim"] = (dim_str,)
+                if "bare" in self.yaxis:
+                    yaxis["ticks"] = ""
+                    yaxis["showticklabels"] = False
+                    yaxis["title"] = ""
 
-                if 'right' in self.yaxis:
-                    yaxis['side'] = 'right'
+                if "right" in self.yaxis:
+                    yaxis["side"] = "right"
                 else:
-                    yaxis['side'] = 'left'
+                    yaxis["side"] = "left"
 
         if is_geo:
             mapbox = {}
@@ -571,34 +602,36 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                 y_delta = t - b
 
                 with np.errstate(divide="ignore"):
-                    max_x_zoom = (np.log2(max_delta / x_delta) -
-                                np.log2(mapbox_tile_size / viewport_width))
-                    max_y_zoom = (np.log2(max_delta / y_delta) -
-                                np.log2(mapbox_tile_size / viewport_height))
+                    max_x_zoom = np.log2(max_delta / x_delta) - np.log2(
+                        mapbox_tile_size / viewport_width
+                    )
+                    max_y_zoom = np.log2(max_delta / y_delta) - np.log2(
+                        mapbox_tile_size / viewport_height
+                    )
                 mapbox["zoom"] = min(max_x_zoom, max_y_zoom)
             layout[PLOTLY_MAP] = mapbox
 
-        if isinstance(self.projection, str) and self.projection == '3d':
+        if isinstance(self.projection, str) and self.projection == "3d":
             scene = dict(xaxis=xaxis, yaxis=yaxis)
             if zdim:
                 zrange = [z1, z0] if self.invert_zaxis else [z0, z1]
                 zaxis = dict(range=zrange, title=zlabel)
                 if self.logz:
-                    zaxis['type'] = 'log'
+                    zaxis["type"] = "log"
                 self._get_ticks(zaxis, self.zticks)
-                scene['zaxis'] = zaxis
-            if self.aspect == 'cube':
-                scene['aspectmode'] = 'cube'
+                scene["zaxis"] = zaxis
+            if self.aspect == "cube":
+                scene["aspectmode"] = "cube"
             else:
-                scene['aspectmode'] = 'manual'
-                scene['aspectratio'] = self.aspect
-            layout['scene'] = scene
+                scene["aspectmode"] = "manual"
+                scene["aspectratio"] = self.aspect
+            layout["scene"] = scene
         else:
             l, b, r, t = self.margins
-            layout['margin'] = dict(l=l, r=r, b=b, t=t, pad=4)
+            layout["margin"] = dict(l=l, r=r, b=b, t=t, pad=4)
             if not is_geo:
-                layout['xaxis'] = xaxis
-                layout['yaxis'] = yaxis
+                layout["xaxis"] = xaxis
+                layout["yaxis"] = yaxis
 
         return layout
 
@@ -607,12 +640,11 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         if isinstance(ticker, (tuple, list)):
             if all(isinstance(t, tuple) for t in ticker):
                 ticks, labels = zip(*ticker, strict=None)
-                labels = [l if isinstance(l, str) else str(l)
-                              for l in labels]
-                axis_props['tickvals'] = ticks
-                axis_props['ticktext'] = labels
+                labels = [l if isinstance(l, str) else str(l) for l in labels]
+                axis_props["tickvals"] = ticks
+                axis_props["ticktext"] = labels
             else:
-                axis_props['tickvals'] = ticker
+                axis_props["tickvals"] = ticker
             axis.update(axis_props)
 
     def update_frame(self, key, ranges=None, element=None, is_geo=False):
@@ -624,38 +656,56 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
 
 class ColorbarPlot(ElementPlot):
-
-    clim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+    clim = param.NumericTuple(
+        default=(np.nan, np.nan),
+        length=2,
+        doc="""
         User-specified colorbar axis range limits for the plot, as a
         tuple (low,high). If specified, takes precedence over data
-        and dimension ranges.""")
+        and dimension ranges.""",
+    )
 
-    clim_percentile = param.ClassSelector(default=False, class_=(int, float, bool), doc="""
+    clim_percentile = param.ClassSelector(
+        default=False,
+        class_=(int, float, bool),
+        doc="""
         Percentile value to compute colorscale robust to outliers. If
         True, uses 2nd and 98th percentile; otherwise uses the specified
-        numerical percentile value.""")
+        numerical percentile value.""",
+    )
 
-    colorbar = param.Boolean(default=False, doc="""
-        Whether to display a colorbar.""")
+    colorbar = param.Boolean(
+        default=False,
+        doc="Whether to display a colorbar.",
+    )
 
-    color_levels = param.ClassSelector(default=None, class_=(int, list), doc="""
+    color_levels = param.ClassSelector(
+        default=None,
+        class_=(int, list),
+        doc="""
         Number of discrete colors to use when colormapping or a set of color
-        intervals defining the range of values to map each color to.""")
+        intervals defining the range of values to map each color to.""",
+    )
 
-    colorbar_opts = param.Dict(default={}, doc="""
+    colorbar_opts = param.Dict(
+        default={},
+        doc="""
         Allows setting including borderwidth, showexponent, nticks,
         outlinecolor, thickness, bgcolor, outlinewidth, bordercolor,
-        ticklen, xpad, ypad, tickangle...""")
+        ticklen, xpad, ypad, tickangle...""",
+    )
 
-    symmetric = param.Boolean(default=False, doc="""
-        Whether to make the colormap symmetric around zero.""")
+    symmetric = param.Boolean(
+        default=False,
+        doc="Whether to make the colormap symmetric around zero.",
+    )
 
     def get_color_opts(self, eldim, element, ranges, style):
         opts = {}
         dim_name = dim_range_key(eldim)
         if self.colorbar:
-            opts['colorbar'] = dict(**self.colorbar_opts)
-            if 'title' not in opts['colorbar']:
+            opts["colorbar"] = dict(**self.colorbar_opts)
+            if "title" not in opts["colorbar"]:
                 if isinstance(eldim, dim):
                     title = str(eldim)
                     if eldim.ops:
@@ -666,20 +716,20 @@ class ColorbarPlot(ElementPlot):
                         title = title[1:-1]
                 else:
                     title = eldim.pprint_label
-                opts['colorbar']['title']=title
-            opts['showscale'] = True
+                opts["colorbar"]["title"] = title
+            opts["showscale"] = True
         else:
-            opts['showscale'] = False
+            opts["showscale"] = False
 
         if eldim:
             auto = False
             if util.isfinite(self.clim).all():
                 cmin, cmax = self.clim
             elif dim_name in ranges:
-                if self.clim_percentile and 'robust' in ranges[dim_name]:
-                    cmin, cmax = ranges[dim_name]['robust']
+                if self.clim_percentile and "robust" in ranges[dim_name]:
+                    cmin, cmax = ranges[dim_name]["robust"]
                 else:
-                    cmin, cmax = ranges[dim_name]['combined']
+                    cmin, cmax = ranges[dim_name]["combined"]
             elif isinstance(eldim, dim):
                 cmin, cmax = np.nan, np.nan
                 auto = True
@@ -692,7 +742,7 @@ class ColorbarPlot(ElementPlot):
             auto = True
             cmin, cmax = None, None
 
-        cmap = style.pop('cmap', 'viridis')
+        cmap = style.pop("cmap", "viridis")
         colorscale = get_colorscale(cmap, self.color_levels, cmin, cmax)
 
         # Reduce colorscale length to <= 255 to work around
@@ -710,27 +760,49 @@ class ColorbarPlot(ElementPlot):
             colorscale[-1] = last_clr_pair
 
         if cmin is not None:
-            opts['cmin'] = cmin
+            opts["cmin"] = cmin
         if cmax is not None:
-            opts['cmax'] = cmax
-        opts['cauto'] = auto
-        opts['colorscale'] = colorscale
+            opts["cmax"] = cmax
+        opts["cauto"] = auto
+        opts["colorscale"] = colorscale
         return opts
 
 
 class OverlayPlot(GenericOverlayPlot, ElementPlot):
-
     _propagate_options = [
-        'width', 'height', 'xaxis', 'yaxis', 'labelled', 'bgcolor',
-        'invert_axes', 'show_frame', 'show_grid', 'logx', 'logy',
-        'xticks', 'toolbar', 'yticks', 'xrotation', 'yrotation', 'responsive',
-        'invert_xaxis', 'invert_yaxis', 'sizing_mode', 'title', 'title_format',
-        'padding', 'xlabel', 'ylabel', 'zlabel', 'xlim', 'ylim', 'zlim']
+        "width",
+        "height",
+        "xaxis",
+        "yaxis",
+        "labelled",
+        "bgcolor",
+        "invert_axes",
+        "show_frame",
+        "show_grid",
+        "logx",
+        "logy",
+        "xticks",
+        "toolbar",
+        "yticks",
+        "xrotation",
+        "yrotation",
+        "responsive",
+        "invert_xaxis",
+        "invert_yaxis",
+        "sizing_mode",
+        "title",
+        "title_format",
+        "padding",
+        "xlabel",
+        "ylabel",
+        "zlabel",
+        "xlim",
+        "ylim",
+        "zlim",
+    ]
 
     def initialize_plot(self, ranges=None, is_geo=False):
-        """Initializes a new plot object with the last available frame.
-
-        """
+        """Initializes a new plot object with the last available frame."""
         # Get element key and ranges for frame
         return self.generate_plot(next(iter(self.hmap.data.keys())), ranges, is_geo=is_geo)
 
@@ -740,10 +812,10 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         items = [] if element is None else list(element.data.items())
 
         # Update plot options
-        plot_opts = self.lookup_options(element, 'plot').options
-        inherited = self._traverse_options(element, 'plot',
-                                           self._propagate_options,
-                                           defaults=False)
+        plot_opts = self.lookup_options(element, "plot").options
+        inherited = self._traverse_options(
+            element, "plot", self._propagate_options, defaults=False
+        )
         plot_opts.update(**{k: v[0] for k, v in inherited.items() if k not in plot_opts})
         self.param.update(**plot_opts)
 
@@ -778,15 +850,15 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
                 merge_figure(figure, fig)
 
         layout = self.init_layout(key, element, ranges, is_geo=is_geo)
-        merge_layout(figure['layout'], layout)
+        merge_layout(figure["layout"], layout)
         self.drawn = True
 
-        self.handles['fig'] = figure
+        self.handles["fig"] = figure
         return figure
 
     def update_frame(self, key, ranges=None, element=None, is_geo=False):
         reused = isinstance(self.hmap, DynamicMap) and self.overlaid
-        self.prev_frame =  self.current_frame
+        self.prev_frame = self.current_frame
         if not reused and element is None:
             element = self._get_frame(key)
         elif element is not None:
