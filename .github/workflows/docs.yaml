@@ -20,9 +20,8 @@ on:
   schedule:
     - cron: "0 14 * * SUN"
 
-defaults:
-  run:
-    shell: bash -e {0}
+env:
+  TAG: "${{ github.ref_name }}"
 
 jobs:
   pixi_lock:
@@ -52,9 +51,6 @@ jobs:
           name: docs
           if-no-files-found: error
           path: builtdocs
-      - name: Set output
-        id: vars
-        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
   docs_publish:
     name: Publish Documentation
@@ -70,9 +66,6 @@ jobs:
         with:
           name: docs
           path: builtdocs/
-      - name: Set output
-        id: vars
-        run: echo "tag=${{ needs.docs_build.outputs.tag }}" >> $GITHUB_OUTPUT
       - name: upload dev
         if: |
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
