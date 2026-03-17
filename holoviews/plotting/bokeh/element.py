@@ -2618,12 +2618,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.current_frame = element
 
         renderer = self.handles.get("glyph_renderer", None)
-        glyph = self.handles.get("glyph", None)
         visible = element is not None
         if hasattr(renderer, "visible"):
             renderer.visible = visible
-        if hasattr(glyph, "visible"):
-            glyph.visible = visible
 
         if (
             (self.batched and not element)
