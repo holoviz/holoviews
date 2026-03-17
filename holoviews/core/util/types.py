@@ -1,5 +1,6 @@
 import datetime as dt
 import inspect
+import sys
 from types import GeneratorType
 from typing import TYPE_CHECKING
 
@@ -20,21 +21,49 @@ else:
 
 # gen_types is copied from param, can be removed when
 # we support 2.2 or greater
+
+_cache_state: list[int] = [0]  # mutable container for sys.modules length
+
+
 class _GeneratorIsMeta(type):
+    def _get_types(cls) -> tuple[type, ...]:
+        # The gen_types generators use _LazyModule with
+        # bool_use_sys_modules=True, so `if np:` / `if pd:` / `if cftime:`
+        # return True only when the library is both installed AND already
+        # imported (in sys.modules). This means the type tuple a generator
+        # yields can grow over time as libraries get imported.
+        #
+        # We cache the evaluated tuple for performance, but invalidate all
+        # caches whenever sys.modules grows, so late imports are picked up.
+        n = len(sys.modules)
+        if n != _cache_state[0]:
+            _cache_state[0] = n
+            for sub in _GeneratorIs.__subclasses__():
+                try:
+                    del sub._cached_types
+                except AttributeError:
+                    pass
+        try:
+            return cls._cached_types
+        except AttributeError:
+            types = tuple(cls.types())
+            cls._cached_types = types
+            return types
+
     def __instancecheck__(cls, inst):
-        return isinstance(inst, tuple(cls.types()))
+        return isinstance(inst, cls._get_types())
 
     def __subclasscheck__(cls, sub):
-        return issubclass(sub, tuple(cls.types()))
+        return issubclass(sub, cls._get_types())
 
     def __iter__(cls):
-        yield from cls.types()
+        yield from cls._get_types()
 
 
 class _GeneratorIs(metaclass=_GeneratorIsMeta):
     @classmethod
     def __iter__(cls):
-        yield from cls.types()
+        yield from cls._get_types()
 
 
 def gen_types(gen_func):
