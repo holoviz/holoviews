@@ -338,8 +338,8 @@ class TestPopup:
             page.mouse.move(end_x, end_y)
             page.mouse.up()
         elif tool == "tap":
-            page.wait_for_timeout(200)
             plot.click()
+            page.wait_for_timeout(200)
 
     def _get_popup_distances_relative_to_bbox(self, popup_box, plot_box):
         return {
