@@ -3,6 +3,7 @@ import inspect
 from types import GeneratorType
 from typing import TYPE_CHECKING
 
+import narwhals
 import narwhals.stable.v2 as nw
 
 from .dependencies import _LazyModule
@@ -97,7 +98,7 @@ def arraylike_types():
 
         yield from (ABCIndex, ABCSeries, ABCExtensionArray)
 
-    yield nw.Series
+    yield from (nw.Series, narwhals.Series)
 
 
 @gen_types
