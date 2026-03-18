@@ -178,11 +178,23 @@ class DataConversion:
 @contextmanager
 def disable_pipeline():
     """Disable PipelineMeta class from storing pipelines."""
+    prev = PipelineMeta.disable
     PipelineMeta.disable = True
     try:
         yield
     finally:
-        PipelineMeta.disable = False
+        PipelineMeta.disable = prev
+
+
+@contextmanager
+def enable_pipeline():
+    """Enable PipelineMeta class for storing pipelines."""
+    prev = PipelineMeta.disable
+    PipelineMeta.disable = False
+    try:
+        yield
+    finally:
+        PipelineMeta.disable = prev
 
 
 class PipelineMeta(ParameterizedMetaclass):
@@ -207,6 +219,9 @@ class PipelineMeta(ParameterizedMetaclass):
     def pipelined(method_fn, method_name):
         @wraps(method_fn)
         def pipelined_fn(*args, **kwargs):
+            if PipelineMeta.disable:
+                return method_fn(*args, **kwargs)
+
             from ...operation.element import method as method_op
 
             inst = args[0]
@@ -217,8 +232,6 @@ class PipelineMeta(ParameterizedMetaclass):
 
             try:
                 result = method_fn(*args, **kwargs)
-                if PipelineMeta.disable:
-                    return result
 
                 op = method_op.instance(
                     input_type=type(inst),
