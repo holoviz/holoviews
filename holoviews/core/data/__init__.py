@@ -178,11 +178,23 @@ class DataConversion:
 @contextmanager
 def disable_pipeline():
     """Disable PipelineMeta class from storing pipelines."""
+    prev = PipelineMeta.disable
     PipelineMeta.disable = True
     try:
         yield
     finally:
-        PipelineMeta.disable = False
+        PipelineMeta.disable = prev
+
+
+@contextmanager
+def enable_pipeline():
+    """Re-enable PipelineMeta class for storing pipelines."""
+    prev = PipelineMeta.disable
+    PipelineMeta.disable = False
+    try:
+        yield
+    finally:
+        PipelineMeta.disable = prev
 
 
 class PipelineMeta(ParameterizedMetaclass):
