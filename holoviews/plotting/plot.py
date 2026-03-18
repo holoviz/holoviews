@@ -243,7 +243,8 @@ class Plot(param.Parameterized):
             )
             stream_key = util.wrap_tuple_streams(key, self.dimensions, self.streams)
 
-            self._trigger_refresh(stream_key)
+            with disable_pipeline():
+                self._trigger_refresh(stream_key)
             if self.top_level:
                 self.push()
         except Exception as e:

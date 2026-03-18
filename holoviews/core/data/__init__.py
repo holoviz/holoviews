@@ -207,6 +207,9 @@ class PipelineMeta(ParameterizedMetaclass):
     def pipelined(method_fn, method_name):
         @wraps(method_fn)
         def pipelined_fn(*args, **kwargs):
+            if PipelineMeta.disable:
+                return method_fn(*args, **kwargs)
+
             from ...operation.element import method as method_op
 
             inst = args[0]
@@ -217,8 +220,6 @@ class PipelineMeta(ParameterizedMetaclass):
 
             try:
                 result = method_fn(*args, **kwargs)
-                if PipelineMeta.disable:
-                    return result
 
                 op = method_op.instance(
                     input_type=type(inst),
