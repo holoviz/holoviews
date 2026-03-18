@@ -22,16 +22,16 @@ else:
 # gen_types is copied from param, can be removed when
 # we support 2.2 or greater
 
-_cache_state = 0
+_module_count = 0
 
 
 class _GeneratorIsMeta(type):
     def _get_types(cls) -> tuple[type, ...]:
-        global _cache_state  # noqa: PLW0603
         # Cache types and invalidate on new imports
+        global _module_count  # noqa: PLW0603
         n = len(sys.modules)
-        if n != _cache_state:
-            _cache_state = n
+        if n != _module_count:
+            _module_count = n
             for sub in _GeneratorIs.__subclasses__():
                 sub._cached_types = None
         if cls._cached_types is None:
