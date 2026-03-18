@@ -188,7 +188,7 @@ def disable_pipeline():
 
 @contextmanager
 def enable_pipeline():
-    """Re-enable PipelineMeta class for storing pipelines."""
+    """Enable PipelineMeta class for storing pipelines."""
     prev = PipelineMeta.disable
     PipelineMeta.disable = False
     try:
