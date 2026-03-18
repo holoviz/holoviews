@@ -22,33 +22,21 @@ else:
 # gen_types is copied from param, can be removed when
 # we support 2.2 or greater
 
-_cache_state: list[int] = [0]  # mutable container for sys.modules length
+_cache_state = 0
 
 
 class _GeneratorIsMeta(type):
     def _get_types(cls) -> tuple[type, ...]:
-        # The gen_types generators use _LazyModule with
-        # bool_use_sys_modules=True, so `if np:` / `if pd:` / `if cftime:`
-        # return True only when the library is both installed AND already
-        # imported (in sys.modules). This means the type tuple a generator
-        # yields can grow over time as libraries get imported.
-        #
-        # We cache the evaluated tuple for performance, but invalidate all
-        # caches whenever sys.modules grows, so late imports are picked up.
+        global _cache_state  # noqa: PLW0603
+        # Cache types and invalidate on new imports
         n = len(sys.modules)
-        if n != _cache_state[0]:
-            _cache_state[0] = n
+        if n != _cache_state:
+            _cache_state = n
             for sub in _GeneratorIs.__subclasses__():
-                try:
-                    del sub._cached_types
-                except AttributeError:
-                    pass
-        try:
-            return cls._cached_types
-        except AttributeError:
-            types = tuple(cls.types())
-            cls._cached_types = types
-            return types
+                sub._cached_types = None
+        if cls._cached_types is None:
+            cls._cached_types = tuple(cls.types())
+        return cls._cached_types
 
     def __instancecheck__(cls, inst):
         return isinstance(inst, cls._get_types())
@@ -61,6 +49,8 @@ class _GeneratorIsMeta(type):
 
 
 class _GeneratorIs(metaclass=_GeneratorIsMeta):
+    _cached_types: tuple[type, ...] | None = None
+
     @classmethod
     def __iter__(cls):
         yield from cls._get_types()

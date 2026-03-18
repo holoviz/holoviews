@@ -8,7 +8,7 @@ from holoviews.core.util.types import gen_types
 
 
 class _FakeIsInstalled:
-    """Stand-in for the lru_cached _is_installed that treats a fake module as installed."""
+    """Stand-in for _is_installed that treats a fake module as installed."""
 
     def __init__(self, original, fake_name: str):
         self._original = original
