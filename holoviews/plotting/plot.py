@@ -20,7 +20,7 @@ from panel.io.state import state
 from pyviz_comms import JupyterComm
 
 from ..core import traversal, util
-from ..core.data import Dataset, disable_pipeline
+from ..core.data import Dataset, PipelineMeta, disable_pipeline
 from ..core.element import Element, Element3D
 from ..core.layout import Empty, Layout, NdLayout
 from ..core.options import Compositor, SkipRendering, Store, lookup_options
@@ -1501,7 +1501,17 @@ class GenericElementPlot(DimensionedPlot):
 
         cached = self.current_key is None and not any(s._triggering for s in self.streams)
         key_map = dict(zip([d.name for d in self.dimensions], key, strict=None))
-        frame = get_plot_frame(self.hmap, key_map, cached)
+        # Re-enable pipeline tracking for the DynamicMap callback evaluation.
+        # Plot.refresh() disables pipeline for the entire update path (see
+        # the disable_pipeline() call there), but user callbacks may call
+        # Dataset methods (e.g. select) whose results should retain pipeline
+        # provenance.
+        prev_disable = PipelineMeta.disable
+        PipelineMeta.disable = False
+        try:
+            frame = get_plot_frame(self.hmap, key_map, cached)
+        finally:
+            PipelineMeta.disable = prev_disable
         traverse_setter(self, "_force", False)
 
         if key not in self.keys and len(key) == self.hmap.ndims and self.dynamic:
@@ -2357,10 +2367,17 @@ class GenericCompositePlot(DimensionedPlot):
             self.current_key = key
 
         key_map = dict(zip([d.name for d in self.dimensions], key, strict=None))
-        for path, item in self.layout.items():
-            frame = get_nested_plot_frame(item, key_map, cached)
-            if frame is not None:
-                layout_frame[path] = frame
+        # Re-enable pipeline tracking for the DynamicMap callback evaluation.
+        # See GenericElementPlot._get_frame for rationale.
+        prev_disable = PipelineMeta.disable
+        PipelineMeta.disable = False
+        try:
+            for path, item in self.layout.items():
+                frame = get_nested_plot_frame(item, key_map, cached)
+                if frame is not None:
+                    layout_frame[path] = frame
+        finally:
+            PipelineMeta.disable = prev_disable
         traverse_setter(self, "_force", False)
 
         self.current_frame = layout_frame
