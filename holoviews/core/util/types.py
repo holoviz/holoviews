@@ -1,5 +1,6 @@
 import datetime as dt
 import inspect
+import sys
 from types import GeneratorType
 from typing import TYPE_CHECKING
 
@@ -20,21 +21,39 @@ else:
 
 # gen_types is copied from param, can be removed when
 # we support 2.2 or greater
+
+_module_count = 0
+
+
 class _GeneratorIsMeta(type):
+    def _get_types(cls) -> tuple[type, ...]:
+        # Cache types and invalidate on new imports
+        global _module_count  # noqa: PLW0603
+        n = len(sys.modules)
+        if n != _module_count:
+            _module_count = n
+            for sub in _GeneratorIs.__subclasses__():
+                sub._cached_types = None
+        if cls._cached_types is None:
+            cls._cached_types = tuple(cls.types())
+        return cls._cached_types
+
     def __instancecheck__(cls, inst):
-        return isinstance(inst, tuple(cls.types()))
+        return isinstance(inst, cls._get_types())
 
     def __subclasscheck__(cls, sub):
-        return issubclass(sub, tuple(cls.types()))
+        return issubclass(sub, cls._get_types())
 
     def __iter__(cls):
-        yield from cls.types()
+        yield from cls._get_types()
 
 
 class _GeneratorIs(metaclass=_GeneratorIsMeta):
+    _cached_types: tuple[type, ...] | None = None
+
     @classmethod
     def __iter__(cls):
-        yield from cls.types()
+        yield from cls._get_types()
 
 
 def gen_types(gen_func):
