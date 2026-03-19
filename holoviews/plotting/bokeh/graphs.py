@@ -2,6 +2,7 @@ from collections import defaultdict
 
 import numpy as np
 import param
+from bokeh.core.property.validation import validate
 from bokeh.models import (
     Bezier,
     ColumnDataSource,
@@ -295,7 +296,8 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
             if self.handles["static_source"]:
                 source.trigger("data", source.data, data)
             else:
-                source.data.update(data)
+                with validate(False):
+                    source.data.update(data)
         else:
             source.graph_layout = data
 
