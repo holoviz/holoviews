@@ -1,6 +1,8 @@
 ## Description
 
 <!--
+Using AI? READ FIRST: https://holoviz.org/contribute.html#ai-readme
+
 - Summarize the change and which issue is fixed.
 - Include relevant motivation and context.
 - Add visuals when possible, e.g. before/after screenshots with full code snippets.
@@ -15,14 +17,15 @@ Fixes #{issue}
 ## AI Disclosure
 
 <!-- Remove this section if your PR does not contain AI-generated content. -->
+<!-- Failure in disclosing the use of AI will result in a ban. -->
 
 - [ ] This PR contains AI-generated content.
   - [ ] I have tested all AI-generated content in my PR.
   - [ ] I take responsibility for all AI-generated content in my PR.
 
-<!-- If you used AI to generate code, please specify the tool and model used, and how you have used it. -->
+<!-- If you used AI to generate code, please specify the tool and model used, and briefly describe how they were used. -->
 
-Tools: {e.g., Claude, Codex, GitHub Copilot, ChatGPT, etc.}
+Tools and Models: {e.g., Cursor + Sonnet 4.6, Claude Code + Opus 4.6, Antigravity + Gemini Flash 3, ChatGPT, etc.}
 
 ## Checklist
 
