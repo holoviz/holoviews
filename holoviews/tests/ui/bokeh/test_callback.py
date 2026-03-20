@@ -371,6 +371,7 @@ class TestPopup:
         return page, hv_plot
 
     def _locate_popup(self, page, count=1):
+        page.wait_for_timeout(200)
         locator = page.locator(".markdown")
         expect(locator).to_have_count(count)
         return locator
