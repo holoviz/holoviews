@@ -40,7 +40,6 @@ class TestBokehServerSetup:
         state.curdoc = None
         curdoc().clear()
         set_curdoc(self.doc)
-        time.sleep(1)
 
     def test_render_server_doc_element(self):
         obj = hv.Curve([])

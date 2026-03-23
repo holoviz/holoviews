@@ -352,7 +352,7 @@ class periodic(Thread):
         return self._completed.is_set()
 
     def start(self):
-        self._start_time = time.time()
+        self._start_time = time.perf_counter()
         if self.block is False:
             super().start()
         else:
@@ -381,7 +381,7 @@ class periodic(Thread):
                 self.stop()
 
             if self.timeout is not None:
-                dt = time.time() - self._start_time
+                dt = time.perf_counter() - self._start_time
                 if dt > self.timeout:
                     self.stop()
             if self.counter == self.count:

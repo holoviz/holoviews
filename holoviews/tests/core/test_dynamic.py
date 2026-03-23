@@ -1053,7 +1053,7 @@ class TestPeriodicStreamUpdate:
 
         assert xval.x != 100
         dmap.periodic(0.0001, 100, param_fn=lambda i: {"x": i}, block=False)
-        time.sleep(2)
+        dmap.periodic.instance._completed.wait(timeout=5)
         if not dmap.periodic.instance.completed:
             raise RuntimeError("Periodic callback timed out.")
         dmap.periodic.stop()
@@ -1067,10 +1067,10 @@ class TestPeriodicStreamUpdate:
         dmap = hv.DynamicMap(callback, streams=[xval])
         # Add stream subscriber mocking plot
         xval.add_subscriber(lambda **kwargs: dmap[()])
-        start = time.time()
-        dmap.periodic(0.5, 10, param_fn=lambda i: {"x": i}, block=True)
-        end = time.time()
-        assert (end - start) > 5
+        start = time.perf_counter()
+        dmap.periodic(0.05, 10, param_fn=lambda i: {"x": i}, block=True)
+        end = time.perf_counter()
+        assert (end - start) > 0.5
 
     def test_periodic_param_fn_blocking_timeout(self):
         def callback(x):
@@ -1080,10 +1080,10 @@ class TestPeriodicStreamUpdate:
         dmap = hv.DynamicMap(callback, streams=[xval])
         # Add stream subscriber mocking plot
         xval.add_subscriber(lambda **kwargs: dmap[()])
-        start = time.time()
-        dmap.periodic(0.5, 100, param_fn=lambda i: {"x": i}, timeout=3)
-        end = time.time()
-        assert (end - start) < 5
+        start = time.perf_counter()
+        dmap.periodic(0.05, 100, param_fn=lambda i: {"x": i}, timeout=0.3)
+        end = time.perf_counter()
+        assert (end - start) < 0.5
 
 
 class TestDynamicCollate(LoggingComparison):
