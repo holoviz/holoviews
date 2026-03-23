@@ -51,15 +51,12 @@ class TestDecollation:
             streams=[Sum([self.stream_val1, Sum([self.stream_val2, self.stream_val3])])],
         )
 
-        if ds is None:
-            return
-
+    def _setup_datashader(self):
         # dmap produced by chained datashade and shade
         self.px_stream = PX()
         self.dmap_spread_points = spread(
             datashade(hv.Points([0.0, 1.0])), streams=[self.px_stream]
         )
-
         # data shaded with kdims: a, b
         self.dmap_datashade_kdim_points = datashade(self.dmap_ab)
 
@@ -105,6 +102,7 @@ class TestDecollation:
 
     @ds_skip
     def test_decollate_spread(self):
+        self._setup_datashader()
         decollated = self.dmap_spread_points.decollate()
         assert isinstance(decollated, hv.DynamicMap)
 
@@ -127,6 +125,7 @@ class TestDecollation:
 
     @ds_skip
     def test_decollate_datashade_kdims(self):
+        self._setup_datashader()
         decollated = self.dmap_datashade_kdim_points.decollate()
         assert isinstance(decollated, hv.DynamicMap)
 
@@ -155,6 +154,7 @@ class TestDecollation:
 
     @ds_skip
     def test_decollate_datashade_kdims_layout(self):
+        self._setup_datashader()
         layout = self.dmap_datashade_kdim_points + self.dmap_b
 
         decollated = layout.decollate()
