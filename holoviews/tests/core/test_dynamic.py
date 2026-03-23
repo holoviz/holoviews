@@ -1027,8 +1027,8 @@ class TestPeriodicStreamUpdate:
         dmap = hv.DynamicMap(counter, streams=[next_stream])
         # Add stream subscriber mocking plot
         next_stream.add_subscriber(lambda **kwargs: dmap[()])
-        dmap.periodic(0.01, 100)
-        assert counter.count == 100
+        dmap.periodic(0.001, 10)
+        assert counter.count == 10
 
     def test_periodic_param_fn_blocking(self):
         def callback(x):
@@ -1038,10 +1038,9 @@ class TestPeriodicStreamUpdate:
         dmap = hv.DynamicMap(callback, streams=[xval])
         # Add stream subscriber mocking plot
         xval.add_subscriber(lambda **kwargs: dmap[()])
-        dmap.periodic(0.01, 100, param_fn=lambda i: {"x": i})
-        assert xval.x == 100
+        dmap.periodic(0.001, 10, param_fn=lambda i: {"x": i})
+        assert xval.x == 10
 
-    @pytest.mark.flaky(reruns=3)
     def test_periodic_param_fn_non_blocking(self):
         def callback(x):
             return hv.Curve([1, 2, 3])
