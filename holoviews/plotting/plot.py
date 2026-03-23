@@ -1384,7 +1384,7 @@ class GenericElementPlot(DimensionedPlot):
     def _apply_plot_opts(self, plot_opts: dict) -> None:
         """Apply plot options, skipping if unchanged from the previous frame."""
         try:
-            unchanged = plot_opts == self._prev_plot_opts
+            unchanged = bool(plot_opts == self._prev_plot_opts)
         except (ValueError, TypeError):
             # Options may contain numpy arrays where == is element-wise
             unchanged = False
