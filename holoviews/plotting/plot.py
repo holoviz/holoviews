@@ -1379,6 +1379,14 @@ class GenericElementPlot(DimensionedPlot):
 
     _multi_y_propagation = False
 
+    _prev_plot_opts = None
+
+    def _apply_plot_opts(self, plot_opts: dict) -> None:
+        """Apply plot options, skipping if unchanged from the previous frame."""
+        if plot_opts != self._prev_plot_opts:
+            self._prev_plot_opts = plot_opts
+            self.param.update(**plot_opts)
+
     def __init__(
         self,
         element,
