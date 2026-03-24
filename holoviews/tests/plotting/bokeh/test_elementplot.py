@@ -319,8 +319,9 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.xaxis.major_label_overrides == {dt_to_int(tick, "ms"): "A"}
 
     def test_update_frame_with_numpy_xticks(self):
-        # Apply opts inside the callback so each frame produces a fresh
-        # numpy array, exercising the plot-options cache comparison.
+        # Apply opts inside the callback so each frame produces a fresh numpy
+        # array, checking that _apply_plot_opts function does not raise an
+        # exception.
         pipe = Pipe(data=[1, 2, 3])
         dmap = hv.DynamicMap(
             lambda data: hv.Curve(data).opts(xticks=np.array([1.0, 2.0, 3.0])),
