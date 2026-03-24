@@ -148,7 +148,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
 
         """
         element = self._get_frame(key)
-        self.param.update(**self.lookup_options(element, "plot").options)
+        self._apply_plot_opts(self.lookup_options(element, "plot").options)
         self._get_title_div(key, "12pt")
 
         # Cache frame object id to skip updating data if unchanged

@@ -1379,6 +1379,8 @@ class GenericElementPlot(DimensionedPlot):
 
     _multi_y_propagation = False
 
+    _prev_plot_opts = None
+
     def __init__(
         self,
         element,
@@ -1912,6 +1914,20 @@ class GenericElementPlot(DimensionedPlot):
 
         attr_accessor = accessors[-1]
         return model, attr_accessor
+
+    def _apply_plot_opts(self, plot_opts: dict) -> None:
+        """Apply plot options, skipping if unchanged from the previous frame.
+
+        This is a performance optimization to avoid unnecessary updates when
+        options have not changed.
+        """
+        try:
+            changed = bool(plot_opts != self._prev_plot_opts)
+        except (ValueError, TypeError):
+            changed = True
+        if changed:
+            self._prev_plot_opts = plot_opts
+            self.param.update(**plot_opts)
 
     def update_frame(self, key, ranges=None):
         """Set the plot(s) to the given frame number.  Operates by

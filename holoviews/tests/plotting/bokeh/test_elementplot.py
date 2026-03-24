@@ -318,6 +318,19 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.xaxis.ticker.ticks == [dt_to_int(tick, "ms")]
         assert plot.state.xaxis.major_label_overrides == {dt_to_int(tick, "ms"): "A"}
 
+    def test_update_frame_with_numpy_xticks(self):
+        # Apply opts inside the callback so each frame produces a fresh numpy
+        # array, checking that _apply_plot_opts function does not raise an
+        # exception.
+        pipe = Pipe(data=[1, 2, 3])
+        dmap = hv.DynamicMap(
+            lambda data: hv.Curve(data).opts(xticks=np.array([1.0, 2.0, 3.0])),
+            streams=[pipe],
+        )
+        bokeh_renderer.get_plot(dmap)
+        pipe.send([4, 5, 6])
+        pipe.send([7, 8, 9])
+
     def test_element_grid_custom_xticker(self):
         curve = hv.Curve([1, 2, 3]).opts(xticks=[0.5, 1.5], show_grid=True)
         plot = bokeh_renderer.get_plot(curve)
