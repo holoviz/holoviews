@@ -355,13 +355,18 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert plot.state.title.text == "After"
 
     def test_streaming_with_numpy_gridstyle(self):
-        # gridstyle values are user-provided and may contain numpy arrays.
-        # The _update_grid cache comparison must not raise ValueError.
+        # Apply opts inside the callback so each frame creates a *new*
+        # numpy array object.  This forces the cache comparison in
+        # _update_grid to compare different array objects, exercising
+        # the ValueError fallback in _update_cache.
         pipe = Pipe(data=[1, 2, 3])
-        dmap = hv.DynamicMap(lambda data: hv.Curve(data), streams=[pipe])  # noqa: PLW0108
-        plot = bokeh_renderer.get_plot(
-            dmap.opts(show_grid=True, gridstyle={"grid_line_dash": np.array([4, 4])})
-        )
+
+        def cb(data):
+            return hv.Curve(data).opts(
+                show_grid=True, gridstyle={"grid_line_dash": np.array([4, 4])}
+            )
+
+        plot = bokeh_renderer.get_plot(hv.DynamicMap(cb, streams=[pipe]))
         assert list(plot.state.xgrid[0].grid_line_dash) == [4, 4]
         pipe.send([4, 5, 6])
         pipe.send([7, 8, 9])
