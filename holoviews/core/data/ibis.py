@@ -164,7 +164,7 @@ class IbisInterface(Interface):
             data = dataset.data[[dimension.name]]
         if not expanded:
             data = data.distinct()
-        return data if keep_index or not compute else data.execute().values.flatten()
+        return data if keep_index or not compute else np.asarray(data.execute().values).flatten()
 
     @classmethod
     def histogram(cls, expr, bins, density=True, weights=None):
