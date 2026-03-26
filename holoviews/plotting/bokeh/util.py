@@ -852,10 +852,9 @@ def cds_column_replace(source, data):
     columns are not the same length as the columns being updated.
 
     """
-    current_length = [
-        len(v) for v in source.data.values() if isinstance(v, (list, *arraylike_types))
-    ]
-    new_length = [len(v) for v in data.values() if isinstance(v, (list, np.ndarray))]
+    arr_types = (list, *arraylike_types)
+    current_length = [len(v) for v in source.data.values() if isinstance(v, arr_types)]
+    new_length = [len(v) for v in data.values() if isinstance(v, arr_types)]
     untouched = [k for k in source.data if k not in data]
     return bool(untouched and current_length and new_length and current_length[0] != new_length[0])
 
