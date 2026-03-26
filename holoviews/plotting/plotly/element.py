@@ -817,7 +817,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             element, "plot", self._propagate_options, defaults=False
         )
         plot_opts.update(**{k: v[0] for k, v in inherited.items() if k not in plot_opts})
-        self.param.update(**plot_opts)
+        self._apply_plot_opts(plot_opts)
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
         figure = None
@@ -841,7 +841,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
                 el = None
 
             # propagate plot options to subplots
-            subplot.param.update(**plot_opts)
+            subplot._apply_plot_opts(plot_opts)
 
             fig = subplot.generate_plot(key, ranges, el, is_geo=is_geo)
             if figure is None:

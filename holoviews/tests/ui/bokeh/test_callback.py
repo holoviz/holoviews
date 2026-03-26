@@ -339,7 +339,6 @@ class TestPopup:
             page.mouse.up()
         elif tool == "tap":
             plot.click()
-            page.wait_for_timeout(200)
 
     def _get_popup_distances_relative_to_bbox(self, popup_box, plot_box):
         return {
@@ -368,9 +367,11 @@ class TestPopup:
         page = serve_hv(plot)
         hv_plot = page.locator(".bk-events")
         expect(hv_plot).to_have_count(1)
+        page.wait_for_load_state("networkidle")
         return page, hv_plot
 
     def _locate_popup(self, page, count=1):
+        page.wait_for_timeout(200)
         locator = page.locator(".markdown")
         expect(locator).to_have_count(count)
         return locator
