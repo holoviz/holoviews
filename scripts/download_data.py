@@ -11,17 +11,17 @@ def retry(func, *args, **kwargs):
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            if i == 4:
-                raise
             wait = 10 * 2**i
             print(f"Attempt {i + 1} failed: {e}. Retrying in {wait}s...", file=sys.stderr)
             time.sleep(wait)
+    func(*args, **kwargs)
 
 
 if Version(bokeh.__version__).release < (3, 5, 0):
     import bokeh.sampledata
 
     retry(bokeh.sampledata.download)
+    print("Downloaded bokeh sampledata")
 
 with suppress(ImportError):
     import pooch  # noqa: F401
@@ -30,3 +30,10 @@ with suppress(ImportError):
 
     retry(xr.tutorial.open_dataset, "air_temperature")
     retry(xr.tutorial.open_dataset, "rasm", decode_times=False)
+    print("Downloaded xarray tutorial datasets")
+
+with suppress(ImportError):
+    from scipy.datasets import ascent
+
+    retry(ascent)
+    print("Downloaded scipy dataset")
