@@ -17,7 +17,7 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: b969e2851312ca2b24bbec879ba4954341d1bd12 # frozen: v0.15.5
+    rev: e05c5c0818279e5ac248ac9e954431ba58865e61 # frozen: v0.15.7
     hooks:
       - id: ruff-check
       - id: ruff-format
