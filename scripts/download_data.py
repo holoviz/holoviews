@@ -14,7 +14,7 @@ def retry(func, *args, **kwargs):
             wait = 10 * 2**i
             print(f"Attempt {i + 1} failed: {e}. Retrying in {wait}s...", file=sys.stderr)
             time.sleep(wait)
-    func(*args, **kwargs)
+    return func(*args, **kwargs)
 
 
 if Version(bokeh.__version__).release < (3, 5, 0):
