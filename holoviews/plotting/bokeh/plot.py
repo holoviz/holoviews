@@ -215,10 +215,10 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                 return
             self._stream_count = stream._count
 
-        with validate(False):
-            if cds_column_replace(source, data):
-                source.data = data
-            else:
+        if cds_column_replace(source, data):
+            source.data = data
+        else:
+            with validate(False):
                 source.data.update(data)
 
         if hasattr(self, "selected") and self.selected is not None:
