@@ -492,6 +492,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     _stream_data = True
 
     def __init__(self, element, plot=None, **params):
+        self._prev_data = {}
         self._subcoord_standalone_ = None
         self.current_ranges = None
         super().__init__(element, **params)
@@ -515,6 +516,20 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self._updated = False
         # Counter to keep track of last stream update
         self._stream_count = None
+
+    def _has_changed(self, key: str, value) -> bool:
+        """Compare *value* against a cached previous value.
+
+        Returns True if the value has changed (or comparison fails, e.g.
+        for numpy arrays).  Updates the cache when changed.
+        """
+        try:
+            changed = bool(value != self._prev_data[key])
+        except (ValueError, TypeError, KeyError):
+            changed = True
+        if changed:
+            self._prev_data[key] = value
+        return changed
 
     def _hover_opts(self, element):
         if self.batched:
@@ -1451,7 +1466,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _update_plot(self, key, plot, element=None):
         """Updates plot parameters on every frame"""
-        plot.update(**self._plot_properties(key, element))
+        props = self._plot_properties(key, element)
+        if self._has_changed("plot", props):
+            plot.update(**props)
         if not self.multi_y:
             self._update_labels(key, plot, element)
         self._update_title(key, plot, element)
@@ -1470,14 +1487,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             xlabel, ylabel = ylabel, xlabel
         props["x"]["axis_label"] = xlabel if "x" in self.labelled or self.xlabel else ""
         props["y"]["axis_label"] = ylabel if "y" in self.labelled or self.ylabel else ""
+        if not self._has_changed("label", props):
+            return
         recursive_model_update(plot.xaxis[0], props.get("x", {}))
         recursive_model_update(plot.yaxis[0], props.get("y", {}))
 
     def _update_title(self, key, plot, element):
+        props = self._title_properties(key, plot, element)
+        if not self._has_changed("title", props):
+            return
         if plot.title:
-            plot.title.update(**self._title_properties(key, plot, element))
+            plot.title.update(**props)
         else:
-            plot.title = Title(**self._title_properties(key, plot, element))
+            plot.title = Title(**props)
 
     def _update_backend_opts(self):
         plot = self.handles["plot"]
@@ -1540,6 +1562,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             xopts["ticker"] = plot.xaxis[0].ticker
         if plot.yaxis and "ticker" not in yopts:
             yopts["ticker"] = plot.yaxis[0].ticker
+        if not self._has_changed("grid", (xopts, yopts)):
+            return
         plot.xgrid[0].update(**xopts)
         plot.ygrid[0].update(**yopts)
 
