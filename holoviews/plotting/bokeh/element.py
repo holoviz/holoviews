@@ -22,6 +22,7 @@ from bokeh.models import (
     Legend,
     Renderer,
     Span,
+    Title,
     tools,
 )
 from bokeh.models.axes import CategoricalAxis, DatetimeAxis
@@ -1497,6 +1498,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return
         if plot.title:
             plot.title.update(**props)
+        else:  # pragma: no cover
+            plot.title = Title(**props)
 
     def _update_backend_opts(self):
         plot = self.handles["plot"]
