@@ -1498,7 +1498,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return
         if plot.title:
             plot.title.update(**props)
-        else:  # pragma: no cover
+        else:
             plot.title = Title(**props)
 
     def _update_backend_opts(self):
