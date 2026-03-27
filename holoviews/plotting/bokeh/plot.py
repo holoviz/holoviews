@@ -3,6 +3,7 @@ from itertools import groupby
 
 import numpy as np
 import param
+from bokeh.core.property.validation import validate
 from bokeh.layouts import gridplot
 from bokeh.models import (
     Axis,
@@ -217,7 +218,8 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
         if cds_column_replace(source, data):
             source.data = data
         else:
-            source.data.update(data)
+            with validate(False):
+                source.data.update(data)
 
         if hasattr(self, "selected") and self.selected is not None:
             self._update_selected(source)
