@@ -55,7 +55,8 @@ class DaskInterface(PandasInterface):
 
         data, dims, extra = PandasInterface.init(eltype, data, kdims, vdims)
         if not isinstance(data, dd.DataFrame):
-            data = dd.from_pandas(data, npartitions=cls.default_partitions, sort=False)
+            npartitions = min(cls.default_partitions, max(1, len(data)))
+            data = dd.from_pandas(data, npartitions=npartitions, sort=False)
         kdims = [d.name if isinstance(d, Dimension) else d for d in dims["kdims"]]
 
         # If a key dimension can be found, speculatively reset index

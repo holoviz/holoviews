@@ -989,7 +989,7 @@ class periodic:
         return self.counter is None
 
     def start(self):
-        self._start_time = time.time()
+        self._start_time = time.perf_counter()
         if self.document is None:
             raise RuntimeError(
                 "periodic was registered to be run on bokehserver but no document was found."
@@ -1015,7 +1015,7 @@ class periodic:
         self.counter += 1
 
         if self.timeout is not None:
-            dt = time.time() - self._start_time
+            dt = time.perf_counter() - self._start_time
             if dt > self.timeout:
                 self.stop()
         if self.counter == self.count:
