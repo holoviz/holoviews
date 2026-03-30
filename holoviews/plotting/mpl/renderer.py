@@ -16,16 +16,14 @@ from ...core.options import Store
 from ..renderer import HTML_TAGS, MIME_TYPES, Renderer
 from .util import get_old_rcparams, get_tight_bbox
 
-
-class OutputWarning(param.Parameterized):
-    pass
-
-
-outputwarning = OutputWarning(name="Warning")
-
 # <format name> : (animation writer, format,  anim_kwargs, extra_args)
 ANIMATION_OPTS = {
-    "webm": ("ffmpeg", "webm", {}, ["-vcodec", "libvpx-vp9", "-b", "1000k"]),
+    "webm": (
+        "ffmpeg",
+        "webm",
+        {},
+        ["-vcodec", "libvpx-vp9", "-b", "1000k", "-pix_fmt", "yuv420p"],
+    ),
     "mp4": ("ffmpeg", "mp4", {"codec": "libx264"}, ["-pix_fmt", "yuv420p"]),
     "gif": ("pillow", "gif", {"fps": 10}, []),
     "scrubber": ("html", None, {"fps": 5}, None),
@@ -152,6 +150,8 @@ class MPLRenderer(Renderer):
         """
         if fmt in ["gif", "mp4", "webm"]:
             with mpl.rc_context(rc=plot.fig_rcparams):
+                if bbox_inches == "tight":
+                    self._adjust_figure_for_anim(plot, fmt)
                 anim = plot.anim(fps=self.fps)
             data = self._anim_data(anim, fmt)
         else:
@@ -234,6 +234,78 @@ class MPLRenderer(Renderer):
             else:
                 kw["bbox_inches"] = MPLRenderer.drawn[fig_id]
         return kw
+
+    def _adjust_figure_for_anim(self, plot, fmt):
+        """Adjust figure size and subplot positions to tightly fit all content.
+
+        Matplotlib's animation writers do not support bbox_inches='tight',
+        so animations can have clipped labels and titles. This method
+        computes the tight bounding box of the rendered figure and adjusts
+        the figure dimensions and axes positions so that all content fits
+        within the figure bounds without clipping.
+        """
+        from matplotlib.backends.backend_agg import FigureCanvasAgg
+
+        fig = plot.state
+
+        traverse_fn = lambda x: x.handles.get("bbox_extra_artists", None)
+        extra_artists = list(
+            chain.from_iterable(
+                artists for artists in plot.traverse(traverse_fn) if artists is not None
+            )
+        )
+
+        pad = mpl.rcParams["savefig.pad_inches"]
+
+        # Ensure we have a non-interactive canvas for rendering, since
+        # the figure may have been closed (plt.close) but still retain
+        # a Tk/Qt canvas that errors on resize operations.
+        if type(fig.canvas) is not FigureCanvasAgg:
+            fig.canvas.manager = None
+            FigureCanvasAgg(fig)
+
+        dpi = self.dpi or fig.dpi
+        fig.set_dpi(dpi)
+        fig.canvas.draw()
+        bbox_inches = get_tight_bbox(fig, extra_artists, pad=pad)
+
+        orig_w, orig_h = fig.get_size_inches()
+        new_w = bbox_inches.width
+        new_h = bbox_inches.height
+
+        # Video codecs like libx264 require even pixel dimensions.
+        # Round up to the nearest even number of pixels for video formats.
+        if fmt in ("mp4", "webm"):
+            pw, ph = int(new_w * dpi), int(new_h * dpi)
+            new_w = (pw + pw % 2) / dpi
+            new_h = (ph + ph % 2) / dpi
+
+        # Compute how to transform positions from old figure coordinates
+        # to new figure coordinates. The tight bbox defines the visible
+        # region in the old coordinate system; we need to map that region
+        # to fill the new (resized) figure.
+        x_shift = -bbox_inches.x0 / orig_w
+        y_shift = -bbox_inches.y0 / orig_h
+        x_scale = orig_w / new_w
+        y_scale = orig_h / new_h
+
+        for ax in fig.axes:
+            pos = ax.get_position()
+            new_pos = [
+                (pos.x0 + x_shift) * x_scale,
+                (pos.y0 + y_shift) * y_scale,
+                pos.width * x_scale,
+                pos.height * y_scale,
+            ]
+            ax.set_position(new_pos)
+
+        # Reposition figure-level texts (e.g. suptitle) which use
+        # figure-fraction coordinates and are not moved by axes adjustment.
+        for text in fig.texts:
+            x, y = text.get_position()
+            text.set_position(((x + x_shift) * x_scale, (y + y_shift) * y_scale))
+
+        fig.set_size_inches(new_w, new_h)
 
     @classmethod
     @contextmanager
