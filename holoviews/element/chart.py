@@ -194,6 +194,8 @@ class Histogram(Selection1DExpr, Chart):
     dimensions usually defines a count, frequency or density associated
     with each bin.
 
+    Multiple histograms may be stacked by overlaying them and passing
+    them to the stack classmethod.
     """
 
     datatype = param.List(default=["grid"])
@@ -211,6 +213,7 @@ class Histogram(Selection1DExpr, Chart):
     vdims = param.List(default=[Dimension("Frequency")], bounds=(1, None))
 
     _binned = True
+    _stacked = False
 
     def __init__(self, data, **params):
         if data is None:
@@ -220,10 +223,61 @@ class Histogram(Selection1DExpr, Chart):
 
         super().__init__(data, **params)
 
+    def clone(self, data=None, shared_data=True, new_type=None, link=True, *args, **overrides):
+        clone = super().clone(data, shared_data, new_type, link, *args, **overrides)
+        if new_type is None or isinstance(clone, Histogram):
+            clone._stacked = self._stacked
+        return clone
+
     @property
     def edges(self):
         """Property to access the Histogram edges provided for backward compatibility"""
         return self.interface.coords(self, self.kdims[0], edges=True)
+
+    @classmethod
+    def stack(cls, histograms, baseline_name="Baseline"):
+        """Stacks an (Nd)Overlay of Histogram Elements by offsetting
+        their baselines. To stack a HoloMap or DynamicMap use the map
+        method.
+        """
+        if not len(histograms):
+            return histograms
+        is_overlay = isinstance(histograms, Overlay)
+        if is_overlay:
+            histograms = NdOverlay({i: el for i, el in enumerate(histograms)})
+
+        # Validate that all histograms share the same bin edges
+        ref_edges = None
+        for hist in histograms.values():
+            xdim = hist.kdims[0]
+            edges = hist.interface.coords(hist, xdim, edges=True)
+            if ref_edges is None:
+                ref_edges = np.asarray(edges)
+            elif len(edges) != len(ref_edges) or not np.allclose(edges, ref_edges):
+                msg = (
+                    "Cannot stack Histograms with different bin edges. "
+                    "Ensure all histograms share the same edges before stacking."
+                )
+                raise ValueError(msg)
+
+        baseline = None
+        stacked = histograms.clone(shared_data=False)
+        for key, hist in histograms.items():
+            xdim = hist.kdims[0]
+            vdim = hist.vdims[0]
+            edges = hist.interface.coords(hist, xdim, edges=True)
+            values = np.array(hist.dimension_values(1))
+            if baseline is None:
+                baseline_values = np.zeros_like(values)
+            else:
+                baseline_values = baseline.copy()
+                values = values + baseline
+            baseline = values.copy()
+            data = {xdim.name: edges, vdim.name: values, baseline_name: baseline_values}
+            cloned = hist.clone(data, vdims=[vdim, baseline_name])
+            cloned._stacked = True
+            stacked[key] = cloned
+        return Overlay(stacked.values()) if is_overlay else stacked
 
 
 class Spikes(Selection1DExpr, Chart):

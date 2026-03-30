@@ -13,7 +13,7 @@ from ...core.util import dimension_sanitizer, dtype_kind, isdatetime, isfinite
 from ...operation import interpolate_curve
 from ...util.transform import dim
 from ...util.warnings import warn
-from ..mixins import AreaMixin, BarsMixin, SpikesMixin
+from ..mixins import AreaMixin, BarsMixin, HistogramMixin, SpikesMixin
 from ..util import compute_sizes, get_min_distance, rgb2hex
 from .element import ColorbarPlot, ElementPlot, LegendPlot, OverlayPlot
 from .selection import BokehOverlaySelectionDisplay
@@ -581,7 +581,7 @@ class CurvePlot(ElementPlot):
         return data, mapping, style
 
 
-class HistogramPlot(ColorbarPlot):
+class HistogramPlot(HistogramMixin, ColorbarPlot):
     selection_display = BokehOverlaySelectionDisplay(color_prop=["color", "fill_color"])
 
     style_opts = base_properties + fill_properties + line_properties + ["cmap"]
@@ -630,16 +630,15 @@ class HistogramPlot(ColorbarPlot):
             if hasattr(edges, "compute"):
                 edges = edges.compute()
             data = dict(top=values, left=edges[:-1], right=edges[1:])
+            if element._stacked:
+                baseline = element.dimension_values(2)
+                data["bottom"] = baseline
+                if self.invert_axes:
+                    mapping["left"] = "bottom"
+                else:
+                    mapping["bottom"] = "bottom"
             self._get_hover_data(data, element)
         return data, mapping, style
-
-    def get_extents(self, element, ranges, range_type="combined", **kwargs):
-        ydim = element.get_dimension(1)
-        s0, s1 = ranges[ydim.label]["soft"]
-        s0 = min(s0, 0) if isfinite(s0) else 0
-        s1 = max(s1, 0) if isfinite(s1) else 0
-        ranges[ydim.label]["soft"] = (s0, s1)
-        return super().get_extents(element, ranges, range_type)
 
     def _update_range(self, axis_range, low, high, factors, invert, shared, log, streaming=False):
         # We allow zero values with histogram
