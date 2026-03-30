@@ -1381,14 +1381,49 @@ class SideSpikesPlot(AdjoinedPlot, SpikesPlot):
 class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
     """Matplotlib Waterfall chart renderer."""
 
-    positive_color = param.String(
-        default="limegreen",
-        doc="Color for bars representing positive changes.",
+    bar_padding = param.Number(
+        default=0.2,
+        doc="Padding between bars, expressed as fraction of bar width.",
+    )
+
+    connector_line_color = param.String(
+        default="gray",
+        doc="Color for connector lines between bars.",
+    )
+
+    connector_line_dash = param.String(
+        default="--",
+        doc="Line style for connector lines between bars, e.g. '--' or '-.'.",
+    )
+
+    connector_line_width = param.Number(
+        default=1,
+        doc="Width of connector lines between bars.",
     )
 
     negative_color = param.String(
         default="crimson",
         doc="Color for bars representing negative changes.",
+    )
+
+    positive_color = param.String(
+        default="limegreen",
+        doc="Color for bars representing positive changes.",
+    )
+
+    show_connectors = param.Boolean(
+        default=True,
+        doc="Whether to draw horizontal connector lines between bars.",
+    )
+
+    show_legend = param.Boolean(
+        default=False,
+        doc="Whether to show legend for the plot.",
+    )
+
+    show_total = param.Boolean(
+        default=True,
+        doc="Whether to append a final total bar running from 0 to the cumulative sum.",
     )
 
     start_color = param.String(
@@ -1408,35 +1443,10 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
         start_color.""",
     )
 
-    show_connectors = param.Boolean(
-        default=True,
-        doc="Whether to draw horizontal connector lines between bars.",
-    )
-
-    show_total = param.Boolean(
-        default=True,
-        doc="Whether to append a final total bar running from 0 to the cumulative sum.",
-    )
-
     total_label = param.String(
         default="Total",
         doc="Label used for the auto-appended total bar.",
     )
-
-    connector_line_dash = param.String(default="--")
-    connector_line_color = param.String(default="gray")
-    connector_line_width = param.Number(default=1)
-
-    bar_padding = param.Number(
-        default=0.2,
-        doc="Padding between bars, expressed as fraction of bar width.",
-    )
-
-    show_legend = param.Boolean(
-        default=False,
-        doc="Whether to show legend for the plot.",
-    )
-
     style_opts = [
         "alpha",
         "edgecolor",

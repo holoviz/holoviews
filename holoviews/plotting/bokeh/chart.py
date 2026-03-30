@@ -1317,14 +1317,39 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
     direction (positive / negative / total).
     """
 
-    positive_color = param.String(
-        default="limegreen",
-        doc="Color for bars representing positive changes.",
+    connector_line_color = param.String(
+        default="gray",
+        doc="Color for connector lines between bars.",
+    )
+
+    connector_line_dash = param.String(
+        default="dashed",
+        doc="Line dash style for connector lines between bars.",
+    )
+
+    connector_line_width = param.Number(
+        default=1,
+        doc="Width of connector lines between bars.",
     )
 
     negative_color = param.String(
         default="crimson",
         doc="Color for bars representing negative changes.",
+    )
+
+    positive_color = param.String(
+        default="limegreen",
+        doc="Color for bars representing positive changes.",
+    )
+
+    show_connectors = param.Boolean(
+        default=True,
+        doc="Whether to draw horizontal connector lines between bars.",
+    )
+
+    show_total = param.Boolean(
+        default=True,
+        doc="Whether to append a final total bar running from 0 to the cumulative sum.",
     )
 
     start_color = param.String(
@@ -1344,24 +1369,10 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
         start_color.""",
     )
 
-    show_connectors = param.Boolean(
-        default=True,
-        doc="Whether to draw horizontal connector lines between bars.",
-    )
-
-    show_total = param.Boolean(
-        default=True,
-        doc="Whether to append a final total bar running from 0 to the cumulative sum.",
-    )
-
     total_label = param.String(
         default="Total",
         doc="Label used for the auto-appended total bar.",
     )
-
-    connector_line_dash = param.String(default="dashed")
-    connector_line_color = param.String(default="gray")
-    connector_line_width = param.Number(default=1)
 
     selection_display = BokehOverlaySelectionDisplay()
 
@@ -1407,6 +1418,21 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
             fill_color=colors,
         )
 
+        # Pre-populate expanded waterfall arrays before calling _get_hover_data.
+        # The element has one fewer row than the expanded data (the total bar is
+        # appended by _compute_waterfall_data), so we cannot let _get_hover_data
+        # fetch dimension values from the element directly. The `if dim not in data`
+        # guard inside _get_hover_data will skip anything we set here, while still
+        # handling overlay_dims correctly.
+        if "hover" in self.handles and not self.static_source:
+            xdim_name = dimension_sanitizer(xdim.name)
+            ydim_name = dimension_sanitizer(element.vdims[0].name)
+            data[xdim_name] = np.array(labels, dtype=str)
+            data[ydim_name] = np.where(np.isnan(values), tops, values)
+            data["kind"] = list(kinds)
+            data["running_total"] = cumulative
+        self._get_hover_data(data, element)
+
         # Store for connector drawing
         self._connector_data = (cat_labels, cumulative)
 
@@ -1417,17 +1443,6 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
             width=width,
             fill_color="fill_color",
         )
-
-        # Hover data — we cannot use _get_hover_data here because
-        # the element has fewer rows than the expanded waterfall data
-        # (the total bar is appended by _compute_waterfall_data).
-        if "hover" in self.handles:
-            xdim_name = dimension_sanitizer(xdim.name)
-            ydim_name = dimension_sanitizer(element.vdims[0].name)
-            data[xdim_name] = np.array(labels, dtype=str)
-            data[ydim_name] = np.where(np.isnan(values), tops, values)
-            data["kind"] = list(kinds)
-            data["running_total"] = cumulative
 
         # Horizontal waterfall: swap to hbar signature
         if self.invert_axes:

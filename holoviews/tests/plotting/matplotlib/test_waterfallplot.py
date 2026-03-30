@@ -79,13 +79,13 @@ class TestWaterfallPlot(TestMPLPlot):
     # ----------------------------------------------------------------
 
     def test_waterfall_show_total_true(self):
-        w = hv.Waterfall([("A", 10), ("B", -3)], show_total=True)
+        w = hv.Waterfall([("A", 10), ("B", -3)]).opts(show_total=True)
         plot = mpl_renderer.get_plot(w)
         ax = plot.handles["axis"]
         assert len(ax.patches) == 3  # A, B, Total
 
     def test_waterfall_show_total_false(self):
-        w = hv.Waterfall([("A", 10), ("B", -3)], show_total=False)
+        w = hv.Waterfall([("A", 10), ("B", -3)]).opts(show_total=False)
         plot = mpl_renderer.get_plot(w)
         ax = plot.handles["axis"]
         assert len(ax.patches) == 2  # A, B only
@@ -99,20 +99,22 @@ class TestWaterfallPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(w)
         ax = plot.handles["axis"]
         patches = ax.patches
-        assert patches[0].get_facecolor() == to_rgba("limegreen")
-        assert patches[1].get_facecolor() == to_rgba("crimson")
-        assert patches[2].get_facecolor() == to_rgba("steelblue")
+        assert patches[0].get_facecolor() == to_rgba(
+            "steelblue"
+        )  # start (first bar uses start_color)
+        assert patches[1].get_facecolor() == to_rgba("crimson")  # negative
+        assert patches[2].get_facecolor() == to_rgba("steelblue")  # total (inherits start_color)
 
     def test_waterfall_colors_custom(self):
         w = hv.Waterfall([("A", 10), ("B", -3)]).opts(
-            positive_color="blue", negative_color="orange", total_color="gray"
+            start_color="blue", positive_color="blue", negative_color="orange", total_color="gray"
         )
         plot = mpl_renderer.get_plot(w)
         ax = plot.handles["axis"]
         patches = ax.patches
-        assert patches[0].get_facecolor() == to_rgba("blue")
-        assert patches[1].get_facecolor() == to_rgba("orange")
-        assert patches[2].get_facecolor() == to_rgba("gray")
+        assert patches[0].get_facecolor() == to_rgba("blue")  # start
+        assert patches[1].get_facecolor() == to_rgba("orange")  # negative
+        assert patches[2].get_facecolor() == to_rgba("gray")  # total
 
     # ----------------------------------------------------------------
     # Connectors
@@ -145,7 +147,7 @@ class TestWaterfallPlot(TestMPLPlot):
         assert "Total" in tick_labels
 
     def test_waterfall_tick_labels_no_total(self):
-        w = hv.Waterfall([("A", 10), ("B", -3)], show_total=False)
+        w = hv.Waterfall([("A", 10), ("B", -3)]).opts(show_total=False)
         plot = mpl_renderer.get_plot(w)
         ax = plot.handles["axis"]
         tick_labels = [t.get_text() for t in ax.get_xticklabels()]
@@ -156,24 +158,24 @@ class TestWaterfallPlot(TestMPLPlot):
     # ----------------------------------------------------------------
 
     def test_waterfall_legend_present(self):
-        w = hv.Waterfall([("A", 10), ("B", -3)])
+        w = hv.Waterfall([("A", 10), ("B", -3)]).opts(show_legend=True)
         plot = mpl_renderer.get_plot(w)
         ax = plot.handles["axis"]
         legend = ax.get_legend()
         assert legend is not None
         texts = [t.get_text() for t in legend.get_texts()]
-        assert "Positive" in texts
+        assert "Start" in texts
         assert "Negative" in texts
         assert "Total" in texts
 
     def test_waterfall_legend_only_present_kinds(self):
-        w = hv.Waterfall([("A", 10), ("B", 20)], show_total=False)
+        w = hv.Waterfall([("A", 10), ("B", 20)]).opts(show_total=False, show_legend=True)
         plot = mpl_renderer.get_plot(w)
         ax = plot.handles["axis"]
         legend = ax.get_legend()
         assert legend is not None
         texts = [t.get_text() for t in legend.get_texts()]
-        assert "Positive" in texts
+        assert "Start" in texts
         assert "Negative" not in texts
 
     # ----------------------------------------------------------------

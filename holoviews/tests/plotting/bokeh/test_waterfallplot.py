@@ -62,19 +62,19 @@ class TestWaterfallPlot(TestBokehPlot):
     # ----------------------------------------------------------------
 
     def test_waterfall_show_total_true(self):
-        w = hv.Waterfall([("A", 10), ("B", -3)], show_total=True)
+        w = hv.Waterfall([("A", 10), ("B", -3)]).opts(show_total=True)
         plot = bokeh_renderer.get_plot(w)
         source = plot.handles["source"]
         assert len(source.data["x"]) == 3  # A, B, Total
 
     def test_waterfall_show_total_false(self):
-        w = hv.Waterfall([("A", 10), ("B", -3)], show_total=False)
+        w = hv.Waterfall([("A", 10), ("B", -3)]).opts(show_total=False)
         plot = bokeh_renderer.get_plot(w)
         source = plot.handles["source"]
         assert len(source.data["x"]) == 2  # A, B only
 
     def test_waterfall_custom_total_label(self):
-        w = hv.Waterfall([("A", 10)], total_label="Sum")
+        w = hv.Waterfall([("A", 10)]).opts(total_label="Sum")
         plot = bokeh_renderer.get_plot(w)
         source = plot.handles["source"]
         assert "Sum" in list(source.data["x"])
@@ -88,20 +88,20 @@ class TestWaterfallPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(w)
         source = plot.handles["source"]
         colors = source.data["fill_color"]
-        assert colors[0] == "limegreen"  # positive
+        assert colors[0] == "steelblue"  # start (first bar uses start_color)
         assert colors[1] == "crimson"  # negative
-        assert colors[2] == "steelblue"  # total
+        assert colors[2] == "steelblue"  # total (inherits start_color)
 
     def test_waterfall_colors_custom(self):
         w = hv.Waterfall([("A", 10), ("B", -3)]).opts(
-            positive_color="blue", negative_color="orange", total_color="gray"
+            start_color="blue", positive_color="blue", negative_color="orange", total_color="gray"
         )
         plot = bokeh_renderer.get_plot(w)
         source = plot.handles["source"]
         colors = source.data["fill_color"]
-        assert colors[0] == "blue"
-        assert colors[1] == "orange"
-        assert colors[2] == "gray"
+        assert colors[0] == "blue"  # start
+        assert colors[1] == "orange"  # negative
+        assert colors[2] == "gray"  # total
 
     # ----------------------------------------------------------------
     # Connectors
@@ -119,7 +119,7 @@ class TestWaterfallPlot(TestBokehPlot):
         assert "connectors" not in plot.handles
 
     def test_waterfall_connector_data(self):
-        w = hv.Waterfall([("A", 10), ("B", -3)], show_total=False)
+        w = hv.Waterfall([("A", 10), ("B", -3)]).opts(show_total=False)
         plot = bokeh_renderer.get_plot(w)
         src = plot.handles["connector_source"]
         # One connector from A→B at y=10 (cumulative after A)
@@ -137,7 +137,7 @@ class TestWaterfallPlot(TestBokehPlot):
         assert list(x_range.factors) == ["A", "B", "Total"]
 
     def test_waterfall_x_range_no_total(self):
-        w = hv.Waterfall([("A", 10), ("B", -3)], show_total=False)
+        w = hv.Waterfall([("A", 10), ("B", -3)]).opts(show_total=False)
         plot = bokeh_renderer.get_plot(w)
         x_range = plot.handles["x_range"]
         assert list(x_range.factors) == ["A", "B"]
@@ -198,7 +198,7 @@ class TestWaterfallPlot(TestBokehPlot):
             )
 
     def test_waterfall_hover_no_total(self):
-        w = hv.Waterfall([("A", 10), ("B", -3)], show_total=False).opts(tools=["hover"])
+        w = hv.Waterfall([("A", 10), ("B", -3)]).opts(show_total=False, tools=["hover"])
         plot = bokeh_renderer.get_plot(w)
         source = plot.handles["source"]
         lengths = {k: len(v) for k, v in source.data.items()}
@@ -209,11 +209,15 @@ class TestWaterfallPlot(TestBokehPlot):
             )
 
     def test_waterfall_hover_data_values(self):
-        w = hv.Waterfall([("A", 10), ("B", -3)], show_total=True).opts(tools=["hover"])
+        w = hv.Waterfall([("A", 10), ("B", -3)]).opts(show_total=True, tools=["hover"])
         plot = bokeh_renderer.get_plot(w)
         source = plot.handles["source"]
         assert "kind" in source.data
-        assert list(source.data["kind"]) == ["positive", "negative", "total"]
+        assert list(source.data["kind"]) == [
+            np.str_("start"),
+            np.str_("negative"),
+            np.str_("total"),
+        ]
 
     # ----------------------------------------------------------------
     # Invert axes

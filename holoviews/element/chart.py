@@ -204,8 +204,6 @@ class Waterfall(Selection1DExpr, Chart):
 
     vdims = param.List(default=[Dimension("y")], bounds=(1, 1))
 
-    _max_kdim_count = 1
-
 
 class Histogram(Selection1DExpr, Chart):
     """Histogram is a Chart element representing a number of bins in a 1D
