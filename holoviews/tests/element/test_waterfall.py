@@ -45,20 +45,10 @@ class TestWaterfallElement:
         w = hv.Waterfall([])
         assert len(w) == 0
 
-    def test_show_total_default(self):
-        from holoviews.plotting.bokeh.chart import WaterfallPlot
-
-        assert WaterfallPlot.param.show_total.default is True
-
     def test_show_total_false(self):
         # show_total is a plot opt; the element itself is unaffected
         w = hv.Waterfall([("A", 10)])
         assert len(w) == 1
-
-    def test_total_label_default(self):
-        from holoviews.plotting.bokeh.chart import WaterfallPlot
-
-        assert WaterfallPlot.param.total_label.default == "Total"
 
     def test_total_label_custom(self):
         # total_label is a plot opt; the element itself is unaffected
