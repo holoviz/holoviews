@@ -77,7 +77,7 @@ class TestWaterfallElement:
 
     def test_dimension_values(self):
         w = hv.Waterfall([("A", 10), ("B", -3)])
-        assert_data_equal(w.dimension_values(0), np.array(["A", "B"]))
+        assert_data_equal(np.asarray(w.dimension_values(0)), np.array(["A", "B"]))
         assert_data_equal(w.dimension_values(1), np.array([10.0, -3.0]))
 
     def test_dframe(self):
