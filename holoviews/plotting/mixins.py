@@ -269,7 +269,7 @@ class WaterfallMixin:
         labels, values, bottoms, tops, kinds, cumulative
         """
         if show_total and len(labels) > 0:
-            labels = np.append(labels, total_label)
+            labels = np.append(labels.astype(object), total_label)
             values = np.append(values, np.nan)  # sentinel
 
         is_total = np.isnan(values)

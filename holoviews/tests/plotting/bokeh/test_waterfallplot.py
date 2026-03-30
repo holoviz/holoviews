@@ -240,3 +240,50 @@ class TestWaterfallPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(w)
         glyph = plot.handles["glyph"]
         assert glyph.width == 0.5
+
+    # ----------------------------------------------------------------
+    # Datetime kdim
+    # ----------------------------------------------------------------
+
+    def test_waterfall_datetime_kdim(self):
+        """Regression: datetime kdim must not raise DTypePromotionError."""
+        df = pd.DataFrame(
+            {
+                "Category": pd.to_datetime(
+                    ["2021-01-01", "2021-01-02", "2021-01-03", "2021-01-04"]
+                ),
+                "Amount": [100, 50, -30, -10],
+            }
+        )
+        w = hv.Waterfall(df, kdims="Category", vdims="Amount")
+        plot = bokeh_renderer.get_plot(w)
+        source = plot.handles["source"]
+        # 4 data bars + 1 total bar = 5
+        assert len(source.data["top"]) == 5
+        assert len(source.data["bottom"]) == 5
+
+    def test_waterfall_datetime_kdim_no_total(self):
+        """Datetime kdim with show_total=False avoids the np.append path entirely."""
+        df = pd.DataFrame(
+            {
+                "Category": pd.to_datetime(["2021-01-01", "2021-01-02"]),
+                "Amount": [100, -30],
+            }
+        )
+        w = hv.Waterfall(df, kdims="Category", vdims="Amount").opts(show_total=False)
+        plot = bokeh_renderer.get_plot(w)
+        source = plot.handles["source"]
+        assert len(source.data["top"]) == 2
+
+    def test_waterfall_datetime_kdim_total_label_in_factors(self):
+        """Total bar label appears in x_range factors even with datetime kdim."""
+        df = pd.DataFrame(
+            {
+                "Category": pd.to_datetime(["2021-01-01", "2021-01-02"]),
+                "Amount": [100, -30],
+            }
+        )
+        w = hv.Waterfall(df, kdims="Category", vdims="Amount").opts(total_label="Net")
+        plot = bokeh_renderer.get_plot(w)
+        x_range = plot.handles["x_range"]
+        assert "Net" in list(x_range.factors)

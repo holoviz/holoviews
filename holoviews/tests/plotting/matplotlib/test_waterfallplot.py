@@ -205,3 +205,50 @@ class TestWaterfallPlot(TestMPLPlot):
         patches = ax.patches
         # For horizontal bars, get_width() gives the value extent
         assert patches[0].get_width() == 10
+
+    # ----------------------------------------------------------------
+    # Datetime kdim
+    # ----------------------------------------------------------------
+
+    def test_waterfall_datetime_kdim(self):
+        """Regression: datetime kdim must not raise DTypePromotionError."""
+        df = pd.DataFrame(
+            {
+                "Category": pd.to_datetime(
+                    ["2021-01-01", "2021-01-02", "2021-01-03", "2021-01-04"]
+                ),
+                "Amount": [100, 50, -30, -10],
+            }
+        )
+        w = hv.Waterfall(df, kdims="Category", vdims="Amount")
+        plot = mpl_renderer.get_plot(w)
+        ax = plot.handles["axis"]
+        # 4 data bars + 1 total bar = 5 patches
+        assert len(ax.patches) == 5
+
+    def test_waterfall_datetime_kdim_no_total(self):
+        """Datetime kdim with show_total=False avoids the np.append path entirely."""
+        df = pd.DataFrame(
+            {
+                "Category": pd.to_datetime(["2021-01-01", "2021-01-02"]),
+                "Amount": [100, -30],
+            }
+        )
+        w = hv.Waterfall(df, kdims="Category", vdims="Amount").opts(show_total=False)
+        plot = mpl_renderer.get_plot(w)
+        ax = plot.handles["axis"]
+        assert len(ax.patches) == 2
+
+    def test_waterfall_datetime_kdim_total_label_in_ticks(self):
+        """Total bar label appears in x-axis tick labels even with datetime kdim."""
+        df = pd.DataFrame(
+            {
+                "Category": pd.to_datetime(["2021-01-01", "2021-01-02"]),
+                "Amount": [100, -30],
+            }
+        )
+        w = hv.Waterfall(df, kdims="Category", vdims="Amount").opts(total_label="Net")
+        plot = mpl_renderer.get_plot(w)
+        ax = plot.handles["axis"]
+        tick_labels = [t.get_text() for t in ax.get_xticklabels()]
+        assert "Net" in tick_labels
