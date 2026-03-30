@@ -5,7 +5,6 @@ Test cases for rendering exporters
 import base64
 import re
 import shutil
-import sys
 from io import BytesIO
 
 import numpy as np
@@ -86,7 +85,7 @@ class MPLRendererTest:
         data, _metadata = self.renderer.components(self.map1, "gif")
         assert "<img src='data:image/gif" in data["text/html"]
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Skip on Windows")
+    # @pytest.mark.skipif(sys.platform == "win32", reason="Skip on Windows")
     @pytest.mark.skipif(not shutil.which("ffmpeg"), reason="ffmpeg not available")
     def test_render_mp4(self):
         data, _metadata = self.renderer.components(self.map1, "mp4")
@@ -255,7 +254,7 @@ class TestAnimationBbox:
         )
         assert self._all_labels_visible(hmap)
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Skip on Windows")
+    # @pytest.mark.skipif(sys.platform == "win32", reason="Skip on Windows")
     @pytest.mark.skipif(not shutil.which("ffmpeg"), reason="ffmpeg not available")
     def test_video_has_even_dimensions(self):
         hmap = hv.HoloMap({i: hv.Curve(np.random.rand(10)) for i in range(3)})
