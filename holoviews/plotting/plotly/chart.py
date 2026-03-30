@@ -3,7 +3,7 @@ import param
 
 from ...element import Tiles
 from ...operation import interpolate_curve
-from ..mixins import AreaMixin, BarsMixin
+from ..mixins import AreaMixin, BarsMixin, HistogramMixin
 from .element import ColorbarPlot, ElementPlot
 from .selection import PlotlyOverlaySelectionDisplay
 from .util import PLOTLY_SCATTERMAP
@@ -310,7 +310,7 @@ class BarPlot(BarsMixin, ElementPlot):
         return layout
 
 
-class HistogramPlot(ElementPlot):
+class HistogramPlot(HistogramMixin, ElementPlot):
     style_opts = ["visible", "color", "line_color", "line_width", "opacity", "selectedpoints"]
 
     _style_key = "marker"
@@ -339,7 +339,16 @@ class HistogramPlot(ElementPlot):
             xs = edges
             ys = values
             orientation = "v"
-        return [{"x": xs, "y": ys, "width": binwidth, "orientation": orientation}]
+
+        trace = {"x": xs, "y": ys, "width": binwidth, "orientation": orientation}
+
+        if element._stacked:
+            baseline = np.asarray(element.dimension_values(2))
+            trace["base"] = baseline
+            # Plotly bar y is the height (delta), not the absolute top
+            trace["y"] = values - baseline
+
+        return [trace]
 
     def init_layout(self, key, element, ranges, **kwargs):
         layout = super().init_layout(key, element, ranges)
