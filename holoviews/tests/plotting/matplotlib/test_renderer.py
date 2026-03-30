@@ -86,9 +86,10 @@ class MPLRendererTest:
         assert "<img src='data:image/gif" in data["text/html"]
 
     @pytest.mark.skipif(not shutil.which("ffmpeg"), reason="ffmpeg not available")
-    def test_render_mp4(self):
-        data, _metadata = self.renderer.components(self.map1, "mp4")
-        assert "<source src='data:video/mp4" in data["text/html"]
+    @pytest.mark.parametrize("fmt", ["mp4", "webm"])
+    def test_render_video(self, fmt):
+        data, _metadata = self.renderer.components(self.map1, fmt)
+        assert f"<source src='data:video/{fmt}" in data["text/html"]
 
     def test_render_static(self):
         curve = hv.Curve([])
