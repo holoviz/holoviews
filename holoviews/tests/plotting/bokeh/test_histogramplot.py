@@ -279,3 +279,44 @@ class TestSideHistogramPlot(LoggingComparison, TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay)
         for subplot, color in zip(plot.subplots.values(), colors, strict=True):
             assert subplot.handles["glyph"].fill_color == color
+
+    def test_histogram_stack_ndoverlay(self):
+        edges = np.array([0, 1, 2, 3])
+        h1 = hv.Histogram((edges, np.array([1, 2, 3])))
+        h2 = hv.Histogram((edges, np.array([6, 4, 2])))
+        h3 = hv.Histogram((edges, np.array([8, 1, 2])))
+        overlay = hv.NdOverlay({0: h1, 1: h2, 2: h3})
+        stacked = hv.Histogram.stack(overlay)
+        plot = bokeh_renderer.get_plot(stacked)
+        expected_baselines = [
+            np.array([0, 0, 0]),
+            np.array([1, 2, 3]),
+            np.array([7, 6, 5]),
+        ]
+        expected_tops = [
+            np.array([1, 2, 3]),
+            np.array([7, 6, 5]),
+            np.array([15, 7, 7]),
+        ]
+        for (_, subplot), baseline, top in zip(
+            plot.subplots.items(), expected_baselines, expected_tops, strict=True
+        ):
+            source = subplot.handles["source"]
+            np.testing.assert_array_equal(source.data["bottom"], baseline)
+            np.testing.assert_array_equal(source.data["top"], top)
+
+    def test_histogram_stack_overlay(self):
+        edges = np.array([0, 1, 2, 3])
+        h1 = hv.Histogram((edges, np.array([1, 2, 3])), label="A")
+        h2 = hv.Histogram((edges, np.array([6, 4, 2])), label="B")
+        stacked = hv.Histogram.stack(h1 * h2)
+        plot = bokeh_renderer.get_plot(stacked)
+        subplots = list(plot.subplots.values())
+        # First histogram: baseline=0
+        source0 = subplots[0].handles["source"]
+        np.testing.assert_array_equal(source0.data["bottom"], np.array([0, 0, 0]))
+        np.testing.assert_array_equal(source0.data["top"], np.array([1, 2, 3]))
+        # Second histogram: baseline=first's top
+        source1 = subplots[1].handles["source"]
+        np.testing.assert_array_equal(source1.data["bottom"], np.array([1, 2, 3]))
+        np.testing.assert_array_equal(source1.data["top"], np.array([7, 6, 5]))

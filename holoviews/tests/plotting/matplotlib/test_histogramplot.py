@@ -172,3 +172,46 @@ class TestHistogramPlot(LoggingComparison, TestMPLPlot):
             children = subplot.handles["artist"].get_children()
             for c in children:
                 assert c.get_facecolor() == color
+
+    def test_histogram_stack_ndoverlay(self):
+        edges = np.array([0, 1, 2, 3])
+        h1 = hv.Histogram((edges, np.array([1, 2, 3])))
+        h2 = hv.Histogram((edges, np.array([6, 4, 2])))
+        h3 = hv.Histogram((edges, np.array([8, 1, 2])))
+        overlay = hv.NdOverlay({0: h1, 1: h2, 2: h3})
+        stacked = hv.Histogram.stack(overlay)
+        plot = mpl_renderer.get_plot(stacked)
+        expected_baselines = [
+            np.array([0, 0, 0]),
+            np.array([1, 2, 3]),
+            np.array([7, 6, 5]),
+        ]
+        expected_heights = [
+            np.array([1, 2, 3]),
+            np.array([6, 4, 2]),
+            np.array([8, 1, 2]),
+        ]
+        for (_, subplot), baseline, heights in zip(
+            plot.subplots.items(), expected_baselines, expected_heights, strict=True
+        ):
+            bars = subplot.handles["artist"]
+            for i, bar in enumerate(bars):
+                assert bar.get_y() == baseline[i]
+                assert bar.get_height() == heights[i]
+
+    def test_histogram_stack_overlay(self):
+        edges = np.array([0, 1, 2, 3])
+        h1 = hv.Histogram((edges, np.array([1, 2, 3])), label="A")
+        h2 = hv.Histogram((edges, np.array([6, 4, 2])), label="B")
+        stacked = hv.Histogram.stack(h1 * h2)
+        plot = mpl_renderer.get_plot(stacked)
+        subplots = list(plot.subplots.values())
+        # First histogram: baseline=0
+        bars0 = subplots[0].handles["artist"]
+        for bar in bars0:
+            assert bar.get_y() == 0
+        np.testing.assert_array_equal([bar.get_height() for bar in bars0], [1, 2, 3])
+        # Second histogram: baseline=first's top
+        bars1 = subplots[1].handles["artist"]
+        np.testing.assert_array_equal([bar.get_y() for bar in bars1], [1, 2, 3])
+        np.testing.assert_array_equal([bar.get_height() for bar in bars1], [6, 4, 2])
