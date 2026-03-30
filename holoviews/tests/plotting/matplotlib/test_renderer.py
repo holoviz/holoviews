@@ -2,9 +2,12 @@
 Test cases for rendering exporters
 """
 
+import base64
 import os
+import re
 import subprocess
 import sys
+from io import BytesIO
 
 import numpy as np
 import panel as pn
@@ -12,6 +15,7 @@ import param
 import pytest
 from matplotlib import style
 from panel.widgets import DiscreteSlider, FloatSlider, Player
+from PIL import Image
 from pyviz_comms import CommManager
 
 import holoviews as hv
@@ -205,3 +209,70 @@ class MPLRendererTest:
         slider.value = 3
         (_, y) = artist.get_data()
         assert y[0] == 3
+
+
+class TestAnimationBbox:
+    """Test that matplotlib animations are not clipped (GH#4975).
+
+    Matplotlib's animation writers do not support bbox_inches='tight',
+    so _adjust_figure_for_anim pre-adjusts the figure to prevent clipping.
+    """
+
+    def setup_method(self):
+        self.renderer = MPLRenderer.instance()
+
+    def _gif_frame_size(self, obj):
+        """Render obj as GIF and return the (width, height) of the first frame."""
+        data, _ = self.renderer.components(obj, "gif")
+        # Extract the base64 data from the img tag
+        match = re.search(r"base64,([^'\"]+)", data["text/html"])
+        raw = base64.b64decode(match.group(1))
+        img = Image.open(BytesIO(raw))
+        return img.size
+
+    def _png_size(self, obj):
+        """Render obj as PNG and return the (width, height)."""
+        data = self.renderer(self.renderer.get_plot(obj), "png")[0]
+
+        img = Image.open(BytesIO(data))
+        return img.size
+
+    def _all_labels_visible(self, obj):
+        """Check that the GIF frame is at least as large as the PNG.
+
+        The PNG uses bbox_inches='tight' which tightly crops to content.
+        If the GIF is smaller in either dimension, content is clipped.
+        """
+        gif_w, gif_h = self._gif_frame_size(obj)
+        png_w, png_h = self._png_size(obj)
+        return gif_w >= png_w and gif_h >= png_h
+
+    def test_gif_single_plot_not_clipped(self):
+        hmap = hv.HoloMap({i: hv.Curve(np.random.rand(10)) for i in range(3)})
+        assert self._all_labels_visible(hmap)
+
+    def test_gif_layout_not_clipped(self):
+        hmap = hv.HoloMap({i: hv.Curve(np.random.rand(10)) for i in range(3)})
+        layout = hmap + hmap
+        assert self._all_labels_visible(layout)
+
+    def test_gif_with_long_labels_not_clipped(self):
+        hmap = hv.HoloMap(
+            {
+                i: hv.Curve(np.random.rand(10), "long x-axis label", "long y-axis label")
+                for i in range(3)
+            },
+            kdims=["parameter with a very long name"],
+        )
+        assert self._all_labels_visible(hmap)
+
+    def test_video_has_even_dimensions(self):
+        hmap = hv.HoloMap({i: hv.Curve(np.random.rand(10)) for i in range(3)})
+        plot = self.renderer.get_plot(hmap)
+        self.renderer._adjust_figure_for_anim(plot, "mp4")
+        fig = plot.state
+        dpi = self.renderer.dpi or fig.dpi
+        w_px = int(fig.get_size_inches()[0] * dpi)
+        h_px = int(fig.get_size_inches()[1] * dpi)
+        assert w_px % 2 == 0
+        assert h_px % 2 == 0
