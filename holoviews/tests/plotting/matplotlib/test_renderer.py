@@ -3,9 +3,8 @@ Test cases for rendering exporters
 """
 
 import base64
-import os
 import re
-import subprocess
+import shutil
 import sys
 from io import BytesIO
 
@@ -87,15 +86,9 @@ class MPLRendererTest:
         data, _metadata = self.renderer.components(self.map1, "gif")
         assert "<img src='data:image/gif" in data["text/html"]
 
-    @pytest.mark.skipif(
-        sys.platform == "win32" and os.environ.get("GITHUB_RUN_ID"), reason="Skip on Windows CI"
-    )
+    @pytest.mark.skipif(sys.platform == "win32", reason="Skip on Windows")
+    @pytest.mark.skipif(not shutil.which("ffmpeg"), reason="ffmpeg not available")
     def test_render_mp4(self):
-        devnull = subprocess.DEVNULL
-        try:
-            subprocess.call(["ffmpeg", "-h"], stdout=devnull, stderr=devnull)
-        except Exception:
-            pytest.skip("ffmpeg not available, skipping mp4 export test")
         data, _metadata = self.renderer.components(self.map1, "mp4")
         assert "<source src='data:video/mp4" in data["text/html"]
 
@@ -121,10 +114,10 @@ class MPLRendererTest:
         data, _ = self.renderer.components(hmap)
         assert 'State"' in data["text/html"]
 
-    # def test_render_holomap_not_embedded(self):
-    #     hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
-    #     data, _ = self.renderer.instance(widget_mode='live').components(hmap)
-    #     self.assertNotIn('State"', data['text/html'])
+    def test_render_holomap_not_embedded(self):
+        hmap = hv.HoloMap({i: hv.Curve([1, 2, i]) for i in range(5)})
+        data, _ = self.renderer.instance(widget_mode="live").components(hmap)
+        assert 'State"' not in data["text/html"]
 
     def test_render_holomap_scrubber(self):
         hmap = hv.HoloMap({i: hv.Curve([1, 2, i]) for i in range(5)})
@@ -212,11 +205,7 @@ class MPLRendererTest:
 
 
 class TestAnimationBbox:
-    """Test that matplotlib animations are not clipped (GH#4975).
-
-    Matplotlib's animation writers do not support bbox_inches='tight',
-    so _adjust_figure_for_anim pre-adjusts the figure to prevent clipping.
-    """
+    """Test that matplotlib animations are not clipped"""
 
     def setup_method(self):
         self.renderer = MPLRenderer.instance()
@@ -266,6 +255,8 @@ class TestAnimationBbox:
         )
         assert self._all_labels_visible(hmap)
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Skip on Windows")
+    @pytest.mark.skipif(not shutil.which("ffmpeg"), reason="ffmpeg not available")
     def test_video_has_even_dimensions(self):
         hmap = hv.HoloMap({i: hv.Curve(np.random.rand(10)) for i in range(3)})
         plot = self.renderer.get_plot(hmap)
