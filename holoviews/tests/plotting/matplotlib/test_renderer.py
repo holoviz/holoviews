@@ -5,6 +5,7 @@ Test cases for rendering exporters
 import base64
 import re
 import shutil
+import sys
 from io import BytesIO
 
 import numpy as np
@@ -88,6 +89,8 @@ class MPLRendererTest:
     @pytest.mark.skipif(not shutil.which("ffmpeg"), reason="ffmpeg not available")
     @pytest.mark.parametrize("fmt", ["mp4", "webm"])
     def test_render_video(self, fmt):
+        if fmt == "webm" and sys.platform == "win32":
+            pytest.skip("webm format not supported on Windows")
         data, _metadata = self.renderer.components(self.map1, fmt)
         assert f"<source src='data:video/{fmt}" in data["text/html"]
 
