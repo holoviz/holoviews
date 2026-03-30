@@ -250,3 +250,105 @@ class GraphMixin:
 
     def get_extents(self, element, ranges, range_type="combined", **kwargs):
         return super().get_extents(element.nodes, ranges, range_type)
+
+
+class WaterfallMixin:
+    """Shared mixin for Waterfall plot classes across backends.
+
+    Provides the cumulative-sum computation that turns incremental
+    deltas into floating-bar coordinates, plus extent calculation
+    that uses the cumulative range (not the raw delta range).
+    """
+
+    @staticmethod
+    def _compute_waterfall_data(labels, values, show_total, total_label):
+        """Compute bottom/top/kind arrays from incremental deltas.
+
+        Returns
+        -------
+        labels, values, bottoms, tops, kinds, cumulative
+        """
+        if show_total and len(labels) > 0:
+            labels = np.append(labels, total_label)
+            values = np.append(values, np.nan)  # sentinel
+
+        is_total = np.isnan(values)
+        safe_values = np.where(is_total, 0, values)
+        cumulative = np.cumsum(safe_values)
+
+        prev = np.concatenate([[0], cumulative[:-1]])
+        is_pos = (~is_total) & (values >= 0)
+        is_neg = (~is_total) & (values < 0)
+
+        kinds = np.where(is_total, "total", np.where(is_pos, "positive", "negative"))
+
+        # First bar represents an absolute starting value, not a delta
+        if len(kinds) > 0 and kinds[0] != "total":
+            kinds[0] = "start"
+
+        bottoms = np.where(is_neg, cumulative, prev)
+        tops = np.where(is_neg, prev, cumulative)
+
+        # Total bars run from 0 → cumulative total
+        bottoms[is_total] = 0
+        tops[is_total] = cumulative[is_total]
+
+        return labels, values, bottoms, tops, kinds, cumulative
+
+    def _map_colors(self, kinds, values):
+        """Return a list of colors for each bar, resolving nullable
+        start_color and total_color.
+
+        - start_color=None → use positive_color/negative_color based on sign
+        - total_color=None → inherit the resolved start color
+        """
+        # Resolve start color
+        if self.start_color is not None:
+            start = self.start_color
+        elif len(values) > 0 and not np.isnan(values[0]):
+            start = self.positive_color if values[0] >= 0 else self.negative_color
+        else:
+            start = self.positive_color
+
+        # Resolve total color
+        total = self.total_color if self.total_color is not None else start
+
+        color_map = {
+            "start": start,
+            "positive": self.positive_color,
+            "negative": self.negative_color,
+            "total": total,
+        }
+        return [color_map[k] for k in kinds]
+
+    def _get_axis_dims(self, element):
+        return (element.kdims[0], element.vdims[0])
+
+    def get_extents(self, element, ranges, range_type="combined", **kwargs):
+        """Y-range derived from cumulative totals, not raw deltas."""
+        if range_type not in ("combined", "data") or not len(element):
+            return super().get_extents(element, ranges, range_type, **kwargs)
+
+        values = element.dimension_values(1)
+        cumsum = np.cumsum(values)
+        all_points = np.concatenate([[0], cumsum])
+        y0 = float(np.nanmin(all_points))
+        y1 = float(np.nanmax(all_points))
+        x0, x1 = "", ""
+
+        if range_type == "data":
+            return (x0, y0, x1, y1)
+
+        vdim = element.vdims[0]
+        if vdim.label in ranges:
+            padding = 0 if self.overlaid else self.padding
+            _, ypad, _ = get_axis_padding(padding)
+            y0, y1 = util.dimension_range(
+                y0,
+                y1,
+                ranges[vdim.label].get("hard", (np.nan, np.nan)),
+                ranges[vdim.label].get("soft", (np.nan, np.nan)),
+                ypad,
+                self.logy,
+            )
+        return (x0, y0, x1, y1)

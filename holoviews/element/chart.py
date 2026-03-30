@@ -187,6 +187,26 @@ class Bars(Selection1DExpr, Chart):
     _max_kdim_count = 3
 
 
+class Waterfall(Selection1DExpr, Chart):
+    """Waterfall chart element representing a series of incremental
+    changes to a value. The key dimension is a categorical label and
+    the value dimension is the incremental change at each step.
+
+    Bars float: each bar's bottom is the running cumulative total
+    from the previous step. Colors encode direction (positive,
+    negative).
+
+    """
+
+    group = param.String(default="Waterfall", constant=True)
+
+    kdims = param.List(default=[Dimension("x")], bounds=(1, 1))
+
+    vdims = param.List(default=[Dimension("y")], bounds=(1, 1))
+
+    _max_kdim_count = 1
+
+
 class Histogram(Selection1DExpr, Chart):
     """Histogram is a Chart element representing a number of bins in a 1D
     coordinate system. The key dimension represents the binned values,

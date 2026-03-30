@@ -29,6 +29,7 @@ from .chart import (
     Scatter,
     Spikes,
     Spread,
+    Waterfall,
 )
 from .chart3d import Path3D, Scatter3D, Surface, TriSurface
 from .geom import Geometry, Points, Rectangles, Segments, VectorField
@@ -130,6 +131,9 @@ class ElementConversion(DataConversion):
     def violin(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(Violin, kdims, vdims, groupby, **kwargs)
 
+    def waterfall(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Waterfall, kdims, vdims, groupby, **kwargs)
+
     def labels(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(Labels, kdims, vdims, groupby, **kwargs)
 
@@ -213,6 +217,7 @@ __all__ = [
     "VectorField",
     "VectorizedAnnotation",
     "Violin",
+    "Waterfall",
     "circular_layout",
     "stamen_sources",
     "tile_sources",

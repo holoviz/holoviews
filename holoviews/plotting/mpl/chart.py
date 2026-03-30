@@ -3,6 +3,7 @@ import numpy as np
 import param
 from matplotlib.collections import LineCollection
 from matplotlib.dates import DateFormatter, date2num
+from matplotlib.patches import Patch
 
 from ...core.dimension import Dimension
 from ...core.options import Store, abbreviated_exception
@@ -20,7 +21,7 @@ from ...core.util import (
 from ...element import HeatMap, Raster
 from ...operation import interpolate_curve
 from ...util.transform import dim
-from ..mixins import AreaMixin, BarsMixin, SpikesMixin
+from ..mixins import AreaMixin, BarsMixin, SpikesMixin, WaterfallMixin
 from ..plot import PlotSelector
 from ..util import compute_sizes, dim_range_key, get_min_distance, get_sideplot_ranges
 from .element import ColorbarPlot, ElementPlot, LegendPlot
@@ -1375,3 +1376,227 @@ class SideSpikesPlot(AdjoinedPlot, SpikesPlot):
         all axis labels including ticks and ylabel. Valid options are 'left',
         'right', 'bare' 'left-bare' and 'right-bare'.""",
     )
+
+
+class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
+    """Matplotlib Waterfall chart renderer."""
+
+    positive_color = param.String(
+        default="limegreen",
+        doc="Color for bars representing positive changes.",
+    )
+
+    negative_color = param.String(
+        default="crimson",
+        doc="Color for bars representing negative changes.",
+    )
+
+    start_color = param.String(
+        default="steelblue",
+        allow_None=True,
+        doc="""
+        Color for the first bar (the starting absolute value). If None,
+        the first bar is colored by its sign using positive_color or
+        negative_color.""",
+    )
+
+    total_color = param.String(
+        default=None,
+        allow_None=True,
+        doc="""
+        Color for the summary total bar. If None, inherits the resolved
+        start_color.""",
+    )
+
+    show_connectors = param.Boolean(
+        default=True,
+        doc="Whether to draw horizontal connector lines between bars.",
+    )
+
+    show_total = param.Boolean(
+        default=True,
+        doc="Whether to append a final total bar running from 0 to the cumulative sum.",
+    )
+
+    total_label = param.String(
+        default="Total",
+        doc="Label used for the auto-appended total bar.",
+    )
+
+    connector_line_dash = param.String(default="--")
+    connector_line_color = param.String(default="gray")
+    connector_line_width = param.Number(default=1)
+
+    bar_padding = param.Number(
+        default=0.2,
+        doc="Padding between bars, expressed as fraction of bar width.",
+    )
+
+    show_legend = param.Boolean(
+        default=False,
+        doc="Whether to show legend for the plot.",
+    )
+
+    style_opts = [
+        "alpha",
+        "edgecolor",
+        "linewidth",
+        "hatch",
+        "visible",
+    ]
+
+    _nonvectorized_styles = ["alpha", "visible", "hatch"]
+
+    @mpl_rc_context
+    def initialize_plot(self, ranges=None):
+        element = self.hmap.last
+        axis = self.handles["axis"]
+        key = self.keys[-1]
+
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = match_spec(element, ranges)
+
+        style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
+        with abbreviated_exception():
+            style = self._apply_transforms(element, ranges, style)
+
+        bars, xticks = self._create_bars(axis, element, ranges, style)
+        self.handles["artist"] = bars
+
+        vdim = element.vdims[0]
+        xdim = element.kdims[0]
+        kwargs = {"yticks": xticks} if self.invert_axes else {"xticks": xticks}
+        return self._finalize_axis(
+            key,
+            ranges=ranges,
+            element=element,
+            dimensions=[xdim, vdim],
+            **kwargs,
+        )
+
+    def _create_bars(self, axis, element, ranges, style):
+        """Build bar artists, connectors, and tick specification."""
+        raw_labels = element.dimension_values(0)
+        raw_values = element.dimension_values(1)
+
+        labels, values, bottoms, tops, kinds, cumulative = self._compute_waterfall_data(
+            raw_labels, raw_values, self.show_total, self.total_label
+        )
+
+        n = len(labels)
+        heights = tops - bottoms
+        x_positions = np.arange(n)
+        width = 1 - self.bar_padding
+
+        colors = self._map_colors(kinds, values)
+
+        # Only pass style keys that matplotlib's bar() understands
+        bar_style = {
+            k: v
+            for k, v in style.items()
+            if k in ("alpha", "edgecolor", "linewidth", "hatch", "visible", "zorder")
+        }
+
+        if self.invert_axes:
+            bars = axis.barh(
+                x_positions,
+                heights,
+                left=bottoms,
+                height=width,
+                color=colors,
+                **bar_style,
+            )
+        else:
+            bars = axis.bar(
+                x_positions,
+                heights,
+                bottom=bottoms,
+                width=width,
+                color=colors,
+                **bar_style,
+            )
+
+        self._draw_connectors(axis, x_positions, cumulative, width, bar_style)
+        self._draw_legend(axis, element, kinds, values)
+
+        str_labels = [
+            lbl if isinstance(lbl, str) else element.kdims[0].pprint_value(lbl) for lbl in labels
+        ]
+        xticks = list(zip(x_positions, str_labels, strict=None))
+        return bars, xticks
+
+    def _draw_connectors(self, axis, x_positions, cumulative, width, bar_style):
+        """Draw horizontal connector lines between adjacent bars."""
+        n = len(x_positions)
+        if not self.show_connectors or n < 2:
+            return
+        half_w = width / 2
+        connector_zorder = bar_style.get("zorder", 0) - 1
+        for i in range(n - 1):
+            cx = [x_positions[i] + half_w, x_positions[i + 1] - half_w]
+            cy = [cumulative[i], cumulative[i]]
+            if self.invert_axes:
+                cx, cy = cy, cx
+            axis.plot(
+                cx,
+                cy,
+                color=self.connector_line_color,
+                linestyle=self.connector_line_dash,
+                linewidth=self.connector_line_width,
+                zorder=connector_zorder,
+            )
+
+    def _draw_legend(self, axis, element, kinds, values):
+        """Draw a legend with entries for each bar kind present."""
+        if not self.show_legend:
+            return
+        # Resolve colors using the same logic as bar rendering
+        color_map = dict(
+            zip(
+                ["start", "positive", "negative", "total"],
+                self._map_colors(
+                    np.array(["start", "positive", "negative", "total"]),
+                    values,
+                ),
+                strict=False,
+            )
+        )
+        legend_items = [
+            ("start", color_map["start"]),
+            ("positive", color_map["positive"]),
+            ("negative", color_map["negative"]),
+            ("total", color_map["total"]),
+        ]
+        present = set(kinds)
+        handles = [
+            Patch(facecolor=c, edgecolor="black", label=lbl.capitalize())
+            for lbl, c in legend_items
+            if lbl in present
+        ]
+        if handles:
+            axis.legend(handles=handles)
+
+    def _finalize_ticks(self, axis, dimensions, xticks, yticks, zticks):
+        """Apply ticks from (position, label) pairs."""
+        ticks = xticks or yticks
+        if ticks is not None:
+            positions, tick_labels = zip(*sorted(ticks, key=lambda x: x[0]), strict=None)
+            ticks = (list(positions), list(tick_labels))
+        if xticks:
+            xticks = ticks
+        elif yticks:
+            yticks = ticks
+        super()._finalize_ticks(axis, dimensions, xticks, yticks, zticks)
+
+    def update_handles(self, key, axis, element, ranges, style):
+        """Update bars and connectors on data change."""
+        for artist in list(axis.patches) + list(axis.lines):
+            artist.remove()
+
+        style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
+        with abbreviated_exception():
+            style = self._apply_transforms(element, ranges, style)
+        bars, xticks = self._create_bars(axis, element, ranges, style)
+        self.handles["artist"] = bars
+
+        return {"yticks": xticks} if self.invert_axes else {"xticks": xticks}
