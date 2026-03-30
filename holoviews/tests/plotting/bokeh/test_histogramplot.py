@@ -280,6 +280,8 @@ class TestSideHistogramPlot(LoggingComparison, TestBokehPlot):
         for subplot, color in zip(plot.subplots.values(), colors, strict=True):
             assert subplot.handles["glyph"].fill_color == color
 
+
+class TestHistogramStackPlot:
     def test_histogram_stack_ndoverlay(self):
         edges = np.array([0, 1, 2, 3])
         h1 = hv.Histogram((edges, np.array([1, 2, 3])))
@@ -320,3 +322,22 @@ class TestSideHistogramPlot(LoggingComparison, TestBokehPlot):
         source1 = subplots[1].handles["source"]
         np.testing.assert_array_equal(source1.data["bottom"], np.array([1, 2, 3]))
         np.testing.assert_array_equal(source1.data["top"], np.array([7, 6, 5]))
+
+    def test_histogram_stack_hover_shows_value(self):
+        edges = np.array([0, 1, 2, 3])
+        h1 = hv.Histogram((edges, np.array([1, 2, 3])), label="A").opts(tools=["hover"])
+        h2 = hv.Histogram((edges, np.array([6, 4, 2])), label="B").opts(tools=["hover"])
+        stacked = hv.Histogram.stack(h1 * h2)
+        plot = bokeh_renderer.get_plot(stacked)
+
+        for (_, label), sp in plot.subplots.items():
+            data = sp.handles["source"].data
+            np.testing.assert_array_equal(
+                data["Frequency"], [1, 2, 3] if label == "A" else [6, 4, 2]
+            )
+            assert "Baseline" not in data
+            assert "Label" not in data
+
+            tooltips = sp.handles.get("hover").tooltips
+            assert ("Label", label) in tooltips
+            assert not any(t[0] == "Baseline" for t in tooltips)

@@ -637,7 +637,12 @@ class HistogramPlot(HistogramMixin, ColorbarPlot):
                     mapping["left"] = "bottom"
                 else:
                     mapping["bottom"] = "bottom"
-            self._get_hover_data(data, element)
+                hover_dims = [x, element.vdims[0]]
+                self._get_hover_data(data, element, hover_dims)
+                vdim_name = dimension_sanitizer(element.vdims[0].name)
+                data[vdim_name] = values - baseline
+            else:
+                self._get_hover_data(data, element)
         return data, mapping, style
 
     def _update_range(self, axis_range, low, high, factors, invert, shared, log, streaming=False):
@@ -647,6 +652,16 @@ class HistogramPlot(HistogramMixin, ColorbarPlot):
         return super()._update_range(
             axis_range, low, high, factors, invert, shared, log, streaming
         )
+
+    def _hover_opts(self, element):
+        dims, opts = super()._hover_opts(element)
+        if element._stacked:
+            baseline_dim = element.vdims[-1] if len(element.vdims) > 1 else None
+            if baseline_dim is not None:
+                dims = [d for d in dims if d is not baseline_dim and d.name != baseline_dim.name]
+            if element.label:
+                dims.append(("Label", element.label))
+        return dims, opts
 
 
 class SideHistogramPlot(HistogramPlot):
