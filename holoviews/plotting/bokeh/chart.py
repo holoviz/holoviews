@@ -1381,8 +1381,6 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
     _nonvectorized_styles = [*base_properties, "bar_width", "cmap"]
     _plot_methods = dict(single=("vbar", "hbar"))
 
-    _connector_data = (np.array([]), np.array([]))
-
     def _get_factors(self, element, ranges):
         """Return categorical factors for the axis."""
         labels = list(element.dimension_values(0, expanded=False))
@@ -1406,11 +1404,8 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
 
         xdim = element.kdims[0]
         cat_labels = categorize_array(labels, xdim)
-
         colors = self._map_colors(kinds, values)
-
         width = style.pop("bar_width", style.pop("width", 0.8))
-
         data = dict(
             x=cat_labels,
             top=tops,
@@ -1428,7 +1423,6 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
         self._get_hover_data(data, element)
 
         self._connector_data = (cat_labels, cumulative)
-
         mapping = dict(
             x="x",
             top="top",
@@ -1436,7 +1430,6 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
             width=width,
             fill_color="fill_color",
         )
-
         if self.invert_axes:
             mapping = dict(
                 y=mapping.pop("x"),
