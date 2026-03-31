@@ -1462,7 +1462,7 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
         x0 = list(cat_labels[:-1])
         x1 = list(cat_labels[1:])
         y0 = list(cumulative[:-1])
-        y1 = list(cumulative[:-1])  # horizontal — same y
+        y1 = y0
         if self.invert_axes:
             return dict(x0=y0, x1=y1, y0=x0, y1=x1)
         return dict(x0=x0, x1=x1, y0=y0, y1=y1)

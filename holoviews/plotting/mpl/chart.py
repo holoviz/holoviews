@@ -1564,11 +1564,8 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
         color_map = dict(
             zip(
                 ["start", "positive", "negative", "total"],
-                self._map_colors(
-                    np.array(["start", "positive", "negative", "total"]),
-                    values,
-                ),
-                strict=False,
+                self._map_colors(["start", "positive", "negative", "total"], values),
+                strict=True,
             )
         )
         legend_items = [
@@ -1590,7 +1587,7 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
         """Apply ticks from (position, label) pairs."""
         ticks = xticks or yticks
         if ticks is not None:
-            positions, tick_labels = zip(*sorted(ticks, key=lambda x: x[0]), strict=None)
+            positions, tick_labels = zip(*sorted(ticks, key=lambda x: x[0]), strict=True)
             ticks = (list(positions), list(tick_labels))
         if xticks:
             xticks = ticks
@@ -1600,7 +1597,7 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
 
     def update_handles(self, key, axis, element, ranges, style):
         """Update bars and connectors on data change."""
-        for artist in list(axis.patches) + list(axis.lines):
+        for artist in (*axis.patches, *axis.lines):
             artist.remove()
 
         style = dict(zorder=self.zorder, **self.style[self.cyclic_index])

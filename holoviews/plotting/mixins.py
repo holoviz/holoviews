@@ -269,7 +269,7 @@ class WaterfallMixin:
         labels, values, bottoms, tops, kinds, cumulative
         """
         if show_total and len(labels) > 0:
-            labels = np.append(labels.astype(object), total_label)
+            labels = np.append(np.asarray(labels), total_label)
             values = np.append(values, np.nan)  # sentinel
 
         is_total = np.isnan(values)
@@ -332,8 +332,8 @@ class WaterfallMixin:
         values = element.dimension_values(1)
         cumsum = np.cumsum(values)
         all_points = np.concatenate([[0], cumsum])
-        y0 = float(np.nanmin(all_points))
-        y1 = float(np.nanmax(all_points))
+        y0 = np.nanmin(all_points)
+        y1 = np.nanmax(all_points)
         x0, x1 = "", ""
 
         if range_type == "data":
