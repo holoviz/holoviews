@@ -1490,7 +1490,7 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
         raw_values = element.dimension_values(1)
 
         labels, values, bottoms, tops, kinds, cumulative = self._compute_waterfall_data(
-            raw_labels, raw_values, self.show_total, self.total_label
+            raw_labels, raw_values, self.show_total, self._resolve_total_label(element)
         )
 
         n = len(labels)
@@ -1560,24 +1560,12 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
         """Draw a legend with entries for each bar kind present."""
         if not self.show_legend:
             return
-        # Resolve colors using the same logic as bar rendering
-        color_map = dict(
-            zip(
-                ["start", "positive", "negative", "total"],
-                self._map_colors(["start", "positive", "negative", "total"], values),
-                strict=True,
-            )
-        )
-        legend_items = [
-            ("start", color_map["start"]),
-            ("positive", color_map["positive"]),
-            ("negative", color_map["negative"]),
-            ("total", color_map["total"]),
-        ]
+        kind_order = ["start", "positive", "negative", "total"]
+        colors = self._map_colors(kind_order, values)
         present = set(kinds)
         handles = [
             Patch(facecolor=c, edgecolor="black", label=lbl.capitalize())
-            for lbl, c in legend_items
+            for lbl, c in zip(kind_order, colors, strict=True)
             if lbl in present
         ]
         if handles:

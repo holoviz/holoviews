@@ -268,49 +268,46 @@ class WaterfallMixin:
         -------
         labels, values, bottoms, tops, kinds, cumulative
         """
-        if show_total and len(labels) > 0:
-            labels = np.append(np.asarray(labels), total_label)
-            values = np.append(values, np.nan)  # sentinel
+        labels = np.asarray(labels)
+        n = len(labels)
 
-        is_total = np.isnan(values)
-        safe_values = np.where(is_total, 0, values)
+        # Build an explicit boolean sentinel mask rather than relying on
+        # np.isnan(values), which would misclassify genuine NaN user data.
+        is_total = np.zeros(n + (1 if show_total and n > 0 else 0), dtype=bool)
+        if show_total and n > 0:
+            labels = np.append(labels.astype(object), total_label)
+            values = np.append(values, 0.0)  # placeholder; overwritten below
+            is_total[-1] = True
+
+        safe_values = np.where(is_total, 0.0, np.where(np.isnan(values), 0.0, values))
         cumulative = np.cumsum(safe_values)
 
         prev = np.concatenate([[0], cumulative[:-1]])
-        is_pos = (~is_total) & (values >= 0)
-        is_neg = (~is_total) & (values < 0)
+        is_pos = (~is_total) & (safe_values >= 0)
+        is_neg = (~is_total) & (safe_values < 0)
 
         kinds = np.where(is_total, "total", np.where(is_pos, "positive", "negative"))
-
-        # First bar represents an absolute starting value, not a delta
-        if len(kinds) > 0 and kinds[0] != "total":
+        if len(kinds) > 0:
             kinds[0] = "start"
 
         bottoms = np.where(is_neg, cumulative, prev)
         tops = np.where(is_neg, prev, cumulative)
 
-        # Total bars run from 0 → cumulative total
-        bottoms[is_total] = 0
-        tops[is_total] = cumulative[is_total]
+        if len(is_total) > 0 and is_total[-1]:
+            bottoms[-1] = np.minimum(0.0, cumulative[-1])
+            tops[-1] = np.maximum(0.0, cumulative[-1])
 
         return labels, values, bottoms, tops, kinds, cumulative
 
     def _map_colors(self, kinds, values):
-        """Return a list of colors for each bar, resolving nullable
-        start_color and total_color.
-
-        - start_color=None → use positive_color/negative_color based on sign
-        - total_color=None → inherit the resolved start color
-        """
-        # Resolve start color
+        """Return a list of colors for each bar, resolving nullable start_color and total_color."""
         if self.start_color is not None:
             start = self.start_color
-        elif len(values) > 0 and not np.isnan(values[0]):
+        elif len(values) > 0:
             start = self.positive_color if values[0] >= 0 else self.negative_color
         else:
             start = self.positive_color
 
-        # Resolve total color
         total = self.total_color if self.total_color is not None else start
 
         color_map = {
@@ -320,6 +317,20 @@ class WaterfallMixin:
             "total": total,
         }
         return [color_map[k] for k in kinds]
+
+    def _resolve_total_label(self, element):
+        """Return total_label, raising if it collides with an existing category."""
+        xdim = element.kdims[0]
+        existing = [
+            lbl if isinstance(lbl, str) else xdim.pprint_value(lbl)
+            for lbl in element.dimension_values(0, expanded=False)
+        ]
+        if self.total_label in existing:
+            raise ValueError(
+                f"total_label {self.total_label!r} conflicts with an existing category in "
+                f"kdim {xdim.name!r}. Rename the kdim value or set a different total_label."
+            )
+        return self.total_label
 
     def _get_axis_dims(self, element):
         return (element.kdims[0], element.vdims[0])

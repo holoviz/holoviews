@@ -1386,10 +1386,10 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
     def _get_factors(self, element, ranges):
         """Return categorical factors for the axis."""
         labels = list(element.dimension_values(0, expanded=False))
-        if self.show_total and labels:
-            labels.append(self.total_label)
         xdim = element.kdims[0]
         labels = [lbl if isinstance(lbl, str) else xdim.pprint_value(lbl) for lbl in labels]
+        if self.show_total and labels:
+            labels.append(self._resolve_total_label(element))
         return ([], labels) if self.invert_axes else (labels, [])
 
     def _glyph_properties(self, *args, **kwargs):
@@ -1401,7 +1401,7 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
         raw_values = element.dimension_values(1)
 
         labels, values, bottoms, tops, kinds, cumulative = self._compute_waterfall_data(
-            raw_labels, raw_values, self.show_total, self.total_label
+            raw_labels, raw_values, self.show_total, self._resolve_total_label(element)
         )
 
         xdim = element.kdims[0]
@@ -1418,22 +1418,15 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
             fill_color=colors,
         )
 
-        # Pre-populate expanded waterfall arrays before calling _get_hover_data.
-        # The element has one fewer row than the expanded data (the total bar is
-        # appended by _compute_waterfall_data), so we cannot let _get_hover_data
-        # fetch dimension values from the element directly. The `if dim not in data`
-        # guard inside _get_hover_data will skip anything we set here, while still
-        # handling overlay_dims correctly.
         if "hover" in self.handles and not self.static_source:
             xdim_name = dimension_sanitizer(xdim.name)
             ydim_name = dimension_sanitizer(element.vdims[0].name)
             data[xdim_name] = np.array(labels, dtype=str)
-            data[ydim_name] = np.where(np.isnan(values), tops, values)
+            data[ydim_name] = np.where(kinds == "total", cumulative, values)
             data["kind"] = list(kinds)
             data["running_total"] = cumulative
         self._get_hover_data(data, element)
 
-        # Store for connector drawing
         self._connector_data = (cat_labels, cumulative)
 
         mapping = dict(
@@ -1444,7 +1437,6 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
             fill_color="fill_color",
         )
 
-        # Horizontal waterfall: swap to hbar signature
         if self.invert_axes:
             mapping = dict(
                 y=mapping.pop("x"),
@@ -1459,10 +1451,8 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
     def _build_connector_source_data(self):
         """Build the x0/x1/y0/y1 dict for the connector Segment glyph."""
         cat_labels, cumulative = self._connector_data
-        x0 = list(cat_labels[:-1])
-        x1 = list(cat_labels[1:])
-        y0 = list(cumulative[:-1])
-        y1 = y0
+        x0, x1 = cat_labels[:-1], cat_labels[1:]
+        y0, y1 = cumulative[:-1], cumulative[:-1]
         if self.invert_axes:
             return dict(x0=y0, x1=y1, y0=x0, y1=x1)
         return dict(x0=x0, x1=x1, y0=y0, y1=y1)
