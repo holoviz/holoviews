@@ -1423,20 +1423,21 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
         self._get_hover_data(data, element)
 
         self._connector_data = (cat_labels, cumulative)
-        mapping = dict(
-            x="x",
-            top="top",
-            bottom="bottom",
-            width=width,
-            fill_color="fill_color",
-        )
         if self.invert_axes:
             mapping = dict(
-                y=mapping.pop("x"),
-                right=mapping.pop("top"),
-                left=mapping.pop("bottom"),
-                height=mapping.pop("width"),
-                fill_color=mapping["fill_color"],
+                y="x",
+                right="top",
+                left="bottom",
+                height=width,
+                fill_color="fill_color",
+            )
+        else:
+            mapping = dict(
+                x="x",
+                top="top",
+                bottom="bottom",
+                width=width,
+                fill_color="fill_color",
             )
 
         return data, mapping, style
