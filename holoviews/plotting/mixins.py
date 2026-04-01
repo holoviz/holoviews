@@ -268,11 +268,9 @@ class WaterfallMixin:
         -------
         labels, values, bottoms, tops, kinds, cumulative
         """
-        labels = np.asarray(labels)
-        n = len(labels)
-
         # Build an explicit boolean sentinel mask rather than relying on
         # np.isnan(values), which would misclassify genuine NaN user data.
+        n = len(labels)
         is_total = np.zeros(n + (1 if show_total and n > 0 else 0), dtype=bool)
         if show_total and n > 0:
             labels = [*labels, total_label]
