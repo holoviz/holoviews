@@ -58,7 +58,6 @@ class TestWaterfallPlot(TestBokehPlot):
         assert "Sum" in list(source.data["x"])
 
     def test_waterfall_nan_user_data(self):
-        """Regression: a genuine NaN in user data must not be treated as the total sentinel."""
         w = hv.Waterfall([("Revenue", 100.0), ("Missing", np.nan), ("Cost", -40.0)]).opts(
             tools=["hover"]
         )
@@ -158,18 +157,8 @@ class TestWaterfallPlot(TestBokehPlot):
     @pytest.mark.parametrize(
         ("data", "kdims", "vdims", "expected_len"),
         [
-            ([("Revenue", 100), ("COGS", -40), ("Opex", -30), ("Tax", -10)], None, None, 5),
-            (
-                pd.DataFrame(
-                    {
-                        "Category": ["Revenue", "COGS", "Opex", "Tax"],
-                        "Amount": [100, -40, -30, -10],
-                    }
-                ),
-                "Category",
-                "Amount",
-                5,
-            ),
+            ([("A", 100), ("B", -40), ("C", -30), ("D", -10)], None, None, 5),
+            (pd.DataFrame({"x": list("ABCD"), "y": [100, -40, -30, -10]}), "x", "y", 5),
             ([("A", 10), ("B", -3)], None, None, 2),
         ],
     )

@@ -275,7 +275,7 @@ class WaterfallMixin:
         # np.isnan(values), which would misclassify genuine NaN user data.
         is_total = np.zeros(n + (1 if show_total and n > 0 else 0), dtype=bool)
         if show_total and n > 0:
-            labels = np.append(labels.astype(object), total_label)
+            labels = [*labels, total_label]
             values = np.append(values, 0.0)  # placeholder; overwritten below
             is_total[-1] = True
 
@@ -327,8 +327,8 @@ class WaterfallMixin:
         ]
         if self.total_label in existing:
             raise ValueError(
-                f"total_label {self.total_label!r} conflicts with an existing category in "
-                f"kdim {xdim.name!r}. Rename the kdim value or set a different total_label."
+                f"The total label {self.total_label!r} conflicts with an existing category in "
+                f"kdim {xdim.name!r}. Update the total label with `.opts(total_label=...)`"
             )
         return self.total_label
 
