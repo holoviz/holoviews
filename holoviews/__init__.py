@@ -161,6 +161,7 @@ from .element import (
     VLines,
     VSpan,
     VSpans,
+    Waterfall,
     elements_list,
 )
 from .selection import link_selections
@@ -344,6 +345,7 @@ __all__ = [
     "VectorField",
     "VectorizedAnnotation",
     "Violin",
+    "Waterfall",
     "__version__",
     "annotate",
     "archive",

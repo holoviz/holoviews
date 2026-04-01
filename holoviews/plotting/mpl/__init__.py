@@ -76,6 +76,7 @@ from ...element import (
     VLines,
     VSpan,
     VSpans,
+    Waterfall,
 )
 from ..plot import PlotSelector
 from ..util import fire_colors
@@ -108,6 +109,7 @@ from .chart import (
     SpikesPlot,
     SpreadPlot,
     VectorFieldPlot,
+    WaterfallPlot,
 )
 from .chart3d import Path3DPlot, Scatter3DPlot, SurfacePlot, TriSurfacePlot
 from .element import ElementPlot, OverlayPlot
@@ -215,6 +217,7 @@ Store.register(
         Curve: CurvePlot,
         Scatter: PointPlot,
         Bars: BarPlot,
+        Waterfall: WaterfallPlot,
         Histogram: HistogramPlot,
         Points: PointPlot,
         VectorField: VectorFieldPlot,
@@ -344,6 +347,7 @@ options.Points = Options("plot", show_frame=True)
 options.ErrorBars = Options("style", edgecolor="k")
 options.Spread = Options("style", facecolor=Cycle(), alpha=0.6, edgecolor="k", linewidth=0.5)
 options.Bars = Options("style", edgecolor="k", color=Cycle())
+options.Waterfall = Options("style", edgecolor="k")
 options.Histogram = Options("style", edgecolor="k", facecolor=Cycle())
 options.Points = Options("style", color=Cycle(), marker="o", cmap=dflt_cmap)
 options.Scatter3D = Options("style", c=Cycle(), marker="o")
