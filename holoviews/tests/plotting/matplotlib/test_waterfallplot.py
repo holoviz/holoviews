@@ -61,13 +61,13 @@ class TestWaterfallPlot(TestMPLPlot):
         assert len(plot.handles["axis"].patches) == expected_patches
 
     def test_waterfall_nan_user_data(self):
-        """Regression: a genuine NaN in user data must not be treated as the total sentinel."""
+        """A genuine NaN in user data must not be treated as the total sentinel."""
         w = hv.Waterfall([("Revenue", 100.0), ("Missing", np.nan), ("Cost", -40.0)])
         plot = mpl_renderer.get_plot(w)
         assert len(plot.handles["axis"].patches) == 4
 
     def test_waterfall_total_label_collision(self):
-        """Regression: a user bar named 'Total' must raise ValueError."""
+        """A user bar named 'Total' must raise ValueError."""
         w = hv.Waterfall([("Revenue", 100), ("Total", 50)])
         with pytest.raises(ValueError, match="total label 'Total' conflicts"):
             mpl_renderer.get_plot(w)
@@ -79,7 +79,7 @@ class TestWaterfallPlot(TestMPLPlot):
         assert len(plot.handles["axis"].patches) == 3
 
     def test_waterfall_all_negative_total_bar_orientation(self):
-        """Regression: all-negative waterfall total bar must have height >= 0."""
+        """All-negative waterfall total bar must have height >= 0."""
         w = hv.Waterfall([("A", -5), ("B", -10)])
         plot = mpl_renderer.get_plot(w)
         for patch in plot.handles["axis"].patches:
@@ -162,7 +162,7 @@ class TestWaterfallPlot(TestMPLPlot):
 
     @pytest.mark.parametrize(("show_total", "expected_patches"), [(True, 5), (False, 2)])
     def test_waterfall_datetime_kdim(self, show_total, expected_patches):
-        """Regression: datetime kdim must not raise DTypePromotionError."""
+        """Datetime kdim must not raise DTypePromotionError."""
         dates = pd.to_datetime(["2021-01-01", "2021-01-02", "2021-01-03", "2021-01-04"])
         amounts = [100, 50, -30, -10]
         if not show_total:
