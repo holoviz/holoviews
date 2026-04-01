@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from bokeh.models.glyphs import HBar
 
 import holoviews as hv
 
@@ -185,15 +186,9 @@ class TestWaterfallPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(w)
         source = plot.handles["source"]
         assert "kind" in source.data
-        assert list(source.data["kind"]) == [
-            np.str_("start"),
-            np.str_("negative"),
-            np.str_("total"),
-        ]
+        assert list(source.data["kind"]) == ["start", "negative", "total"]
 
     def test_waterfall_invert_axes(self):
-        from bokeh.models.glyphs import HBar
-
         w = hv.Waterfall([("A", 10), ("B", -3)]).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(w)
         assert isinstance(plot.handles["glyph"], HBar)
