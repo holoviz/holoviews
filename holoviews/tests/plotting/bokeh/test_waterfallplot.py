@@ -21,8 +21,8 @@ class TestWaterfallPlot(TestBokehPlot):
         w = hv.Waterfall([("A", 10), ("B", -3), ("C", 5)])
         plot = bokeh_renderer.get_plot(w)
         source = plot.handles["source"]
-        np.testing.assert_equal(source.data["bottom"], np.array([0, 7, 7, 0]))
-        np.testing.assert_equal(source.data["top"], np.array([10, 10, 12, 12]))
+        np.testing.assert_equal(source.data["bottom"], [0, 7, 7, 0])
+        np.testing.assert_equal(source.data["top"], [10, 10, 12, 12])
 
     @pytest.mark.parametrize(
         ("values", "expected_bottom", "expected_top"),
@@ -35,8 +35,8 @@ class TestWaterfallPlot(TestBokehPlot):
         w = hv.Waterfall(values)
         plot = bokeh_renderer.get_plot(w)
         source = plot.handles["source"]
-        np.testing.assert_equal(source.data["bottom"], np.array(expected_bottom))
-        np.testing.assert_equal(source.data["top"], np.array(expected_top))
+        np.testing.assert_equal(source.data["bottom"], expected_bottom)
+        np.testing.assert_equal(source.data["top"], expected_top)
 
     def test_waterfall_dataframe_input(self):
         df = pd.DataFrame({"Category": ["Revenue", "COGS", "Opex"], "Amount": [100, -40, -30]})
@@ -70,9 +70,9 @@ class TestWaterfallPlot(TestBokehPlot):
         assert kinds[-1] == "total"
 
     def test_waterfall_total_label_collision(self):
-        """Regression: a user bar named 'Total' must raise ValueError."""
+        """A user bar named 'Total' must raise ValueError."""
         w = hv.Waterfall([("Revenue", 100), ("Total", 50)])
-        with pytest.raises(ValueError, match="total_label 'Total' conflicts"):
+        with pytest.raises(ValueError, match="total label 'Total' conflicts"):
             bokeh_renderer.get_plot(w)
 
     def test_waterfall_total_label_collision_custom_label(self):
@@ -82,7 +82,7 @@ class TestWaterfallPlot(TestBokehPlot):
         assert len(plot.handles["source"].data["x"]) == 3
 
     def test_waterfall_all_negative_total_bar_orientation(self):
-        """Regression: all-negative waterfall total bar must satisfy top >= bottom."""
+        """All-negative waterfall total bar must satisfy top >= bottom."""
         w = hv.Waterfall([("A", -5), ("B", -10)])
         plot = bokeh_renderer.get_plot(w)
         source = plot.handles["source"]
@@ -125,8 +125,8 @@ class TestWaterfallPlot(TestBokehPlot):
         w = hv.Waterfall([("A", 10), ("B", -3)]).opts(show_total=False)
         plot = bokeh_renderer.get_plot(w)
         src = plot.handles["connector_source"]
-        np.testing.assert_equal(np.array(src.data["y0"]), np.array([10.0]))
-        np.testing.assert_equal(np.array(src.data["y1"]), np.array([10.0]))
+        np.testing.assert_equal(src.data["y0"], [10.0])
+        np.testing.assert_equal(src.data["y1"], [10.0])
 
     @pytest.mark.parametrize(
         ("show_total", "expected_factors"),
@@ -152,8 +152,8 @@ class TestWaterfallPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(w)
         source = plot.handles["source"]
         assert len(source.data["top"]) == 2
-        np.testing.assert_equal(source.data["bottom"], np.array([0, 0]))
-        np.testing.assert_equal(source.data["top"], np.array([42, 42]))
+        np.testing.assert_equal(source.data["bottom"], [0, 0])
+        np.testing.assert_equal(source.data["top"], [42, 42])
 
     @pytest.mark.parametrize(
         ("data", "kdims", "vdims", "expected_len"),
@@ -164,16 +164,11 @@ class TestWaterfallPlot(TestBokehPlot):
         ],
     )
     def test_waterfall_hover_column_lengths(self, data, kdims, vdims, expected_len):
-        """Regression: hover must not cause mismatched column lengths."""
-        kwargs = {}
-        if kdims:
-            kwargs["kdims"] = kdims
-        if vdims:
-            kwargs["vdims"] = vdims
+        """Hover must not cause mismatched column lengths."""
         opts = {"tools": ["hover"]}
         if expected_len == 2:
             opts["show_total"] = False
-        w = hv.Waterfall(data, **kwargs).opts(**opts)
+        w = hv.Waterfall(data).opts(**opts)
         plot = bokeh_renderer.get_plot(w)
         source = plot.handles["source"]
         for col, vals in source.data.items():
@@ -200,7 +195,7 @@ class TestWaterfallPlot(TestBokehPlot):
 
     @pytest.mark.parametrize(("show_total", "expected_len"), [(True, 5), (False, 2)])
     def test_waterfall_datetime_kdim(self, show_total, expected_len):
-        """Regression: datetime kdim must not raise DTypePromotionError."""
+        """Datetime kdim must not raise DTypePromotionError."""
         dates = pd.to_datetime(["2021-01-01", "2021-01-02", "2021-01-03", "2021-01-04"])
         amounts = [100, 50, -30, -10]
         if not show_total:

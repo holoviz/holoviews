@@ -69,7 +69,7 @@ class TestWaterfallPlot(TestMPLPlot):
     def test_waterfall_total_label_collision(self):
         """Regression: a user bar named 'Total' must raise ValueError."""
         w = hv.Waterfall([("Revenue", 100), ("Total", 50)])
-        with pytest.raises(ValueError, match="total_label 'Total' conflicts"):
+        with pytest.raises(ValueError, match="total label 'Total' conflicts"):
             mpl_renderer.get_plot(w)
 
     def test_waterfall_total_label_collision_custom_label(self):
