@@ -1,6 +1,7 @@
 import matplotlib as mpl
 import numpy as np
 import param
+from matplotlib import colormaps as mpl_colormaps
 from matplotlib.collections import LineCollection
 from matplotlib.dates import DateFormatter, date2num
 from matplotlib.patches import Patch, Wedge
@@ -23,7 +24,13 @@ from ...operation import interpolate_curve
 from ...util.transform import dim
 from ..mixins import AreaMixin, BarsMixin, DonutMixin, SpikesMixin, WaterfallMixin
 from ..plot import PlotSelector
-from ..util import compute_sizes, dim_range_key, get_min_distance, get_sideplot_ranges
+from ..util import (
+    compute_sizes,
+    dim_range_key,
+    get_min_distance,
+    get_sideplot_ranges,
+    process_cmap,
+)
 from .element import ColorbarPlot, ElementPlot, LegendPlot
 from .path import PathPlot
 from .plot import AdjoinedPlot, mpl_rc_context
@@ -1600,7 +1607,7 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
 class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
     """Matplotlib Donut chart renderer."""
 
-    total_label = param.String(
+    center_label = param.String(
         default=None,
         allow_None=True,
         doc="""Text to display in the center of the donut. If set to
@@ -1610,7 +1617,7 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
     )
 
     inner_radius = param.Number(
-        default=0.4,
+        default=0.6,
         bounds=(0, 1),
         doc="Inner radius of the annulus. Set to 0 for a pie chart.",
     )
@@ -1621,9 +1628,74 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         doc="Outer radius of the annulus.",
     )
 
-    show_labels = param.Boolean(
+    show_labels = param.ClassSelector(
         default=False,
-        doc="Whether to draw text labels next to each wedge.",
+        class_=(bool, str),
+        doc="""
+        Whether and how to draw text labels next to each wedge.
+        Can be a boolean, a template string using dimension names
+        (e.g. '{Category}: {Amount}'), or 'fraction'.""",
+    )
+
+    label_radius = param.Number(
+        default=0.7,
+        bounds=(0, None),
+        doc="""
+        Radial distance of wedge labels as a multiple of outer_radius.
+        1.0 places labels exactly at the outer edge; values above 1
+        push them outside the ring; values below 1 pull them inside
+        (use a value between inner_radius/outer_radius and 1.0 to
+        centre labels within the wedge).""",
+    )
+
+    label_font_size = param.Number(
+        default=9,
+        doc="Font size for wedge labels in points.",
+    )
+
+    center_font_size = param.Number(
+        default=12,
+        doc="Font size for the center label in points.",
+    )
+
+    label_text_color = param.Color(
+        default="black",
+        doc="Color for wedge labels.",
+    )
+
+    center_text_color = param.Color(
+        default="black",
+        doc="Color for the center label.",
+    )
+
+    label_horizontalalignment = param.Selector(
+        default="center",
+        objects=["auto", "left", "right", "center"],
+        doc="""Horizontal alignment of wedge labels. 'auto' chooses
+        left/right based on angular position and whether labels are
+        inside or outside the ring.""",
+    )
+
+    @property
+    def label_text_align(self):
+        return self.label_horizontalalignment
+
+    label_verticalalignment = param.Selector(
+        default="bottom",
+        objects=["top", "bottom", "center", "baseline", "center_baseline"],
+        doc="Vertical alignment of wedge labels.",
+    )
+
+    center_horizontalalignment = param.Selector(
+        default="center",
+        objects=["left", "right", "center"],
+        doc="Horizontal alignment of the center label.",
+    )
+
+    center_verticalalignment = param.Selector(
+        default="center",
+        objects=["top", "bottom", "center", "baseline", "center_baseline"],
+        doc="Vertical alignment of the center label.",
     )
 
     show_legend = param.Boolean(
@@ -1638,13 +1710,14 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
 
     style_opts = [
         "alpha",
+        "cmap",
         "edgecolor",
         "linewidth",
         "hatch",
         "visible",
     ]
 
-    _nonvectorized_styles = ["alpha", "visible", "hatch"]
+    _nonvectorized_styles = ["alpha", "visible", "hatch", "cmap"]
 
     @mpl_rc_context
     def initialize_plot(self, ranges=None):
@@ -1671,37 +1744,42 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
             dimensions=[xdim, vdim],
         )
 
-    def _get_colors(self, element, style, n):
+    def _get_colors(self, labels, style, n):
         """Resolve colors for n wedges from cmap or Cycle."""
         cmap = style.pop("cmap", None)
         if cmap and n > 0:
-            from matplotlib import cm
+            if isinstance(cmap, dict):
+                return [
+                    cmap.get(label, cmap.get("NaN", f"C{i}")) for i, label in enumerate(labels)
+                ]
 
             try:
-                colormap = cm.get_cmap(cmap)
-                colors = [colormap(i / max(n - 1, 1)) for i in range(n)]
-            except (ValueError, TypeError):
-                colors = None
-        else:
-            colors = None
+                return process_cmap(cmap, n, provider="matplotlib", categorical=True)
+            except (TypeError, ValueError):
+                if isinstance(cmap, str):
+                    try:
+                        colormap = mpl_colormaps[cmap]
+                        return [colormap(i / max(n - 1, 1)) for i in range(n)]
+                    except KeyError:
+                        pass
 
-        if colors is None and n > 0:
+        if n > 0:
             cycle = self.style.max_cycles(n)
-            colors = [cycle[i].get("facecolor", cycle[i].get("color", f"C{i}")) for i in range(n)]
-
-        return colors or []
+            return [cycle[i].get("facecolor", cycle[i].get("color", f"C{i}")) for i in range(n)]
+        return []
 
     def _create_wedges(self, axis, element, ranges, style):
         """Build Wedge patch artists."""
-        values = element.dimension_values(1)
-        labels = element.dimension_values(0)
-
-        starts, ends, percentages = self._compute_donut_data(values)
-        starts = starts + self.start_angle
-        ends = ends + self.start_angle
+        dd = self._prepare_donut_data(element)
+        labels = dd["labels"]
+        values = dd["values"]
+        starts = dd["starts"]
+        ends = dd["ends"]
+        fracs = dd["fracs"]
+        display_labels = dd["display_labels"]
 
         n = len(values)
-        colors = self._get_colors(element, style, n)
+        colors = self._get_colors(labels, style, n)
         width = self.outer_radius - self.inner_radius
 
         wedge_style = {
@@ -1726,56 +1804,43 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
             axis.add_patch(wedge)
             wedges.append(wedge)
 
-        axis.set_xlim(-1.05 * self.outer_radius, 1.05 * self.outer_radius)
-        axis.set_ylim(-1.05 * self.outer_radius, 1.05 * self.outer_radius)
         axis.set_aspect("equal")
-
-        str_labels = [
-            lbl if isinstance(lbl, str) else element.kdims[0].pprint_value(lbl) for lbl in labels
-        ]
 
         # Wedge text labels
         if self.show_labels and n > 0:
-            mid_angles = (np.array(starts) + np.array(ends)) / 2
-            label_r = self.outer_radius * 1.15
+            xs, ys, aligns = self._compute_label_geometry(starts, ends)
+            texts = self._generate_labels(element, labels, values, fracs)
+
+            va = self.label_verticalalignment
             for i in range(n):
-                x = label_r * np.cos(mid_angles[i])
-                y = label_r * np.sin(mid_angles[i])
                 axis.text(
-                    x,
-                    y,
-                    str_labels[i],
-                    ha="center",
-                    va="center",
-                    fontsize=9,
+                    xs[i],
+                    ys[i],
+                    texts[i],
+                    ha=aligns[i],
+                    va=va,
+                    fontsize=self.label_font_size,
+                    color=self.label_text_color,
                 )
 
         # Center label
-        if self.total_label is not None and self.inner_radius > 0:
-            if self.total_label == "total":
-                total = np.nansum(values)
-                if total >= 1_000_000:
-                    text = f"${total / 1_000_000:.1f}M"
-                elif total >= 1_000:
-                    text = f"${total / 1_000:.1f}K"
-                else:
-                    text = f"${total:g}"
-            else:
-                text = self.total_label
+        text = self._resolve_center_text(values, element)
+        if text is not None:
             axis.text(
                 0,
                 0,
                 text,
-                ha="center",
-                va="center",
-                fontsize=16,
+                ha=self.center_horizontalalignment,
+                va=self.center_verticalalignment,
+                fontsize=self.center_font_size,
                 fontweight="bold",
+                color=self.center_text_color,
             )
 
         # Legend
         if self.show_legend and n > 0:
             handles = [
-                Patch(facecolor=colors[i], edgecolor="none", label=str_labels[i])
+                Patch(facecolor=colors[i], edgecolor="none", label=display_labels[i])
                 for i in range(n)
                 if i < len(colors)
             ]

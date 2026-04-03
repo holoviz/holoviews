@@ -351,16 +351,13 @@ options.ErrorBars = Options("style", edgecolor="k")
 options.Spread = Options("style", facecolor=Cycle(), alpha=0.6, edgecolor="k", linewidth=0.5)
 options.Bars = Options("style", edgecolor="k", color=Cycle())
 options.Waterfall = Options("style", edgecolor="k")
-
 options.Donut = Options(
     "plot",
     xaxis=None,
     yaxis=None,
-    show_legend=True,
-    aspect="equal",
     show_frame=False,
+    show_legend=True,
 )
-options.Donut = Options("style", edgecolor="none")
 
 options.Histogram = Options("style", edgecolor="k", facecolor=Cycle())
 options.Points = Options("style", color=Cycle(), marker="o", cmap=dflt_cmap)

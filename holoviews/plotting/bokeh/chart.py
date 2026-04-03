@@ -3,7 +3,14 @@ from collections import defaultdict
 
 import numpy as np
 import param
-from bokeh.models import CategoricalColorMapper, ColumnDataSource, CustomJS, LabelSet, Whisker
+from bokeh.models import (
+    CategoricalColorMapper,
+    ColumnDataSource,
+    CustomJS,
+    Label,
+    LabelSet,
+    Whisker,
+)
 from bokeh.models.glyphs import Segment
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
@@ -337,8 +344,6 @@ class VectorFieldPlot(ColorbarPlot):
         distance between vectors, this can be disabled with the
         rescale_lengths option.""",
     )
-
-    padding = param.ClassSelector(default=0.05, class_=(int, float, tuple))
 
     pivot = param.Selector(
         default="mid",
@@ -1500,9 +1505,70 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         doc="Outer radius of the annulus.",
     )
 
-    show_labels = param.Boolean(
+    show_labels = param.ClassSelector(
         default=False,
-        doc="Whether to draw text labels next to each wedge.",
+        class_=(bool, str),
+        doc="""
+        Whether and how to draw text labels next to each wedge.
+        Can be a boolean, a template string using dimension names
+        (e.g. '{Category}: {Amount}'), or 'fraction'.""",
+    )
+
+    label_radius = param.Number(
+        default=0.7,
+        bounds=(0, None),
+        doc="""
+        Radial distance of wedge labels as a multiple of outer_radius.
+        1.0 places labels exactly at the outer edge; values above 1
+        push them outside the ring; values below 1 pull them inside
+        (use a value between inner_radius/outer_radius and 1.0 to
+        centre labels within the wedge).""",
+    )
+
+    label_font_size = param.String(
+        default="9pt",
+        doc="Font size for wedge labels, as a CSS string (e.g. '9pt', '12px').",
+    )
+
+    label_text_color = param.Color(
+        default="black",
+        doc="Color for wedge labels.",
+    )
+
+    center_font_size = param.String(
+        default="12pt",
+        doc="Font size for the center label, as a CSS string (e.g. '16pt').",
+    )
+
+    label_text_align = param.Selector(
+        default="center",
+        objects=["auto", "left", "right", "center"],
+        doc="""Horizontal alignment of wedge labels. 'auto' chooses
+        left/right based on angular position and whether labels are
+        inside or outside the ring.""",
+    )
+
+    label_text_baseline = param.Selector(
+        default="bottom",
+        objects=["top", "middle", "bottom", "alphabetic", "hanging"],
+        doc="Vertical alignment of wedge labels.",
+    )
+
+    center_text_align = param.Selector(
+        default="center",
+        objects=["left", "right", "center"],
+        doc="Horizontal alignment of the center label.",
+    )
+
+    center_text_baseline = param.Selector(
+        default="middle",
+        objects=["top", "middle", "bottom", "alphabetic", "hanging"],
+        doc="Vertical alignment of the center label.",
+    )
+
+    center_text_color = param.Color(
+        default="black",
+        doc="Color for the center label.",
     )
 
     start_angle = param.Number(
@@ -1510,7 +1576,7 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         doc="Rotation offset in radians for the first wedge.",
     )
 
-    total_label = param.String(
+    center_label = param.String(
         default=None,
         allow_None=True,
         doc="""Text to display in the center of the donut. If set to
@@ -1534,32 +1600,29 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         props.pop("size", None)
         return props
 
-    @staticmethod
-    def _format_total(total):
-        """Format a total value with $ prefix and K/M suffix."""
-        if total >= 1_000_000:
-            return f"${total / 1_000_000:.1f}M"
-        elif total >= 1_000:
-            return f"${total / 1_000:.1f}K"
-        else:
-            return f"${total:g}"
-
     def get_data(self, element, ranges, style):
-        values = element.dimension_values(1)
-        labels = element.dimension_values(0)
+        dd = self._prepare_donut_data(element)
+        labels = dd["labels"]
+        values = dd["values"]
+        starts = dd["starts"]
+        ends = dd["ends"]
+        fracs = dd["fracs"]
+        display_labels = dd["display_labels"]
+        valid = dd["valid"]
 
-        starts, ends, percentages = self._compute_donut_data(values)
-        starts = starts + self.start_angle
-        ends = ends + self.start_angle
-
-        str_labels = [
-            lbl if isinstance(lbl, str) else element.kdims[0].pprint_value(lbl) for lbl in labels
-        ]
-
+        kdim = element.kdims[0]
+        vdim = element.vdims[0]
+        kdim_san = dimension_sanitizer(kdim.name)
+        vdim_san = dimension_sanitizer(vdim.name)
         data = dict(
             start_angle=starts,
             end_angle=ends,
+            **{kdim_san: display_labels, vdim_san: values, "percentage": fracs * 100},
         )
+
+        # Include extra vdims for hover tooltips.
+        for vd in element.vdims[1:]:
+            data[dimension_sanitizer(vd.name)] = element.dimension_values(vd)[valid]
 
         mapping = dict(
             x=0,
@@ -1569,42 +1632,50 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
             start_angle="start_angle",
             end_angle="end_angle",
         )
-        self._get_hover_data(data, element)
-        self._label_data = (starts, ends, str_labels, values, percentages)
+
+        # Populate kdim column for categorical color mapping and legend.
+        color_style = style.pop("color", None)
+        if color_style is not None:
+            raise ValueError(
+                f"Setting color={color_style!r} on a Donut plot is not "
+                "supported. To control wedge colors use the 'cmap' "
+                "option, e.g. .opts(cmap='Category20') or "
+                ".opts(cmap={'Rent': 'blue', 'Food': 'orange'})."
+            )
+        color_ds = Dataset(
+            {kdim.name: display_labels, vdim.name: values}, kdims=[kdim], vdims=[vdim]
+        )
+        factors = list(dict.fromkeys(display_labels))
+        mapper = self._get_colormapper(kdim, color_ds, ranges, style, factors=factors)
+        mapping["color"] = {"field": kdim_san, "transform": mapper}
+        if self.show_legend:
+            mapping["legend_field"] = kdim_san
+
+        self._label_data = (starts, ends, labels, values, fracs)
         return data, mapping, style
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         plot = super().initialize_plot(ranges, plot, plots, source)
         self._draw_text_labels(plot)
-        self._draw_total_label(plot)
+        self._draw_center_label(plot)
         return plot
 
     def _draw_text_labels(self, plot):
         """Draw text labels next to each wedge with smart alignment."""
-        if not self.show_labels or not hasattr(self, "_label_data"):
+        if not self.show_labels or self._label_data is None:
             return
-        starts, ends, str_labels, values, percentages = self._label_data
+        starts, ends, labels, values, fracs = self._label_data
         if len(starts) == 0:
             return
 
-        mid_angles = (np.array(starts) + np.array(ends)) / 2
-        label_radius = self.outer_radius * 1.12
-        xs = label_radius * np.cos(mid_angles)
-        ys = label_radius * np.sin(mid_angles)
-
-        aligns = []
-        for angle in mid_angles:
-            a = angle % (2 * np.pi)
-            if a < np.pi / 2 or a > 3 * np.pi / 2:
-                aligns.append("left")
-            else:
-                aligns.append("right")
+        xs, ys, aligns = self._compute_label_geometry(starts, ends)
+        texts = self._generate_labels(self.hmap.last, labels, values, fracs)
 
         label_src = ColumnDataSource(
             dict(
                 x=xs,
                 y=ys,
-                text=str_labels,
+                text=texts,
                 text_align=aligns,
             )
         )
@@ -1613,66 +1684,51 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
             y="y",
             text="text",
             text_align="text_align",
+            text_baseline=self.label_text_baseline,
+            text_color=self.label_text_color,
             source=label_src,
-            text_font_size="9pt",
-            text_baseline="middle",
+            text_font_size=self.label_font_size,
         )
         plot.add_layout(label_set)
         self.handles["label_source"] = label_src
         self.handles["labels"] = label_set
 
-    def _draw_total_label(self, plot):
+    def _draw_center_label(self, plot):
         """Draw a center annotation (e.g. total value)."""
-        if self.total_label is None or self.inner_radius == 0:
+        if self._label_data is None or self.inner_radius == 0:
             return
-        if not hasattr(self, "_label_data"):
+        _, _, _, values, _ = self._label_data
+        text = self._resolve_center_text(values, self.hmap.last)
+        if text is None:
             return
-
-        from bokeh.models import Label
-
-        _starts, _ends, _labels, values, _pcts = self._label_data
-        if self.total_label == "total":
-            text = self._format_total(np.nansum(values))
-        else:
-            text = self.total_label
 
         label = Label(
             x=0,
             y=0,
             text=text,
-            text_align="center",
-            text_baseline="middle",
-            text_font_size="16pt",
+            text_align=self.center_text_align,
+            text_baseline=self.center_text_baseline,
+            text_font_size=self.center_font_size,
+            text_color=self.center_text_color,
             text_font_style="bold",
         )
         plot.add_layout(label)
-        self.handles["total_label"] = label
+        self.handles["center_label"] = label
 
     def update_handles(self, key, axis, element, ranges, style):
         """Refresh labels when data changes."""
         ret = super().update_handles(key, axis, element, ranges, style)
         if self.show_labels and "label_source" in self.handles:
-            starts, ends, str_labels, values, percentages = self._label_data
-            mid_angles = (np.array(starts) + np.array(ends)) / 2
-            label_radius = self.outer_radius * 1.12
-            aligns = []
-            for angle in mid_angles:
-                a = angle % (2 * np.pi)
-                aligns.append("left" if a < np.pi / 2 or a > 3 * np.pi / 2 else "right")
+            starts, ends, labels, values, fracs = self._label_data
+            xs, ys, aligns = self._compute_label_geometry(starts, ends)
+            texts = self._generate_labels(element, labels, values, fracs)
             self.handles["label_source"].data = dict(
-                x=label_radius * np.cos(mid_angles),
-                y=label_radius * np.sin(mid_angles),
-                text=str_labels,
+                x=xs,
+                y=ys,
+                text=texts,
                 text_align=aligns,
             )
-        if self.total_label is not None and "total_label" in self.handles:
-            _starts, _ends, _labels, values, _pcts = self._label_data
-            if self.total_label == "total":
-                text = self._format_total(np.nansum(values))
-            else:
-                text = self.total_label
-            self.handles["total_label"].text = text
+        if "center_label" in self.handles:
+            _, _, _, values, _ = self._label_data
+            self.handles["center_label"].text = self._resolve_center_text(values, element)
         return ret
-
-    def get_extents(self, element, ranges, range_type="combined", **kwargs):
-        return super().get_extents(element, ranges, range_type, **kwargs)

@@ -57,6 +57,84 @@ class DonutMixin:
     """
 
     @staticmethod
+    def _coerce_donut_values(values):
+        """Convert nullable numeric inputs to float, preserving missing values."""
+        return np.asarray([np.nan if util.is_nan(v) else float(v) for v in values], dtype=float)
+
+    @staticmethod
+    def _filter_donut_data(labels, values):
+        """Drop rows with missing labels or missing values.
+
+        Returns
+        -------
+        labels, values, valid_mask
+        """
+        labels = np.asarray(labels)
+        values = DonutMixin._coerce_donut_values(values)
+        valid = np.array(
+            [
+                not util.is_nan(label) and not util.is_nan(value)
+                for label, value in zip(labels, values, strict=True)
+            ],
+            dtype=bool,
+        )
+        return labels[valid], values[valid], valid
+
+    def _resolve_center_text(self, values, element):
+        """Return the text to display in the donut center."""
+        label = self.center_label
+        if label is None:
+            return None
+
+        values = self._coerce_donut_values(values)
+        total = np.nansum(values)
+        vdim = element.vdims[0]
+        context = {
+            "total": total,
+            vdim.name: total,
+        }
+        if label == "total":
+            return str(total)
+        return label.format(**context)
+
+    def _compute_label_geometry(self, starts, ends):
+        """Compute label positions and text-alignment strings for wedge labels.
+
+        Parameters
+        ----------
+        starts, ends : array-like
+            Wedge start/end angles in radians.
+
+        Returns
+        -------
+        xs, ys : ndarray
+            Label x/y co-ordinates.
+        aligns : list[str]
+            Per-label ``text_align`` values (``"left"`` or ``"right"``).
+        """
+        starts = np.asarray(starts)
+        ends = np.asarray(ends)
+        mid = (starts + ends) / 2
+        r = self.outer_radius * self.label_radius
+        xs = r * np.cos(mid)
+        ys = r * np.sin(mid)
+        a = mid % (2 * np.pi)
+
+        if self.label_text_align == "auto":
+            # Determine auto-alignment based on position.
+            # Outside: left-align on right side, right-align on left.
+            # Inside: flip so text "hugs" the wedge boundary.
+            right_half = (a < np.pi / 2) | (a > 3 * np.pi / 2)
+            if self.label_radius >= 1.0:
+                aligns = np.where(right_half, "left", "right")
+            else:
+                aligns = np.where(right_half, "right", "left")
+        else:
+            aligns = np.full(len(mid), self.label_text_align)
+
+        return xs, ys, aligns.tolist()
+
+    @staticmethod
     def _compute_donut_data(values):
         """Compute start and end angles from raw values.
 
@@ -67,9 +145,9 @@ class DonutMixin:
 
         Returns
         -------
-        start_angles, end_angles, percentages
+        start_angles, end_angles, fractions
         """
-        values = np.asarray(values, dtype=float)
+        values = DonutMixin._coerce_donut_values(values)
         if len(values) == 0:
             return np.array([]), np.array([]), np.array([])
         total = np.nansum(values)
@@ -80,18 +158,96 @@ class DonutMixin:
         cumulative = np.cumsum(fracs) * 2 * np.pi
         starts = np.concatenate([[0], cumulative[:-1]])
         ends = cumulative
-        percentages = fracs * 100
-        return starts, ends, percentages
+        return starts, ends, fracs
 
     def _get_axis_dims(self, element):
         return (element.kdims[0], element.vdims[0])
+
+    def _format_donut_labels(self, element, labels):
+        """Format donut labels for display using the key dimension formatter."""
+        kdim = self._get_axis_dims(element)[0]
+        return [label if isinstance(label, str) else kdim.pprint_value(label) for label in labels]
+
+    def _label_value_for_template(self, label):
+        """Return a template-friendly label value.
+
+        Datetime labels are converted to Python datetimes so format
+        specs like ``{date:%Y-%m-%d}`` work as expected.
+        """
+        if isinstance(label, np.datetime64):
+            return util.dt64_to_dt(label)
+        return label
+
+    def _generate_labels(self, element, labels, values, fractions):
+        """Generate wedge labels based on show_labels attribute."""
+        show = self.show_labels
+        formatted_labels = self._format_donut_labels(element, labels)
+        if show is True:
+            return formatted_labels
+        if show is False or show is None:
+            return None
+
+        kdim, vdim = self._get_axis_dims(element)
+        labels = [
+            show.format(
+                **{
+                    kdim.name: self._label_value_for_template(label),
+                    vdim.name: val,
+                    "fraction": frac,
+                }
+            )
+            for label, val, frac in zip(labels, values, fractions, strict=True)
+        ]
+        return labels
+
+    def _prepare_donut_data(self, element):
+        """Extract and compute all backend-agnostic donut data.
+
+        Returns
+        -------
+        dict with keys:
+            labels : raw label values (may be datetime, numeric, etc.)
+            values : float array of wedge values
+            starts : start angles in radians (with start_angle offset)
+            ends   : end angles in radians (with start_angle offset)
+            fracs  : fractional share of each wedge
+            display_labels : string-formatted labels for display/legend
+            valid  : boolean mask used to filter rows from the element
+        """
+        labels, values, valid = self._filter_donut_data(
+            element.dimension_values(0), element.dimension_values(1)
+        )
+        starts, ends, fracs = self._compute_donut_data(values)
+        starts = starts + self.start_angle
+        ends = ends + self.start_angle
+        display_labels = self._format_donut_labels(element, labels)
+        return dict(
+            labels=labels,
+            values=values,
+            starts=starts,
+            ends=ends,
+            fracs=fracs,
+            display_labels=display_labels,
+            valid=valid,
+        )
 
     def get_extents(self, element, ranges, range_type="combined", **kwargs):
         """Fixed radial extents for a donut chart."""
         for _d, rs in ranges.items():
             rs.pop("factors", None)
-        pad = 1.05
-        return (-pad, -pad, pad, pad)
+
+        r = self.outer_radius
+        if self.show_labels and self.label_radius > 1.0:
+            r = self.outer_radius * self.label_radius
+
+        if range_type == "data":
+            return (-r, -r, r, r)
+
+        padding = 0 if self.overlaid else self.padding
+        xpad, ypad, _ = get_axis_padding(padding)
+        px = r * (1 + xpad)
+        py = r * (1 + ypad)
+        return (-px, -py, px, py)
 
 
 class HeatMapMixin:

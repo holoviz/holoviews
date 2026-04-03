@@ -102,7 +102,7 @@ class Donut(Selection1DExpr, Chart):
 
     kdims = param.List(default=[Dimension("x")], bounds=(1, 1))
 
-    vdims = param.List(default=[Dimension("y")], bounds=(1, 1))
+    vdims = param.List(default=[Dimension("y")], bounds=(1, None))
 
 
 class ErrorBars(Selection1DExpr, Chart):

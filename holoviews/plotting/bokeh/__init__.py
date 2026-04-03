@@ -74,7 +74,6 @@ from ...element import (
     VSpans,
     Waterfall,
 )
-from ...util.transform import dim
 from ..plot import PlotSelector
 from ..util import fire
 from .annotation import (
@@ -271,15 +270,8 @@ options.Spread = Options("style", color=Cycle(), alpha=0.6, line_color="black", 
 options.Bars = Options("style", color=Cycle(), line_color="black", bar_width=0.8, muted_alpha=0.2)
 options.Waterfall = Options("style", line_color="black", bar_width=0.8, muted_alpha=0.2)
 
-options.Donut = Options(
-    "plot",
-    xaxis=None,
-    yaxis=None,
-    show_legend=True,
-    tools=["hover"],
-    legend_position="right",
-)
-options.Donut = Options("style", cmap="Category20", line_alpha=0, color=dim("x"))
+options.Donut = Options("plot", xaxis=None, yaxis=None, tools=["hover"], show_frame=False)
+options.Donut = Options("style", cmap="Category20")
 
 options.Spikes = Options("style", color="black", cmap=dflt_cmap, muted_alpha=0.2)
 options.Area = Options("style", color=Cycle(), alpha=1, line_color="black", muted_alpha=0.2)
