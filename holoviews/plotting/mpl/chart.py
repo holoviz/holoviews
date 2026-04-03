@@ -3,7 +3,7 @@ import numpy as np
 import param
 from matplotlib.collections import LineCollection
 from matplotlib.dates import DateFormatter, date2num
-from matplotlib.patches import Patch
+from matplotlib.patches import Patch, Wedge
 
 from ...core.dimension import Dimension
 from ...core.options import Store, abbreviated_exception
@@ -21,7 +21,7 @@ from ...core.util import (
 from ...element import HeatMap, Raster
 from ...operation import interpolate_curve
 from ...util.transform import dim
-from ..mixins import AreaMixin, BarsMixin, SpikesMixin, WaterfallMixin
+from ..mixins import AreaMixin, BarsMixin, DonutMixin, SpikesMixin, WaterfallMixin
 from ..plot import PlotSelector
 from ..util import compute_sizes, dim_range_key, get_min_distance, get_sideplot_ranges
 from .element import ColorbarPlot, ElementPlot, LegendPlot
@@ -1595,3 +1595,206 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
         self.handles["artist"] = bars
 
         return {"yticks": xticks} if self.invert_axes else {"xticks": xticks}
+
+
+class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
+    """Matplotlib Donut chart renderer."""
+
+    total_label = param.String(
+        default=None,
+        allow_None=True,
+        doc="""Text to display in the center of the donut. If set to
+        'total', the sum of all values is shown formatted with a $
+        prefix. Any other string is rendered as-is. None disables
+        the center label.""",
+    )
+
+    inner_radius = param.Number(
+        default=0.4,
+        bounds=(0, 1),
+        doc="Inner radius of the annulus. Set to 0 for a pie chart.",
+    )
+
+    outer_radius = param.Number(
+        default=1.0,
+        bounds=(0, None),
+        doc="Outer radius of the annulus.",
+    )
+
+    show_labels = param.Boolean(
+        default=False,
+        doc="Whether to draw text labels next to each wedge.",
+    )
+
+    show_legend = param.Boolean(
+        default=True,
+        doc="Whether to show legend for the plot.",
+    )
+
+    start_angle = param.Number(
+        default=0,
+        doc="Rotation offset in radians for the first wedge.",
+    )
+
+    style_opts = [
+        "alpha",
+        "edgecolor",
+        "linewidth",
+        "hatch",
+        "visible",
+    ]
+
+    _nonvectorized_styles = ["alpha", "visible", "hatch"]
+
+    @mpl_rc_context
+    def initialize_plot(self, ranges=None):
+        element = self.hmap.last
+        axis = self.handles["axis"]
+        key = self.keys[-1]
+
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = match_spec(element, ranges)
+
+        style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
+        with abbreviated_exception():
+            style = self._apply_transforms(element, ranges, style)
+
+        wedges = self._create_wedges(axis, element, ranges, style)
+        self.handles["artist"] = wedges
+
+        vdim = element.vdims[0]
+        xdim = element.kdims[0]
+        return self._finalize_axis(
+            key,
+            ranges=ranges,
+            element=element,
+            dimensions=[xdim, vdim],
+        )
+
+    def _get_colors(self, element, style, n):
+        """Resolve colors for n wedges from cmap or Cycle."""
+        cmap = style.pop("cmap", None)
+        if cmap and n > 0:
+            from matplotlib import cm
+
+            try:
+                colormap = cm.get_cmap(cmap)
+                colors = [colormap(i / max(n - 1, 1)) for i in range(n)]
+            except (ValueError, TypeError):
+                colors = None
+        else:
+            colors = None
+
+        if colors is None and n > 0:
+            cycle = self.style.max_cycles(n)
+            colors = [cycle[i].get("facecolor", cycle[i].get("color", f"C{i}")) for i in range(n)]
+
+        return colors or []
+
+    def _create_wedges(self, axis, element, ranges, style):
+        """Build Wedge patch artists."""
+        values = element.dimension_values(1)
+        labels = element.dimension_values(0)
+
+        starts, ends, percentages = self._compute_donut_data(values)
+        starts = starts + self.start_angle
+        ends = ends + self.start_angle
+
+        n = len(values)
+        colors = self._get_colors(element, style, n)
+        width = self.outer_radius - self.inner_radius
+
+        wedge_style = {
+            k: v
+            for k, v in style.items()
+            if k in ("alpha", "edgecolor", "linewidth", "hatch", "visible", "zorder")
+        }
+
+        wedges = []
+        for i in range(n):
+            theta1 = np.degrees(starts[i])
+            theta2 = np.degrees(ends[i])
+            wedge = Wedge(
+                center=(0, 0),
+                r=self.outer_radius,
+                theta1=theta1,
+                theta2=theta2,
+                width=width,
+                facecolor=colors[i] if i < len(colors) else f"C{i}",
+                **wedge_style,
+            )
+            axis.add_patch(wedge)
+            wedges.append(wedge)
+
+        axis.set_xlim(-1.05 * self.outer_radius, 1.05 * self.outer_radius)
+        axis.set_ylim(-1.05 * self.outer_radius, 1.05 * self.outer_radius)
+        axis.set_aspect("equal")
+
+        str_labels = [
+            lbl if isinstance(lbl, str) else element.kdims[0].pprint_value(lbl) for lbl in labels
+        ]
+
+        # Wedge text labels
+        if self.show_labels and n > 0:
+            mid_angles = (np.array(starts) + np.array(ends)) / 2
+            label_r = self.outer_radius * 1.15
+            for i in range(n):
+                x = label_r * np.cos(mid_angles[i])
+                y = label_r * np.sin(mid_angles[i])
+                axis.text(
+                    x,
+                    y,
+                    str_labels[i],
+                    ha="center",
+                    va="center",
+                    fontsize=9,
+                )
+
+        # Center label
+        if self.total_label is not None and self.inner_radius > 0:
+            if self.total_label == "total":
+                total = np.nansum(values)
+                if total >= 1_000_000:
+                    text = f"${total / 1_000_000:.1f}M"
+                elif total >= 1_000:
+                    text = f"${total / 1_000:.1f}K"
+                else:
+                    text = f"${total:g}"
+            else:
+                text = self.total_label
+            axis.text(
+                0,
+                0,
+                text,
+                ha="center",
+                va="center",
+                fontsize=16,
+                fontweight="bold",
+            )
+
+        # Legend
+        if self.show_legend and n > 0:
+            handles = [
+                Patch(facecolor=colors[i], edgecolor="none", label=str_labels[i])
+                for i in range(n)
+                if i < len(colors)
+            ]
+            if handles:
+                axis.legend(handles=handles)
+
+        return wedges
+
+    def update_handles(self, key, axis, element, ranges, style):
+        """Update wedges on data change."""
+        for artist in list(axis.patches):
+            artist.remove()
+        for txt in list(axis.texts):
+            txt.remove()
+
+        style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
+        with abbreviated_exception():
+            style = self._apply_transforms(element, ranges, style)
+        wedges = self._create_wedges(axis, element, ranges, style)
+        self.handles["artist"] = wedges
+
+        return {}

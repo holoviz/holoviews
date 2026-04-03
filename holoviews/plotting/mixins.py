@@ -48,6 +48,52 @@ class ChordMixin:
         return (x0, y0, x1, y1)
 
 
+class DonutMixin:
+    """Shared mixin for Donut plot classes across backends.
+
+    Provides the angle computation that turns raw values into
+    wedge start/end angles, plus extent calculation that fixes
+    the plot to a unit circle.
+    """
+
+    @staticmethod
+    def _compute_donut_data(values):
+        """Compute start and end angles from raw values.
+
+        Parameters
+        ----------
+        values : array-like
+            Raw slice values (must be non-negative).
+
+        Returns
+        -------
+        start_angles, end_angles, percentages
+        """
+        values = np.asarray(values, dtype=float)
+        if len(values) == 0:
+            return np.array([]), np.array([]), np.array([])
+        total = np.nansum(values)
+        if total == 0:
+            fracs = np.zeros_like(values)
+        else:
+            fracs = np.where(np.isnan(values), 0.0, values) / total
+        cumulative = np.cumsum(fracs) * 2 * np.pi
+        starts = np.concatenate([[0], cumulative[:-1]])
+        ends = cumulative
+        percentages = fracs * 100
+        return starts, ends, percentages
+
+    def _get_axis_dims(self, element):
+        return (element.kdims[0], element.vdims[0])
+
+    def get_extents(self, element, ranges, range_type="combined", **kwargs):
+        """Fixed radial extents for a donut chart."""
+        for _d, rs in ranges.items():
+            rs.pop("factors", None)
+        pad = 1.05
+        return (-pad, -pad, pad, pad)
+
+
 class HeatMapMixin:
     def get_extents(self, element, ranges, range_type="combined", **kwargs):
         if range_type in ("data", "combined"):

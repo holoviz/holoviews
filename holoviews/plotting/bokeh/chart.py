@@ -3,7 +3,7 @@ from collections import defaultdict
 
 import numpy as np
 import param
-from bokeh.models import CategoricalColorMapper, ColumnDataSource, CustomJS, Whisker
+from bokeh.models import CategoricalColorMapper, ColumnDataSource, CustomJS, LabelSet, Whisker
 from bokeh.models.glyphs import Segment
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
@@ -14,7 +14,7 @@ from ...core.util import dimension_sanitizer, dtype_kind, isdatetime, isfinite
 from ...operation import interpolate_curve
 from ...util.transform import dim
 from ...util.warnings import warn
-from ..mixins import AreaMixin, BarsMixin, SpikesMixin, WaterfallMixin
+from ..mixins import AreaMixin, BarsMixin, DonutMixin, SpikesMixin, WaterfallMixin
 from ..util import compute_sizes, get_min_distance, rgb2hex
 from .element import ColorbarPlot, ElementPlot, LegendPlot, OverlayPlot
 from .selection import BokehOverlaySelectionDisplay
@@ -1483,3 +1483,196 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
             if len(self._connector_data[1]) >= 2:
                 self.handles["connector_source"].data = self._build_connector_source_data()
         return ret
+
+
+class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
+    """Renders a Donut (annular wedge) chart in Bokeh."""
+
+    inner_radius = param.Number(
+        default=0.4,
+        bounds=(0, 1),
+        doc="Inner radius of the annulus. Set to 0 for a pie chart.",
+    )
+
+    outer_radius = param.Number(
+        default=1.0,
+        bounds=(0, None),
+        doc="Outer radius of the annulus.",
+    )
+
+    show_labels = param.Boolean(
+        default=False,
+        doc="Whether to draw text labels next to each wedge.",
+    )
+
+    start_angle = param.Number(
+        default=0,
+        doc="Rotation offset in radians for the first wedge.",
+    )
+
+    total_label = param.String(
+        default=None,
+        allow_None=True,
+        doc="""Text to display in the center of the donut. If set to
+        'total', the sum of all values is shown formatted with a $
+        prefix. Any other string is rendered as-is. None disables
+        the center label.""",
+    )
+
+    selection_display = BokehOverlaySelectionDisplay()
+
+    style_opts = base_properties + fill_properties + line_properties + ["cmap"]
+
+    _nonvectorized_styles = [*base_properties, "cmap"]
+    _plot_methods = dict(single="annular_wedge")
+
+    def _get_factors(self, element, ranges):
+        return ([], [])
+
+    def _glyph_properties(self, *args, **kwargs):
+        props = super()._glyph_properties(*args, **kwargs)
+        props.pop("size", None)
+        return props
+
+    @staticmethod
+    def _format_total(total):
+        """Format a total value with $ prefix and K/M suffix."""
+        if total >= 1_000_000:
+            return f"${total / 1_000_000:.1f}M"
+        elif total >= 1_000:
+            return f"${total / 1_000:.1f}K"
+        else:
+            return f"${total:g}"
+
+    def get_data(self, element, ranges, style):
+        values = element.dimension_values(1)
+        labels = element.dimension_values(0)
+
+        starts, ends, percentages = self._compute_donut_data(values)
+        starts = starts + self.start_angle
+        ends = ends + self.start_angle
+
+        str_labels = [
+            lbl if isinstance(lbl, str) else element.kdims[0].pprint_value(lbl) for lbl in labels
+        ]
+
+        data = dict(
+            start_angle=starts,
+            end_angle=ends,
+        )
+
+        mapping = dict(
+            x=0,
+            y=0,
+            inner_radius=self.inner_radius,
+            outer_radius=self.outer_radius,
+            start_angle="start_angle",
+            end_angle="end_angle",
+        )
+        self._get_hover_data(data, element)
+        self._label_data = (starts, ends, str_labels, values, percentages)
+        return data, mapping, style
+
+    def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
+        plot = super().initialize_plot(ranges, plot, plots, source)
+        self._draw_text_labels(plot)
+        self._draw_total_label(plot)
+        return plot
+
+    def _draw_text_labels(self, plot):
+        """Draw text labels next to each wedge with smart alignment."""
+        if not self.show_labels or not hasattr(self, "_label_data"):
+            return
+        starts, ends, str_labels, values, percentages = self._label_data
+        if len(starts) == 0:
+            return
+
+        mid_angles = (np.array(starts) + np.array(ends)) / 2
+        label_radius = self.outer_radius * 1.12
+        xs = label_radius * np.cos(mid_angles)
+        ys = label_radius * np.sin(mid_angles)
+
+        aligns = []
+        for angle in mid_angles:
+            a = angle % (2 * np.pi)
+            if a < np.pi / 2 or a > 3 * np.pi / 2:
+                aligns.append("left")
+            else:
+                aligns.append("right")
+
+        label_src = ColumnDataSource(
+            dict(
+                x=xs,
+                y=ys,
+                text=str_labels,
+                text_align=aligns,
+            )
+        )
+        label_set = LabelSet(
+            x="x",
+            y="y",
+            text="text",
+            text_align="text_align",
+            source=label_src,
+            text_font_size="9pt",
+            text_baseline="middle",
+        )
+        plot.add_layout(label_set)
+        self.handles["label_source"] = label_src
+        self.handles["labels"] = label_set
+
+    def _draw_total_label(self, plot):
+        """Draw a center annotation (e.g. total value)."""
+        if self.total_label is None or self.inner_radius == 0:
+            return
+        if not hasattr(self, "_label_data"):
+            return
+
+        from bokeh.models import Label
+
+        _starts, _ends, _labels, values, _pcts = self._label_data
+        if self.total_label == "total":
+            text = self._format_total(np.nansum(values))
+        else:
+            text = self.total_label
+
+        label = Label(
+            x=0,
+            y=0,
+            text=text,
+            text_align="center",
+            text_baseline="middle",
+            text_font_size="16pt",
+            text_font_style="bold",
+        )
+        plot.add_layout(label)
+        self.handles["total_label"] = label
+
+    def update_handles(self, key, axis, element, ranges, style):
+        """Refresh labels when data changes."""
+        ret = super().update_handles(key, axis, element, ranges, style)
+        if self.show_labels and "label_source" in self.handles:
+            starts, ends, str_labels, values, percentages = self._label_data
+            mid_angles = (np.array(starts) + np.array(ends)) / 2
+            label_radius = self.outer_radius * 1.12
+            aligns = []
+            for angle in mid_angles:
+                a = angle % (2 * np.pi)
+                aligns.append("left" if a < np.pi / 2 or a > 3 * np.pi / 2 else "right")
+            self.handles["label_source"].data = dict(
+                x=label_radius * np.cos(mid_angles),
+                y=label_radius * np.sin(mid_angles),
+                text=str_labels,
+                text_align=aligns,
+            )
+        if self.total_label is not None and "total_label" in self.handles:
+            _starts, _ends, _labels, values, _pcts = self._label_data
+            if self.total_label == "total":
+                text = self._format_total(np.nansum(values))
+            else:
+                text = self.total_label
+            self.handles["total_label"].text = text
+        return ret
+
+    def get_extents(self, element, ranges, range_type="combined", **kwargs):
+        return super().get_extents(element, ranges, range_type, **kwargs)

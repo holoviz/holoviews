@@ -24,6 +24,7 @@ from .chart import (
     Bars,
     Chart,  # noqa: F401
     Curve,
+    Donut,
     ErrorBars,
     Histogram,
     Scatter,
@@ -131,6 +132,9 @@ class ElementConversion(DataConversion):
     def violin(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(Violin, kdims, vdims, groupby, **kwargs)
 
+    def donut(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Donut, kdims, vdims, groupby, **kwargs)
+
     def waterfall(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(Waterfall, kdims, vdims, groupby, **kwargs)
 
@@ -171,6 +175,7 @@ __all__ = [
     "Dendrogram",
     "Distribution",
     "Div",
+    "Donut",
     "EdgePaths",
     "Element",
     "Ellipse",

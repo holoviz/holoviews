@@ -32,6 +32,7 @@ from ...element import (
     Dendrogram,
     Distribution,
     Div,
+    Donut,
     EdgePaths,
     Ellipse,
     ErrorBars,
@@ -73,6 +74,7 @@ from ...element import (
     VSpans,
     Waterfall,
 )
+from ...util.transform import dim
 from ..plot import PlotSelector
 from ..util import fire
 from .annotation import (
@@ -94,6 +96,7 @@ from .chart import (
     AreaPlot,
     BarPlot,
     CurvePlot,
+    DonutPlot,
     ErrorPlot,
     HistogramPlot,
     PointPlot,
@@ -137,6 +140,7 @@ associations = {
     Curve: CurvePlot,
     Bars: BarPlot,
     Waterfall: WaterfallPlot,
+    Donut: DonutPlot,
     Points: PointPlot,
     Scatter: PointPlot,
     ErrorBars: ErrorPlot,
@@ -266,6 +270,17 @@ options.ErrorBars = Options("style", color="black")
 options.Spread = Options("style", color=Cycle(), alpha=0.6, line_color="black", muted_alpha=0.2)
 options.Bars = Options("style", color=Cycle(), line_color="black", bar_width=0.8, muted_alpha=0.2)
 options.Waterfall = Options("style", line_color="black", bar_width=0.8, muted_alpha=0.2)
+
+options.Donut = Options(
+    "plot",
+    xaxis=None,
+    yaxis=None,
+    show_legend=True,
+    tools=["hover"],
+    legend_position="right",
+)
+options.Donut = Options("style", cmap="Category20", line_alpha=0, color=dim("x"))
+
 options.Spikes = Options("style", color="black", cmap=dflt_cmap, muted_alpha=0.2)
 options.Area = Options("style", color=Cycle(), alpha=1, line_color="black", muted_alpha=0.2)
 options.VectorField = Options("style", color="black", muted_alpha=0.2)
