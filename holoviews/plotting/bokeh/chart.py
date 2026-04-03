@@ -345,6 +345,8 @@ class VectorFieldPlot(ColorbarPlot):
         rescale_lengths option.""",
     )
 
+    padding = param.ClassSelector(default=0.05, class_=(int, float, tuple))
+
     pivot = param.Selector(
         default="mid",
         objects=["mid", "tip", "tail"],
