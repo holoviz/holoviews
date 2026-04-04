@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 from ..core import Dataset, Dimension, util
 from ..core.util import dtype_kind
@@ -59,7 +60,7 @@ class DonutMixin:
     @staticmethod
     def _coerce_donut_values(values):
         """Convert nullable numeric inputs to float, preserving missing values."""
-        return np.asarray([np.nan if util.is_nan(v) else float(v) for v in values], dtype=float)
+        return np.where(pd.isna(values), np.nan, values).astype(float)
 
     @staticmethod
     def _filter_donut_data(labels, values):
@@ -71,13 +72,7 @@ class DonutMixin:
         """
         labels = np.asarray(labels)
         values = DonutMixin._coerce_donut_values(values)
-        valid = np.array(
-            [
-                not util.is_nan(label) and not util.is_nan(value)
-                for label, value in zip(labels, values, strict=True)
-            ],
-            dtype=bool,
-        )
+        valid = ~pd.isna(labels) & ~np.isnan(values)
         return labels[valid], values[valid], valid
 
     def _resolve_center_text(self, values, element):

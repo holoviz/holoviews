@@ -1663,7 +1663,7 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         doc="Color for wedge labels.",
     )
 
-    label_horizontalalignment = param.Selector(
+    label_text_align = param.Selector(
         default="center",
         objects=["auto", "left", "right", "center"],
         doc="""Horizontal alignment of wedge labels. 'auto' chooses
@@ -1671,23 +1671,19 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         inside or outside the ring.""",
     )
 
-    @property
-    def label_text_align(self):
-        return self.label_horizontalalignment
-
-    label_verticalalignment = param.Selector(
+    label_text_baseline = param.Selector(
         default="bottom",
         objects=["top", "bottom", "center", "baseline", "center_baseline"],
         doc="Vertical alignment of wedge labels.",
     )
 
-    center_horizontalalignment = param.Selector(
+    center_text_align = param.Selector(
         default="center",
         objects=["left", "right", "center"],
         doc="Horizontal alignment of the center label.",
     )
 
-    center_verticalalignment = param.Selector(
+    center_text_baseline = param.Selector(
         default="center",
         objects=["top", "bottom", "center", "baseline", "center_baseline"],
         doc="Vertical alignment of the center label.",
@@ -1797,7 +1793,7 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
             xs, ys, aligns = self._compute_label_geometry(starts, ends)
             texts = self._generate_labels(element, labels, values, fracs)
 
-            va = self.label_verticalalignment
+            va = self.label_text_baseline
             for i in range(n):
                 axis.text(
                     xs[i],
@@ -1816,8 +1812,8 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
                 0,
                 0,
                 text,
-                ha=self.center_horizontalalignment,
-                va=self.center_verticalalignment,
+                ha=self.center_text_align,
+                va=self.center_text_baseline,
                 fontsize=self.center_font_size,
                 fontweight="bold",
                 color=self.center_text_color,
