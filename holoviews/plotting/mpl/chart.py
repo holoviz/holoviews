@@ -1827,7 +1827,7 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
                 if i < len(colors)
             ]
             if handles:
-                axis.legend(handles=handles)
+                axis.legend(handles=handles, **self._legend_opts)
 
         return wedges
 
