@@ -1600,7 +1600,6 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
 
     def get_data(self, element, ranges, style):
         dd = self._prepare_donut_data(element)
-        labels = dd["labels"]
         values = dd["values"]
         starts = dd["starts"]
         ends = dd["ends"]
@@ -1645,7 +1644,7 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         if self.show_legend:
             mapping["legend_field"] = kdim_san
 
-        self._label_data = (starts, ends, labels, values, fracs)
+        self._donut_data = dd
         return data, mapping, style
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
@@ -1656,14 +1655,14 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
 
     def _draw_text_labels(self, plot):
         """Draw text labels next to each wedge with smart alignment."""
-        if not self.show_labels or self._label_data is None:
+        if not self.show_labels or self._donut_data is None:
             return
-        starts, ends, labels, values, fracs = self._label_data
-        if len(starts) == 0:
+        dd = self._donut_data
+        if len(dd["starts"]) == 0:
             return
 
-        xs, ys, aligns = self._compute_label_geometry(starts, ends)
-        texts = self._generate_labels(self.hmap.last, labels, values, fracs)
+        xs, ys, aligns = self._compute_label_geometry(dd["starts"], dd["ends"])
+        texts = self._generate_labels(self.hmap.last, dd["labels"], dd["values"], dd["fracs"])
 
         label_src = ColumnDataSource(
             dict(
@@ -1689,10 +1688,9 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
 
     def _draw_center_label(self, plot):
         """Draw a center annotation (e.g. total value)."""
-        if self._label_data is None or self.inner_radius == 0:
+        if self._donut_data is None or self.inner_radius == 0:
             return
-        _, _, _, values, _ = self._label_data
-        text = self._resolve_center_text(values, self.hmap.last)
+        text = self._resolve_center_text(self._donut_data["values"], self.hmap.last)
         if text is None:
             return
 
@@ -1713,9 +1711,9 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         """Refresh labels when data changes."""
         ret = super().update_handles(key, axis, element, ranges, style)
         if self.show_labels and "label_source" in self.handles:
-            starts, ends, labels, values, fracs = self._label_data
-            xs, ys, aligns = self._compute_label_geometry(starts, ends)
-            texts = self._generate_labels(element, labels, values, fracs)
+            dd = self._donut_data
+            xs, ys, aligns = self._compute_label_geometry(dd["starts"], dd["ends"])
+            texts = self._generate_labels(element, dd["labels"], dd["values"], dd["fracs"])
             self.handles["label_source"].data = dict(
                 x=xs,
                 y=ys,
@@ -1723,6 +1721,7 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
                 text_align=aligns,
             )
         if "center_label" in self.handles:
-            _, _, _, values, _ = self._label_data
-            self.handles["center_label"].text = self._resolve_center_text(values, element)
+            self.handles["center_label"].text = self._resolve_center_text(
+                self._donut_data["values"], element
+            )
         return ret

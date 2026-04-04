@@ -42,7 +42,7 @@ class TestDonutPlot(TestMPLPlot):
         d = hv.Donut([("A", 30), ("B", 70)]).opts(inner_radius=0)
         _, patches = self._get_patches(d)
         assert len(patches) == 2
-        assert patches[0].width == 1.0
+        np.testing.assert_almost_equal(patches[0].width, 1.0)
 
     def test_donut_wedge_angles(self):
         """Wedge angles should span the full 360 degrees."""
@@ -73,7 +73,7 @@ class TestDonutPlot(TestMPLPlot):
     def test_donut_equal_aspect(self):
         d = hv.Donut([("A", 30), ("B", 70)])
         plot = mpl_renderer.get_plot(d)
-        assert plot.handles["axis"].get_aspect() == 1.0
+        np.testing.assert_almost_equal(plot.handles["axis"].get_aspect(), 1.0)
 
     def test_donut_show_labels(self):
         d = hv.Donut([("A", 30), ("B", 70)]).opts(show_labels=True)
