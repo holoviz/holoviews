@@ -1510,21 +1510,17 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
     show_labels = param.ClassSelector(
         default=False,
         class_=(bool, str),
-        doc="""
-        Whether and how to draw text labels next to each wedge.
-        Can be a boolean, a template string using dimension names
-        (e.g. '{Category}: {Amount}'), or 'fraction'.""",
+        doc="""Whether and how to draw text labels next to each wedge.
+        Can be a boolean or a template string using dimension names
+        (e.g. '{Category}: {Amount}').""",
     )
 
     label_radius = param.Number(
         default=0.7,
         bounds=(0, None),
-        doc="""
-        Radial distance of wedge labels as a multiple of outer_radius.
+        doc="""Radial distance of wedge labels as a multiple of outer_radius.
         1.0 places labels exactly at the outer edge; values above 1
-        push them outside the ring; values below 1 pull them inside
-        (use a value between inner_radius/outer_radius and 1.0 to
-        centre labels within the wedge).""",
+        push them outside the ring.""",
     )
 
     label_font_size = param.String(
@@ -1582,9 +1578,9 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         default=None,
         allow_None=True,
         doc="""Text to display in the center of the donut. If set to
-        'total', the sum of all values is shown formatted with a $
-        prefix. Any other string is rendered as-is. None disables
-        the center label.""",
+        'total', the sum of all values is shown. Any other string
+        is used as a format template with access to 'total' and
+        the vdim name as keys. None disables the center label.""",
     )
 
     selection_display = BokehOverlaySelectionDisplay()
@@ -1635,7 +1631,6 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
             end_angle="end_angle",
         )
 
-        # Populate kdim column for categorical color mapping and legend.
         color_style = style.pop("color", None)
         if color_style is not None:
             raise ValueError(
@@ -1644,11 +1639,8 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
                 "option, e.g. .opts(cmap='Category20') or "
                 ".opts(cmap={'Rent': 'blue', 'Food': 'orange'})."
             )
-        color_ds = Dataset(
-            {kdim.name: display_labels, vdim.name: values}, kdims=[kdim], vdims=[vdim]
-        )
         factors = list(dict.fromkeys(display_labels))
-        mapper = self._get_colormapper(kdim, color_ds, ranges, style, factors=factors)
+        mapper = self._get_colormapper(kdim, element, ranges, style, factors=factors)
         mapping["color"] = {"field": kdim_san, "transform": mapper}
         if self.show_legend:
             mapping["legend_field"] = kdim_san

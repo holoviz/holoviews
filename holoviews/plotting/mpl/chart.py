@@ -1,7 +1,6 @@
 import matplotlib as mpl
 import numpy as np
 import param
-from matplotlib import colormaps as mpl_colormaps
 from matplotlib.collections import LineCollection
 from matplotlib.dates import DateFormatter, date2num
 from matplotlib.patches import Patch, Wedge
@@ -1611,9 +1610,9 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         default=None,
         allow_None=True,
         doc="""Text to display in the center of the donut. If set to
-        'total', the sum of all values is shown formatted with a $
-        prefix. Any other string is rendered as-is. None disables
-        the center label.""",
+        'total', the sum of all values is shown. Any other string
+        is used as a format template with access to 'total' and
+        the vdim name as keys. None disables the center label.""",
     )
 
     inner_radius = param.Number(
@@ -1631,21 +1630,17 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
     show_labels = param.ClassSelector(
         default=False,
         class_=(bool, str),
-        doc="""
-        Whether and how to draw text labels next to each wedge.
-        Can be a boolean, a template string using dimension names
-        (e.g. '{Category}: {Amount}'), or 'fraction'.""",
+        doc="""Whether and how to draw text labels next to each wedge.
+        Can be a boolean or a template string using dimension names
+        (e.g. '{Category}: {Amount}').""",
     )
 
     label_radius = param.Number(
         default=0.7,
         bounds=(0, None),
-        doc="""
-        Radial distance of wedge labels as a multiple of outer_radius.
+        doc="""Radial distance of wedge labels as a multiple of outer_radius.
         1.0 places labels exactly at the outer edge; values above 1
-        push them outside the ring; values below 1 pull them inside
-        (use a value between inner_radius/outer_radius and 1.0 to
-        centre labels within the wedge).""",
+        push them outside the ring.""",
     )
 
     label_font_size = param.Number(
@@ -1658,14 +1653,14 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         doc="Font size for the center label in points.",
     )
 
-    label_text_color = param.Color(
-        default="black",
-        doc="Color for wedge labels.",
-    )
-
     center_text_color = param.Color(
         default="black",
         doc="Color for the center label.",
+    )
+
+    label_text_color = param.Color(
+        default="black",
+        doc="Color for wedge labels.",
     )
 
     label_horizontalalignment = param.Selector(
@@ -1752,16 +1747,7 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
                 return [
                     cmap.get(label, cmap.get("NaN", f"C{i}")) for i, label in enumerate(labels)
                 ]
-
-            try:
-                return process_cmap(cmap, n, provider="matplotlib", categorical=True)
-            except (TypeError, ValueError):
-                if isinstance(cmap, str):
-                    try:
-                        colormap = mpl_colormaps[cmap]
-                        return [colormap(i / max(n - 1, 1)) for i in range(n)]
-                    except KeyError:
-                        pass
+            return process_cmap(cmap, n, provider="matplotlib", categorical=True)
 
         if n > 0:
             cycle = self.style.max_cycles(n)
