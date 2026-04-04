@@ -70,7 +70,6 @@ class DonutMixin:
         -------
         labels, values, valid_mask
         """
-        labels = np.asarray(labels)
         values = DonutMixin._coerce_donut_values(values)
         valid = ~pd.isna(labels) & ~np.isnan(values)
         return labels[valid], values[valid], valid
@@ -107,8 +106,6 @@ class DonutMixin:
         aligns : list[str]
             Per-label ``text_align`` values (``"left"`` or ``"right"``).
         """
-        starts = np.asarray(starts)
-        ends = np.asarray(ends)
         mid = (starts + ends) / 2
         r = self.outer_radius * self.label_radius
         xs = r * np.cos(mid)

@@ -25,7 +25,7 @@ class TestDonutElement:
         df = pd.DataFrame({"Category": ["A", "B", "C"], "Value": [10, 20, 30]})
         d = hv.Donut(df, kdims="Category", vdims="Value")
         assert len(d) == 3
-        np.testing.assert_equal(d.dimension_values("Value"), np.array([10, 20, 30]))
+        np.testing.assert_equal(d.dimension_values("Value"), [10, 20, 30])
 
     @pytest.mark.parametrize(
         "data",
@@ -50,8 +50,8 @@ class TestDonutElement:
 
     def test_dimension_values(self):
         d = hv.Donut([("A", 30), ("B", 70)])
-        np.testing.assert_equal(np.asarray(d.dimension_values(0)), np.array(["A", "B"]))
-        np.testing.assert_equal(d.dimension_values(1), np.array([30.0, 70.0]))
+        np.testing.assert_equal(np.asarray(d.dimension_values(0)), ["A", "B"])
+        np.testing.assert_equal(d.dimension_values(1), [30.0, 70.0])
 
     def test_dframe(self):
         d = hv.Donut([("A", 30), ("B", 70)])
