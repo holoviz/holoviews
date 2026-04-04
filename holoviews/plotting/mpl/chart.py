@@ -1616,7 +1616,7 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
     )
 
     inner_radius = param.Number(
-        default=0.6,
+        default=0.4,
         bounds=(0, 1),
         doc="Inner radius of the annulus. Set to 0 for a pie chart.",
     )
