@@ -1771,14 +1771,14 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         }
 
         wedges = []
+        theta1s = np.rad2deg(starts)
+        theta2s = np.rad2deg(ends)
         for i in range(n):
-            theta1 = np.degrees(starts[i])
-            theta2 = np.degrees(ends[i])
             wedge = Wedge(
                 center=(0, 0),
                 r=self.outer_radius,
-                theta1=theta1,
-                theta2=theta2,
+                theta1=theta1s[i],
+                theta2=theta2s[i],
                 width=width,
                 facecolor=colors[i] if i < len(colors) else f"C{i}",
                 **wedge_style,
