@@ -44,14 +44,6 @@ _EAGER_TYPE = {
 _NO_DROP_NULL = [nw.Implementation.DUCKDB, nw.Implementation.IBIS]
 
 
-def _get_obj_info(obj) -> tuple[str, str]:
-    try:
-        obj_type = type(obj)
-        return obj_type.__module__.lower(), obj_type.__name__.lower()
-    except Exception:
-        return "", ""
-
-
 class NarwhalsDtype:
     __slots__ = ("dtype",)
 
@@ -76,7 +68,9 @@ class NarwhalsInterface(Interface):
 
     @classmethod
     def applies(cls, obj):
-        module, name = _get_obj_info(obj)
+        obj_type = type(obj)
+        module = getattr(obj_type, "__module__", "").lower()
+        name = getattr(obj_type, "__name__", "").lower()
         return (
             (module.startswith("narwhals.") and name in ("series", "dataframe", "lazyframe"))
             or nw.dependencies.is_into_dataframe(obj)
