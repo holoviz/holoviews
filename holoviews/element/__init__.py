@@ -94,6 +94,9 @@ class ElementConversion(DataConversion):
                 params["group"] = element.group
             return Distribution((element.dimension_values(dim),), **dict(params, **kwargs))
 
+    def donut(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Donut, kdims, vdims, groupby, **kwargs)
+
     def heatmap(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(HeatMap, kdims, vdims, groupby, **kwargs)
 
@@ -131,9 +134,6 @@ class ElementConversion(DataConversion):
 
     def violin(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(Violin, kdims, vdims, groupby, **kwargs)
-
-    def donut(self, kdims=None, vdims=None, groupby=None, **kwargs):
-        return self(Donut, kdims, vdims, groupby, **kwargs)
 
     def waterfall(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(Waterfall, kdims, vdims, groupby, **kwargs)
