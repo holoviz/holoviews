@@ -541,6 +541,44 @@ class ImageElement_XArrayInterfaceTests(BaseImageElementInterfaceTests):
         with pytest.raises(ValueError):  # noqa: PT011
             hv.Image(xrarr, kdims=["x", "y"])
 
+    def test_tz_aware_datetime_coords_range(self):
+        data = xr.DataArray(
+            [[1, 2, 1, 2], [2, 3, 2, 1]],
+            coords=[
+                ("number", [0.0, 0.1]),
+                (
+                    "time",
+                    xr.date_range("2000-01-01", "2000-01-02", periods=4, tz="Europe/Helsinki"),
+                ),
+            ],
+            name="test",
+        )
+        ds = hv.Dataset(data, kdims=["time", "number"], vdims=["test"])
+        dmin, dmax = ds.range("time")
+        assert getattr(dmin, "tzinfo", None) is None
+        assert getattr(dmax, "tzinfo", None) is None
+        assert dmin == pd.Timestamp("2000-01-01 00:00:00")
+        assert dmax == pd.Timestamp("2000-01-02 00:00:00")
+
+    def test_tz_aware_datetime_coords_values(self):
+        data = xr.DataArray(
+            [[1, 2, 1, 2], [2, 3, 2, 1]],
+            coords=[
+                ("number", [0.0, 0.1]),
+                (
+                    "time",
+                    xr.date_range("2000-01-01", "2000-01-02", periods=4, tz="Europe/Helsinki"),
+                ),
+            ],
+            name="test",
+        )
+        ds = hv.Dataset(data, kdims=["time", "number"], vdims=["test"])
+        time_vals = ds.dimension_values("time", expanded=False)
+        assert time_vals.dtype.kind == "M"
+        assert getattr(time_vals.dtype, "tz", None) is None
+        assert time_vals[0] == pd.Timestamp("2000-01-01")
+        assert time_vals[-1] == pd.Timestamp("2000-01-02")
+
 
 @xr_skip
 class RGBElement_XArrayInterfaceTests(BaseRGBElementInterfaceTests):

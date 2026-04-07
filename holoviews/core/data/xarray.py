@@ -349,6 +349,9 @@ class XArrayInterface(GridInterface):
             dmax = dmax[()]
         dmin = dmin if np.isscalar(dmin) or isinstance(dmin, util.datetime_types) else dmin.item()
         dmax = dmax if np.isscalar(dmax) or isinstance(dmax, util.datetime_types) else dmax.item()
+        if getattr(data.dtype, "tz", None):
+            dmin = dmin.replace(tzinfo=None)
+            dmax = dmax.replace(tzinfo=None)
         return finite_range(data, dmin, dmax)
 
     @classmethod
@@ -409,7 +412,10 @@ class XArrayInterface(GridInterface):
 
             return data.values if isinstance(data, xr.DataArray) else data
 
-        data = np.atleast_1d(dataset.data[dim].data)
+        dim_data = dataset.data[dim].data
+        if getattr(dim_data, "tz", None):
+            dim_data = dim_data.tz_localize(None)
+        data = np.atleast_1d(dim_data)
         if ordered and data.shape and np.all(data[1:] < data[:-1]):
             data = data[::-1]
         shape = cls.shape(dataset, True)
