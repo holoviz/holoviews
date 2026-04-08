@@ -44,14 +44,6 @@ _EAGER_TYPE = {
 _NO_DROP_NULL = [nw.Implementation.DUCKDB, nw.Implementation.IBIS]
 
 
-def _is_geodataframe(obj) -> True:
-    # Do not use for GeoPandas and SpatialPandas
-    try:
-        return "geo" in type(obj).__name__.lower()
-    except Exception:
-        return False
-
-
 class NarwhalsDtype:
     __slots__ = ("dtype",)
 
@@ -76,13 +68,16 @@ class NarwhalsInterface(Interface):
 
     @classmethod
     def applies(cls, obj):
+        obj_type = type(obj)
+        module = getattr(obj_type, "__module__", "").lower()
+        name = getattr(obj_type, "__name__", "").lower()
         return (
-            isinstance(obj, (nw.Series, nw.DataFrame, nw.LazyFrame))
+            (module.startswith("narwhals.") and name in ("series", "dataframe", "lazyframe"))
             or nw.dependencies.is_into_dataframe(obj)
             or nw.dependencies.is_into_series(obj)
             or nw.dependencies.is_ibis_table(obj)
             or bool(cls.narwhals_backend and isinstance(obj, (dict, tuple, np.ndarray)))
-        ) and not _is_geodataframe(obj)
+        ) and "geo" not in name  # Do not use for GeoPandas and SpatialPandas
 
     @classmethod
     def dimension_type(cls, dataset, dim):

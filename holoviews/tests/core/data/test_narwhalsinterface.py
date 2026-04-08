@@ -7,9 +7,13 @@ import pytest
 
 import holoviews as hv
 from holoviews.core.data import NarwhalsInterface
+from holoviews.core.util.dependencies import _no_import_version
 from holoviews.testing import assert_data_equal
 
+from ...utils import optional_dependencies
 from .base import HeterogeneousColumnTests, InterfaceTests
+
+_, pl_skip = optional_dependencies("polars")
 
 
 class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
@@ -350,3 +354,45 @@ class CudfNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
         samples = self.dataset_ht.sample([0, 5, 10]).dimension_values("y")
         assert samples.implementation == nw.Implementation.CUDF
         assert_data_equal(np.array([0, 0.5, 1]), samples.to_numpy())
+
+
+@pl_skip
+def test_applies_for_all_versions():
+    import narwhals as nwm
+    import narwhals.stable.v1 as nw1
+    import narwhals.stable.v2 as nw2
+    import polars as pl
+
+    from holoviews.core.data.narwhals import NarwhalsInterface
+
+    df = pl.DataFrame({"A": [1, 2, 3]})
+    converters = [nwm.from_native, nw1.from_native, nw2.from_native]
+    for c in converters:
+        cdf = c(df)
+        assert NarwhalsInterface.applies(cdf)
+        assert NarwhalsInterface.applies(cdf.lazy())
+        assert NarwhalsInterface.applies(cdf["A"])
+
+
+@pl_skip
+@pytest.mark.skipif(
+    _no_import_version("narwhals") < (2, 19, 0),
+    reason="Version 2.19.0 or higher of narwhals is required",
+)
+def test_init_for_all_versions():
+    import narwhals as nwm
+    import narwhals.stable.v1 as nw1
+    import narwhals.stable.v2 as nw2
+    import polars as pl
+
+    from holoviews.core.data.narwhals import NarwhalsInterface
+
+    df = pl.DataFrame({"A": [1, 2, 3]})
+    converters = [nwm.from_native, nw1.from_native, nw2.from_native]
+    get_init_type = lambda x: type(NarwhalsInterface.init(hv.Dataset, x, ["A"], None)[0])
+
+    for c in converters:
+        cdf = c(df)
+        assert get_init_type(cdf) is nw2.DataFrame
+        assert get_init_type(cdf.lazy()) is nw2.LazyFrame
+        assert get_init_type(cdf["A"]) is nw2.DataFrame
