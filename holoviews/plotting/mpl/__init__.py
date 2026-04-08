@@ -358,7 +358,6 @@ options.Donut = Options(
     show_frame=False,
     show_legend=True,
 )
-
 options.Histogram = Options("style", edgecolor="k", facecolor=Cycle())
 options.Points = Options("style", color=Cycle(), marker="o", cmap=dflt_cmap)
 options.Scatter3D = Options("style", c=Cycle(), marker="o")
