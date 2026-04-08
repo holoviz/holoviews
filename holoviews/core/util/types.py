@@ -3,15 +3,15 @@ from __future__ import annotations
 import datetime as dt
 import inspect
 import sys
+import typing as t
 from types import GeneratorType
-from typing import TYPE_CHECKING
 
 import narwhals.stable.v2 as nw
 import numpy as np
 
 from .dependencies import _LazyModule
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import cftime
     import pandas as pd
 else:
@@ -26,6 +26,8 @@ _module_count = 0
 
 
 class _GeneratorIsMeta(type):
+    types: t.Callable[[], t.Iterable[type]]
+
     def _get_types(cls) -> tuple[type, ...]:
         # Cache types and invalidate on new imports
         global _module_count  # noqa: PLW0603

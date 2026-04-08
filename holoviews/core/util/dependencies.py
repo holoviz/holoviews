@@ -34,7 +34,7 @@ def _get_version(package_name):
         return "0.0.0"
 
 
-def _no_import_version(package_name) -> tuple[int, int, int]:
+def _no_import_version(package_name) -> tuple[int, ...]:
     """Get version number without importing the library"""
     version_str = _get_version(package_name)
     return tuple(map(int, _re_no.findall(version_str)[:3]))

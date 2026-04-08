@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     import networkx as nx
     import notebook
     import plotly
+    import polars as pl
     import pyparsing
     import scipy
     import shapely
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
     import tsdownsample
     import xarray
     from _pytest.mark.structures import MarkDecorator
+    from ty_extensions import TypeOf
 
     MaybeModuleType = ModuleType | None
 
@@ -203,72 +205,86 @@ class LoggingComparison:
 
 
 @overload
-def optional_dependencies(name: Literal["scipy"], /) -> tuple[scipy, MarkDecorator]: ...
+def optional_dependencies(name: Literal["scipy"], /) -> tuple[TypeOf[scipy], MarkDecorator]: ...
 
 
 @overload
-def optional_dependencies(name: Literal["ibis"], /) -> tuple[ibis, MarkDecorator]: ...
+def optional_dependencies(name: Literal["ibis"], /) -> tuple[TypeOf[ibis], MarkDecorator]: ...
 
 
 @overload
-def optional_dependencies(name: Literal["dask"], /) -> tuple[dask, MarkDecorator]: ...
+def optional_dependencies(name: Literal["dask"], /) -> tuple[TypeOf[dask], MarkDecorator]: ...
 
 
 @overload
-def optional_dependencies(name: Literal["dask.array"], /) -> tuple[da, MarkDecorator]: ...
+def optional_dependencies(name: Literal["dask.array"], /) -> tuple[TypeOf[da], MarkDecorator]: ...
 
 
 @overload
-def optional_dependencies(name: Literal["dask.dataframe"], /) -> tuple[dd, MarkDecorator]: ...
+def optional_dependencies(
+    name: Literal["dask.dataframe"], /
+) -> tuple[TypeOf[dd], MarkDecorator]: ...
 
 
 @overload
-def optional_dependencies(name: Literal["datashader"], /) -> tuple[datashader, MarkDecorator]: ...
+def optional_dependencies(
+    name: Literal["datashader"], /
+) -> tuple[TypeOf[datashader], MarkDecorator]: ...
 
 
 @overload
-def optional_dependencies(name: Literal["matplotlib"], /) -> tuple[mpl, MarkDecorator]: ...
+def optional_dependencies(name: Literal["matplotlib"], /) -> tuple[TypeOf[mpl], MarkDecorator]: ...
 
 
 @overload
-def optional_dependencies(name: Literal["networkx"], /) -> tuple[nx, MarkDecorator]: ...
+def optional_dependencies(name: Literal["networkx"], /) -> tuple[TypeOf[nx], MarkDecorator]: ...
 
 
 @overload
-def optional_dependencies(name: Literal["notebook"], /) -> tuple[notebook, MarkDecorator]: ...
+def optional_dependencies(
+    name: Literal["notebook"], /
+) -> tuple[TypeOf[notebook], MarkDecorator]: ...
 
 
 @overload
-def optional_dependencies(name: Literal["plotly"], /) -> tuple[plotly, MarkDecorator]: ...
+def optional_dependencies(name: Literal["plotly"], /) -> tuple[TypeOf[plotly], MarkDecorator]: ...
 
 
 @overload
-def optional_dependencies(name: Literal["pyparsing"], /) -> tuple[pyparsing, MarkDecorator]: ...
+def optional_dependencies(
+    name: Literal["pyparsing"], /
+) -> tuple[TypeOf[pyparsing], MarkDecorator]: ...
 
 
 @overload
-def optional_dependencies(name: Literal["shapely"], /) -> tuple[shapely, MarkDecorator]: ...
+def optional_dependencies(
+    name: Literal["shapely"], /
+) -> tuple[TypeOf[shapely], MarkDecorator]: ...
 
 
 @overload
 def optional_dependencies(
     name: Literal["spatialpandas"], /
-) -> tuple[spatialpandas, MarkDecorator]: ...
+) -> tuple[TypeOf[spatialpandas], MarkDecorator]: ...
 
 
 @overload
 def optional_dependencies(
     name: Literal["tsdownsample"], /
-) -> tuple[tsdownsample, MarkDecorator]: ...
+) -> tuple[TypeOf[tsdownsample], MarkDecorator]: ...
 
 
 @overload
-def optional_dependencies(name: Literal["xarray"], /) -> tuple[xarray, MarkDecorator]: ...
+def optional_dependencies(name: Literal["xarray"], /) -> tuple[TypeOf[xarray], MarkDecorator]: ...
+
+
+@overload
+def optional_dependencies(name: Literal["polars"], /) -> tuple[TypeOf[pl], MarkDecorator]: ...
 
 
 def optional_dependencies(name: str, /) -> tuple[MaybeModuleType, MarkDecorator]:
     """Check if a dependency is installed and return the module and a fixture that skips test."""
-    if _is_installed(name):
+    if _is_installed(name) or TYPE_CHECKING:
         module = importlib.import_module(name)
     else:
         module = None
