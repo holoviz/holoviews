@@ -179,6 +179,7 @@ select = [
     "PLW",
     "PT",
     "RUF",
+    "TC",
     "UP",
     "W",
 ]
@@ -234,6 +235,9 @@ extend-unsafe-fixes = [
 known-first-party = ["holoviews"]
 combine-as-imports = true
 required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.lint.flake8-import-conventions.aliases]
+typing = "t"
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
