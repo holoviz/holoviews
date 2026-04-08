@@ -22,9 +22,13 @@ from .core import util
 from .core.ndmapping import UniformNdMapping
 
 if t.TYPE_CHECKING:
+    from collections.abc import Sequence
+
     import pandas as pd
 
     from .core import Element
+
+    BufferData: t.TypeAlias = "np.ndarray | pd.DataFrame | dict[str, np.ndarray]"
 else:
     pd = util.dependencies._LazyModule("pandas", bool_use_sys_modules=True)
 
@@ -581,7 +585,7 @@ class Buffer(Pipe):
 
     def verify(self, x):
         """Verify consistency of dataframes that pass through this stream"""
-        if type(x) != type(self.data):  # noqa: E721
+        if type(x) is not type(self.data):
             raise TypeError(
                 f"Input expected to be of type {type(self.data).__name__}, got {type(x).__name__}."
             )
@@ -617,7 +621,7 @@ class Buffer(Pipe):
             self.data = data
         self.send(data)
 
-    def _concat(self, data):
+    def _concat(self, data: BufferData) -> BufferData:
         """Concatenate and slice the accepted data types to the defined
         length.
 
@@ -630,7 +634,7 @@ class Buffer(Pipe):
                 prev_chunk = self.data[-(self.length - data_length) :]
                 data = np.concatenate([prev_chunk, data])
             elif data_length > self.length:
-                data = data[-self.length :]
+                data = np.asarray(data)[-self.length :]
         elif pd and isinstance(data, pd.DataFrame):
             data_length = len(data)
             if not self.length:
@@ -760,7 +764,7 @@ class Params(Stream):
     def __init__(
         self,
         parameterized: param.Parameterized | type[param.Parameterized] | None = None,
-        parameters: list[param.Parameter] | None = None,
+        parameters: Sequence[param.Parameter | str] | None = None,
         watch: bool = True,
         watch_only: bool = False,
         **params,
@@ -768,12 +772,20 @@ class Params(Stream):
 
         if parameters is None:
             if parameterized is None:
-                raise ValueError(...)
+                msg = "Must supply a parameterized object if parameters are not set."
+                raise ValueError(msg)
             parameters = [parameterized.param[p] for p in parameterized.param if p != "name"]
         else:
-            parameters = [
-                p if isinstance(p, param.Parameter) else parameterized.param[p] for p in parameters
-            ]
+            resolved_parameters = []
+            for p in parameters:
+                if isinstance(p, param.Parameter):
+                    resolved_parameters.append(p)
+                elif parameterized is None:
+                    msg = "Must supply a parameterized object if parameters are given as strings."
+                    raise ValueError(msg)
+                else:
+                    resolved_parameters.append(parameterized.param[p])
+            parameters = resolved_parameters
 
         if "rename" in params:
             rename = {}
