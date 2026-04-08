@@ -1495,61 +1495,18 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
 class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
     """Renders a Donut (annular wedge) chart in Bokeh."""
 
-    inner_radius = param.Number(
-        default=0.4,
-        bounds=(0, 1),
-        doc="Inner radius of the annulus. Set to 0 for a pie chart.",
-    )
-
-    outer_radius = param.Number(
-        default=1.0,
-        bounds=(0, None),
-        doc="Outer radius of the annulus.",
-    )
-
-    show_labels = param.ClassSelector(
-        default=False,
-        class_=(bool, str),
-        doc="""Whether and how to draw text labels next to each wedge.
-        Can be a boolean or a template string using dimension names
-        (e.g. '{Category}: {Amount}').""",
-    )
-
-    label_radius = param.Number(
-        default=0.7,
-        bounds=(0, None),
-        doc="""Radial distance of wedge labels as a multiple of outer_radius.
-        1.0 places labels exactly at the outer edge; values above 1
-        push them outside the ring.""",
-    )
-
-    label_font_size = param.String(
-        default="9pt",
-        doc="Font size for wedge labels, as a CSS string (e.g. '9pt', '12px').",
-    )
-
-    label_text_color = param.Color(
-        default="black",
-        doc="Color for wedge labels.",
-    )
-
     center_font_size = param.String(
         default="12pt",
         doc="Font size for the center label, as a CSS string (e.g. '16pt').",
     )
 
-    label_text_align = param.Selector(
-        default="center",
-        objects=["auto", "left", "right", "center"],
-        doc="""Horizontal alignment of wedge labels. 'auto' chooses
-        left/right based on angular position and whether labels are
-        inside or outside the ring.""",
-    )
-
-    label_text_baseline = param.Selector(
-        default="bottom",
-        objects=["top", "middle", "bottom", "alphabetic", "hanging"],
-        doc="Vertical alignment of wedge labels.",
+    center_label = param.String(
+        default=None,
+        allow_None=True,
+        doc="""Text to display in the center of the donut. If set to
+        'total', the sum of all values is shown. Any other string
+        is used as a format template with access to 'total' and
+        the vdim name as keys. None disables the center label.""",
     )
 
     center_text_align = param.Selector(
@@ -1569,18 +1526,61 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         doc="Color for the center label.",
     )
 
+    inner_radius = param.Number(
+        default=0.4,
+        bounds=(0, 1),
+        doc="Inner radius of the annulus. Set to 0 for a pie chart.",
+    )
+
+    label_font_size = param.String(
+        default="9pt",
+        doc="Font size for wedge labels, as a CSS string (e.g. '9pt', '12px').",
+    )
+
+    label_radius = param.Number(
+        default=0.7,
+        bounds=(0, None),
+        doc="""Radial distance of wedge labels as a multiple of outer_radius.
+        1.0 places labels exactly at the outer edge; values above 1
+        push them outside the ring.""",
+    )
+
+    label_text_align = param.Selector(
+        default="center",
+        objects=["auto", "left", "right", "center"],
+        doc="""Horizontal alignment of wedge labels. 'auto' chooses
+        left/right based on angular position and whether labels are
+        inside or outside the ring.""",
+    )
+
+    label_text_baseline = param.Selector(
+        default="bottom",
+        objects=["top", "middle", "bottom", "alphabetic", "hanging"],
+        doc="Vertical alignment of wedge labels.",
+    )
+
+    label_text_color = param.Color(
+        default="black",
+        doc="Color for wedge labels.",
+    )
+
+    outer_radius = param.Number(
+        default=1.0,
+        bounds=(0, None),
+        doc="Outer radius of the annulus.",
+    )
+
+    show_labels = param.ClassSelector(
+        default=False,
+        class_=(bool, str),
+        doc="""Whether and how to draw text labels next to each wedge.
+        Can be a boolean or a template string using dimension names
+        (e.g. '{Category}: {Amount}').""",
+    )
+
     start_angle = param.Number(
         default=0,
         doc="Rotation offset in radians for the first wedge.",
-    )
-
-    center_label = param.String(
-        default=None,
-        allow_None=True,
-        doc="""Text to display in the center of the donut. If set to
-        'total', the sum of all values is shown. Any other string
-        is used as a format template with access to 'total' and
-        the vdim name as keys. None disables the center label.""",
     )
 
     selection_display = BokehOverlaySelectionDisplay()
@@ -1610,17 +1610,16 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         kdim = element.kdims[0]
         vdim = element.vdims[0]
         kdim_san = dimension_sanitizer(kdim.name)
-        vdim_san = dimension_sanitizer(vdim.name)
         data = dict(
             start_angle=starts,
             end_angle=ends,
-            **{kdim_san: display_labels, vdim_san: values, "percentage": fracs * 100},
+            percentage=fracs * 100,
+            **{kdim_san: display_labels, dimension_sanitizer(vdim.name): values},
+            **{
+                dimension_sanitizer(vd.name): element.dimension_values(vd)[valid]
+                for vd in element.vdims[1:]
+            },
         )
-
-        # Include extra vdims for hover tooltips.
-        for vd in element.vdims[1:]:
-            data[dimension_sanitizer(vd.name)] = element.dimension_values(vd)[valid]
-
         mapping = dict(
             x=0,
             y=0,

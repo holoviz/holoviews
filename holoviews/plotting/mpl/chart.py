@@ -1606,6 +1606,11 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
 class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
     """Matplotlib Donut chart renderer."""
 
+    center_font_size = param.Number(
+        default=12,
+        doc="Font size for the center label in points.",
+    )
+
     center_label = param.String(
         default=None,
         allow_None=True,
@@ -1615,24 +1620,32 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         the vdim name as keys. None disables the center label.""",
     )
 
+    center_text_align = param.Selector(
+        default="center",
+        objects=["left", "right", "center"],
+        doc="Horizontal alignment of the center label.",
+    )
+
+    center_text_baseline = param.Selector(
+        default="center",
+        objects=["top", "bottom", "center", "baseline", "center_baseline"],
+        doc="Vertical alignment of the center label.",
+    )
+
+    center_text_color = param.Color(
+        default="black",
+        doc="Color for the center label.",
+    )
+
     inner_radius = param.Number(
         default=0.4,
         bounds=(0, 1),
         doc="Inner radius of the annulus. Set to 0 for a pie chart.",
     )
 
-    outer_radius = param.Number(
-        default=1.0,
-        bounds=(0, None),
-        doc="Outer radius of the annulus.",
-    )
-
-    show_labels = param.ClassSelector(
-        default=False,
-        class_=(bool, str),
-        doc="""Whether and how to draw text labels next to each wedge.
-        Can be a boolean or a template string using dimension names
-        (e.g. '{Category}: {Amount}').""",
+    label_font_size = param.Number(
+        default=9,
+        doc="Font size for wedge labels in points.",
     )
 
     label_radius = param.Number(
@@ -1641,26 +1654,6 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         doc="""Radial distance of wedge labels as a multiple of outer_radius.
         1.0 places labels exactly at the outer edge; values above 1
         push them outside the ring.""",
-    )
-
-    label_font_size = param.Number(
-        default=9,
-        doc="Font size for wedge labels in points.",
-    )
-
-    center_font_size = param.Number(
-        default=12,
-        doc="Font size for the center label in points.",
-    )
-
-    center_text_color = param.Color(
-        default="black",
-        doc="Color for the center label.",
-    )
-
-    label_text_color = param.Color(
-        default="black",
-        doc="Color for wedge labels.",
     )
 
     label_text_align = param.Selector(
@@ -1677,16 +1670,23 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         doc="Vertical alignment of wedge labels.",
     )
 
-    center_text_align = param.Selector(
-        default="center",
-        objects=["left", "right", "center"],
-        doc="Horizontal alignment of the center label.",
+    label_text_color = param.Color(
+        default="black",
+        doc="Color for wedge labels.",
     )
 
-    center_text_baseline = param.Selector(
-        default="center",
-        objects=["top", "bottom", "center", "baseline", "center_baseline"],
-        doc="Vertical alignment of the center label.",
+    outer_radius = param.Number(
+        default=1.0,
+        bounds=(0, None),
+        doc="Outer radius of the annulus.",
+    )
+
+    show_labels = param.ClassSelector(
+        default=False,
+        class_=(bool, str),
+        doc="""Whether and how to draw text labels next to each wedge.
+        Can be a boolean or a template string using dimension names
+        (e.g. '{Category}: {Amount}').""",
     )
 
     show_legend = param.Boolean(
