@@ -6,6 +6,7 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 
 from __future__ import annotations
 
+import typing as t
 import weakref
 from collections import defaultdict
 from contextlib import contextmanager
@@ -13,7 +14,6 @@ from functools import partial
 from itertools import groupby
 from numbers import Number
 from types import FunctionType
-from typing import TYPE_CHECKING
 
 import numpy as np
 import param
@@ -21,8 +21,10 @@ import param
 from .core import util
 from .core.ndmapping import UniformNdMapping
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import pandas as pd
+
+    from .core import Element
 else:
     pd = util.dependencies._LazyModule("pandas", bool_use_sys_modules=True)
 
@@ -142,29 +144,28 @@ class Stream(param.Parameterized):
         Supported types: bool, int, float, str, dict, tuple and list
 
         """
-        params = {"name": param.String(default=name)}
+        params: dict[str, param.Parameter] = {"name": param.String(default=name)}
         for k, v in kwargs.items():
-            kws = dict(default=v, constant=True)
             if isinstance(v, param.Parameter):
                 params[k] = v
             elif isinstance(v, bool):
-                params[k] = param.Boolean(**kws)
+                params[k] = param.Boolean(default=v, constant=True)
             elif isinstance(v, int):
-                params[k] = param.Integer(**kws)
+                params[k] = param.Integer(default=v, constant=True)
             elif isinstance(v, float):
-                params[k] = param.Number(**kws)
+                params[k] = param.Number(default=v, constant=True)
             elif isinstance(v, str):
-                params[k] = param.String(**kws)
+                params[k] = param.String(default=v, constant=True)
             elif isinstance(v, dict):
-                params[k] = param.Dict(**kws)
+                params[k] = param.Dict(default=v, constant=True)
             elif isinstance(v, tuple):
-                params[k] = param.Tuple(**kws)
+                params[k] = param.Tuple(default=v, constant=True)
             elif isinstance(v, list):
-                params[k] = param.List(**kws)
+                params[k] = param.List(default=v, constant=True)
             elif isinstance(v, np.ndarray):
-                params[k] = param.Array(**kws)
+                params[k] = param.Array(default=v, constant=True)
             else:
-                params[k] = param.Parameter(**kws)
+                params[k] = param.Parameter(default=v, constant=True)
 
         # Dynamic class creation using type
         return type(name, (Stream,), params)
@@ -221,7 +222,7 @@ class Stream(param.Parameterized):
         """Called when a stream has been triggered"""
 
     @classmethod
-    def _process_streams(cls, streams):
+    def _process_streams(cls, streams: list[t.Any]) -> tuple[list[Params], list[Params]]:
         """Processes a list of streams promoting Parameterized objects and
         methods to Param based streams.
 
@@ -321,7 +322,7 @@ class Stream(param.Parameterized):
     @property
     def subscribers(self):
         """Property returning the subscriber list"""
-        return [s for p, s in sorted(self._subscribers, key=lambda x: x[0])]
+        return [s for _, s in sorted(self._subscribers, key=lambda x: x[0])]
 
     def clear(self, policy="all"):
         """Clear all subscribers registered to this stream.
@@ -604,7 +605,7 @@ class Buffer(Pipe):
             elif len({len(v) for v in x.values()}) > 1:
                 raise ValueError("Input columns expected to have the same number of rows.")
 
-    def clear(self):
+    def clear(self, policy="all"):
         """Clears the data in the stream"""
         if isinstance(self.data, np.ndarray):
             data = self.data[:, :0]
@@ -757,9 +758,17 @@ class Params(Stream):
     )
 
     def __init__(
-        self, parameterized=None, parameters=None, watch=True, watch_only=False, **params
-    ):
+        self,
+        parameterized: param.Parameterized | type[param.Parameterized] | None = None,
+        parameters: list[param.Parameter] | None = None,
+        watch: bool = True,
+        watch_only: bool = False,
+        **params,
+    ) -> None:
+
         if parameters is None:
+            if parameterized is None:
+                raise ValueError(...)
             parameters = [parameterized.param[p] for p in parameterized.param if p != "name"]
         else:
             parameters = [
@@ -877,7 +886,6 @@ class Params(Stream):
                     owner.param.update(**updates)
         elif isinstance(self.parameterized, Stream):
             self.parameterized.update(**kwargs)
-            return
         else:
             self.parameterized.param.update(**kwargs)
 
@@ -1810,6 +1818,8 @@ class CDSStream(LinkedStream):
         path-like data).""",
     )
 
+    element: Element
+
 
 class PointDraw(CDSStream):
     """Attaches a PointDrawTool and syncs the datasource.
@@ -2050,7 +2060,7 @@ class FreehandDraw(CDSStream):
     def dynamic(self):
         from .core.spaces import DynamicMap
 
-        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
+        return DynamicMap(lambda: self.element, streams=[self])
 
 
 class BoxEdit(CDSStream):
@@ -2106,7 +2116,7 @@ class BoxEdit(CDSStream):
             return source.clone(data, id=None)
         paths = []
         for i, (x0, x1, y0, y1) in enumerate(
-            zip(data["x0"], data["x1"], data["y0"], data["y1"], strict=None)
+            zip(data["x0"], data["x1"], data["y0"], data["y1"], strict=False)
         ):
             xs = [x0, x0, x1, x1]
             ys = [y0, y1, y1, y0]
@@ -2122,7 +2132,7 @@ class BoxEdit(CDSStream):
     def dynamic(self):
         from .core.spaces import DynamicMap
 
-        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
+        return DynamicMap(lambda: self.element, streams=[self])
 
 
 class PolyEdit(PolyDraw):
