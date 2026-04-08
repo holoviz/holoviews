@@ -2128,7 +2128,7 @@ class BoxEdit(CDSStream):
             return source.clone(data, id=None)
         paths = []
         for i, (x0, x1, y0, y1) in enumerate(
-            zip(data["x0"], data["x1"], data["y0"], data["y1"], strict=False)
+            zip(data["x0"], data["x1"], data["y0"], data["y1"], strict=True)
         ):
             xs = [x0, x0, x1, x1]
             ys = [y0, y1, y1, y0]
