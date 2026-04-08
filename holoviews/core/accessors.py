@@ -1,5 +1,7 @@
 """Module for accessor objects for viewable HoloViews objects."""
 
+from __future__ import annotations
+
 import copy
 from functools import wraps
 from types import FunctionType

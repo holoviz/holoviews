@@ -2,6 +2,8 @@
 Unit tests for dim transforms
 """
 
+from __future__ import annotations
+
 import pickle
 import warnings
 

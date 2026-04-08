@@ -2,6 +2,8 @@
 Unit tests of the helper functions in core.utils
 """
 
+from __future__ import annotations
+
 import datetime
 import math
 import os

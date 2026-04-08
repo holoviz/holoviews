@@ -3,6 +3,8 @@ Test cases for the composite types built with + and *, i.e. Layout
 and Overlay (does *not* test HoloMaps).
 """
 
+from __future__ import annotations
+
 import re
 
 import pytest

@@ -2,6 +2,8 @@
 Test cases for boundingregion
 """
 
+from __future__ import annotations
+
 import holoviews as hv
 from holoviews.core import AARectangle
 

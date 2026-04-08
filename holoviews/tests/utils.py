@@ -4,7 +4,6 @@ import importlib
 import logging
 import os
 import sys
-from types import ModuleType
 from typing import TYPE_CHECKING, Literal, overload
 
 import param
@@ -14,6 +13,8 @@ from holoviews.core.util.dependencies import _is_installed
 from holoviews.util.warnings import deprecated
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     import dask
     import dask.array as da
     import dask.dataframe as dd

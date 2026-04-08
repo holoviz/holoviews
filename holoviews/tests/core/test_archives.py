@@ -3,6 +3,8 @@ Unit test of the archive system, namely FileArchive with different
 exporters (not including renderers).
 """
 
+from __future__ import annotations
+
 import json
 import os
 import tarfile

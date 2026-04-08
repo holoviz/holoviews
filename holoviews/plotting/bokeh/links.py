@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 from bokeh.models import CustomJS, Toolbar
 from bokeh.models.tools import RangeTool

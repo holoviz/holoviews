@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from bokeh.models import LinearAxis, LinearScale, LogAxis, LogScale
 
 import holoviews as hv

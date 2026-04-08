@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import param
 from datashader.bundling import (
     directly_connect_edges as connect_edges,

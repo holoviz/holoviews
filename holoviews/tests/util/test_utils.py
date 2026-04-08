@@ -2,6 +2,8 @@
 Unit tests of the helper functions in utils
 """
 
+from __future__ import annotations
+
 from pyviz_comms import CommManager
 
 import holoviews as hv

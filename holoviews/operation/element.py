@@ -3,6 +3,8 @@ examples.
 
 """
 
+from __future__ import annotations
+
 import warnings
 from collections import defaultdict
 from functools import partial
