@@ -93,9 +93,6 @@ class Donut(Selection1DExpr, Chart):
     the categorical label for each slice and the value dimension
     represents the size of each slice.
 
-    Setting ``inner_radius=0`` via options turns the donut into a
-    standard pie chart.
-
     """
 
     group = param.String(default="Donut", constant=True)
