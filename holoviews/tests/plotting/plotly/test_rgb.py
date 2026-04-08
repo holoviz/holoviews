@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import PIL.Image
 import plotly.graph_objs as go

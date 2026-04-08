@@ -2,6 +2,8 @@
 Script to sync tags from upstream repository to forked repository
 """
 
+from __future__ import annotations
+
 import sys
 from subprocess import run
 

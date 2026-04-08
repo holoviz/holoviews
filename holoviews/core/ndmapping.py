@@ -4,6 +4,8 @@ also enables slicing over multiple dimension ranges.
 
 """
 
+from __future__ import annotations
+
 from itertools import cycle
 from operator import itemgetter
 

@@ -1,5 +1,7 @@
 """Definition and registration of display hooks for the IPython Notebook."""
 
+from __future__ import annotations
+
 import sys
 import traceback
 from contextlib import contextmanager

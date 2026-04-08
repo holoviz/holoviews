@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import enum
 import warnings
 from collections.abc import Callable, Iterable

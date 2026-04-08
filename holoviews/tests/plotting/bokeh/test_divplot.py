@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import holoviews as hv
 
 from .test_plot import TestBokehPlot, bokeh_renderer

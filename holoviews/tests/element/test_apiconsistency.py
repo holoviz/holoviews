@@ -2,6 +2,8 @@
 Tests to make sure all components follow the appropriate API
 """
 
+from __future__ import annotations
+
 import pytest
 
 import holoviews as hv

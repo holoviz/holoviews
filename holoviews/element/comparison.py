@@ -18,6 +18,8 @@ considered different.
 
 """
 
+from __future__ import annotations
+
 import contextlib
 from functools import partial
 from unittest import SkipTest, TestCase

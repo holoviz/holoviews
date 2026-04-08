@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import builtins
 
 import narwhals.stable.v2 as nw

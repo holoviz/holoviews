@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ...core.options import Store
 from ...core.overlay import NdOverlay, Overlay
 from ...selection import OverlaySelectionDisplay

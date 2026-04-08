@@ -4,6 +4,8 @@ Test cases for the Comparisons class over basic literal types.
 Int, float, numpy array and BoundingBox comparisons are tested.
 """
 
+from __future__ import annotations
+
 import numpy as np
 
 import holoviews as hv

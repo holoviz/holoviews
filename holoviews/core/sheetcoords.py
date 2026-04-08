@@ -75,6 +75,8 @@ outside of the actual matrix.
 
 """
 
+from __future__ import annotations
+
 import numpy as np
 
 from .boundingregion import BoundingBox

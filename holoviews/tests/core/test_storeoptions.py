@@ -3,6 +3,8 @@ Unit tests of the StoreOptions class used to control custom options on
 Store as used by the %opts magic.
 """
 
+from __future__ import annotations
+
 import numpy as np
 
 import holoviews as hv

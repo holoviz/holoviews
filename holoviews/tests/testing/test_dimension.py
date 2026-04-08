@@ -2,6 +2,8 @@
 Test cases for Dimension and Dimensioned object comparison.
 """
 
+from __future__ import annotations
+
 import pytest
 
 import holoviews as hv

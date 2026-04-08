@@ -4,6 +4,8 @@ of this Plot baseclass.
 
 """
 
+from __future__ import annotations
+
 import uuid
 import warnings
 from ast import literal_eval

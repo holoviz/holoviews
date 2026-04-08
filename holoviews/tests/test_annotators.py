@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import holoviews as hv
 from holoviews.annotators import PathAnnotator, PointAnnotator
 from holoviews.element.tiles import EsriStreet

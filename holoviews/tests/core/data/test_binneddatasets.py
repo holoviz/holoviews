@@ -2,6 +2,8 @@
 Tests for binned interfaces including GridInterface and XArrayInterface
 """
 
+from __future__ import annotations
+
 import numpy as np
 import pytest
 

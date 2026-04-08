@@ -1,5 +1,7 @@
 """Defines valid style options, validation and utilities"""
 
+from __future__ import annotations
+
 import numpy as np
 from bokeh.core.properties import (
     Angle,
