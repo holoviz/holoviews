@@ -242,6 +242,17 @@ typing = "t"
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
 
+[tool.ty.src]
+include = ["holoviews/*.py", "holoviews/core/util/dependencies.py", "holoviews/core/util/types.py"]
+exclude = [
+    "holoviews/*version.py",
+    "holoviews/annotators.py", # TODO
+    "holoviews/selection.py", # TODO
+]
+
+[tool.ty.rules]
+unresolved-import = "ignore"
+
 [tool.typos.default]
 extend-ignore-re = [
     ".*(?:#|--|//|/*).*(?:typos):\\s?ignore[^\\n]*\\n",
