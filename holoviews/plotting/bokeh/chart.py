@@ -1688,7 +1688,7 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
 
     def _draw_center_label(self, plot):
         """Draw a center annotation (e.g. total value)."""
-        if self._donut_data is None or self.inner_radius == 0:
+        if self._donut_data is None:
             return
         text = self._resolve_center_text(self._donut_data["values"], self.hmap.last)
         if text is None:

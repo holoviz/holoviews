@@ -1726,13 +1726,13 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         wedges = self._create_wedges(axis, element, ranges, style)
         self.handles["artist"] = wedges
 
+        kdim = element.kdims[0]
         vdim = element.vdims[0]
-        xdim = element.kdims[0]
         return self._finalize_axis(
             key,
             ranges=ranges,
             element=element,
-            dimensions=[xdim, vdim],
+            dimensions=[kdim, vdim],
         )
 
     def _get_colors(self, labels, style, n):

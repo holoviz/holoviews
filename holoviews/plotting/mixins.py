@@ -129,8 +129,8 @@ class DonutMixin:
 
         return xs, ys, aligns.tolist()
 
-    @staticmethod
-    def _compute_donut_data(values):
+    @classmethod
+    def _compute_donut_data(cls, values):
         """Compute start and end angles from raw values.
 
         Parameters
@@ -142,7 +142,7 @@ class DonutMixin:
         -------
         start_angles, end_angles, fractions
         """
-        values = DonutMixin._coerce_donut_values(values)
+        values = cls._coerce_donut_values(values)
         if len(values) == 0:
             return np.array([]), np.array([]), np.array([])
         total = np.nansum(values)
