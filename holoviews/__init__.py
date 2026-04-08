@@ -182,6 +182,8 @@ from .util.warnings import (
 )
 
 TYPE_CHECKING = False
+extension: type[extension]
+
 
 if hasattr(builtins, "__IPYTHON__"):
     from .ipython import notebook_extension
@@ -199,9 +201,7 @@ if "_pyodide" in sys.modules:
 
     # The notebook_extension is needed inside jupyterlite,
     # so the override is only done if we are not inside jupyterlite.
-    if in_jupyterlite():
-        extension.inline = False
-    else:
+    if not in_jupyterlite():
         extension = pyodide_extension
     del pyodide_extension, in_jupyterlite
 
