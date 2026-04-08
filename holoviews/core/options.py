@@ -38,6 +38,7 @@ import difflib
 import inspect
 import pickle
 import traceback
+import typing as t
 from collections import defaultdict
 from contextlib import contextmanager
 
@@ -48,6 +49,9 @@ from .accessors import Opts  # noqa (clean up in 2.0)
 from .pprint import InfoPrinter
 from .tree import AttrTree
 from .util import group_sanitizer, label_sanitizer, sanitize_identifier
+
+if t.TYPE_CHECKING:
+    from ..util.settings import OutputSettings
 
 
 def cleanup_custom_options(id, weakref=None):
@@ -844,26 +848,28 @@ class OptionTree(AttrTree):
             if groups[group].kwargs != {}:
                 accumulator.append((".", groups[group].kwargs))
 
-            for t, v in sorted(self.items()):
+            for k, v in sorted(self.items()):
                 kwargs = v.groups[group].kwargs
-                accumulator.append((".".join(t), kwargs))
+                accumulator.append((".".join(k), kwargs))
 
-            for t, kws in accumulator:
+            for name, kws in accumulator:
                 if group == "norm" and all(
                     kws.get(k, False) is False for k in ["axiswise", "framewise"]
                 ):
                     continue
                 elif kws:
-                    especs.append((t, kws))
+                    especs.append((name, kws))
 
             if especs:
                 format_kws = [
-                    (t, f"dict({', '.join(f'{k}={v}' for k, v in sorted(kws.items()))})")
-                    for t, kws in especs
+                    (name, f"dict({', '.join(f'{k}={v}' for k, v in sorted(kws.items()))})")
+                    for name, kws in especs
                 ]
-                ljust = max(len(t) for t, _ in format_kws)
+                ljust = max(len(name) for name, _ in format_kws)
                 sep = (tab * 2) if len(format_kws) > 1 else ""
-                entries = sep + esep.join([f"{sep}{t.ljust(ljust)} : {v}" for t, v in format_kws])
+                entries = sep + esep.join(
+                    [f"{sep}{name.ljust(ljust)} : {v}" for name, v in format_kws]
+                )
                 gspecs.append(
                     ("%s%s={\n%s}" if len(format_kws) > 1 else "%s%s={%s}") % (tab, group, entries)
                 )
@@ -1219,6 +1225,8 @@ class Store:
     current_backend = "matplotlib"
 
     _backend_switch_hooks = []
+
+    output_settings: OutputSettings
 
     @classmethod
     def set_current_backend(cls, backend):
