@@ -216,7 +216,7 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
         with:
           environments: ${{ matrix.environment }}
-      - name: Test Unit
+      - name: Type TY
         run: |
           pixi run -e ${{ matrix.environment }} type-ty
 

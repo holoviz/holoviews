@@ -27,8 +27,6 @@ if t.TYPE_CHECKING:
     import pandas as pd
 
     from .core import Element
-
-    BufferData: t.TypeAlias = "np.ndarray | pd.DataFrame | dict[str, np.ndarray]"
 else:
     pd = util.dependencies._LazyModule("pandas", bool_use_sys_modules=True)
 
@@ -621,7 +619,7 @@ class Buffer(Pipe):
             self.data = data
         self.send(data)
 
-    def _concat(self, data: BufferData) -> BufferData:
+    def _concat(self, data):
         """Concatenate and slice the accepted data types to the defined
         length.
 
@@ -645,6 +643,7 @@ class Buffer(Pipe):
             elif data_length > self.length:
                 data = data.iloc[-self.length :]
         elif isinstance(data, dict) and data:
+            data = t.cast("dict[str, np.ndarray]", data)
             data_length = len(next(iter(data.values())))
             new_data = {}
             for k, v in data.items():
