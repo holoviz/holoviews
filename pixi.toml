@@ -62,7 +62,7 @@ features = ["lint"]
 no-default-feature = true
 
 [environments.type]
-features = ["required", "py310", "optional", "test-core", "type"]
+features = ["required", "py310", "optional", "test-core", "type", "type-task"]
 no-default-feature = true
 
 [feature.required.dependencies]
@@ -291,5 +291,5 @@ lint-install = 'pre-commit install'
 ty = "*"
 param = ">=2.4.0a0"
 
-[feature.type.tasks]
+[feature.type-task.tasks]
 type-ty = 'ty check .'

@@ -26,7 +26,8 @@ if t.TYPE_CHECKING:
 
     import pandas as pd
 
-    from .core import Element
+    from .core import Dataset
+    from .element import Path
 else:
     pd = util.dependencies._LazyModule("pandas", bool_use_sys_modules=True)
 
@@ -512,7 +513,7 @@ class Pipe(Stream):
         doc="Arbitrary data being streamed to a DynamicMap callback.",
     )
 
-    def __init__(self, data=None, memoize=False, **params):
+    def __init__(self, data=None, **params):
         super().__init__(data=data, **params)
         self._memoize_counter = 0
 
@@ -1798,7 +1799,6 @@ class Selection1D(LinkedStream):
 
     index = param.List(
         default=[],
-        allow_None=True,
         constant=True,
         doc="Indices into a 1D datastructure.",
     )
@@ -1829,7 +1829,7 @@ class CDSStream(LinkedStream):
         path-like data).""",
     )
 
-    element: Element
+    element: Dataset
 
 
 class PointDraw(CDSStream):
@@ -1899,7 +1899,7 @@ class PointDraw(CDSStream):
     def dynamic(self):
         from .core.spaces import DynamicMap
 
-        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
+        return DynamicMap(lambda: self.element, streams=[self])
 
 
 class CurveEdit(PointDraw):
@@ -1992,7 +1992,7 @@ class PolyDraw(CDSStream):
         super().__init__(**params)
 
     @property
-    def element(self):
+    def element(self) -> Path:
         source = self.source
         if isinstance(source, UniformNdMapping):
             source = source.last
@@ -2012,7 +2012,7 @@ class PolyDraw(CDSStream):
     def dynamic(self):
         from .core.spaces import DynamicMap
 
-        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
+        return DynamicMap(lambda: self.element, streams=[self])
 
 
 class FreehandDraw(CDSStream):

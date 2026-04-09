@@ -246,7 +246,6 @@ convention = "numpy"
 include = ["holoviews/*.py", "holoviews/core/util/dependencies.py", "holoviews/core/util/types.py"]
 exclude = [
     "holoviews/*version.py",
-    "holoviews/annotators.py", # TODO
     "holoviews/selection.py", # TODO
 ]
 

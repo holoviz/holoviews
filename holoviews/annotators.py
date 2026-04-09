@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import sys
+import typing as t
 from inspect import getmro
 
 import param
@@ -8,7 +8,7 @@ from panel.layout import Row, Tabs
 from panel.pane import PaneBase
 from panel.util import param_name
 
-from .core import DynamicMap, Element, HoloMap, Layout, Overlay, Store, ViewableElement
+from .core import Dataset, DynamicMap, Element, HoloMap, Layout, Overlay, Store, ViewableElement
 from .core.util import isscalar
 from .element import Curve, Path, Points, Polygons, Rectangles, Table
 from .plotting.links import (
@@ -17,10 +17,15 @@ from .plotting.links import (
     SelectionLink,
     VertexTableLink,
 )
-from .streams import BoxEdit, CurveEdit, PointDraw, PolyDraw, PolyEdit, Selection1D
+from .streams import BoxEdit, CDSStream, CurveEdit, PointDraw, PolyDraw, PolyEdit, Selection1D
+
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
+
+    _T = t.TypeVar("_T")
 
 
-def preprocess(function, current=None):
+def preprocess(function):
     """Turns a param.depends watch call into a preprocessor method, i.e.
     skips all downstream events triggered by it.
 
@@ -32,8 +37,6 @@ def preprocess(function, current=None):
     See https://github.com/holoviz/param/issues/332
 
     """
-    if current is None:
-        current = []
 
     def inner(*args, **kwargs):
         self = args[0]
@@ -225,7 +228,7 @@ class Annotator(PaneBase):
     )
 
     object = param.ClassSelector(
-        class_=Element,
+        class_=Dataset,
         doc="The Element to edit and annotate.",
     )
 
@@ -264,10 +267,14 @@ class Annotator(PaneBase):
 
     priority = 0.7
 
+    _init_stream: Callable[[], None]
+    _process_element: Callable[[t.Any], Dataset]
+    _stream: CDSStream
+    _selection: Selection1D
+    name: str
+
     @classmethod
     def applies(cls, obj):
-        if "holoviews" not in sys.modules:
-            return False
         return isinstance(obj, cls.param.object.class_)
 
     @property
@@ -363,7 +370,7 @@ class Annotator(PaneBase):
 
     @property
     def tables(self):
-        return list(zip(self.editor._names, self.editor, strict=None))
+        return list(zip(self.editor._names, self.editor, strict=True))
 
     @property
     def selected(self):
@@ -405,6 +412,8 @@ class PathAnnotator(Annotator):
     _vertex_table_link = VertexTableLink
 
     _triggers = ["annotations", "edit_vertices", "object", "table_opts", "vertex_annotations"]
+
+    _stream: PolyDraw
 
     def __init__(self, object=None, **params):
         self._vertex_table_row = Row()
@@ -533,9 +542,9 @@ class _GeomAnnotator(Annotator):
         doc="Opts to apply to the element.",
     )
 
-    _stream_type = None
-
     __abstract = True
+
+    _stream_type: t.ClassVar[type[CDSStream]]
 
     def _init_stream(self):
         name = param_name(self.name)
