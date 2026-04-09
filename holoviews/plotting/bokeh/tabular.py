@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import param
 from bokeh.models import Column
 from bokeh.models.widgets import (

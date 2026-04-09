@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 from functools import cmp_to_key
 from itertools import cycle

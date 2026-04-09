@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import pytest
 from bokeh.models.tools import WheelZoomTool, ZoomInTool, ZoomOutTool

@@ -2,6 +2,8 @@
 Test cases for rendering exporters
 """
 
+from __future__ import annotations
+
 import panel as pn
 import param
 import pytest

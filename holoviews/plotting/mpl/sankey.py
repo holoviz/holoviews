@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import param
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle

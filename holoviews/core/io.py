@@ -15,6 +15,8 @@ generating a PDF or collecting HoloViews objects to dump to HDF5.
 
 """
 
+from __future__ import annotations
+
 import itertools
 import os
 import pickle

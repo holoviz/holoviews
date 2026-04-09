@@ -2,6 +2,8 @@
 Test cases for the Comparisons class over the Path elements
 """
 
+from __future__ import annotations
+
 import pytest
 
 import holoviews as hv

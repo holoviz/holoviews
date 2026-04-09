@@ -3,6 +3,8 @@ Test cases for computing ranges on elements which are not simply
 the (min, max) of the dimension values array.
 """
 
+from __future__ import annotations
+
 import holoviews as hv
 
 

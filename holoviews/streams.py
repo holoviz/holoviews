@@ -4,6 +4,8 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 
 """
 
+from __future__ import annotations
+
 import weakref
 from collections import defaultdict
 from contextlib import contextmanager

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import pyviz_comms as comms
 from bokeh.models import (

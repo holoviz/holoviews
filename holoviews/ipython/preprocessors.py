@@ -4,6 +4,8 @@ python holoviews/ipython/convert.py Conversion_Example.ipynb | python
 
 """
 
+from __future__ import annotations
+
 import ast
 
 from nbconvert.preprocessors import Preprocessor

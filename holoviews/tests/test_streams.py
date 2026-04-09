@@ -2,6 +2,8 @@
 Unit test of the streams system
 """
 
+from __future__ import annotations
+
 from collections import defaultdict
 
 import numpy as np

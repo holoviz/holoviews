@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from weakref import WeakValueDictionary
 
 from ...element import Tiles

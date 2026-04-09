@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pyviz_comms import Comm, JupyterComm
 
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import colorsys
 from collections.abc import Mapping
 from copy import deepcopy

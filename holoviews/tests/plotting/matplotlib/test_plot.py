@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import matplotlib.pyplot as plt
 import pyviz_comms as comms
 from param import concrete_descendents

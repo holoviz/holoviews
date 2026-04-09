@@ -1,21 +1,21 @@
+from __future__ import annotations
+
 import datetime as dt
 import inspect
 import sys
 from types import GeneratorType
 from typing import TYPE_CHECKING
 
-import narwhals
 import narwhals.stable.v2 as nw
+import numpy as np
 
 from .dependencies import _LazyModule
 
 if TYPE_CHECKING:
     import cftime
-    import numpy as np
     import pandas as pd
 else:
     cftime = _LazyModule("cftime", bool_use_sys_modules=True)
-    np = _LazyModule("numpy", bool_use_sys_modules=True)
     pd = _LazyModule("pandas", bool_use_sys_modules=True)
 
 
@@ -93,37 +93,29 @@ def cftime_types():
 
 @gen_types
 def datetime_types():
-    yield from (dt.datetime, dt.date, dt.time)
-    if np:
-        yield np.datetime64
+    yield from (dt.datetime, dt.date, dt.time, np.datetime64)
     yield from pandas_datetime_types
     yield from cftime_types
 
 
 @gen_types
 def timedelta_types():
-    yield dt.timedelta
-    if np:
-        yield np.timedelta64
+    yield from (dt.timedelta, np.timedelta64)
     yield from pandas_timedelta_types
 
 
 @gen_types
 def arraylike_types():
-    if np:
-        yield np.ndarray
+    yield from (np.ndarray, nw.Series)
     if pd:
         from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries
 
         yield from (ABCIndex, ABCSeries, ABCExtensionArray)
 
-    yield from (nw.Series, narwhals.Series)
-
 
 @gen_types
 def masked_types():
-    if np:
-        yield np.ma.core.MaskedArray
+    yield np.ma.core.MaskedArray
 
     if pd:
         from pandas.core.arrays.masked import BaseMaskedArray

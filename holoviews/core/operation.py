@@ -3,6 +3,8 @@ the purposes of analysis or visualization.
 
 """
 
+from __future__ import annotations
+
 import param
 
 from . import Dataset, util

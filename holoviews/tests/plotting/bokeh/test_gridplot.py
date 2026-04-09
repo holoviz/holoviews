@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 from bokeh.layouts import Column
 from bokeh.models import Div, Toolbar

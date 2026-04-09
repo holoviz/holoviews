@@ -4,6 +4,8 @@ or mutate the matching elements.
 
 """
 
+from __future__ import annotations
+
 from collections import defaultdict
 from operator import itemgetter
 

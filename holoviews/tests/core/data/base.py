@@ -2,6 +2,8 @@
 Tests for the Dataset Element types.
 """
 
+from __future__ import annotations
+
 import datetime
 
 import numpy as np
@@ -819,6 +821,13 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         if self.force_sort:
             output = output.select(Age=[10, 12, 16])
         assert_element_equal(output, grouped)
+
+    def test_dataset_groupby_multiple_dims(self):
+        grouped = self.table.groupby(["Gender", "Age"])
+        assert len(grouped) == 3
+        assert ("M", 10) in grouped
+        assert ("M", 16) in grouped
+        assert ("F", 12) in grouped
 
     def test_dataset_groupby_dynamic(self):
         grouped_dataset = self.table.groupby("Gender", dynamic=True)

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 from subprocess import check_output
 from textwrap import dedent

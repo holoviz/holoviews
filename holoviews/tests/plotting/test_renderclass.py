@@ -2,6 +2,8 @@
 Test cases for rendering exporters
 """
 
+from __future__ import annotations
+
 from holoviews.plotting import Renderer
 
 

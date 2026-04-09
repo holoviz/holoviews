@@ -8,6 +8,8 @@ File originally part of the Topographica project.
 ### matrix notation, not list notation, so that it can be scaled,
 ### translated, etc. easily.
 ###
+from __future__ import annotations
+
 from param.parameterized import get_occupied_slots
 
 from .util import datetime_types
