@@ -106,7 +106,7 @@ class TestDonutPlot(TestBokehPlot):
             ([("A", 300), ("B", pd.NA), ("C", 700)], {"center_label": "total"}, "1000.0", True),
             ([("A", 300), (None, 700)], {"center_label": "total"}, "300.0", True),
             ([("A", 30), ("B", 70)], {"center_label": "Budget"}, "Budget", True),
-            ([("A", 30), ("B", 70)], {"center_label": "total", "inner_radius": 0}, None, False),
+            ([("A", 30), ("B", 70)], {"center_label": "total", "inner_radius": 0}, None, True),
         ],
     )
     def test_donut_center_label(self, values, opts, expected_text, present):
