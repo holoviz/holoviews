@@ -822,6 +822,13 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
             output = output.select(Age=[10, 12, 16])
         assert_element_equal(output, grouped)
 
+    def test_dataset_groupby_multiple_dims(self):
+        grouped = self.table.groupby(["Gender", "Age"])
+        assert len(grouped) == 3
+        assert ("M", 10) in grouped
+        assert ("M", 16) in grouped
+        assert ("F", 12) in grouped
+
     def test_dataset_groupby_dynamic(self):
         grouped_dataset = self.table.groupby("Gender", dynamic=True)
         assert_element_equal(grouped_dataset["M"], self.table.select(Gender="M").reindex(["Age"]))
