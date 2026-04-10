@@ -1226,7 +1226,7 @@ class Store:
 
     _backend_switch_hooks = []
 
-    output_settings: OutputSettings
+    output_settings: type[OutputSettings]
 
     @classmethod
     def set_current_backend(cls, backend):

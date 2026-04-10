@@ -465,8 +465,8 @@ class link_selections(_base_link_selections):
         filtered = data[expr.apply(data)]
         return filtered if is_dataset else filtered.data
 
-    @bothmethod
-    def _install_param_callbacks(self_or_cls, inst):
+    @staticmethod
+    def _install_param_callbacks(inst):
         def update_selection_mode(*_):
             # Reset selection state of streams
             for stream in inst._selection_expr_streams.values():
@@ -584,8 +584,6 @@ class SelectionDisplay:
     def build_selection(
         self, selection_streams, hvobj, operations, region_stream=None, cache=None
     ):
-        if cache is None:
-            cache = {}
         raise NotImplementedError()
 
     @staticmethod

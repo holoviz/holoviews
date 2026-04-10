@@ -1348,11 +1348,12 @@ class CrossFilterSet(Derived):
                     vals = set.intersection(
                         *(set(expr.ops[2]["args"][0]) for expr in selection_exprs)
                     )
-                    old = selection_exprs[0]
+                    old = t.cast("dim", selection_exprs[0])
                     selection_expr = dim("new")
                     selection_expr.dimension = old.dimension
                     selection_expr.ops = list(old.ops)
-                    selection_expr.ops[2] = dict(selection_expr.ops[2], args=(list(vals),))
+                    selection_expr.ops[2] = selection_expr.ops[2].copy()
+                    selection_expr.ops[2]["args"] = (list(vals),)
             else:
                 selection_expr = selection_exprs[0]
                 for expr in selection_exprs[1:]:

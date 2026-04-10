@@ -2,6 +2,7 @@ import inspect
 import os
 import shutil
 import sys
+import typing as t
 from collections import defaultdict
 from inspect import Parameter, Signature
 from pathlib import Path
@@ -59,7 +60,7 @@ class OptsMeta(param.parameterized.ParameterizedMetaclass):
 
     def __getattr__(self, attr):
         try:
-            return super().__getattr__(attr)
+            return super().__getattr__(attr)  # ty:ignore[unresolved-attribute]
         except AttributeError:
             msg = (
                 f"No entry for {attr!r} registered; this name may not refer to a valid object "
@@ -532,7 +533,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             [Parameter("spec", Parameter.POSITIONAL_OR_KEYWORD)]
             + [Parameter(kw, Parameter.KEYWORD_ONLY) for kw in sorted_kw_set]
         )
-        builder.__signature__ = signature
+        builder.__signature__ = signature  # ty:ignore[unresolved-attribute]
         return classmethod(builder)
 
     @classmethod
@@ -576,7 +577,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             [Parameter("args", Parameter.VAR_POSITIONAL)]
             + [Parameter(kw, Parameter.KEYWORD_ONLY) for kw in sorted_kw_set]
         )
-        cls.__init__.__signature__ = signature
+        cls.__init__.__signature__ = signature  # ty:ignore[unresolved-attribute]
 
 
 Store._backend_switch_hooks.append(opts._update_backend)
@@ -671,10 +672,10 @@ class output(param.ParameterizedFunction):
 
 
 output.__doc__ = Store.output_settings._generate_docstring(signature=False)
-output.__init__.__signature__ = Store.output_settings._generate_signature()
+output.__init__.__signature__ = Store.output_settings._generate_signature()  # ty:ignore[unresolved-attribute]
 
 
-def renderer(name):
+def renderer(name: t.Literal["bokeh", "matplotlib", "plotly"]):
     """Helper utility to access the active renderer for a given extension."""
     try:
         if name not in Store.renderers:
@@ -717,6 +718,12 @@ class extension(_pyviz_extension):
     _backend_hooks = defaultdict(list)
 
     _loaded = False
+
+    if t.TYPE_CHECKING:
+        # Can be removed when pyviz_comms support typing
+        def __init__(
+            self, backend: t.Literal["bokeh", "matplotlib", "plotly"], *args, **params
+        ) -> None: ...
 
     def __call__(self, *args, **params):
         # Get requested backends
@@ -780,11 +787,11 @@ class extension(_pyviz_extension):
 
         if pn.config.comms == "default":
             if "google.colab" in sys.modules:
-                pn.config.comms = "colab"
+                pn.config.comms = "colab"  # ty:ignore[invalid-assignment]
                 return
 
             if "VSCODE_CWD" in os.environ or "VSCODE_PID" in os.environ:
-                pn.config.comms = "vscode"
+                pn.config.comms = "vscode"  # ty:ignore[invalid-assignment]
                 self._ignore_bokeh_warnings()
                 return
 
@@ -1162,11 +1169,11 @@ class Dynamic(param.ParameterizedFunction):
             if isinstance(hmap, Overlay):
                 dmap.callback.inputs[:] = list(hmap)
             return dmap
-        dim_values = zip(*hmap.data.keys(), strict=None)
+        dim_values = zip(*hmap.data.keys(), strict=True)
         params = util.get_param_values(hmap)
         kdims = [
             d.clone(values=list(util.unique_iterator(values)))
-            for d, values in zip(hmap.kdims, dim_values, strict=None)
+            for d, values in zip(hmap.kdims, dim_values, strict=False)
         ]
         return DynamicMap(dynamic_fn, streams=streams, **dict(params, kdims=kdims))
 
