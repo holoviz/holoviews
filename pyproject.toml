@@ -244,10 +244,7 @@ convention = "numpy"
 
 [tool.ty.src]
 include = ["holoviews/*.py", "holoviews/core/util/dependencies.py", "holoviews/core/util/types.py"]
-exclude = [
-    "holoviews/*version.py",
-    "holoviews/selection.py", # TODO
-]
+exclude = ["holoviews/*version.py"]
 
 [tool.ty.rules]
 unresolved-import = "ignore"

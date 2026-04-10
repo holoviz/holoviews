@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing as t
 from collections import defaultdict, namedtuple
 
 import numpy as np
@@ -82,6 +83,25 @@ class _base_link_selections(param.ParameterizedFunction):
         doc="Whether to highlight the selected regions.",
     )
 
+    index_cols = param.List(
+        default=None,
+        doc="""
+        If provided, selection switches to index mode where all queries are
+        expressed solely in terms of discrete values along the index_cols.
+        All Elements given to link_selections must define the index_cols,
+        either as explicit dimensions or by sharing an underlying Dataset
+        that defines them.""",
+    )
+
+    _cache: dict[str, t.Any]  # TODO: Narrow?
+    _cross_filter_stream: CrossFilterSet
+    _plot_reset_streams: dict[str, t.Any]  # TODO: Narrow?
+    _selection_expr_streams: dict[str, t.Any]  # TODO: Narrow?
+    _selection_override = _SelectionExprOverride
+    _selection_streams: list[_SelectionStreams]
+    _streams: dict[t.Any, list[t.Any]]  # TODO: Narrow?
+    _datasets: list[t.Any]  # TODO: Narrow?
+
     @bothmethod
     def instance(self_or_cls, **params):
         inst = super().instance(**params)
@@ -95,6 +115,10 @@ class _base_link_selections(param.ParameterizedFunction):
 
         # Init selection streams
         inst._selection_streams = self_or_cls._build_selection_streams(inst)
+
+        # _datasets caches
+        inst._datasets = []
+        inst._cache = {}
 
         return inst
 
@@ -323,14 +347,6 @@ class link_selections(_base_link_selections):
         elements.""",
     )
 
-    index_cols = param.List(
-        default=None,
-        doc="""
-        If provided, selection switches to index mode where all queries
-        are expressed solely in terms of discrete values along the
-        index_cols.  All Elements given to link_selections must define the index_cols, either as explicit dimensions or by sharing an underlying Dataset that defines them.""",
-    )
-
     selection_expr = param.Parameter(
         default=None,
         doc="""
@@ -364,6 +380,8 @@ class link_selections(_base_link_selections):
         doc="Color of unselected data.",
     )
 
+    _updating_show_regions_internal: bool
+
     @bothmethod
     def instance(self_or_cls, **params):
         inst = super().instance(**params)
@@ -374,10 +392,6 @@ class link_selections(_base_link_selections):
         inst._reset_regions = True
         inst._user_show_regions = inst.show_regions
         inst._updating_show_regions_internal = False
-
-        # _datasets caches
-        inst._datasets = []
-        inst._cache = {}
 
         self_or_cls._install_param_callbacks(inst)
 
@@ -424,7 +438,7 @@ class link_selections(_base_link_selections):
             data = Dataset(data)
         pipe = Pipe()
         self._datasets.append((pipe, data, raw))
-        self._update_pipes()
+        self._update_pipes()  # ty:ignore[missing-argument] NOTE: fix in param
         return pipe.param.data
 
     def filter(self, data, selection_expr=None):
@@ -785,7 +799,7 @@ class ColorListSelectionDisplay(SelectionDisplay):
 
             color_inds = np.zeros(n, dtype="int8")
 
-            for i, expr in zip(range(1, len(clrs)), selection_exprs, strict=None):
+            for i, expr in zip(range(1, len(clrs)), selection_exprs, strict=False):
                 if not expr:
                     color_inds[:] = i
                 else:
