@@ -633,7 +633,7 @@ class Buffer(Pipe):
                 prev_chunk = self.data[-(self.length - data_length) :]
                 data = np.concatenate([prev_chunk, data])
             elif data_length > self.length:
-                data = np.asarray(data)[-self.length :]
+                data = data[-self.length :]
         elif pd and isinstance(data, pd.DataFrame):
             data_length = len(data)
             if not self.length:

@@ -284,7 +284,7 @@ def optional_dependencies(name: Literal["polars"], /) -> tuple[TypeOf[pl], MarkD
 
 def optional_dependencies(name: str, /) -> tuple[MaybeModuleType, MarkDecorator]:
     """Check if a dependency is installed and return the module and a fixture that skips test."""
-    if _is_installed(name) or TYPE_CHECKING:
+    if _is_installed(name):
         module = importlib.import_module(name)
     else:
         module = None
