@@ -1,15 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy as np
 
 from .. import util
 
-if TYPE_CHECKING:
-    import dask.array as da
-else:
-    da = util._LazyModule("dask.array", bool_use_sys_modules=True)
+da = util._LazyModule("dask.array", bool_use_sys_modules=True)
 
 
 def finite_range(column, cmin, cmax):

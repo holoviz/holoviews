@@ -45,15 +45,9 @@ from .types import (
     timedelta_types,
 )
 
-TYPE_CHECKING = False
-if TYPE_CHECKING:
-    import dask.dataframe as dd
-    import pandas as pd
-    import polars as pl
-else:
-    dd = _LazyModule("dask.dataframe", bool_use_sys_modules=True)
-    pd = _LazyModule("pandas", bool_use_sys_modules=True)
-    pl = _LazyModule("polars", bool_use_sys_modules=True)
+dd = _LazyModule("dask.dataframe", bool_use_sys_modules=True)
+pd = _LazyModule("pandas", bool_use_sys_modules=True)
+pl = _LazyModule("polars", bool_use_sys_modules=True)
 
 # Python 2 builtins
 basestring = str

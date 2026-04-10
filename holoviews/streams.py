@@ -24,12 +24,10 @@ from .core.ndmapping import UniformNdMapping
 if t.TYPE_CHECKING:
     from collections.abc import Sequence
 
-    import pandas as pd
-
     from .core import Dataset
     from .element import Path
-else:
-    pd = util.dependencies._LazyModule("pandas", bool_use_sys_modules=True)
+
+pd = util.dependencies._LazyModule("pandas", bool_use_sys_modules=True)
 
 
 # Types supported by Pointer derived streams

@@ -11,12 +11,8 @@ import numpy as np
 
 from .dependencies import _LazyModule
 
-if t.TYPE_CHECKING:
-    import cftime
-    import pandas as pd
-else:
-    cftime = _LazyModule("cftime", bool_use_sys_modules=True)
-    pd = _LazyModule("pandas", bool_use_sys_modules=True)
+cftime = _LazyModule("cftime", bool_use_sys_modules=True)
+pd = _LazyModule("pandas", bool_use_sys_modules=True)
 
 
 # gen_types is copied from param, can be removed when

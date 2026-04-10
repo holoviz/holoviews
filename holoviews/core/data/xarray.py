@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import sys
 import types
-from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -18,10 +17,7 @@ from .util import dask_array_module, finite_range
 
 XARRAY_VERSION = _no_import_version("xarray")
 
-if TYPE_CHECKING:
-    import cupy as cp
-else:
-    cp = _LazyModule("cupy", bool_use_sys_modules=True)
+cp = _LazyModule("cupy", bool_use_sys_modules=True)
 
 
 def is_cupy(array):

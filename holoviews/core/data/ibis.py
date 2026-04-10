@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -14,10 +13,7 @@ from ..util.dependencies import _LazyModule, _no_import_version
 from .interface import DataError, Interface
 from .util import cached
 
-if TYPE_CHECKING:
-    import ibis
-else:
-    ibis = _LazyModule("ibis", "ibis-framework", bool_use_sys_modules=True)
+ibis = _LazyModule("ibis", "ibis-framework", bool_use_sys_modules=True)
 
 IBIS_VERSION = _no_import_version("ibis-framework")
 IBIS_GE_4_0_0 = IBIS_VERSION >= (4, 0, 0)

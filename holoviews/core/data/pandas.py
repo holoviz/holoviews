@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy as np
 
 from .. import util
@@ -13,10 +11,7 @@ from ..util.dependencies import PANDAS_GE_2_1_0, _LazyModule
 from .interface import DataError, Interface
 from .util import finite_range
 
-if TYPE_CHECKING:
-    import pandas as pd
-else:
-    pd = _LazyModule("pandas")
+pd = _LazyModule("pandas")
 
 
 class PandasAPI:
