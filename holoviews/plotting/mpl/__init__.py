@@ -357,6 +357,8 @@ options.Donut = Options(
     yaxis=None,
     show_frame=False,
     show_legend=True,
+    legend_position="center",
+    inner_radius=0.8,
 )
 options.Histogram = Options("style", edgecolor="k", facecolor=Cycle())
 options.Points = Options("style", color=Cycle(), marker="o", cmap=dflt_cmap)
