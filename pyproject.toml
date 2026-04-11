@@ -248,6 +248,7 @@ include = [
     "holoviews/util/*.py",
     "holoviews/core/util/dependencies.py",
     "holoviews/core/util/types.py",
+    "scripts/*.py",
 ]
 exclude = ["holoviews/*version.py"]
 

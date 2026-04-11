@@ -544,7 +544,7 @@ class _GeomAnnotator(Annotator):
 
     __abstract = True
 
-    _stream_type: t.ClassVar[type[CDSStream]]
+    _stream_type: type[CDSStream]
 
     def _init_stream(self):
         name = param_name(self.name)

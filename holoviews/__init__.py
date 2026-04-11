@@ -182,7 +182,8 @@ from .util.warnings import (
 )
 
 TYPE_CHECKING = False
-extension: type[extension]
+if TYPE_CHECKING:
+    extension: type[extension]
 
 
 if hasattr(builtins, "__IPYTHON__"):
@@ -207,7 +208,7 @@ if "_pyodide" in sys.modules:
 
 if TYPE_CHECKING:
     # Adding this here to have better docstring in LSP
-    from .util import extension  # noqa: TC004
+    from .util import extension
 
 _load_rc_file()
 
