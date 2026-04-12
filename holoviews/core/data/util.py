@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from .. import util
-
-da = util._LazyModule("dask.array", bool_use_sys_modules=True)
+from ..util.dependencies import da
+from ..util.types import datetime_types
 
 
 def finite_range(column, cmin, cmax):
@@ -36,8 +35,8 @@ def finite_range(column, cmin, cmax):
         cmin = cmin[()]
     if isinstance(cmax, np.ndarray) and cmax.shape == ():
         cmax = cmax[()]
-    cmin = cmin if np.isscalar(cmin) or isinstance(cmin, util.datetime_types) else cmin.item()
-    cmax = cmax if np.isscalar(cmax) or isinstance(cmax, util.datetime_types) else cmax.item()
+    cmin = cmin if np.isscalar(cmin) or isinstance(cmin, datetime_types) else cmin.item()
+    cmax = cmax if np.isscalar(cmax) or isinstance(cmax, datetime_types) else cmax.item()
     return cmin, cmax
 
 

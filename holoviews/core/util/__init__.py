@@ -32,7 +32,12 @@ from .dependencies import (  # noqa: F401
     PANDAS_VERSION,
     PARAM_VERSION,
     VersionError,
-    _LazyModule,
+    cp,
+    da,
+    dd,
+    ibis,
+    pd,
+    pl,
 )
 from .types import (
     arraylike_types,
@@ -44,10 +49,6 @@ from .types import (
     pandas_timedelta_types,
     timedelta_types,
 )
-
-dd = _LazyModule("dask.dataframe", bool_use_sys_modules=True)
-pd = _LazyModule("pandas", bool_use_sys_modules=True)
-pl = _LazyModule("polars", bool_use_sys_modules=True)
 
 # Python 2 builtins
 basestring = str
@@ -955,8 +956,6 @@ def isfinite(val):
     if val is None:
         return False
     elif is_dask:
-        import dask.array as da
-
         return da.isfinite(val)
     elif isinstance(val, np.ndarray):
         if dtype_kind(val) == "M":
@@ -1680,28 +1679,16 @@ def is_series(data):
     return isinstance(data, tuple(types))
 
 
-def is_dask_array(data):
-    if "dask.array" in sys.modules:
-        import dask.array as da
-
-        return isinstance(data, da.Array)
-    return False
+def is_dask_array(data) -> bool:
+    return da and isinstance(data, da.Array)
 
 
-def is_cupy_array(data):
-    if "cupy" in sys.modules:
-        import cupy
-
-        return isinstance(data, cupy.ndarray)
-    return False
+def is_cupy_array(data) -> bool:
+    return cp and isinstance(data, cp.ndarray)
 
 
-def is_ibis_expr(data):
-    if "ibis" in sys.modules:
-        import ibis
-
-        return isinstance(data, ibis.expr.types.ColumnExpr)
-    return False
+def is_ibis_expr(data) -> bool:
+    return ibis and isinstance(data, ibis.expr.types.ColumnExpr)
 
 
 def get_param_values(data):

@@ -9,11 +9,9 @@ from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..util import dtype_kind
-from ..util.dependencies import _LazyModule, _no_import_version
+from ..util.dependencies import _no_import_version, ibis
 from .interface import DataError, Interface
 from .util import cached
-
-ibis = _LazyModule("ibis", "ibis-framework", bool_use_sys_modules=True)
 
 IBIS_VERSION = _no_import_version("ibis-framework")
 IBIS_GE_4_0_0 = IBIS_VERSION >= (4, 0, 0)

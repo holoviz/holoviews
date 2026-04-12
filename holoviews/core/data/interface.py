@@ -130,7 +130,7 @@ class ndloc(Accessor):
 
 
 class Interface(param.Parameterized):
-    interfaces = {}
+    interfaces: dict[str, Interface] = {}
 
     datatype = None
 

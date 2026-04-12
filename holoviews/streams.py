@@ -20,14 +20,13 @@ import param
 
 from .core import util
 from .core.ndmapping import UniformNdMapping
+from .core.util.dependencies import pd
 
 if t.TYPE_CHECKING:
     from collections.abc import Sequence
 
     from .core import Dataset
     from .element import Path
-
-pd = util.dependencies._LazyModule("pandas", bool_use_sys_modules=True)
 
 
 # Types supported by Pointer derived streams

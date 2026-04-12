@@ -9,11 +9,7 @@ from types import GeneratorType
 import narwhals.stable.v2 as nw
 import numpy as np
 
-from .dependencies import _LazyModule
-
-cftime = _LazyModule("cftime", bool_use_sys_modules=True)
-pd = _LazyModule("pandas", bool_use_sys_modules=True)
-
+from .dependencies import cftime, pd
 
 # gen_types is copied from param, can be removed when
 # we support 2.2 or greater
