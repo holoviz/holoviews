@@ -290,6 +290,7 @@ lint-install = 'pre-commit install'
 [feature.type.dependencies]
 ty = "*"
 param = ">=2.4.0a0"
+pandas-stubs = "*"
 
 [feature.type-task.tasks]
 type-ty = 'ty check .'
