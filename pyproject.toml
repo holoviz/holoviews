@@ -243,13 +243,7 @@ typing = "t"
 convention = "numpy"
 
 [tool.ty.src]
-include = [
-    "holoviews/*.py",
-    "holoviews/util/*.py",
-    "holoviews/core/util/dependencies.py",
-    "holoviews/core/util/types.py",
-    "scripts/*.py",
-]
+include = ["holoviews/*.py", "holoviews/core/util/*.py", "holoviews/util/*.py", "scripts/*.py"]
 exclude = ["holoviews/*version.py"]
 
 [tool.ty.rules]
