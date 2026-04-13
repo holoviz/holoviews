@@ -9,6 +9,7 @@ from __future__ import annotations
 import builtins
 import datetime as dt
 import re
+import typing as t
 import weakref
 from collections import Counter, defaultdict
 from collections.abc import Iterable
@@ -1057,6 +1058,8 @@ class Dimensioned(LabelledData):
             )
         return [(dim.label if label == "long" else dim.name) if label else dim for dim in dims]
 
+    @t.overload
+    def get_dimension(self, dimension, default=None, strict=True) -> Dimension: ...
     def get_dimension(self, dimension, default=None, strict=False) -> Dimension | None:
         """Get a Dimension object by name or index.
 

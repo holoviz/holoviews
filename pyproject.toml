@@ -243,8 +243,24 @@ typing = "t"
 convention = "numpy"
 
 [tool.ty.src]
-include = ["holoviews/*.py", "holoviews/core/util/*.py", "holoviews/util/*.py", "scripts/*.py"]
-exclude = ["holoviews/*version.py"]
+include = [
+    "holoviews/*.py",
+    "holoviews/core/*.py",
+    "holoviews/core/util/*.py",
+    "holoviews/util/*.py",
+    "scripts/*.py",
+]
+exclude = [
+    "holoviews/*version.py",
+    "holoviews/core/dimension.py", # 21
+    "holoviews/core/element.py", # 13
+    "holoviews/core/io.py", # 10
+    "holoviews/core/ndmapping.py", # 21
+    "holoviews/core/options.py", # 13
+    "holoviews/core/overlay.py", # 7
+    "holoviews/core/spaces.py", # 28
+    "holoviews/core/traversal.py", # 14
+]
 
 [tool.ty.rules]
 unresolved-import = "ignore"
