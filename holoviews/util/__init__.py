@@ -719,17 +719,18 @@ class extension(_pyviz_extension):
 
     _loaded = False
 
-    if t.TYPE_CHECKING:
-        # Can be removed when pyviz_comms support typing
-        def __init__(
-            self, backend: t.Literal["bokeh", "matplotlib", "plotly"], *args, **params
-        ) -> None: ...
+    def __new__(
+        cls,
+        *backends: t.Literal["bokeh", "matplotlib", "plotly"],
+        **kwargs,
+    ) -> t.Any:
+        return super().__new__(cls, *backends, **kwargs)
 
-    def __call__(self, *args, **params):
+    def __call__(self, *backends, **params):
         # Get requested backends
         config = params.pop("config", {})
         util.config.param.update(**config)
-        imports = [(arg, self._backends[arg]) for arg in args if arg in self._backends]
+        imports = [(b, self._backends[b]) for b in backends if b in self._backends]
         for p, _val in sorted(params.items()):
             if p in self._backends:
                 imports.append((p, self._backends[p]))
@@ -740,7 +741,6 @@ class extension(_pyviz_extension):
             )
             raise TypeError(msg)
 
-        args = list(args)
         selected_backend = None
         for backend, imp in imports:
             try:
