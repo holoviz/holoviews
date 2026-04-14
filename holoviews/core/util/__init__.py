@@ -67,7 +67,15 @@ anonymous_dimension_label = "_"
 ArgSpec = namedtuple("ArgSpec", "args varargs keywords defaults")
 
 _STANDARD_CALENDARS = {"standard", "gregorian", "proleptic_gregorian"}
-_TIME_SCALES = {"us": 1e6, "ms": 1e3, "s": 1, "m": 1/60, "h1": 1/3600, "D": 1/86400, "W": 1/604800}
+_TIME_SCALES = {
+    "us": 1e6,
+    "ms": 1e3,
+    "s": 1,
+    "m": 1 / 60,
+    "h": 1 / 3600,
+    "D": 1 / 86400,
+    "W": 1 / 604800,
+}
 _ARRAY_SIZE_LARGE = 1_000_000
 _ARRAY_SAMPLE_SIZE = 1_000_000
 _DATAFRAME_ROWS_LARGE = 1_000_000
