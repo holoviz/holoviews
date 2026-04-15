@@ -30,6 +30,8 @@ from .settings import OutputSettings, list_backends, list_formats
 
 Store.output_settings = OutputSettings
 
+_BackendT: t.TypeAlias = t.Literal["bokeh", "matplotlib", "plotly"]
+
 _STR_OPTIONS_ERR = (
     "String-based options specification is no longer supported. "
     "Use dictionary or option objects instead."
@@ -675,7 +677,7 @@ output.__doc__ = Store.output_settings._generate_docstring(signature=False)
 output.__init__.__signature__ = Store.output_settings._generate_signature()  # ty:ignore[unresolved-attribute]
 
 
-def renderer(name: t.Literal["bokeh", "matplotlib", "plotly"]):
+def renderer(name: _BackendT):
     """Helper utility to access the active renderer for a given extension."""
     try:
         if name not in Store.renderers:
@@ -719,11 +721,7 @@ class extension(_pyviz_extension):
 
     _loaded = False
 
-    def __new__(
-        cls,
-        *backends: t.Literal["bokeh", "matplotlib", "plotly"],
-        **kwargs,
-    ) -> t.Any:
+    def __new__(cls, *backends: _BackendT, **kwargs) -> t.Any:
         return super().__new__(cls, *backends, **kwargs)
 
     def __call__(self, *backends, **params):
@@ -889,7 +887,7 @@ def save(
     return renderer_obj.save(obj, filename, fmt=fmt, resources=resources, title=title)
 
 
-def render(obj, backend=None, **kwargs):
+def render(obj, backend: _BackendT | None = None, **kwargs):
     """Renders the HoloViews object to the corresponding object in the
     specified backend, e.g. a Matplotlib or Bokeh figure.
 

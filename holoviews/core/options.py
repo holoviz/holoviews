@@ -51,6 +51,7 @@ from .tree import AttrTree
 from .util import group_sanitizer, label_sanitizer, sanitize_identifier
 
 if t.TYPE_CHECKING:
+    from ..util import _BackendT
     from ..util.settings import OutputSettings
 
 
@@ -1222,7 +1223,7 @@ class Store:
     load_counter_offset = None
     save_option_state = False
 
-    current_backend = "matplotlib"
+    current_backend: _BackendT = "matplotlib"
 
     _backend_switch_hooks = []
 

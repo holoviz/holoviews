@@ -57,7 +57,7 @@ _Styles = Stream.define("Styles", colors=[], alpha=1.0)
 _RegionElement = Stream.define("RegionElement", region_element=None)
 
 
-_SelectionStreams = namedtuple("SelectionStreams", "style_stream exprs_stream cmap_streams ")
+_SelectionStreams = namedtuple("_SelectionStreams", "style_stream exprs_stream cmap_streams ")
 
 
 class _base_link_selections(param.ParameterizedFunction):
