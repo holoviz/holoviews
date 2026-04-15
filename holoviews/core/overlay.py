@@ -8,6 +8,7 @@ for indexing, slicing and animating collections of Views.
 
 from __future__ import annotations
 
+import typing as t
 from functools import reduce
 
 import numpy as np
@@ -17,6 +18,9 @@ from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
 from .layout import AdjointLayout, Composable, Layout, Layoutable
 from .ndmapping import UniformNdMapping
 from .util import dimensioned_streams, sanitize_identifier, unique_array
+
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class Overlayable:
@@ -64,6 +68,13 @@ class CompositeOverlay(ViewableElement, Composable):
     """CompositeOverlay provides a common baseclass for Overlay classes."""
 
     _deep_indexable = True
+
+    # Defined in AttrTree, but can't inherit without test failings
+    keys: Callable[[], list[t.Any]]
+    values: Callable[[], list[t.Any]]
+    items: Callable[[], list[list[t.Any]]]
+    main_layer: int
+    __len__: Callable[[], int]
 
     def hist(
         self,
@@ -165,7 +176,7 @@ class CompositeOverlay(ViewableElement, Composable):
             return super().dimension_values(dimension, expanded, flat)
         values = [v for v in values if v is not None and len(v)]
         if not values:
-            return np.array()
+            return np.array([])
         vals = np.concatenate(values)
         return vals if expanded else unique_array(vals)
 
