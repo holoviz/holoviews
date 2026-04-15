@@ -120,6 +120,13 @@ class Exporter(param.ParameterizedFunction):
         contain items that will be quick to load and inspect. """,
     )
 
+    file_ext = param.String(
+        "pkl",
+        doc="""
+        The file extension associated with the corresponding file
+        format (if applicable).""",
+    )
+
     @classmethod
     def encode(cls, entry):
         """Classmethod that applies conditional encoding based on
@@ -142,8 +149,8 @@ class Exporter(param.ParameterizedFunction):
         else:
             return filename
 
-    @bothmethod
-    def _merge_metadata(self_or_cls, obj, fn, *dicts):
+    @staticmethod
+    def _merge_metadata(obj, fn, *dicts):
         """Returns a merged metadata info dictionary from the supplied
         function and additional dictionaries
 
@@ -151,7 +158,7 @@ class Exporter(param.ParameterizedFunction):
         merged = {k: v for d in dicts for (k, v) in d.items()}
         return dict(merged, **fn(obj)) if fn else merged
 
-    def __call__(self, obj, fmt=None):
+    def __call__(self, obj, **kwargs):
         """Given a HoloViews object return the raw exported data and
         corresponding metadata as the tuple (data, metadata). The
         metadata should include:
@@ -166,8 +173,8 @@ class Exporter(param.ParameterizedFunction):
         """
         raise NotImplementedError("Exporter not implemented.")
 
-    @bothmethod
-    def save(self_or_cls, obj, basename, fmt=None, key=None, info=None, **kwargs):
+    @staticmethod
+    def save(obj, basename, fmt=None, key=None, info=None, **kwargs):
         """Similar to the call method except saves exporter data to disk
         into a file with specified basename. For exporters that
         support multiple formats, the fmt argument may also be
@@ -246,13 +253,6 @@ class Serializer(Exporter):
         "application/python-pickle",
         allow_None=True,
         doc="The mime-type associated with the serializer (if applicable).",
-    )
-
-    file_ext = param.String(
-        "pkl",
-        doc="""
-        The file extension associated with the corresponding file
-        format (if applicable).""",
     )
 
     def __call__(self, obj, **kwargs):
@@ -387,7 +387,7 @@ class Pickler(Exporter):
                 ]
                 components = [obj]
 
-            for component, entry in zip(components, entries, strict=None):
+            for component, entry in zip(components, entries, strict=False):
                 f.writestr(entry, Store.dumps(component, protocol=self_or_cls.protocol))
             f.writestr("metadata", pickle.dumps({"info": info, "key": key}))
 
@@ -666,14 +666,14 @@ class FileArchive(Archive):
     ffields = {"type", "group", "label", "obj", "SHA", "timestamp", "dimensions"}
     efields = {"timestamp"}
 
-    @classmethod
-    def parse_fields(cls, formatter):
+    @staticmethod
+    def parse_fields(formatter):
         """Returns the format fields otherwise raise exception"""
         if formatter is None:
             return []
         try:
-            parse = list(string.Formatter().parse(formatter))
-            return {f for f in list(zip(*parse, strict=None))[1] if f is not None}
+            parse = string.Formatter().parse(formatter)
+            return {p[1] for p in parse} - {None}
         except Exception as e:
             raise SyntaxError(f"Could not parse formatter {formatter!r}") from e
 
@@ -915,7 +915,7 @@ class FileArchive(Archive):
 
         fnames = [self._truncate_name(*k, maxlen=maxlen) for k in self._files]
         max_len = max([len(f) for f in fnames])
-        for name, v in zip(fnames, self._files.values(), strict=None):
+        for name, v in zip(fnames, self._files.values(), strict=True):
             mime_type = v[1].get("mime_type", "no mime type")
             lines.append(f"{name.ljust(max_len)} : {mime_type}")
         print("\n".join(lines))

@@ -254,7 +254,6 @@ exclude = [
     "holoviews/*version.py",
     "holoviews/core/dimension.py", # 21
     "holoviews/core/element.py", # 13
-    "holoviews/core/io.py", # 10
     "holoviews/core/ndmapping.py", # 21
     "holoviews/core/options.py", # 13
     "holoviews/core/overlay.py", # 7
