@@ -257,7 +257,6 @@ exclude = [
     "holoviews/core/ndmapping.py", # 21
     "holoviews/core/options.py", # 13
     "holoviews/core/spaces.py", # 28
-    "holoviews/core/traversal.py", # 14
 ]
 
 [tool.ty.rules]
