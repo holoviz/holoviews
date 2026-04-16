@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import itertools
 import types
+import typing as t
 from collections import defaultdict
 from contextlib import contextmanager
 from functools import partial
@@ -13,6 +14,7 @@ import numpy as np
 import param
 
 from ..streams import Params, Stream, streams_list_from_dict
+from ..util.warnings import HoloviewsUserWarning, warn
 from . import traversal, util
 from .accessors import Opts, Redim
 from .dimension import Dimension, ViewableElement
@@ -177,7 +179,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
 
         """
         return [
-            tuple(zip([d.name for d in self.kdims], [k] if self.ndims == 1 else k, strict=None))
+            tuple(zip([d.name for d in self.kdims], [k] if self.ndims == 1 else k, strict=True))
             for k in self.keys()
         ]
 
@@ -204,7 +206,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
             streams = map_obj.streams
 
         def dynamic_mul(*key, **kwargs):
-            key_map = {d.name: k for d, k in zip(dimensions, key, strict=None)}
+            key_map = {d.name: k for d, k in zip(dimensions, key, strict=False)}
             layers = []
             try:
                 self_el = self.select(HoloMap, **key_map) if self.kdims else self[()]
@@ -445,7 +447,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
             map_range = self.range(kwargs["dimension"])
 
         bin_range = map_range if bin_range is None else bin_range
-        style_prefix = "Custom[<" + self.name + ">]_"
+        style_prefix = f"Custom[<{self.name}>]_"
         if issubclass(self.type, (NdOverlay, Overlay)) and "index" not in kwargs:
             kwargs["index"] = 0
 
@@ -469,7 +471,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
             for hist in histmaps:
                 layout = layout << hist
             if issubclass(self.type, (NdOverlay, Overlay)):
-                layout.main_layer = kwargs["index"]
+                t.cast("NdOverlay|Overlay", layout).main_layer = kwargs["index"]
             return layout
         elif len(histmaps) > 1:
             return Layout(histmaps)
@@ -511,7 +513,6 @@ class Callable(param.Parameterized):
     """
 
     callable = param.Callable(
-        default=None,
         constant=True,
         allow_refs=False,
         doc="The callable function being wrapped.",
@@ -651,7 +652,7 @@ class Callable(param.Parameterized):
             # Missing information on positional argument names, cannot promote to keywords
             pass
         elif len(args) != 0:  # Turn positional arguments into keyword arguments
-            pos_kwargs = {k: v for k, v in zip(self.argspec.args, args, strict=None)}
+            pos_kwargs = {k: v for k, v in zip(self.argspec.args, args, strict=False)}
             ignored = range(len(self.argspec.args), len(args))
             if ignored:
                 self.param.warning(
@@ -692,7 +693,6 @@ class Generator(Callable):
     """
 
     callable = param.ClassSelector(
-        default=None,
         class_=types.GeneratorType,
         constant=True,
         doc="The generator that is wrapped by this Generator.",
@@ -708,8 +708,8 @@ class Generator(Callable):
         except StopIteration:
             raise
         except Exception:
-            msg = "Generator {name} raised the following exception:"
-            self.param.warning(msg.format(name=self.name))
+            msg = f"Generator {self.name} raised the following exception:"
+            self.param.warning(msg)
             raise
 
 
@@ -819,7 +819,10 @@ class periodic:
 
     def stop(self):
         """Stop the periodic process."""
-        self.instance.stop()
+        if self.instance is None:
+            warn("No periodic process to stop.", HoloviewsUserWarning)
+        else:
+            self.instance.stop()
 
     def __str__(self):
         return "<holoviews.core.spaces.periodic method>"
@@ -1098,7 +1101,7 @@ class DynamicMap(HoloMap):
             kwargs = {}
             args = args + tuple([s.contents for s in self.streams])
         elif self._posarg_keys:
-            kwargs = dict(flattened, **dict(zip(self._posarg_keys, args, strict=None)))
+            kwargs = dict(flattened, **dict(zip(self._posarg_keys, args, strict=False)))
             args = ()
         else:
             kwargs = dict(flattened)
@@ -1563,7 +1566,7 @@ class DynamicMap(HoloMap):
 
         return decollate(self)
 
-    def collate(self):
+    def collate(self, merge_type=None, drop=None, drop_constant=False):
         """Unpacks DynamicMap into container of DynamicMaps
 
         Collation allows unpacking DynamicMaps which return Layout,
@@ -1719,8 +1722,8 @@ class DynamicMap(HoloMap):
                 if inner_dynamic:
 
                     def inner_fn(*inner_key, **dynkwargs):
-                        outer_vals = zip(outer_kdims, util.wrap_tuple(outer_key), strict=None)
-                        inner_vals = zip(inner_kdims, util.wrap_tuple(inner_key), strict=None)
+                        outer_vals = zip(outer_kdims, util.wrap_tuple(outer_key), strict=False)
+                        inner_vals = zip(inner_kdims, util.wrap_tuple(inner_key), strict=False)
                         inner_sel = [(k.name, v) for k, v in inner_vals]
                         outer_sel = [(k.name, v) for k, v in outer_vals]
                         return self.select(**dict(inner_sel + outer_sel))
@@ -1730,7 +1733,7 @@ class DynamicMap(HoloMap):
                     dim_vals = [(d.name, d.values) for d in inner_kdims]
                     dim_vals += [
                         (d.name, [v])
-                        for d, v in zip(outer_kdims, util.wrap_tuple(outer_key), strict=None)
+                        for d, v in zip(outer_kdims, util.wrap_tuple(outer_key), strict=False)
                     ]
                     with item_check(False):
                         selected = HoloMap(self.select(**dict(dim_vals)))
@@ -1744,11 +1747,11 @@ class DynamicMap(HoloMap):
             outer_product = itertools.product(*[self.get_dimension(d).values for d in dimensions])
             groups = []
             for outer in outer_product:
-                outer_vals = [(d.name, [o]) for d, o in zip(outer_kdims, outer, strict=None)]
+                outer_vals = [(d.name, [o]) for d, o in zip(outer_kdims, outer, strict=False)]
                 if inner_dynamic or not inner_kdims:
 
                     def inner_fn(outer_vals, *key, **dynkwargs):
-                        inner_dims = zip(inner_kdims, util.wrap_tuple(key), strict=None)
+                        inner_dims = zip(inner_kdims, util.wrap_tuple(key), strict=False)
                         inner_vals = [(d.name, k) for d, k in inner_dims]
                         return self.select(**dict(outer_vals + inner_vals)).last
 
@@ -1821,7 +1824,9 @@ class DynamicMap(HoloMap):
         dims = [d for d in self.kdims if d not in dimensions]
         return self.groupby(dims, group_type=NdOverlay)
 
-    def hist(self, dimension=None, num_bins=20, bin_range=None, adjoin=True, **kwargs):
+    def hist(
+        self, dimension=None, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs
+    ):
         """Computes and adjoins histogram along specified dimension(s).
 
         Defaults to first value dimension if present otherwise falls
@@ -1933,7 +1938,7 @@ class GridSpace(Layoutable, UniformNdMapping):
         else:
             raise TypeError(f"Cannot append {type(other).__name__} to a AdjointLayout")
 
-    def _transform_indices(self, key):
+    def _transform_indices(self, indices):
         """Snaps indices into the GridSpace to the closest coordinate.
 
         Parameters
@@ -1946,19 +1951,19 @@ class GridSpace(Layoutable, UniformNdMapping):
         Transformed key snapped to closest numeric coordinates
         """
         ndims = self.ndims
-        if all(not (isinstance(el, slice) or callable(el)) for el in key):
+        if all(not (isinstance(el, slice) or callable(el)) for el in indices):
             dim_inds = []
             for dim in self.kdims:
                 dim_type = self.get_dimension_type(dim)
                 if isinstance(dim_type, type) and issubclass(dim_type, Number):
                     dim_inds.append(self.get_dimension_index(dim))
-            str_keys = iter(key[i] for i in range(self.ndims) if i not in dim_inds)
-            num_keys = []
+            str_keys = iter(indices[i] for i in range(self.ndims) if i not in dim_inds)
+            num_keys = iter([])
             if dim_inds:
                 keys = list(
                     {tuple(k[i] if ndims > 1 else k for i in dim_inds) for k in self.keys()}
                 )
-                q = np.array([tuple(key[i] if ndims > 1 else key for i in dim_inds)])
+                q = np.array([tuple(indices[i] if ndims > 1 else indices for i in dim_inds)])
                 idx = np.argmin(
                     [
                         np.inner(q - np.array(x), q - np.array(x))
@@ -1968,22 +1973,22 @@ class GridSpace(Layoutable, UniformNdMapping):
                     ]
                 )
                 num_keys = iter(keys[idx])
-            key = tuple(
+            indices = tuple(
                 next(num_keys) if i in dim_inds else next(str_keys) for i in range(self.ndims)
             )
-        elif any(not (isinstance(el, slice) or callable(el)) for el in key):
+        elif any(not (isinstance(el, slice) or callable(el)) for el in indices):
             keys = self.keys()
-            for i, k in enumerate(key):
+            for i, k in enumerate(indices):
                 if isinstance(k, slice):
                     continue
                 dim_keys = np.array([ke[i] for ke in keys])
                 if dtype_kind(dim_keys) in "OSU":
                     continue
                 snapped_val = dim_keys[np.argmin(np.abs(dim_keys - k))]
-                key = list(key)
-                key[i] = snapped_val
-            key = tuple(key)
-        return key
+                indices = list(indices)
+                indices[i] = snapped_val
+            indices = tuple(indices)
+        return indices
 
     def keys(self, full_grid=False):
         """Returns the keys of the GridSpace
