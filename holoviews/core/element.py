@@ -285,6 +285,13 @@ class Tabular(Element):
 
     __abstract = True
 
+    # Defined in Dataset
+    iloc: property
+
+    def __len__(self):
+        # Defined in Dataset
+        raise NotImplementedError
+
     @property
     def rows(self):
         """Number of rows in table (including header)"""
@@ -429,7 +436,7 @@ class Collator(NdMapping):
     _deep_indexable = False
     _auxiliary_component = False
 
-    _nest_order = {
+    _nest_order: dict[type[NdMapping], type | tuple[type, ...]] = {
         HoloMap: ViewableElement,
         GridSpace: (HoloMap, CompositeOverlay, ViewableElement),
         NdLayout: (GridSpace, HoloMap, ViewableElement),
@@ -462,19 +469,19 @@ class Collator(NdMapping):
             if isinstance(data, AttrTree):
                 data = data.filter(self.filters)
             if len(self.vdims) and self.value_transform:
-                vargs = dict(zip(self.dimensions("value", label=True), data, strict=None))
+                vargs = dict(zip(self.dimensions("value", label=True), data, strict=False))
                 data = self.value_transform(vargs)
             if not isinstance(data, Dimensioned):
                 raise ValueError("Collator values must be Dimensioned objects before collation.")
 
             varying_keys = [
                 (d, k)
-                for d, k in zip(self.kdims, key, strict=None)
+                for d, k in zip(self.kdims, key, strict=False)
                 if not self.drop_constant or (d not in constant_dims and d not in self.drop)
             ]
             constant_keys = {
                 d: k
-                for d, k in zip(self.kdims, key, strict=None)
+                for d, k in zip(self.kdims, key, strict=False)
                 if d in constant_dims and d not in self.drop and self.drop_constant
             }
             if varying_keys or constant_keys:
@@ -508,18 +515,18 @@ class Collator(NdMapping):
             item.fixed = False
 
         dim_vals = [(dim, val) for dim, val in dims[::-1] if dim not in self.drop]
-        if isinstance(item, self.merge_type):
+        if isinstance(item, self.merge_type):  # ty:ignore[invalid-argument-type], upstream param
             new_item = item.clone(cdims=constant_keys)
             for dim, val in dim_vals:
                 dim = asdim(dim)
                 if dim not in new_item.kdims:
                     new_item = new_item.add_dimension(dim, 0, val)
-        elif isinstance(item, self._nest_order[self.merge_type]):
+        elif isinstance(item, self._nest_order[self.merge_type]):  # ty:ignore[invalid-argument-type], upstream param
             if dim_vals:
-                dimensions, key = zip(*dim_vals, strict=None)
+                dimensions, key = zip(*dim_vals, strict=True)
                 new_item = self.merge_type(
                     {key: item}, kdims=list(dimensions), cdims=constant_keys
-                )
+                )  # ty:ignore[call-non-callable], upstream param
             else:
                 new_item = item
         else:

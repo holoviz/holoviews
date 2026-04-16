@@ -253,7 +253,6 @@ include = [
 exclude = [
     "holoviews/*version.py",
     "holoviews/core/dimension.py", # 21
-    "holoviews/core/element.py", # 13
     "holoviews/core/ndmapping.py", # 21
     "holoviews/core/spaces.py", # 28
 ]
