@@ -9,16 +9,10 @@ from holoviews.core import Apply, Redim
 from holoviews.operation import function, histogram
 from holoviews.testing import assert_element_equal
 
-from ..utils import optional_dependencies
-
-ds, ds_skip = optional_dependencies("datashader")
-dask, dask_skip = optional_dependencies("dask")
+from ..utils import dask, dask_skip, dd, ds, ds_skip
 
 if ds:
     from holoviews.operation.datashader import datashade, dynspread, rasterize
-
-if dask:
-    import dask.dataframe as dd
 
 
 class DatasetPropertyTestCase:

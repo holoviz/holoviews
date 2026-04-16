@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import holoviews as hv
 
-from ...utils import optional_dependencies
+from ...utils import scipy_skip
 from .test_plot import TestPlotlyPlot
-
-_, scipy_skip = optional_dependencies("scipy")
 
 
 @scipy_skip
