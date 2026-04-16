@@ -6,6 +6,7 @@ also enables slicing over multiple dimension ranges.
 
 from __future__ import annotations
 
+import typing as t
 from itertools import cycle
 from operator import itemgetter
 
@@ -23,6 +24,9 @@ from .util import (
     unique_iterator,
     wrap_tuple,
 )
+
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class item_check:
@@ -61,7 +65,7 @@ class sorted_context:
         MultiDimensionalMapping.sort = self.enabled
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        MultiDimensionalMapping.sort = self._enabled
+        MultiDimensionalMapping.sort = self._enabled  # ty:ignore[invalid-assignment]
 
 
 class MultiDimensionalMapping(Dimensioned):
@@ -104,6 +108,9 @@ class MultiDimensionalMapping(Dimensioned):
     data_type = None  # Optional type checking of elements
     _deep_indexable = False
     _check_items = True
+
+    # Defined in HoloMap / DynamicMap
+    _split_overlays: Callable[[], tuple[list[t.Any], list[t.Any]]]
 
     def __init__(self, initial_items=None, kdims=None, **params):
         if isinstance(initial_items, MultiDimensionalMapping):
@@ -168,9 +175,9 @@ class MultiDimensionalMapping(Dimensioned):
         self._item_check(dim_vals, data)
 
         # Apply dimension types
-        dim_types = zip([kd.type for kd in self.kdims], dim_vals, strict=None)
+        dim_types = zip([kd.type for kd in self.kdims], dim_vals, strict=False)
         dim_vals = tuple(v if None in [t, v] else t(v) for t, v in dim_types)
-        valid_vals = zip(self.kdims, dim_vals, strict=None)
+        valid_vals = zip(self.kdims, dim_vals, strict=False)
 
         for dim, val in valid_vals:
             if dim.values and val is not None and val not in dim.values:
@@ -195,7 +202,7 @@ class MultiDimensionalMapping(Dimensioned):
 
         """
         typed_key = ()
-        for dim, key in zip(self.kdims, keys, strict=None):
+        for dim, key in zip(self.kdims, keys, strict=False):
             key_type = dim.type
             if key_type is None:
                 typed_key += (key,)
@@ -367,7 +374,7 @@ class MultiDimensionalMapping(Dimensioned):
             raise ValueError("Added dimension values must be same lengthas existing keys.")
 
         items = {}
-        for dval, (key, val) in zip(dim_val, self.data.items(), strict=None):
+        for dval, (key, val) in zip(dim_val, self.data.items(), strict=False):
             if vdim:
                 new_val = list(val)
                 new_val.insert(dim_pos, dval)
@@ -444,7 +451,7 @@ class MultiDimensionalMapping(Dimensioned):
         indices = [self.get_dimension_index(el) for el in kdims]
 
         keys = [tuple(k[i] for i in indices) for k in self.data.keys()]
-        reindexed_items = dict((k, v) for (k, v) in zip(keys, self.data.values(), strict=None))
+        reindexed_items = dict((k, v) for (k, v) in zip(keys, self.data.values(), strict=False))
         reduced_dims = {d.name for d in self.kdims}.difference(kdims)
         dimensions = [self.get_dimension(d) for d in kdims if d not in reduced_dims]
 
@@ -532,7 +539,7 @@ class MultiDimensionalMapping(Dimensioned):
 
     def items(self):
         """Returns all elements as a list in (key,value) format."""
-        return list(zip(list(self.keys()), list(self.values()), strict=None))
+        return list(zip(self.keys(), self.values(), strict=True))
 
     def get(self, key, default=None):
         """Standard get semantics for all mapping types"""
@@ -594,26 +601,26 @@ class NdMapping(MultiDimensionalMapping):
 
     group = param.String(default="NdMapping", constant=True)
 
-    def __getitem__(self, indexslice):
+    def __getitem__(self, key):
         """Allows slicing operations along the key and data
         dimensions. If no data slice is supplied it will return all
         data elements, otherwise it will return the requested slice of
         the data.
 
         """
-        if isinstance(indexslice, np.ndarray) and dtype_kind(indexslice) == "b":
-            if not len(indexslice) == len(self):
+        if isinstance(key, np.ndarray) and dtype_kind(key) == "b":
+            if not len(key) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
-            selection = zip(indexslice, self.data.items(), strict=None)
+            selection = zip(key, self.data.items(), strict=False)
             return self.clone([item for c, item in selection if c])
-        elif isinstance(indexslice, tuple) and indexslice == () and not self.kdims:
+        elif isinstance(key, tuple) and key == () and not self.kdims:
             return self.data[()]
-        elif (isinstance(indexslice, tuple) and indexslice == ()) or indexslice is Ellipsis:
+        elif (isinstance(key, tuple) and key == ()) or key is Ellipsis:
             return self
-        elif any(Ellipsis is sl for sl in wrap_tuple(indexslice)):
-            indexslice = process_ellipses(self, indexslice)
+        elif any(Ellipsis is sl for sl in wrap_tuple(key)):
+            key = process_ellipses(self, key)
 
-        map_slice, data_slice = self._split_index(indexslice)
+        map_slice, data_slice = self._split_index(key)
         map_slice = self._transform_indices(map_slice)
         map_slice = self._expand_slice(map_slice)
 
@@ -624,7 +631,7 @@ class NdMapping(MultiDimensionalMapping):
         else:
             conditions = self._generate_conditions(map_slice)
             items = self.data.items()
-            for cidx, (condition, dim) in enumerate(zip(conditions, self.kdims, strict=None)):
+            for cidx, (condition, dim) in enumerate(zip(conditions, self.kdims, strict=False)):
                 values = dim.values
                 items = [
                     (k, v)
@@ -672,7 +679,7 @@ class NdMapping(MultiDimensionalMapping):
     def _generate_conditions(self, map_slice):
         """Generates filter conditions used for slicing the data structure."""
         conditions = []
-        for dim, dim_slice in zip(self.kdims, map_slice, strict=None):
+        for dim, dim_slice in zip(self.kdims, map_slice, strict=False):
             if isinstance(dim_slice, slice):
                 start, stop = dim_slice.start, dim_slice.stop
                 if dim.values:
@@ -868,7 +875,7 @@ class UniformNdMapping(NdMapping):
                     dict(
                         [
                             (key, ndmap.collapse(function=function, spreadfn=spreadfn, **kwargs))
-                            for key, ndmap in zip(keys, maps, strict=None)
+                            for key, ndmap in zip(keys, maps, strict=True)
                         ]
                     )
                 )
