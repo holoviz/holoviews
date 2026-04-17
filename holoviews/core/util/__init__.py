@@ -36,7 +36,6 @@ from .dependencies import (  # noqa: F401
     PARAM_VERSION,
     VersionError,
     cp,
-    cudf,
     da,
     dd,
     ibis,

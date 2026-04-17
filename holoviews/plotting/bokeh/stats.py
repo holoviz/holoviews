@@ -11,8 +11,6 @@ from ...core import NdOverlay
 from ...core.dimension import Dimension, Dimensioned
 from ...core.ndmapping import sorted_context
 from ...core.util import (
-    cp,
-    da,
     dimension_sanitizer,
     is_cupy_array,
     is_dask_array,
@@ -20,6 +18,7 @@ from ...core.util import (
     unique_iterator,
     wrap_tuple,
 )
+from ...core.util.dependencies import cp, da
 from ...operation.stats import univariate_kde
 from ...util.transform import dim
 from ..mixins import MultiDistributionMixin

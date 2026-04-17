@@ -4,7 +4,8 @@ import sys
 
 import numpy as np
 
-from ...core.util import dd, dtype_kind
+from ...core.util import dtype_kind
+from ...core.util.dependencies import dd
 from .dask import DaskInterface
 from .interface import Interface
 from .spatialpandas import SpatialPandasInterface

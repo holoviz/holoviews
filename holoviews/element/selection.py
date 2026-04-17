@@ -10,7 +10,8 @@ from importlib.util import find_spec
 import numpy as np
 
 from ..core import Dataset, NdOverlay, util
-from ..core.util import cp, cudf, dd, dtype_kind, pd
+from ..core.util import dtype_kind
+from ..core.util.dependencies import cp, cudf, dd, pd
 from ..streams import Lasso, Selection1D, SelectionXY
 from ..util.transform import dim
 from .annotation import HSpan, VSpan

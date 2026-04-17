@@ -9,7 +9,8 @@ import param
 from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping
-from ..util import cp, da, dtype_kind
+from ..util import dtype_kind
+from ..util.dependencies import cp, da
 from .util import finite_range
 
 

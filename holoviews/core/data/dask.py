@@ -6,7 +6,8 @@ from .. import util
 from ..dimension import Dimension
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from ..util import dd, dtype_kind, pd
+from ..util import dtype_kind
+from ..util.dependencies import dd, pd
 from .interface import Interface
 from .pandas import PandasInterface
 
