@@ -53,6 +53,13 @@ from .types import (
     timedelta_types,
 )
 
+if t.TYPE_CHECKING:
+    from typing_extensions import TypeIs
+
+    from ..dimension import ViewableTree
+    from ..layout import AdjointLayout
+    from ..ndmapping import UniformNdMapping
+
 # Python 2 builtins
 basestring = str
 long = int
@@ -2571,3 +2578,7 @@ def dtype_kind(obj) -> str:
         return "U"
     else:
         return "O"
+
+
+def _is_deep_indexable(obj) -> TypeIs[ViewableTree | UniformNdMapping | AdjointLayout]:
+    return getattr(obj, "_deep_indexable", False)

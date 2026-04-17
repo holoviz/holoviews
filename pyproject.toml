@@ -250,10 +250,7 @@ include = [
     "holoviews/util/*.py",
     "scripts/*.py",
 ]
-exclude = [
-    "holoviews/*version.py",
-    "holoviews/core/dimension.py", # 21
-]
+exclude = ["holoviews/*version.py"]
 
 [tool.ty.rules]
 unresolved-import = "ignore"
