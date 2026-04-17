@@ -16,6 +16,7 @@ import param
 from . import util
 from .dimension import Dimension, Dimensioned, ViewableElement, asdim
 from .util import (
+    _is_deep_indexable,
     dimension_sort,
     dtype_kind,
     get_ndmapping_label,
@@ -251,7 +252,7 @@ class MultiDimensionalMapping(Dimensioned):
         been declared deep indexable.
 
         """
-        if self._deep_indexable and isinstance(data, Dimensioned) and indices:
+        if _is_deep_indexable(self) and isinstance(data, Dimensioned) and indices:
             return data[indices]
         elif len(indices) > 0:
             self.param.warning("Cannot index into data element, extra data indices ignored.")
@@ -355,7 +356,7 @@ class MultiDimensionalMapping(Dimensioned):
         if dimension in self.dimensions():
             raise Exception(f"{dimension.name} dimension already defined")
 
-        if vdim and self._deep_indexable:
+        if vdim and _is_deep_indexable(self):
             raise Exception("Cannot add value dimension to object that is deep indexable")
 
         if vdim:
@@ -880,10 +881,8 @@ class UniformNdMapping(NdMapping):
                     )
                 )
             else:
-                raise ValueError(
-                    "Could not determine correct collapse operation "
-                    "for items of type: {group.type!r}."
-                )
+                msg = f"Could not determine correct collapse operation for items of type: {group.type!r}."
+                raise ValueError(msg)
             collapsed[key] = group_data
         return collapsed if self.ndims - len(dimensions) else collapsed.last
 
