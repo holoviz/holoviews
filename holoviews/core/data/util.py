@@ -21,8 +21,6 @@ def finite_range(column, cmin, cmax):
             cmin = np.nanmin(column) if min_inf else cmin
             cmax = np.nanmax(column) if max_inf else cmax
             if is_dask(column):
-                import dask.array as da
-
                 if min_inf and max_inf:
                     cmin, cmax = da.compute(cmin, cmax)
                 elif min_inf:

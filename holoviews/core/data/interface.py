@@ -9,7 +9,7 @@ import param
 from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping
-from ..util import dtype_kind
+from ..util import cp, da, dtype_kind
 from .util import finite_range
 
 
@@ -765,19 +765,15 @@ class Interface(param.Parameterized):
             Tuple of (histogram values, bin edges)
         """
         if util.is_dask_array(array):
-            import dask.array as da
-
             histogram = da.histogram
         elif util.is_cupy_array(array):
-            import cupy
-
-            histogram = cupy.histogram
+            histogram = cp.histogram
         else:
             histogram = np.histogram
         hist, edges = histogram(array, bins=bins, density=density, weights=weights)
         if util.is_cupy_array(hist):
-            edges = cupy.asnumpy(edges)
-            hist = cupy.asnumpy(hist)
+            edges = cp.asnumpy(edges)
+            hist = cp.asnumpy(hist)
         return hist, edges
 
     @classmethod

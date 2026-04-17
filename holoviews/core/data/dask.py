@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-import sys
-
 import numpy as np
 
 from .. import util
 from ..dimension import Dimension
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from ..util import dtype_kind
+from ..util import dd, dtype_kind, pd
 from .interface import Interface
 from .pandas import PandasInterface
 
@@ -41,20 +39,16 @@ class DaskInterface(PandasInterface):
 
     @classmethod
     def loaded(cls):
-        return "dask.dataframe" in sys.modules and "pandas" in sys.modules
+        return bool(dd and pd)
 
     @classmethod
     def applies(cls, obj):
         if not cls.loaded():
             return False
-        import dask.dataframe as dd
-
         return isinstance(obj, (dd.DataFrame, dd.Series))
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
-        import dask.dataframe as dd
-
         data, dims, extra = PandasInterface.init(eltype, data, kdims, vdims)
         if not isinstance(data, dd.DataFrame):
             npartitions = min(cls.default_partitions, max(1, len(data)))
@@ -83,8 +77,6 @@ class DaskInterface(PandasInterface):
 
     @classmethod
     def range(cls, dataset, dimension):
-        import dask.dataframe as dd
-
         dimension = dataset.get_dimension(dimension, strict=True)
         column = dataset.data[dimension.name]
         if dtype_kind(column) == "O":
@@ -282,8 +274,6 @@ class DaskInterface(PandasInterface):
         the interface, return a simple scalar.
 
         """
-        import dask.dataframe as dd
-
         if len(data.columns) > 1 or len(data) != 1:
             return data
         if isinstance(data, dd.DataFrame):
@@ -322,8 +312,6 @@ class DaskInterface(PandasInterface):
 
     @classmethod
     def concat_fn(cls, dataframes, **kwargs):
-        import dask.dataframe as dd
-
         return dd.concat(dataframes, **kwargs)
 
     @classmethod

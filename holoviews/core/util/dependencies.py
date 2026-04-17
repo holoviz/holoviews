@@ -113,6 +113,7 @@ class _LazyModule:
 
 if t.TYPE_CHECKING:
     import cftime
+    import cudf
     import cupy as cp
     import dask.array as da
     import dask.dataframe as dd
@@ -121,6 +122,7 @@ if t.TYPE_CHECKING:
     import polars as pl
 else:
     cftime = _LazyModule("cftime")
+    cudf = _LazyModule("cudf")
     cp = _LazyModule("cupy")
     da = _LazyModule("dask.array")
     dd = _LazyModule("dask.dataframe")

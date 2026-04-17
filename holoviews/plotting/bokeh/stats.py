@@ -11,6 +11,8 @@ from ...core import NdOverlay
 from ...core.dimension import Dimension, Dimensioned
 from ...core.ndmapping import sorted_context
 from ...core.util import (
+    cp,
+    da,
     dimension_sanitizer,
     is_cupy_array,
     is_dask_array,
@@ -165,13 +167,9 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
         is_dask = is_dask_array(vals)
         is_cupy = is_cupy_array(vals)
         if is_cupy:
-            import cupy
-
-            percentile = cupy.percentile
-            is_finite = cupy.isfinite
+            percentile = cp.percentile
+            is_finite = cp.isfinite
         elif is_dask:
-            import dask.array as da
-
             percentile = da.percentile
         else:
             percentile = np.percentile
@@ -195,7 +193,7 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
                 q3.item(),
                 upper.item(),
                 lower.item(),
-                cupy.asnumpy(outliers),
+                cp.asnumpy(outliers),
             )
         elif is_dask:
             return da.compute(q1, q2, q3, upper, lower, outliers)
