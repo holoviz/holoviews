@@ -17,10 +17,7 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
 from .layout import AdjointLayout, Composable, Layout, Layoutable
 from .ndmapping import UniformNdMapping
-from .util import dimensioned_streams, sanitize_identifier, unique_array
-
-if t.TYPE_CHECKING:
-    from collections.abc import Callable
+from .util import _is_deep_indexable, dimensioned_streams, sanitize_identifier, unique_array
 
 
 class Overlayable:
@@ -69,13 +66,6 @@ class CompositeOverlay(ViewableElement, Composable):
 
     _deep_indexable = True
 
-    # Defined in AttrTree, but can't inherit without test failings
-    keys: Callable[[], list[t.Any]]
-    values: Callable[[], list[t.Any]]
-    items: Callable[[], list[list[t.Any]]]
-    main_layer: int
-    __len__: Callable[[], int]
-
     def hist(
         self,
         dimension=None,
@@ -113,6 +103,9 @@ class CompositeOverlay(ViewableElement, Composable):
         AdjointLayout of element and histogram or just the
         histogram
         """
+        if not _is_deep_indexable(self):
+            msg = f"Histogram can only be computed for deeply indexable types, supplied type is {type(self).__name__}"
+            raise TypeError(msg)
         # Get main layer to get plot dimensions
         main_layer_int_index = getattr(self, "main_layer", None) or 0
         # Validate index, and extract as integer if not None
@@ -154,7 +147,7 @@ class CompositeOverlay(ViewableElement, Composable):
             for dim, hists in hists_per_dim.items()
         }
         if adjoin:
-            layout = self
+            layout = t.cast("AdjointLayout", self)
             for dim in reversed(self.values()[main_layer_int_index].kdims):
                 if dim.name in hists_overlay_per_dim:
                     layout = layout << hists_overlay_per_dim[dim.name]

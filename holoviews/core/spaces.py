@@ -467,11 +467,11 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
                 histmaps[0][k] = hists
 
         if adjoin:
-            layout = self
+            layout = t.cast("AdjointLayout", self)
             for hist in histmaps:
                 layout = layout << hist
             if issubclass(self.type, (NdOverlay, Overlay)):
-                t.cast("NdOverlay|Overlay", layout).main_layer = kwargs["index"]
+                layout.main_layer = kwargs["index"]
             return layout
         elif len(histmaps) > 1:
             return Layout(histmaps)

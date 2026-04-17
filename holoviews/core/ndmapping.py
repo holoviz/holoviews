@@ -27,7 +27,13 @@ from .util import (
 )
 
 if t.TYPE_CHECKING:
-    from collections.abc import Callable
+    from typing_extensions import TypeIs
+
+    from .spaces import HoloMap
+
+
+def _has_split_overlays(obj) -> TypeIs[HoloMap]:
+    return hasattr(obj, "_split_overlays")
 
 
 class item_check:
@@ -109,9 +115,6 @@ class MultiDimensionalMapping(Dimensioned):
     data_type = None  # Optional type checking of elements
     _deep_indexable = False
     _check_items = True
-
-    # Defined in HoloMap / DynamicMap
-    _split_overlays: Callable[[], tuple[list[t.Any], list[t.Any]]]
 
     def __init__(self, initial_items=None, kdims=None, **params):
         if isinstance(initial_items, MultiDimensionalMapping):
@@ -870,7 +873,7 @@ class UniformNdMapping(NdMapping):
                 if function:
                     agg = group_data.aggregate(group.last.kdims, function, spreadfn, **kwargs)
                     group_data = group.type(agg)
-            elif issubclass(group.type, CompositeOverlay) and hasattr(self, "_split_overlays"):
+            elif issubclass(group.type, CompositeOverlay) and _has_split_overlays(self):
                 keys, maps = self._split_overlays()
                 group_data = group.type(
                     dict(
