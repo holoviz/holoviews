@@ -24,6 +24,10 @@ from .options import Store, StoreOptions
 from .overlay import CompositeOverlay, NdOverlay, Overlay, Overlayable
 from .util import dtype_kind
 
+NoNone = False
+if t.TYPE_CHECKING:
+    from param.parameters import NoNone  # noqa: TC004, move up when 2.4 is lower pin
+
 
 class HoloMap(Layoutable, UniformNdMapping, Overlayable):
     """A HoloMap is an n-dimensional mapping of viewable elements or
@@ -694,6 +698,7 @@ class Generator(Callable):
 
     callable = param.ClassSelector(
         class_=types.GeneratorType,
+        allow_None=NoNone,
         constant=True,
         doc="The generator that is wrapped by this Generator.",
     )
@@ -850,6 +855,7 @@ class DynamicMap(HoloMap):
     callback = param.ClassSelector(
         class_=Callable,
         constant=True,
+        allow_None=NoNone,
         doc="""
         The callable used to generate the elements. The arguments to the
         callable includes any number of declared key dimensions as well

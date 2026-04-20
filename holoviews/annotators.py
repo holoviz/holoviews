@@ -19,8 +19,11 @@ from .plotting.links import (
 )
 from .streams import BoxEdit, CDSStream, CurveEdit, PointDraw, PolyDraw, PolyEdit, Selection1D
 
+NoNone = False
 if t.TYPE_CHECKING:
     from collections.abc import Callable
+
+    from param.parameters import NoNone  # noqa: TC004, move up when 2.4 is lower pin
 
     _T = t.TypeVar("_T")
 
@@ -229,6 +232,7 @@ class Annotator(PaneBase):
 
     object = param.ClassSelector(
         class_=Dataset,
+        allow_None=NoNone,
         doc="The Element to edit and annotate.",
     )
 
@@ -299,7 +303,7 @@ class Annotator(PaneBase):
         self._update_table()
         self._update_links()
         self.param.watch(self._update, self._triggers)
-        self.layout[:] = [self.plot, self.editor]
+        self.layout[:] = [self.plot, self.editor]  # ty:ignore[invalid-assignment], fix in panel
 
     @param.depends("annotations", "object", "default_opts")
     def _get_plot(self):
@@ -390,6 +394,7 @@ class PathAnnotator(Annotator):
 
     object = param.ClassSelector(
         class_=Path,
+        allow_None=NoNone,
         doc="Path object to edit and annotate.",
     )
 

@@ -438,7 +438,7 @@ class link_selections(_base_link_selections):
             data = Dataset(data)
         pipe = Pipe()
         self._datasets.append((pipe, data, raw))
-        self._update_pipes()  # ty:ignore[missing-argument] NOTE: fix in param
+        self._update_pipes()
         return pipe.param.data
 
     def filter(self, data, selection_expr=None):

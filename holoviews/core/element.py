@@ -515,18 +515,18 @@ class Collator(NdMapping):
             item.fixed = False
 
         dim_vals = [(dim, val) for dim, val in dims[::-1] if dim not in self.drop]
-        if isinstance(item, self.merge_type):  # ty:ignore[invalid-argument-type], upstream param
+        if isinstance(item, self.merge_type):
             new_item = item.clone(cdims=constant_keys)
             for dim, val in dim_vals:
                 dim = asdim(dim)
                 if dim not in new_item.kdims:
                     new_item = new_item.add_dimension(dim, 0, val)
-        elif isinstance(item, self._nest_order[self.merge_type]):  # ty:ignore[invalid-argument-type], upstream param
+        elif isinstance(item, self._nest_order[self.merge_type]):
             if dim_vals:
                 dimensions, key = zip(*dim_vals, strict=True)
                 new_item = self.merge_type(
                     {key: item}, kdims=list(dimensions), cdims=constant_keys
-                )  # ty:ignore[call-non-callable], upstream param
+                )
             else:
                 new_item = item
         else:

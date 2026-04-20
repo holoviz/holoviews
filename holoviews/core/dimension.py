@@ -606,17 +606,23 @@ class LabelledData(param.Parameterized):
     @t.overload
     def clone(
         self,
-        data=None,
-        shared_data=True,
-        *,
-        new_type: type[_LabelledDataT],
-        link=True,
+        data: t.Any = ...,
+        shared_data: bool = ...,
+        new_type: None = None,
+        link: bool = ...,
+        *args,
         **overrides,
-    ) -> _LabelledDataT: ...
+    ) -> Self: ...
     @t.overload
     def clone(
-        self, data=None, shared_data=True, new_type: None = None, link=True, *args, **overrides
-    ) -> Self: ...
+        self,
+        data: t.Any = ...,
+        shared_data: bool = ...,
+        new_type: type[_LabelledDataT] = ...,
+        link: bool = ...,
+        *args,
+        **overrides,
+    ) -> _LabelledDataT: ...
     def clone(
         self,
         data=None,
