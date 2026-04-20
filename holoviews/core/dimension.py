@@ -1091,10 +1091,14 @@ class Dimensioned(LabelledData):
         return [(dim.label if label == "long" else dim.name) if label else dim for dim in dims]
 
     @t.overload
-    def get_dimension(self, dimension, default=None, strict=True) -> Dimension: ...
+    def get_dimension(
+        self, dimension, *, default=..., strict: t.Literal[False] = False
+    ) -> Dimension | None: ...
     @t.overload
-    def get_dimension(self, dimension, default=None, strict: bool = False) -> Dimension | None: ...
-    def get_dimension(self, dimension, default=None, strict=False):
+    def get_dimension(
+        self, dimension, *, default=..., strict: t.Literal[True] = True
+    ) -> Dimension: ...
+    def get_dimension(self, dimension, *, default=None, strict=False):
         """Get a Dimension object by name or index.
 
         Parameters

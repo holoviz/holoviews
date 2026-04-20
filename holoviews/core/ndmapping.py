@@ -912,7 +912,9 @@ class UniformNdMapping(NdMapping):
             outer_dimensions = self.kdims
             inner_dimensions = None
         else:
-            outer_dimensions = [self.get_dimension(d) for d in dimensions if d in self.kdims]
+            outer_dimensions = [
+                self.get_dimension(d, strict=True) for d in dimensions if d in self.kdims
+            ]
             inner_dimensions = [d for d in dimensions if d not in outer_dimensions]
         inds = [(d, self.get_dimension_index(d)) for d in outer_dimensions]
 

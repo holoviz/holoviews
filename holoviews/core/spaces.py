@@ -1711,7 +1711,7 @@ class DynamicMap(HoloMap):
         container_type = container_type if container_type else type(self)
         group_type = group_type if group_type else type(self)
 
-        outer_kdims = [self.get_dimension(d) for d in dimensions]
+        outer_kdims = [self.get_dimension(d, strict=True) for d in dimensions]
         inner_kdims = [d for d in self.kdims if d not in outer_kdims]
 
         outer_dynamic = issubclass(container_type, DynamicMap)
@@ -1750,7 +1750,9 @@ class DynamicMap(HoloMap):
             else:
                 return outer_fn(())
         else:
-            outer_product = itertools.product(*[self.get_dimension(d).values for d in dimensions])
+            outer_product = itertools.product(
+                *[self.get_dimension(d, strict=True).values for d in dimensions]
+            )
             groups = []
             for outer in outer_product:
                 outer_vals = [(d.name, [o]) for d, o in zip(outer_kdims, outer, strict=False)]
@@ -1768,7 +1770,9 @@ class DynamicMap(HoloMap):
                         group = inner_fn(outer_vals, ())
                     groups.append((outer, group))
                 else:
-                    inner_vals = [(d.name, self.get_dimension(d).values) for d in inner_kdims]
+                    inner_vals = [
+                        (d.name, self.get_dimension(d, strict=True).values) for d in inner_kdims
+                    ]
                     with item_check(False):
                         selected = HoloMap(self.select(**dict(outer_vals + inner_vals)))
                         group = group_type(selected.reindex(inner_kdims))

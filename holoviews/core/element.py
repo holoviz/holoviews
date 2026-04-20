@@ -329,7 +329,7 @@ class Tabular(Element):
                     return ""
             return self.kdims[col].pprint_label
         else:
-            dim = self.get_dimension(col)
+            dim = self.get_dimension(col, strict=True)
             return dim.pprint_value(self.iloc[row - 1, col])
 
     def cell_type(self, row, col):
