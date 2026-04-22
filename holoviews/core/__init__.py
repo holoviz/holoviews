@@ -4,7 +4,7 @@ import numpy as np
 
 from .accessors import Apply, Redim
 from .boundingregion import AARectangle, BoundingBox, BoundingEllipse
-from .data import Dataset
+from .data import Dataset, Interface
 from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
 from .element import Collator, Element, Element2D, Element3D, Tabular
 from .io import FileArchive
@@ -60,6 +60,7 @@ __all__ = [
     "GridMatrix",
     "GridSpace",
     "HoloMap",
+    "Interface",
     "Layout",
     "MultiDimensionalMapping",
     "NdLayout",
