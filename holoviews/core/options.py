@@ -424,7 +424,7 @@ class Palette(Cycle):
         inherited.
 
         """
-        (start, stop), step = self.range, self.samples  # ty:ignore[not-iterable], upstream param
+        (start, stop), step = self.range, self.samples
         if isinstance(key, slice):
             if key.start is not None:
                 start = key.start
@@ -438,7 +438,7 @@ class Palette(Cycle):
 
     def _get_values(self):
         cmap = self.colormaps[self.key]
-        (start, stop), steps = self.range, self.samples  # ty:ignore[not-iterable], upstream param
+        (start, stop), steps = self.range, self.samples
         samples = [cmap(n) for n in self.sample_fn(start, stop, steps)]
         return samples[::-1] if self.reverse else samples
 
