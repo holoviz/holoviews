@@ -243,6 +243,7 @@ class XArrayInterface(GridInterface):
                 cls,
             )
 
+        kdim_names = [kd.name for kd in kdims]
         for vdim in vdims:
             if packed:
                 continue
@@ -253,10 +254,10 @@ class XArrayInterface(GridInterface):
                 continue
             undeclared = []
             for c in da.coords:
-                if c in kdims or len(da[c].shape) != 1 or da[c].shape[0] <= 1:
+                if c in kdim_names or len(da[c].shape) != 1 or da[c].shape[0] <= 1:
                     # Skip if coord is declared, represents irregular coordinates or is constant
                     continue
-                elif all(d in kdims for d in da[c].dims):
+                elif all(d in kdim_names for d in da[c].dims):
                     continue  # Skip if coord is alias for another dimension
                 elif any(all(d in da[kd.name].dims for d in da[c].dims) for kd in kdims):
                     # Skip if all the dims on the coord are present on another coord
@@ -422,7 +423,7 @@ class XArrayInterface(GridInterface):
             data = data[::-1]
         shape = cls.shape(dataset, True)
 
-        if dim in dataset.kdims:
+        if any(dim == kd.name for kd in dataset.kdims):
             idx = dataset.get_dimension_index(dim)
             isedges = len(shape) == dataset.ndims and len(data) == (
                 shape[dataset.ndims - idx - 1] + 1
