@@ -50,11 +50,7 @@ _MIN_SUPPORTED_VERSION = {
 
 
 class _LazyModule:
-    def __init__(
-        self,
-        module_name: str,
-        package_name: str | None = None,
-    ):
+    def __init__(self, module_name: str, package_name: str | None = None):
         """
         Lazy import module
 
