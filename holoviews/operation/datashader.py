@@ -180,17 +180,15 @@ class AggregationOperation(ResampleOperation2D):
             else:
                 agg = cls._agg_methods[agg]()
 
+        agg_col = getattr(agg, "column", False)
+        if agg_col is False:
+            return agg
+
         elements = element.traverse(lambda x: x, [Element])
-        if (
-            add_field
-            and getattr(agg, "column", False) in ("__temp__", None)
-            and not isinstance(agg, agg_types)
-        ):
-            if not elements:
-                raise ValueError(
-                    f"Could not find any elements to apply {cls.__name__} operation to."
-                )
-            inner_element = elements[0]
+        if not elements:
+            raise ValueError(f"Could not find any elements to apply {cls.__name__} operation to.")
+        inner_element = elements[0]
+        if add_field and agg_col in ("__temp__", None) and not isinstance(agg, agg_types):
             if isinstance(inner_element, TriMesh) and inner_element.nodes.vdims:
                 field = inner_element.nodes.vdims[0].name
             elif inner_element.vdims:
@@ -205,6 +203,12 @@ class AggregationOperation(ResampleOperation2D):
                     "aggregator."
                 )
             agg = type(agg)(field)
+        elif agg_col:
+            agg_dim = inner_element.get_dimension(agg_col)
+            if agg_dim is None and isinstance(element, NdOverlay):
+                agg_dim = element.get_dimension(agg_col)
+            agg = type(agg)(agg_dim.name)
+
         return agg
 
     def _empty_agg(self, element, x, y, width, height, xs, ys, agg_fn, **params):
@@ -480,7 +484,11 @@ class aggregate(LineAggregationOperation):
             df = df.to_pandas()
 
         is_custom = (bool_dd and isinstance(df, dd.DataFrame)) or cuDFInterface.applies(df)
-        category_check = category and df[category].dtype.name != "category"
+        if category:
+            cat_col = obj.get_dimension(category).name
+            category_check = df[cat_col].dtype.name != "category"
+        else:
+            category_check = False
         if category_check or any(
             (not is_custom and len(df[d.name]) and isinstance(df[d.name].values[0], cftime_types))
             or dtype_kind(df[d.name]) in ["M", "u"]
@@ -488,7 +496,7 @@ class aggregate(LineAggregationOperation):
         ):
             df = df.copy()
         if category_check:
-            df[category] = df[category].astype("category")
+            df[cat_col] = df[cat_col].astype("category")
 
         for d in (x, y):
             vals = df[d.name]
