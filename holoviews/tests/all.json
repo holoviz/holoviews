@@ -132,6 +132,7 @@
     "GridMatrix",
     "GridSpace",
     "HoloMap",
+    "Interface",
     "Layout",
     "MultiDimensionalMapping",
     "NdLayout",
