@@ -479,8 +479,8 @@ class aggregate(LineAggregationOperation):
             if is_ndoverlay and is_wide:
                 ydim = next(iter(ydims))
                 paths = [
-                    df.rename(columns={ydim.name: ydim.label})
-                    for yname, path in zip(ydims, paths, strict=True)
+                    df.rename(columns={yd.name: yd.label})
+                    for yd, path in zip(ydims, paths, strict=True)
                 ]
                 is_wide = True
                 dims = (dims[0], ydim.clone(ydim.label, label=ydim.label))

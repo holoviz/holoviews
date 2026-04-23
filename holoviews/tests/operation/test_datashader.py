@@ -2070,3 +2070,15 @@ def test_points_polars(lazy, op):
     pandas_img = op(hv.Points(pandas_df), **op_kwargs)
 
     xr.testing.assert_equal(polars_img.data, pandas_img.data)
+
+
+def test_wide_data_lines():
+    df = pd.DataFrame({"AAPL": [1, 2, 3], "MSFT": [3, 2, 1]})
+
+    a = hv.Curve(df, "index", [("AAPL", "Price")])
+    b = hv.Curve(df, "index", [("MSFT", "Price")])
+    overlay = hv.NdOverlay({"AAPL": a, "MSFT": b}, kdims=["Ticker"])
+
+    res = rasterize(overlay, dynamic=False, width=3, height=3)
+    arr = np.array([[1, np.nan, 1], [np.nan, 2, np.nan], [1, np.nan, 1]])
+    assert_data_equal(res.dimension_values(2, flat=False), arr)
