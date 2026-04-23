@@ -226,7 +226,7 @@ class AggregationOperation(ResampleOperation2D):
                 if red_dim is None and isinstance(element, NdOverlay):
                     red_dim = element.get_dimension(red_col)
                 agg_kwargs["reduction"] = type(reduction)(red_dim.name)
-            elif reduction:
+            elif reduction and not isinstance(agg, ds.count_cat):
                 agg_kwargs["reduction"] = reduction
             if hasattr(agg, "self_intersect"):
                 agg_kwargs["self_intersect"] = agg.self_intersect
