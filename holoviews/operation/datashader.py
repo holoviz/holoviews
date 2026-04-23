@@ -427,19 +427,38 @@ class aggregate(LineAggregationOperation):
         kdims = list(obj.kdims)
         vdims = list(obj.vdims)
         dims = obj.dimensions()[:2]
+        is_wide = False
         if isinstance(obj, Path):
             glyph = "line"
             for p in obj.split(datatype="dataframe"):
                 paths.append(p)
         elif isinstance(obj, CompositeOverlay):
             element = None
+            is_ndoverlay = isinstance(obj, NdOverlay)
+            ydims = []
             for key, el in obj.data.items():
                 x, y, element, glyph = cls.get_agg_data(el)
                 dims = (x, y)
                 df = PandasInterface.as_dframe(element)
-                if isinstance(obj, NdOverlay):
+                if is_ndoverlay:
                     df = df.assign(**dict(zip(obj.dimensions("key", True), key, strict=None)))
+                    y_dim = el.get_dimension(y)
+                    ydims.append(y_dim)
                 paths.append(df)
+
+            # If data is in wide format we align the column names on the Dimension.label
+            is_wide = len({yd.label for yd in ydims}) == 1 and len(
+                {yd.name for yd in ydims}
+            ) == len(obj)
+            if is_ndoverlay and is_wide:
+                ydim = next(iter(ydims))
+                paths = [
+                    df.rename(columns={ydim.name: ydim.label})
+                    for yname, path in zip(ydims, paths, strict=True)
+                ]
+                is_wide = True
+                dims = (dims[0], ydim.clone(ydim.label, label=ydim.label))
+
             if element is None:
                 dims = None
             else:
@@ -627,6 +646,7 @@ class overlay_aggregate(aggregate):
                 isinstance(agg_fn, (ds.count, ds.sum, ds.mean, ds.any))
                 and (agg_fn.column is None or agg_fn.column not in element.kdims)
             )
+            and len(set(id(el.data) for el in element)) > 1
         )
 
     def _process(self, element, key=None):
