@@ -180,6 +180,16 @@ class AggregationOperation(ResampleOperation2D):
             else:
                 agg = cls._agg_methods[agg]()
 
+        elements = element.traverse(lambda x: x, [Element])
+        if not elements:
+            raise ValueError(f"Could not find any elements to apply {cls.__name__} operation to.")
+        is_ndoverlay = isinstance(element, NdOverlay)
+        is_wide = False
+        if is_ndoverlay:
+            ydims = [el.dimensions()[1] for el in elements]
+            is_wide = len({yd.label for yd in ydims}) == 1 and len(
+                {yd.name for yd in ydims}
+            ) == len(element)
         agg_col = getattr(agg, "column", False)
         if agg_col is False:
             return agg
@@ -188,9 +198,6 @@ class AggregationOperation(ResampleOperation2D):
         reduction = getattr(agg, "reduction", None)
         red_col = getattr(reduction, "column", None)
 
-        elements = element.traverse(lambda x: x, [Element])
-        if not elements:
-            raise ValueError(f"Could not find any elements to apply {cls.__name__} operation to.")
         inner_element = elements[0]
         if add_field and agg_col in ("__temp__", None) and not isinstance(agg, agg_types):
             if isinstance(inner_element, TriMesh) and inner_element.nodes.vdims:
@@ -213,19 +220,21 @@ class AggregationOperation(ResampleOperation2D):
                 agg_dim = inner_element.get_dimension(agg_col)
                 if agg_dim is None and isinstance(element, NdOverlay):
                     agg_dim = element.get_dimension(agg_col)
-                agg_col = agg_dim.name
+                agg_col = agg_dim.label if is_wide and agg_dim in ydims else agg_dim.name
             if isinstance(sel_col, str):
                 sel_dim = inner_element.get_dimension(sel_col)
                 if sel_dim is None and isinstance(element, NdOverlay):
                     sel_dim = element.get_dimension(sel_col)
-                agg_kwargs["selector"] = type(selector)(sel_dim.name)
+                sel_name = sel_dim.label if is_wide and sel_dim in ydims else sel_dim.name
+                agg_kwargs["selector"] = type(selector)(sel_name)
             elif selector:
                 agg_kwargs["selector"] = selector
             if isinstance(red_col, str):
                 red_dim = inner_element.get_dimension(red_col)
                 if red_dim is None and isinstance(element, NdOverlay):
                     red_dim = element.get_dimension(red_col)
-                agg_kwargs["reduction"] = type(reduction)(red_dim.name)
+                red_name = red_dim.label if is_wide and red_dim in ydims else red_dim.name
+                agg_kwargs["reduction"] = type(reduction)(red_name)
             elif reduction and not isinstance(agg, ds.count_cat):
                 agg_kwargs["reduction"] = reduction
             if hasattr(agg, "self_intersect"):
