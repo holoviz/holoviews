@@ -102,10 +102,6 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
     _no_completion = [
         "title_format",
         "normalize_lengths",
-        "group_index",
-        "category_index",
-        "stack_index",
-        "color_by",
     ]
 
     strict = param.Boolean(
