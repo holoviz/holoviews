@@ -183,6 +183,8 @@ class AggregationOperation(ResampleOperation2D):
         agg_col = getattr(agg, "column", False)
         if agg_col is False:
             return agg
+        selector = getattr(agg, "selector", None)
+        sel_col = getattr(selector, "column", None)
 
         elements = element.traverse(lambda x: x, [Element])
         if not elements:
@@ -203,11 +205,26 @@ class AggregationOperation(ResampleOperation2D):
                     "aggregator."
                 )
             agg = type(agg)(field)
-        elif agg_col:
-            agg_dim = inner_element.get_dimension(agg_col)
-            if agg_dim is None and isinstance(element, NdOverlay):
-                agg_dim = element.get_dimension(agg_col)
-            agg = type(agg)(agg_dim.name)
+        elif agg_col or sel_col:
+            agg_kwargs = {}
+            if isinstance(agg_col, str):
+                agg_dim = inner_element.get_dimension(agg_col)
+                if agg_dim is None and isinstance(element, NdOverlay):
+                    agg_dim = element.get_dimension(agg_col)
+                agg_col = agg_dim.name
+            if isinstance(sel_col, str):
+                sel_dim = inner_element.get_dimension(sel_col)
+                if sel_dim is None and isinstance(element, NdOverlay):
+                    sel_dim = element.get_dimension(sel_col)
+                agg_kwargs["selector"] = type(selector)(sel_dim.name)
+            elif selector:
+                agg_kwargs["selector"] = selector
+            if hasattr(agg, "self_intersect"):
+                agg_kwargs["self_intersect"] = agg.self_intersect
+            if isinstance(agg, ds.where):
+                agg = ds.where(agg_kwargs["selector"], agg_col)
+            else:
+                agg = type(agg)(agg_col, **agg_kwargs)
 
         return agg
 
