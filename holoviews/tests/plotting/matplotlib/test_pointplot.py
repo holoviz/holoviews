@@ -8,7 +8,6 @@ import holoviews as hv
 from holoviews.core.options import AbbreviatedException
 from holoviews.testing import assert_data_equal
 
-from ..utils import ParamLogStream
 from .test_plot import TestMPLPlot, mpl_renderer
 
 

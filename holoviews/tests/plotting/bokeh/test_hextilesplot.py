@@ -5,7 +5,7 @@ import numpy as np
 import holoviews as hv
 from holoviews.plotting.bokeh.hex_tiles import hex_binning
 from holoviews.plotting.bokeh.util import property_to_dict
-from holoviews.testing import assert_data_equal, assert_element_equal
+from holoviews.testing import assert_element_equal
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 

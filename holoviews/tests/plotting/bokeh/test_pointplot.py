@@ -20,7 +20,6 @@ from holoviews.plotting.bokeh.util import BOKEH_GE_3_8_0, property_to_dict
 from holoviews.streams import Stream
 from holoviews.testing import assert_data_equal
 
-from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 

@@ -7,11 +7,11 @@ import param
 from matplotlib.collections import LineCollection, PolyCollection
 
 from ...core.data import Dataset
-from ...core.options import Cycle, abbreviated_exception
-from ...core.util import dtype_kind, is_number, isscalar, search_indices, unique_array
+from ...core.options import abbreviated_exception
+from ...core.util import dtype_kind, is_number, isscalar
 from ...util.transform import dim
 from ..mixins import ChordMixin, GraphMixin
-from ..util import get_directed_graph_paths, process_cmap
+from ..util import get_directed_graph_paths
 from .element import ColorbarPlot
 from .util import MPL_GE_3_10_1, filter_styles
 

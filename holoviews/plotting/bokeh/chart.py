@@ -17,7 +17,7 @@ from ...operation import interpolate_curve
 from ...util.transform import dim
 from ...util.warnings import warn
 from ..mixins import AreaMixin, BarsMixin, SpikesMixin, WaterfallMixin
-from ..util import compute_sizes, get_min_distance, rgb2hex
+from ..util import get_min_distance, rgb2hex
 from .element import ColorbarPlot, ElementPlot, LegendPlot, OverlayPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import (
@@ -990,7 +990,9 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         mapping.update(cmapping)
         if isinstance(cmapper, CategoricalColorMapper) and dtype_kind(cd) in "uif":
             cd = categorize_array(cd, cdim)
-        if field not in data or (len(data[field]) != next(len(data[key]) for key in data if key != field)):
+        if field not in data or (
+            len(data[field]) != next(len(data[key]) for key in data if key != field)
+        ):
             data[field].append(cd)
         else:
             data[field][-1] = cd

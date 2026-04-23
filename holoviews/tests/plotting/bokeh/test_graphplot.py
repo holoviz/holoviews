@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 from bokeh.models import EdgesAndLinkedNodes, NodesAndLinkedEdges, NodesOnly, Patches
-from bokeh.models.mappers import CategoricalColorMapper, LinearColorMapper
+from bokeh.models.mappers import CategoricalColorMapper
 
 import holoviews as hv
 from holoviews.element import circular_layout

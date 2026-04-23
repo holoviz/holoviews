@@ -17,17 +17,16 @@ from bokeh.models import (
 
 from ...core.data import Dataset
 from ...core.options import Cycle, abbreviated_exception
-from ...core.util import dimension_sanitizer, dtype_kind, unique_array
+from ...core.util import dimension_sanitizer, dtype_kind
 from ...util.transform import dim
 from ..mixins import ChordMixin, GraphMixin
-from ..util import get_directed_graph_paths, process_cmap
+from ..util import get_directed_graph_paths
 from .chart import PointPlot
 from .element import ColorbarPlot, CompositeElementPlot, LegendPlot
 from .styles import (
     base_properties,
     fill_properties,
     line_properties,
-    rgba_tuple,
     text_properties,
 )
 

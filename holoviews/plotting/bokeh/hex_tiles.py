@@ -10,7 +10,6 @@ from ...core import Dimension, Operation
 from ...core.options import Compositor
 from ...core.util import dimension_sanitizer, isfinite, max_range
 from ...element import HexTiles
-from ...util.transform import dim as dim_transform
 from .element import ColorbarPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties

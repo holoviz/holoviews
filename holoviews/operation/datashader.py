@@ -25,7 +25,6 @@ from ..core import (
     NdOverlay,
     Operation,
     Overlay,
-    Store,
 )
 from ..core.data import (
     DaskInterface,
