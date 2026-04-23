@@ -402,20 +402,20 @@ class XArrayInterface(GridInterface):
         import xarray as xr
 
         dim = dataset.get_dimension(dimension)
-        dim = dimension if dim is None else dim.name
-        irregular = cls.irregular(dataset, dim)
+        dim_name = dimension if dim is None else dim.name
+        irregular = cls.irregular(dataset, dim_name)
         if irregular or expanded:
             if irregular:
-                data = dataset.data[dim]
+                data = dataset.data[dim_name]
             else:
-                data = util.expand_grid_coords(dataset, dim)
+                data = util.expand_grid_coords(dataset, dim_name)
             if edges:
                 data = cls._infer_interval_breaks(data, axis=1)
                 data = cls._infer_interval_breaks(data, axis=0)
 
             return data.values if isinstance(data, xr.DataArray) else data
 
-        dim_data = dataset.data[dim].data
+        dim_data = dataset.data[dim_name].data
         if getattr(dim_data, "tz", None):
             dim_data = dim_data.tz_localize(None)
         data = np.atleast_1d(dim_data)
@@ -423,7 +423,7 @@ class XArrayInterface(GridInterface):
             data = data[::-1]
         shape = cls.shape(dataset, True)
 
-        if any(dim == kd.name for kd in dataset.kdims):
+        if dim in dataset.kdims:
             idx = dataset.get_dimension_index(dim)
             isedges = len(shape) == dataset.ndims and len(data) == (
                 shape[dataset.ndims - idx - 1] + 1
