@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import typing as t
 import warnings
 
 import numpy as np
@@ -131,7 +132,7 @@ class ndloc(Accessor):
 
 
 class Interface(param.Parameterized):
-    interfaces: dict[str, Interface] = {}
+    interfaces: t.ClassVar[dict[str, Interface]] = {}
 
     datatype = None
 

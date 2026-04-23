@@ -291,6 +291,7 @@ lint-install = 'pre-commit install'
 ty = "==0.0.32"
 pandas-stubs = "*"
 typing-extensions = "*"
+param = "==2.4.0rc1" # >=2.4.0
 
 [feature.type-task.tasks]
 type-ty = 'ty check .'
