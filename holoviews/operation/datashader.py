@@ -162,6 +162,71 @@ class AggregationOperation(ResampleOperation2D):
     }
 
     @classmethod
+    def _overlay_wide_mapping(cls, element, elements):
+        if not isinstance(element, NdOverlay):
+            return False, []
+        ydims = [el.dimensions()[1] for el in elements]
+        is_wide = len({yd.label for yd in ydims}) == 1 and len({yd.name for yd in ydims}) == len(
+            element
+        )
+        return is_wide, ydims
+
+    @classmethod
+    def _resolve_agg_column_name(cls, element, inner_element, column, is_wide, ydims):
+        if not isinstance(column, str):
+            return column
+        dimension = inner_element.get_dimension(column)
+        if dimension is None and isinstance(element, NdOverlay):
+            dimension = element.get_dimension(column)
+        return dimension.label if is_wide and dimension in ydims else dimension.name
+
+    @classmethod
+    def _default_agg_field(cls, element, inner_element):
+        if isinstance(inner_element, TriMesh) and inner_element.nodes.vdims:
+            return inner_element.nodes.vdims[0].name
+        if inner_element.vdims:
+            return inner_element.vdims[0].name
+        if isinstance(element, NdOverlay):
+            return element.kdims[0].name
+        raise ValueError(
+            "Could not determine dimension to apply "
+            f"'{cls.__name__}' operation to. Declare the dimension "
+            "to aggregate as part of the datashader "
+            "aggregator."
+        )
+
+    @classmethod
+    def _remap_aggregator(cls, element, agg, inner_element, is_wide, ydims):
+        agg_col = cls._resolve_agg_column_name(element, inner_element, agg.column, is_wide, ydims)
+        selector = getattr(agg, "selector", None)
+        reduction = getattr(agg, "reduction", None)
+        agg_kwargs = {}
+
+        selector_col = getattr(selector, "column", None)
+        if isinstance(selector_col, str):
+            selector_name = cls._resolve_agg_column_name(
+                element, inner_element, selector_col, is_wide, ydims
+            )
+            agg_kwargs["selector"] = type(selector)(selector_name)
+        elif selector:
+            agg_kwargs["selector"] = selector
+
+        reduction_col = getattr(reduction, "column", None)
+        if isinstance(reduction_col, str):
+            reduction_name = cls._resolve_agg_column_name(
+                element, inner_element, reduction_col, is_wide, ydims
+            )
+            agg_kwargs["reduction"] = type(reduction)(reduction_name)
+        elif reduction and not isinstance(agg, ds.count_cat):
+            agg_kwargs["reduction"] = reduction
+
+        if hasattr(agg, "self_intersect"):
+            agg_kwargs["self_intersect"] = agg.self_intersect
+        if isinstance(agg, ds.where):
+            return ds.where(agg_kwargs["selector"], agg_col)
+        return type(agg)(agg_col, **agg_kwargs)
+
+    @classmethod
     def _get_aggregator(cls, element, agg, add_field=True):
         if DATASHADER_GE_0_15_1:
             agg_types = (rd.count, rd.any, rd.where)
@@ -183,66 +248,20 @@ class AggregationOperation(ResampleOperation2D):
         elements = element.traverse(lambda x: x, [Element])
         if not elements:
             raise ValueError(f"Could not find any elements to apply {cls.__name__} operation to.")
-        is_ndoverlay = isinstance(element, NdOverlay)
-        is_wide = False
-        if is_ndoverlay:
-            ydims = [el.dimensions()[1] for el in elements]
-            is_wide = len({yd.label for yd in ydims}) == 1 and len(
-                {yd.name for yd in ydims}
-            ) == len(element)
+        is_wide, ydims = cls._overlay_wide_mapping(element, elements)
         agg_col = getattr(agg, "column", False)
         if agg_col is False:
             return agg
-        selector = getattr(agg, "selector", None)
-        sel_col = getattr(selector, "column", None)
-        reduction = getattr(agg, "reduction", None)
-        red_col = getattr(reduction, "column", None)
 
         inner_element = elements[0]
         if add_field and agg_col in ("__temp__", None) and not isinstance(agg, agg_types):
-            if isinstance(inner_element, TriMesh) and inner_element.nodes.vdims:
-                field = inner_element.nodes.vdims[0].name
-            elif inner_element.vdims:
-                field = inner_element.vdims[0].name
-            elif isinstance(element, NdOverlay):
-                field = element.kdims[0].name
-            else:
-                raise ValueError(
-                    "Could not determine dimension to apply "
-                    f"'{cls.__name__}' operation to. Declare the dimension "
-                    "to aggregate as part of the datashader "
-                    "aggregator."
-                )
-            agg = type(agg)(field)
-        elif agg_col or sel_col or red_col:
-            agg_kwargs = {}
-            if isinstance(agg_col, str):
-                agg_dim = inner_element.get_dimension(agg_col)
-                if agg_dim is None and isinstance(element, NdOverlay):
-                    agg_dim = element.get_dimension(agg_col)
-                agg_col = agg_dim.label if is_wide and agg_dim in ydims else agg_dim.name
-            if isinstance(sel_col, str):
-                sel_dim = inner_element.get_dimension(sel_col)
-                if sel_dim is None and isinstance(element, NdOverlay):
-                    sel_dim = element.get_dimension(sel_col)
-                sel_name = sel_dim.label if is_wide and sel_dim in ydims else sel_dim.name
-                agg_kwargs["selector"] = type(selector)(sel_name)
-            elif selector:
-                agg_kwargs["selector"] = selector
-            if isinstance(red_col, str):
-                red_dim = inner_element.get_dimension(red_col)
-                if red_dim is None and isinstance(element, NdOverlay):
-                    red_dim = element.get_dimension(red_col)
-                red_name = red_dim.label if is_wide and red_dim in ydims else red_dim.name
-                agg_kwargs["reduction"] = type(reduction)(red_name)
-            elif reduction and not isinstance(agg, ds.count_cat):
-                agg_kwargs["reduction"] = reduction
-            if hasattr(agg, "self_intersect"):
-                agg_kwargs["self_intersect"] = agg.self_intersect
-            if isinstance(agg, ds.where):
-                agg = ds.where(agg_kwargs["selector"], agg_col)
-            else:
-                agg = type(agg)(agg_col, **agg_kwargs)
+            agg = type(agg)(cls._default_agg_field(element, inner_element))
+        elif (
+            agg_col
+            or getattr(getattr(agg, "selector", None), "column", None)
+            or getattr(getattr(agg, "reduction", None), "column", None)
+        ):
+            agg = cls._remap_aggregator(element, agg, inner_element, is_wide, ydims)
 
         return agg
 
