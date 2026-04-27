@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 
 from ..core import Dataset, Dimension, util
@@ -250,3 +252,114 @@ class GraphMixin:
 
     def get_extents(self, element, ranges, range_type="combined", **kwargs):
         return super().get_extents(element.nodes, ranges, range_type)
+
+
+class WaterfallMixin:
+    """Shared mixin for Waterfall plot classes across backends.
+
+    Provides the cumulative-sum computation that turns incremental
+    deltas into floating-bar coordinates, plus extent calculation
+    that uses the cumulative range (not the raw delta range).
+    """
+
+    @staticmethod
+    def _compute_waterfall_data(labels, values, show_total, total_label):
+        """Compute bottom/top/kind arrays from incremental deltas.
+
+        Returns
+        -------
+        labels, values, bottoms, tops, kinds, cumulative
+        """
+        # Build an explicit boolean sentinel mask rather than relying on
+        # np.isnan(values), which would misclassify genuine NaN user data.
+        n = len(labels)
+        is_total = np.zeros(n + (1 if show_total and n > 0 else 0), dtype=bool)
+        if show_total and n > 0:
+            labels = [*labels, total_label]
+            values = np.append(values, 0.0)  # placeholder; overwritten below
+            is_total[-1] = True
+
+        safe_values = np.where(is_total, 0.0, np.where(np.isnan(values), 0.0, values))
+        cumulative = np.cumsum(safe_values)
+
+        prev = np.concatenate([[0], cumulative[:-1]])
+        is_pos = (~is_total) & (safe_values >= 0)
+        is_neg = (~is_total) & (safe_values < 0)
+
+        kinds = np.where(is_total, "total", np.where(is_pos, "positive", "negative"))
+        if len(kinds) > 0:
+            kinds[0] = "start"
+
+        bottoms = np.where(is_neg, cumulative, prev)
+        tops = np.where(is_neg, prev, cumulative)
+
+        if len(is_total) > 0 and is_total[-1]:
+            bottoms[-1] = np.minimum(0.0, cumulative[-1])
+            tops[-1] = np.maximum(0.0, cumulative[-1])
+
+        return labels, values, bottoms, tops, kinds, cumulative
+
+    def _map_colors(self, kinds, values):
+        """Return a list of colors for each bar, resolving nullable start_color and total_color."""
+        if self.start_color is not None:
+            start = self.start_color
+        elif len(values) > 0:
+            start = self.positive_color if values[0] >= 0 else self.negative_color
+        else:
+            start = self.positive_color
+
+        total = self.total_color if self.total_color is not None else start
+
+        color_map = {
+            "start": start,
+            "positive": self.positive_color,
+            "negative": self.negative_color,
+            "total": total,
+        }
+        return [color_map[k] for k in kinds]
+
+    def _resolve_total_label(self, element):
+        """Return total_label, raising if it collides with an existing category."""
+        xdim = element.kdims[0]
+        existing = [
+            lbl if isinstance(lbl, str) else xdim.pprint_value(lbl)
+            for lbl in element.dimension_values(0, expanded=False)
+        ]
+        if self.total_label in existing:
+            raise ValueError(
+                f"The total label {self.total_label!r} conflicts with an existing category in "
+                f"kdim {xdim.name!r}. Update the total label with `.opts(total_label=...)`"
+            )
+        return self.total_label
+
+    def _get_axis_dims(self, element):
+        return (element.kdims[0], element.vdims[0])
+
+    def get_extents(self, element, ranges, range_type="combined", **kwargs):
+        """Y-range derived from cumulative totals, not raw deltas."""
+        if range_type not in ("combined", "data") or not len(element):
+            return super().get_extents(element, ranges, range_type, **kwargs)
+
+        values = element.dimension_values(1)
+        cumsum = np.cumsum(values)
+        all_points = np.concatenate([[0], cumsum])
+        y0 = np.nanmin(all_points)
+        y1 = np.nanmax(all_points)
+        x0, x1 = "", ""
+
+        if range_type == "data":
+            return (x0, y0, x1, y1)
+
+        vdim = element.vdims[0]
+        if vdim.label in ranges:
+            padding = 0 if self.overlaid else self.padding
+            _, ypad, _ = get_axis_padding(padding)
+            y0, y1 = util.dimension_range(
+                y0,
+                y1,
+                ranges[vdim.label].get("hard", (np.nan, np.nan)),
+                ranges[vdim.label].get("soft", (np.nan, np.nan)),
+                ypad,
+                self.logy,
+            )
+        return (x0, y0, x1, y1)

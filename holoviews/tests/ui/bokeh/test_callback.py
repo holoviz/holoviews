@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 import panel as pn
@@ -338,7 +340,6 @@ class TestPopup:
             page.mouse.move(end_x, end_y)
             page.mouse.up()
         elif tool == "tap":
-            page.wait_for_timeout(200)
             plot.click()
 
     def _get_popup_distances_relative_to_bbox(self, popup_box, plot_box):
@@ -368,9 +369,11 @@ class TestPopup:
         page = serve_hv(plot)
         hv_plot = page.locator(".bk-events")
         expect(hv_plot).to_have_count(1)
+        page.wait_for_load_state("networkidle")
         return page, hv_plot
 
     def _locate_popup(self, page, count=1):
+        page.wait_for_timeout(200)
         locator = page.locator(".markdown")
         expect(locator).to_have_count(count)
         return locator

@@ -2,6 +2,8 @@
 Unit test of the (non-rendering) exporters and importers.
 """
 
+from __future__ import annotations
+
 import numpy as np
 
 import holoviews as hv

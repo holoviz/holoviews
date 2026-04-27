@@ -2,6 +2,8 @@
 Test cases for rendering exporters
 """
 
+from __future__ import annotations
+
 import panel as pn
 import param
 import pytest
@@ -56,10 +58,10 @@ class PlotlyRendererTest:
         data, _ = self.renderer.components(hmap)
         assert 'State"' in data["text/html"]
 
-    # def test_render_holomap_not_embedded(self):
-    #     hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
-    #     data, _ = self.renderer.instance(widget_mode='live').components(hmap)
-    #     self.assertNotIn('State"', data['text/html'])
+    def test_render_holomap_not_embedded(self):
+        hmap = hv.HoloMap({i: hv.Curve([1, 2, i]) for i in range(5)})
+        data, _ = self.renderer.instance(widget_mode="live").components(hmap)
+        assert 'State"' not in data["text/html"]
 
     def test_render_holomap_scrubber(self):
         hmap = hv.HoloMap({i: hv.Curve([1, 2, i]) for i in range(5)})

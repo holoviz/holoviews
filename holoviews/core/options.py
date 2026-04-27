@@ -32,6 +32,8 @@ extension together.
 
 """
 
+from __future__ import annotations
+
 import difflib
 import inspect
 import pickle

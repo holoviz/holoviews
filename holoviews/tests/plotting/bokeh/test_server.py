@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
+import socket
 import time
 
 import param
-import pytest
 from bokeh.client import pull_session
 from bokeh.document import Document
 from bokeh.io.doc import curdoc, set_curdoc
@@ -19,6 +21,19 @@ from holoviews.plotting.bokeh.util import BOKEH_GE_3_8_0
 from holoviews.streams import PlotReset, RangeXY, Stream
 
 bokeh_renderer = BokehRenderer.instance(mode="server")
+
+
+def _wait_for_port(port, *, connected, timeout=10):
+    deadline = time.perf_counter() + timeout
+    while time.perf_counter() < deadline:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(0.1)
+            is_connected = sock.connect_ex(("localhost", port)) == 0
+        if is_connected == connected:
+            return
+        time.sleep(0.05)
+    state = "open" if connected else "closed"
+    raise TimeoutError(f"Port {port} never became {state}")
 
 
 class TestBokehServerSetup:
@@ -40,7 +55,6 @@ class TestBokehServerSetup:
         state.curdoc = None
         curdoc().clear()
         set_curdoc(self.doc)
-        time.sleep(1)
 
     def test_render_server_doc_element(self):
         obj = hv.Curve([])
@@ -80,7 +94,6 @@ class TestBokehServerSetup:
         assert cb.streams == [stream]
 
 
-@pytest.mark.flaky(reruns=3)
 class TestBokehServer:
     def setup_method(self):
         self.previous_backend = hv.Store.current_backend
@@ -91,7 +104,18 @@ class TestBokehServer:
         hv.Store.current_backend = self.previous_backend
         Callback._callbacks = {}
         state.kill_all_servers()
-        time.sleep(1)
+        if self._port is not None:
+            _wait_for_port(self._port, connected=False)
+
+    def _wait_and_assert_cds_value(self, *, key, index, expected, timeout=10):
+        deadline = time.perf_counter() + timeout
+        while time.perf_counter() < deadline:
+            cds = self.session.document.roots[0].select_one({"type": ColumnDataSource})
+            if cds.data[key][index] == expected:
+                return
+            time.sleep(0.05)
+        cds = self.session.document.roots[0].select_one({"type": ColumnDataSource})
+        assert cds.data[key][index] == expected
 
     def _launcher(self, obj, threaded=True, port=6001):
         try:
@@ -103,7 +127,7 @@ class TestBokehServer:
 
         self._port = port
         server = serve(obj, threaded=threaded, show=False, port=port)
-        time.sleep(0.5)
+        _wait_for_port(port, connected=True)
         return server, self.session
 
     @property
@@ -151,9 +175,7 @@ class TestBokehServer:
             slider.value = 3.1
 
         doc.add_next_tick_callback(run)
-        time.sleep(1)
-        cds = self.session.document.roots[0].select_one({"type": ColumnDataSource})
-        assert cds.data["y"][2] == 3.1
+        self._wait_and_assert_cds_value(key="y", index=2, expected=3.1)
 
     def test_server_dynamicmap_with_stream(self):
         stream = Stream.define("Custom", y=2)()
@@ -174,9 +196,7 @@ class TestBokehServer:
             stream.event(y=3)
 
         doc.add_next_tick_callback(run)
-        time.sleep(1)
-        cds = self.session.document.roots[0].select_one({"type": ColumnDataSource})
-        assert cds.data["y"][2] == 3
+        self._wait_and_assert_cds_value(key="y", index=2, expected=3)
 
     def test_server_dynamicmap_with_stream_dims(self):
         stream = Stream.define("Custom", y=2)()
@@ -199,9 +219,7 @@ class TestBokehServer:
             stream.event(y=3)
 
         doc.add_next_tick_callback(run)
-        time.sleep(1)
-        cds = self.session.document.roots[0].select_one({"type": ColumnDataSource})
-        assert cds.data["y"][2] == 3
+        self._wait_and_assert_cds_value(key="y", index=2, expected=3)
 
         assert orig_cds.data["y"][0] == 1
         slider = obj.layout.select(DiscreteSlider)[0]
@@ -210,6 +228,4 @@ class TestBokehServer:
             slider.value = 3
 
         doc.add_next_tick_callback(run)
-        time.sleep(1)
-        cds = self.session.document.roots[0].select_one({"type": ColumnDataSource})
-        assert cds.data["y"][0] == 3
+        self._wait_and_assert_cds_value(key="y", index=0, expected=3)

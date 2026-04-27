@@ -2,6 +2,8 @@
 Unit tests of Ellipsis (...) in __getitem__
 """
 
+from __future__ import annotations
+
 import numpy as np
 import pytest
 

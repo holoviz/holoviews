@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import math
 from collections import defaultdict
 
 import numpy as np
 import param
-from bokeh.models import CategoricalColorMapper, CustomJS, Whisker
+from bokeh.models import CategoricalColorMapper, ColumnDataSource, CustomJS, Whisker
+from bokeh.models.glyphs import Segment
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
@@ -13,7 +16,7 @@ from ...core.util import dimension_sanitizer, dtype_kind, isdatetime, isfinite
 from ...operation import interpolate_curve
 from ...util.transform import dim
 from ...util.warnings import warn
-from ..mixins import AreaMixin, BarsMixin, SpikesMixin
+from ..mixins import AreaMixin, BarsMixin, SpikesMixin, WaterfallMixin
 from ..util import compute_sizes, get_min_distance, rgb2hex
 from .element import ColorbarPlot, ElementPlot, LegendPlot, OverlayPlot
 from .selection import BokehOverlaySelectionDisplay
@@ -1309,3 +1312,176 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             )
 
         return sanitized_data, mapping, style
+
+
+class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
+    """Renders a Waterfall chart with floating bars colored by
+    direction (positive / negative / total).
+    """
+
+    connector_line_color = param.String(
+        default="gray",
+        doc="Color for connector lines between bars.",
+    )
+
+    connector_line_dash = param.String(
+        default="dashed",
+        doc="Line dash style for connector lines between bars.",
+    )
+
+    connector_line_width = param.Number(
+        default=1,
+        doc="Width of connector lines between bars.",
+    )
+
+    negative_color = param.String(
+        default="crimson",
+        doc="Color for bars representing negative changes.",
+    )
+
+    positive_color = param.String(
+        default="limegreen",
+        doc="Color for bars representing positive changes.",
+    )
+
+    show_connectors = param.Boolean(
+        default=True,
+        doc="Whether to draw horizontal connector lines between bars.",
+    )
+
+    show_total = param.Boolean(
+        default=True,
+        doc="Whether to append a final total bar running from 0 to the cumulative sum.",
+    )
+
+    start_color = param.String(
+        default="steelblue",
+        allow_None=True,
+        doc="""
+        Color for the first bar (the starting absolute value). If None,
+        the first bar is colored by its sign using positive_color or
+        negative_color.""",
+    )
+
+    total_color = param.String(
+        default=None,
+        allow_None=True,
+        doc="""
+        Color for the summary total bar. If None, inherits the resolved
+        start_color.""",
+    )
+
+    total_label = param.String(
+        default="Total",
+        doc="Label used for the auto-appended total bar.",
+    )
+
+    selection_display = BokehOverlaySelectionDisplay()
+
+    style_opts = base_properties + fill_properties + line_properties + ["bar_width", "cmap"]
+
+    _nonvectorized_styles = [*base_properties, "bar_width", "cmap"]
+    _plot_methods = dict(single=("vbar", "hbar"))
+
+    def _get_factors(self, element, ranges):
+        """Return categorical factors for the axis."""
+        labels = list(element.dimension_values(0, expanded=False))
+        xdim = element.kdims[0]
+        labels = [lbl if isinstance(lbl, str) else xdim.pprint_value(lbl) for lbl in labels]
+        if self.show_total and labels:
+            labels.append(self._resolve_total_label(element))
+        return ([], labels) if self.invert_axes else (labels, [])
+
+    def _glyph_properties(self, *args, **kwargs):
+        props = super()._glyph_properties(*args, **kwargs)
+        return {k: v for k, v in props.items() if k not in ("width", "bar_width")}
+
+    def get_data(self, element, ranges, style):
+        raw_labels = element.dimension_values(0)
+        raw_values = element.dimension_values(1)
+
+        labels, values, bottoms, tops, kinds, cumulative = self._compute_waterfall_data(
+            raw_labels, raw_values, self.show_total, self._resolve_total_label(element)
+        )
+
+        xdim = element.kdims[0]
+        cat_labels = categorize_array(labels, xdim)
+        colors = self._map_colors(kinds, values)
+        width = style.pop("bar_width", style.pop("width", 0.8))
+        data = dict(
+            x=cat_labels,
+            top=tops,
+            bottom=bottoms,
+            fill_color=colors,
+        )
+
+        if "hover" in self.handles and not self.static_source:
+            xdim_name = dimension_sanitizer(xdim.name)
+            ydim_name = dimension_sanitizer(element.vdims[0].name)
+            data[xdim_name] = np.array(labels, dtype=str)
+            data[ydim_name] = np.where(kinds == "total", cumulative, values)
+            data["kind"] = list(kinds)
+            data["running_total"] = cumulative
+        self._get_hover_data(data, element)
+
+        self._connector_data = (cat_labels, cumulative)
+        if self.invert_axes:
+            mapping = dict(
+                y="x",
+                right="top",
+                left="bottom",
+                height=width,
+                fill_color="fill_color",
+            )
+        else:
+            mapping = dict(
+                x="x",
+                top="top",
+                bottom="bottom",
+                width=width,
+                fill_color="fill_color",
+            )
+
+        return data, mapping, style
+
+    def _build_connector_source_data(self):
+        """Build the x0/x1/y0/y1 dict for the connector Segment glyph."""
+        cat_labels, cumulative = self._connector_data
+        x0, x1 = cat_labels[:-1], cat_labels[1:]
+        y0, y1 = cumulative[:-1], cumulative[:-1]
+        if self.invert_axes:
+            return dict(x0=y0, x1=y1, y0=x0, y1=x1)
+        return dict(x0=x0, x1=x1, y0=y0, y1=y1)
+
+    def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
+        plot = super().initialize_plot(ranges, plot, plots, source)
+        if self.show_connectors:
+            self._draw_connectors(plot)
+        return plot
+
+    def _draw_connectors(self, plot):
+        """Draw horizontal connector lines between adjacent bars."""
+        if len(self._connector_data[1]) < 2:
+            return
+
+        src = ColumnDataSource(self._build_connector_source_data())
+        glyph = Segment(
+            x0="x0",
+            y0="y0",
+            x1="x1",
+            y1="y1",
+            line_color=self.connector_line_color,
+            line_dash=self.connector_line_dash,
+            line_width=self.connector_line_width,
+        )
+        plot.add_glyph(src, glyph)
+        self.handles["connector_source"] = src
+        self.handles["connectors"] = glyph
+
+    def update_handles(self, key, axis, element, ranges, style):
+        """Refresh connector source when data changes."""
+        ret = super().update_handles(key, axis, element, ranges, style)
+        if self.show_connectors and "connector_source" in self.handles:
+            if len(self._connector_data[1]) >= 2:
+                self.handles["connector_source"].data = self._build_connector_source_data()
+        return ret

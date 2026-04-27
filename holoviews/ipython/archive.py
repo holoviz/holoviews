@@ -3,6 +3,8 @@ and export it to disk via the display hooks.
 
 """
 
+from __future__ import annotations
+
 import os
 import sys
 import time

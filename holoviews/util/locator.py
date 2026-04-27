@@ -4,6 +4,8 @@ Taken from Matplotlib 3.8.0.
 
 """
 
+from __future__ import annotations
+
 import math
 
 import numpy as np

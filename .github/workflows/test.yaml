@@ -84,7 +84,11 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "environment": ["test-310", "test-313", "test-314"]
+              "environment": ["test-310", "test-314"],
+              "include": [
+                # Can be removed when tsdownsample support 3.14
+                {"environment": "test-313", "os": "ubuntu-latest"}
+              ]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'full' option
@@ -135,7 +139,7 @@ jobs:
       - name: Test Examples
         run: |
           pixi run -e ${{ matrix.environment }} test-example
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -169,7 +173,7 @@ jobs:
           name: ui_screenshots_${{ runner.os }}
           path: ./ui_screenshots
           if-no-files-found: ignore
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -191,8 +195,8 @@ jobs:
       - name: Check packages latest version
         if: ${{ needs.setup.outputs.matrix_option != 'downstream' }}
         run: |
-          pixi run -e ${{ matrix.environment }} check-latest-packages pandas bokeh panel param
           # pixi run -e ${{ matrix.environment }} check-latest-packages pandas bokeh panel param numpy
+          pixi run -e ${{ matrix.environment }} check-latest-packages pandas bokeh panel param
       - name: Test Unit
         run: |
           pixi run -e ${{ matrix.environment }} test-unit

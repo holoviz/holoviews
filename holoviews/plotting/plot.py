@@ -4,6 +4,8 @@ of this Plot baseclass.
 
 """
 
+from __future__ import annotations
+
 import uuid
 import warnings
 from ast import literal_eval
@@ -20,7 +22,7 @@ from panel.io.state import state
 from pyviz_comms import JupyterComm
 
 from ..core import traversal, util
-from ..core.data import Dataset, disable_pipeline
+from ..core.data import Dataset, disable_pipeline, enable_pipeline
 from ..core.element import Element, Element3D
 from ..core.layout import Empty, Layout, NdLayout
 from ..core.options import Compositor, SkipRendering, Store, lookup_options
@@ -243,7 +245,8 @@ class Plot(param.Parameterized):
             )
             stream_key = util.wrap_tuple_streams(key, self.dimensions, self.streams)
 
-            self._trigger_refresh(stream_key)
+            with disable_pipeline():
+                self._trigger_refresh(stream_key)
             if self.top_level:
                 self.push()
         except Exception as e:
@@ -1378,6 +1381,8 @@ class GenericElementPlot(DimensionedPlot):
 
     _multi_y_propagation = False
 
+    _prev_plot_opts = None
+
     def __init__(
         self,
         element,
@@ -1500,7 +1505,13 @@ class GenericElementPlot(DimensionedPlot):
 
         cached = self.current_key is None and not any(s._triggering for s in self.streams)
         key_map = dict(zip([d.name for d in self.dimensions], key, strict=None))
-        frame = get_plot_frame(self.hmap, key_map, cached)
+        # Re-enable pipeline tracking for the DynamicMap callback evaluation.
+        # Plot.refresh() disables pipeline for the entire update path (see
+        # the disable_pipeline() call there), but user callbacks may call
+        # Dataset methods (e.g. select) whose results should retain pipeline
+        # provenance.
+        with enable_pipeline():
+            frame = get_plot_frame(self.hmap, key_map, cached)
         traverse_setter(self, "_force", False)
 
         if key not in self.keys and len(key) == self.hmap.ndims and self.dynamic:
@@ -1905,6 +1916,20 @@ class GenericElementPlot(DimensionedPlot):
 
         attr_accessor = accessors[-1]
         return model, attr_accessor
+
+    def _apply_plot_opts(self, plot_opts: dict) -> None:
+        """Apply plot options, skipping if unchanged from the previous frame.
+
+        This is a performance optimization to avoid unnecessary updates when
+        options have not changed.
+        """
+        try:
+            changed = bool(plot_opts != self._prev_plot_opts)
+        except (ValueError, TypeError):
+            changed = True
+        if changed:
+            self._prev_plot_opts = plot_opts
+            self.param.update(**plot_opts)
 
     def update_frame(self, key, ranges=None):
         """Set the plot(s) to the given frame number.  Operates by
@@ -2356,10 +2381,13 @@ class GenericCompositePlot(DimensionedPlot):
             self.current_key = key
 
         key_map = dict(zip([d.name for d in self.dimensions], key, strict=None))
-        for path, item in self.layout.items():
-            frame = get_nested_plot_frame(item, key_map, cached)
-            if frame is not None:
-                layout_frame[path] = frame
+        # Re-enable pipeline tracking for the DynamicMap callback evaluation.
+        # See GenericElementPlot._get_frame for rationale.
+        with enable_pipeline():
+            for path, item in self.layout.items():
+                frame = get_nested_plot_frame(item, key_map, cached)
+                if frame is not None:
+                    layout_frame[path] = frame
         traverse_setter(self, "_force", False)
 
         self.current_frame = layout_frame

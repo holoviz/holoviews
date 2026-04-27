@@ -161,6 +161,7 @@ from .element import (
     VLines,
     VSpan,
     VSpans,
+    Waterfall,
     elements_list,
 )
 from .selection import link_selections
@@ -206,7 +207,7 @@ if "_pyodide" in sys.modules:
 
 if TYPE_CHECKING:
     # Adding this here to have better docstring in LSP
-    from .util import extension
+    from .util import extension  # noqa: TC004
 
 _load_rc_file()
 
@@ -344,6 +345,7 @@ __all__ = [
     "VectorField",
     "VectorizedAnnotation",
     "Violin",
+    "Waterfall",
     "__version__",
     "annotate",
     "archive",

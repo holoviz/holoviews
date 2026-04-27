@@ -2,6 +2,8 @@
 Test cases for Dimension and Dimensioned object comparison.
 """
 
+from __future__ import annotations
+
 import holoviews as hv
 from holoviews.core import Dimensioned
 from holoviews.core.util import NUMPY_GE_2_0_0

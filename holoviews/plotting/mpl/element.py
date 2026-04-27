@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 import math
 import warnings
@@ -611,7 +613,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self.current_frame = element
 
         if element is not None:
-            self.param.update(**self.lookup_options(element, "plot").options)
+            self._apply_plot_opts(self.lookup_options(element, "plot").options)
         axis = self.handles["axis"]
 
         axes_visible = element is not None or self.overlaid
@@ -1469,7 +1471,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             element, "plot", self._propagate_options, defaults=False
         )
         plot_opts.update(**{k: v[0] for k, v in inherited.items() if k not in plot_opts})
-        self.param.update(**plot_opts)
+        self._apply_plot_opts(plot_opts)
 
         if self.show_legend and not empty:
             self._adjust_legend(element, axis)

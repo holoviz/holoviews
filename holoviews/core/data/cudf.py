@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import sys
+import typing as t
 import warnings
 from itertools import product
 
@@ -9,9 +12,23 @@ from ..dimension import dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..util import dtype_kind
+from ..util.dependencies import _no_import_version
 from .interface import DataError, Interface
 from .pandas import PandasInterface
 from .util import finite_range
+
+CUDF_VERSION = _no_import_version("cudf")
+CUDF_GE_26_4 = CUDF_VERSION >= (26, 4, 0)
+
+if t.TYPE_CHECKING:
+    import cudf
+
+
+def _to_numpy(obj: cudf.DataFrame):
+    if CUDF_GE_26_4:
+        return obj.to_numpy()
+    else:
+        return obj.values_host
 
 
 class cuDFInterface(PandasInterface):
@@ -137,15 +154,15 @@ class cuDFInterface(PandasInterface):
         data = dataset.data[dim.name]
         if not expanded:
             data = data.unique()
-            return data.values_host if compute else data.values
+            return _to_numpy(data) if compute else data.values
         elif keep_index:
             return data
         elif compute:
-            return data.values_host
+            return _to_numpy(data)
         try:
             return data.values
         except Exception:
-            return data.values_host
+            return _to_numpy(data)
 
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
@@ -165,7 +182,7 @@ class cuDFInterface(PandasInterface):
         group_kwargs["dataset"] = dataset.dataset
 
         # Find all the keys along supplied dimensions
-        keys = product(*(dataset.data[dimensions[0]].unique().values_host for d in dimensions))
+        keys = product(*(_to_numpy(dataset.data[d].unique()) for d in dimensions))
 
         # Iterate over the unique entries applying selection masks
         grouped_data = []
@@ -305,18 +322,15 @@ class cuDFInterface(PandasInterface):
             if not hasattr(reindexed, agg):
                 raise ValueError(f"{agg} aggregation is not supported on cudf DataFrame.")
             agg = getattr(reindexed, agg)()
+            index = _to_numpy(agg.index)
             try:
-                data = {
-                    col: [v] for col, v in zip(agg.index.values_host, agg.to_numpy(), strict=True)
-                }
+                data = {col: [v] for col, v in zip(index, agg.to_numpy(), strict=True)}
             except Exception:
                 # Give FutureWarning: 'The to_array method will be removed in a future cuDF release.
                 # Consider using `to_numpy` instead.'
                 # Seen in cudf=21.12.01
-                data = {
-                    col: [v] for col, v in zip(agg.index.values_host, agg.to_array(), strict=True)
-                }
-            df = pd.DataFrame(data, columns=list(agg.index.values_host))
+                data = {col: [v] for col, v in zip(index, agg.to_array(), strict=True)}
+            df = pd.DataFrame(data, columns=list(index))
 
         dropped = []
         for vd in vdims:

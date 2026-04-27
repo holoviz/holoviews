@@ -5,6 +5,8 @@ to act as supplementary elements.
 
 """
 
+from __future__ import annotations
+
 import numpy as np
 import param
 

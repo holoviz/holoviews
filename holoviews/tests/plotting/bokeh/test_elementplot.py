@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime as dt
 
 import numpy as np
@@ -317,6 +319,73 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         plot = bokeh_renderer.get_plot(curve)
         assert plot.state.xaxis.ticker.ticks == [dt_to_int(tick, "ms")]
         assert plot.state.xaxis.major_label_overrides == {dt_to_int(tick, "ms"): "A"}
+
+    def test_streaming_with_static_layout(self):
+        # Verify that layout caching in _update_plot/_update_labels/
+        # _update_title/_update_grid does not interfere with data updates.
+        pipe = Pipe(data=[1, 2, 3])
+        dmap = hv.DynamicMap(lambda data: hv.Curve(data), streams=[pipe])  # noqa: PLW0108
+        plot = bokeh_renderer.get_plot(dmap.opts(title="Static", xlabel="X", show_grid=True))
+        source = plot.handles["source"]
+        assert list(source.data["y"]) == [1, 2, 3]
+        assert plot.state.title.text == "Static"
+
+        pipe.send([4, 5, 6])
+        assert list(source.data["y"]) == [4, 5, 6]
+        assert plot.state.title.text == "Static"
+
+        pipe.send([7, 8, 9])
+        assert list(source.data["y"]) == [7, 8, 9]
+
+    def test_streaming_layout_cache_invalidation(self):
+        # When layout options change between frames the cached values
+        # must be invalidated so the new options take effect.
+        pipe = Pipe(data=[1, 2, 3])
+        call_count = [0]
+
+        def cb(data):
+            call_count[0] += 1
+            label = "Before" if call_count[0] <= 1 else "After"
+            return hv.Curve(data).opts(xlabel=label, title=label)
+
+        plot = bokeh_renderer.get_plot(hv.DynamicMap(cb, streams=[pipe]))
+        assert plot.state.xaxis[0].axis_label == "Before"
+        assert plot.state.title.text == "Before"
+
+        pipe.send([4, 5, 6])
+        assert plot.state.xaxis[0].axis_label == "After"
+        assert plot.state.title.text == "After"
+
+    def test_streaming_with_numpy_gridstyle(self):
+        # Apply opts inside the callback so each frame creates a *new*
+        # numpy array object.  This forces the cache comparison in
+        # _update_grid to compare different array objects, exercising
+        # the ValueError fallback in _update_cache.
+        pipe = Pipe(data=[1, 2, 3])
+
+        def cb(data):
+            return hv.Curve(data).opts(
+                show_grid=True, gridstyle={"grid_line_dash": np.array([4, 4])}
+            )
+
+        plot = bokeh_renderer.get_plot(hv.DynamicMap(cb, streams=[pipe]))
+        assert list(plot.state.xgrid[0].grid_line_dash) == [4, 4]
+        pipe.send([4, 5, 6])
+        pipe.send([7, 8, 9])
+        assert list(plot.state.xgrid[0].grid_line_dash) == [4, 4]
+
+    def test_update_frame_with_numpy_xticks(self):
+        # Apply opts inside the callback so each frame produces a fresh numpy
+        # array, checking that _apply_plot_opts function does not raise an
+        # exception.
+        pipe = Pipe(data=[1, 2, 3])
+        dmap = hv.DynamicMap(
+            lambda data: hv.Curve(data).opts(xticks=np.array([1.0, 2.0, 3.0])),
+            streams=[pipe],
+        )
+        bokeh_renderer.get_plot(dmap)
+        pipe.send([4, 5, 6])
+        pipe.send([7, 8, 9])
 
     def test_element_grid_custom_xticker(self):
         curve = hv.Curve([1, 2, 3]).opts(xticks=[0.5, 1.5], show_grid=True)

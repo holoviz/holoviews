@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Collection, Mapping
 
 import narwhals.stable.v2 as nw

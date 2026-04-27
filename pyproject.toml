@@ -179,6 +179,7 @@ select = [
     "PLW",
     "PT",
     "RUF",
+    "TC",
     "UP",
     "W",
 ]
@@ -208,6 +209,9 @@ extend-unsafe-fixes = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"holoviews/**/__init__.py" = [
+    "I002", # Ignore required-imports
+]
 "holoviews/tests/*" = [
     "RUF001", # Ambiguous unicode character
     "RUF002", # Ambiguous unicode character
@@ -217,6 +221,7 @@ extend-unsafe-fixes = [
 ]
 "examples/*" = [
     "B905", # zip-without-explicit-strict
+    "I002", # Ignore required-imports
     "NPY002", # Replace legacy `np.random.rand` call with Generator
     "PLW0603", # Using global statement
     "RUF001", # Ambiguous unicode character
@@ -229,6 +234,10 @@ extend-unsafe-fixes = [
 [tool.ruff.lint.isort]
 known-first-party = ["holoviews"]
 combine-as-imports = true
+required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.lint.flake8-import-conventions.aliases]
+typing = "t"
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"

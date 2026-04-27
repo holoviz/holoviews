@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import plotly.graph_objs as go
 import pyviz_comms as comms
 from param import concrete_descendents

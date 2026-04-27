@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import param
 
 from ..core import Dimension, Element3D

@@ -2,6 +2,8 @@
 Test cases for the Comparisons class over the Raster types.
 """
 
+from __future__ import annotations
+
 import re
 
 import numpy as np

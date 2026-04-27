@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import calendar
 import datetime as dt
 import re
@@ -852,10 +854,9 @@ def cds_column_replace(source, data):
     columns are not the same length as the columns being updated.
 
     """
-    current_length = [
-        len(v) for v in source.data.values() if isinstance(v, (list, *arraylike_types))
-    ]
-    new_length = [len(v) for v in data.values() if isinstance(v, (list, np.ndarray))]
+    arr_types = (list, *arraylike_types)
+    current_length = [len(v) for v in source.data.values() if isinstance(v, arr_types)]
+    new_length = [len(v) for v in data.values() if isinstance(v, arr_types)]
     untouched = [k for k in source.data if k not in data]
     return bool(untouched and current_length and new_length and current_length[0] != new_length[0])
 
@@ -990,7 +991,7 @@ class periodic:
         return self.counter is None
 
     def start(self):
-        self._start_time = time.time()
+        self._start_time = time.perf_counter()
         if self.document is None:
             raise RuntimeError(
                 "periodic was registered to be run on bokehserver but no document was found."
@@ -1016,7 +1017,7 @@ class periodic:
         self.counter += 1
 
         if self.timeout is not None:
-            dt = time.time() - self._start_time
+            dt = time.perf_counter() - self._start_time
             if dt > self.timeout:
                 self.stop()
         if self.counter == self.count:

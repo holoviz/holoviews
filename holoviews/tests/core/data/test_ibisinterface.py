@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sqlite3
 from tempfile import NamedTemporaryFile
 
@@ -7,6 +9,7 @@ import pytest
 
 import holoviews as hv
 from holoviews.core.data.ibis import IBIS_VERSION, IbisInterface
+from holoviews.core.util.dependencies import PANDAS_GE_3_0_0
 from holoviews.testing import assert_element_equal
 
 from ...utils import optional_dependencies
@@ -160,11 +163,12 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         pytest.skip("Not supported")
 
     def test_dataset_dataset_ht_dtypes(self):
-        int_dtype = "int64" if IBIS_VERSION >= (9, 0, 0) else "int32"
+        int_dtype = np.dtype("int64" if IBIS_VERSION >= (9, 0, 0) else "int32")
+        object_dtype = pd.StringDtype(na_value=np.nan) if PANDAS_GE_3_0_0 else np.dtype("object")
         ds = self.table
-        assert ds.interface.dtype(ds, "Gender") == np.dtype("object")
-        assert ds.interface.dtype(ds, "Age") == np.dtype(int_dtype)
-        assert ds.interface.dtype(ds, "Weight") == np.dtype(int_dtype)
+        assert ds.interface.dtype(ds, "Gender") == object_dtype
+        assert ds.interface.dtype(ds, "Age") == int_dtype
+        assert ds.interface.dtype(ds, "Weight") == int_dtype
         assert ds.interface.dtype(ds, "Height") == np.dtype("float64")
 
     def test_dataset_dtypes(self):

@@ -1,39 +1,59 @@
+from __future__ import annotations
+
 import datetime as dt
 import inspect
+import sys
 from types import GeneratorType
 from typing import TYPE_CHECKING
 
 import narwhals.stable.v2 as nw
+import numpy as np
 
 from .dependencies import _LazyModule
 
 if TYPE_CHECKING:
     import cftime
-    import numpy as np
     import pandas as pd
 else:
     cftime = _LazyModule("cftime", bool_use_sys_modules=True)
-    np = _LazyModule("numpy", bool_use_sys_modules=True)
     pd = _LazyModule("pandas", bool_use_sys_modules=True)
 
 
 # gen_types is copied from param, can be removed when
 # we support 2.2 or greater
+
+_module_count = 0
+
+
 class _GeneratorIsMeta(type):
+    def _get_types(cls) -> tuple[type, ...]:
+        # Cache types and invalidate on new imports
+        global _module_count  # noqa: PLW0603
+        n = len(sys.modules)
+        if n != _module_count:
+            _module_count = n
+            for sub in _GeneratorIs.__subclasses__():
+                sub._cached_types = None
+        if cls._cached_types is None:
+            cls._cached_types = tuple(cls.types())
+        return cls._cached_types
+
     def __instancecheck__(cls, inst):
-        return isinstance(inst, tuple(cls.types()))
+        return isinstance(inst, cls._get_types())
 
     def __subclasscheck__(cls, sub):
-        return issubclass(sub, tuple(cls.types()))
+        return issubclass(sub, cls._get_types())
 
     def __iter__(cls):
-        yield from cls.types()
+        yield from cls._get_types()
 
 
 class _GeneratorIs(metaclass=_GeneratorIsMeta):
+    _cached_types: tuple[type, ...] | None = None
+
     @classmethod
     def __iter__(cls):
-        yield from cls.types()
+        yield from cls._get_types()
 
 
 def gen_types(gen_func):
@@ -73,37 +93,29 @@ def cftime_types():
 
 @gen_types
 def datetime_types():
-    yield from (dt.datetime, dt.date, dt.time)
-    if np:
-        yield np.datetime64
+    yield from (dt.datetime, dt.date, dt.time, np.datetime64)
     yield from pandas_datetime_types
     yield from cftime_types
 
 
 @gen_types
 def timedelta_types():
-    yield dt.timedelta
-    if np:
-        yield np.timedelta64
+    yield from (dt.timedelta, np.timedelta64)
     yield from pandas_timedelta_types
 
 
 @gen_types
 def arraylike_types():
-    if np:
-        yield np.ndarray
+    yield from (np.ndarray, nw.Series)
     if pd:
         from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries
 
         yield from (ABCIndex, ABCSeries, ABCExtensionArray)
 
-    yield nw.Series
-
 
 @gen_types
 def masked_types():
-    if np:
-        yield np.ma.core.MaskedArray
+    yield np.ma.core.MaskedArray
 
     if pd:
         from pandas.core.arrays.masked import BaseMaskedArray
