@@ -142,8 +142,13 @@ class NdIndexableMappingTest:
                 {(1, 0.5): "a", (1, 1.5): "b"},
                 {(1, 0.5)},
             ),
+            (
+                [hv.Dimension("x", values=[1, 2]), "y"],
+                {(1, 0.5): "a", (2, 0.5): "b"},
+                {(1, 0.5), (2, 0.5)},
+            ),
         ],
-        ids=["int_values_first", "str_values_first", "int_values_on_second"],
+        ids=["int_values_first", "str_values_first", "int_values_on_second", "multi_key"],
     )
     def test_explicit_tuple_set_slicing(self, kdims, data, keys):
         ndmap = hv.NdMapping(data, kdims=kdims)

@@ -502,27 +502,30 @@ class TestDynamicMapMethods:
             ([hv.Dimension("x", values=[1, 2]), "y"], {(1, 0.5)}),
             ([hv.Dimension("x", values=["1", "2"]), "y"], {("1", 0.5)}),
             ([hv.Dimension("x", range=(1, 5)), "y"], {(1, 0.5)}),
+            ([hv.Dimension("x", values=[1, 2]), "y"], {(1, 0.5), (2, 0.5)}),
         ],
-        ids=["int_values", "str_values", "no_values"],
+        ids=["int_values", "str_values", "no_values", "multi_key"],
     )
     def test_explicit_tuple_set_slicing(self, kdims, keys):
-        call_count = [0]
+        call_count = 0
 
         def callback(x, y):
-            call_count[0] += 1
+            nonlocal call_count
+            call_count += 1
             return hv.Curve([x, y])
 
         dmap = hv.DynamicMap(callback, kdims=kdims)
+        assert call_count == 0
         result = dmap[keys]
         assert len(result) == len(keys)
         for key in keys:
             assert key in result.data
 
-        assert call_count[0] == 1
+        assert call_count == len(keys)
 
         # Check we hit cache
         result = dmap[keys]
-        assert call_count[0] == 1
+        assert call_count == len(keys)
 
 
 class DynamicMapOptionsTests(CustomBackendTestCase):
