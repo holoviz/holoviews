@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from types import NoneType
+
 import numpy as np
 import param
 from matplotlib.collections import LineCollection, PatchCollection
@@ -7,7 +9,7 @@ from matplotlib.dates import DateFormatter, date2num
 
 from ...core import util
 from ...core.dimension import Dimension
-from ...core.options import abbreviated_exception
+from ...core.options import Cycle, abbreviated_exception
 from ...core.util import dtype_kind
 from ...element import Polygons
 from ...util.transform import dim
@@ -144,7 +146,11 @@ class ContourPlot(PathPlot):
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
 
-        cdim = element.get_dimension(2) if element.vdims else None
+        raw_color = self.lookup_options(element, "style").kwargs.get("color")
+        if element.vdims and isinstance(raw_color, (Cycle, NoneType)):
+            cdim = element.get_dimension(2)
+        else:
+            cdim = None
 
         if "c" in style:
             style["array"] = style.pop("c")

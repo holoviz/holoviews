@@ -668,6 +668,18 @@ class TestContoursPlot(TestBokehPlot):
         assert property_to_dict(glyph.line_width) == {"field": "line_width"}
         assert list(cds.data["line_width"]) == [7, 3]
 
+    def test_contours_explicit_color_not_overridden_by_vdim(self):
+        contours = hv.Contours(
+            [
+                {("x", "y"): [(0, 0), (0, 1), (1, 0)], "hover_info": "A"},
+                {("x", "y"): [(1, 0), (1, 1), (0, 1)], "hover_info": "B"},
+            ],
+            vdims=["hover_info"],
+        ).opts(color="black")
+        plot = bokeh_renderer.get_plot(contours)
+        glyph = plot.handles["glyph"]
+        assert glyph.line_color == "black"
+
 
 class TestDendrogramPlot(TestBokehPlot):
     @property

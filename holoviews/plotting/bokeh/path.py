@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from types import NoneType
 
 import numpy as np
 import param
@@ -8,6 +9,7 @@ from bokeh.models import FactorRange
 
 from ...core import util
 from ...core.dimension import Dimension
+from ...core.options import Cycle
 from ...core.util import arraylike_types, dtype_kind
 from ...element import Contours, Polygons
 from ...util.transform import dim
@@ -324,18 +326,17 @@ class ContourPlot(PathPlot):
         self._get_hover_data(data, element)
 
         color, fill_color = style.get("color"), style.get("fill_color")
+        raw_color = self.lookup_options(element, "style").kwargs.get("color")
         if (
-            ((isinstance(color, dim) and color.applies(element)) or color in element)
+            not element.vdims
+            or ((isinstance(color, dim) and color.applies(element)) or color in element)
             or (isinstance(fill_color, dim) and fill_color.applies(element))
             or fill_color in element
+            or not isinstance(raw_color, (Cycle, NoneType))
         ):
-            cdim = None
-        else:
-            cdim = element.get_dimension(2) if element.vdims else None
-
-        if cdim is None:
             return data, mapping, style
 
+        cdim = element.get_dimension(2)
         dim_name = util.dimension_sanitizer(cdim.name)
         values = element.dimension_values(cdim, expanded=False)
         data[dim_name] = values
