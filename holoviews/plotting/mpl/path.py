@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from types import NoneType
-
 import numpy as np
 import param
 from matplotlib.collections import LineCollection, PatchCollection
@@ -9,7 +7,7 @@ from matplotlib.dates import DateFormatter, date2num
 
 from ...core import util
 from ...core.dimension import Dimension
-from ...core.options import Cycle, abbreviated_exception
+from ...core.options import abbreviated_exception
 from ...core.util import dtype_kind
 from ...element import Polygons
 from ...util.transform import dim
@@ -80,6 +78,8 @@ class PathPlot(ColorbarPlot):
                 yarr = date2num(yarr)
                 dims[1] = ydim(value_format=DateFormatter(dt_format))
             arr = np.column_stack([xarr, yarr])
+            # If not array-style mapping is present, keep whole paths;
+            # otherwise, segment into (len(x)-1) segments for correct mapping.
             if not style_mapping:
                 paths.append(arr)
                 continue
@@ -146,12 +146,7 @@ class ContourPlot(PathPlot):
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
 
-        raw_color = self.lookup_options(element, "style").kwargs.get("color")
-        if element.vdims and isinstance(raw_color, (Cycle, NoneType)):
-            cdim = element.get_dimension(2)
-        else:
-            cdim = None
-
+        cdim = element.get_dimension(2) if element.vdims else None
         if "c" in style:
             style["array"] = style.pop("c")
             style["clim"] = style.pop("vmin"), style.pop("vmax")

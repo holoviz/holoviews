@@ -209,17 +209,13 @@ class LabelsPlot(ColorbarPlot):
         if self.yoffset is not None:
             ys += self.yoffset
 
-        cs = None
-        if "c" in style:
-            cs = style.pop("c")
-
         if "size" in style:
             style["fontsize"] = style.pop("size")
         if "horizontalalignment" not in style:
             style["horizontalalignment"] = "center"
         if "verticalalignment" not in style:
             style["verticalalignment"] = "center"
-        return (*positions, text, cs), style, {}
+        return (*positions, text, style.pop("c", None)), style, {}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         if plot_args[-1] is not None:

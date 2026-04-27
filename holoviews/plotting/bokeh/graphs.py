@@ -164,8 +164,6 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
 
         point_data = {"index": index}
 
-        point_mapping = {}
-
         # Handle edge colors
         edge_mapping = {}
         nan_node = index.max() + 1 if len(index) else 0
@@ -197,7 +195,7 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
                         dim_name += "_values"
                     path_data[dim_name] = element.dimension_values(d)
         data = {"scatter_1": point_data, self.edge_glyph: path_data, "layout": layout}
-        mapping = {"scatter_1": point_mapping, self.edge_glyph: edge_mapping}
+        mapping = {"scatter_1": {}, self.edge_glyph: edge_mapping}
         return data, mapping, style
 
     def _update_datasource(self, source, data):

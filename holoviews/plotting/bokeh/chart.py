@@ -370,12 +370,7 @@ class VectorFieldPlot(ColorbarPlot):
             y0s = np.tile(y0s, 3)
             y1s = np.concatenate([y1s, ya1s, ya2s])
 
-        data = {
-            "x0": x0s,
-            "x1": x1s,
-            "y0": y0s,
-            "y1": y1s,
-        }
+        data = {"x0": x0s, "x1": x1s, "y0": y0s, "y1": y1s}
         if "hover" in self.handles:
             data.update(
                 {
@@ -387,8 +382,7 @@ class VectorFieldPlot(ColorbarPlot):
                 }
             )
         mapping = dict(x0="x0", x1="x1", y0="y0", y1="y1")
-
-        return (data, mapping, style)
+        return data, mapping, style
 
 
 class CurvePlot(ElementPlot):
@@ -950,11 +944,12 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         field = dimension_sanitizer(cdim.name)
         cd = ds.dimension_values(cdim)
         cmapper = self._get_colormapper(cdim, ds, ranges, style, factors, colors)
+        is_categorical = isinstance(cmapper, CategoricalColorMapper)
         cmapping = {"color": {"field": field, "transform": cmapper}}
 
         # Enable legend if colormapper is categorical
         legend_prop = "legend_field"
-        if self.show_legend and isinstance(cmapper, CategoricalColorMapper):
+        if self.show_legend and is_categorical:
             mapping[legend_prop] = cdim.name
 
         if not self.stacked and ds.ndims > 1 and self.multi_level:
@@ -962,7 +957,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         # Merge data and mappings
         mapping.update(cmapping)
-        if isinstance(cmapper, CategoricalColorMapper) and dtype_kind(cd) in "uif":
+        if is_categorical and dtype_kind(cd) in "uif":
             cd = categorize_array(cd, cdim)
         if field not in data or (
             len(data[field]) != next(len(data[key]) for key in data if key != field)

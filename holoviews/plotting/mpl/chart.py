@@ -549,13 +549,10 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         plot_type = Store.registry["matplotlib"].get(type(range_item))
         if isinstance(plot_type, PlotSelector):
             plot_type = plot_type.get_plot_class(range_item)
-        opts = self.lookup_options(range_item, "plot")
         if plot_type and issubclass(plot_type, ColorbarPlot):
             opts = self.lookup_options(range_item, "style")
             cidx = opts.kwargs.get("color", None)
-            if cidx not in range_item:
-                cidx = None
-            cdim = None if cidx is None else range_item.get_dimension(cidx)
+            cdim = range_item.get_dimension(cidx) if cidx in range_item else None
         else:
             cdim = None
 

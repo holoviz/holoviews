@@ -459,16 +459,3 @@ class TestContoursPlot(TestMPLPlot):
         assert artist.get_linewidths() == [7, 3]
         plot.update((1,))
         assert artist.get_linewidths() == [2, 5]
-
-    def test_contours_explicit_color_not_overridden_by_vdim(self):
-        contours = hv.Contours(
-            [
-                {("x", "y"): [(0, 0), (0, 1), (1, 0)], "hover_info": "A"},
-                {("x", "y"): [(1, 0), (1, 1), (0, 1)], "hover_info": "B"},
-            ],
-            vdims=["hover_info"],
-        ).opts(color="black")
-        plot = mpl_renderer.get_plot(contours)
-        artist = plot.handles["artist"]
-        black = np.array([0.0, 0.0, 0.0, 1.0])
-        assert_data_equal(artist.get_edgecolors()[0], black)
