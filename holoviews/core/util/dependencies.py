@@ -8,6 +8,7 @@ from importlib.metadata import PackageNotFoundError, version
 from importlib.util import find_spec
 
 _re_no = re.compile(r"\d+")
+_convert_int = lambda version_str: tuple(map(int, _re_no.findall(version_str)[:3]))
 
 
 class VersionError(Exception):
@@ -38,7 +39,7 @@ def _get_version(package_name):
 def _no_import_version(package_name) -> tuple[int, int, int]:
     """Get version number without importing the library"""
     version_str = _get_version(package_name)
-    return tuple(map(int, _re_no.findall(version_str)[:3]))
+    return _convert_int(version_str)
 
 
 _MIN_SUPPORTED_VERSION = {
