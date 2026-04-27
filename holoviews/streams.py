@@ -498,11 +498,7 @@ class Counter(Stream):
 
 
 class Pipe(Stream):
-    """A Stream used to pipe arbitrary data to a callback.
-    Unlike other streams memoization can be disabled for a
-    Pipe stream (and is disabled by default).
-
-    """
+    """A Stream used to pipe arbitrary data to a callback."""
 
     data = param.Parameter(
         default=None,
