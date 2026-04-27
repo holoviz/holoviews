@@ -90,7 +90,7 @@ def __getattr__(attr):
 
         return directly_connect_edges
     elif attr == "ds_version":
-        from packaging.version import Version
+        from packaging.version import Version  # noqa: TID251
 
         from ..util.warnings import deprecated
 

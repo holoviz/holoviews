@@ -179,6 +179,7 @@ select = [
     "PT",
     "RUF",
     "TC",
+    "TID251",
     "UP",
     "W",
 ]
@@ -240,6 +241,9 @@ typing = "t"
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"packaging.version.Version".msg = "Use holoviews.core.util.dependencies._no_import_version instead."
 
 [tool.typos.default]
 extend-ignore-re = [
