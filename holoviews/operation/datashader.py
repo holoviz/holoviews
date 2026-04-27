@@ -15,7 +15,6 @@ import pandas as pd
 import param
 import xarray as xr
 from datashader.colors import color_lookup
-from packaging.version import Version
 from param.parameterized import bothmethod
 
 from ..core import (
@@ -43,7 +42,7 @@ from ..core.util import (
     dtype_kind,
     get_param_values,
 )
-from ..core.util.dependencies import PANDAS_GE_3_0_0, _LazyModule
+from ..core.util.dependencies import PANDAS_GE_3_0_0, _LazyModule, _no_import_version
 from ..element import (
     RGB,
     Area,
@@ -67,8 +66,7 @@ from ..element.util import connect_tri_edges_pd
 from ..streams import PointerXY
 from .resample import LinkableOperation, ResampleOperation2D
 
-ds_version = Version(ds.__version__)  # DEPRECATED: Used by hvplot<=0.11.1
-DATASHADER_VERSION = ds_version.release
+DATASHADER_VERSION = _no_import_version("datashader")
 DATASHADER_GE_0_14_0 = DATASHADER_VERSION >= (0, 14, 0)
 DATASHADER_GE_0_15_1 = DATASHADER_VERSION >= (0, 15, 1)
 DATASHADER_GE_0_16_0 = DATASHADER_VERSION >= (0, 16, 0)
@@ -91,6 +89,15 @@ def __getattr__(attr):
         from ._datashader_bundling import directly_connect_edges
 
         return directly_connect_edges
+    elif attr == "ds_version":
+        from packaging.version import Version
+
+        from ..util.warnings import deprecated
+
+        deprecated("1.24.0", "ds_version")
+        ds_version = Version(ds.__version__)  # DEPRECATED: Used by hvplot<=0.11.1
+        return ds_version
+
     raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
 
 

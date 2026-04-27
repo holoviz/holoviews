@@ -13,7 +13,6 @@ from itertools import pairwise
 import narwhals.stable.v2 as nw
 import numpy as np
 import param
-from packaging.version import Version
 from param import _is_number
 
 from ..core import (
@@ -44,6 +43,7 @@ from ..core.util import (
     isfinite,
     label_sanitizer,
 )
+from ..core.util.dependencies import _no_import_version
 from ..element.chart import Histogram, Scatter
 from ..element.path import Contours, Dendrogram, Polygons
 from ..element.raster import RGB, HeatMap, Image
@@ -665,12 +665,7 @@ class contours(Operation):
 
     def _process(self, element, key=None):
         try:
-            from contourpy import (
-                FillType,
-                LineType,
-                __version__ as contourpy_version,
-                contour_generator,
-            )
+            from contourpy import FillType, LineType, contour_generator
         except ImportError:
             raise ImportError("contours operation requires contourpy.") from None
 
@@ -737,7 +732,7 @@ class contours(Operation):
         if self.p.filled:
             vdims = [vdims[0].clone(range=crange)]
 
-        if Version(contourpy_version).release >= (1, 2, 0):
+        if _no_import_version("contourpy") >= (1, 2, 0):
             line_type = LineType.ChunkCombinedNan
         else:
             line_type = LineType.ChunkCombinedOffset
@@ -968,7 +963,7 @@ class histogram(Operation):
         if is_cupy:
             import cupy
 
-            full_cupy_support = Version(cupy.__version__).release > (8, 0, 0)
+            full_cupy_support = _no_import_version("cupy") > (8, 0, 0)
             if not full_cupy_support and (normed or self.p.weight_dimension):
                 data = cupy.asnumpy(data)
                 is_cupy = False

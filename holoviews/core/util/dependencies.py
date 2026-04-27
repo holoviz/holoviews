@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import sys
-from functools import lru_cache
+from functools import cache
 from importlib import import_module
 from importlib.metadata import PackageNotFoundError, version
 from importlib.util import find_spec
@@ -19,14 +19,14 @@ class VersionError(Exception):
         super().__init__(msg, **kwargs)
 
 
-@lru_cache
+@cache
 def _is_installed(module_name):
     # So we don't accidentally import it
     module_name, *_ = module_name.split(".")
     return find_spec(module_name) is not None
 
 
-@lru_cache
+@cache
 def _get_version(package_name):
     try:
         return version(package_name)
@@ -34,6 +34,7 @@ def _get_version(package_name):
         return "0.0.0"
 
 
+@cache
 def _no_import_version(package_name) -> tuple[int, int, int]:
     """Get version number without importing the library"""
     version_str = _get_version(package_name)
