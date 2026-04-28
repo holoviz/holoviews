@@ -502,7 +502,10 @@ class TestDynamicMapMethods:
             ([hv.Dimension("x", values=[1, 2]), "y"], {(1, 0.5)}),
             ([hv.Dimension("x", values=["1", "2"]), "y"], {("1", 0.5)}),
             ([hv.Dimension("x", range=(1, 5)), "y"], {(1, 0.5)}),
-            ([hv.Dimension("x", values=[1, 2]), "y"], {(1, 0.5), (2, 0.5)}),
+            (
+                [hv.Dimension("x", values=[1, 2]), hv.Dimension("y", values=[3, 4])],
+                {(1, 3), (2, 4)},
+            ),
         ],
         ids=["int_values", "str_values", "no_values", "multi_key"],
     )
