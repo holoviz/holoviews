@@ -12,10 +12,8 @@ from holoviews.core.data import NarwhalsInterface
 from holoviews.core.util.dependencies import _no_import_version
 from holoviews.testing import assert_data_equal
 
-from ...utils import optional_dependencies
+from ...utils import pl_skip
 from .base import HeterogeneousColumnTests, InterfaceTests
-
-_, pl_skip = optional_dependencies("polars")
 
 
 class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):

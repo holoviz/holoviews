@@ -11,12 +11,9 @@ from holoviews.core.options import OptionTree
 from holoviews.plotting import bokeh
 from holoviews.util import OutputSettings
 
-from ..utils import LoggingComparison, optional_dependencies
+from ..utils import LoggingComparison, mpl_skip, notebook_skip
 
 BACKENDS = ["matplotlib", "bokeh"]
-
-_, notebook_skip = optional_dependencies("notebook")
-_, mpl_skip = optional_dependencies("matplotlib")
 
 
 @mpl_skip

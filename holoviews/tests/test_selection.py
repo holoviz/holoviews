@@ -9,10 +9,8 @@ from holoviews.plotting.util import linear_gradient
 from holoviews.streams import SelectionXY
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 
-from .utils import optional_dependencies
+from .utils import ds, ds_skip, plotly_skip
 
-plotly, plotly_skip = optional_dependencies("plotly")
-ds, ds_skip = optional_dependencies("datashader")
 if ds:
     from holoviews.operation.datashader import datashade, dynspread
 

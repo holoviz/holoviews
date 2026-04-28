@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import typing as t
 from collections import defaultdict
 
 from ..core import Store
+
+if t.TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class KeywordSettings:
@@ -82,7 +86,6 @@ class KeywordSettings:
         unprocessed = list(reversed(line.split("=")))
         while unprocessed:
             chunk = unprocessed.pop()
-            key = None
             if chunk.strip() in cls.allowed:
                 key = chunk.strip()
             else:
@@ -480,7 +483,7 @@ class OutputSettings(KeywordSettings):
         # Switch format if mode does not allow it
         for p in ["fig", "holomap"]:
             if backend_options.get(p) not in cls.allowed[p]:
-                backend_options[p] = cls.allowed[p][0]
+                backend_options[p] = t.cast("Sequence", cls.allowed[p])[0]
 
         # Ensure backend and mode are set
         backend_options["backend"] = backend_spec

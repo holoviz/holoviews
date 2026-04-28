@@ -107,7 +107,7 @@ class AdjointLayout(Layoutable, Dimensioned):
             if wrong_pos:
                 raise Exception("Wrong AdjointLayout positions provided.")
         elif isinstance(data, list):
-            data = dict(zip(self.layout_order, data, strict=None))
+            data = dict(zip(self.layout_order, data, strict=False))
         else:
             data = {}
 
@@ -298,6 +298,9 @@ class AdjointLayout(Layoutable, Dimensioned):
 
     def keys(self):
         return list(self.data.keys())
+
+    def values(self):
+        return list(self.data.values())
 
     def items(self):
         return list(self.data.items())

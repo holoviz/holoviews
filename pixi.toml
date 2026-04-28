@@ -14,6 +14,7 @@ default = [
     "test-ui",
     "lint",
     "dev",
+    "type",
 ]
 
 [environments.test-310]
@@ -58,6 +59,10 @@ no-default-feature = true
 
 [environments.lint]
 features = ["lint"]
+no-default-feature = true
+
+[environments.type]
+features = ["required", "py310", "optional", "test-core", "type", "type-task"]
 no-default-feature = true
 
 [feature.required.dependencies]
@@ -277,3 +282,15 @@ pre-commit = "*"
 [feature.lint.tasks]
 lint = 'pre-commit run --all-files'
 lint-install = 'pre-commit install'
+
+# =============================================
+# =================== TYPE ====================
+# =============================================
+[feature.type.dependencies]
+ty = "==0.0.32"
+pandas-stubs = "*"
+typing-extensions = "*"
+param = "==2.4.0rc1" # >=2.4.0
+
+[feature.type-task.tasks]
+type-ty = 'ty check .'

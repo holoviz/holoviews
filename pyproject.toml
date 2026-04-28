@@ -245,6 +245,19 @@ convention = "numpy"
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "packaging.version.Version".msg = "Use holoviews.core.util.dependencies._no_import_version instead."
 
+[tool.ty.src]
+include = [
+    "holoviews/*.py",
+    "holoviews/core/*.py",
+    "holoviews/core/util/*.py",
+    "holoviews/util/*.py",
+    "scripts/*.py",
+]
+exclude = ["holoviews/*version.py"]
+
+[tool.ty.rules]
+unresolved-import = "ignore"
+
 [tool.typos.default]
 extend-ignore-re = [
     ".*(?:#|--|//|/*).*(?:typos):\\s?ignore[^\\n]*\\n",

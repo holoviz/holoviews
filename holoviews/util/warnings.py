@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import os
 import sys
+import typing as t
 import warnings
 
 import param
@@ -42,7 +43,7 @@ def find_stack_level():
     )
 
     if ipc := sys.modules.get("IPython.core"):
-        ignore_paths = (*ignore_paths, os.path.dirname(ipc.__file__))
+        ignore_paths = (*ignore_paths, os.path.dirname(t.cast("str", ipc.__file__)))
 
     frame = inspect.currentframe()
     try:

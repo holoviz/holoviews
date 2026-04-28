@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import sys
 import types
-from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -11,17 +10,12 @@ from ..dimension import Dimension, asdim, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..util import dtype_kind
-from ..util.dependencies import _LazyModule, _no_import_version
+from ..util.dependencies import _no_import_version, cp
 from .grid import GridInterface
 from .interface import DataError, Interface
 from .util import dask_array_module, finite_range
 
 XARRAY_VERSION = _no_import_version("xarray")
-
-if TYPE_CHECKING:
-    import cupy as cp
-else:
-    cp = _LazyModule("cupy", bool_use_sys_modules=True)
 
 
 def is_cupy(array):

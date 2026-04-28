@@ -15,14 +15,7 @@ import pytest
 import holoviews as hv
 from holoviews.testing import assert_element_equal
 
-from ..utils import optional_dependencies
-
-dask, dask_skip = optional_dependencies("dask")
-xr, xr_skip = optional_dependencies("xarray")
-
-if dask:
-    import dask.array as da
-    import dask.dataframe as dd
+from ..utils import da, dask, dd, xr, xr_skip
 
 dask_conversion_warning = pytest.mark.filterwarnings(
     "ignore:Dask currently has limited support for converting pandas extension dtypes to arrays:UserWarning"

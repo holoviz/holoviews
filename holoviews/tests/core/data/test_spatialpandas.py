@@ -14,11 +14,8 @@ from holoviews.core.data.interface import DataError
 from holoviews.core.data.spatialpandas import get_value_array
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from ...utils import optional_dependencies
+from ...utils import dd_skip, spd, spd_skip
 from .test_multiinterface import GeomTests
-
-spd, spd_skip = optional_dependencies("spatialpandas")
-dd, dask_skip = optional_dependencies("dask.dataframe")
 
 if spd:
     import spatialpandas.geometry as sgeom
@@ -325,7 +322,7 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
 
 
 @spd_skip
-@dask_skip
+@dd_skip
 class DaskSpatialPandasTest(GeomTests, RoundTripTests):
     """
     Test of the DaskSpatialPandasInterface.
