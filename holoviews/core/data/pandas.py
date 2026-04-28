@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy as np
 
 from .. import util
@@ -9,14 +7,9 @@ from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..util import dtype_kind
-from ..util.dependencies import PANDAS_GE_2_1_0, _LazyModule
+from ..util.dependencies import PANDAS_GE_2_1_0, pd
 from .interface import DataError, Interface
 from .util import finite_range
-
-if TYPE_CHECKING:
-    import pandas as pd
-else:
-    pd = _LazyModule("pandas")
 
 
 class PandasAPI:
@@ -39,7 +32,7 @@ class PandasInterface(Interface, PandasAPI):
     def loaded(cls):
         # 2025-02: As long as it is a required dependency and to not break
         # existing behavior we will for now always return True
-        return bool(pd)
+        return True
 
     @classmethod
     def applies(cls, obj):

@@ -10,16 +10,13 @@ import holoviews as hv
 from holoviews.core.data import XArrayInterface, concat
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from ...utils import optional_dependencies
+from ...utils import da, da_skip, xr, xr_skip
 from .test_gridinterface import BaseGridInterfaceTests
 from .test_imageinterface import (
     BaseHSVElementInterfaceTests,
     BaseImageElementInterfaceTests,
     BaseRGBElementInterfaceTests,
 )
-
-xr, xr_skip = optional_dependencies("xarray")
-da, dask_skip = optional_dependencies("dask.array")
 
 
 @xr_skip
@@ -386,7 +383,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         pytest.skip("Not supported")
 
 
-@dask_skip
+@da_skip
 class DaskXArrayInterfaceTest(XArrayInterfaceTests):
     """
     Tests for XArray interface wrapping dask arrays

@@ -38,16 +38,22 @@ import difflib
 import inspect
 import pickle
 import traceback
+import typing as t
 from collections import defaultdict
 from contextlib import contextmanager
 
 import numpy as np
 import param
 
+from ..util.warnings import HoloviewsUserWarning, warn
 from .accessors import Opts  # noqa (clean up in 2.0)
 from .pprint import InfoPrinter
 from .tree import AttrTree
 from .util import group_sanitizer, label_sanitizer, sanitize_identifier
+
+if t.TYPE_CHECKING:
+    from ..util import _BackendT
+    from ..util.settings import OutputSettings
 
 
 def cleanup_custom_options(id, weakref=None):
@@ -322,8 +328,8 @@ class Cycle(param.Parameterized):
         super().__init__(**params)
         self.values = self._get_values()
 
-    def __getitem__(self, num):
-        return self(values=self.values[:num])
+    def __getitem__(self, key):
+        return self(values=self.values[:key])
 
     def _get_values(self):
         if self.values:
@@ -410,7 +416,7 @@ class Palette(Cycle):
         super(Cycle, self).__init__(key=key, **params)
         self.values = self._get_values()
 
-    def __getitem__(self, slc):
+    def __getitem__(self, key):
         """Provides a convenient interface to override the
         range and samples parameters of the Cycle.
         Supplying a slice step or index overrides the
@@ -419,15 +425,15 @@ class Palette(Cycle):
 
         """
         (start, stop), step = self.range, self.samples
-        if isinstance(slc, slice):
-            if slc.start is not None:
-                start = slc.start
-            if slc.stop is not None:
-                stop = slc.stop
-            if slc.step is not None:
-                step = slc.step
+        if isinstance(key, slice):
+            if key.start is not None:
+                start = key.start
+            if key.stop is not None:
+                stop = key.stop
+            if key.step is not None:
+                step = key.step
         else:
-            step = slc
+            step = key
         return self(range=(start, stop), samples=step)
 
     def _get_values(self):
@@ -486,8 +492,9 @@ class Options:
             error = OptionError(invalid_kw, allowed_keywords, group_name=key)
             StoreOptions.record_skipped_option(error)
         if invalid_kws and self.warn_on_skip:
-            self.param.warning(
-                f"Invalid options {invalid_kws!r}, valid options are: {allowed_keywords!s}"
+            warn(
+                f"Invalid options {invalid_kws!r}, valid options are: {allowed_keywords!s}",
+                category=HoloviewsUserWarning,
             )
 
         self.kwargs = dict([(k, kwargs[k]) for k in sorted(kwargs.keys()) if k not in invalid_kws])
@@ -683,21 +690,16 @@ class OptionTree(AttrTree):
                 e.invalid_keyword, e.allowed_keywords, group_name=group_name, path=self.path
             ) from e
 
-    def __getitem__(self, item):
-        if item in self.groups:
-            return self.groups[item]
-        return super().__getitem__(item)
+    def __getitem__(self, key):
+        if key in self.groups:
+            return self.groups[key]
+        return super().__getitem__(key)
 
     def __getattr__(self, identifier):
         """Allows creating sub OptionTree instances using attribute
         access, inheriting the group options.
 
         """
-        try:
-            return super(AttrTree, self).__getattr__(identifier)
-        except AttributeError:
-            pass
-
         if identifier.startswith("_"):
             raise AttributeError(str(identifier))
         elif self.fixed == True:
@@ -844,26 +846,28 @@ class OptionTree(AttrTree):
             if groups[group].kwargs != {}:
                 accumulator.append((".", groups[group].kwargs))
 
-            for t, v in sorted(self.items()):
+            for k, v in sorted(self.items()):
                 kwargs = v.groups[group].kwargs
-                accumulator.append((".".join(t), kwargs))
+                accumulator.append((".".join(k), kwargs))
 
-            for t, kws in accumulator:
+            for name, kws in accumulator:
                 if group == "norm" and all(
                     kws.get(k, False) is False for k in ["axiswise", "framewise"]
                 ):
                     continue
                 elif kws:
-                    especs.append((t, kws))
+                    especs.append((name, kws))
 
             if especs:
                 format_kws = [
-                    (t, f"dict({', '.join(f'{k}={v}' for k, v in sorted(kws.items()))})")
-                    for t, kws in especs
+                    (name, f"dict({', '.join(f'{k}={v}' for k, v in sorted(kws.items()))})")
+                    for name, kws in especs
                 ]
-                ljust = max(len(t) for t, _ in format_kws)
+                ljust = max(len(name) for name, _ in format_kws)
                 sep = (tab * 2) if len(format_kws) > 1 else ""
-                entries = sep + esep.join([f"{sep}{t.ljust(ljust)} : {v}" for t, v in format_kws])
+                entries = sep + esep.join(
+                    [f"{sep}{name.ljust(ljust)} : {v}" for name, v in format_kws]
+                )
                 gspecs.append(
                     ("%s%s={\n%s}" if len(format_kws) > 1 else "%s%s={%s}") % (tab, group, entries)
                 )
@@ -990,14 +994,8 @@ class Compositor(param.Parameterized):
             result = applicable_op.apply(sliced, ranges, backend)
             if applicable_op.group:
                 result = result.relabel(group=applicable_op.group)
-            if isinstance(overlay, Overlay):
-                result = [result]
-            else:
-                result = list(zip(sliced.keys(), [result], strict=None))
-            processed[applicable_op] += [
-                el for r in result for el in r.traverse(lambda x: x, [Element])
-            ]
-            overlay = overlay.clone(values[:start] + result + values[stop:])
+            processed[applicable_op] += result.traverse(lambda x: x, [Element])
+            overlay = overlay.clone([*values[:start], result, *values[stop:]])
 
             # Guard against infinite recursion for no-ops
             spec_fn = lambda x: not isinstance(x, CompositeOverlay)
@@ -1016,7 +1014,7 @@ class Compositor(param.Parameterized):
         # Apply compositors
         clone = holomap.clone(shared_data=False)
         data = (
-            zip(ranges[1], holomap.data.values(), strict=None) if ranges else holomap.data.items()
+            zip(ranges[1], holomap.data.values(), strict=False) if ranges else holomap.data.items()
         )
         for key, overlay in data:
             clone[key] = cls.collapse_element(overlay, ranges, mode)
@@ -1107,7 +1105,7 @@ class Compositor(param.Parameterized):
 
         """
         level = 0
-        for spec, el in zip(self._pattern_spec, overlay_items, strict=None):
+        for spec, el in zip(self._pattern_spec, overlay_items, strict=False):
             if spec[0] != type(el).__name__:
                 return None
             level += 1  # Types match
@@ -1216,9 +1214,11 @@ class Store:
     load_counter_offset = None
     save_option_state = False
 
-    current_backend = "matplotlib"
+    current_backend: _BackendT = "matplotlib"
 
     _backend_switch_hooks = []
+
+    output_settings: type[OutputSettings]
 
     @classmethod
     def set_current_backend(cls, backend):
@@ -1713,7 +1713,7 @@ class StoreOptions:
         return expanded_spec, applied_keys
 
     @classmethod
-    def create_custom_trees(cls, obj, options=None, backend=None):
+    def create_custom_trees(cls, obj, options, backend=None):
         """Returns the appropriate set of customized subtree clones for
         an object, suitable for merging with Store.custom_options (i.e
         with the ids appropriately offset). Note if an object has no

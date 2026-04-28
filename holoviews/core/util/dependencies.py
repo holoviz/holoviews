@@ -2,10 +2,14 @@ from __future__ import annotations
 
 import re
 import sys
+import typing as t
 from functools import lru_cache
 from importlib import import_module
 from importlib.metadata import PackageNotFoundError, version
 from importlib.util import find_spec
+
+if t.TYPE_CHECKING:
+    from types import ModuleType
 
 _re_no = re.compile(r"\d+")
 
@@ -34,7 +38,7 @@ def _get_version(package_name):
         return "0.0.0"
 
 
-def _no_import_version(package_name) -> tuple[int, int, int]:
+def _no_import_version(package_name) -> tuple[int, ...]:
     """Get version number without importing the library"""
     version_str = _get_version(package_name)
     return tuple(map(int, _re_no.findall(version_str)[:3]))
@@ -46,7 +50,7 @@ _MIN_SUPPORTED_VERSION = {
 
 
 class _LazyModule:
-    def __init__(self, module_name, package_name=None, *, bool_use_sys_modules=False):
+    def __init__(self, module_name: str, package_name: str | None = None):
         """
         Lazy import module
 
@@ -60,17 +64,13 @@ class _LazyModule:
             Name of the package, this is the named used for installing the package, e.g. `pip install pillow`.
             Used for the __version__ if the module is not imported.
             If not set uses the module_name.
-        bool_use_sys_modules: bool, optional, default False
-            Also check `sys.modules` for module in __bool__ check if True.
-            This means that bool can only be True if the module is already imported.
         """
         self.__module = None
         self.__module_name = module_name
         self.__package_name = package_name or module_name
-        self.__bool_use_sys_modules = bool_use_sys_modules
 
     @property
-    def _module(self):
+    def _module(self) -> ModuleType:
         if self.__module is None:
             self.__module = import_module(self.__module_name)
             if self.__package_name in _MIN_SUPPORTED_VERSION:
@@ -87,19 +87,16 @@ class _LazyModule:
     def __getattr__(self, attr):
         return getattr(self._module, attr)
 
-    def __dir__(self):
+    def __dir__(self) -> list[str]:
         return dir(self._module)
 
-    def __bool__(self):
-        if self.__bool_use_sys_modules:
-            return bool(
-                self.__module
-                or (_is_installed(self.__module_name) and self.__module_name in sys.modules)
-            )
-        else:
-            return bool(self.__module or _is_installed(self.__module_name))
+    def __bool__(self) -> bool:
+        return bool(
+            self.__module
+            or (_is_installed(self.__module_name) and self.__module_name in sys.modules)
+        )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.__module:
             return repr(self.__module).replace("<module", "<lazy-module")
         else:
@@ -109,6 +106,25 @@ class _LazyModule:
     def __version__(self):
         return self.__module and self.__module.__version__ or _get_version(self.__package_name)
 
+
+if t.TYPE_CHECKING:
+    import cftime
+    import cudf
+    import cupy as cp
+    import dask.array as da
+    import dask.dataframe as dd
+    import ibis
+    import pandas as pd
+    import polars as pl
+else:
+    cftime = _LazyModule("cftime")
+    cudf = _LazyModule("cudf")
+    cp = _LazyModule("cupy")
+    da = _LazyModule("dask.array")
+    dd = _LazyModule("dask.dataframe")
+    ibis = _LazyModule("ibis", "ibis-framework")
+    pd = _LazyModule("pandas")
+    pl = _LazyModule("polars")
 
 # Versions
 NUMPY_VERSION = _no_import_version("numpy")
@@ -128,5 +144,4 @@ __all__ = [
     "PANDAS_GE_3_0_0",
     "PANDAS_VERSION",
     "PARAM_VERSION",
-    "_LazyModule",
 ]

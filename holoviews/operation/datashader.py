@@ -43,7 +43,7 @@ from ..core.util import (
     dtype_kind,
     get_param_values,
 )
-from ..core.util.dependencies import PANDAS_GE_3_0_0, _LazyModule
+from ..core.util.dependencies import PANDAS_GE_3_0_0, dd
 from ..element import (
     RGB,
     Area,
@@ -75,11 +75,7 @@ DATASHADER_GE_0_16_0 = DATASHADER_VERSION >= (0, 16, 0)
 DATASHADER_GE_0_18_1 = DATASHADER_VERSION >= (0, 18, 1)
 
 if TYPE_CHECKING:
-    import dask.dataframe as dd
-
     from ._datashader_bundling import bundle_graph, directly_connect_edges  # noqa: F401
-else:
-    dd = _LazyModule("dask.dataframe", bool_use_sys_modules=True)
 
 
 def __getattr__(attr):

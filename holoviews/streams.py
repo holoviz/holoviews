@@ -6,6 +6,7 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 
 from __future__ import annotations
 
+import typing as t
 import weakref
 from collections import defaultdict
 from contextlib import contextmanager
@@ -13,18 +14,19 @@ from functools import partial
 from itertools import groupby
 from numbers import Number
 from types import FunctionType
-from typing import TYPE_CHECKING
 
 import numpy as np
 import param
 
 from .core import util
 from .core.ndmapping import UniformNdMapping
+from .core.util.dependencies import pd
 
-if TYPE_CHECKING:
-    import pandas as pd
-else:
-    pd = util.dependencies._LazyModule("pandas", bool_use_sys_modules=True)
+if t.TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from .core import Dataset
+    from .element import Path
 
 
 # Types supported by Pointer derived streams
@@ -142,29 +144,28 @@ class Stream(param.Parameterized):
         Supported types: bool, int, float, str, dict, tuple and list
 
         """
-        params = {"name": param.String(default=name)}
+        params: dict[str, param.Parameter] = {"name": param.String(default=name)}
         for k, v in kwargs.items():
-            kws = dict(default=v, constant=True)
             if isinstance(v, param.Parameter):
                 params[k] = v
             elif isinstance(v, bool):
-                params[k] = param.Boolean(**kws)
+                params[k] = param.Boolean(default=v, constant=True)
             elif isinstance(v, int):
-                params[k] = param.Integer(**kws)
+                params[k] = param.Integer(default=v, constant=True)
             elif isinstance(v, float):
-                params[k] = param.Number(**kws)
+                params[k] = param.Number(default=v, constant=True)
             elif isinstance(v, str):
-                params[k] = param.String(**kws)
+                params[k] = param.String(default=v, constant=True)
             elif isinstance(v, dict):
-                params[k] = param.Dict(**kws)
+                params[k] = param.Dict(default=v, constant=True)
             elif isinstance(v, tuple):
-                params[k] = param.Tuple(**kws)
+                params[k] = param.Tuple(default=v, constant=True)
             elif isinstance(v, list):
-                params[k] = param.List(**kws)
+                params[k] = param.List(default=v, constant=True)
             elif isinstance(v, np.ndarray):
-                params[k] = param.Array(**kws)
+                params[k] = param.Array(default=v, constant=True)
             else:
-                params[k] = param.Parameter(**kws)
+                params[k] = param.Parameter(default=v, constant=True)
 
         # Dynamic class creation using type
         return type(name, (Stream,), params)
@@ -221,7 +222,7 @@ class Stream(param.Parameterized):
         """Called when a stream has been triggered"""
 
     @classmethod
-    def _process_streams(cls, streams):
+    def _process_streams(cls, streams: list[t.Any]) -> tuple[list[Params], list[Params]]:
         """Processes a list of streams promoting Parameterized objects and
         methods to Param based streams.
 
@@ -321,7 +322,7 @@ class Stream(param.Parameterized):
     @property
     def subscribers(self):
         """Property returning the subscriber list"""
-        return [s for p, s in sorted(self._subscribers, key=lambda x: x[0])]
+        return [s for _, s in sorted(self._subscribers, key=lambda x: x[0])]
 
     def clear(self, policy="all"):
         """Clear all subscribers registered to this stream.
@@ -497,11 +498,7 @@ class Counter(Stream):
 
 
 class Pipe(Stream):
-    """A Stream used to pipe arbitrary data to a callback.
-    Unlike other streams memoization can be disabled for a
-    Pipe stream (and is disabled by default).
-
-    """
+    """A Stream used to pipe arbitrary data to a callback."""
 
     data = param.Parameter(
         default=None,
@@ -509,7 +506,7 @@ class Pipe(Stream):
         doc="Arbitrary data being streamed to a DynamicMap callback.",
     )
 
-    def __init__(self, data=None, memoize=False, **params):
+    def __init__(self, data=None, **params):
         super().__init__(data=data, **params)
         self._memoize_counter = 0
 
@@ -580,7 +577,7 @@ class Buffer(Pipe):
 
     def verify(self, x):
         """Verify consistency of dataframes that pass through this stream"""
-        if type(x) != type(self.data):  # noqa: E721
+        if type(x) is not type(self.data):
             raise TypeError(
                 f"Input expected to be of type {type(self.data).__name__}, got {type(x).__name__}."
             )
@@ -604,7 +601,7 @@ class Buffer(Pipe):
             elif len({len(v) for v in x.values()}) > 1:
                 raise ValueError("Input columns expected to have the same number of rows.")
 
-    def clear(self):
+    def clear(self, policy="all"):
         """Clears the data in the stream"""
         if isinstance(self.data, np.ndarray):
             data = self.data[:, :0]
@@ -640,6 +637,7 @@ class Buffer(Pipe):
             elif data_length > self.length:
                 data = data.iloc[-self.length :]
         elif isinstance(data, dict) and data:
+            data = t.cast("dict[str, np.ndarray]", data)
             data_length = len(next(iter(data.values())))
             new_data = {}
             for k, v in data.items():
@@ -757,14 +755,30 @@ class Params(Stream):
     )
 
     def __init__(
-        self, parameterized=None, parameters=None, watch=True, watch_only=False, **params
-    ):
+        self,
+        parameterized: param.Parameterized | type[param.Parameterized] | None = None,
+        parameters: Sequence[param.Parameter | str] | None = None,
+        watch: bool = True,
+        watch_only: bool = False,
+        **params,
+    ) -> None:
+
         if parameters is None:
+            if parameterized is None:
+                msg = "Must supply a parameterized object if parameters are not set."
+                raise ValueError(msg)
             parameters = [parameterized.param[p] for p in parameterized.param if p != "name"]
         else:
-            parameters = [
-                p if isinstance(p, param.Parameter) else parameterized.param[p] for p in parameters
-            ]
+            resolved_parameters = []
+            for p in parameters:
+                if isinstance(p, param.Parameter):
+                    resolved_parameters.append(p)
+                elif parameterized is None:
+                    msg = "Must supply a parameterized object if parameters are given as strings."
+                    raise ValueError(msg)
+                else:
+                    resolved_parameters.append(parameterized.param[p])
+            parameters = resolved_parameters
 
         if "rename" in params:
             rename = {}
@@ -877,7 +891,6 @@ class Params(Stream):
                     owner.param.update(**updates)
         elif isinstance(self.parameterized, Stream):
             self.parameterized.update(**kwargs)
-            return
         else:
             self.parameterized.param.update(**kwargs)
 
@@ -1330,11 +1343,12 @@ class CrossFilterSet(Derived):
                     vals = set.intersection(
                         *(set(expr.ops[2]["args"][0]) for expr in selection_exprs)
                     )
-                    old = selection_exprs[0]
+                    old = t.cast("dim", selection_exprs[0])
                     selection_expr = dim("new")
                     selection_expr.dimension = old.dimension
                     selection_expr.ops = list(old.ops)
-                    selection_expr.ops[2] = dict(selection_expr.ops[2], args=(list(vals),))
+                    selection_expr.ops[2] = selection_expr.ops[2].copy()
+                    selection_expr.ops[2]["args"] = (list(vals),)
             else:
                 selection_expr = selection_exprs[0]
                 for expr in selection_exprs[1:]:
@@ -1779,7 +1793,6 @@ class Selection1D(LinkedStream):
 
     index = param.List(
         default=[],
-        allow_None=True,
         constant=True,
         doc="Indices into a 1D datastructure.",
     )
@@ -1809,6 +1822,8 @@ class CDSStream(LinkedStream):
         (for point-like data) or list of lists of values (for
         path-like data).""",
     )
+
+    element: Dataset
 
 
 class PointDraw(CDSStream):
@@ -1878,7 +1893,7 @@ class PointDraw(CDSStream):
     def dynamic(self):
         from .core.spaces import DynamicMap
 
-        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
+        return DynamicMap(lambda: self.element, streams=[self])
 
 
 class CurveEdit(PointDraw):
@@ -1971,7 +1986,7 @@ class PolyDraw(CDSStream):
         super().__init__(**params)
 
     @property
-    def element(self):
+    def element(self) -> Path:
         source = self.source
         if isinstance(source, UniformNdMapping):
             source = source.last
@@ -1991,7 +2006,7 @@ class PolyDraw(CDSStream):
     def dynamic(self):
         from .core.spaces import DynamicMap
 
-        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
+        return DynamicMap(lambda: self.element, streams=[self])
 
 
 class FreehandDraw(CDSStream):
@@ -2050,7 +2065,7 @@ class FreehandDraw(CDSStream):
     def dynamic(self):
         from .core.spaces import DynamicMap
 
-        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
+        return DynamicMap(lambda: self.element, streams=[self])
 
 
 class BoxEdit(CDSStream):
@@ -2106,7 +2121,7 @@ class BoxEdit(CDSStream):
             return source.clone(data, id=None)
         paths = []
         for i, (x0, x1, y0, y1) in enumerate(
-            zip(data["x0"], data["x1"], data["y0"], data["y1"], strict=None)
+            zip(data["x0"], data["x1"], data["y0"], data["y1"], strict=True)
         ):
             xs = [x0, x0, x1, x1]
             ys = [y0, y1, y1, y0]
@@ -2122,7 +2137,7 @@ class BoxEdit(CDSStream):
     def dynamic(self):
         from .core.spaces import DynamicMap
 
-        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
+        return DynamicMap(lambda: self.element, streams=[self])
 
 
 class PolyEdit(PolyDraw):

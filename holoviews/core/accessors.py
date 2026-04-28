@@ -10,6 +10,7 @@ import param
 
 from . import util
 from .pprint import PrettyPrinter
+from .util import _is_deep_indexable
 
 
 class AccessorPipelineMeta(type):
@@ -233,7 +234,7 @@ class Apply(metaclass=AccessorPipelineMeta):
             ):
                 new_obj._dataset = self._obj.dataset
             return new_obj
-        elif self._obj._deep_indexable:
+        elif _is_deep_indexable(self._obj):
             mapped = []
             for k, v in self._obj.data.items():
                 new_val = v.apply(
@@ -409,7 +410,9 @@ class Redim(metaclass=AccessorPipelineMeta):
         """
         filtered = []
         for key, value in dmap.data.items():
-            if not any(kd.values and v not in kd.values for kd, v in zip(kdims, key, strict=None)):
+            if not any(
+                kd.values and v not in kd.values for kd, v in zip(kdims, key, strict=False)
+            ):
                 filtered.append((key, value))
         return filtered
 
@@ -467,7 +470,7 @@ class Redim(metaclass=AccessorPipelineMeta):
         """
         obj = self._obj
         redimmed = obj
-        if obj._deep_indexable and self.mode != "dataset":
+        if _is_deep_indexable(obj) and self.mode != "dataset":
             deep_mapped = [(k, v.redim(specs, **dimensions)) for k, v in obj.items()]
             redimmed = obj.clone(deep_mapped)
 
@@ -480,7 +483,7 @@ class Redim(metaclass=AccessorPipelineMeta):
 
         kdims = self.replace_dimensions(obj.kdims, dimensions)
         vdims = self.replace_dimensions(obj.vdims, dimensions)
-        zipped_dims = zip(obj.kdims + obj.vdims, kdims + vdims, strict=None)
+        zipped_dims = zip(obj.kdims + obj.vdims, kdims + vdims, strict=False)
         renames = {pk.name: nk for pk, nk in zipped_dims if pk.name != nk.name}
 
         if self.mode == "dataset":

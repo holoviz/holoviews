@@ -18,6 +18,7 @@ from ...core.util import (
     unique_iterator,
     wrap_tuple,
 )
+from ...core.util.dependencies import cp, da
 from ...operation.stats import univariate_kde
 from ...util.transform import dim
 from ..mixins import MultiDistributionMixin
@@ -165,13 +166,9 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
         is_dask = is_dask_array(vals)
         is_cupy = is_cupy_array(vals)
         if is_cupy:
-            import cupy
-
-            percentile = cupy.percentile
-            is_finite = cupy.isfinite
+            percentile = cp.percentile
+            is_finite = cp.isfinite
         elif is_dask:
-            import dask.array as da
-
             percentile = da.percentile
         else:
             percentile = np.percentile
@@ -195,7 +192,7 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
                 q3.item(),
                 upper.item(),
                 lower.item(),
-                cupy.asnumpy(outliers),
+                cp.asnumpy(outliers),
             )
         elif is_dask:
             return da.compute(q1, q2, q3, upper, lower, outliers)
