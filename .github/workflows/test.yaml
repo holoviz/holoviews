@@ -130,7 +130,6 @@ jobs:
         with:
           environments: ${{ matrix.environment }}
       - name: Check packages latest version
-        if: ${{ needs.setup.outputs.matrix_option != 'downstream' }}
         run: |
           pixi run -e ${{ matrix.environment }} check-latest-packages bokeh panel param datashader
       - name: Test Unit
@@ -193,7 +192,6 @@ jobs:
         with:
           environments: ${{ matrix.environment }}
       - name: Check packages latest version
-        if: ${{ needs.setup.outputs.matrix_option != 'downstream' }}
         run: |
           pixi run -e ${{ matrix.environment }} check-latest-packages pandas bokeh panel param numpy
       - name: Test Unit
