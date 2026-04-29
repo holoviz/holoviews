@@ -32,6 +32,7 @@ from ...element import (
     Dendrogram,
     Distribution,
     Div,
+    Donut,
     EdgePaths,
     Ellipse,
     ErrorBars,
@@ -94,6 +95,7 @@ from .chart import (
     AreaPlot,
     BarPlot,
     CurvePlot,
+    DonutPlot,
     ErrorPlot,
     HistogramPlot,
     PointPlot,
@@ -137,6 +139,7 @@ associations = {
     Curve: CurvePlot,
     Bars: BarPlot,
     Waterfall: WaterfallPlot,
+    Donut: DonutPlot,
     Points: PointPlot,
     Scatter: PointPlot,
     ErrorBars: ErrorPlot,
@@ -266,6 +269,16 @@ options.ErrorBars = Options("style", color="black")
 options.Spread = Options("style", color=Cycle(), alpha=0.6, line_color="black", muted_alpha=0.2)
 options.Bars = Options("style", color=Cycle(), line_color="black", bar_width=0.8, muted_alpha=0.2)
 options.Waterfall = Options("style", line_color="black", bar_width=0.8, muted_alpha=0.2)
+options.Donut = Options(
+    "plot",
+    xaxis=None,
+    yaxis=None,
+    tools=["hover"],
+    show_frame=False,
+    legend_position="center",
+    inner_radius=0.8,
+)
+options.Donut = Options("style", cmap="Category20")
 options.Spikes = Options("style", color="black", cmap=dflt_cmap, muted_alpha=0.2)
 options.Area = Options("style", color=Cycle(), alpha=1, line_color="black", muted_alpha=0.2)
 options.VectorField = Options("style", color="black", muted_alpha=0.2)

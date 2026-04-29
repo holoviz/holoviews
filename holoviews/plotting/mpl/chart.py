@@ -5,7 +5,7 @@ import numpy as np
 import param
 from matplotlib.collections import LineCollection
 from matplotlib.dates import DateFormatter, date2num
-from matplotlib.patches import Patch
+from matplotlib.patches import Patch, Wedge
 
 from ...core.dimension import Dimension
 from ...core.options import Store, abbreviated_exception
@@ -23,9 +23,15 @@ from ...core.util import (
 from ...element import HeatMap, Raster
 from ...operation import interpolate_curve
 from ...util.transform import dim
-from ..mixins import AreaMixin, BarsMixin, SpikesMixin, WaterfallMixin
+from ..mixins import AreaMixin, BarsMixin, DonutMixin, SpikesMixin, WaterfallMixin
 from ..plot import PlotSelector
-from ..util import compute_sizes, dim_range_key, get_min_distance, get_sideplot_ranges
+from ..util import (
+    compute_sizes,
+    dim_range_key,
+    get_min_distance,
+    get_sideplot_ranges,
+    process_cmap,
+)
 from .element import ColorbarPlot, ElementPlot, LegendPlot
 from .path import PathPlot
 from .plot import AdjoinedPlot, mpl_rc_context
@@ -1597,3 +1603,247 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
         self.handles["artist"] = bars
 
         return {"yticks": xticks} if self.invert_axes else {"xticks": xticks}
+
+
+class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
+    """Matplotlib Donut chart renderer."""
+
+    center_font_size = param.Number(
+        default=12,
+        doc="Font size for the center label in points.",
+    )
+
+    center_label = param.String(
+        default=None,
+        allow_None=True,
+        doc="""Text to display in the center of the donut. If set to
+        'total', the sum of all values is shown. Any other string
+        is used as a format template with access to 'total' and
+        the vdim name as keys. None disables the center label.""",
+    )
+
+    center_text_align = param.Selector(
+        default="center",
+        objects=["left", "right", "center"],
+        doc="Horizontal alignment of the center label.",
+    )
+
+    center_text_baseline = param.Selector(
+        default="center",
+        objects=["top", "bottom", "center", "baseline", "center_baseline"],
+        doc="Vertical alignment of the center label.",
+    )
+
+    center_text_color = param.Color(
+        default="black",
+        doc="Color for the center label.",
+    )
+
+    inner_radius = param.Number(
+        default=0.4,
+        bounds=(0, 1),
+        doc="Inner radius of the annulus. Set to 0 for a pie chart.",
+    )
+
+    label_font_size = param.Number(
+        default=9,
+        doc="Font size for wedge labels in points.",
+    )
+
+    label_radius = param.Number(
+        default=0.7,
+        bounds=(0, None),
+        doc="""Radial distance of wedge labels as a multiple of outer_radius.
+        1.0 places labels exactly at the outer edge; values above 1
+        push them outside the ring.""",
+    )
+
+    label_text_align = param.Selector(
+        default="center",
+        objects=["auto", "left", "right", "center"],
+        doc="""Horizontal alignment of wedge labels. 'auto' chooses
+        left/right based on angular position and whether labels are
+        inside or outside the ring.""",
+    )
+
+    label_text_baseline = param.Selector(
+        default="bottom",
+        objects=["top", "bottom", "center", "baseline", "center_baseline"],
+        doc="Vertical alignment of wedge labels.",
+    )
+
+    label_text_color = param.Color(
+        default="black",
+        doc="Color for wedge labels.",
+    )
+
+    outer_radius = param.Number(
+        default=1.0,
+        bounds=(0, None),
+        doc="Outer radius of the annulus.",
+    )
+
+    show_labels = param.ClassSelector(
+        default=False,
+        class_=(bool, str),
+        doc="""Whether and how to draw text labels next to each wedge.
+        Can be a boolean or a template string using dimension names
+        (e.g. '{Category}: {Amount}').""",
+    )
+
+    show_legend = param.Boolean(
+        default=True,
+        doc="Whether to show legend for the plot.",
+    )
+
+    start_angle = param.Number(
+        default=0,
+        doc="Rotation offset in radians for the first wedge.",
+    )
+
+    style_opts = [
+        "alpha",
+        "cmap",
+        "edgecolor",
+        "linewidth",
+        "hatch",
+        "visible",
+    ]
+
+    _nonvectorized_styles = ["alpha", "visible", "hatch", "cmap"]
+
+    @mpl_rc_context
+    def initialize_plot(self, ranges=None):
+        element = self.hmap.last
+        axis = self.handles["axis"]
+        key = self.keys[-1]
+
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = match_spec(element, ranges)
+
+        style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
+        with abbreviated_exception():
+            style = self._apply_transforms(element, ranges, style)
+
+        wedges = self._create_wedges(axis, element, ranges, style)
+        self.handles["artist"] = wedges
+
+        kdim = element.kdims[0]
+        vdim = element.vdims[0]
+        return self._finalize_axis(
+            key,
+            ranges=ranges,
+            element=element,
+            dimensions=[kdim, vdim],
+        )
+
+    def _get_colors(self, labels, style, n):
+        """Resolve colors for n wedges from cmap or Cycle."""
+        cmap = style.pop("cmap", None)
+        if cmap and n > 0:
+            if isinstance(cmap, dict):
+                return [
+                    cmap.get(label, cmap.get("NaN", f"C{i}")) for i, label in enumerate(labels)
+                ]
+            return process_cmap(cmap, n, provider="matplotlib", categorical=True)
+
+        if n > 0:
+            cycle = self.style.max_cycles(n)
+            return [cycle[i].get("facecolor", cycle[i].get("color", f"C{i}")) for i in range(n)]
+        return []
+
+    def _create_wedges(self, axis, element, ranges, style):
+        """Build Wedge patch artists."""
+        dd = self._prepare_donut_data(element)
+        labels = dd["labels"]
+        values = dd["values"]
+        starts = dd["starts"]
+        ends = dd["ends"]
+        fracs = dd["fracs"]
+        display_labels = dd["display_labels"]
+
+        n = len(values)
+        colors = self._get_colors(labels, style, n)
+        width = self.outer_radius - self.inner_radius
+
+        wedge_style = {
+            k: v
+            for k, v in style.items()
+            if k in ("alpha", "edgecolor", "linewidth", "hatch", "visible", "zorder")
+        }
+
+        wedges = []
+        theta1s = np.rad2deg(starts)
+        theta2s = np.rad2deg(ends)
+        for i in range(n):
+            wedge = Wedge(
+                center=(0, 0),
+                r=self.outer_radius,
+                theta1=theta1s[i],
+                theta2=theta2s[i],
+                width=width,
+                facecolor=colors[i] if i < len(colors) else f"C{i}",
+                **wedge_style,
+            )
+            axis.add_patch(wedge)
+            wedges.append(wedge)
+
+        axis.set_aspect("equal")
+
+        # Wedge text labels
+        if self.show_labels and n > 0:
+            xs, ys, aligns = self._compute_label_geometry(starts, ends)
+            texts = self._generate_labels(element, labels, values, fracs)
+
+            va = self.label_text_baseline
+            for i in range(n):
+                axis.text(
+                    xs[i],
+                    ys[i],
+                    texts[i],
+                    ha=aligns[i],
+                    va=va,
+                    fontsize=self.label_font_size,
+                    color=self.label_text_color,
+                )
+
+        # Center label
+        text = self._resolve_center_text(values, element)
+        if text is not None:
+            axis.text(
+                0,
+                0,
+                text,
+                ha=self.center_text_align,
+                va=self.center_text_baseline,
+                fontsize=self.center_font_size,
+                fontweight="bold",
+                color=self.center_text_color,
+            )
+
+        # Legend
+        if self.show_legend and n > 0:
+            handles = [
+                Patch(facecolor=colors[i], edgecolor="none", label=display_labels[i])
+                for i in range(n)
+                if i < len(colors)
+            ]
+            if handles:
+                axis.legend(handles=handles, **self._legend_opts)
+
+        return wedges
+
+    def update_handles(self, key, axis, element, ranges, style):
+        """Update wedges on data change."""
+        for artist in list(axis.patches):
+            artist.remove()
+        for txt in list(axis.texts):
+            txt.remove()
+
+        style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
+        with abbreviated_exception():
+            style = self._apply_transforms(element, ranges, style)
+        wedges = self._create_wedges(axis, element, ranges, style)
+        self.handles["artist"] = wedges
+
+        return {}

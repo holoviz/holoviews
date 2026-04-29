@@ -1249,6 +1249,7 @@ class LegendPlot(ElementPlot):
             "top_left",
             "bottom_left",
             "bottom_right",
+            "center",
         ],
         default="inner",
         doc="""
@@ -1283,6 +1284,7 @@ class LegendPlot(ElementPlot):
         "top_left": dict(loc=2),
         "bottom_left": dict(loc=3),
         "bottom_right": dict(loc=4),
+        "center": dict(loc=10),
     }
 
     @property

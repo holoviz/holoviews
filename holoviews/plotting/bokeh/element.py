@@ -3404,6 +3404,7 @@ class LegendPlot(ElementPlot):
             "left",
             "top",
             "bottom",
+            "center",
         ],
         default="top_right",
         doc="""
