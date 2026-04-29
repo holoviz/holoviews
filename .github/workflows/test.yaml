@@ -58,6 +58,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         if: github.event_name != 'pull_request'
+        with:
+          persist-credentials: false
       - name: Check for code changes
         uses: dorny/paths-filter@v4
         id: filter
@@ -70,12 +72,14 @@ jobs:
               - 'pyproject.toml'
               - '.github/workflows/test.yaml'
       - name: Set matrix option
+        env:
+          GITHUB_EVENT_INPUTS_TARGET: ${{ github.event.inputs.target }}
         run: |
-          if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
-            OPTION=${{ github.event.inputs.target }}
-          elif [[ '${{ github.event_name }}' == 'schedule' ]]; then
+          if [[ "${GITHUB_EVENT_NAME}" == 'workflow_dispatch' ]]; then
+            OPTION=${GITHUB_EVENT_INPUTS_TARGET}
+          elif [[ "${GITHUB_EVENT_NAME}" == 'schedule' ]]; then
             OPTION="full"
-          elif [[ '${{ github.event_name }}' == 'push' && '${{ github.ref_type }}' == 'tag' ]]; then
+          elif [[ "${GITHUB_EVENT_NAME}" == 'push' && "${GITHUB_REF_TYPE}" == 'tag' ]]; then
             OPTION="full"
           else
             OPTION="default"
@@ -126,6 +130,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
+    env:
+      ENV: ${{ matrix.environment }}
     timeout-minutes: 120
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi-install@v1
@@ -134,13 +140,13 @@ jobs:
       - name: Check packages latest version
         if: ${{ needs.setup.outputs.matrix_option != 'downstream' }}
         run: |
-          pixi run -e ${{ matrix.environment }} check-latest-packages bokeh panel param datashader
+          pixi run -e "${ENV}" check-latest-packages bokeh panel param datashader
       - name: Test Unit
         run: |
-          pixi run -e ${{ matrix.environment }} test-unit $COV
+          pixi run -e "${ENV}" test-unit $COV
       - name: Test Examples
         run: |
-          pixi run -e ${{ matrix.environment }} test-example
+          pixi run -e "${ENV}" test-example
       - uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -158,6 +164,7 @@ jobs:
     timeout-minutes: 60
     env:
       PANEL_LOG_LEVEL: info
+      ENV: ${{ matrix.environment }}
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi-install@v1
         with:
@@ -168,7 +175,7 @@ jobs:
           # https://github.com/microsoft/playwright-python/issues/313
           echo "[run]\nconcurrency = greenlet" > .uicoveragerc
           FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
-          pixi run -e ${{ matrix.environment }} test-ui $COV --cov-config=.uicoveragerc $FAIL
+          pixi run -e "${ENV}" test-ui $COV --cov-config=.uicoveragerc $FAIL
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -189,6 +196,8 @@ jobs:
       matrix:
         os: ["ubuntu-latest"]
         environment: ["test-core"]
+    env:
+      ENV: ${{ matrix.environment }}
     timeout-minutes: 120
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi-install@v1
@@ -198,10 +207,10 @@ jobs:
         if: ${{ needs.setup.outputs.matrix_option != 'downstream' }}
         run: |
           # pixi run -e ${{ matrix.environment }} check-latest-packages pandas bokeh panel param numpy
-          pixi run -e ${{ matrix.environment }} check-latest-packages pandas bokeh panel param
+          pixi run -e "${ENV}" check-latest-packages pandas bokeh panel param
       - name: Test Unit
         run: |
-          pixi run -e ${{ matrix.environment }} test-unit
+          pixi run -e "${ENV}" test-unit
 
   type_suite:
     name: type:${{ matrix.environment }}:${{ matrix.os }}
@@ -213,6 +222,8 @@ jobs:
       matrix:
         os: ["ubuntu-latest"]
         environment: ["type"]
+    env:
+      ENV: ${{ matrix.environment }}
     timeout-minutes: 5
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi-install@v1
@@ -220,7 +231,7 @@ jobs:
           environments: ${{ matrix.environment }}
       - name: Type TY
         run: |
-          pixi run -e ${{ matrix.environment }} type-ty
+          pixi run -e "${ENV}" type-ty
 
   result_test_suite:
     name: result:test
