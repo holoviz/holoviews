@@ -21,6 +21,7 @@ from pyviz_comms import CommManager
 
 import holoviews as hv
 from holoviews.plotting.mpl import CurvePlot, MPLRenderer
+from holoviews.plotting.mpl.util import MPL_GE_3_11_0
 from holoviews.plotting.renderer import Renderer
 from holoviews.streams import Stream
 
@@ -62,15 +63,21 @@ class MPLRendererTest:
         with style.context("default"):
             plot = self.renderer.get_plot(self.image1 + self.image2)
         w, h = self.renderer.get_size(plot)
-        # Depending on the backend the height may be slightly different
-        assert (w, h) == (576, 257) or (w, h) == (576, 259)
+        if MPL_GE_3_11_0:
+            assert (w, h) == (576, 264)
+        else:
+            # Depending on the backend the height may be slightly different
+            assert (w, h) == (576, 257) or (w, h) == (576, 259)
 
     def test_get_size_column_plot(self):
         with style.context("default"):
             plot = self.renderer.get_plot((self.image1 + self.image2).cols(1))
         w, h = self.renderer.get_size(plot)
-        # Depending on the backend the height may be slightly different
-        assert (w, h) == (288, 509) or (w, h) == (288, 511)
+        if MPL_GE_3_11_0:
+            assert (w, h) == (288, 522)
+        else:
+            # Depending on the backend the height may be slightly different
+            assert (w, h) == (288, 509) or (w, h) == (288, 511)
 
     def test_get_size_grid_plot(self):
         grid = hv.GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})

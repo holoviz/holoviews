@@ -45,6 +45,7 @@ MPL_GE_3_7_0 = MPL_VERSION >= (3, 7, 0)
 MPL_GE_3_9_0 = MPL_VERSION >= (3, 9, 0)
 MPL_GE_3_10_0 = MPL_VERSION >= (3, 10, 0)
 MPL_GE_3_10_1 = MPL_VERSION >= (3, 10, 1)
+MPL_GE_3_11_0 = MPL_VERSION >= (3, 11, 0)
 
 
 def is_color(color):
