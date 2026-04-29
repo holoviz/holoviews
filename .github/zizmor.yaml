@@ -1,0 +1,7 @@
+rules:
+  unpinned-uses:
+    disable: true
+  dangerous-triggers:
+    ignore:
+      - .github/workflows/downstream_tests.yaml:3
+      - .github/workflows/conventional_commits.yaml:3
