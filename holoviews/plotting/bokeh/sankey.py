@@ -70,15 +70,6 @@ class SankeyPlot(GraphPlot):
         fixed or preferred height, depending on height sizing policy.""",
     )
 
-    # Deprecated options
-
-    color_index = param.ClassSelector(
-        default=2,
-        class_=(str, int),
-        allow_None=True,
-        doc="Index of the dimension from which the node labels will be drawn",
-    )
-
     label_index = param.ClassSelector(
         default=2,
         class_=(str, int),

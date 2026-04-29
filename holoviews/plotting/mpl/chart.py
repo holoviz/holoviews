@@ -17,15 +17,13 @@ from ...core.util import (
     isfinite,
     isscalar,
     match_spec,
-    search_indices,
-    unique_array,
 )
 from ...element import HeatMap, Raster
 from ...operation import interpolate_curve
 from ...util.transform import dim
 from ..mixins import AreaMixin, BarsMixin, SpikesMixin, WaterfallMixin
 from ..plot import PlotSelector
-from ..util import compute_sizes, dim_range_key, get_min_distance, get_sideplot_ranges
+from ..util import dim_range_key, get_min_distance, get_sideplot_ranges
 from .element import ColorbarPlot, ElementPlot, LegendPlot
 from .path import PathPlot
 from .plot import AdjoinedPlot, mpl_rc_context
@@ -551,15 +549,10 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         plot_type = Store.registry["matplotlib"].get(type(range_item))
         if isinstance(plot_type, PlotSelector):
             plot_type = plot_type.get_plot_class(range_item)
-        opts = self.lookup_options(range_item, "plot")
         if plot_type and issubclass(plot_type, ColorbarPlot):
-            cidx = opts.options.get("color_index", None)
-            if cidx is None:
-                opts = self.lookup_options(range_item, "style")
-                cidx = opts.kwargs.get("color", None)
-                if cidx not in range_item:
-                    cidx = None
-            cdim = None if cidx is None else range_item.get_dimension(cidx)
+            opts = self.lookup_options(range_item, "style")
+            cidx = opts.kwargs.get("color", None)
+            cdim = range_item.get_dimension(cidx) if cidx in range_item else None
         else:
             cdim = None
 
@@ -626,45 +619,6 @@ class PointPlot(ChartPlot, ColorbarPlot, LegendPlot):
         doc="Whether to draw grid lines at the tick positions.",
     )
 
-    # Deprecated parameters
-
-    color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of color style mapping, e.g. `color=dim('color')`",
-    )
-
-    size_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of size style mapping, e.g. `size=dim('size')`",
-    )
-
-    scaling_method = param.Selector(
-        default="area",
-        objects=["width", "area"],
-        doc="""
-        Deprecated in favor of size style mapping, e.g.
-        size=dim('size')**2.""",
-    )
-
-    scaling_factor = param.Number(
-        default=1,
-        bounds=(0, None),
-        doc="""
-        Scaling factor which is applied to either the width or area
-        of each point, depending on the value of `scaling_method`.""",
-    )
-
-    size_fn = param.Callable(
-        default=np.abs,
-        doc="""
-        Function applied to size values before applying scaling,
-        to remove values lower than zero.""",
-    )
-
     style_opts = [
         "alpha",
         "color",
@@ -687,56 +641,10 @@ class PointPlot(ChartPlot, ColorbarPlot, LegendPlot):
 
     def get_data(self, element, ranges, style):
         xs, ys = (element.dimension_values(i) for i in range(2))
-        self._compute_styles(element, ranges, style)
+        style["edgecolors"] = style.pop("edgecolors", style.pop("edgecolor", "none"))
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
         return (ys, xs) if self.invert_axes else (xs, ys), style, {}
-
-    def _compute_styles(self, element, ranges, style):
-        cdim = element.get_dimension(self.color_index)
-        color = style.pop("color", None)
-        cmap = style.get("cmap", None)
-
-        if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
-            self.param.warning(
-                "Cannot declare style mapping for 'color' option and "
-                "declare a color_index; ignoring the color_index."
-            )
-            cdim = None
-        if cdim and cmap:
-            cs = element.dimension_values(self.color_index)
-            # Check if numeric otherwise treat as categorical
-            if dtype_kind(cs) in "uif":
-                style["c"] = cs
-            else:
-                style["c"] = search_indices(cs, unique_array(cs))
-            self._norm_kwargs(element, ranges, style, cdim)
-        elif color is not None:
-            style["color"] = color
-        style["edgecolors"] = style.pop("edgecolors", style.pop("edgecolor", "none"))
-
-        ms = style.get("s", mpl.rcParams["lines.markersize"])
-        sdim = element.get_dimension(self.size_index)
-        if sdim and ((isinstance(ms, str) and ms in element) or isinstance(ms, dim)):
-            self.param.warning(
-                "Cannot declare style mapping for 's' option and "
-                "declare a size_index; ignoring the size_index."
-            )
-            sdim = None
-        if sdim:
-            sizes = element.dimension_values(self.size_index)
-            sizes = compute_sizes(
-                sizes, self.size_fn, self.scaling_factor, self.scaling_method, ms
-            )
-            if sizes is None:
-                eltype = type(element).__name__
-                self.param.warning(
-                    f"{sdim.pprint_label} dimension is not numeric, cannot use to "
-                    f"scale {eltype} size."
-                )
-            else:
-                style["s"] = sizes
-        style["edgecolors"] = style.pop("edgecolors", "none")
 
     def update_handles(self, key, axis, element, ranges, style):
         paths = self.handles["artist"]
@@ -774,9 +682,6 @@ class VectorFieldPlot(ColorbarPlot):
     angle alone (with some common, arbitrary arrow length) or may be
     true polar vectors.
 
-    The color or magnitude can be mapped onto any dimension using the
-    color_index and size_index.
-
     The length of the arrows is controlled by the 'scale' style
     option. The scaling of the arrows may also be controlled via the
     normalize_lengths and rescale_lengths plot option, which will
@@ -810,28 +715,6 @@ class VectorFieldPlot(ColorbarPlot):
         doc="""
         Whether the lengths will be rescaled to take into account the
         smallest non-zero distance between two vectors.""",
-    )
-
-    # Deprecated parameters
-
-    color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="""
-        Deprecated in favor of dimension value transform on color option,
-        e.g. `color=dim('Magnitude')`.
-        """,
-    )
-
-    size_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="""
-        Deprecated in favor of the magnitude option, e.g.
-        `magnitude=dim('Magnitude')`.
-        """,
     )
 
     normalize_lengths = param.Boolean(
@@ -875,16 +758,8 @@ class VectorFieldPlot(ColorbarPlot):
     _plot_methods = dict(single="quiver")
 
     def _get_magnitudes(self, element, style, ranges):
-        size_dim = element.get_dimension(self.size_index)
         mag_dim = self.magnitude
-        if size_dim and mag_dim:
-            self.param.warning(
-                "Cannot declare style mapping for 'magnitude' option "
-                "and declare a size_index; ignoring the size_index."
-            )
-        elif size_dim:
-            mag_dim = size_dim
-        elif isinstance(mag_dim, str):
+        if isinstance(mag_dim, str):
             mag_dim = element.get_dimension(mag_dim)
         if mag_dim is not None:
             if isinstance(mag_dim, dim):
@@ -916,22 +791,6 @@ class VectorFieldPlot(ColorbarPlot):
             input_scale = input_scale / min_dist
 
         args = (xs, ys, magnitudes, [0.0] * len(element))
-
-        # Compute color
-        cdim = element.get_dimension(self.color_index)
-        color = style.get("color", None)
-        if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
-            self.param.warning(
-                "Cannot declare style mapping for 'color' option and "
-                "declare a color_index; ignoring the color_index."
-            )
-            cdim = None
-        if cdim:
-            colors = element.dimension_values(self.color_index)
-            style["c"] = colors
-            cdim = element.get_dimension(self.color_index)
-            self._norm_kwargs(element, ranges, style, cdim)
-            style.pop("color", None)
 
         # Process style
         with abbreviated_exception():
@@ -1233,13 +1092,6 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
         'square' and 'equal' options.""",
     )
 
-    color_index = param.ClassSelector(
-        default=None,
-        allow_None=True,
-        class_=(str, int),
-        doc="Index of the dimension from which the color will the drawn",
-    )
-
     spike_length = param.Number(
         default=0.1,
         doc="The length of each spike if Spikes object is one dimensional.",
@@ -1298,18 +1150,6 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
                     dims[i] = dims[i].clone(value_format=DateFormatter(dt_format))
                 cols.append(vs)
             clean_spikes.append(np.column_stack(cols))
-
-        cdim = element.get_dimension(self.color_index)
-        color = style.get("color", None)
-        if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
-            self.param.warning(
-                "Cannot declare style mapping for 'color' option and "
-                "declare a color_index; ignoring the color_index."
-            )
-            cdim = None
-        if cdim:
-            style["array"] = element.dimension_values(cdim)
-            self._norm_kwargs(element, ranges, style, cdim)
 
         if "spike_length" in opts:
             axis_dims = (element.dimensions()[0], None)

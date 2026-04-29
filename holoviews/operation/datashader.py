@@ -25,7 +25,6 @@ from ..core import (
     NdOverlay,
     Operation,
     Overlay,
-    Store,
 )
 from ..core.data import (
     DaskInterface,
@@ -2269,11 +2268,7 @@ class inspect_polygons(inspect_base):
 
     @classmethod
     def _element(cls, raster, df):
-        polygons = Polygons(df, kdims=raster.kdims, vdims=cls._vdims(raster, df))
-        if Store.loaded_backends() != []:
-            return polygons.opts(color_index=None)
-        else:
-            return polygons
+        return Polygons(df, kdims=raster.kdims, vdims=cls._vdims(raster, df))
 
     @classmethod
     def _sort_by_distance(cls, raster, df, x, y):
