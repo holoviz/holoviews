@@ -538,7 +538,7 @@ class PolyAnnotator(PathAnnotator):
     object = param.ClassSelector(
         class_=Polygons,
         doc="Polygon element to edit and annotate.",
-    )  # ty:ignore[no-matching-overload], https://github.com/astral-sh/ruff/pull/24698
+    )
 
 
 class _GeomAnnotator(Annotator):
@@ -601,7 +601,7 @@ class PointAnnotator(_GeomAnnotator):
     object = param.ClassSelector(
         class_=Points,
         doc="Points element to edit and annotate.",
-    )  # ty:ignore[no-matching-overload], https://github.com/astral-sh/ruff/pull/24698
+    )
 
     _stream_type = PointDraw
 
@@ -620,7 +620,7 @@ class CurveAnnotator(_GeomAnnotator):
     object = param.ClassSelector(
         class_=Curve,
         doc="Points element to edit and annotate.",
-    )  # ty:ignore[no-matching-overload], https://github.com/astral-sh/ruff/pull/24698
+    )
 
     vertex_style = param.Dict(
         default={"size": 10},
@@ -645,7 +645,7 @@ class RectangleAnnotator(_GeomAnnotator):
     object = param.ClassSelector(
         class_=Rectangles,
         doc="Points element to edit and annotate.",
-    )  # ty:ignore[no-matching-overload], https://github.com/astral-sh/ruff/pull/24698
+    )
 
     _stream_type = BoxEdit
 

@@ -26,12 +26,13 @@ if t.TYPE_CHECKING:
     from collections.abc import Sequence
 
     from .core import Dataset
+    from .core.util.types import _DatetimeT
     from .element import Path
 
 
 # Types supported by Pointer derived streams
 @util.types.gen_types
-def pointer_types():
+def pointer_types() -> t.Iterator[type[Number | str | tuple | _DatetimeT]]:
     yield from (Number, str, tuple)
     yield from util.datetime_types
 
@@ -1347,8 +1348,7 @@ class CrossFilterSet(Derived):
                     selection_expr = dim("new")
                     selection_expr.dimension = old.dimension
                     selection_expr.ops = list(old.ops)
-                    selection_expr.ops[2] = selection_expr.ops[2].copy()
-                    selection_expr.ops[2]["args"] = (list(vals),)
+                    selection_expr.ops[2] = {**selection_expr.ops[2], "args": (list(vals),)}
             else:
                 selection_expr = selection_exprs[0]
                 for expr in selection_exprs[1:]:
