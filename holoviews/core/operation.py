@@ -246,7 +246,7 @@ class OperationCallable(Callable):
     operation = param.ClassSelector(
         class_=Operation,
         doc="The Operation being wrapped into an OperationCallable.",
-    )  # ty:ignore[no-matching-overload], https://github.com/astral-sh/ruff/pull/24698
+    )
 
     def __init__(self, callable, **kwargs):
         if "operation" not in kwargs:
