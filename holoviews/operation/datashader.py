@@ -158,6 +158,71 @@ class AggregationOperation(ResampleOperation2D):
     }
 
     @classmethod
+    def _overlay_wide_mapping(cls, element, elements):
+        if not isinstance(element, NdOverlay):
+            return False, []
+        ydims = [el.dimensions()[1] for el in elements]
+        is_wide = len({yd.label for yd in ydims}) == 1 and len({yd.name for yd in ydims}) == len(
+            element
+        )
+        return is_wide, ydims
+
+    @classmethod
+    def _resolve_agg_column_name(cls, element, inner_element, column, is_wide, ydims):
+        if not isinstance(column, str):
+            return column
+        dimension = inner_element.get_dimension(column)
+        if dimension is None and isinstance(element, NdOverlay):
+            dimension = element.get_dimension(column)
+        return dimension.label if is_wide and dimension in ydims else dimension.name
+
+    @classmethod
+    def _default_agg_field(cls, element, inner_element):
+        if isinstance(inner_element, TriMesh) and inner_element.nodes.vdims:
+            return inner_element.nodes.vdims[0].name
+        if inner_element.vdims:
+            return inner_element.vdims[0].name
+        if isinstance(element, NdOverlay):
+            return element.kdims[0].name
+        raise ValueError(
+            "Could not determine dimension to apply "
+            f"'{cls.__name__}' operation to. Declare the dimension "
+            "to aggregate as part of the datashader "
+            "aggregator."
+        )
+
+    @classmethod
+    def _remap_aggregator(cls, element, agg, inner_element, is_wide, ydims):
+        agg_col = cls._resolve_agg_column_name(element, inner_element, agg.column, is_wide, ydims)
+        selector = getattr(agg, "selector", None)
+        reduction = getattr(agg, "reduction", None)
+        agg_kwargs = {}
+
+        selector_col = getattr(selector, "column", None)
+        if isinstance(selector_col, str):
+            selector_name = cls._resolve_agg_column_name(
+                element, inner_element, selector_col, is_wide, ydims
+            )
+            agg_kwargs["selector"] = type(selector)(selector_name)
+        elif selector:
+            agg_kwargs["selector"] = selector
+
+        reduction_col = getattr(reduction, "column", None)
+        if isinstance(reduction_col, str):
+            reduction_name = cls._resolve_agg_column_name(
+                element, inner_element, reduction_col, is_wide, ydims
+            )
+            agg_kwargs["reduction"] = type(reduction)(reduction_name)
+        elif reduction and not isinstance(agg, ds.count_cat):
+            agg_kwargs["reduction"] = reduction
+
+        if hasattr(agg, "self_intersect"):
+            agg_kwargs["self_intersect"] = agg.self_intersect
+        if isinstance(agg, ds.where):
+            return ds.where(agg_kwargs["selector"], agg_col)
+        return type(agg)(agg_col, **agg_kwargs)
+
+    @classmethod
     def _get_aggregator(cls, element, agg, add_field=True):
         if DATASHADER_GE_0_15_1:
             agg_types = (rd.count, rd.any, rd.where)
@@ -177,30 +242,23 @@ class AggregationOperation(ResampleOperation2D):
                 agg = cls._agg_methods[agg]()
 
         elements = element.traverse(lambda x: x, [Element])
-        if (
-            add_field
-            and getattr(agg, "column", False) in ("__temp__", None)
-            and not isinstance(agg, agg_types)
+        if not elements:
+            raise ValueError(f"Could not find any elements to apply {cls.__name__} operation to.")
+        is_wide, ydims = cls._overlay_wide_mapping(element, elements)
+        agg_col = getattr(agg, "column", False)
+        if agg_col is False:
+            return agg
+
+        inner_element = elements[0]
+        if add_field and agg_col in ("__temp__", None) and not isinstance(agg, agg_types):
+            agg = type(agg)(cls._default_agg_field(element, inner_element))
+        elif (
+            agg_col
+            or getattr(getattr(agg, "selector", None), "column", None)
+            or getattr(getattr(agg, "reduction", None), "column", None)
         ):
-            if not elements:
-                raise ValueError(
-                    f"Could not find any elements to apply {cls.__name__} operation to."
-                )
-            inner_element = elements[0]
-            if isinstance(inner_element, TriMesh) and inner_element.nodes.vdims:
-                field = inner_element.nodes.vdims[0].name
-            elif inner_element.vdims:
-                field = inner_element.vdims[0].name
-            elif isinstance(element, NdOverlay):
-                field = element.kdims[0].name
-            else:
-                raise ValueError(
-                    "Could not determine dimension to apply "
-                    f"'{cls.__name__}' operation to. Declare the dimension "
-                    "to aggregate as part of the datashader "
-                    "aggregator."
-                )
-            agg = type(agg)(field)
+            agg = cls._remap_aggregator(element, agg, inner_element, is_wide, ydims)
+
         return agg
 
     def _empty_agg(self, element, x, y, width, height, xs, ys, agg_fn, **params):
@@ -419,19 +477,38 @@ class aggregate(LineAggregationOperation):
         kdims = list(obj.kdims)
         vdims = list(obj.vdims)
         dims = obj.dimensions()[:2]
+        is_wide = False
         if isinstance(obj, Path):
             glyph = "line"
             for p in obj.split(datatype="dataframe"):
                 paths.append(p)
         elif isinstance(obj, CompositeOverlay):
             element = None
+            is_ndoverlay = isinstance(obj, NdOverlay)
+            ydims = []
             for key, el in obj.data.items():
                 x, y, element, glyph = cls.get_agg_data(el)
                 dims = (x, y)
                 df = PandasInterface.as_dframe(element)
-                if isinstance(obj, NdOverlay):
+                if is_ndoverlay:
                     df = df.assign(**dict(zip(obj.dimensions("key", True), key, strict=None)))
+                    y_dim = el.get_dimension(y)
+                    ydims.append(y_dim)
                 paths.append(df)
+
+            # If data is in wide format we align the column names on the Dimension.label
+            is_wide = len({yd.label for yd in ydims}) == 1 and len(
+                {yd.name for yd in ydims}
+            ) == len(obj)
+            if is_ndoverlay and is_wide:
+                ydim = next(iter(ydims))
+                paths = [
+                    df.rename(columns={yd.name: yd.label})
+                    for yd, path in zip(ydims, paths, strict=True)
+                ]
+                is_wide = True
+                dims = (dims[0], ydim.clone(ydim.label, label=ydim.label))
+
             if element is None:
                 dims = None
             else:
@@ -476,7 +553,11 @@ class aggregate(LineAggregationOperation):
             df = df.to_pandas()
 
         is_custom = (bool_dd and isinstance(df, dd.DataFrame)) or cuDFInterface.applies(df)
-        category_check = category and df[category].dtype.name != "category"
+        if category:
+            cat_col = obj.get_dimension(category).name
+            category_check = df[cat_col].dtype.name != "category"
+        else:
+            category_check = False
         if category_check or any(
             (not is_custom and len(df[d.name]) and isinstance(df[d.name].values[0], cftime_types))
             or dtype_kind(df[d.name]) in ["M", "u"]
@@ -484,7 +565,7 @@ class aggregate(LineAggregationOperation):
         ):
             df = df.copy()
         if category_check:
-            df[category] = df[category].astype("category")
+            df[cat_col] = df[cat_col].astype("category")
 
         for d in (x, y):
             vals = df[d.name]
@@ -615,6 +696,7 @@ class overlay_aggregate(aggregate):
                 isinstance(agg_fn, (ds.count, ds.sum, ds.mean, ds.any))
                 and (agg_fn.column is None or agg_fn.column not in element.kdims)
             )
+            and len(set(id(el.data) for el in element)) > 1
         )
 
     def _process(self, element, key=None):

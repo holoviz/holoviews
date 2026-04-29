@@ -1165,10 +1165,13 @@ class Dimensioned(LabelledData):
                 return dimension
             else:
                 return IndexError("Dimension index out of bounds")
-        dim = dimension_name(dimension)
+
+        dimensions = self.kdims + self.vdims
         try:
-            dimensions = self.kdims + self.vdims
-            return next(i for i, d in enumerate(dimensions) if d == dim)
+            if isinstance(dimension, Dimension):
+                return dimensions.index(dimension)
+            dim = dimension_name(dimension)
+            return next(i for i, d in enumerate(dimensions) if dim in (d.name, d))
         except StopIteration:
             raise Exception(f"Dimension {dim} not found in {self.__class__.__name__}.") from None
 

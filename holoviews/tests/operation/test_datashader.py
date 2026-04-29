@@ -133,6 +133,25 @@ class DatashaderAggregateTests:
         )
         assert_element_equal(img, expected)
 
+    def test_aggregate_points_count_column_by_label(self):
+        points = hv.Points(
+            [(0.2, 0.3, np.nan), (0.4, 0.7, 22), (0, 0.99, np.nan)], vdims=("z", "Value")
+        )
+        img = aggregate(
+            points,
+            dynamic=False,
+            x_range=(0, 1),
+            y_range=(0, 1),
+            width=2,
+            height=2,
+            aggregator=ds.count("Value"),
+        )
+        expected = hv.Image(
+            ([0.25, 0.75], [0.25, 0.75], [[0, 0], [1, 0]]),
+            vdims=[hv.Dimension("z Count", nodata=0)],
+        )
+        assert_element_equal(img, expected)
+
     @pytest.mark.gpu
     def test_aggregate_points_cudf(self):
         import cudf
@@ -1703,7 +1722,14 @@ def test_geom_aggregate_with_selector():
 
 
 @pytest.mark.parametrize(
-    "aggregator", [ds.count_cat("cat"), ds.by("cat", ds.count())], ids=["count_cat", "by"]
+    "aggregator",
+    [
+        ds.count_cat("cat"),
+        ds.by("cat", ds.count()),
+        ds.count_cat("Category"),
+        ds.by("Category", ds.count()),
+    ],
+    ids=["count_cat", "by", "count_cat_with_label", "by_with_label"],
 )
 def test_geom_aggregate_with_by_and_selector(aggregator):
     rects = hv.Rectangles(
@@ -1711,7 +1737,7 @@ def test_geom_aggregate_with_by_and_selector(aggregator):
             (0, 0, 1, 2, "A", 20, 0),
             (1, 1, 3, 2, "B", 300, 1),
         ],
-        vdims=["cat", "value", "index_col"],
+        vdims=[("cat", "Category"), "value", "index_col"],
     )
     agg = rasterize(
         rects, width=4, height=4, dynamic=False, aggregator=aggregator, selector=ds.first("value")
@@ -2067,3 +2093,16 @@ def test_points_polars(lazy, op):
     pandas_img = op(hv.Points(pandas_df), **op_kwargs)
 
     xr.testing.assert_equal(polars_img.data, pandas_img.data)
+
+
+@pytest.mark.parametrize("aggregator", [ds.count(), ds.count("Price")])
+def test_wide_data_lines(aggregator):
+    df = pd.DataFrame({"AAPL": [1, 2, 3], "MSFT": [3, 2, 1]})
+
+    a = hv.Curve(df, "index", [("AAPL", "Price")])
+    b = hv.Curve(df, "index", [("MSFT", "Price")])
+    overlay = hv.NdOverlay({"AAPL": a, "MSFT": b}, kdims=["Ticker"])
+
+    res = rasterize(overlay, dynamic=False, width=3, height=3, aggregator=aggregator)
+    arr = np.array([[1, np.nan, 1], [np.nan, 2, np.nan], [1, np.nan, 1]])
+    assert_data_equal(res.dimension_values(2, flat=False), arr)
