@@ -8,7 +8,6 @@ from collections import defaultdict, namedtuple
 
 import numpy as np
 import param
-from packaging.version import Version
 
 from ..core import (
     AdjointLayout,
@@ -37,6 +36,7 @@ from ..core.util import (
     unique_iterator,
     wrap_tuple,
 )
+from ..core.util.dependencies import _no_import_version
 from ..element import Points
 from ..streams import LinkedStream, Params
 from ..util.transform import dim
@@ -596,7 +596,6 @@ def resample_palette(palette, ncolors, categorical, cmap_categorical):
 
 def mplcmap_to_palette(cmap, ncolors=None, categorical=False):
     """Converts a matplotlib colormap to palette of RGB hex strings."""
-    import matplotlib as mpl
     from matplotlib.colors import Colormap, ListedColormap
 
     ncolors = ncolors or 256
@@ -605,7 +604,7 @@ def mplcmap_to_palette(cmap, ncolors=None, categorical=False):
         if cmap.startswith("Category"):
             cmap = cmap.replace("Category", "tab")
 
-        if Version(mpl.__version__).release < (3, 5, 0):
+        if _no_import_version("matplotlib") < (3, 5, 0):
             from matplotlib import cm
 
             try:

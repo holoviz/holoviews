@@ -11,13 +11,11 @@ from contextlib import contextmanager
 from functools import partial
 from io import BytesIO, StringIO
 
-import panel as pn
 import param
 from bokeh.document import Document
 from bokeh.embed import file_html
 from bokeh.io import curdoc
 from bokeh.resources import CDN, INLINE
-from packaging.version import Version
 from panel import config
 from panel.io.notebook import (
     JupyterCommManagerBinary,
@@ -39,11 +37,12 @@ from ..core.data import disable_pipeline
 from ..core.io import Exporter
 from ..core.options import Compositor, SkipRendering, Store, StoreOptions
 from ..core.util import unbound_dimensions
+from ..core.util.dependencies import _no_import_version
 from ..streams import Stream
 from . import Plot
 from .util import collate, displayable, initialize_dynamic
 
-PANEL_VERSION = Version(pn.__version__).release
+PANEL_VERSION = _no_import_version("panel")
 
 # Tags used when visual output is to be embedded in HTML
 IMAGE_TAG = "<img src='{src}' style='max-width:100%; margin: auto; display: block; {css}'/>"
