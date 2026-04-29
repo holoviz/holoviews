@@ -206,7 +206,7 @@ jobs:
       - name: Check packages latest version
         if: ${{ needs.setup.outputs.matrix_option != 'downstream' }}
         run: |
-          # pixi run -e ${{ matrix.environment }} check-latest-packages pandas bokeh panel param numpy
+          # pixi run -e "${ENV}" check-latest-packages pandas bokeh panel param numpy
           pixi run -e "${ENV}" check-latest-packages pandas bokeh panel param
       - name: Test Unit
         run: |
