@@ -44,7 +44,7 @@ jobs:
     name: pre-commit
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pre-commit@v1
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@a15d3e2297339666d8c39739ebff7891ce8c3458 # v1
 
   setup:
     name: Setup workflow
@@ -56,12 +56,12 @@ jobs:
       matrix: ${{ env.MATRIX }}
       matrix_option: ${{ env.MATRIX_OPTION }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         if: github.event_name != 'pull_request'
         with:
           persist-credentials: false
       - name: Check for code changes
-        uses: dorny/paths-filter@v4
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
         id: filter
         with:
           filters: |
@@ -118,7 +118,7 @@ jobs:
     name: Pixi lock
     runs-on: ubuntu-latest
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-lock@v1
+      - uses: holoviz-dev/holoviz_tasks/pixi-lock@a15d3e2297339666d8c39739ebff7891ce8c3458 # v1
         with:
           cache: ${{ github.event.inputs.cache == 'true' || github.event.inputs.cache == '' }}
 
@@ -134,7 +134,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@v1
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@a15d3e2297339666d8c39739ebff7891ce8c3458 # v1
         with:
           environments: ${{ matrix.environment }}
       - name: Check packages latest version
@@ -147,7 +147,7 @@ jobs:
       - name: Test Examples
         run: |
           pixi run -e "${ENV}" test-example
-      - uses: codecov/codecov-action@v6
+      - uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -166,7 +166,7 @@ jobs:
       PANEL_LOG_LEVEL: info
       ENV: ${{ matrix.environment }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@v1
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@a15d3e2297339666d8c39739ebff7891ce8c3458 # v1
         with:
           environments: ${{ matrix.environment }}
       - name: Test UI
@@ -176,13 +176,13 @@ jobs:
           echo "[run]\nconcurrency = greenlet" > .uicoveragerc
           FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
           pixi run -e "${ENV}" test-ui $COV --cov-config=.uicoveragerc $FAIL
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           name: ui_screenshots_${{ runner.os }}
           path: ./ui_screenshots
           if-no-files-found: ignore
-      - uses: codecov/codecov-action@v6
+      - uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -200,7 +200,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@v1
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@a15d3e2297339666d8c39739ebff7891ce8c3458 # v1
         with:
           environments: ${{ matrix.environment }}
       - name: Check packages latest version
@@ -226,7 +226,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 5
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@v1
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@a15d3e2297339666d8c39739ebff7891ce8c3458 # v1
         with:
           environments: ${{ matrix.environment }}
       - name: Type TY
