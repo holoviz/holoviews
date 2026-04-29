@@ -14,9 +14,15 @@ on:
         required: true
         default: true
 
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   downstream_tests:
-    uses: holoviz-dev/holoviz_tasks/.github/workflows/run_downstream_tests.yaml@main
+    uses: holoviz-dev/holoviz_tasks/.github/workflows/run_downstream_tests.yaml@v1
     with:
       downstream_repos_as_json: '{"downstream_repo":["hvplot", "geoviews"]}'
     secrets:

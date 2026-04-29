@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "0 0 * * *"
 
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   PACKAGE: "holoviews"
 
