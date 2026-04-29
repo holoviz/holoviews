@@ -182,7 +182,7 @@ class LoggingComparison:
 
 def optional_dependencies(*names: tuple[str]):
     """Check if a dependency is installed and return the module and a fixture that skips test."""
-    if all(_is_installed(n) for n in names):
+    if all(map(_is_installed, names)):
         return importlib.import_module(names[0])
 
 
