@@ -180,10 +180,10 @@ class LoggingComparison:
                     log.log(LEVELS[level], msg)
 
 
-def optional_dependencies(name: str):
+def optional_dependencies(*names: tuple[str]):
     """Check if a dependency is installed and return the module and a fixture that skips test."""
-    if _is_installed(name):
-        return importlib.import_module(name)
+    if all(_is_installed(n) for n in names):
+        return importlib.import_module(names[0])
 
 
 if TYPE_CHECKING:
@@ -205,7 +205,7 @@ if TYPE_CHECKING:
 else:
     dask = optional_dependencies("dask")
     da = optional_dependencies("dask.array")
-    dd = optional_dependencies("dask.dataframe")
+    dd = optional_dependencies("dask.dataframe", "pyarrow")
     ds = optional_dependencies("datashader")
     ibis = optional_dependencies("ibis")
     mpl = optional_dependencies("matplotlib")
