@@ -39,10 +39,10 @@ env:
 
 jobs:
   pre_commit:
-    name: Run pre-commit
+    name: pre-commit
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pre-commit@v0
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@v1
 
   setup:
     name: Setup workflow
@@ -112,7 +112,7 @@ jobs:
     name: Pixi lock
     runs-on: ubuntu-latest
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_lock@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi-lock@v1
         with:
           cache: ${{ github.event.inputs.cache == 'true' || github.event.inputs.cache == '' }}
 
@@ -126,7 +126,7 @@ jobs:
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@v1
         with:
           environments: ${{ matrix.environment }}
       - name: Check packages latest version
@@ -157,7 +157,7 @@ jobs:
     env:
       PANEL_LOG_LEVEL: info
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@v1
         with:
           environments: ${{ matrix.environment }}
       - name: Test UI
@@ -189,7 +189,7 @@ jobs:
         environment: ["test-core"]
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@v1
         with:
           environments: ${{ matrix.environment }}
       - name: Check packages latest version
@@ -213,7 +213,7 @@ jobs:
         environment: ["type"]
     timeout-minutes: 5
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@v1
         with:
           environments: ${{ matrix.environment }}
       - name: Type TY

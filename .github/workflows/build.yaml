@@ -10,9 +10,11 @@ on:
   schedule:
     - cron: "0 14 * * SUN"
 
-defaults:
-  run:
-    shell: bash -e {0}
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   PACKAGE: "holoviews"
@@ -33,14 +35,14 @@ jobs:
     name: Pixi lock
     runs-on: ubuntu-latest
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_lock@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi-lock@v1
 
   conda_build:
     name: Build Conda
     needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@v1
         with:
           environments: "build"
           download-data: false
@@ -82,7 +84,7 @@ jobs:
     needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@v1
         with:
           environments: "build"
           download-data: false
@@ -142,6 +144,8 @@ jobs:
       TAG: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v8
         with:
           pattern: artifacts-*
