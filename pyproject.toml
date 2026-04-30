@@ -260,7 +260,6 @@ exclude = [
     "holoviews/core/data/grid.py", # 37
     "holoviews/core/data/ibis.py", # 20
     "holoviews/core/data/image.py", # 13
-    "holoviews/core/data/interface.py", # 5
     "holoviews/core/data/multipath.py", # 24
     "holoviews/core/data/narwhals.py", # 6
     "holoviews/core/data/pandas.py", # 14

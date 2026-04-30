@@ -117,12 +117,12 @@ class ndloc(Accessor):
     """
 
     @classmethod
-    def _perform_getitem(cls, dataset, indices):
+    def _perform_getitem(cls, dataset, index):
         ds = dataset
-        indices = util.wrap_tuple(indices)
+        index = util.wrap_tuple(index)
         if not ds.interface.gridded:
             raise IndexError("Cannot use ndloc on non nd-dimensional datastructure")
-        selected = dataset.interface.ndloc(ds, indices)
+        selected = dataset.interface.ndloc(ds, index)
         if np.isscalar(selected):
             return selected
         params = {}
@@ -146,6 +146,11 @@ class Interface(param.Parameterized):
 
     # Whether the interface stores the names of the underlying dimensions
     named = True
+
+    @classmethod
+    def init(cls, eltype, data, kdims, vdims):
+        msg = "Init should be defined on the Interface subclass to initialize the data and dimensions"
+        raise NotImplementedError(msg)
 
     @classmethod
     def loaded(cls):
@@ -357,7 +362,7 @@ class Interface(param.Parameterized):
         return not any(array.shape not in [arrays[0].shape, (1,)] for array in arrays[1:])
 
     @classmethod
-    def isscalar(cls, dataset, dim):
+    def isscalar(cls, dataset, dim, *, per_geom=False):
         """
         Whether the selected dimension is a scalar value.
 
@@ -398,7 +403,7 @@ class Interface(param.Parameterized):
             Whether the dimension is scalar
         """
         try:
-            return cls.isscalar(dataset, dim, per_geom)
+            return cls.isscalar(dataset, dim, per_geom=per_geom)
         except TypeError:
             return cls.isscalar(dataset, dim)
 
@@ -648,7 +653,7 @@ class Interface(param.Parameterized):
 
         datasets = template.interface.cast(datasets, datatype)
         template = datasets[0]
-        data = list(zip(keys, datasets, strict=None)) if keys else datasets
+        data = list(zip(keys, datasets, strict=False)) if keys else datasets
         concat_data = template.interface.concat(data, dimensions, vdims=template.vdims)
         return template.clone(concat_data, kdims=dimensions + template.kdims, new_type=new_type)
 
@@ -856,25 +861,6 @@ class Interface(param.Parameterized):
             A pandas DataFrame containing the selected dimensions
         """
         return Element.dframe(dataset, dimensions)
-
-    @classmethod
-    def columns(cls, dataset, dimensions):
-        """
-        Returns the data as a dictionary of 1D arrays indexed by column name.
-
-        Parameters
-        ----------
-        dataset : Dataset
-            The dataset to convert
-        dimensions : list[str]
-            List of dimensions to include
-
-        Returns
-        -------
-        dict[str, np.ndarray]
-            Dictionary mapping column names to arrays
-        """
-        return Element.columns(dataset, dimensions)
 
     @classmethod
     def shape(cls, dataset):
