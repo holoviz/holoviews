@@ -1017,3 +1017,17 @@ class Interface(param.Parameterized):
             DataFrame representation of the data
         """
         return dataset.dframe()
+
+    @classmethod
+    def unpack_scalar(cls, dataset, data):
+        """Given a dataset object and data in the appropriate format for
+        the interface, return a simple scalar.
+        """
+        msg = f"Unpacking scalar is not supported for {cls.__name__}"
+        raise TypeError(msg)
+
+    @classmethod
+    def dimension_type(cls, dataset, dim):
+        """Given a dataset object and dimension, return the type of the dimension"""
+        msg = f"Getting dimension type is not supported for {cls.__name__}"
+        raise TypeError(msg)
