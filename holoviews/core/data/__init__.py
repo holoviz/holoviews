@@ -879,7 +879,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             Y, X = np.meshgrid(ysamples, xsamples)
             linsamples = list(zip(X.flat, Y.flat, strict=False))
             samples = list(core_util.unique_iterator(self.closest(linsamples)))
-        else:
+        elif isinstance(samples, (int, float, tuple)):
             raise NotImplementedError(
                 "Regular sampling not implemented for elements with more than two dimensions."
             )
