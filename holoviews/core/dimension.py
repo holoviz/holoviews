@@ -33,7 +33,15 @@ ALIASES = {"key_dimensions": "kdims", "value_dimensions": "vdims", "constant_dim
 
 title_format = "{name}: {val}{unit}"
 
-redim = Redim  # pickle compatibility - remove in 2.0
+
+class redim(Redim):
+    def __init__(self, *args, **kwargs):
+        from ..util.warnings import deprecated
+
+        # exists because of pickle compatibility
+        deprecated("1.24.0", "redim", "Redim")
+        super().__init__(*args, **kwargs)
+
 
 if t.TYPE_CHECKING:
     from typing_extensions import Self

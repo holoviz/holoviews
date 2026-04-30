@@ -46,7 +46,6 @@ import numpy as np
 import param
 
 from ..util.warnings import HoloviewsUserWarning, warn
-from .accessors import Opts  # noqa (clean up in 2.0)
 from .pprint import InfoPrinter
 from .tree import AttrTree
 from .util import group_sanitizer, label_sanitizer, sanitize_identifier
@@ -54,6 +53,17 @@ from .util import group_sanitizer, label_sanitizer, sanitize_identifier
 if t.TYPE_CHECKING:
     from ..util import _BackendT
     from ..util.settings import OutputSettings
+
+
+def __getattr__(name):
+    if name == "Opts":
+        from ..util.warnings import deprecated
+        from .accessors import Opts
+
+        deprecated("1.24.0", "holoviews.core.options.Opts", "holoviews.core.accessors.Opts")
+        return Opts
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def cleanup_custom_options(id, weakref=None):
