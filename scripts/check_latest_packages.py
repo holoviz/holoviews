@@ -8,8 +8,7 @@ from importlib.metadata import version
 from subprocess import DEVNULL, check_output
 
 PYTHON_VERSION = sys.version_info[:2]
-PLATFORM_SPECIFIERS = {"linux": "linux-64", "darwin": "osx-arm64", "win32": "win-64"}
-PLATFORM = PLATFORM_SPECIFIERS[sys.platform]
+PLATFORM = {"linux": "linux-64", "darwin": "osx-arm64", "win32": "win-64"}[sys.platform]
 
 if sys.stdout.isatty() or os.environ.get("GITHUB_ACTIONS"):
     GREEN, RED, RESET = "\033[92m", "\033[91m", "\033[0m"
@@ -37,25 +36,28 @@ def python_check(item):
     return False
 
 
+def get_data(package):
+    out = check_output(
+        ["pixi", "search", package, "--json", "--channel", "conda-forge", "--platform", PLATFORM],
+        stderr=DEVNULL,
+    )
+    raw = json.loads(out)
+    return [*raw.get("noarch", ()), *raw.get(PLATFORM, ())]
+
+
 def main(*packages):
     all_latest = True
     for package in sorted(packages):
-        out = check_output(
-            ["pixi", "search", package, "--json", "--channel", "conda-forge"], stderr=DEVNULL
-        )
-        raw = json.loads(out)
-        data = [*raw.get("noarch", ()), *raw.get(PLATFORM, ())]
+        data = get_data(package)
         versions = {item["version"] for item in data if python_check(item)}
-        latest_str = max(versions, key=convert_int)
-        latest_int = convert_int(latest_str)
-        current_str = version(package)
-        current_int = convert_int(current_str)
-        is_latest = current_int >= latest_int
+        latest = max(versions, key=convert_int)
+        current = version(package)
+        is_latest = convert_int(current) >= convert_int(latest)
         all_latest &= is_latest
 
         text_color = GREEN if is_latest else RED
         print(
-            f"{text_color}Package: {package:<16} Current: {current_str:<16}\tLatest: {latest_str}{RESET}"
+            f"{text_color}Package: {package:<16} Current: {current:<16}\tLatest: {latest}{RESET}"
         )
 
     if not all_latest:

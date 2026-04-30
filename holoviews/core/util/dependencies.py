@@ -12,7 +12,6 @@ if t.TYPE_CHECKING:
     from types import ModuleType
 
 _re_no = re.compile(r"\d+")
-_convert_int = lambda version_str: tuple(map(int, _re_no.findall(version_str)[:3]))
 
 
 class VersionError(Exception):
@@ -25,25 +24,29 @@ class VersionError(Exception):
 
 
 @cache
-def _is_installed(module_name):
+def _is_installed(module_name: str) -> bool:
     # So we don't accidentally import it
     module_name, *_ = module_name.split(".")
     return find_spec(module_name) is not None
 
 
 @cache
-def _get_version(package_name):
+def _get_version(package_name: str) -> str:
     try:
         return version(package_name)
     except PackageNotFoundError:
         return "0.0.0"
 
 
+def _convert_int(version_str: str) -> tuple[int, ...]:
+    """Convert a version string to a tuple of integers."""
+    return tuple(map(int, _re_no.findall(version_str)[:3]))
+
+
 @cache
 def _no_import_version(package_name) -> tuple[int, ...]:
     """Get version number without importing the library"""
-    version_str = _get_version(package_name)
-    return _convert_int(version_str)
+    return _convert_int(_get_version(package_name))
 
 
 _MIN_SUPPORTED_VERSION = {
