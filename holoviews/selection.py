@@ -804,7 +804,7 @@ class ColorListSelectionDisplay(SelectionDisplay):
                     color_inds[expr.apply(ds)] = i
 
             colors = clrs[color_inds]
-            color_opts = {color_prop: colors for color_prop in self.color_props}
+            color_opts = dict.fromkeys(self.color_props, colors)
             return el.pipeline(ds).opts(backend=self.backend, clone=True, **color_opts)
 
         sel_streams = [selection_streams.style_stream, selection_streams.exprs_stream]

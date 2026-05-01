@@ -266,7 +266,7 @@ def _get_max_subplot_ids(fig):
         A dict from subplot type strings to integers indicating the largest
         subplot number in the figure of that subplot type
     """
-    max_subplot_ids = {subplot_type: 0 for subplot_type in _subplot_types}
+    max_subplot_ids = dict.fromkeys(_subplot_types, 0)
     max_subplot_ids["xaxis"] = 0
     max_subplot_ids["yaxis"] = 0
 

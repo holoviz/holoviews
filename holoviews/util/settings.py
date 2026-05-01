@@ -172,9 +172,8 @@ class OutputSettings(KeywordSettings):
             "right_top",
             "right_bottom",
         ],
-        "css": {
-            k: str
-            for k in [
+        "css": dict.fromkeys(
+            [
                 "width",
                 "height",
                 "padding",
@@ -185,8 +184,9 @@ class OutputSettings(KeywordSettings):
                 "min-height",
                 "outline",
                 "float",
-            ]
-        },
+            ],
+            str,
+        ),
     }
 
     defaults = dict(

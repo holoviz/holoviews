@@ -165,6 +165,7 @@ exclude = ["*.ipynb", "*.md"]
 [tool.ruff.lint]
 select = [
     "B",
+    "C4",
     "D",
     "E",
     "F",
@@ -185,6 +186,12 @@ select = [
 ]
 
 ignore = [
+    "D1", # Undocumented code
+    "D200", # Unnecessary-multiline-docstring
+    "D205", # Missing-blank-line-after-summary
+    "D400", # Missing-trailing-period
+    "D401", # Non-imperative-mood
+    "D404", # Docstring-starts-with-this
     "E402", # Module level import not at top of file
     "E501", # Line too long
     "E712", # Comparison to true should be is
@@ -196,12 +203,6 @@ ignore = [
     "PLW2901", # `for` loop variable is overwritten
     "RUF012", # Mutable class attributes should use `typing.ClassVar`
     "RUF021", # parenthesize-chained-operators
-    "D1", # Undocumented code
-    "D200", # Unnecessary-multiline-docstring
-    "D205", # Missing-blank-line-after-summary
-    "D400", # Missing-trailing-period
-    "D401", # Non-imperative-mood
-    "D404", # Docstring-starts-with-this
 ]
 extend-unsafe-fixes = [
     "F401", # Unused imports
@@ -238,6 +239,9 @@ required-imports = ["from __future__ import annotations"]
 
 [tool.ruff.lint.flake8-import-conventions.aliases]
 typing = "t"
+
+[tool.ruff.lint.flake8-comprehensions]
+allow-dict-calls-with-keyword-arguments = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
