@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import typing as t
 import warnings
 
 import numpy as np
@@ -10,6 +11,7 @@ from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping
 from ..util import dtype_kind
+from ..util.dependencies import cp, da
 from .util import finite_range
 
 
@@ -130,7 +132,7 @@ class ndloc(Accessor):
 
 
 class Interface(param.Parameterized):
-    interfaces = {}
+    interfaces: t.ClassVar[dict[str, Interface]] = {}
 
     datatype = None
 
@@ -234,7 +236,7 @@ class Interface(param.Parameterized):
             elif interface.multi and any(
                 cls.interfaces[dt].multi for dt in datatype if dt in cls.interfaces
             ):
-                data = [d for d in data.interface.split(data, None, None, "columns")]
+                data = list(data.interface.split(data, None, None, "columns"))
             elif interface.gridded and any(cls.interfaces[dt].gridded for dt in datatype):
                 new_data = []
                 for kd in data.kdims:
@@ -765,19 +767,15 @@ class Interface(param.Parameterized):
             Tuple of (histogram values, bin edges)
         """
         if util.is_dask_array(array):
-            import dask.array as da
-
             histogram = da.histogram
         elif util.is_cupy_array(array):
-            import cupy
-
-            histogram = cupy.histogram
+            histogram = cp.histogram
         else:
             histogram = np.histogram
         hist, edges = histogram(array, bins=bins, density=density, weights=weights)
         if util.is_cupy_array(hist):
-            edges = cupy.asnumpy(edges)
-            hist = cupy.asnumpy(hist)
+            edges = cp.asnumpy(edges)
+            hist = cp.asnumpy(hist)
         return hist, edges
 
     @classmethod

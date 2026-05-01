@@ -1143,7 +1143,7 @@ def scale_fontsize(size, scaling):
     """Scales a numeric or string font size."""
     ext = None
     if isinstance(size, str):
-        match = re.match(r"[-+]?\d*\.\d+|\d+", size)
+        match = re.search(r"^[-+]?\d*\.\d+|\d+", size)
         if match:
             value = match.group()
             ext = size.replace(value, "")

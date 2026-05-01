@@ -6,9 +6,8 @@ import holoviews as hv
 from holoviews.streams import PlotSize, RangeXY, Stream
 from holoviews.testing import assert_element_equal
 from holoviews.tests.test_streams import Sum, Val
-from holoviews.tests.utils import optional_dependencies
+from holoviews.tests.utils import ds, ds_skip
 
-ds, ds_skip = optional_dependencies("datashader")
 if ds:
     from holoviews.operation.datashader import datashade, spread
 

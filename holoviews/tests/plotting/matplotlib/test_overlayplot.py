@@ -4,10 +4,9 @@ import numpy as np
 
 import holoviews as hv
 
-from ...utils import LoggingComparison, optional_dependencies
+from ...utils import LoggingComparison, mpl, mpl_skip
 from .test_plot import TestMPLPlot, mpl_renderer
 
-mpl, mpl_skip = optional_dependencies("matplotlib")
 if mpl:
     from holoviews.plotting.mpl import OverlayPlot
 

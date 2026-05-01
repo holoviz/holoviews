@@ -367,7 +367,7 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                     plot.handles["source"] = plot.handles["cds"] = new_source
                     plots.append(plot)
                 shared_sources.append(new_source)
-                source_cols[id(new_source)] = [c for c in new_source.data]
+                source_cols[id(new_source)] = list(new_source.data)
         for plot in plots:
             for hook in plot.hooks:
                 hook(plot, plot.current_frame)
@@ -599,9 +599,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         subplots = {}
         frame_ranges = self.compute_ranges(layout, None, ranges)
         keys = self.keys[:1] if self.dynamic else self.keys
-        frame_ranges = dict(
-            [(key, self.compute_ranges(layout, key, frame_ranges)) for key in keys]
-        )
+        frame_ranges = {key: self.compute_ranges(layout, key, frame_ranges) for key in keys}
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         for i, coord in enumerate(layout.keys(full_grid=True)):
             r = i % self.rows
@@ -874,9 +872,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
         keys = self.keys[:1] if self.dynamic else self.keys
-        frame_ranges = dict(
-            [(key, self.compute_ranges(layout, key, frame_ranges)) for key in keys]
-        )
+        frame_ranges = {key: self.compute_ranges(layout, key, frame_ranges) for key in keys}
         layout_items = layout.grid_items()
         layout_dimensions = layout.kdims if isinstance(layout, NdLayout) else None
         layout_subplots, layouts, paths = {}, {}, {}

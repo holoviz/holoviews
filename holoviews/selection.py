@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing as t
 from collections import defaultdict, namedtuple
 
 import numpy as np
@@ -56,7 +57,7 @@ _Styles = Stream.define("Styles", colors=[], alpha=1.0)
 _RegionElement = Stream.define("RegionElement", region_element=None)
 
 
-_SelectionStreams = namedtuple("SelectionStreams", "style_stream exprs_stream cmap_streams ")
+_SelectionStreams = namedtuple("_SelectionStreams", "style_stream exprs_stream cmap_streams ")
 
 
 class _base_link_selections(param.ParameterizedFunction):
@@ -82,6 +83,25 @@ class _base_link_selections(param.ParameterizedFunction):
         doc="Whether to highlight the selected regions.",
     )
 
+    index_cols = param.List(
+        default=None,
+        doc="""
+        If provided, selection switches to index mode where all queries are
+        expressed solely in terms of discrete values along the index_cols.
+        All Elements given to link_selections must define the index_cols,
+        either as explicit dimensions or by sharing an underlying Dataset
+        that defines them.""",
+    )
+
+    _cache: dict[str, t.Any]  # TODO: Narrow?
+    _cross_filter_stream: CrossFilterSet
+    _plot_reset_streams: dict[str, t.Any]  # TODO: Narrow?
+    _selection_expr_streams: dict[str, t.Any]  # TODO: Narrow?
+    _selection_override = _SelectionExprOverride
+    _selection_streams: list[_SelectionStreams]
+    _streams: dict[t.Any, list[t.Any]]  # TODO: Narrow?
+    _datasets: list[t.Any]  # TODO: Narrow?
+
     @bothmethod
     def instance(self_or_cls, **params):
         inst = super().instance(**params)
@@ -95,6 +115,10 @@ class _base_link_selections(param.ParameterizedFunction):
 
         # Init selection streams
         inst._selection_streams = self_or_cls._build_selection_streams(inst)
+
+        # _datasets caches
+        inst._datasets = []
+        inst._cache = {}
 
         return inst
 
@@ -259,9 +283,7 @@ class _base_link_selections(param.ParameterizedFunction):
                 )
             return hvobj
         elif isinstance(hvobj, (Layout, Overlay, NdOverlay, GridSpace, AdjointLayout)):
-            data = dict(
-                [(k, self._selection_transform(v, operations, origin)) for k, v in hvobj.items()]
-            )
+            data = {k: self._selection_transform(v, operations, origin) for k, v in hvobj.items()}
             if isinstance(hvobj, NdOverlay):
 
                 def compose(*args, **kwargs):
@@ -323,14 +345,6 @@ class link_selections(_base_link_selections):
         elements.""",
     )
 
-    index_cols = param.List(
-        default=None,
-        doc="""
-        If provided, selection switches to index mode where all queries
-        are expressed solely in terms of discrete values along the
-        index_cols.  All Elements given to link_selections must define the index_cols, either as explicit dimensions or by sharing an underlying Dataset that defines them.""",
-    )
-
     selection_expr = param.Parameter(
         default=None,
         doc="""
@@ -364,6 +378,8 @@ class link_selections(_base_link_selections):
         doc="Color of unselected data.",
     )
 
+    _updating_show_regions_internal: bool
+
     @bothmethod
     def instance(self_or_cls, **params):
         inst = super().instance(**params)
@@ -374,10 +390,6 @@ class link_selections(_base_link_selections):
         inst._reset_regions = True
         inst._user_show_regions = inst.show_regions
         inst._updating_show_regions_internal = False
-
-        # _datasets caches
-        inst._datasets = []
-        inst._cache = {}
 
         self_or_cls._install_param_callbacks(inst)
 
@@ -451,8 +463,8 @@ class link_selections(_base_link_selections):
         filtered = data[expr.apply(data)]
         return filtered if is_dataset else filtered.data
 
-    @bothmethod
-    def _install_param_callbacks(self_or_cls, inst):
+    @staticmethod
+    def _install_param_callbacks(inst):
         def update_selection_mode(*_):
             # Reset selection state of streams
             for stream in inst._selection_expr_streams.values():
@@ -570,8 +582,6 @@ class SelectionDisplay:
     def build_selection(
         self, selection_streams, hvobj, operations, region_stream=None, cache=None
     ):
-        if cache is None:
-            cache = {}
         raise NotImplementedError()
 
     @staticmethod
@@ -785,14 +795,14 @@ class ColorListSelectionDisplay(SelectionDisplay):
 
             color_inds = np.zeros(n, dtype="int8")
 
-            for i, expr in zip(range(1, len(clrs)), selection_exprs, strict=None):
+            for i, expr in zip(range(1, len(clrs)), selection_exprs, strict=False):
                 if not expr:
                     color_inds[:] = i
                 else:
                     color_inds[expr.apply(ds)] = i
 
             colors = clrs[color_inds]
-            color_opts = {color_prop: colors for color_prop in self.color_props}
+            color_opts = dict.fromkeys(self.color_props, colors)
             return el.pipeline(ds).opts(backend=self.backend, clone=True, **color_opts)
 
         sel_streams = [selection_streams.style_stream, selection_streams.exprs_stream]

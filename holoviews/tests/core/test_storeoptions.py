@@ -10,9 +10,8 @@ import numpy as np
 import holoviews as hv
 from holoviews.plotting import bokeh  # noqa: F401
 
-from ..utils import optional_dependencies
+from ..utils import mpl, mpl_skip
 
-mpl, mpl_skip = optional_dependencies("matplotlib")
 if mpl:
     import holoviews.plotting.mpl
 
@@ -89,7 +88,7 @@ class TestStoreOptsMethod:
         Short __call__ syntax.
         """
         im = hv.Image(np.random.rand(10, 10))
-        layout = (im + im).opts({"Layout": dict({"hspace": 5})})
+        layout = (im + im).opts({"Layout": {"hspace": 5}})
         assert hv.Store.lookup_options("matplotlib", layout, "plot").kwargs["hspace"] == 5
 
     def test_layout_options_long_style(self):
@@ -97,7 +96,7 @@ class TestStoreOptsMethod:
         The old (longer) syntax in __call__
         """
         im = hv.Image(np.random.rand(10, 10))
-        layout = (im + im).opts({"Layout": dict({"hspace": 10})})
+        layout = (im + im).opts({"Layout": {"hspace": 10}})
         assert hv.Store.lookup_options("matplotlib", layout, "plot").kwargs["hspace"] == 10
 
     def test_holomap_opts(self):

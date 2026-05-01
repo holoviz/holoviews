@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import operator
+import typing as t
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import narwhals.stable.v2 as nw
@@ -10,6 +11,14 @@ import param
 from ..core.data import PandasInterface
 from ..core.dimension import Dimension
 from ..core.util import dtype_kind, flatten, resolve_dependent_value, unique_iterator
+
+if t.TYPE_CHECKING:
+
+    class _OpT(t.TypedDict):
+        args: tuple
+        fn: t.Any
+        kwargs: dict
+        reverse: bool
 
 
 def _maybe_map(numpy_fn):
@@ -150,7 +159,7 @@ def bin(values, bins, labels=None):
         labels = np.asarray(labels)
     dtype = "float" if dtype_kind(labels) == "f" else "O"
     binned = np.full_like(values, (np.nan if dtype == "f" else None), dtype=dtype)
-    for lower, upper, label in zip(bins[:-1], bins[1:], labels, strict=None):
+    for lower, upper, label in zip(bins[:-1], bins[1:], labels, strict=True):
         condition = (values > lower) & (values <= upper)
         binned[np.where(condition)[0]] = label
     return binned
@@ -290,7 +299,7 @@ class dim:
     def __init__(self, obj, *args, **kwargs):
         from panel.widgets import Widget
 
-        self.ops = []
+        self.ops: list[_OpT] = []
         self._ns = np.ndarray
         self.coerce = kwargs.get("coerce", True)
         if isinstance(obj, (str, tuple)):
@@ -303,7 +312,7 @@ class dim:
             self.dimension = obj.param.value
         else:
             self.dimension = obj.dimension
-            self.ops = obj.ops
+            self.ops = t.cast("list[_OpT]", obj.ops)
         if args:
             fn = args[0]
         else:
@@ -314,15 +323,13 @@ class dim:
                 or any(fn in funcs for funcs in self._all_funcs)
             ):
                 raise ValueError(f"Second argument must be a function, found {type(fn)} type")
-            self.ops = [
-                *self.ops,
-                {
-                    "args": args[1:],
-                    "fn": fn,
-                    "kwargs": kwargs,
-                    "reverse": kwargs.pop("reverse", False),
-                },
-            ]
+            op: _OpT = {
+                "args": args[1:],
+                "fn": fn,
+                "kwargs": kwargs,
+                "reverse": kwargs.pop("reverse", False),
+            }
+            self.ops = [*self.ops, op]
 
     def __getstate__(self):
         return self.__dict__
@@ -349,9 +356,9 @@ class dim:
             )
         op = self.ops[-1]
         if op["fn"] == "str":
-            new_op = dict(op, fn=astype, args=(str,), kwargs={})
+            new_op = {**op, "fn": astype, "args": (str,), "kwargs": {}}
         else:
-            new_op = dict(op, args=args, kwargs=kwargs)
+            new_op = {**op, "args": args, "kwargs": kwargs}
         return self.clone(self.dimension, [*self.ops[:-1], new_op])
 
     def __getattribute__(self, attr):
@@ -491,9 +498,6 @@ class dim:
     def __and__(self, other):
         return type(self)(self, operator.and_, other)
 
-    def __div__(self, other):
-        return type(self)(self, operator.div, other)
-
     def __eq__(self, other):
         return type(self)(self, operator.eq, other)
 
@@ -546,14 +550,8 @@ class dim:
     def __rand__(self, other):
         return type(self)(self, operator.and_, other)
 
-    def __rdiv__(self, other):
-        return type(self)(self, operator.div, other, reverse=True)
-
     def __rfloordiv__(self, other):
         return type(self)(self, operator.floordiv, other, reverse=True)
-
-    def __rlshift__(self, other):
-        return type(self)(self, operator.rlshift, other)
 
     def __rmod__(self, other):
         return type(self)(self, operator.mod, other, reverse=True)
@@ -566,9 +564,6 @@ class dim:
 
     def __rpow__(self, other):
         return type(self)(self, operator.pow, other, reverse=True)
-
-    def __rrshift__(self, other):
-        return type(self)(self, operator.rrshift, other)
 
     def __rsub__(self, other):
         return type(self)(self, operator.sub, other, reverse=True)
@@ -1116,16 +1111,19 @@ class df_dim(dim):
             return data.to_numpy()
         return data.values
 
-    def _coerce(self, dataset):
-        if self.interface_applies(dataset, coerce=False):
-            return dataset
-        pandas_interfaces = param.concrete_descendents(PandasInterface)
+    def _coerce(self, data):
+        if self.interface_applies(data, coerce=False):
+            return data
+        pandas_interfaces = t.cast(
+            "dict[str, type[PandasInterface]]",
+            param.concrete_descendents(parentclass=PandasInterface),
+        )
         datatypes = [
             intfc.datatype
             for intfc in pandas_interfaces.values()
-            if dataset.interface.multi == intfc.multi
+            if data.interface.multi == intfc.multi
         ]
-        return dataset.clone(datatype=datatypes)
+        return data.clone(datatype=datatypes)
 
     @property
     def loc(self):
@@ -1163,10 +1161,10 @@ class xr_dim(dim):
             data = data.compute()
         return data
 
-    def _coerce(self, dataset):
-        if self.interface_applies(dataset, coerce=False):
-            return dataset
-        return dataset.clone(datatype=["xarray"])
+    def _coerce(self, data):
+        if self.interface_applies(data, coerce=False):
+            return data
+        return data.clone(datatype=["xarray"])
 
 
 def lon_lat_to_easting_northing(longitude, latitude):

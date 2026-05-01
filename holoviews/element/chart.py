@@ -291,7 +291,7 @@ class Area(Curve):
             return areas
         is_overlay = isinstance(areas, Overlay)
         if is_overlay:
-            areas = NdOverlay({i: el for i, el in enumerate(areas)})
+            areas = NdOverlay(dict(enumerate(areas)))
         df = areas.dframe(multi_index=True)
         levels = list(range(areas.ndims))
         vdims = [[el.vdims[0], baseline_name] for el in areas]

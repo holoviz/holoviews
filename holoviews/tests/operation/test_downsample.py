@@ -7,9 +7,7 @@ import pytest
 import holoviews as hv
 from holoviews.operation.downsample import _ALGORITHMS, downsample1d
 
-from ..utils import optional_dependencies
-
-tsdownsample, tsdownsample_skip = optional_dependencies("tsdownsample")
+from ..utils import tsdownsample_skip
 
 algorithms = _ALGORITHMS.copy()
 algorithms.pop("viewport", None)  # viewport return slice(len(data)) no matter the width
