@@ -85,7 +85,7 @@ def collate(obj):
     if isinstance(obj, DynamicMap):
         if obj.type in [DynamicMap, HoloMap]:
             obj_name = obj.type.__name__
-            raise Exception(
+            raise ValueError(
                 f"Nesting a {obj_name} inside a DynamicMap is not "
                 "supported. Ensure that the DynamicMap callback "
                 "returns an Element or (Nd)Overlay. If you have "
@@ -118,9 +118,9 @@ def collate(obj):
                     expanded.extend(collated_layout.values())
             return Layout(expanded)
         except Exception as e:
-            raise Exception(undisplayable_info(obj)) from e
+            raise TypeError(undisplayable_info(obj)) from e
     else:
-        raise Exception(undisplayable_info(obj))
+        raise TypeError(undisplayable_info(obj))
 
 
 def isoverlay_fn(obj):
@@ -508,7 +508,7 @@ def validate_unbounded_mode(holomaps, dynmaps):
     holomap_kdims = set(unique_iterator([kd.name for dm in holomaps for kd in dm.kdims]))
     hmranges = {d: composite.range(d) for d in holomap_kdims}
     if any(not {d.name for d in dm.kdims} <= holomap_kdims for dm in dynmaps):
-        raise Exception(
+        raise ValueError(
             "DynamicMap that are unbounded must have key dimensions that are a "
             "subset of dimensions of the HoloMap(s) defining the keys."
         )
@@ -518,7 +518,7 @@ def validate_unbounded_mode(holomaps, dynmaps):
         for d, hmrange in hmranges.items()
         if d in dm.kdims
     ):
-        raise Exception("HoloMap(s) have keys outside the ranges specified on the DynamicMap(s).")
+        raise ValueError("HoloMap(s) have keys outside the ranges specified on the DynamicMap(s).")
 
 
 def get_dynamic_mode(composite):
@@ -529,7 +529,7 @@ def get_dynamic_mode(composite):
     if holomaps:
         validate_unbounded_mode(holomaps, dynmaps)
     elif dynamic_unbounded and not holomaps:
-        raise Exception(
+        raise ValueError(
             "DynamicMaps in unbounded mode must be displayed alongside "
             "a HoloMap to define the sampling."
         )

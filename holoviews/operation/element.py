@@ -457,7 +457,7 @@ class image_overlay(Operation):
         specs = tuple(el.strip() for el in self.p.spec.split("*"))
         ordering, strengths = self._match_overlay(raster, specs)
         if all(el is None for el in ordering):
-            raise Exception("The image_overlay operation requires at least one match")
+            raise ValueError("The image_overlay operation requires at least one match")
 
         completed = []
         strongest = ordering[np.argmax(strengths)]
@@ -553,7 +553,7 @@ class gradient(Operation):
         r, c = data.shape
 
         if matrix_dim.cyclic and (None in matrix_dim.range):
-            raise Exception(
+            raise ValueError(
                 "Cyclic range must be specified to compute the gradient of cyclic quantities"
             )
         cyclic_range = None if not matrix_dim.cyclic else np.diff(matrix_dim.range)
@@ -605,12 +605,12 @@ class convolve(Operation):
 
     def _process(self, overlay, key=None):
         if len(overlay) != 2:
-            raise Exception("Overlay must contain at least to items.")
+            raise ValueError("Overlay must contain at least to items.")
 
         [target, kernel] = overlay.get(0), overlay.get(1)
 
         if len(target.vdims) != 1:
-            raise Exception("Convolution requires inputs with single value dimensions.")
+            raise ValueError("Convolution requires inputs with single value dimensions.")
 
         xslice = slice(self.p.kernel_roi[0], self.p.kernel_roi[2])
         yslice = slice(self.p.kernel_roi[1], self.p.kernel_roi[3])

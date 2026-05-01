@@ -357,10 +357,10 @@ class MultiDimensionalMapping(Dimensioned):
         dimension = asdim(dimension)
 
         if dimension in self.dimensions():
-            raise Exception(f"{dimension.name} dimension already defined")
+            raise ValueError(f"{dimension.name} dimension already defined")
 
         if vdim and _is_deep_indexable(self):
-            raise Exception("Cannot add value dimension to object that is deep indexable")
+            raise TypeError("Cannot add value dimension to object that is deep indexable")
 
         if vdim:
             dims = self.vdims[:]
@@ -460,7 +460,7 @@ class MultiDimensionalMapping(Dimensioned):
         dimensions = [self.get_dimension(d) for d in kdims if d not in reduced_dims]
 
         if len(set(keys)) != len(keys) and not force:
-            raise Exception("Given dimension labels not sufficientto address all values uniquely")
+            raise ValueError("Given dimension labels not sufficientto address all values uniquely")
 
         if keys:
             cdims = {self.get_dimension(d): self.dimension_values(d)[0] for d in reduced_dims}

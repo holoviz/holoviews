@@ -143,7 +143,7 @@ def set_style(key):
         if "backup" in styles:
             plt.rcParams.update(styles["backup"])
         else:
-            raise Exception("No style backed up to restore")
+            raise RuntimeError("No style backed up to restore")
     elif key not in styles:
         raise KeyError("%r not in available styles.")
     else:

@@ -581,7 +581,7 @@ def process_ellipses(obj, key, vdim_selection=False):
     if ellipse_count == 0:
         return key
     elif ellipse_count != 1:
-        raise Exception("Only one ellipsis allowed at a time.")
+        raise ValueError("Only one ellipsis allowed at a time.")
     dim_count = len(obj.dimensions())
     index = wrapped_key.index(Ellipsis)
     head = wrapped_key[:index]
@@ -858,7 +858,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         """Accumulate blocks of hex and separate blocks by underscores"""
         invalid = {"\a": "a", "\b": "b", "\v": "v", "\f": "f", "\r": "r"}
         for cc in filter(lambda el: el in name, invalid.keys()):
-            raise Exception(rf"Please use a raw string or escape control code '\{invalid[cc]}'")
+            raise ValueError(rf"Please use a raw string or escape control code '\{invalid[cc]}'")
         sanitized, chars = [], ""
         for split in name.split():
             for c in split:
@@ -1946,7 +1946,7 @@ def stream_parameters(streams, no_duplicates=True, exclude=None):
         clashes = sorted(clashes)
         if clashes:
             clashing = ", ".join([repr(c) for c in clash_streams[:-1]])
-            raise Exception(
+            raise ValueError(
                 f"The supplied stream objects {clashing} and {clash_streams[-1]} "
                 f"clash on the following parameters: {clashes!r}"
             )
