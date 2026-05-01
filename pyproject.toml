@@ -271,6 +271,7 @@ nd = "nd"
 pn = "pn"
 ser = "ser"
 spreaded = "spreaded"
+writeable = "writeable"
 
 [tool.typos.default.extend-identifiers]
 les_mis = "les_mis"
