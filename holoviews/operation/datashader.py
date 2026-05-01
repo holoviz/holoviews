@@ -696,7 +696,7 @@ class overlay_aggregate(aggregate):
                 isinstance(agg_fn, (ds.count, ds.sum, ds.mean, ds.any))
                 and (agg_fn.column is None or agg_fn.column not in element.kdims)
             )
-            and len(set(id(el.data) for el in element)) > 1
+            and len({id(el.data) for el in element}) > 1
         )
 
     def _process(self, element, key=None):
