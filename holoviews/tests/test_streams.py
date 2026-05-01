@@ -64,11 +64,11 @@ def test_all_linked_stream_parameters_owners():
         for name, p in stream_class.param.objects().items():
             if name != "name" and (p.owner != stream_class):
                 msg = (
-                    "Linked stream %r has parameter %r which is "
-                    "inherited from %s. Parameter needs to be redeclared "
+                    f"Linked stream {stream_class!r} has parameter {name!r} which is "
+                    f"inherited from {p.owner}. Parameter needs to be redeclared "
                     "in the class definition of this linked stream."
                 )
-                raise Exception(msg % (stream_class, name, p.owner))
+                pytest.fail(msg)
 
 
 class TestStreamsDefine:

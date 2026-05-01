@@ -183,6 +183,7 @@ select = [
     "RUF",
     "TC",
     "TID251",
+    "TRY002",
     "UP",
     "W",
 ]
