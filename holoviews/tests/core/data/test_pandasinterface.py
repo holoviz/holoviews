@@ -243,7 +243,7 @@ class PandasInterfaceMultiIndexTests(HeterogeneousColumnTests, InterfaceTests):
         # Indexing relies on knowing the lexsort_depth but this is a
         # private import so we want to know should this import ever
         # be changed
-        from pandas.core.indexes.multi import _lexsort_depth  # noqa
+        from pandas.core.indexes.multi import _lexsort_depth  # noqa: F401
 
     def test_no_kdims(self):
         ds = hv.Dataset(self.df)

@@ -236,7 +236,7 @@ class Interface(param.Parameterized):
             elif interface.multi and any(
                 cls.interfaces[dt].multi for dt in datatype if dt in cls.interfaces
             ):
-                data = [d for d in data.interface.split(data, None, None, "columns")]
+                data = list(data.interface.split(data, None, None, "columns"))
             elif interface.gridded and any(cls.interfaces[dt].gridded for dt in datatype):
                 new_data = []
                 for kd in data.kdims:

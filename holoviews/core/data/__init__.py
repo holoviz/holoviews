@@ -22,19 +22,19 @@ from ..element import Element
 from ..ndmapping import MultiDimensionalMapping
 from ..spaces import DynamicMap, HoloMap
 from .array import ArrayInterface
-from .cudf import cuDFInterface  # noqa (API import)
-from .dask import DaskInterface  # noqa (API import)
-from .dictionary import DictInterface  # noqa (API import)
-from .grid import GridInterface  # noqa (API import)
-from .ibis import IbisInterface  # noqa (API import)
-from .image import ImageInterface  # noqa (API import)
+from .cudf import cuDFInterface  # noqa: F401
+from .dask import DaskInterface  # noqa: F401
+from .dictionary import DictInterface  # noqa: F401
+from .grid import GridInterface  # noqa: F401
+from .ibis import IbisInterface  # noqa: F401
+from .image import ImageInterface  # noqa: F401
 from .interface import Interface, iloc, ndloc
-from .multipath import MultiInterface  # noqa (API import)
+from .multipath import MultiInterface  # noqa: F401
 from .narwhals import NarwhalsInterface  # noqa: F401
-from .pandas import PandasAPI, PandasInterface  # noqa (API import)
-from .spatialpandas import SpatialPandasInterface  # noqa (API import)
-from .spatialpandas_dask import DaskSpatialPandasInterface  # noqa (API import)
-from .xarray import XArrayInterface  # noqa (API import)
+from .pandas import PandasAPI, PandasInterface  # noqa: F401
+from .spatialpandas import SpatialPandasInterface  # noqa: F401
+from .spatialpandas_dask import DaskSpatialPandasInterface  # noqa: F401
+from .xarray import XArrayInterface  # noqa: F401
 
 default_datatype = "dataframe"
 
@@ -1193,10 +1193,10 @@ class Dataset(Element, metaclass=PipelineMeta):
         if drop:
             kdims = [ds.get_dimension(d) for d in new_data if d in ds.kdims]
             vdims = [ds.get_dimension(d) or d for d in new_data if d not in ds.kdims]
-            data = dict([(dimension_name(d), values) for d, values in new_data.items()])
+            data = {dimension_name(d): values for d, values in new_data.items()}
             return ds.clone(data, kdims=kdims, vdims=vdims)
         else:
-            new_data = dict([(dimension_name(d), values) for d, values in new_data.items()])
+            new_data = {dimension_name(d): values for d, values in new_data.items()}
             data = ds.interface.assign(ds, new_data)
             data, drop = data if isinstance(data, tuple) else (data, [])
             kdims = [kd for kd in self.kdims if kd.name not in drop]
@@ -1288,7 +1288,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             dimensions = self.dimensions()
         else:
             dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
-        return dict([(d.name, self.dimension_values(d)) for d in dimensions])
+        return {d.name: self.dimension_values(d) for d in dimensions}
 
     @property
     def to(self):

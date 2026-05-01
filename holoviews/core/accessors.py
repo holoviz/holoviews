@@ -685,7 +685,7 @@ class Opts(metaclass=AccessorPipelineMeta):
 
     def _holomap_opts(self, *args, clone=None, **kwargs):
         apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
-        data = dict([(k, v.opts(*args, **kwargs)) for k, v in self._obj.data.items()])
+        data = {k: v.opts(*args, **kwargs) for k, v in self._obj.data.items()}
 
         # By default do not clone in .opts method
         if apply_groups if clone is None else clone:
@@ -714,7 +714,7 @@ class Opts(metaclass=AccessorPipelineMeta):
                 obj.callback = self._obj.callback
                 self._obj.callback = dmap.callback
             dmap = self._obj
-            dmap.data = dict([(k, v.opts(*args, **kwargs)) for k, v in self._obj.data.items()])
+            dmap.data = {k: v.opts(*args, **kwargs) for k, v in self._obj.data.items()}
         return dmap
 
     def _base_opts(self, *args, **kwargs):

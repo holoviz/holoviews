@@ -128,7 +128,7 @@ class MultiDimensionalMapping(Dimensioned):
                 initial_items = initial_items.items()
             elif isinstance(initial_items, MultiDimensionalMapping):
                 initial_items = initial_items.data.items()
-            self.data = dict((k if isinstance(k, tuple) else (k,), v) for k, v in initial_items)
+            self.data = {k if isinstance(k, tuple) else (k,): v for k, v in initial_items}
             if self.sort:
                 self._resort()
         elif initial_items is not None:
@@ -448,7 +448,7 @@ class MultiDimensionalMapping(Dimensioned):
         indices = [self.get_dimension_index(el) for el in kdims]
 
         keys = [tuple(k[i] for i in indices) for k in self.data.keys()]
-        reindexed_items = dict((k, v) for (k, v) in zip(keys, self.data.values(), strict=False))
+        reindexed_items = dict(zip(keys, self.data.values(), strict=False))
         reduced_dims = {d.name for d in self.kdims}.difference(kdims)
         dimensions = [self.get_dimension(d) for d in kdims if d not in reduced_dims]
 
@@ -859,7 +859,7 @@ class UniformNdMapping(NdMapping):
         for key, group in groups.items():
             last = group.values()[-1]
             if isinstance(last, UniformNdMapping):
-                group_data = dict([(k, v.collapse()) for k, v in group.items()])
+                group_data = {k: v.collapse() for k, v in group.items()}
                 group = group.clone(group_data)
             if hasattr(group.values()[-1], "interface"):
                 group_data = concat(group)
@@ -869,12 +869,10 @@ class UniformNdMapping(NdMapping):
             elif issubclass(group.type, CompositeOverlay) and _has_split_overlays(self):
                 keys, maps = self._split_overlays()
                 group_data = group.type(
-                    dict(
-                        [
-                            (key, ndmap.collapse(function=function, spreadfn=spreadfn, **kwargs))
-                            for key, ndmap in zip(keys, maps, strict=True)
-                        ]
-                    )
+                    {
+                        key: ndmap.collapse(function=function, spreadfn=spreadfn, **kwargs)
+                        for key, ndmap in zip(keys, maps, strict=True)
+                    }
                 )
             else:
                 msg = f"Could not determine correct collapse operation for items of type: {group.type!r}."

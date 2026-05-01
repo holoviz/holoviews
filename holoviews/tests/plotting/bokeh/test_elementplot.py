@@ -1190,7 +1190,7 @@ class TestColorbarPlot(LoggingComparison, TestBokehPlot):
         assert colorbar.title == ""
 
     def test_explicit_categorical_cmap_on_integer_data(self):
-        explicit_mapping = dict([(0, "blue"), (1, "red"), (2, "green"), (3, "purple")])
+        explicit_mapping = {0: "blue", 1: "red", 2: "green", 3: "purple"}
         points = hv.Scatter(
             ([0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3]), vdims=["y", "Category"]
         ).opts(color_index="Category", cmap=explicit_mapping)

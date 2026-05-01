@@ -166,7 +166,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             else:
                 identifier = obj.__class__.__name__
 
-            options = {identifier: {grp: kws for (grp, kws) in kwargs.items()}}
+            options = {identifier: dict(kwargs.items())}
         else:
             dfltdict = defaultdict(dict)
             for grp, entries in kwargs.items():
@@ -998,7 +998,7 @@ class Dynamic(param.ParameterizedFunction):
                 kwargs["plot_id"] = map_obj._plot_id
             dmap = map_obj.clone(**kwargs)
             if self.p.shared_data:
-                dmap.data = dict([(k, callback.callable(*k)) for k, v in dmap.data])
+                dmap.data = {k: callback.callable(*k) for k, v in dmap.data}
         else:
             dmap = self._make_dynamic(map_obj, callback, streams)
         return dmap

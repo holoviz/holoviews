@@ -111,7 +111,7 @@ class MPLRendererTest:
         widgets = obj.layout.select(DiscreteSlider)
         assert len(widgets) == 1
         slider = widgets[0]
-        assert slider.options == dict([(str(i), i) for i in range(5)])
+        assert slider.options == {str(i): i for i in range(5)}
 
     def test_render_holomap_embedded(self):
         hmap = hv.HoloMap({i: hv.Curve([1, 2, i]) for i in range(5)})

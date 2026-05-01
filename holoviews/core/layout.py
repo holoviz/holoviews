@@ -479,7 +479,7 @@ class Layout(Layoutable, ViewableTree):
                 "A Layout may not be sliced, ensure that you "
                 "are slicing on a leaf (i.e. not a branch) of the Layout."
             )
-        if len(key) == 2 and not any([isinstance(k, str) for k in key]):
+        if len(key) == 2 and not any(isinstance(k, str) for k in key):
             if key == (slice(None), slice(None)):
                 return self
             row, col = key

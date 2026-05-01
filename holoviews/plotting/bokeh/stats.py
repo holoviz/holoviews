@@ -145,7 +145,7 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
         if not element.kdims:
             xfactors, yfactors = [element.label], []
         else:
-            factors = [key for key in element.groupby(element.kdims).data.keys()]
+            factors = list(element.groupby(element.kdims).data.keys())
             if element.ndims > 1:
                 factors = sorted(factors)
             factors = [
@@ -204,7 +204,7 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
             with sorted_context(False):
                 groups = element.groupby(element.kdims).data
         else:
-            groups = dict([(element.label, element)])
+            groups = {element.label: element}
         vdim = dimension_sanitizer(element.vdims[0].name)
 
         # Define CDS data
@@ -445,7 +445,7 @@ class ViolinPlot(BoxWhiskerPlot):
         if not kdims:
             xfactors, yfactors = [element.label], []
         else:
-            factors = [key for key in element.groupby(kdims).data.keys()]
+            factors = list(element.groupby(kdims).data.keys())
             if element.ndims > 1:
                 factors = sorted(factors)
             factors = [
@@ -578,7 +578,7 @@ class ViolinPlot(BoxWhiskerPlot):
             with sorted_context(False):
                 groups = element.groupby(kdims).data
         else:
-            groups = dict([((element.label,), element)])
+            groups = {(element.label,): element}
 
         if split_dim:
             split_name = split_dim.dimension.label
