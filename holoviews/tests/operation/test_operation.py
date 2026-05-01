@@ -26,11 +26,7 @@ from holoviews.operation.element import (
 )
 from holoviews.testing import assert_element_equal
 
-from ..utils import optional_dependencies
-
-mpl, mpl_skip = optional_dependencies("matplotlib")
-da, dask_skip = optional_dependencies("dask.array")
-ibis, ibis_skip = optional_dependencies("ibis")
+from ..utils import da, da_skip, ibis, ibis_skip, mpl_skip
 
 
 class OperationTests:
@@ -539,10 +535,8 @@ class OperationTests:
             np.testing.assert_equal(exp, h.data["xy"])
             assert (h.data["xy_count"] == 5).all()
 
-    @dask_skip
+    @da_skip
     def test_dataset_histogram_dask(self):
-        import dask.array as da
-
         ds = hv.Dataset(
             (da.from_array(np.array(range(10), dtype="f"), chunks=(3)),), ["x"], datatype=["dask"]
         )
@@ -554,10 +548,8 @@ class OperationTests:
         assert isinstance(op_hist.data["x_frequency"], da.Array)
         assert_element_equal(op_hist, hist)
 
-    @dask_skip
+    @da_skip
     def test_dataset_cumulative_histogram_dask(self):
-        import dask.array as da
-
         ds = hv.Dataset(
             (da.from_array(np.array(range(10), dtype="f"), chunks=(3)),), ["x"], datatype=["dask"]
         )
@@ -567,10 +559,8 @@ class OperationTests:
         assert isinstance(op_hist.data["x_frequency"], da.Array)
         assert_element_equal(op_hist, hist)
 
-    @dask_skip
+    @da_skip
     def test_dataset_weighted_histogram_dask(self):
-        import dask.array as da
-
         ds = hv.Dataset(
             (
                 da.from_array(np.array(range(10), dtype="f"), chunks=3),
@@ -1197,7 +1187,7 @@ class TestDendrogramOperation:
         xr = pytest.importorskip("xarray")
 
         N = 10
-        da = xr.DataArray(
+        xda = xr.DataArray(
             rng.normal(size=(N, N)),
             name="main",
             dims=("cluster", "gene"),
@@ -1207,7 +1197,7 @@ class TestDendrogramOperation:
             },
         )
 
-        dendro = dendrogram(hv.Dataset(da), adjoint_dims=adjoint_dims, main_dim="main")
+        dendro = dendrogram(hv.Dataset(xda), adjoint_dims=adjoint_dims, main_dim="main")
         assert isinstance(dendro, hv.AdjointLayout)
 
     def test_failed_linkage(self):

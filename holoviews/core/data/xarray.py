@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import sys
 import types
-from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -11,17 +10,12 @@ from ..dimension import Dimension, asdim, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..util import dtype_kind
-from ..util.dependencies import _LazyModule, _no_import_version
+from ..util.dependencies import _no_import_version, cp
 from .grid import GridInterface
 from .interface import DataError, Interface
 from .util import dask_array_module, finite_range
 
 XARRAY_VERSION = _no_import_version("xarray")
-
-if TYPE_CHECKING:
-    import cupy as cp
-else:
-    cp = _LazyModule("cupy", bool_use_sys_modules=True)
 
 
 def is_cupy(array):
@@ -192,10 +186,10 @@ class XArrayInterface(GridInterface):
                     and len(data[-1].shape) == (ndims + 1)
                 ):
                     value_array = data[-1]
-                    data = {d: v for d, v in zip(dimensions, data[:-1], strict=None)}
+                    data = dict(zip(dimensions, data[:-1], strict=None))
                     packed = True
                 else:
-                    data = {d: v for d, v in zip(dimensions, data, strict=None)}
+                    data = dict(zip(dimensions, data, strict=None))
             elif isinstance(data, (list, np.ndarray)) and len(data) == 0:
                 dimensions = [d.name for d in kdims + vdims]
                 data = {d: np.array([]) for d in dimensions[:ndims]}
@@ -498,7 +492,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def ndloc(cls, dataset, indices):
-        kdims = [d for d in dataset.kdims[::-1]]
+        kdims = list(dataset.kdims[::-1])
         adjusted_indices = []
         slice_dims = []
         for kd, ind in zip(kdims, indices, strict=None):
@@ -545,7 +539,7 @@ class XArrayInterface(GridInterface):
                 selected = dataset.data.isel({k: xr.DataArray(v) for k, v in isel.items()})
                 df = selected.to_dataframe("vdims")[["vdims"]].T
                 vdims = [vd.name for vd in dataset.vdims]
-                return df.rename(columns={i: d for i, d in enumerate(vdims)})[vdims]
+                return df.rename(columns=dict(enumerate(vdims)))[vdims]
             if all_scalar:
                 isel = {k: [v] for k, v in isel.items()}
             selected = dataset.data.isel({k: xr.DataArray(v) for k, v in isel.items()})
@@ -655,11 +649,11 @@ class XArrayInterface(GridInterface):
 
         # Restore constant dimensions
         indexed = cls.indexed(dataset, selection)
-        dropped = dict(
-            (d.name, np.atleast_1d(data[d.name]))
+        dropped = {
+            d.name: np.atleast_1d(data[d.name])
             for d in dataset.kdims
             if not data[d.name].data.shape
-        )
+        }
         if dropped and not indexed:
             data = data.expand_dims(dropped)
             # see https://github.com/pydata/xarray/issues/2891

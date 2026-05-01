@@ -2023,21 +2023,17 @@ class GenericOverlayPlot(GenericElementPlot):
         if keys and ranges and dimensions and not defaultdim:
             dim_inds = [dimensions.index(d) for d in holomap.kdims]
             sliced_keys = [tuple(k[i] for i in dim_inds) for k in keys]
-            frame_ranges = dict(
-                [
-                    (slckey, self.compute_ranges(holomap, key, ranges[key]))
-                    for key, slckey in zip(keys, sliced_keys, strict=None)
-                    if slckey in holomap.data.keys()
-                ]
-            )
+            frame_ranges = {
+                slckey: self.compute_ranges(holomap, key, ranges[key])
+                for key, slckey in zip(keys, sliced_keys, strict=None)
+                if slckey in holomap.data.keys()
+            }
         else:
             mapwise_ranges = self.compute_ranges(holomap, None, None)
-            frame_ranges = dict(
-                [
-                    (key, self.compute_ranges(holomap, key, mapwise_ranges))
-                    for key in holomap.data.keys()
-                ]
-            )
+            frame_ranges = {
+                key: self.compute_ranges(holomap, key, mapwise_ranges)
+                for key in holomap.data.keys()
+            }
         ranges = frame_ranges.values()
 
         with disable_pipeline():

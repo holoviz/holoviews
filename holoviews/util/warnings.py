@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import os
 import sys
+import typing as t
 import warnings
 
 import param
@@ -43,7 +44,7 @@ def find_stack_level():
     )
 
     if ipc := sys.modules.get("IPython.core"):
-        ignore_paths = (*ignore_paths, os.path.dirname(ipc.__file__))
+        ignore_paths = (*ignore_paths, os.path.dirname(t.cast("str", ipc.__file__)))
 
     frame = inspect.currentframe()
     try:
@@ -71,9 +72,7 @@ def deprecated(remove_version, old, new=None, extra=None, *, repr_old=True, repr
     if isinstance(remove_version, str):
         remove_version = Version(remove_version)
 
-    if remove_version <= current_version and not (
-        full_version.is_prerelease and full_version.pre[0] == "a"
-    ):
+    if remove_version <= current_version and not (full_version.pre and full_version.pre[0] == "a"):
         # This error is mainly for developers to remove the deprecated.
         raise ValueError(
             f"{old!r} should have been removed in {remove_version}, current version {current_version}."

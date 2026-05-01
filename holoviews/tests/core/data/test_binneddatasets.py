@@ -195,7 +195,7 @@ class Irregular2DBinsTest:
 
     def test_construct_from_xarray(self):
         xr = pytest.importorskip("xarray")
-        coords = dict([("lat", (("y", "x"), self.ys)), ("lon", (("y", "x"), self.xs))])
+        coords = {"lat": (("y", "x"), self.ys), "lon": (("y", "x"), self.xs)}
         da = xr.DataArray(self.zs, dims=["y", "x"], coords=coords, name="z")
         dataset = hv.Dataset(da)
 

@@ -22,7 +22,7 @@ def retry(func, *args, **kwargs):
 if Version(bokeh.__version__).release < (3, 5, 0):
     import bokeh.sampledata
 
-    retry(bokeh.sampledata.download)
+    retry(bokeh.sampledata.download)  # ty:ignore[unresolved-attribute]
     print("Downloaded bokeh sampledata")
 
 with suppress(ImportError):

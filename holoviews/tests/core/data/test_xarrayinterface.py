@@ -10,16 +10,13 @@ import holoviews as hv
 from holoviews.core.data import XArrayInterface, concat
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from ...utils import optional_dependencies
+from ...utils import da, da_skip, xr, xr_skip
 from .test_gridinterface import BaseGridInterfaceTests
 from .test_imageinterface import (
     BaseHSVElementInterfaceTests,
     BaseImageElementInterfaceTests,
     BaseRGBElementInterfaceTests,
 )
-
-xr, xr_skip = optional_dependencies("xarray")
-da, dask_skip = optional_dependencies("dask.array")
 
 
 @xr_skip
@@ -42,7 +39,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         y = np.arange(2, 12, 2) * multiplier
         da = xr.DataArray(
             data=[np.arange(100).reshape(5, 20)],
-            coords=dict([("band", [1]), ("x", x), ("y", y)]),
+            coords={"band": [1], "x": x, "y": y},
             dims=["band", "y", "x"],
             attrs={"transform": (3, 0, 2, 0, -2, -2)},
         )
@@ -72,7 +69,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         )
 
     def test_ignore_dependent_dimensions_if_not_specified(self):
-        coords = dict([("time", [0, 1]), ("lat", [0, 1]), ("lon", [0, 1])])
+        coords = {"time": [0, 1], "lat": [0, 1], "lon": [0, 1]}
         da = xr.DataArray(
             np.arange(8).reshape((2, 2, 2)), coords, ["time", "lat", "lon"]
         ).assign_coords(lat1=xr.DataArray([2, 3], dims=["lat"]))
@@ -184,7 +181,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
 
     def test_xarray_coord_ordering(self):
         data = np.zeros((3, 4, 5))
-        coords = dict([("b", range(3)), ("c", range(4)), ("a", range(5))])
+        coords = {"b": range(3), "c": range(4), "a": range(5)}
         darray = xr.DataArray(data, coords=coords, dims=["b", "c", "a"])
         dataset = xr.Dataset({"value": darray}, coords=coords)
         ds = hv.Dataset(dataset)
@@ -386,7 +383,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         pytest.skip("Not supported")
 
 
-@dask_skip
+@da_skip
 class DaskXArrayInterfaceTest(XArrayInterfaceTests):
     """
     Tests for XArray interface wrapping dask arrays

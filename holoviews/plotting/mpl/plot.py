@@ -13,7 +13,7 @@ from matplotlib import (
     rcParams,
 )
 from matplotlib.font_manager import font_scalings
-from mpl_toolkits.mplot3d import Axes3D  # noqa (For 3D plots)
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 (For 3D plots)
 
 from ...core import (
     AdjointLayout,
@@ -498,9 +498,7 @@ class GridPlot(CompositePlot):
         subplots, subaxes = {}, {}
         frame_ranges = self.compute_ranges(layout, None, ranges)
         keys = self.keys[:1] if self.dynamic else self.keys
-        frame_ranges = dict(
-            [(key, self.compute_ranges(layout, key, frame_ranges)) for key in keys]
-        )
+        frame_ranges = {key: self.compute_ranges(layout, key, frame_ranges) for key in keys}
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         r, c = (0, 0)
         for coord in layout.keys(full_grid=True):
@@ -1059,9 +1057,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
         keys = self.keys[:1] if self.dynamic else self.keys
-        frame_ranges = dict(
-            [(key, self.compute_ranges(layout, key, frame_ranges)) for key in keys]
-        )
+        frame_ranges = {key: self.compute_ranges(layout, key, frame_ranges) for key in keys}
         layout_subplots, layout_axes = {}, {}
         for r, c in self.coords:
             # Compute the layout type from shape
