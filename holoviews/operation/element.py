@@ -1315,7 +1315,7 @@ class collapse(Operation):
         if isinstance(overlay, NdOverlay):
             collapse_map = HoloMap(overlay)
         else:
-            collapse_map = HoloMap({i: el for i, el in enumerate(overlay)})
+            collapse_map = HoloMap(dict(enumerate(overlay)))
         return collapse_map.collapse(function=self.p.fn)
 
 

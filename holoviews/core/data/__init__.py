@@ -1193,10 +1193,10 @@ class Dataset(Element, metaclass=PipelineMeta):
         if drop:
             kdims = [ds.get_dimension(d) for d in new_data if d in ds.kdims]
             vdims = [ds.get_dimension(d) or d for d in new_data if d not in ds.kdims]
-            data = dict([(dimension_name(d), values) for d, values in new_data.items()])
+            data = {dimension_name(d): values for d, values in new_data.items()}
             return ds.clone(data, kdims=kdims, vdims=vdims)
         else:
-            new_data = dict([(dimension_name(d), values) for d, values in new_data.items()])
+            new_data = {dimension_name(d): values for d, values in new_data.items()}
             data = ds.interface.assign(ds, new_data)
             data, drop = data if isinstance(data, tuple) else (data, [])
             kdims = [kd for kd in self.kdims if kd.name not in drop]
@@ -1288,7 +1288,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             dimensions = self.dimensions()
         else:
             dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
-        return dict([(d.name, self.dimension_values(d)) for d in dimensions])
+        return {d.name: self.dimension_values(d) for d in dimensions}
 
     @property
     def to(self):

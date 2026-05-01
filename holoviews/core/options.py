@@ -497,7 +497,7 @@ class Options:
                 category=HoloviewsUserWarning,
             )
 
-        self.kwargs = dict([(k, kwargs[k]) for k in sorted(kwargs.keys()) if k not in invalid_kws])
+        self.kwargs = {k: kwargs[k] for k in sorted(kwargs.keys()) if k not in invalid_kws}
         self._options = []
         self._max_cycles = max_cycles
 
@@ -541,7 +541,7 @@ class Options:
 
     def keys(self):
         """The keyword names across the supplied options."""
-        return sorted(list(self.kwargs.keys()))
+        return sorted(self.kwargs.keys())
 
     def max_cycles(self, num):
         """Truncates all contained Palette objects to a maximum number
@@ -1567,7 +1567,7 @@ class StoreOptions:
 
     @classmethod
     def get_object_ids(cls, obj):
-        return {el for el in obj.traverse(lambda x: getattr(x, "id", None))}
+        return set(obj.traverse(lambda x: getattr(x, "id", None)))
 
     @classmethod
     def tree_to_dict(cls, tree):

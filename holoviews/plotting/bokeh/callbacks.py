@@ -362,9 +362,7 @@ class Callback:
             return
 
         # Get unique event types in the queue
-        events = list(
-            dict([(event.event_name, event) for event, dt in self._event_queue]).values()
-        )
+        events = list({event.event_name: event for event, dt in self._event_queue}.values())
         self._event_queue = []
 
         # Process event types

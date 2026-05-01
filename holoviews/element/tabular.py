@@ -54,7 +54,7 @@ class ItemTable(Element):
             data = dict(list(data))
         if "vdims" not in params:
             params["vdims"] = list(data.keys())
-        str_keys = dict((dimension_name(k), v) for (k, v) in data.items())
+        str_keys = {dimension_name(k): v for (k, v) in data.items()}
         super().__init__(str_keys, **params)
 
     def __getitem__(self, heading):
@@ -78,7 +78,7 @@ class ItemTable(Element):
         if callable(samples):
             sampled_data = dict(item for item in self.data.items() if samples(item))
         else:
-            sampled_data = dict((s, self.data.get(s, np.nan)) for s in samples)
+            sampled_data = {s: self.data.get(s, np.nan) for s in samples}
         return self.clone(sampled_data)
 
     def reduce(self, dimensions=None, function=None, **reduce_map):

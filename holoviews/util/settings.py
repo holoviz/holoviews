@@ -17,7 +17,7 @@ class KeywordSettings:
 
     # Dictionary from keywords to allowed bounds/values
     allowed = {}
-    defaults = dict([])  # Default keyword values.
+    defaults = {}  # Default keyword values.
     options = dict(defaults.items())  # Current options
 
     # Callables accepting (value, keyword, allowed) for custom exceptions
@@ -189,23 +189,21 @@ class OutputSettings(KeywordSettings):
         ),
     }
 
-    defaults = dict(
-        [
-            ("backend", None),
-            ("center", True),
-            ("fig", None),
-            ("holomap", None),
-            ("widgets", None),
-            ("fps", None),
-            ("max_frames", 500),
-            ("size", None),
-            ("dpi", None),
-            ("filename", None),
-            ("info", False),
-            ("widget_location", None),
-            ("css", None),
-        ]
-    )
+    defaults = {
+        "backend": None,
+        "center": True,
+        "fig": None,
+        "holomap": None,
+        "widgets": None,
+        "fps": None,
+        "max_frames": 500,
+        "size": None,
+        "dpi": None,
+        "filename": None,
+        "info": False,
+        "widget_location": None,
+        "css": None,
+    }
 
     # Defines the options the OutputSettings remembers. All other options
     # are held by the backend specific Renderer.
@@ -496,7 +494,7 @@ class OutputSettings(KeywordSettings):
         cls.backend_list = backend_list
         backend = Store.current_backend
         if backend in Store.renderers:
-            cls.options = dict({k: cls.defaults[k] for k in cls.remembered})
+            cls.options = {k: cls.defaults[k] for k in cls.remembered}
             cls.set_backend(backend)
         else:
             cls.options["backend"] = None
