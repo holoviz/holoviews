@@ -48,13 +48,11 @@ class TestDimTransforms:
         x = np.arange(2, 62, 3)
         y = np.arange(2, 12, 2)
         array = np.arange(100).reshape(5, 20)
-        darray = xr.DataArray(data=array, coords=dict([("x", x), ("y", y)]), dims=["y", "x"])
+        darray = xr.DataArray(data=array, coords={"x": x, "y": y}, dims=["y", "x"])
         self.dataset_xarray = hv.Dataset(darray, vdims=["z"])
         if dask is not None:
             dask_array = da.from_array(array)
-            dask_da = xr.DataArray(
-                data=dask_array, coords=dict([("x", x), ("y", y)]), dims=["y", "x"]
-            )
+            dask_da = xr.DataArray(data=dask_array, coords={"x": x, "y": y}, dims=["y", "x"])
             self.dataset_xarray_dask = hv.Dataset(dask_da, vdims=["z"])
 
     # Assertion helpers

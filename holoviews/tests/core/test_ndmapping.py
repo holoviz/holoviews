@@ -35,7 +35,7 @@ class NdIndexableMappingTest:
     def setup_method(self):
         self.init_items_1D_list = [(1, "a"), (5, "b")]
         self.init_item_list = [((1, 2.0), "a"), ((5, 3.0), "b")]
-        self.init_item_odict = dict([((1, 2.0), "a"), ((5, 3.0), "b")])
+        self.init_item_odict = {(1, 2.0): "a", (5, 3.0): "b"}
         self.dimension_labels = ["intdim", "floatdim"]
         self.dim1 = hv.Dimension("intdim", type=int)
         self.dim2 = hv.Dimension("floatdim", type=float)
@@ -89,7 +89,7 @@ class NdIndexableMappingTest:
 
         ndmap_list = [(0.5, ndmap1), (1.5, ndmap2)]
         nested_ndmap = MultiDimensionalMapping(ndmap_list, kdims=[self.dim2])
-        nested_ndmap[(0.5,)].update(dict([(0, "c"), (1, "d")]))
+        nested_ndmap[(0.5,)].update({0: "c", 1: "d"})
         assert list(nested_ndmap[0.5].values()) == ["c", "d"]
 
         nested_ndmap[1.5] = ndmap3
@@ -195,7 +195,7 @@ class NdIndexableMappingTest:
         assert ndmap2d.kdims == [self.dim2, self.dim1]
 
     def test_idxmapping_apply_key_type(self):
-        data = dict([(0.5, "a"), (1.5, "b")])
+        data = {0.5: "a", 1.5: "b"}
         ndmap = MultiDimensionalMapping(data, kdims=[self.dim1])
 
         assert list(ndmap.keys()) == [0, 1]

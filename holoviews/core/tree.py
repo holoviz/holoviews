@@ -144,7 +144,7 @@ class AttrTree:
         # Search for substring matches between paths and path filters
         new_attrtree = self.__class__()
         for path, item in self.data.items():
-            if any([all([subpath in path for subpath in pf]) for pf in path_filters]):
+            if any(all(subpath in path for subpath in pf) for pf in path_filters):
                 new_attrtree.set_path(path, item)
 
         return new_attrtree

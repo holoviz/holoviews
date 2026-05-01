@@ -123,22 +123,14 @@ class CompositeOverlay(ViewableElement, Composable):
             dimension = [dim.name for dim in self.values()[main_layer_int_index].kdims]
         # Compute histogram for each dimension and each element in OverLay
         hists_per_dim = {
-            dim: dict(
-                [  # All histograms for a given dimension
-                    (
-                        elem_key,
-                        elem.hist(
-                            adjoin=False,
-                            dimension=dim,
-                            bin_range=bin_range,
-                            num_bins=num_bins,
-                            **kwargs,
-                        ),
-                    )
-                    for i, (elem_key, elem) in enumerate(self.items())
-                    if (index is None) or (getattr(elem, "label", None) == index) or (index == i)
-                ]
-            )
+            dim: {
+                # All histograms for a given dimension
+                elem_key: elem.hist(
+                    adjoin=False, dimension=dim, bin_range=bin_range, num_bins=num_bins, **kwargs
+                )
+                for i, (elem_key, elem) in enumerate(self.items())
+                if (index is None) or (getattr(elem, "label", None) == index) or (index == i)
+            }
             for dim in dimension
         }
         # Create new Overlays of histograms
