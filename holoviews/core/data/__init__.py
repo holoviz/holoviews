@@ -22,19 +22,19 @@ from ..element import Element
 from ..ndmapping import MultiDimensionalMapping
 from ..spaces import DynamicMap, HoloMap
 from .array import ArrayInterface
-from .cudf import cuDFInterface  # noqa (API import)
-from .dask import DaskInterface  # noqa (API import)
-from .dictionary import DictInterface  # noqa (API import)
-from .grid import GridInterface  # noqa (API import)
-from .ibis import IbisInterface  # noqa (API import)
-from .image import ImageInterface  # noqa (API import)
+from .cudf import cuDFInterface  # noqa: F401
+from .dask import DaskInterface  # noqa: F401
+from .dictionary import DictInterface  # noqa: F401
+from .grid import GridInterface  # noqa: F401
+from .ibis import IbisInterface  # noqa: F401
+from .image import ImageInterface  # noqa: F401
 from .interface import Interface, iloc, ndloc
-from .multipath import MultiInterface  # noqa (API import)
+from .multipath import MultiInterface  # noqa: F401
 from .narwhals import NarwhalsInterface  # noqa: F401
-from .pandas import PandasAPI, PandasInterface  # noqa (API import)
-from .spatialpandas import SpatialPandasInterface  # noqa (API import)
-from .spatialpandas_dask import DaskSpatialPandasInterface  # noqa (API import)
-from .xarray import XArrayInterface  # noqa (API import)
+from .pandas import PandasAPI, PandasInterface  # noqa: F401
+from .spatialpandas import SpatialPandasInterface  # noqa: F401
+from .spatialpandas_dask import DaskSpatialPandasInterface  # noqa: F401
+from .xarray import XArrayInterface  # noqa: F401
 
 default_datatype = "dataframe"
 

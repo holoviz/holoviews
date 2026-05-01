@@ -47,7 +47,7 @@ from ..core.util import (
 from ..element.chart import Histogram, Scatter
 from ..element.path import Contours, Dendrogram, Polygons
 from ..element.raster import RGB, HeatMap, Image
-from ..element.util import categorical_aggregate2d  # noqa (API import)
+from ..element.util import categorical_aggregate2d  # noqa: F401
 from ..streams import RangeXY
 from ..util.locator import MaxNLocator
 from ..util.warnings import warn

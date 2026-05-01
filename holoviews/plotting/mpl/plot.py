@@ -13,7 +13,7 @@ from matplotlib import (
     rcParams,
 )
 from matplotlib.font_manager import font_scalings
-from mpl_toolkits.mplot3d import Axes3D  # noqa (For 3D plots)
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 (For 3D plots)
 
 from ...core import (
     AdjointLayout,

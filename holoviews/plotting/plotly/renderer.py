@@ -169,7 +169,7 @@ class PlotlyRenderer(Renderer):
     @classmethod
     def load_nb(cls, inline=True):
         """Loads the plotly notebook resources."""
-        import panel.models.plotly  # noqa
+        import panel.models.plotly  # noqa: F401
 
         cls._loaded = True
         if "plotly" not in getattr(pn.extension, "_loaded_extensions", ["plotly"]):

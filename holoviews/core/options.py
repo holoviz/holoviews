@@ -46,7 +46,7 @@ import numpy as np
 import param
 
 from ..util.warnings import HoloviewsUserWarning, warn
-from .accessors import Opts  # noqa (clean up in 2.0)
+from .accessors import Opts  # noqa: F401 (clean up in 2.0)
 from .pprint import InfoPrinter
 from .tree import AttrTree
 from .util import group_sanitizer, label_sanitizer, sanitize_identifier
