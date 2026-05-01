@@ -124,7 +124,7 @@ STYLE_ALIASES = {
 
 # Regular expression to extract any trailing digits from a subplot-style
 # string.
-_subplot_re = re.compile(r"\D*(\d+)")
+_subplot_re = re.compile(r"(\d+)")
 
 
 def _get_subplot_number(subplot_val):
@@ -149,7 +149,7 @@ def _get_subplot_number(subplot_val):
     -------
     int
     """
-    match = _subplot_re.match(subplot_val)
+    match = _subplot_re.search(subplot_val)
     if match:
         subplot_number = int(match.group(1))
     else:

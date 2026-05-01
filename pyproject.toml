@@ -182,6 +182,7 @@ select = [
     "PT",
     "RUF",
     "TC",
+    "TID251",
     "UP",
     "W",
 ]
@@ -246,6 +247,9 @@ allow-dict-calls-with-keyword-arguments = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"re.match".msg = "Use re.search with '^' instead of re.match"
 
 [tool.ty.src]
 include = [
