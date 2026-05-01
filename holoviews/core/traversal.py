@@ -93,7 +93,7 @@ def unique_dimkeys(obj, default_dim="Frame"):
                 unique_keys.append(padded_key)
 
     with item_check(False):
-        sorted_keys = NdMapping({key: None for key in unique_keys}, kdims=all_dims).data.keys()
+        sorted_keys = NdMapping(dict.fromkeys(unique_keys), kdims=all_dims).data.keys()
     return all_dims, list(sorted_keys)
 
 

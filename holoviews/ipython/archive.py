@@ -86,7 +86,7 @@ class NotebookArchive(FileArchive):
             raise ImportError("HoloViews does not seem to be imported")
         matches = [
             k
-            for k, v in get_ipython().user_ns.items()  # noqa (get_ipython)
+            for k, v in get_ipython().user_ns.items()  # noqa: F821
             if not k.startswith("_") and v is sys.modules["holoviews"]
         ]
         if len(matches) == 0:

@@ -51,7 +51,7 @@ def is_color(color):
     """Checks if supplied object is a valid color spec."""
     if not isinstance(color, str):
         return False
-    elif RGB_HEX_REGEX.match(color):
+    elif RGB_HEX_REGEX.search(color):
         return True
     elif color in COLOR_ALIASES:
         return True

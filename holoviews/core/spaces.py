@@ -155,7 +155,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
         -------
         Returns the cloned object with the options applied
         """
-        data = dict([(k, v.options(*args, **kwargs)) for k, v in self.data.items()])
+        data = {k: v.options(*args, **kwargs) for k, v in self.data.items()}
         return self.clone(data)
 
     def _split_overlays(self):
@@ -656,7 +656,7 @@ class Callable(param.Parameterized):
             # Missing information on positional argument names, cannot promote to keywords
             pass
         elif len(args) != 0:  # Turn positional arguments into keyword arguments
-            pos_kwargs = {k: v for k, v in zip(self.argspec.args, args, strict=False)}
+            pos_kwargs = dict(zip(self.argspec.args, args, strict=False))
             ignored = range(len(self.argspec.args), len(args))
             if ignored:
                 self.param.warning(
@@ -1547,7 +1547,7 @@ class DynamicMap(HoloMap):
                 return items[match][1]
 
             dmap = Dynamic(self, streams=self.streams, operation=split_overlay_callback)
-            dmap.data = dict([(list(self.data.keys())[-1], self.last.data[key])])
+            dmap.data = {list(self.data.keys())[-1]: self.last.data[key]}
             dmaps.append(dmap)
         return keys, dmaps
 

@@ -213,7 +213,7 @@ class TestLinkCallbacks(TestBokehPlot):
     def test_data_link_nan(self):
         arr = np.random.rand(3, 5)
         arr[0, 0] = np.nan
-        data = {k: v for k, v in zip(["x", "y", "z"], arr, strict=True)}
+        data = dict(zip(["x", "y", "z"], arr, strict=True))
         a = hv.Scatter(data, "x", "z")
         b = hv.Scatter(data, "x", "y")
         DataLink(a, b)

@@ -17,7 +17,7 @@ from ..utils import dd, dd_skip, ds_skip, shapely_skip, spd_skip
 
 class TestIndexExpr:
     def setup_method(self):
-        import holoviews.plotting.bokeh  # noqa
+        import holoviews.plotting.bokeh  # noqa: F401
 
         self._backend = hv.Store.current_backend
         hv.Store.set_current_backend("bokeh")
@@ -39,7 +39,7 @@ class TestIndexExpr:
 
 class TestSelection1DExpr:
     def setup_method(self):
-        import holoviews.plotting.bokeh  # noqa
+        import holoviews.plotting.bokeh  # noqa: F401
 
         self._backend = hv.Store.current_backend
         hv.Store.set_current_backend("bokeh")
@@ -223,7 +223,7 @@ class TestSelection1DExpr:
 
 class TestSelection2DExpr:
     def setup_method(self):
-        import holoviews.plotting.bokeh  # noqa
+        import holoviews.plotting.bokeh  # noqa: F401
 
         self._backend = hv.Store.current_backend
         hv.Store.set_current_backend("bokeh")
@@ -489,7 +489,7 @@ class TestSelection2DExpr:
 
 class TestSelectionGeomExpr:
     def setup_method(self):
-        import holoviews.plotting.bokeh  # noqa
+        import holoviews.plotting.bokeh  # noqa: F401
 
         self._backend = hv.Store.current_backend
         hv.Store.set_current_backend("bokeh")
@@ -620,7 +620,7 @@ class TestSelectionGeomExpr:
 
 class TestSelectionPolyExpr:
     def setup_method(self):
-        import holoviews.plotting.bokeh  # noqa
+        import holoviews.plotting.bokeh  # noqa: F401
 
         self._backend = hv.Store.current_backend
         hv.Store.set_current_backend("bokeh")

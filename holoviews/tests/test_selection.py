@@ -862,7 +862,7 @@ class TestLinkSelectionsBokeh(TestLinkSelections):
     __test__ = True
 
     def setup_method(self):
-        import holoviews.plotting.bokeh  # noqa
+        import holoviews.plotting.bokeh  # noqa: F401
 
         super().setup_method()
         self._backend = hv.Store.current_backend

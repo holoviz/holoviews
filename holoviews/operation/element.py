@@ -47,7 +47,7 @@ from ..core.util.dependencies import _no_import_version, cp
 from ..element.chart import Histogram, Scatter
 from ..element.path import Contours, Dendrogram, Polygons
 from ..element.raster import RGB, HeatMap, Image
-from ..element.util import categorical_aggregate2d  # noqa (API import)
+from ..element.util import categorical_aggregate2d  # noqa: F401
 from ..streams import RangeXY
 from ..util.locator import MaxNLocator
 from ..util.warnings import warn
@@ -1308,7 +1308,7 @@ class collapse(Operation):
         if isinstance(overlay, NdOverlay):
             collapse_map = HoloMap(overlay)
         else:
-            collapse_map = HoloMap({i: el for i, el in enumerate(overlay)})
+            collapse_map = HoloMap(dict(enumerate(overlay)))
         return collapse_map.collapse(function=self.p.fn)
 
 

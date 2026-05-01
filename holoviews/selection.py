@@ -283,9 +283,7 @@ class _base_link_selections(param.ParameterizedFunction):
                 )
             return hvobj
         elif isinstance(hvobj, (Layout, Overlay, NdOverlay, GridSpace, AdjointLayout)):
-            data = dict(
-                [(k, self._selection_transform(v, operations, origin)) for k, v in hvobj.items()]
-            )
+            data = {k: self._selection_transform(v, operations, origin) for k, v in hvobj.items()}
             if isinstance(hvobj, NdOverlay):
 
                 def compose(*args, **kwargs):
@@ -804,7 +802,7 @@ class ColorListSelectionDisplay(SelectionDisplay):
                     color_inds[expr.apply(ds)] = i
 
             colors = clrs[color_inds]
-            color_opts = {color_prop: colors for color_prop in self.color_props}
+            color_opts = dict.fromkeys(self.color_props, colors)
             return el.pipeline(ds).opts(backend=self.backend, clone=True, **color_opts)
 
         sel_streams = [selection_streams.style_stream, selection_streams.exprs_stream]

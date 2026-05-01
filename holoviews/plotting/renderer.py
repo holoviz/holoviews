@@ -741,7 +741,7 @@ class Renderer(Exporter):
             load_notebook(inline)
         with param.logging_level("ERROR"):
             try:
-                ip = get_ipython()  # noqa
+                ip = get_ipython()  # noqa: F821
             except Exception:
                 ip = None
             if not ip or not hasattr(ip, "kernel"):
