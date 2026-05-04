@@ -78,7 +78,7 @@ class ElementConversion(DataConversion):
             if self._element.vdims:
                 dim = self._element.vdims[0]
             else:
-                raise Exception(
+                raise ValueError(
                     "Must supply an explicit value dimension if no value dimensions are defined "
                 )
         if groupby:

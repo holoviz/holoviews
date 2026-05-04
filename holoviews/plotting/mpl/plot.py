@@ -450,7 +450,7 @@ class GridPlot(CompositePlot):
         self, layout, axis=None, create_axes=True, ranges=None, layout_num=1, keys=None, **params
     ):
         if not isinstance(layout, GridSpace):
-            raise Exception("GridPlot only accepts GridSpace.")
+            raise TypeError("GridPlot only accepts GridSpace.")
         super().__init__(layout, layout_num=layout_num, ranges=ranges, keys=keys, **params)
         # Compute ranges layoutwise
         grid_kwargs = {}

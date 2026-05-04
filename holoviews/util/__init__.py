@@ -138,7 +138,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         """Format option group kwargs into canonical options format"""
         groups = Options._option_groups
         if set(kwargs.keys()) - set(groups):
-            raise Exception(
+            raise ValueError(
                 "Keyword options {} must be one of  {}".format(
                     groups, ",".join(repr(g) for g in groups)
                 )
@@ -146,12 +146,12 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         elif not all(isinstance(v, dict) for v in kwargs.values()):
             options_str = ",".join([repr(k) for k in kwargs.keys()])
             msg = f"The {options_str} options must be specified using dictionary groups"
-            raise Exception(msg)
+            raise ValueError(msg)
 
         # Check whether the user is specifying targets (such as 'Image.Foo')
         targets = [grp and all(k[0].isupper() for k in grp) for grp in kwargs.values()]
         if any(targets) and not all(targets):
-            raise Exception(
+            raise ValueError(
                 "Cannot mix target specification keys such as 'Image' with non-target keywords."
             )
         elif not any(targets):
@@ -204,7 +204,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
                 filtered = {k: v for k, v in groups.items() if k != "output"}
                 dfltdict[groups["output"]["backend"]][spec.strip()] = filtered
             else:
-                raise Exception("The output options group must have the backend keyword")
+                raise ValueError("The output options group must have the backend keyword")
 
         return [(bk, bk_opts) for (bk, bk_opts) in dfltdict.items()]
 
@@ -309,7 +309,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             The plotting extension the options apply to
         """
         if kwargs and len(kwargs) != 1 and next(iter(kwargs.keys())) != "backend":
-            raise Exception('opts.defaults only accepts "backend" keyword argument')
+            raise TypeError('opts.defaults only accepts "backend" keyword argument')
 
         backend = kwargs.get("backend")
         expanded = cls._expand_options(util.merge_options_to_dict(options), backend=backend)

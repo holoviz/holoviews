@@ -82,7 +82,7 @@ def cleanup_custom_options(id, weakref=None):
         if not weakrefs:
             Store._weakrefs.pop(id, None)
     except Exception as e:
-        raise Exception(
+        raise RuntimeError(
             f"Cleanup of custom options tree with id '{id}' failed "
             f"with the following exception: {e}, an unreferenced "
             "orphan tree may persist in memory."
@@ -261,7 +261,7 @@ class Keywords:
 
     def __add__(self, other):
         if (self.target and other.target) and (self.target != other.target):
-            raise Exception("Targets must match to combine Keywords")
+            raise ValueError("Targets must match to combine Keywords")
         target = self.target or other.target
         return Keywords(sorted(set(self.values + other.values)), target=target)
 
@@ -482,7 +482,7 @@ class Options:
                     raise OptionError(kwarg, allowed_keywords)
 
         if key and key[0].islower() and key not in self._option_groups:
-            raise Exception(
+            raise ValueError(
                 "Key {} does not start with a capitalized element class name and is not a group in {}".format(
                     repr(key), ", ".join(repr(el) for el in self._option_groups)
                 )
@@ -581,7 +581,7 @@ class Options:
         if not self.cyclic:
             return self[0]
         else:
-            raise Exception("The options property may only be used with non-cyclic Options.")
+            raise TypeError("The options property may only be used with non-cyclic Options.")
 
     def __repr__(self):
         kws = ", ".join(f"{k}={self.kwargs[k]!r}" for k in sorted(self.kwargs.keys()))
@@ -651,7 +651,7 @@ class OptionTree(AttrTree):
                 g: Options(**root_groups.get(g, {})) for g in _groups.keys()
             }
         elif root_groups:
-            raise Exception(
+            raise ValueError(
                 "Group specification as a dictionary only supported if "
                 "the root node '.' syntax not used in the options."
             )
@@ -1359,10 +1359,10 @@ class Store:
         """
         ids = {el for el in obj.traverse(lambda x: x.id) if el is not None}
         if len(ids) == 0:
-            raise Exception("Object does not own a custom options tree")
+            raise LookupError("Object does not own a custom options tree")
         elif len(ids) != 1:
             idlist = ",".join([str(el) for el in sorted(ids)])
-            raise Exception(
+            raise LookupError(
                 f"Object contains elements combined across multiple custom trees (ids {idlist})"
             )
         return cls._custom_options[backend][next(iter(ids))]
@@ -1547,7 +1547,7 @@ class StoreOptions:
 
         """
         if cls._errors_recorded is None:
-            raise Exception("Cannot stop recording before it is started")
+            raise RuntimeError("Cannot stop recording before it is started")
         recorded = cls._errors_recorded[:]
         cls._errors_recorded = None
         return recorded
@@ -1780,7 +1780,7 @@ class StoreOptions:
         if options is not None and set(options.keys()) <= groups:
             kwargs, options = options, None
         elif options is not None and any(k in groups for k in options):
-            raise Exception(f"All keys must be a subset of {', '.join(groups)}.")
+            raise ValueError(f"All keys must be a subset of {', '.join(groups)}.")
 
         options = {} if (options is None) else dict(**options)
         all_keys = {k for d in kwargs.values() for k in d}

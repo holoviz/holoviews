@@ -203,11 +203,11 @@ class Element(ViewableElement, Composable, Overlayable):
 
     def _reduce_map(self, dimensions, function, reduce_map):
         if dimensions and reduce_map:
-            raise Exception(
+            raise ValueError(
                 "Pass reduced dimensions either as an argument or as part of the kwargs not both."
             )
         if len(set(reduce_map.values())) > 1:
-            raise Exception(
+            raise ValueError(
                 "Cannot define reduce operations with more than one function at a time."
             )
         if reduce_map:
@@ -318,9 +318,9 @@ class Tabular(Element):
         """
         ndims = self.ndims
         if col >= self.cols:
-            raise Exception(f"Maximum column index is {self.cols - 1}")
+            raise IndexError(f"Maximum column index is {self.cols - 1}")
         elif row >= self.rows:
-            raise Exception(f"Maximum row index is {self.cols - 1}")
+            raise IndexError(f"Maximum row index is {self.cols - 1}")
         elif row == 0:
             if col >= ndims:
                 if self.vdims:

@@ -87,9 +87,9 @@ class ItemTable(Element):
     def pprint_cell(self, row, col):
         """Get the formatted cell value for the given row and column indices."""
         if col > 2:
-            raise Exception("Only two columns available in a ItemTable.")
+            raise IndexError("Only two columns available in a ItemTable.")
         elif row >= self.rows:
-            raise Exception(f"Maximum row index is {self.rows - 1}")
+            raise IndexError(f"Maximum row index is {self.rows - 1}")
         elif col == 0:
             return self.dimensions("value")[row].pprint_label
         else:

@@ -194,7 +194,7 @@ else:
 
     class notebook_extension(param.ParameterizedFunction):
         def __call__(self, *args, **kwargs):
-            raise Exception("Jupyter notebook not available: use hv.extension instead.")
+            raise RuntimeError("Jupyter notebook not available: use hv.extension instead.")
 
 
 if "_pyodide" in sys.modules:

@@ -362,7 +362,7 @@ class Renderer(Exporter):
 
         all_formats = set(fig_formats + holomap_formats)
         if fmt not in all_formats:
-            raise Exception(
+            raise ValueError(
                 f"Format {fmt!r} not supported by mode {self.mode!r}. Allowed formats: {fig_formats + holomap_formats!r}"
             )
         self.last_plot = plot
@@ -649,7 +649,7 @@ class Renderer(Exporter):
         if key is None:
             key = {}
         if info or key:
-            raise Exception("Renderer does not support saving metadata to file.")
+            raise NotImplementedError("Renderer does not support saving metadata to file.")
 
         if kwargs:
             param.main.param.warning(
