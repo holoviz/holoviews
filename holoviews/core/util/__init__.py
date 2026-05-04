@@ -60,12 +60,6 @@ if t.TYPE_CHECKING:
     from ..layout import AdjointLayout
     from ..ndmapping import UniformNdMapping
 
-# Python 2 builtins
-basestring = str
-long = int
-unicode = str
-cmp = lambda a, b: (a > b) - (a < b)
-
 get_keywords = operator.attrgetter("varkw")
 
 anonymous_dimension_label = "_"
