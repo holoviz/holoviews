@@ -460,7 +460,9 @@ class MultiDimensionalMapping(Dimensioned):
         dimensions = [self.get_dimension(d) for d in kdims if d not in reduced_dims]
 
         if len(set(keys)) != len(keys) and not force:
-            raise ValueError("Given dimension labels not sufficientto address all values uniquely")
+            raise ValueError(
+                "Given dimension labels not sufficient to address all values uniquely"
+            )
 
         if keys:
             cdims = {self.get_dimension(d): self.dimension_values(d)[0] for d in reduced_dims}
