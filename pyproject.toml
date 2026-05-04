@@ -152,7 +152,12 @@ filterwarnings = [
 
 [tool.coverage]
 omit = ["holoviews/__version.py"]
-exclude_also = ["if __name__ == .__main__.:", "if TYPE_CHECKING:", "if ._pyodide. in sys.modules:"]
+exclude_also = [
+    "@overload",
+    "if ._pyodide. in sys.modules:",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]
 
 [tool.ruff]
 fix = true
