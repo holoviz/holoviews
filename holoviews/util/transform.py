@@ -1114,14 +1114,9 @@ class df_dim(dim):
     def _coerce(self, data):
         if self.interface_applies(data, coerce=False):
             return data
-        pandas_interfaces = t.cast(
-            "dict[str, type[PandasInterface]]",
-            param.concrete_descendents(parentclass=PandasInterface),
-        )
+        pandas_interfaces = param.descendents(class_=PandasInterface)
         datatypes = [
-            intfc.datatype
-            for intfc in pandas_interfaces.values()
-            if data.interface.multi == intfc.multi
+            intfc.datatype for intfc in pandas_interfaces if data.interface.multi == intfc.multi
         ]
         return data.clone(datatype=datatypes)
 

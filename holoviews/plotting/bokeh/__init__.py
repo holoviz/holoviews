@@ -2,7 +2,7 @@ import sys
 
 import numpy as np
 from bokeh.palettes import all_palettes
-from param import concrete_descendents
+from param import descendents
 
 from ...core import (
     AdjointLayout,
@@ -204,7 +204,7 @@ associations = {
 Store.register(associations, "bokeh")
 
 if config.no_padding:
-    for plot in concrete_descendents(ElementPlot).values():
+    for plot in descendents(ElementPlot):
         plot.padding = 0
 
 # Raster types, Path types and VectorField should have frames

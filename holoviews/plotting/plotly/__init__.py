@@ -1,6 +1,6 @@
 import numpy as np
 import plotly
-from param import concrete_descendents
+from param import descendents
 
 from ...core import (
     AdjointLayout,
@@ -154,7 +154,7 @@ Store.register(
 options = Store.options(backend="plotly")
 
 if config.no_padding:
-    for plot in concrete_descendents(ElementPlot).values():
+    for plot in descendents(ElementPlot):
         plot.padding = 0
 
 dflt_cmap = config.default_cmap
