@@ -85,15 +85,6 @@ def __getattr__(attr):
         from ._datashader_bundling import directly_connect_edges
 
         return directly_connect_edges
-    elif attr == "ds_version":
-        from packaging.version import Version  # noqa: TID251
-
-        from ..util.warnings import deprecated
-
-        deprecated("1.24.0", "ds_version")
-        ds_version = Version(ds.__version__)  # DEPRECATED: Used by hvplot<=0.11.1
-        return ds_version
-
     raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
 
 
