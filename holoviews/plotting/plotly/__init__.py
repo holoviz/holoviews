@@ -1,6 +1,5 @@
 import numpy as np
 import plotly
-from packaging.version import Version
 from param import concrete_descendents
 
 from ...core import (
@@ -14,7 +13,7 @@ from ...core import (
     config,
 )
 from ...core.options import Cycle, Options, Store
-from ...core.util import VersionError
+from ...core.util.dependencies import VersionError, _no_import_version
 from ...element import (
     RGB,
     Area,
@@ -82,7 +81,7 @@ from .stats import BivariatePlot, BoxWhiskerPlot, DistributionPlot, ViolinPlot
 from .tabular import TablePlot
 from .tiles import TilePlot
 
-if Version(plotly.__version__).release < (4, 0, 0):
+if _no_import_version("plotly") < (4, 0, 0):
     raise VersionError(
         "The plotly extension requires a plotly version >=4.0.0, "
         f"please upgrade from plotly {plotly.__version__} to a more recent version.",

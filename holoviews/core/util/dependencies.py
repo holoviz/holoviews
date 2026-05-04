@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import sys
 import typing as t
-from functools import lru_cache
+from functools import cache
 from importlib import import_module
 from importlib.metadata import PackageNotFoundError, version
 from importlib.util import find_spec
@@ -23,25 +23,30 @@ class VersionError(Exception):
         super().__init__(msg, **kwargs)
 
 
-@lru_cache
-def _is_installed(module_name):
+@cache
+def _is_installed(module_name: str) -> bool:
     # So we don't accidentally import it
     module_name, *_ = module_name.split(".")
     return find_spec(module_name) is not None
 
 
-@lru_cache
-def _get_version(package_name):
+@cache
+def _get_version(package_name: str) -> str:
     try:
         return version(package_name)
     except PackageNotFoundError:
         return "0.0.0"
 
 
+def _convert_int(version_str: str) -> tuple[int, ...]:
+    """Convert a version string to a tuple of integers."""
+    return tuple(map(int, _re_no.findall(version_str)[:3]))
+
+
+@cache
 def _no_import_version(package_name) -> tuple[int, ...]:
     """Get version number without importing the library"""
-    version_str = _get_version(package_name)
-    return tuple(map(int, _re_no.findall(version_str)[:3]))
+    return _convert_int(_get_version(package_name))
 
 
 _MIN_SUPPORTED_VERSION = {
