@@ -38,9 +38,14 @@ def _get_version(package_name: str) -> str:
         return "0.0.0"
 
 
+class _tuple(tuple):
+    def __str__(self):
+        return ".".join(map(str, self))
+
+
 def _convert_int(version_str: str) -> tuple[int, ...]:
     """Convert a version string to a tuple of integers."""
-    return tuple(map(int, _re_no.findall(version_str)[:3]))
+    return _tuple(map(int, _re_no.findall(version_str)[:3]))
 
 
 @cache
