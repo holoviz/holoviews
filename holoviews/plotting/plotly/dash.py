@@ -33,6 +33,10 @@ from holoviews.plotting.plotly.callbacks import (
 from holoviews.plotting.plotly.util import clean_internal_figure_properties
 from holoviews.plotting.util import initialize_dynamic
 from holoviews.streams import Derived, History
+from holoviews.util.warnings import deprecated
+
+deprecated("1.24.0", "Dash support", repr_old=False)
+
 
 # Dash imports
 try:
