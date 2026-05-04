@@ -3,7 +3,11 @@ from __future__ import annotations
 
 import base64
 import copy
+import hashlib
+import hmac
+import os
 import pickle
+import secrets
 import uuid
 from collections import namedtuple
 
@@ -49,6 +53,8 @@ hv.extension("plotly")
 StreamCallback = namedtuple("StreamCallback", ["input_ids", "fn", "output_id"])
 DashComponents = namedtuple("DashComponents", ["graphs", "kdims", "store", "resets", "children"])
 HoloViewsFunctionSpec = namedtuple("HoloViewsFunctionSpec", ["fn", "kdims", "streams"])
+
+_STORE_SECRET: bytes = os.getenv("HOLOVIEWS_DASH_TOKEN", "").encode() or secrets.token_bytes(32)
 
 
 def get_layout_ranges(plot):
@@ -272,9 +278,10 @@ def populate_stream_callback_graph(stream_callbacks, streams):
 def encode_store_data(store_data):
     """Encode store_data dict into a JSON serializable dict
 
-    This is currently done by pickling store_data and converting to a base64 encoded
-    string. If HoloViews supports JSON serialization in the future, this method could
-    be updated to use this approach instead
+    The dict is pickled, base64-encoded, and HMAC-signed with a secret
+    (set via the ``HOLOVIEWS_DASH_TOKEN`` environment variable, or a random
+    per-process value) so that decode_store_data can reject any payload that
+    was not produced by a server process sharing the same secret.
 
     Parameters
     ----------
@@ -284,11 +291,17 @@ def encode_store_data(store_data):
     -------
     dict that can be JSON serialized
     """
-    return {"pickled": base64.b64encode(pickle.dumps(store_data)).decode("utf-8")}
+    pickled = pickle.dumps(store_data)
+    mac = hmac.new(_STORE_SECRET, pickled, hashlib.sha256).hexdigest()
+    return {"pickled": base64.b64encode(pickled).decode("utf-8"), "mac": mac}
 
 
 def decode_store_data(store_data):
     """Decode a dict that was encoded by the encode_store_data function.
+
+    The HMAC signature (using the secret from ``HOLOVIEWS_DASH_TOKEN`` or the
+    per-process random value) is verified before unpickling to prevent
+    deserialisation of attacker-controlled payloads.
 
     Parameters
     ----------
@@ -297,8 +310,19 @@ def decode_store_data(store_data):
     Returns
     -------
     decoded dict
+
+    Raises
+    ------
+    ValueError
+        If the payload signature is missing or does not match.
     """
-    return pickle.loads(base64.b64decode(store_data["pickled"]))
+    pickled = base64.b64decode(store_data["pickled"])
+    expected_mac = hmac.new(_STORE_SECRET, pickled, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(store_data.get("mac", ""), expected_mac):
+        raise ValueError(
+            "Store data integrity check failed, the payload may have been tampered with."
+        )
+    return pickle.loads(pickled)
 
 
 def to_dash(
