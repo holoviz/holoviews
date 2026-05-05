@@ -1189,18 +1189,6 @@ class TestColorbarPlot(LoggingComparison, TestBokehPlot):
         colorbar = plot.handles["colorbar"]
         assert colorbar.title == ""
 
-    def test_explicit_categorical_cmap_on_integer_data(self):
-        explicit_mapping = {0: "blue", 1: "red", 2: "green", 3: "purple"}
-        points = hv.Scatter(
-            ([0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3]), vdims=["y", "Category"]
-        ).opts(color_index="Category", cmap=explicit_mapping)
-        plot = bokeh_renderer.get_plot(points)
-        cmapper = plot.handles["color_mapper"]
-        cds = plot.handles["cds"]
-        assert cds.data["Category_str__"] == ["0", "1", "2", "3"]
-        assert cmapper.factors == ["0", "1", "2", "3"]
-        assert cmapper.palette == ["blue", "red", "green", "purple"]
-
     def test_cticks_int(self):
         img = hv.Image(np.array([[0, 1], [2, 3]])).opts(cticks=3, colorbar=True)
         plot = bokeh_renderer.get_plot(img)

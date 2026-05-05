@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 from bokeh.models import EdgesAndLinkedNodes, NodesAndLinkedEdges, NodesOnly, Patches
-from bokeh.models.mappers import CategoricalColorMapper, LinearColorMapper
+from bokeh.models.mappers import CategoricalColorMapper
 
 import holoviews as hv
 from holoviews.element import circular_layout
@@ -116,53 +116,6 @@ class TestBokehGraphPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(self.graph.opts(selection_policy=None))
         renderer = plot.handles["glyph_renderer"]
         assert isinstance(renderer.selection_policy, NodesOnly)
-
-    def test_graph_nodes_categorical_colormapped(self):
-        g = self.graph2.opts(color_index="Label", cmap="Set1")
-        plot = bokeh_renderer.get_plot(g)
-        cmapper = plot.handles["color_mapper"]
-        node_source = plot.handles["scatter_1_source"]
-        glyph = plot.handles["scatter_1_glyph"]
-        assert isinstance(cmapper, CategoricalColorMapper)
-        assert cmapper.factors == ["Output", "Input"]
-        np.testing.assert_array_equal(node_source.data["Label"], self.node_info["Label"])
-        assert property_to_dict(glyph.fill_color) == {"field": "Label", "transform": cmapper}
-
-    def test_graph_nodes_numerically_colormapped(self):
-        g = self.graph3.opts(color_index="Weight", cmap="viridis")
-        plot = bokeh_renderer.get_plot(g)
-        cmapper = plot.handles["color_mapper"]
-        node_source = plot.handles["scatter_1_source"]
-        glyph = plot.handles["scatter_1_glyph"]
-        assert isinstance(cmapper, LinearColorMapper)
-        assert cmapper.low == self.weights.min()
-        assert cmapper.high == self.weights.max()
-        assert_data_equal(node_source.data["Weight"], self.node_info2["Weight"])
-        assert property_to_dict(glyph.fill_color) == {"field": "Weight", "transform": cmapper}
-
-    def test_graph_edges_categorical_colormapped(self):
-        g = self.graph3.opts(edge_color_index="start", edge_cmap=["#FFFFFF", "#000000"])
-        plot = bokeh_renderer.get_plot(g)
-        cmapper = plot.handles["edge_colormapper"]
-        edge_source = plot.handles["multi_line_1_source"]
-        glyph = plot.handles["multi_line_1_glyph"]
-        assert isinstance(cmapper, CategoricalColorMapper)
-        factors = ["0", "1", "2", "3", "4", "5", "6", "7"]
-        assert cmapper.factors == factors
-        assert edge_source.data["start_str__"] == factors
-        assert property_to_dict(glyph.line_color) == {"field": "start_str__", "transform": cmapper}
-
-    def test_graph_edges_numerically_colormapped(self):
-        g = self.graph4.opts(edge_color_index="Weight", edge_cmap=["#FFFFFF", "#000000"])
-        plot = bokeh_renderer.get_plot(g)
-        cmapper = plot.handles["edge_colormapper"]
-        edge_source = plot.handles["multi_line_1_source"]
-        glyph = plot.handles["multi_line_1_glyph"]
-        assert isinstance(cmapper, LinearColorMapper)
-        assert np.isclose(cmapper.low, self.weights.min())
-        assert np.isclose(cmapper.high, self.weights.max())
-        assert_data_equal(edge_source.data["Weight"], self.node_info2["Weight"])
-        assert property_to_dict(glyph.line_color) == {"field": "Weight", "transform": cmapper}
 
     ###########################
     #    Styling mapping      #
@@ -334,30 +287,6 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         assert_data_equal(edge_source.data["end"], np.arange(1, 3))
         layout = {z: (x, y) for x, y, z in self.trimesh.nodes.array()}
         assert layout_source.graph_layout == layout
-
-    def test_trimesh_edges_categorical_colormapped(self):
-        g = self.trimesh.opts(edge_color_index="node1", edge_cmap=["#FFFFFF", "#000000"])
-        plot = bokeh_renderer.get_plot(g)
-        cmapper = plot.handles["edge_colormapper"]
-        edge_source = plot.handles["multi_line_1_source"]
-        glyph = plot.handles["multi_line_1_glyph"]
-        assert isinstance(cmapper, CategoricalColorMapper)
-        factors = ["0", "1", "2", "3"]
-        assert cmapper.factors == factors
-        assert edge_source.data["node1_str__"] == ["0", "1"]
-        assert property_to_dict(glyph.line_color) == {"field": "node1_str__", "transform": cmapper}
-
-    def test_trimesh_nodes_numerically_colormapped(self):
-        g = self.trimesh_weighted.opts(edge_color_index="weight", edge_cmap=["#FFFFFF", "#000000"])
-        plot = bokeh_renderer.get_plot(g)
-        cmapper = plot.handles["edge_colormapper"]
-        edge_source = plot.handles["multi_line_1_source"]
-        glyph = plot.handles["multi_line_1_glyph"]
-        assert isinstance(cmapper, LinearColorMapper)
-        assert cmapper.low == 0
-        assert cmapper.high == 1
-        assert_data_equal(edge_source.data["weight"], np.array([0, 1]))
-        assert property_to_dict(glyph.line_color) == {"field": "weight", "transform": cmapper}
 
     ###########################
     #    Styling mapping      #
@@ -550,22 +479,6 @@ class TestBokehChordPlot(TestBokehPlot):
         source = plot.handles["text_1_source"]
         assert source.data["text"] == ["A", "B", "C"]
 
-    def test_chord_nodes_categorically_colormapped(self):
-        g = self.chord.opts(
-            color_index="Label", label_index="Label", cmap=["#FFFFFF", "#888888", "#000000"]
-        )
-        plot = bokeh_renderer.get_plot(g)
-        cmapper = plot.handles["color_mapper"]
-        source = plot.handles["scatter_1_source"]
-        arc_source = plot.handles["multi_line_2_source"]
-        glyph = plot.handles["scatter_1_glyph"]
-        assert isinstance(cmapper, CategoricalColorMapper)
-        assert cmapper.factors == ["A", "B", "C"]
-        assert cmapper.palette == ["#FFFFFF", "#888888", "#000000"]
-        assert source.data["Label"] == ["A", "B", "C"]
-        assert arc_source.data["Label"] == ["A", "B", "C"]
-        assert property_to_dict(glyph.fill_color) == {"field": "Label", "transform": cmapper}
-
     def test_chord_nodes_style_map_node_color_colormapped(self):
         g = self.chord.opts(
             labels="Label", node_color="Label", cmap=["#FFFFFF", "#888888", "#000000"]
@@ -586,18 +499,6 @@ class TestBokehChordPlot(TestBokehPlot):
             "field": "node_color",
             "transform": cmapper,
         }
-
-    def test_chord_edges_categorically_colormapped(self):
-        g = self.chord.opts(edge_color_index="start", edge_cmap=["#FFFFFF", "#000000"])
-        plot = bokeh_renderer.get_plot(g)
-        cmapper = plot.handles["edge_colormapper"]
-        edge_source = plot.handles["multi_line_1_source"]
-        glyph = plot.handles["multi_line_1_glyph"]
-        assert isinstance(cmapper, CategoricalColorMapper)
-        assert cmapper.palette == ["#FFFFFF", "#000000", "#FFFFFF"]
-        assert cmapper.factors == ["0", "1", "2"]
-        assert edge_source.data["start_str__"] == ["0", "0", "1"]
-        assert property_to_dict(glyph.line_color) == {"field": "start_str__", "transform": cmapper}
 
     def test_chord_edge_color_style_mapping(self):
         g = self.chord.opts(
@@ -632,10 +533,8 @@ class TestBokehSankeyPlot(TestBokehPlot):
         )
         self.sk = hv.Sankey(((self.src, self.tgt, self.val), self.nodes), vdims=["Value"])
         self.sk = self.sk.opts(
-            # Color nodes by their label using the provided palette
             node_color="Label",
             node_cmap=self.palette,
-            color_index=None,
         )
 
     def test_basic_sankey_sources(self):

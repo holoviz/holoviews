@@ -33,13 +33,6 @@ class ChartPlot(ElementPlot):
 
 
 class ScatterPlot(ChartPlot, ColorbarPlot):
-    color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Index of the dimension from which the color will the drawn",
-    )
-
     style_opts = [
         "visible",
         "marker",
@@ -68,14 +61,6 @@ class ScatterPlot(ChartPlot, ColorbarPlot):
 
     def graph_options(self, element, ranges, style, **kwargs):
         opts = super().graph_options(element, ranges, style, **kwargs)
-        cdim = element.get_dimension(self.color_index)
-        if cdim:
-            copts = self.get_color_opts(cdim, element, ranges, style)
-            copts["color"] = element.dimension_values(cdim)
-            opts["marker"].update(copts)
-
-        # If cmap was present and applicable, it was processed by get_color_opts above.
-        # Remove it now to avoid plotly validation error
         opts.get("marker", {}).pop("cmap", None)
         return opts
 

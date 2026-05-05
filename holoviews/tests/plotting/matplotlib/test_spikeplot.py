@@ -7,7 +7,6 @@ import holoviews as hv
 from holoviews.core.options import AbbreviatedException
 from holoviews.testing import assert_data_equal
 
-from ..utils import ParamLogStream
 from .test_plot import TestMPLPlot, mpl_renderer
 
 
@@ -198,17 +197,3 @@ class TestSpikesPlot(TestMPLPlot):
             children = subplot.handles["artist"].get_children()
             for c in children:
                 assert c.get_facecolor() == color
-
-    def test_spikes_color_index_color_clash(self):
-        spikes = hv.Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)], vdims=["y", "color"]).opts(
-            color="color", color_index="color"
-        )
-        with ParamLogStream() as log:
-            mpl_renderer.get_plot(spikes)
-        log_msg = log.stream.read()
-        warning = (
-            "The `color_index` parameter is deprecated in favor of color style mapping, e.g. "
-            "`color=dim('color')` or `line_color=dim('color')`\nCannot declare style mapping "
-            "for 'color' option and declare a color_index; ignoring the color_index.\n"
-        )
-        assert log_msg == warning

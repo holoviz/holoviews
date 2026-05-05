@@ -3271,49 +3271,6 @@ class ColorbarPlot(ElementPlot):
             self.handles[prefix + "color_dim"] = eldim
         return cmapper
 
-    def _get_color_data(
-        self, element, ranges, style, name="color", factors=None, colors=None, int_categories=False
-    ):
-        data, mapping = {}, {}
-        cdim = element.get_dimension(self.color_index)
-        color = style.get(name, None)
-        if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
-            self.param.warning(
-                f"Cannot declare style mapping for '{name}' option and "
-                "declare a color_index; ignoring the color_index."
-            )
-            cdim = None
-        if not cdim:
-            return data, mapping
-
-        cdata = element.dimension_values(cdim)
-        field = util.dimension_sanitizer(cdim.name)
-        dtypes = "iOSU" if int_categories else "OSU"
-
-        if factors is None and (isinstance(cdata, list) or dtype_kind(cdata) in dtypes):
-            range_key = dim_range_key(cdim)
-            if range_key in ranges and "factors" in ranges[range_key]:
-                factors = ranges[range_key]["factors"]
-            else:
-                factors = util.unique_array(cdata)
-        if factors is not None and int_categories and dtype_kind(cdata) == "i":
-            field += "_str__"
-            cdata = [str(f) for f in cdata]
-            factors = [str(f) for f in factors]
-
-        mapper = self._get_colormapper(cdim, element, ranges, style, factors, colors)
-        if factors is None and isinstance(mapper, CategoricalColorMapper):
-            field += "_str__"
-            cdata = [cdim.pprint_value(c) for c in cdata]
-            factors = True
-
-        data[field] = cdata
-        if factors is not None and self.show_legend:
-            mapping["legend_field"] = field
-        mapping[name] = {"field": field, "transform": mapper}
-
-        return data, mapping
-
     def _get_cmapper_opts(self, low, high, factors, colors):
         if factors is None:
             opts = {}

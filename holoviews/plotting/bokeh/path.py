@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from types import NoneType
 
 import numpy as np
 import param
@@ -8,6 +9,7 @@ from bokeh.models import FactorRange
 
 from ...core import util
 from ...core.dimension import Dimension
+from ...core.options import Cycle
 from ...core.util import arraylike_types, dtype_kind
 from ...element import Contours, Polygons
 from ...util.transform import dim
@@ -36,15 +38,6 @@ class PathPlot(LegendPlot, ColorbarPlot):
     show_legend = param.Boolean(
         default=False,
         doc="Whether to show legend for the plot.",
-    )
-
-    # Deprecated options
-
-    color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of color style mapping, e.g. `color=dim('color')`",
     )
 
     style_opts = base_properties + line_properties + ["cmap"]
@@ -77,13 +70,10 @@ class PathPlot(LegendPlot, ColorbarPlot):
         return np.concatenate(transformed)
 
     def _hover_opts(self, element):
-        cdim = element.get_dimension(self.color_index)
         if self.batched:
             dims = list(self.hmap.last.kdims) + self.hmap.last.last.vdims
         else:
             dims = list(self.overlay_dims.keys()) + self.hmap.last.vdims
-        if cdim not in dims and cdim is not None:
-            dims.append(cdim)
         return dims, {}
 
     def _get_hover_data(self, data, element):
@@ -104,8 +94,6 @@ class PathPlot(LegendPlot, ColorbarPlot):
         elif isinstance(color, Dimension):
             # Handle hv.Dimension() objects directly
             cdim = element.get_dimension(color.name) if color.name in element else color
-        elif self.color_index is not None:
-            cdim = element.get_dimension(self.color_index)
 
         scalar = element.interface.isunique(element, cdim, per_geom=True) if cdim else False
         style_mapping = {
@@ -271,15 +259,6 @@ class ContourPlot(PathPlot):
         doc="Whether to show legend for the plot.",
     )
 
-    # Deprecated options
-
-    color_index = param.ClassSelector(
-        default=0,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of color style mapping, e.g. `color=dim('color')`",
-    )
-
     _color_style = "line_color"
     _nonvectorized_styles = [*base_properties, "cmap"]
 
@@ -347,19 +326,17 @@ class ContourPlot(PathPlot):
         self._get_hover_data(data, element)
 
         color, fill_color = style.get("color"), style.get("fill_color")
+        raw_color = self.lookup_options(element, "style").kwargs.get("color")
         if (
-            ((isinstance(color, dim) and color.applies(element)) or color in element)
+            not element.vdims
+            or (isinstance(color, dim) or color in element)
             or (isinstance(fill_color, dim) and fill_color.applies(element))
             or fill_color in element
+            or not isinstance(raw_color, (Cycle, NoneType))
         ):
-            cdim = None
-        else:
-            cidx = self.color_index + 2 if isinstance(self.color_index, int) else self.color_index
-            cdim = element.get_dimension(cidx)
-
-        if cdim is None:
             return data, mapping, style
 
+        cdim = element.vdims[0]
         dim_name = util.dimension_sanitizer(cdim.name)
         values = element.dimension_values(cdim, expanded=False)
         data[dim_name] = values
