@@ -44,7 +44,7 @@ jobs:
     name: pre-commit
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pre-commit@a15d3e2297339666d8c39739ebff7891ce8c3458 # v1
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@f4019d8cc3d504eb650e41cd406c6af4438eba2d # v1
 
   setup:
     name: Setup workflow
@@ -118,7 +118,7 @@ jobs:
     name: Pixi lock
     runs-on: ubuntu-latest
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-lock@a15d3e2297339666d8c39739ebff7891ce8c3458 # v1
+      - uses: holoviz-dev/holoviz_tasks/pixi-lock@f4019d8cc3d504eb650e41cd406c6af4438eba2d # v1
         with:
           cache: ${{ github.event.inputs.cache == 'true' || github.event.inputs.cache == '' }}
 
@@ -134,7 +134,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@a15d3e2297339666d8c39739ebff7891ce8c3458 # v1
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@f4019d8cc3d504eb650e41cd406c6af4438eba2d # v1
         with:
           environments: ${{ matrix.environment }}
       - name: Check packages latest version
@@ -165,7 +165,7 @@ jobs:
       PANEL_LOG_LEVEL: info
       ENV: ${{ matrix.environment }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@a15d3e2297339666d8c39739ebff7891ce8c3458 # v1
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@f4019d8cc3d504eb650e41cd406c6af4438eba2d # v1
         with:
           environments: ${{ matrix.environment }}
       - name: Test UI
@@ -199,7 +199,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@a15d3e2297339666d8c39739ebff7891ce8c3458 # v1
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@f4019d8cc3d504eb650e41cd406c6af4438eba2d # v1
         with:
           environments: ${{ matrix.environment }}
       - name: Check packages latest version
@@ -223,7 +223,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 5
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@a15d3e2297339666d8c39739ebff7891ce8c3458 # v1
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@f4019d8cc3d504eb650e41cd406c6af4438eba2d # v1
         with:
           environments: ${{ matrix.environment }}
       - name: Type TY

@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-lock@a15d3e2297339666d8c39739ebff7891ce8c3458 # v1
+      - uses: holoviz-dev/holoviz_tasks/pixi-lock@f4019d8cc3d504eb650e41cd406c6af4438eba2d # v1
       - name: Upload lock-file to S3
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
