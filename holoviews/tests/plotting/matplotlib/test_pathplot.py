@@ -459,3 +459,42 @@ class TestContoursPlot(TestMPLPlot):
         assert artist.get_linewidths() == [7, 3]
         plot.update((1,))
         assert artist.get_linewidths() == [2, 5]
+
+    def test_contours_vdim_auto_color(self):
+        contours = hv.Contours(
+            [
+                {("x", "y"): [(0, 0), (0, 1), (1, 0)], "level": 7},
+                {("x", "y"): [(1, 0), (1, 1), (0, 1)], "level": 3},
+            ],
+            vdims=["level"],
+        )
+        plot = mpl_renderer.get_plot(contours)
+        artist = plot.handles["artist"]
+        assert_data_equal(np.asarray(artist.get_array()), np.array([7, 3]))
+        assert artist.get_clim() == (3, 7)
+
+    def test_contours_explicit_color_not_overridden_by_vdim(self):
+        contours = hv.Contours(
+            [
+                {("x", "y"): [(0, 0), (0, 1), (1, 0)], "level": 7},
+                {("x", "y"): [(1, 0), (1, 1), (0, 1)], "level": 3},
+            ],
+            vdims=["level"],
+        ).opts(color="black")
+        plot = mpl_renderer.get_plot(contours)
+        artist = plot.handles["artist"]
+        assert artist.get_array() is None
+        assert (artist.get_edgecolors() == [[0, 0, 0, 1]]).all()
+
+    def test_contours_explicit_dim_color_not_overridden_by_vdim(self):
+        contours = hv.Contours(
+            [
+                {("x", "y"): [(0, 0), (0, 1), (1, 0)], "level": 7, "other": 1},
+                {("x", "y"): [(1, 0), (1, 1), (0, 1)], "level": 3, "other": 2},
+            ],
+            vdims=["level", "other"],
+        ).opts(color=hv.dim("other"))
+        plot = mpl_renderer.get_plot(contours)
+        artist = plot.handles["artist"]
+        assert_data_equal(np.asarray(artist.get_array()), np.array([1, 2]))
+        assert artist.get_clim() == (1, 2)

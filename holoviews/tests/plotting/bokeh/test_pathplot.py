@@ -668,6 +668,22 @@ class TestContoursPlot(TestBokehPlot):
         assert property_to_dict(glyph.line_width) == {"field": "line_width"}
         assert list(cds.data["line_width"]) == [7, 3]
 
+    def test_contours_vdim_auto_color(self):
+        contours = hv.Contours(
+            [
+                {("x", "y"): [(0, 0), (0, 1), (1, 0)], "level": 7},
+                {("x", "y"): [(1, 0), (1, 1), (0, 1)], "level": 3},
+            ],
+            vdims=["level"],
+        )
+        plot = bokeh_renderer.get_plot(contours)
+        cds = plot.handles["source"]
+        glyph = plot.handles["glyph"]
+        cmapper = plot.handles["color_mapper"]
+        assert property_to_dict(glyph.line_color) == {"field": "level", "transform": cmapper}
+        assert list(cds.data["level"]) == [7, 3]
+        assert isinstance(cmapper, LinearColorMapper)
+
     def test_contours_explicit_color_not_overridden_by_vdim(self):
         contours = hv.Contours(
             [
@@ -679,6 +695,23 @@ class TestContoursPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(contours)
         glyph = plot.handles["glyph"]
         assert glyph.line_color == "black"
+
+    def test_contours_explicit_dim_color_not_overridden_by_vdim(self):
+        contours = hv.Contours(
+            [
+                {("x", "y"): [(0, 0), (0, 1), (1, 0)], "level": 7, "other": 1},
+                {("x", "y"): [(1, 0), (1, 1), (0, 1)], "level": 3, "other": 2},
+            ],
+            vdims=["level", "other"],
+        ).opts(color=hv.dim("other"))
+        plot = bokeh_renderer.get_plot(contours)
+        cds = plot.handles["source"]
+        glyph = plot.handles["glyph"]
+        cmapper = plot.handles["color_color_mapper"]
+        assert property_to_dict(glyph.line_color) == {"field": "color", "transform": cmapper}
+        assert list(cds.data["color"]) == [1, 2]
+        assert cmapper.low == 1
+        assert cmapper.high == 2
 
 
 class TestDendrogramPlot(TestBokehPlot):

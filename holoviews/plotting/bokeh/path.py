@@ -329,14 +329,14 @@ class ContourPlot(PathPlot):
         raw_color = self.lookup_options(element, "style").kwargs.get("color")
         if (
             not element.vdims
-            or ((isinstance(color, dim) and color.applies(element)) or color in element)
+            or (isinstance(color, dim) or color in element)
             or (isinstance(fill_color, dim) and fill_color.applies(element))
             or fill_color in element
             or not isinstance(raw_color, (Cycle, NoneType))
         ):
             return data, mapping, style
 
-        cdim = element.get_dimension(2)
+        cdim = element.vdims[0]
         dim_name = util.dimension_sanitizer(cdim.name)
         values = element.dimension_values(cdim, expanded=False)
         data[dim_name] = values
