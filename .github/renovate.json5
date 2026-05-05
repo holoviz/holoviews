@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":maintainLockFilesMonthly"],
+  "extends": ["config:recommended", ":enablePreCommit"], // ":maintainLockFilesMonthly"
   "schedule": ["on tuesday"],
   "enabledManagers": ["github-actions", "pre-commit"],  // pixi
   "commitMessagePrefix": "chore:",
@@ -10,6 +10,7 @@
     {
       "groupName": "GitHub Actions",
       "matchManagers": ["github-actions"],
+      "description": "Weekly update of GitHub Actions",
       "pinDigests": true
     },
     {
@@ -20,7 +21,7 @@
     {
       "groupName": "pre-commit dependencies",
       "matchManagers": ["pre-commit"],
-      "description": "Weekly update of pre-commit dependencies"
+      "description": "Weekly update of pre-commit"
     }
     // {
     //   "groupName": "Pixi",
