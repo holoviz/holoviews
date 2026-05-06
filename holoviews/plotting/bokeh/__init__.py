@@ -2,7 +2,7 @@ import sys
 
 import numpy as np
 from bokeh.palettes import all_palettes
-from param import concrete_descendents
+from param import descendents
 
 from ...core import (
     AdjointLayout,
@@ -90,7 +90,7 @@ from .annotation import (
     VLinesAnnotationPlot,
     VSpansAnnotationPlot,
 )
-from .callbacks import Callback  # noqa (API import)
+from .callbacks import Callback  # noqa: F401
 from .chart import (
     AreaPlot,
     BarPlot,
@@ -111,7 +111,7 @@ from .geometry import RectanglesPlot, SegmentPlot
 from .graphs import ChordPlot, GraphPlot, NodePlot, TriMeshPlot
 from .heatmap import HeatMapPlot, RadialHeatMapPlot
 from .hex_tiles import HexTilesPlot
-from .links import LinkCallback  # noqa (API import)
+from .links import LinkCallback  # noqa: F401
 from .path import ContourPlot, DendrogramPlot, PathPlot, PolygonPlot
 from .plot import AdjointLayoutPlot, GridPlot, LayoutPlot
 from .raster import HSVPlot, ImageStackPlot, QuadMeshPlot, RasterPlot, RGBPlot
@@ -120,7 +120,7 @@ from .sankey import SankeyPlot
 from .stats import BivariatePlot, BoxWhiskerPlot, DistributionPlot, ViolinPlot
 from .tabular import TablePlot
 from .tiles import TilePlot
-from .util import BOKEH_VERSION  # noqa (API import)
+from .util import BOKEH_VERSION  # noqa: F401
 
 Store.renderers["bokeh"] = BokehRenderer.instance()
 
@@ -207,7 +207,7 @@ associations = {
 Store.register(associations, "bokeh")
 
 if config.no_padding:
-    for plot in concrete_descendents(ElementPlot).values():
+    for plot in descendents(ElementPlot):
         plot.padding = 0
 
 # Raster types, Path types and VectorField should have frames

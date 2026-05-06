@@ -7,10 +7,9 @@ import numpy as np
 import holoviews as hv
 from holoviews.testing import assert_data_equal
 
-from ...utils import optional_dependencies
+from ...utils import mpl, mpl_skip
 from .test_plot import TestMPLPlot, mpl_renderer
 
-mpl, mpl_skip = optional_dependencies("matplotlib")
 if mpl:
     from holoviews.plotting.mpl import RadialHeatMapPlot
 

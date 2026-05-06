@@ -3,16 +3,14 @@ import platform
 import sys
 from importlib.util import find_spec
 
-import bokeh
-import pandas as pd
-from packaging.version import Version
+from holoviews.core.util.dependencies import _no_import_version
 
 # Setting this to not error out if no install is done.
 os.environ["PYTHONPATH"] = os.path.dirname(os.path.dirname(__file__))
 
 system = platform.system()
 py_version = sys.version_info[:2]
-PANDAS_GE_2_0_0 = Version(pd.__version__).release >= (2, 0, 0)
+PANDAS_GE_2_0_0 = _no_import_version("pandas") >= (2, 0, 0)
 
 collect_ignore_glob = [
     # Needs selenium, phantomjs, firefox, and geckodriver to save a png picture
@@ -41,7 +39,7 @@ if system == "Windows":
     ]
 
 # First available in Bokeh 3.2.0
-if Version(bokeh.__version__).release < (3, 2, 0):
+if _no_import_version("bokeh") < (3, 2, 0):
     collect_ignore_glob += [
         "reference/elements/bokeh/HLines.ipynb",
         "reference/elements/bokeh/HSpans.ipynb",

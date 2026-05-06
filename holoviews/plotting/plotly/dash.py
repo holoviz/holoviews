@@ -501,7 +501,7 @@ def to_dash(
                         min=kdim_range[0],
                         max=kdim_range[-1],
                         step=None,
-                        marks={m: "" for m in kdim_range},
+                        marks=dict.fromkeys(kdim_range, ""),
                         value=kdim_range[0],
                     ),
                 ]

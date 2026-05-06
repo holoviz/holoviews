@@ -93,13 +93,13 @@ class TestDeepHash:
         assert deephash({1: "a", 2: "b"}) != deephash({2: "b", 1: "c"})
 
     def test_deephash_odict_equality_v1(self):
-        odict1 = dict([(1, "a"), (2, "b")])
-        odict2 = dict([(1, "a"), (2, "b")])
+        odict1 = {1: "a", 2: "b"}
+        odict2 = {1: "a", 2: "b"}
         assert deephash(odict1) == deephash(odict2)
 
     def test_deephash_odict_equality_v2(self):
-        odict1 = dict([(1, "a"), (2, "b")])
-        odict2 = dict([(1, "a"), (2, "c")])
+        odict1 = {1: "a", 2: "b"}
+        odict2 = {1: "a", 2: "c"}
         assert deephash(odict1) != deephash(odict2)
 
     def test_deephash_numpy_equality(self):
@@ -182,7 +182,7 @@ class TestDeepHash:
             pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
             np.array([1, 2, 3]),
             {"a": "b", "1": True},
-            dict([(1, "a"), (2, "b")]),
+            {1: "a", 2: "b"},
             np.int64(34),
         ]
         obj2 = [
@@ -191,7 +191,7 @@ class TestDeepHash:
             pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
             np.array([1, 2, 3]),
             {"a": "b", "1": True},
-            dict([(1, "a"), (2, "b")]),
+            {1: "a", 2: "b"},
             np.int64(34),
         ]
         assert deephash(obj1) == deephash(obj2)
@@ -203,7 +203,7 @@ class TestDeepHash:
             pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
             np.array([1, 2, 3]),
             {"a": "b", "2": True},
-            dict([(1, "a"), (2, "b")]),
+            {1: "a", 2: "b"},
             np.int64(34),
         ]
         obj2 = [
@@ -212,7 +212,7 @@ class TestDeepHash:
             pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
             np.array([1, 2, 3]),
             {"a": "b", "1": True},
-            dict([(1, "a"), (2, "b")]),
+            {1: "a", 2: "b"},
             np.int64(34),
         ]
         assert deephash(obj1) != deephash(obj2)

@@ -5,6 +5,7 @@ import sys
 import numpy as np
 
 from ...core.util import dtype_kind
+from ...core.util.dependencies import dd
 from .dask import DaskInterface
 from .interface import Interface
 from .spatialpandas import SpatialPandasInterface
@@ -40,7 +41,6 @@ class DaskSpatialPandasInterface(SpatialPandasInterface):
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         import dask
-        import dask.dataframe as dd
 
         data, dims, params = super().init(eltype, data, kdims, vdims)
         if not isinstance(data, cls.frame_type()):

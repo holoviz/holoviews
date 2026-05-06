@@ -149,8 +149,6 @@ class Operation(param.ParameterizedFunction):
         for hook in self._preprocess_hooks:
             kwargs.update(hook(self, element))
 
-        element_pipeline = getattr(element, "_pipeline", None)
-
         if hasattr(element, "_in_method"):
             in_method = element._in_method
             if not in_method:
@@ -172,6 +170,7 @@ class Operation(param.ParameterizedFunction):
             and isinstance(element, Dataset)
             and not in_method
         ):
+            element_pipeline = element._pipeline
             ret._dataset = element.dataset.clone()
             ret._pipeline = element_pipeline.instance(
                 operations=[*element_pipeline.operations, self.instance(**self.p)],

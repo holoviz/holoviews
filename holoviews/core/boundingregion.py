@@ -29,8 +29,8 @@ class BoundingRegion:
     def contains(self, x, y):
         raise NotImplementedError
 
-    def __contains__(self, point):
-        (x, y) = point
+    def __contains__(self, other):
+        (x, y) = other
         return self.contains(x, y)
 
     def scale(self, xs, ys):
@@ -303,7 +303,7 @@ class AARectangle:
         r = min(r1, r2)
         t = min(t1, t2)
 
-        return AARectangle(points=((l, b), (r, t)))
+        return AARectangle((l, b), (r, t))
 
     def width(self):
         return self._right - self._left

@@ -12,12 +12,9 @@ from holoviews.core.options import OptionError, OptionTree, options_policy
 from holoviews.plotting import bokeh  # noqa: F401
 from holoviews.testing import assert_element_equal
 
-from ..utils import optional_dependencies
+from ..utils import mpl, mpl_skip, plotly, plotly_skip
 
 hv.Options.skip_invalid = False
-
-mpl, mpl_skip = optional_dependencies("matplotlib")
-plotly, plotly_skip = optional_dependencies("plotly")
 
 if mpl:
     import holoviews.plotting.mpl

@@ -98,16 +98,16 @@ class AdjointLayout(Layoutable, Dimensioned):
     def __init__(self, data, **params):
         self.main_layer = 0  # The index of the main layer if .main is an overlay
         if data and len(data) > 3:
-            raise Exception("AdjointLayout accepts no more than three elements.")
+            raise ValueError("AdjointLayout accepts no more than three elements.")
 
         if data is not None and all(isinstance(v, tuple) for v in data):
             data = dict(data)
         if isinstance(data, dict):
             wrong_pos = [k for k in data if k not in self.layout_order]
             if wrong_pos:
-                raise Exception("Wrong AdjointLayout positions provided.")
+                raise ValueError("Wrong AdjointLayout positions provided.")
         elif isinstance(data, list):
-            data = dict(zip(self.layout_order, data, strict=None))
+            data = dict(zip(self.layout_order, data, strict=False))
         else:
             data = {}
 
@@ -265,7 +265,7 @@ class AdjointLayout(Layoutable, Dimensioned):
             else:
                 raise ValueError("AdjointLayout only accepts Element types.")
         else:
-            raise Exception(f"Position {key} not valid in AdjointLayout.")
+            raise KeyError(f"Position {key} not valid in AdjointLayout.")
 
     def __lshift__(self, other):
         """Add another plot to the AdjointLayout"""
@@ -298,6 +298,9 @@ class AdjointLayout(Layoutable, Dimensioned):
 
     def keys(self):
         return list(self.data.keys())
+
+    def values(self):
+        return list(self.data.values())
 
     def items(self):
         return list(self.data.items())
@@ -476,7 +479,7 @@ class Layout(Layoutable, ViewableTree):
                 "A Layout may not be sliced, ensure that you "
                 "are slicing on a leaf (i.e. not a branch) of the Layout."
             )
-        if len(key) == 2 and not any([isinstance(k, str) for k in key]):
+        if len(key) == 2 and not any(isinstance(k, str) for k in key):
             if key == (slice(None), slice(None)):
                 return self
             row, col = key
