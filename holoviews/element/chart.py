@@ -89,6 +89,21 @@ class Curve(Selection1DExpr, Chart):
     group = param.String(default="Curve", constant=True)
 
 
+class Donut(Selection1DExpr, Chart):
+    """Donut is a Chart element representing proportional data as
+    wedges of an annular (ring) shape. The key dimension represents
+    the categorical label for each slice and the value dimension
+    represents the size of each slice.
+
+    """
+
+    group = param.String(default="Donut", constant=True)
+
+    kdims = param.List(default=[Dimension("x")], bounds=(1, 1))
+
+    vdims = param.List(default=[Dimension("y")], bounds=(1, None))
+
+
 class ErrorBars(Selection1DExpr, Chart):
     """ErrorBars is a Chart element representing error bars in a 1D
     coordinate system where the key dimension corresponds to the

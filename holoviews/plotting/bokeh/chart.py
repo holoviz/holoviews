@@ -5,7 +5,14 @@ from collections import defaultdict
 
 import numpy as np
 import param
-from bokeh.models import CategoricalColorMapper, ColumnDataSource, CustomJS, Whisker
+from bokeh.models import (
+    CategoricalColorMapper,
+    ColumnDataSource,
+    CustomJS,
+    Label,
+    LabelSet,
+    Whisker,
+)
 from bokeh.models.glyphs import Segment
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
@@ -16,7 +23,7 @@ from ...core.util import dimension_sanitizer, dtype_kind, isdatetime, isfinite
 from ...operation import interpolate_curve
 from ...util.transform import dim
 from ...util.warnings import warn
-from ..mixins import AreaMixin, BarsMixin, SpikesMixin, WaterfallMixin
+from ..mixins import AreaMixin, BarsMixin, DonutMixin, SpikesMixin, WaterfallMixin
 from ..util import compute_sizes, get_min_distance, rgb2hex
 from .element import ColorbarPlot, ElementPlot, LegendPlot, OverlayPlot
 from .selection import BokehOverlaySelectionDisplay
@@ -1484,4 +1491,238 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
         if self.show_connectors and "connector_source" in self.handles:
             if len(self._connector_data[1]) >= 2:
                 self.handles["connector_source"].data = self._build_connector_source_data()
+        return ret
+
+
+class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
+    """Renders a Donut (annular wedge) chart in Bokeh."""
+
+    center_font_size = param.String(
+        default="12pt",
+        doc="Font size for the center label, as a CSS string (e.g. '16pt').",
+    )
+
+    center_label = param.String(
+        default=None,
+        allow_None=True,
+        doc="""Text to display in the center of the donut. If set to
+        'total', the sum of all values is shown. Any other string
+        is used as a format template with access to 'total' and
+        the vdim name as keys. None disables the center label.""",
+    )
+
+    center_text_align = param.Selector(
+        default="center",
+        objects=["left", "right", "center"],
+        doc="Horizontal alignment of the center label.",
+    )
+
+    center_text_baseline = param.Selector(
+        default="middle",
+        objects=["top", "middle", "bottom", "alphabetic", "hanging"],
+        doc="Vertical alignment of the center label.",
+    )
+
+    center_text_color = param.Color(
+        default="black",
+        doc="Color for the center label.",
+    )
+
+    inner_radius = param.Number(
+        default=0.4,
+        bounds=(0, 1),
+        doc="Inner radius of the annulus. Set to 0 for a pie chart.",
+    )
+
+    label_font_size = param.String(
+        default="9pt",
+        doc="Font size for wedge labels, as a CSS string (e.g. '9pt', '12px').",
+    )
+
+    label_radius = param.Number(
+        default=0.7,
+        bounds=(0, None),
+        doc="""Radial distance of wedge labels as a multiple of outer_radius.
+        1.0 places labels exactly at the outer edge; values above 1
+        push them outside the ring.""",
+    )
+
+    label_text_align = param.Selector(
+        default="center",
+        objects=["auto", "left", "right", "center"],
+        doc="""Horizontal alignment of wedge labels. 'auto' chooses
+        left/right based on angular position and whether labels are
+        inside or outside the ring.""",
+    )
+
+    label_text_baseline = param.Selector(
+        default="bottom",
+        objects=["top", "middle", "bottom", "alphabetic", "hanging"],
+        doc="Vertical alignment of wedge labels.",
+    )
+
+    label_text_color = param.Color(
+        default="black",
+        doc="Color for wedge labels.",
+    )
+
+    outer_radius = param.Number(
+        default=1.0,
+        bounds=(0, None),
+        doc="Outer radius of the annulus.",
+    )
+
+    show_labels = param.ClassSelector(
+        default=False,
+        class_=(bool, str),
+        doc="""Whether and how to draw text labels next to each wedge.
+        Can be a boolean or a template string using dimension names
+        (e.g. '{Category}: {Amount}').""",
+    )
+
+    start_angle = param.Number(
+        default=0,
+        doc="Rotation offset in radians for the first wedge.",
+    )
+
+    selection_display = BokehOverlaySelectionDisplay()
+
+    style_opts = base_properties + fill_properties + line_properties + ["cmap"]
+
+    _nonvectorized_styles = [*base_properties, "cmap"]
+    _plot_methods = dict(single="annular_wedge")
+
+    def _get_factors(self, element, ranges):
+        return ([], [])
+
+    def _glyph_properties(self, *args, **kwargs):
+        props = super()._glyph_properties(*args, **kwargs)
+        props.pop("size", None)
+        return props
+
+    def get_data(self, element, ranges, style):
+        dd = self._prepare_donut_data(element)
+        values = dd["values"]
+        starts = dd["starts"]
+        ends = dd["ends"]
+        fracs = dd["fracs"]
+        display_labels = dd["display_labels"]
+        valid = dd["valid"]
+
+        kdim = element.kdims[0]
+        vdim = element.vdims[0]
+        kdim_san = dimension_sanitizer(kdim.name)
+        data = dict(
+            start_angle=starts,
+            end_angle=ends,
+            percentage=fracs * 100,
+            **{kdim_san: display_labels, dimension_sanitizer(vdim.name): values},
+            **{
+                dimension_sanitizer(vd.name): element.dimension_values(vd)[valid]
+                for vd in element.vdims[1:]
+            },
+        )
+        mapping = dict(
+            x=0,
+            y=0,
+            inner_radius=self.inner_radius,
+            outer_radius=self.outer_radius,
+            start_angle="start_angle",
+            end_angle="end_angle",
+        )
+
+        color_style = style.pop("color", None)
+        if color_style is not None:
+            raise ValueError(
+                f"Setting color={color_style!r} on a Donut plot is not "
+                "supported. To control wedge colors use the 'cmap' "
+                "option, e.g. .opts(cmap='Category20') or "
+                ".opts(cmap={'Rent': 'blue', 'Food': 'orange'})."
+            )
+        factors = list(dict.fromkeys(display_labels))
+        mapper = self._get_colormapper(kdim, element, ranges, style, factors=factors)
+        mapping["color"] = {"field": kdim_san, "transform": mapper}
+        if self.show_legend:
+            mapping["legend_field"] = kdim_san
+
+        self._donut_data = dd
+        return data, mapping, style
+
+    def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
+        plot = super().initialize_plot(ranges, plot, plots, source)
+        self._draw_text_labels(plot)
+        self._draw_center_label(plot)
+        return plot
+
+    def _draw_text_labels(self, plot):
+        """Draw text labels next to each wedge with smart alignment."""
+        if not self.show_labels or self._donut_data is None:
+            return
+        dd = self._donut_data
+        if len(dd["starts"]) == 0:
+            return
+
+        xs, ys, aligns = self._compute_label_geometry(dd["starts"], dd["ends"])
+        texts = self._generate_labels(self.hmap.last, dd["labels"], dd["values"], dd["fracs"])
+
+        label_src = ColumnDataSource(
+            dict(
+                x=xs,
+                y=ys,
+                text=texts,
+                text_align=aligns,
+            )
+        )
+        label_set = LabelSet(
+            x="x",
+            y="y",
+            text="text",
+            text_align="text_align",
+            text_baseline=self.label_text_baseline,
+            text_color=self.label_text_color,
+            source=label_src,
+            text_font_size=self.label_font_size,
+        )
+        plot.add_layout(label_set)
+        self.handles["label_source"] = label_src
+        self.handles["labels"] = label_set
+
+    def _draw_center_label(self, plot):
+        """Draw a center annotation (e.g. total value)."""
+        if self._donut_data is None:
+            return
+        text = self._resolve_center_text(self._donut_data["values"], self.hmap.last)
+        if text is None:
+            return
+
+        label = Label(
+            x=0,
+            y=0,
+            text=text,
+            text_align=self.center_text_align,
+            text_baseline=self.center_text_baseline,
+            text_font_size=self.center_font_size,
+            text_color=self.center_text_color,
+            text_font_style="bold",
+        )
+        plot.add_layout(label)
+        self.handles["center_label"] = label
+
+    def update_handles(self, key, axis, element, ranges, style):
+        """Refresh labels when data changes."""
+        ret = super().update_handles(key, axis, element, ranges, style)
+        if self.show_labels and "label_source" in self.handles:
+            dd = self._donut_data
+            xs, ys, aligns = self._compute_label_geometry(dd["starts"], dd["ends"])
+            texts = self._generate_labels(element, dd["labels"], dd["values"], dd["fracs"])
+            self.handles["label_source"].data = dict(
+                x=xs,
+                y=ys,
+                text=texts,
+                text_align=aligns,
+            )
+        if "center_label" in self.handles:
+            self.handles["center_label"].text = self._resolve_center_text(
+                self._donut_data["values"], element
+            )
         return ret
