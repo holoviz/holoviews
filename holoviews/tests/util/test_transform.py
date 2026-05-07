@@ -15,14 +15,7 @@ import pytest
 import holoviews as hv
 from holoviews.testing import assert_element_equal
 
-from ..utils import optional_dependencies
-
-dask, dask_skip = optional_dependencies("dask")
-xr, xr_skip = optional_dependencies("xarray")
-
-if dask:
-    import dask.array as da
-    import dask.dataframe as dd
+from ..utils import da, dask, dd, xr, xr_skip
 
 dask_conversion_warning = pytest.mark.filterwarnings(
     "ignore:Dask currently has limited support for converting pandas extension dtypes to arrays:UserWarning"
@@ -55,13 +48,11 @@ class TestDimTransforms:
         x = np.arange(2, 62, 3)
         y = np.arange(2, 12, 2)
         array = np.arange(100).reshape(5, 20)
-        darray = xr.DataArray(data=array, coords=dict([("x", x), ("y", y)]), dims=["y", "x"])
+        darray = xr.DataArray(data=array, coords={"x": x, "y": y}, dims=["y", "x"])
         self.dataset_xarray = hv.Dataset(darray, vdims=["z"])
         if dask is not None:
             dask_array = da.from_array(array)
-            dask_da = xr.DataArray(
-                data=dask_array, coords=dict([("x", x), ("y", y)]), dims=["y", "x"]
-            )
+            dask_da = xr.DataArray(data=dask_array, coords={"x": x, "y": y}, dims=["y", "x"])
             self.dataset_xarray_dask = hv.Dataset(dask_da, vdims=["z"])
 
     # Assertion helpers

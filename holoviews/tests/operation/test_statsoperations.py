@@ -6,9 +6,7 @@ import holoviews as hv
 from holoviews.operation.stats import bivariate_kde, univariate_kde
 from holoviews.testing import assert_element_equal
 
-from ..utils import optional_dependencies
-
-scipy, scipy_skip = optional_dependencies("scipy")
+from ..utils import scipy_skip
 
 
 @scipy_skip

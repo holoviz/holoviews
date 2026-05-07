@@ -12,10 +12,8 @@ from holoviews.core.data.ibis import IBIS_VERSION, IbisInterface
 from holoviews.core.util.dependencies import PANDAS_GE_3_0_0
 from holoviews.testing import assert_element_equal
 
-from ...utils import optional_dependencies
+from ...utils import ibis, ibis_skip
 from .base import HeterogeneousColumnTests, InterfaceTests, ScalarColumnTests
-
-ibis, ibis_skip = optional_dependencies("ibis")
 
 
 def create_temp_db(df, name, index=False):

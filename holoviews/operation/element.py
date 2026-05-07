@@ -13,7 +13,6 @@ from itertools import pairwise
 import narwhals.stable.v2 as nw
 import numpy as np
 import param
-from packaging.version import Version
 from param import _is_number
 
 from ..core import (
@@ -44,10 +43,11 @@ from ..core.util import (
     isfinite,
     label_sanitizer,
 )
+from ..core.util.dependencies import _no_import_version, cp
 from ..element.chart import Histogram, Scatter
 from ..element.path import Contours, Dendrogram, Polygons
 from ..element.raster import RGB, HeatMap, Image
-from ..element.util import categorical_aggregate2d  # noqa (API import)
+from ..element.util import categorical_aggregate2d  # noqa: F401
 from ..streams import RangeXY
 from ..util.locator import MaxNLocator
 from ..util.warnings import warn
@@ -457,7 +457,7 @@ class image_overlay(Operation):
         specs = tuple(el.strip() for el in self.p.spec.split("*"))
         ordering, strengths = self._match_overlay(raster, specs)
         if all(el is None for el in ordering):
-            raise Exception("The image_overlay operation requires at least one match")
+            raise ValueError("The image_overlay operation requires at least one match")
 
         completed = []
         strongest = ordering[np.argmax(strengths)]
@@ -553,7 +553,7 @@ class gradient(Operation):
         r, c = data.shape
 
         if matrix_dim.cyclic and (None in matrix_dim.range):
-            raise Exception(
+            raise ValueError(
                 "Cyclic range must be specified to compute the gradient of cyclic quantities"
             )
         cyclic_range = None if not matrix_dim.cyclic else np.diff(matrix_dim.range)
@@ -605,12 +605,12 @@ class convolve(Operation):
 
     def _process(self, overlay, key=None):
         if len(overlay) != 2:
-            raise Exception("Overlay must contain at least to items.")
+            raise ValueError("Overlay must contain at least to items.")
 
         [target, kernel] = overlay.get(0), overlay.get(1)
 
         if len(target.vdims) != 1:
-            raise Exception("Convolution requires inputs with single value dimensions.")
+            raise ValueError("Convolution requires inputs with single value dimensions.")
 
         xslice = slice(self.p.kernel_roi[0], self.p.kernel_roi[2])
         yslice = slice(self.p.kernel_roi[1], self.p.kernel_roi[3])
@@ -665,12 +665,7 @@ class contours(Operation):
 
     def _process(self, element, key=None):
         try:
-            from contourpy import (
-                FillType,
-                LineType,
-                __version__ as contourpy_version,
-                contour_generator,
-            )
+            from contourpy import FillType, LineType, contour_generator
         except ImportError:
             raise ImportError("contours operation requires contourpy.") from None
 
@@ -737,7 +732,7 @@ class contours(Operation):
         if self.p.filled:
             vdims = [vdims[0].clone(range=crange)]
 
-        if Version(contourpy_version).release >= (1, 2, 0):
+        if _no_import_version("contourpy") >= (1, 2, 0):
             line_type = LineType.ChunkCombinedNan
         else:
             line_type = LineType.ChunkCombinedOffset
@@ -966,14 +961,12 @@ class histogram(Operation):
         is_finite = isfinite
         is_cupy = is_cupy_array(data)
         if is_cupy:
-            import cupy
-
-            full_cupy_support = Version(cupy.__version__).release > (8, 0, 0)
+            full_cupy_support = _no_import_version("cupy") > (8, 0, 0)
             if not full_cupy_support and (normed or self.p.weight_dimension):
-                data = cupy.asnumpy(data)
+                data = cp.asnumpy(data)
                 is_cupy = False
             else:
-                is_finite = cupy.isfinite
+                is_finite = cp.isfinite
 
         # Mask data
         if is_ibis_expr(data):
@@ -1017,7 +1010,7 @@ class histogram(Operation):
 
         # Compute bins
         if isinstance(self.p.bins, str):
-            bin_data = cupy.asnumpy(data) if is_cupy else data
+            bin_data = cp.asnumpy(data) if is_cupy else data
             edges = np.histogram_bin_edges(bin_data, bins=self.p.bins)
         elif isinstance(self.p.bins, (list, np.ndarray)):
             edges = self.p.bins
@@ -1052,7 +1045,7 @@ class histogram(Operation):
             else:
                 edges = np.linspace(start, end, steps)
         if is_cupy:
-            edges = cupy.asarray(edges)
+            edges = cp.asarray(edges)
 
         if not is_dask_array(data) and no_data:
             nbins = self.p.num_bins if self.p.bins is None else len(self.p.bins) - 1
@@ -1315,7 +1308,7 @@ class collapse(Operation):
         if isinstance(overlay, NdOverlay):
             collapse_map = HoloMap(overlay)
         else:
-            collapse_map = HoloMap({i: el for i, el in enumerate(overlay)})
+            collapse_map = HoloMap(dict(enumerate(overlay)))
         return collapse_map.collapse(function=self.p.fn)
 
 

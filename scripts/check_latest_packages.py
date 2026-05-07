@@ -1,15 +1,14 @@
 from __future__ import annotations
 
+import json
 import os
+import re
 import sys
-from datetime import date, datetime, timedelta
 from importlib.metadata import version
+from subprocess import DEVNULL, check_output
 
-import requests
-from packaging.specifiers import SpecifierSet
-from packaging.version import Version
-
-PY_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+PYTHON_VERSION = sys.version_info[:2]
+PLATFORM = {"linux": "linux-64", "darwin": "osx-arm64", "win32": "win-64"}[sys.platform]
 
 if sys.stdout.isatty() or os.environ.get("GITHUB_ACTIONS"):
     GREEN, RED, RESET = "\033[92m", "\033[91m", "\033[0m"
@@ -17,63 +16,48 @@ else:
     GREEN = RED = RESET = ""
 
 
-def compare_versions(version_str, constraint_str):
-    try:
-        # Convert version string to a Version object
-        version = Version(version_str)
+def convert_int(x: str) -> tuple[int, ...]:
+    return tuple(map(int, re.findall(r"\d+", x)))
 
-        # Convert constraint string to a SpecifierSet object
-        constraint = SpecifierSet(constraint_str)
 
-        # Check if the version satisfies the constraint
-        if version in constraint:
-            return True
-        else:
-            return False
-    except Exception as e:
-        return str(e)
+def python_check(item):
+    py_version = [
+        py
+        for py in item["depends"]
+        if py.lower().startswith("python") and not py.lower().startswith("python-")
+    ]
+
+    if len(py_version) == 1:
+        return PYTHON_VERSION >= convert_int(py_version[0])
+    if len(py_version) == 2:
+        # For compiled: python_abi 3.12.* *_cp312
+        idx = int("abi" not in py_version[0])
+        return PYTHON_VERSION == convert_int(py_version[idx].split("*")[0])
+    return False
+
+
+def get_data(package):
+    out = check_output(
+        ["pixi", "search", package, "--json", "--channel", "conda-forge", "--platform", PLATFORM],
+        stderr=DEVNULL,
+    )
+    raw = json.loads(out)
+    return [*raw.get("noarch", ()), *raw.get(PLATFORM, ())]
 
 
 def main(*packages):
-    allowed_date = date.today() - timedelta(days=5)
     all_latest = True
     for package in sorted(packages):
-        url = f"https://pypi.org/pypi/{package}/json"
-        resp = requests.get(url, timeout=1).json()
-
-        found = False
-        for vrelease in sorted(resp["releases"], key=Version, reverse=True):
-            if Version(vrelease).is_devrelease or Version(vrelease).is_prerelease:
-                continue
-            for info in resp["releases"][vrelease]:
-                if not compare_versions(PY_VERSION, info["requires_python"]):
-                    continue
-
-                latest = vrelease
-
-                # Remove suffix because older Python versions does not support it
-                latest_release_date = datetime.fromisoformat(
-                    info["upload_time_iso_8601"].removesuffix("Z")
-                ).date()
-                found = True
-                break
-            if found:
-                break
-        else:
-            raise RuntimeError("Could not find matching version")
-
+        data = get_data(package)
+        versions = {item["version"] for item in data if python_check(item)}
+        latest = max(versions, key=convert_int)
         current = version(package)
-        current_release_date = datetime.fromisoformat(
-            resp["releases"][current][0]["upload_time_iso_8601"].removesuffix("Z")
-        ).date()
-        version_check = Version(current) >= Version(latest)
-        date_check = latest_release_date >= allowed_date
-        is_latest = version_check or date_check
+        is_latest = convert_int(current) >= convert_int(latest)
         all_latest &= is_latest
 
         text_color = GREEN if is_latest else RED
         print(
-            f"{text_color}Package: {package:<10} Current: {current:<7} ({current_release_date})\tLatest: {latest:<7} ({latest_release_date}){RESET}"
+            f"{text_color}Package: {package:<16} Current: {current:<16}\tLatest: {latest}{RESET}"
         )
 
     if not all_latest:

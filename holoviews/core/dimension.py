@@ -9,6 +9,7 @@ from __future__ import annotations
 import builtins
 import datetime as dt
 import re
+import typing as t
 import weakref
 from collections import Counter, defaultdict
 from collections.abc import Iterable
@@ -24,7 +25,7 @@ from .accessors import Apply, Opts, Redim
 from .options import Options, Store, cleanup_custom_options
 from .pprint import PrettyPrinter
 from .tree import AttrTree
-from .util import bytes_to_unicode
+from .util import _is_deep_indexable, bytes_to_unicode
 
 # Alias parameter support for pickle loading
 
@@ -32,7 +33,20 @@ ALIASES = {"key_dimensions": "kdims", "value_dimensions": "vdims", "constant_dim
 
 title_format = "{name}: {val}{unit}"
 
-redim = Redim  # pickle compatibility - remove in 2.0
+
+class redim(Redim):
+    def __init__(self, *args, **kwargs):
+        from ..util.warnings import deprecated
+
+        # exists because of pickle compatibility
+        deprecated("1.24.0", "redim", "Redim")
+        super().__init__(*args, **kwargs)
+
+
+if t.TYPE_CHECKING:
+    from typing_extensions import Self
+
+    _LabelledDataT = t.TypeVar("_LabelledDataT", bound="LabelledData")
 
 
 def param_aliases(d):
@@ -387,10 +401,10 @@ class Dimension(param.Parameterized):
         """Hashes object on Dimension spec, i.e. (name, label)."""
         return hash(self.spec)
 
-    def __setstate__(self, d):
+    def __setstate__(self, state):
         """Compatibility for pickles before alias attribute was introduced."""
-        super().__setstate__(d)
-        if "_label_param_value" not in d:
+        super().__setstate__(state)
+        if "_label_param_value" not in state:
             self.label = self.name
 
     def __eq__(self, other):
@@ -430,8 +444,8 @@ class Dimension(param.Parameterized):
 
         params = self.param.objects("existing")
         ordering = sorted(
-            sorted(changed.keys()),
-            key=lambda k: -float("inf") if params[k].precedence is None else params[k].precedence,
+            changed,
+            key=lambda k: -float("inf") if (p := params[k].precedence) is None else p,
         )
         kws = ", ".join(f"{k}={changed[k]!r}" for k in ordering if k != "name")
         return f"Dimension({self.name!r}, {kws})"
@@ -597,7 +611,35 @@ class LabelledData(param.Parameterized):
             ref = weakref.ref(self, partial(cleanup_custom_options, opts_id))
             Store._weakrefs[opts_id].append(ref)
 
-    def clone(self, data=None, shared_data=True, new_type=None, link=True, *args, **overrides):
+    @t.overload
+    def clone(
+        self,
+        data: t.Any = ...,
+        shared_data: bool = ...,
+        new_type: None = None,
+        link: bool = ...,
+        *args,
+        **overrides,
+    ) -> Self: ...
+    @t.overload
+    def clone(
+        self,
+        data: t.Any = ...,
+        shared_data: bool = ...,
+        new_type: type[_LabelledDataT] = ...,
+        link: bool = ...,
+        *args,
+        **overrides,
+    ) -> _LabelledDataT: ...
+    def clone(
+        self,
+        data=None,
+        shared_data=True,
+        new_type: type[LabelledData] | None = None,
+        link=True,
+        *args,
+        **overrides,
+    ) -> LabelledData | Self:
         """Clones the object, overriding data and parameters.
 
         Parameters
@@ -664,7 +706,7 @@ class LabelledData(param.Parameterized):
         Returns relabelled object
         """
         new_data = self.data
-        if (depth > 0) and getattr(self, "_deep_indexable", False):
+        if (depth > 0) and _is_deep_indexable(self):
             new_data = []
             for k, v in self.data.items():
                 relabelled = v.relabel(group=group, label=label, depth=depth - 1)
@@ -699,7 +741,7 @@ class LabelledData(param.Parameterized):
         split_spec = tuple(spec.split(".")) if not isinstance(spec, tuple) else spec
         split_spec, nocompare = zip(
             *((None, True) if s == "*" or s is None else (s, False) for s in split_spec),
-            strict=None,
+            strict=True,
         )
         if all(nocompare):
             return True
@@ -708,9 +750,9 @@ class LabelledData(param.Parameterized):
         unescaped_match = match_fn(specification[: len(split_spec)]) == self_spec
         if unescaped_match:
             return True
-        sanitizers = [util.sanitize_identifier, util.group_sanitizer, util.label_sanitizer]
+        sanitizers = (util.sanitize_identifier, util.group_sanitizer, util.label_sanitizer)
         identifier_specification = tuple(
-            fn(ident, escape=False) for ident, fn in zip(specification, sanitizers, strict=None)
+            fn(ident, escape=False) for ident, fn in zip(specification, sanitizers, strict=True)
         )
         identifier_match = match_fn(identifier_specification[: len(split_spec)]) == self_spec
         return identifier_match
@@ -744,7 +786,7 @@ class LabelledData(param.Parameterized):
             specs = [specs]
         accumulator = []
         matches = specs is None
-        if not matches:
+        if specs is not None:
             for spec in specs:
                 matches = self.matches(spec)
                 if matches:
@@ -753,7 +795,7 @@ class LabelledData(param.Parameterized):
             accumulator.append(fn(self))
 
         # Assumes composite objects are iterables
-        if self._deep_indexable:
+        if _is_deep_indexable(self):
             for el in self:
                 if el is None:
                     continue
@@ -790,7 +832,7 @@ class LabelledData(param.Parameterized):
             specs = [specs]
         applies = specs is None or any(self.matches(spec) for spec in specs)
 
-        if self._deep_indexable:
+        if _is_deep_indexable(self):
             deep_mapped = self.clone(shared_data=False) if clone else self
             for k, v in self.items():
                 new_val = v.map(map_fn, specs, clone)
@@ -820,31 +862,30 @@ class LabelledData(param.Parameterized):
             self.param.warning("Could not pickle custom style information.")
         return obj_dict
 
-    def __setstate__(self, d):
+    def __setstate__(self, state):
         """Restores options applied to this object."""
-        d = param_aliases(d)
+        state = param_aliases(state)
 
-        load_options = Store.load_counter_offset is not None
-        if load_options:
-            matches = [k for k in d if k.startswith("_custom_option")]
+        if Store.load_counter_offset is not None:
+            matches = [k for k in state if k.startswith("_custom_option")]
             for match in matches:
                 custom_id = int(match.split("_")[-1]) + Store.load_counter_offset
-                for backend, info in d[match].items():
+                for backend, info in state[match].items():
                     if backend not in Store._custom_options:
                         Store._custom_options[backend] = {}
                     Store._custom_options[backend][custom_id] = info
-                if d[match]:
+                if state[match]:
                     if custom_id not in Store._weakrefs:
                         Store._weakrefs[custom_id] = []
                     ref = weakref.ref(self, partial(cleanup_custom_options, custom_id))
-                    Store._weakrefs[d["_id"]].append(ref)
-                d.pop(match)
+                    Store._weakrefs[state["_id"]].append(ref)
+                state.pop(match)
 
-            if d["_id"] is not None:
-                d["_id"] += Store.load_counter_offset
+            if state["_id"] is not None:
+                state["_id"] += Store.load_counter_offset
 
-        self.__dict__.update(d)
-        super().__setstate__(d)
+        self.__dict__.update(state)
+        super().__setstate__(state)
 
 
 class Dimensioned(LabelledData):
@@ -992,14 +1033,14 @@ class Dimensioned(LabelledData):
             if isinstance(dim, Dimension):
                 dim = dim.name
             if dim not in self.kdims:
-                raise Exception(f"Supplied dimensions {dim} not found.")
+                raise KeyError(f"Supplied dimensions {dim} not found.")
             valid_dimensions.append(dim)
         return valid_dimensions
 
     @property
     def ddims(self):
         """The list of deep dimensions"""
-        if self._deep_indexable and self:
+        if _is_deep_indexable(self) and self:
             return self.values()[0].dimensions()
         else:
             return []
@@ -1057,7 +1098,15 @@ class Dimensioned(LabelledData):
             )
         return [(dim.label if label == "long" else dim.name) if label else dim for dim in dims]
 
-    def get_dimension(self, dimension, default=None, strict=False) -> Dimension | None:
+    @t.overload
+    def get_dimension(
+        self, dimension, *, default=..., strict: t.Literal[False] = False
+    ) -> Dimension | None: ...
+    @t.overload
+    def get_dimension(
+        self, dimension, *, default=..., strict: t.Literal[True] = True
+    ) -> Dimension: ...
+    def get_dimension(self, dimension, *, default=None, strict=False):
         """Get a Dimension object by name or index.
 
         Parameters
@@ -1129,7 +1178,7 @@ class Dimensioned(LabelledData):
             dimensions = self.kdims + self.vdims
             return next(i for i, d in enumerate(dimensions) if d == dim)
         except StopIteration:
-            raise Exception(f"Dimension {dim} not found in {self.__class__.__name__}.") from None
+            raise KeyError(f"Dimension {dim} not found in {self.__class__.__name__}.") from None
 
     def get_dimension_type(self, dim):
         """Get the type of the requested dimension.
@@ -1236,7 +1285,7 @@ class Dimensioned(LabelledData):
                     if isinstance(val, tuple):
                         val = slice(*val)
                     select[self.get_dimension_index(dim)] = val
-            if self._deep_indexable:
+            if _is_deep_indexable(self):
                 selection = self.get(tuple(select), None)
                 if selection is None:
                     selection = self.clone(shared_data=False)
@@ -1252,7 +1301,7 @@ class Dimensioned(LabelledData):
             dimensions = [*selection.dimensions(), "value"]
             if any(kw in dimensions for kw in kwargs):
                 selection = selection.select(selection_specs=selection_specs, **kwargs)
-        elif isinstance(selection, Dimensioned) and selection._deep_indexable:
+        elif isinstance(selection, Dimensioned) and _is_deep_indexable(selection):
             # Apply the deep selection on each item in local selection
             items = []
             for k, v in selection.items():
@@ -1291,7 +1340,7 @@ class Dimensioned(LabelledData):
         if val:
             return np.array([val])
         else:
-            raise Exception(f"Dimension {dimension} not found in {self.__class__.__name__}.")
+            raise KeyError(f"Dimension {dimension} not found in {self.__class__.__name__}.")
 
     def range(self, dimension, data_range=True, dimension_range=True):
         """Return the lower and upper bounds of values along dimension.
@@ -1494,13 +1543,13 @@ class ViewableTree(AttrTree, Dimensioned):
         items = cls._deduplicate_items(items)
         return items
 
-    def __setstate__(self, d):
+    def __setstate__(self, state):
         """Ensure that object does not try to reference its parent during
         unpickling.
         """
-        parent = d.pop("parent", None)
-        d["parent"] = None
-        super(AttrTree, self).__setstate__(d)
+        parent = state.pop("parent", None)
+        state["parent"] = None
+        super(AttrTree, self).__setstate__(state)
         self.__dict__["parent"] = parent
 
     @classmethod
@@ -1561,6 +1610,3 @@ class ViewableTree(AttrTree, Dimensioned):
             return vals if expanded else util.unique_array(vals)
         else:
             return super().dimension_values(dimension, expanded, flat)
-
-    def __len__(self):
-        return len(self.data)

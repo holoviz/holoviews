@@ -4,8 +4,7 @@ import sys
 import time
 from contextlib import suppress
 
-import bokeh
-from packaging.version import Version
+from holoviews.core.util.dependencies import _no_import_version
 
 
 def retry(func, *args, **kwargs):
@@ -19,10 +18,10 @@ def retry(func, *args, **kwargs):
     return func(*args, **kwargs)
 
 
-if Version(bokeh.__version__).release < (3, 5, 0):
+if _no_import_version("bokeh") < (3, 5, 0):
     import bokeh.sampledata
 
-    retry(bokeh.sampledata.download)
+    retry(bokeh.sampledata.download)  # ty:ignore[unresolved-attribute]
     print("Downloaded bokeh sampledata")
 
 with suppress(ImportError):

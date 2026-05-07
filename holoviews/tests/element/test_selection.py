@@ -12,17 +12,12 @@ import holoviews as hv
 from holoviews.element.selection import spatial_select_columnar
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 
-from ..utils import optional_dependencies
-
-ds, ds_skip = optional_dependencies("datashader")
-spd, spd_skip = optional_dependencies("spatialpandas")
-shapely, shapely_skip = optional_dependencies("shapely")
-dd, dask_skip = optional_dependencies("dask.dataframe")
+from ..utils import dd, dd_skip, ds_skip, shapely_skip, spd_skip
 
 
 class TestIndexExpr:
     def setup_method(self):
-        import holoviews.plotting.bokeh  # noqa
+        import holoviews.plotting.bokeh  # noqa: F401
 
         self._backend = hv.Store.current_backend
         hv.Store.set_current_backend("bokeh")
@@ -44,7 +39,7 @@ class TestIndexExpr:
 
 class TestSelection1DExpr:
     def setup_method(self):
-        import holoviews.plotting.bokeh  # noqa
+        import holoviews.plotting.bokeh  # noqa: F401
 
         self._backend = hv.Store.current_backend
         hv.Store.set_current_backend("bokeh")
@@ -228,7 +223,7 @@ class TestSelection1DExpr:
 
 class TestSelection2DExpr:
     def setup_method(self):
-        import holoviews.plotting.bokeh  # noqa
+        import holoviews.plotting.bokeh  # noqa: F401
 
         self._backend = hv.Store.current_backend
         hv.Store.set_current_backend("bokeh")
@@ -494,7 +489,7 @@ class TestSelection2DExpr:
 
 class TestSelectionGeomExpr:
     def setup_method(self):
-        import holoviews.plotting.bokeh  # noqa
+        import holoviews.plotting.bokeh  # noqa: F401
 
         self._backend = hv.Store.current_backend
         hv.Store.set_current_backend("bokeh")
@@ -625,7 +620,7 @@ class TestSelectionGeomExpr:
 
 class TestSelectionPolyExpr:
     def setup_method(self):
-        import holoviews.plotting.bokeh  # noqa
+        import holoviews.plotting.bokeh  # noqa: F401
 
         self._backend = hv.Store.current_backend
         hv.Store.set_current_backend("bokeh")
@@ -735,12 +730,12 @@ class TestSpatialSelectColumnar:
         )
         assert np.array_equal(mask, pt_mask)
 
-    @dask_skip
+    @dd_skip
     def test_dask(self, geometry, pt_mask, dask_df):
         mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry, self.method)
         assert np.array_equal(mask.compute(), pt_mask)
 
-    @dask_skip
+    @dd_skip
     def test_meta_dtype(self, geometry, pt_mask, dask_df):
         mask = spatial_select_columnar(dask_df.x, dask_df.y, geometry, self.method)
         assert mask._meta.dtype == np.bool_

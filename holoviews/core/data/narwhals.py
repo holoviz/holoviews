@@ -335,7 +335,7 @@ class NarwhalsInterface(Interface):
         df = dataset.data
         only_scalar_selection = True
         if selection_mask is None:
-            column_sel = {k: v for k, v in selection.items()}
+            column_sel = dict(selection.items())
             if column_sel:
                 only_scalar_selection = all(isinstance(v, (str, int)) for v in column_sel.values())
                 selection_mask = cls.select_mask(dataset, column_sel)

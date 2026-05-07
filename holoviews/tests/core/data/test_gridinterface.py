@@ -12,7 +12,7 @@ from holoviews.core.data.interface import DataError
 from holoviews.core.util import date_range
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from ...utils import optional_dependencies
+from ...utils import da, da_skip
 from .base import (
     DatatypeContext,
     GriddedInterfaceTests,
@@ -24,8 +24,6 @@ from .test_imageinterface import (
     BaseImageElementInterfaceTests,
     BaseRGBElementInterfaceTests,
 )
-
-da, dask_skip = optional_dependencies("dask.array")
 
 
 class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, InterfaceTests):
@@ -422,7 +420,7 @@ class GridInterfaceTests(BaseGridInterfaceTests):
     __test__ = True
 
 
-@dask_skip
+@da_skip
 class DaskGridInterfaceTests(GridInterfaceTests):
     def init_column_data(self):
         self.xs = np.arange(11)

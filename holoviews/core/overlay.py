@@ -8,6 +8,7 @@ for indexing, slicing and animating collections of Views.
 
 from __future__ import annotations
 
+import typing as t
 from functools import reduce
 
 import numpy as np
@@ -16,7 +17,7 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
 from .layout import AdjointLayout, Composable, Layout, Layoutable
 from .ndmapping import UniformNdMapping
-from .util import dimensioned_streams, sanitize_identifier, unique_array
+from .util import _is_deep_indexable, dimensioned_streams, sanitize_identifier, unique_array
 
 
 class Overlayable:
@@ -102,6 +103,9 @@ class CompositeOverlay(ViewableElement, Composable):
         AdjointLayout of element and histogram or just the
         histogram
         """
+        if not _is_deep_indexable(self):
+            msg = f"Histogram can only be computed for deeply indexable types, supplied type is {type(self).__name__}"
+            raise TypeError(msg)
         # Get main layer to get plot dimensions
         main_layer_int_index = getattr(self, "main_layer", None) or 0
         # Validate index, and extract as integer if not None
@@ -119,22 +123,14 @@ class CompositeOverlay(ViewableElement, Composable):
             dimension = [dim.name for dim in self.values()[main_layer_int_index].kdims]
         # Compute histogram for each dimension and each element in OverLay
         hists_per_dim = {
-            dim: dict(
-                [  # All histograms for a given dimension
-                    (
-                        elem_key,
-                        elem.hist(
-                            adjoin=False,
-                            dimension=dim,
-                            bin_range=bin_range,
-                            num_bins=num_bins,
-                            **kwargs,
-                        ),
-                    )
-                    for i, (elem_key, elem) in enumerate(self.items())
-                    if (index is None) or (getattr(elem, "label", None) == index) or (index == i)
-                ]
-            )
+            dim: {
+                # All histograms for a given dimension
+                elem_key: elem.hist(
+                    adjoin=False, dimension=dim, bin_range=bin_range, num_bins=num_bins, **kwargs
+                )
+                for i, (elem_key, elem) in enumerate(self.items())
+                if (index is None) or (getattr(elem, "label", None) == index) or (index == i)
+            }
             for dim in dimension
         }
         # Create new Overlays of histograms
@@ -143,7 +139,7 @@ class CompositeOverlay(ViewableElement, Composable):
             for dim, hists in hists_per_dim.items()
         }
         if adjoin:
-            layout = self
+            layout = t.cast("AdjointLayout", self)
             for dim in reversed(self.values()[main_layer_int_index].kdims):
                 if dim.name in hists_overlay_per_dim:
                     layout = layout << hists_overlay_per_dim[dim.name]
@@ -165,7 +161,7 @@ class CompositeOverlay(ViewableElement, Composable):
             return super().dimension_values(dimension, expanded, flat)
         values = [v for v in values if v is not None and len(v)]
         if not values:
-            return np.array()
+            return np.array([])
         vals = np.concatenate(values)
         return vals if expanded else unique_array(vals)
 

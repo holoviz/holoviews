@@ -101,7 +101,7 @@ class AttrTree:
 
         """
         if not isinstance(other, AttrTree):
-            raise Exception("Can only update with another AttrTree type.")
+            raise TypeError("Can only update with another AttrTree type.")
         fixed_status = (self.fixed, other.fixed)
         (self.fixed, other.fixed) = (False, False)
         for identifier, element in other.items():
@@ -120,7 +120,7 @@ class AttrTree:
 
         disallowed = [p for p in path if not type(self)._sanitizer.allowable(p)]
         if any(disallowed):
-            raise Exception(
+            raise ValueError(
                 "Attribute strings in path elements cannot be correctly escaped : {}".format(
                     ",".join(repr(el) for el in disallowed)
                 )
@@ -144,7 +144,7 @@ class AttrTree:
         # Search for substring matches between paths and path filters
         new_attrtree = self.__class__()
         for path, item in self.data.items():
-            if any([all([subpath in path for subpath in pf]) for pf in path_filters]):
+            if any(all(subpath in path for subpath in pf) for pf in path_filters):
                 new_attrtree.set_path(path, item)
 
         return new_attrtree
@@ -158,7 +158,7 @@ class AttrTree:
                 items = [
                     (key, v)
                     for key, v in self.data.items()
-                    if not all(k == p for k, p in zip(key, path, strict=None))
+                    if not all(k == p for k, p in zip(key, path, strict=False))
                 ]
                 self.data = dict(items)
         else:
@@ -166,32 +166,30 @@ class AttrTree:
         if self.parent is not None:
             self.parent._propagate((self.identifier, *path), val)
 
-    def __setitem__(self, identifier, val):
+    def __setitem__(self, key, val):
         """Set a value at a child node with given identifier. If at a root
         node, multi-level path specifications is allowed (i.e. 'A.B.C'
         format or tuple format) in which case the behaviour matches
         that of set_path.
 
         """
-        if isinstance(identifier, str) and "." not in identifier:
-            self.__setattr__(identifier, val)
-        elif isinstance(identifier, str) and self.parent is None:
-            self.set_path(tuple(identifier.split(".")), val)
-        elif isinstance(identifier, tuple) and self.parent is None:
-            self.set_path(identifier, val)
+        if isinstance(key, str) and "." not in key:
+            self.__setattr__(key, val)
+        elif isinstance(key, str) and self.parent is None:
+            self.set_path(tuple(key.split(".")), val)
+        elif isinstance(key, tuple) and self.parent is None:
+            self.set_path(key, val)
         else:
-            raise Exception("Multi-level item setting only allowed from root node.")
+            raise ValueError("Multi-level item setting only allowed from root node.")
 
-    def __getitem__(self, identifier):
+    def __getitem__(self, key):
         """For a given non-root node, access a child element by identifier.
 
         If the node is a root node, you may also access elements using
         either tuple format or the 'A.B.C' string format.
 
         """
-        split_label = (
-            tuple(identifier.split(".")) if isinstance(identifier, str) else tuple(identifier)
-        )
+        split_label = tuple(key.split(".")) if isinstance(key, str) else tuple(key)
         if len(split_label) == 1:
             identifier = split_label[0]
             if identifier in self.children:
@@ -203,10 +201,8 @@ class AttrTree:
             path_item = path_item[identifier]
         return path_item
 
-    def __delitem__(self, identifier):
-        split_label = (
-            tuple(identifier.split(".")) if isinstance(identifier, str) else tuple(identifier)
-        )
+    def __delitem__(self, key):
+        split_label = tuple(key.split(".")) if isinstance(key, str) else tuple(key)
         if len(split_label) == 1:
             identifier = split_label[0]
             if identifier in self.children:
@@ -241,7 +237,7 @@ class AttrTree:
 
         """
         try:
-            return super().__getattr__(identifier)
+            return super().__getattr__(identifier)  # ty:ignore[unresolved-attribute]
         except AttributeError:
             pass
 

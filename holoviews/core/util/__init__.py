@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import builtins
 import datetime as dt
 import hashlib
@@ -11,6 +13,7 @@ import pickle
 import string
 import sys
 import time
+import typing as t
 import unicodedata
 import warnings
 from collections import defaultdict, namedtuple
@@ -32,7 +35,12 @@ from .dependencies import (  # noqa: F401
     PANDAS_VERSION,
     PARAM_VERSION,
     VersionError,
-    _LazyModule,
+    cp,
+    da,
+    dd,
+    ibis,
+    pd,
+    pl,
 )
 from .types import (
     arraylike_types,
@@ -45,21 +53,12 @@ from .types import (
     timedelta_types,
 )
 
-TYPE_CHECKING = False
-if TYPE_CHECKING:
-    import dask.dataframe as dd
-    import pandas as pd
-    import polars as pl
-else:
-    dd = _LazyModule("dask.dataframe", bool_use_sys_modules=True)
-    pd = _LazyModule("pandas", bool_use_sys_modules=True)
-    pl = _LazyModule("polars", bool_use_sys_modules=True)
+if t.TYPE_CHECKING:
+    from typing_extensions import TypeIs
 
-# Python 2 builtins
-basestring = str
-long = int
-unicode = str
-cmp = lambda a, b: (a > b) - (a < b)
+    from ..dimension import ViewableTree
+    from ..layout import AdjointLayout
+    from ..ndmapping import UniformNdMapping
 
 get_keywords = operator.attrgetter("varkw")
 
@@ -69,6 +68,15 @@ anonymous_dimension_label = "_"
 ArgSpec = namedtuple("ArgSpec", "args varargs keywords defaults")
 
 _STANDARD_CALENDARS = {"standard", "gregorian", "proleptic_gregorian"}
+_TIME_SCALES = {
+    "us": 1e6,
+    "ms": 1e3,
+    "s": 1,
+    "m": 1 / 60,
+    "h": 1 / 3600,
+    "D": 1 / 86400,
+    "W": 1 / 604800,
+}
 _ARRAY_SIZE_LARGE = 1_000_000
 _ARRAY_SAMPLE_SIZE = 1_000_000
 _DATAFRAME_ROWS_LARGE = 1_000_000
@@ -197,48 +205,48 @@ class HashableJSON(json.JSONEncoder):
     string_hashable = (dt.datetime,)
     repr_hashable = ()
 
-    def default(self, obj):
-        if isinstance(obj, set):
-            return hash(frozenset(obj))
-        elif isinstance(obj, np.ndarray):
+    def default(self, o):
+        if isinstance(o, set):
+            return hash(frozenset(o))
+        elif isinstance(o, np.ndarray):
             h = hashlib.new("md5")
-            for s in obj.shape:
+            for s in o.shape:
                 h.update(_int_to_bytes(s))
-            if obj.size >= _ARRAY_SIZE_LARGE:
+            if o.size >= _ARRAY_SIZE_LARGE:
                 state = np.random.RandomState(0)
-                obj = state.choice(obj.flat, size=_ARRAY_SAMPLE_SIZE)
-            h.update(obj.tobytes())
+                o = state.choice(o.flat, size=_ARRAY_SAMPLE_SIZE)
+            h.update(o.tobytes())
             return h.hexdigest()
-        if pd and isinstance(obj, (pd.Series, pd.DataFrame)):
-            if len(obj) > _DATAFRAME_ROWS_LARGE:
-                obj = obj.sample(n=_DATAFRAME_SAMPLE_SIZE, random_state=0)
+        if pd and isinstance(o, (pd.Series, pd.DataFrame)):
+            if len(o) > _DATAFRAME_ROWS_LARGE:
+                o = o.sample(n=_DATAFRAME_SAMPLE_SIZE, random_state=0)
             try:
-                pd_values = list(pd.util.hash_pandas_object(obj, index=True).values)
+                pd_values = list(pd.util.hash_pandas_object(o, index=True).values)
             except TypeError:
                 # Use pickle if pandas cannot hash the object for example if
                 # it contains unhashable objects.
-                pd_values = [pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)]
-            if isinstance(obj, pd.Series):
-                columns = [obj.name]
-            elif isinstance(obj.columns, pd.MultiIndex):
-                columns = [name for cols in obj.columns for name in cols]
+                pd_values = [pickle.dumps(o, pickle.HIGHEST_PROTOCOL)]
+            if isinstance(o, pd.Series):
+                columns = [o.name]
+            elif isinstance(o.columns, pd.MultiIndex):
+                columns = [name for cols in o.columns for name in cols]
             else:
-                columns = list(obj.columns)
-            all_vals = pd_values + columns + list(obj.index.names)
+                columns = list(o.columns)
+            all_vals = pd_values + columns + list(o.index.names)
             h = hashlib.md5()
             for val in all_vals:
                 if not isinstance(val, bytes):
                     val = str(val).encode("utf-8")
                 h.update(val)
             return h.hexdigest()
-        elif isinstance(obj, self.string_hashable):
-            return str(obj)
-        elif isinstance(obj, self.repr_hashable):
-            return repr(obj)
+        elif isinstance(o, self.string_hashable):
+            return str(o)
+        elif isinstance(o, self.repr_hashable):
+            return repr(o)
         try:
-            return hash(obj)
+            return hash(o)
         except Exception:
-            return id(obj)
+            return id(o)
 
 
 def merge_option_dicts(old_opts, new_opts):
@@ -369,6 +377,8 @@ class periodic(Thread):
         return repr(self)
 
     def run(self):
+        if self._start_time is None:
+            self._start_time = time.perf_counter()
         while not self.completed:
             if self.block:
                 time.sleep(self.period)
@@ -565,7 +575,7 @@ def process_ellipses(obj, key, vdim_selection=False):
     if ellipse_count == 0:
         return key
     elif ellipse_count != 1:
-        raise Exception("Only one ellipsis allowed at a time.")
+        raise ValueError("Only one ellipsis allowed at a time.")
     dim_count = len(obj.dimensions())
     index = wrapped_key.index(Ellipsis)
     head = wrapped_key[:index]
@@ -753,8 +763,8 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
             return True
         return unicodedata.category(identifier[0]) in invalid_starting
 
-    @param.parameterized.bothmethod
-    def remove_diacritics(self_or_cls, identifier):
+    @staticmethod
+    def remove_diacritics(identifier):
         """Remove diacritics and accents from the input leaving other
         unicode characters alone.
 
@@ -768,10 +778,8 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
                 chars += c
         return chars
 
-    @param.parameterized.bothmethod
-    def shortened_character_name(
-        self_or_cls, c, eliminations=None, substitutions=None, transforms=None
-    ):
+    @staticmethod
+    def shortened_character_name(c, eliminations=None, substitutions=None, transforms=None):
         """Given a unicode character c, return the shortened unicode name
         (as a list of tokens) by applying the eliminations,
         substitutions and transforms.
@@ -844,7 +852,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         """Accumulate blocks of hex and separate blocks by underscores"""
         invalid = {"\a": "a", "\b": "b", "\v": "v", "\f": "f", "\r": "r"}
         for cc in filter(lambda el: el in name, invalid.keys()):
-            raise Exception(rf"Please use a raw string or escape control code '\{invalid[cc]}'")
+            raise ValueError(rf"Please use a raw string or escape control code '\{invalid[cc]}'")
         sanitized, chars = [], ""
         for split in name.split():
             for c in split:
@@ -961,8 +969,6 @@ def isfinite(val):
     if val is None:
         return False
     elif is_dask:
-        import dask.array as da
-
         return da.isfinite(val)
     elif isinstance(val, np.ndarray):
         if dtype_kind(val) == "M":
@@ -1002,7 +1008,7 @@ def find_minmax(lims, olims):
 
     """
     try:
-        limzip = zip(list(lims), list(olims), [np.nanmin, np.nanmax], strict=None)
+        limzip = zip(list(lims), list(olims), [np.nanmin, np.nanmax], strict=False)
         limits = tuple([float(fn([l, ol])) for l, ol, fn in limzip])
     except Exception:
         limits = (np.nan, np.nan)
@@ -1194,8 +1200,8 @@ def max_extents(extents, zrange=False):
     else:
         num = 4
         inds = [(0, 2), (1, 3)]
-    arr = list(zip(*extents, strict=None)) if extents else []
-    extents = [np.nan] * num
+    arr = list(zip(*extents, strict=True)) if extents else []
+    extents: list[t.Any] = [np.nan] * num
     if len(arr) == 0:
         return extents
     with warnings.catch_warnings():
@@ -1297,12 +1303,12 @@ def unique_iterator(seq):
             yield item
 
 
-def lzip(*args, strict=None):
+def lzip(*args, strict: bool = False):
     """Zip function that returns a list."""
     return list(zip(*args, strict=strict))
 
 
-def unique_zip(*args, strict=None):
+def unique_zip(*args, strict: bool = False):
     """Returns a unique list of zipped values."""
     return list(unique_iterator(zip(*args, strict=strict)))
 
@@ -1433,7 +1439,7 @@ def dimension_sort(odict, kdims, vdims, key_index):
     else:
         sortkws["key"] = lambda x: tuple(
             cached_values[dim.name].index(x[t][d]) if dim.values else x[t][d]
-            for i, (dim, t, d) in enumerate(indexes)
+            for dim, t, d in indexes
         )
     return python2sort(odict.items(), **sortkws)
 
@@ -1444,7 +1450,7 @@ def is_number(obj):
         return True
     elif isinstance(obj, np.str_):
         return False
-    elif np.__version__[0] < "2" and isinstance(obj, np.unicode_):  # noqa: NPY201
+    elif not NUMPY_GE_2_0_0 and isinstance(obj, np.unicode_):  # noqa: NPY201  # ty: ignore[unresolved-attribute]
         return False
     # The extra check is for classes that behave like numbers, such as those
     # found in numpy, gmpy, etc.
@@ -1606,9 +1612,7 @@ def layer_sort(hmap):
         if len(okeys) == 1 and okeys[0] not in orderings:
             orderings[okeys[0]] = []
         else:
-            orderings.update(
-                {k: [] if k == v else [v] for k, v in zip(okeys[1:], okeys, strict=None)}
-            )
+            orderings.update({k: [] if k == v else [v] for v, k in itertools.pairwise(okeys)})
     return [i for g in sort_topologically(orderings) for i in sorted(g)]
 
 
@@ -1624,13 +1628,19 @@ def layer_groups(ordering, length=2):
     return group_orderings
 
 
-def group_select(selects, length=None, depth=None):
+def group_select(
+    selects, length: int | None = None, depth: int | None = None
+) -> defaultdict | list:
     """Given a list of key tuples to select, groups them into sensible
     chunks to avoid duplicating indexing operations.
 
     """
     if length is None and depth is None:
         length = depth = len(selects[0])
+    if length is None or depth is None:
+        msg = "Must specify both length and depth"
+        raise ValueError(msg)
+
     getter = operator.itemgetter(depth - length)
     if length > 1:
         selects = sorted(selects, key=getter)
@@ -1686,28 +1696,16 @@ def is_series(data):
     return isinstance(data, tuple(types))
 
 
-def is_dask_array(data):
-    if "dask.array" in sys.modules:
-        import dask.array as da
-
-        return isinstance(data, da.Array)
-    return False
+def is_dask_array(data) -> bool:
+    return da and isinstance(data, da.Array)
 
 
-def is_cupy_array(data):
-    if "cupy" in sys.modules:
-        import cupy
-
-        return isinstance(data, cupy.ndarray)
-    return False
+def is_cupy_array(data) -> bool:
+    return cp and isinstance(data, cp.ndarray)
 
 
-def is_ibis_expr(data):
-    if "ibis" in sys.modules:
-        import ibis
-
-        return isinstance(data, ibis.expr.types.ColumnExpr)
-    return False
+def is_ibis_expr(data) -> bool:
+    return ibis and isinstance(data, ibis.expr.types.ColumnExpr)  # ty:ignore[possibly-missing-submodule]
 
 
 def get_param_values(data):
@@ -1764,7 +1762,6 @@ def resolve_dependent_value(value):
     """
     from panel.widgets import RangeSlider
 
-    range_widget = False
     if isinstance(value, list):
         value = [resolve_dependent_value(v) for v in value]
     elif isinstance(value, tuple):
@@ -1828,7 +1825,7 @@ def disable_constant(parameterized):
     try:
         yield
     finally:
-        for p, const in zip(params, constants, strict=None):
+        for p, const in zip(params, constants, strict=False):
             p.constant = const
 
 
@@ -1943,7 +1940,7 @@ def stream_parameters(streams, no_duplicates=True, exclude=None):
         clashes = sorted(clashes)
         if clashes:
             clashing = ", ".join([repr(c) for c in clash_streams[:-1]])
-            raise Exception(
+            raise ValueError(
                 f"The supplied stream objects {clashing} and {clash_streams[-1]} "
                 f"clash on the following parameters: {clashes!r}"
             )
@@ -1987,7 +1984,7 @@ def drop_streams(streams, kdims, keys):
     """Drop any dimensioned streams from the keys and kdims."""
     stream_params = stream_parameters(streams)
     inds, dims = zip(
-        *[(ind, kdim) for ind, kdim in enumerate(kdims) if kdim not in stream_params], strict=None
+        *[(ind, kdim) for ind, kdim in enumerate(kdims) if kdim not in stream_params], strict=False
     )
     get = operator.itemgetter(*inds)  # itemgetter used for performance
     keys = (get(k) for k in keys)
@@ -2038,7 +2035,7 @@ def get_path(item):
             path = path[:1]
     else:
         path = (item.group, item.label) if item.label else (item.group,)
-    return tuple(capitalize(fn(p)) for (p, fn) in zip(path, sanitizers, strict=None))
+    return tuple(capitalize(fn(p)) for (p, fn) in zip(path, sanitizers, strict=False))
 
 
 def make_path_unique(path, counts, new):
@@ -2074,10 +2071,8 @@ class ndmapping_groupby(param.ParameterizedFunction):
         fn = self.groupby_pandas if pd else self.groupby_python
         return fn(ndmapping, dimensions, container_type, group_type, sort=sort, **kwargs)
 
-    @param.parameterized.bothmethod
-    def groupby_pandas(
-        self_or_cls, ndmapping, dimensions, container_type, group_type, sort=False, **kwargs
-    ):
+    @staticmethod
+    def groupby_pandas(ndmapping, dimensions, container_type, group_type, sort=False, **kwargs):
         if "kdims" in kwargs:
             idims = [ndmapping.get_dimension(d) for d in kwargs["kdims"]]
         else:
@@ -2085,7 +2080,7 @@ class ndmapping_groupby(param.ParameterizedFunction):
 
         all_dims = [d.name for d in ndmapping.kdims]
         inds = [ndmapping.get_dimension_index(dim) for dim in idims]
-        getter = operator.itemgetter(*inds) if inds else lambda x: ()
+        getter = operator.itemgetter(*inds) if inds else lambda _: ()
 
         multi_index = pd.MultiIndex.from_tuples(ndmapping.keys(), names=all_dims)
         df = pd.DataFrame(list(map(wrap_tuple, ndmapping.values())), index=multi_index)
@@ -2111,10 +2106,8 @@ class ndmapping_groupby(param.ParameterizedFunction):
 
         return container_type(groups, kdims=dimensions, sort=sort)
 
-    @param.parameterized.bothmethod
-    def groupby_python(
-        self_or_cls, ndmapping, dimensions, container_type, group_type, sort=False, **kwargs
-    ):
+    @staticmethod
+    def groupby_python(ndmapping, dimensions, container_type, group_type, sort=False, **kwargs):
         idims = [dim for dim in ndmapping.kdims if dim not in dimensions]
         dim_names = [dim.name for dim in dimensions]
         selects = get_unique_keys(ndmapping, dimensions)
@@ -2156,7 +2149,7 @@ def cross_index(values, index):
         indexes.append(index // p)
         index -= indexes[-1] * p
     indexes.append(index)
-    return tuple(v[i] for v, i in zip(values, indexes, strict=None))
+    return tuple(v[i] for v, i in zip(values, indexes, strict=False))
 
 
 def arglexsort(arrays):
@@ -2259,7 +2252,10 @@ def validate_regular_sampling(values, rtol=10e-6):
 
     """
     diffs = np.diff(values)
-    return (len(diffs) < 1) or abs(diffs.min() - diffs.max()) < abs(diffs.min() * rtol)
+    if len(diffs) < 1:
+        return True
+    min_diff = diffs.min()
+    return abs(min_diff - diffs.max()) < abs(min_diff * rtol)
 
 
 def compute_density(start, end, length, time_unit="us"):
@@ -2275,11 +2271,11 @@ def compute_density(start, end, length, time_unit="us"):
     diff = end - start
     if isinstance(diff, timedelta_types):
         if isinstance(diff, np.timedelta64):
+            # NOTE: time_unit not in _TIME_SCALES will be converted to int
             diff = np.timedelta64(diff, time_unit).tolist()
-        tscale = 1.0 / np.timedelta64(1, time_unit).tolist().total_seconds()
-        return length / (diff.total_seconds() * tscale)
-    else:
-        return length / diff
+        if isinstance(diff, dt.timedelta):
+            return length / (diff.total_seconds() * _TIME_SCALES[time_unit])
+    return length / diff
 
 
 def date_range(start, end, length, time_unit="us"):
@@ -2351,25 +2347,24 @@ def dt_to_int(value, time_unit="us"):
     if isinstance(value, cftime_types):
         return cftime_to_timestamp(value, time_unit)
 
-    # date class is a parent for datetime class
-    if isinstance(value, dt.date) and not isinstance(value, dt.datetime):
-        value = dt.datetime(*value.timetuple()[:6])
-
     # Handle datetime64 separately
     if isinstance(value, np.datetime64):
         try:
-            value = np.datetime64(value, "ns")
+            value = value.astype("datetime64[ns]")
             tscale = np.timedelta64(1, time_unit) / np.timedelta64(1, "ns")
             return int(value.tolist() / tscale)
-        except Exception:
+        except Exception as e:
             # If it can't handle ns precision fall back to datetime
             value = value.tolist()
+            if isinstance(value, int) or value is None:
+                msg = "Cannot convert np.datetime64 to datetime object"
+                raise ValueError(msg) from e
 
-    if time_unit == "ns":
-        tscale = 1e9
-    else:
-        tscale = 1.0 / np.timedelta64(1, time_unit).tolist().total_seconds()
+    # date class is a parent for datetime class
+    if isinstance(value, dt.date) and not isinstance(value, dt.datetime):
+        value = dt.datetime(year=value.year, month=value.month, day=value.day)
 
+    tscale = 1e9 if time_unit == "ns" else _TIME_SCALES[time_unit]
     if value.tzinfo is None:
         _epoch = dt.datetime(1970, 1, 1)
     else:
@@ -2577,3 +2572,7 @@ def dtype_kind(obj) -> str:
         return "U"
     else:
         return "O"
+
+
+def _is_deep_indexable(obj) -> TypeIs[ViewableTree | UniformNdMapping | AdjointLayout]:
+    return getattr(obj, "_deep_indexable", False)

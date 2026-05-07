@@ -38,9 +38,7 @@ from holoviews.streams import (
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 from holoviews.util import Dynamic
 
-from .utils import LoggingComparison, optional_dependencies
-
-_, shapely_skip = optional_dependencies("shapely")
+from .utils import LoggingComparison, shapely_skip
 
 PARAM_GE_2_0_0 = PARAM_VERSION >= (2, 0, 0)
 
@@ -66,11 +64,11 @@ def test_all_linked_stream_parameters_owners():
         for name, p in stream_class.param.objects().items():
             if name != "name" and (p.owner != stream_class):
                 msg = (
-                    "Linked stream %r has parameter %r which is "
-                    "inherited from %s. Parameter needs to be redeclared "
+                    f"Linked stream {stream_class!r} has parameter {name!r} which is "
+                    f"inherited from {p.owner}. Parameter needs to be redeclared "
                     "in the class definition of this linked stream."
                 )
-                raise Exception(msg % (stream_class, name, p.owner))
+                pytest.fail(msg)
 
 
 class TestStreamsDefine:

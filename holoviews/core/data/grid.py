@@ -57,15 +57,15 @@ class GridInterface(DictInterface):
                 and len(data[-1].shape) == (ndims + 1)
             ):
                 value_array = data[-1]
-                data = {d: v for d, v in zip(dimensions, data[:-1], strict=None)}
+                data = dict(zip(dimensions, data[:-1], strict=None))
                 data[vdim_tuple] = value_array
             else:
-                data = {d: v for d, v in zip(dimensions, data, strict=None)}
+                data = dict(zip(dimensions, data, strict=None))
         elif isinstance(data, list) and data == []:
             if len(kdims) == 1:
-                data = dict([(d, []) for d in dimensions])
+                data = {d: [] for d in dimensions}
             else:
-                data = dict([(d.name, np.array([])) for d in kdims])
+                data = {d.name: np.array([]) for d in kdims}
                 if len(vdims) == 1:
                     data[vdims[0].name] = np.zeros((0, 0))
                 else:
@@ -74,15 +74,15 @@ class GridInterface(DictInterface):
             isinstance(data, tuple(t for t in interface.types if t is not None))
             for interface in cls.interfaces.values()
         ):
-            data = {k: v for k, v in zip(dimensions, zip(*data, strict=None), strict=None)}
+            data = dict(zip(dimensions, zip(*data, strict=None), strict=None))
         elif isinstance(data, np.ndarray):
             if data.shape == (0, 0) and len(vdims) == 1:
                 array = data
-                data = dict([(d.name, np.array([])) for d in kdims])
+                data = {d.name: np.array([]) for d in kdims}
                 data[vdims[0].name] = array
             elif data.shape == (0, 0, len(vdims)):
                 array = data
-                data = dict([(d.name, np.array([])) for d in kdims])
+                data = {d.name: np.array([]) for d in kdims}
                 data[vdim_tuple] = array
             else:
                 if data.ndim == 1:
@@ -765,7 +765,7 @@ class GridInterface(DictInterface):
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
         if not vdim:
-            raise Exception("Cannot add key dimension to a dense representation.")
+            raise TypeError("Cannot add key dimension to a dense representation.")
         dim = dimension_name(dimension)
         return dict(dataset.data, **{dim: values})
 
@@ -776,7 +776,7 @@ class GridInterface(DictInterface):
         if not by or by in [dataset.kdims, dataset.dimensions()]:
             return dataset.data
         else:
-            raise Exception(
+            raise TypeError(
                 "Compressed format cannot be sorted, either instantiate "
                 "in the desired order or use the expanded format."
             )

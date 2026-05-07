@@ -6,6 +6,8 @@ also enables slicing over multiple dimension ranges.
 
 from __future__ import annotations
 
+import typing as t
+from contextlib import contextmanager
 from itertools import cycle
 from operator import itemgetter
 
@@ -15,6 +17,7 @@ import param
 from . import util
 from .dimension import Dimension, Dimensioned, ViewableElement, asdim
 from .util import (
+    _is_deep_indexable,
     dimension_sort,
     dtype_kind,
     get_ndmapping_label,
@@ -24,44 +27,45 @@ from .util import (
     wrap_tuple,
 )
 
+if t.TYPE_CHECKING:
+    from typing_extensions import TypeIs
 
-class item_check:
+    from .spaces import HoloMap
+
+
+def _has_split_overlays(obj) -> TypeIs[HoloMap]:
+    return hasattr(obj, "_split_overlays")
+
+
+@contextmanager
+def item_check(enabled):
     """Context manager to allow creating NdMapping types without
     performing the usual item_checks, providing significant
     speedups when there are a lot of items. Should only be
     used when both keys and values are guaranteed to be the
     right type, as is the case for many internal operations.
-
     """
-
-    def __init__(self, enabled):
-        self.enabled = enabled
-
-    def __enter__(self):
-        self._enabled = MultiDimensionalMapping._check_items
-        MultiDimensionalMapping._check_items = self.enabled
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        MultiDimensionalMapping._check_items = self._enabled
+    prev = MultiDimensionalMapping._check_items
+    try:
+        MultiDimensionalMapping._check_items = enabled
+        yield
+    finally:
+        MultiDimensionalMapping._check_items = prev
 
 
-class sorted_context:
+@contextmanager
+def sorted_context(enabled):
     """Context manager to temporarily disable sorting on NdMapping
     types. Retains the current sort order, which can be useful as
     an optimization on NdMapping instances where sort=True but the
     items are already known to have been sorted.
-
     """
-
-    def __init__(self, enabled):
-        self.enabled = enabled
-
-    def __enter__(self):
-        self._enabled = MultiDimensionalMapping.sort
-        MultiDimensionalMapping.sort = self.enabled
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        MultiDimensionalMapping.sort = self._enabled
+    prev = MultiDimensionalMapping.sort
+    try:
+        MultiDimensionalMapping.sort = enabled
+        yield
+    finally:
+        MultiDimensionalMapping.sort = prev  # ty:ignore[invalid-assignment]
 
 
 class MultiDimensionalMapping(Dimensioned):
@@ -124,7 +128,7 @@ class MultiDimensionalMapping(Dimensioned):
                 initial_items = initial_items.items()
             elif isinstance(initial_items, MultiDimensionalMapping):
                 initial_items = initial_items.data.items()
-            self.data = dict((k if isinstance(k, tuple) else (k,), v) for k, v in initial_items)
+            self.data = {k if isinstance(k, tuple) else (k,): v for k, v in initial_items}
             if self.sort:
                 self._resort()
         elif initial_items is not None:
@@ -168,9 +172,9 @@ class MultiDimensionalMapping(Dimensioned):
         self._item_check(dim_vals, data)
 
         # Apply dimension types
-        dim_types = zip([kd.type for kd in self.kdims], dim_vals, strict=None)
+        dim_types = zip([kd.type for kd in self.kdims], dim_vals, strict=False)
         dim_vals = tuple(v if None in [t, v] else t(v) for t, v in dim_types)
-        valid_vals = zip(self.kdims, dim_vals, strict=None)
+        valid_vals = zip(self.kdims, dim_vals, strict=False)
 
         for dim, val in valid_vals:
             if dim.values and val is not None and val not in dim.values:
@@ -195,7 +199,7 @@ class MultiDimensionalMapping(Dimensioned):
 
         """
         typed_key = ()
-        for dim, key in zip(self.kdims, keys, strict=None):
+        for dim, key in zip(self.kdims, keys, strict=False):
             key_type = dim.type
             if key_type is None:
                 typed_key += (key,)
@@ -244,7 +248,7 @@ class MultiDimensionalMapping(Dimensioned):
         been declared deep indexable.
 
         """
-        if self._deep_indexable and isinstance(data, Dimensioned) and indices:
+        if _is_deep_indexable(self) and isinstance(data, Dimensioned) and indices:
             return data[indices]
         elif len(indices) > 0:
             self.param.warning("Cannot index into data element, extra data indices ignored.")
@@ -346,10 +350,10 @@ class MultiDimensionalMapping(Dimensioned):
         dimension = asdim(dimension)
 
         if dimension in self.dimensions():
-            raise Exception(f"{dimension.name} dimension already defined")
+            raise ValueError(f"{dimension.name} dimension already defined")
 
-        if vdim and self._deep_indexable:
-            raise Exception("Cannot add value dimension to object that is deep indexable")
+        if vdim and _is_deep_indexable(self):
+            raise TypeError("Cannot add value dimension to object that is deep indexable")
 
         if vdim:
             dims = self.vdims[:]
@@ -367,7 +371,7 @@ class MultiDimensionalMapping(Dimensioned):
             raise ValueError("Added dimension values must be same lengthas existing keys.")
 
         items = {}
-        for dval, (key, val) in zip(dim_val, self.data.items(), strict=None):
+        for dval, (key, val) in zip(dim_val, self.data.items(), strict=False):
             if vdim:
                 new_val = list(val)
                 new_val.insert(dim_pos, dval)
@@ -444,12 +448,14 @@ class MultiDimensionalMapping(Dimensioned):
         indices = [self.get_dimension_index(el) for el in kdims]
 
         keys = [tuple(k[i] for i in indices) for k in self.data.keys()]
-        reindexed_items = dict((k, v) for (k, v) in zip(keys, self.data.values(), strict=None))
+        reindexed_items = dict(zip(keys, self.data.values(), strict=False))
         reduced_dims = {d.name for d in self.kdims}.difference(kdims)
         dimensions = [self.get_dimension(d) for d in kdims if d not in reduced_dims]
 
         if len(set(keys)) != len(keys) and not force:
-            raise Exception("Given dimension labels not sufficientto address all values uniquely")
+            raise ValueError(
+                "Given dimension labels not sufficient to address all values uniquely"
+            )
 
         if keys:
             cdims = {self.get_dimension(d): self.dimension_values(d)[0] for d in reduced_dims}
@@ -532,7 +538,7 @@ class MultiDimensionalMapping(Dimensioned):
 
     def items(self):
         """Returns all elements as a list in (key,value) format."""
-        return list(zip(list(self.keys()), list(self.values()), strict=None))
+        return list(zip(self.keys(), self.values(), strict=True))
 
     def get(self, key, default=None):
         """Standard get semantics for all mapping types"""
@@ -594,26 +600,26 @@ class NdMapping(MultiDimensionalMapping):
 
     group = param.String(default="NdMapping", constant=True)
 
-    def __getitem__(self, indexslice):
+    def __getitem__(self, key):
         """Allows slicing operations along the key and data
         dimensions. If no data slice is supplied it will return all
         data elements, otherwise it will return the requested slice of
         the data.
 
         """
-        if isinstance(indexslice, np.ndarray) and dtype_kind(indexslice) == "b":
-            if not len(indexslice) == len(self):
+        if isinstance(key, np.ndarray) and dtype_kind(key) == "b":
+            if not len(key) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
-            selection = zip(indexslice, self.data.items(), strict=None)
+            selection = zip(key, self.data.items(), strict=False)
             return self.clone([item for c, item in selection if c])
-        elif isinstance(indexslice, tuple) and indexslice == () and not self.kdims:
+        elif isinstance(key, tuple) and key == () and not self.kdims:
             return self.data[()]
-        elif (isinstance(indexslice, tuple) and indexslice == ()) or indexslice is Ellipsis:
+        elif (isinstance(key, tuple) and key == ()) or key is Ellipsis:
             return self
-        elif any(Ellipsis is sl for sl in wrap_tuple(indexslice)):
-            indexslice = process_ellipses(self, indexslice)
+        elif any(Ellipsis is sl for sl in wrap_tuple(key)):
+            key = process_ellipses(self, key)
 
-        map_slice, data_slice = self._split_index(indexslice)
+        map_slice, data_slice = self._split_index(key)
         map_slice = self._transform_indices(map_slice)
         map_slice = self._expand_slice(map_slice)
 
@@ -624,7 +630,7 @@ class NdMapping(MultiDimensionalMapping):
         else:
             conditions = self._generate_conditions(map_slice)
             items = self.data.items()
-            for cidx, (condition, dim) in enumerate(zip(conditions, self.kdims, strict=None)):
+            for cidx, (condition, dim) in enumerate(zip(conditions, self.kdims, strict=False)):
                 values = dim.values
                 items = [
                     (k, v)
@@ -672,7 +678,7 @@ class NdMapping(MultiDimensionalMapping):
     def _generate_conditions(self, map_slice):
         """Generates filter conditions used for slicing the data structure."""
         conditions = []
-        for dim, dim_slice in zip(self.kdims, map_slice, strict=None):
+        for dim, dim_slice in zip(self.kdims, map_slice, strict=False):
             if isinstance(dim_slice, slice):
                 start, stop = dim_slice.start, dim_slice.stop
                 if dim.values:
@@ -855,28 +861,24 @@ class UniformNdMapping(NdMapping):
         for key, group in groups.items():
             last = group.values()[-1]
             if isinstance(last, UniformNdMapping):
-                group_data = dict([(k, v.collapse()) for k, v in group.items()])
+                group_data = {k: v.collapse() for k, v in group.items()}
                 group = group.clone(group_data)
             if hasattr(group.values()[-1], "interface"):
                 group_data = concat(group)
                 if function:
                     agg = group_data.aggregate(group.last.kdims, function, spreadfn, **kwargs)
                     group_data = group.type(agg)
-            elif issubclass(group.type, CompositeOverlay) and hasattr(self, "_split_overlays"):
+            elif issubclass(group.type, CompositeOverlay) and _has_split_overlays(self):
                 keys, maps = self._split_overlays()
                 group_data = group.type(
-                    dict(
-                        [
-                            (key, ndmap.collapse(function=function, spreadfn=spreadfn, **kwargs))
-                            for key, ndmap in zip(keys, maps, strict=None)
-                        ]
-                    )
+                    {
+                        key: ndmap.collapse(function=function, spreadfn=spreadfn, **kwargs)
+                        for key, ndmap in zip(keys, maps, strict=True)
+                    }
                 )
             else:
-                raise ValueError(
-                    "Could not determine correct collapse operation "
-                    "for items of type: {group.type!r}."
-                )
+                msg = f"Could not determine correct collapse operation for items of type: {group.type!r}."
+                raise ValueError(msg)
             collapsed[key] = group_data
         return collapsed if self.ndims - len(dimensions) else collapsed.last
 
@@ -903,7 +905,9 @@ class UniformNdMapping(NdMapping):
             outer_dimensions = self.kdims
             inner_dimensions = None
         else:
-            outer_dimensions = [self.get_dimension(d) for d in dimensions if d in self.kdims]
+            outer_dimensions = [
+                self.get_dimension(d, strict=True) for d in dimensions if d in self.kdims
+            ]
             inner_dimensions = [d for d in dimensions if d not in outer_dimensions]
         inds = [(d, self.get_dimension_index(d)) for d in outer_dimensions]
 

@@ -182,6 +182,9 @@ from .util.warnings import (
 )
 
 TYPE_CHECKING = False
+if TYPE_CHECKING:
+    extension: type[extension]
+
 
 if hasattr(builtins, "__IPYTHON__"):
     from .ipython import notebook_extension
@@ -191,7 +194,7 @@ else:
 
     class notebook_extension(param.ParameterizedFunction):
         def __call__(self, *args, **kwargs):
-            raise Exception("Jupyter notebook not available: use hv.extension instead.")
+            raise RuntimeError("Jupyter notebook not available: use hv.extension instead.")
 
 
 if "_pyodide" in sys.modules:
@@ -199,15 +202,13 @@ if "_pyodide" in sys.modules:
 
     # The notebook_extension is needed inside jupyterlite,
     # so the override is only done if we are not inside jupyterlite.
-    if in_jupyterlite():
-        extension.inline = False
-    else:
+    if not in_jupyterlite():
         extension = pyodide_extension
     del pyodide_extension, in_jupyterlite
 
 if TYPE_CHECKING:
     # Adding this here to have better docstring in LSP
-    from .util import extension  # noqa: TC004
+    from .util import extension
 
 _load_rc_file()
 
