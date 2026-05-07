@@ -782,6 +782,24 @@ class TestSubscribers:
         # and the callback
         assert subscriber.call_count == 3
 
+    def test_bound_method_subscriber_does_not_pin_instance(self):
+        import gc
+        import weakref
+
+        class Viewer:
+            def __init__(self):
+                self.stream = RangeXY()
+                self.stream.add_subscriber(self.on_update)
+
+            def on_update(self, x_range=None, y_range=None):
+                pass
+
+        viewer = Viewer()
+        ref = weakref.ref(viewer)
+        del viewer
+        gc.collect()
+        assert ref() is None, "Viewer instance should be freed after deletion"
+
 
 class TestStreamSource:
     def teardown_method(self):

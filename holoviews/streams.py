@@ -53,6 +53,33 @@ class _SkipTrigger:
     pass
 
 
+class _WeakMethodSubscriber:
+    """Wraps a bound method as a weak reference so the stream does not pin the instance."""
+
+    def __init__(self, method):
+        self._ref = weakref.WeakMethod(method)
+        self._func = method.__func__
+        self._self_id = id(method.__self__)
+
+    def alive(self):
+        return self._ref() is not None
+
+    def __call__(self, **kwargs):
+        m = self._ref()
+        if m is not None:
+            m(**kwargs)
+
+    def __eq__(self, other):
+        if isinstance(other, _WeakMethodSubscriber):
+            return self._func is other._func and self._self_id == other._self_id
+        if callable(other) and hasattr(other, "__func__") and hasattr(other, "__self__"):
+            return self._func is other.__func__ and self._self_id == id(other.__self__)
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._func, self._self_id))
+
+
 @contextmanager
 def triggering_streams(streams):
     """Temporarily declares the streams as being in a triggered state.
@@ -203,6 +230,11 @@ class Stream(param.Parameterized):
         subscriber_precedence = defaultdict(list)
         for stream in streams:
             stream._on_trigger()
+            stream._subscribers = [
+                (p, s)
+                for (p, s) in stream._subscribers
+                if not isinstance(s, _WeakMethodSubscriber) or s.alive()
+            ]
             for precedence, subscriber in stream._subscribers:
                 subscriber_precedence[precedence].append(subscriber)
         sorted_subscribers = sorted(subscriber_precedence.items(), key=lambda x: x[0])
@@ -367,6 +399,8 @@ class Stream(param.Parameterized):
         """
         if not callable(subscriber):
             raise TypeError("Subscriber must be a callable.")
+        if hasattr(subscriber, "__self__") and hasattr(subscriber, "__func__"):
+            subscriber = _WeakMethodSubscriber(subscriber)
         self._subscribers.append((precedence, subscriber))
 
     def _validate_rename(self, mapping):
