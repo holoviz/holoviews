@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import gc
-
 import numpy as np
 import pytest
 from bokeh.models import ColumnDataSource, RangeTool
@@ -231,7 +229,6 @@ def test_link_unlink_after_source_garbage_collected():
     link = RangeToolLink(src, tgt)
 
     del src
-    gc.collect()
     assert link.source is None
 
     link.unlink()
