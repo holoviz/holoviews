@@ -289,7 +289,11 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                 stream._subscribers = [
                     (p, subscriber)
                     for p, subscriber in stream._subscribers
-                    if not is_param_method(subscriber) or get_method_owner(subscriber) not in plots
+                    if subscriber
+                    and (
+                        not is_param_method(subscriber)
+                        or get_method_owner(subscriber) not in plots
+                    )
                 ]
 
     def _fontsize(self, key, label="fontsize", common=True):

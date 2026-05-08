@@ -201,8 +201,11 @@ class Plot(param.Parameterized):
                 stream._subscribers = [
                     (p, subscriber)
                     for p, subscriber in stream._subscribers
-                    if not util.is_param_method(subscriber)
-                    or util.get_method_owner(subscriber) not in plots
+                    if subscriber
+                    and (
+                        not util.is_param_method(subscriber)
+                        or util.get_method_owner(subscriber) not in plots
+                    )
                 ]
 
     def _session_destroy(self, session_context):

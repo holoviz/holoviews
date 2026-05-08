@@ -6,6 +6,7 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 
 from __future__ import annotations
 
+import inspect
 import typing as t
 import weakref
 from collections import defaultdict
@@ -54,30 +55,32 @@ class _SkipTrigger:
 
 
 class _WeakMethodSubscriber:
-    """Wraps a bound method as a weak reference so the stream does not pin the instance."""
-
     def __init__(self, method):
         self._ref = weakref.WeakMethod(method)
-        self._func = method.__func__
-        self._self_id = id(method.__self__)
+        self._hash = self._generate_hash(method)
 
-    def alive(self):
-        return self._ref() is not None
+    def __bool__(self) -> bool:
+        method = self._ref()
+        return bool(method is not None and not util.is_param_method(method))
 
-    def __call__(self, **kwargs):
-        m = self._ref()
-        if m is not None:
-            m(**kwargs)
+    def __call__(self, *args, **kwargs):
+        method = self._ref()
+        if method is not None:
+            return method(*args, **kwargs)
 
-    def __eq__(self, other):
+    @staticmethod
+    def _generate_hash(method) -> int:
+        return hash((id(method.__func__), id(method.__self__)))
+
+    def __eq__(self, other) -> bool:
         if isinstance(other, _WeakMethodSubscriber):
-            return self._func is other._func and self._self_id == other._self_id
-        if callable(other) and hasattr(other, "__func__") and hasattr(other, "__self__"):
-            return self._func is other.__func__ and self._self_id == id(other.__self__)
+            return self._hash == other._hash
+        if inspect.ismethod(other):
+            return self._hash == self._generate_hash(other)
         return NotImplemented
 
-    def __hash__(self):
-        return hash((self._func, self._self_id))
+    def __hash__(self) -> int:
+        return self._hash
 
 
 @contextmanager
@@ -230,11 +233,6 @@ class Stream(param.Parameterized):
         subscriber_precedence = defaultdict(list)
         for stream in streams:
             stream._on_trigger()
-            stream._subscribers = [
-                (p, s)
-                for (p, s) in stream._subscribers
-                if not isinstance(s, _WeakMethodSubscriber) or s.alive()
-            ]
             for precedence, subscriber in stream._subscribers:
                 subscriber_precedence[precedence].append(subscriber)
         sorted_subscribers = sorted(subscriber_precedence.items(), key=lambda x: x[0])
@@ -399,7 +397,7 @@ class Stream(param.Parameterized):
         """
         if not callable(subscriber):
             raise TypeError("Subscriber must be a callable.")
-        if hasattr(subscriber, "__self__") and hasattr(subscriber, "__func__"):
+        if inspect.ismethod(subscriber):
             subscriber = _WeakMethodSubscriber(subscriber)
         self._subscribers.append((precedence, subscriber))
 

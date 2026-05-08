@@ -4,6 +4,7 @@ Unit test of the streams system
 
 from __future__ import annotations
 
+import weakref
 from collections import defaultdict
 
 import numpy as np
@@ -695,7 +696,7 @@ def test_dynamicmap_partial_bind_and_streams():
     def make_plot(z, x_range, y_range):
         return hv.Curve([1, 2, 3, 4, z])
 
-    slider = IntSlider(name="Slider", start=0, end=10)
+    slider = IntSlider(start=0, end=10)
     range_xy = RangeXY()
 
     dmap = hv.DynamicMap(param.bind(make_plot, z=slider), streams=[range_xy])
@@ -783,12 +784,10 @@ class TestSubscribers:
         assert subscriber.call_count == 3
 
     def test_bound_method_subscriber_does_not_pin_instance(self):
-        import gc
-        import weakref
-
         class Viewer:
             def __init__(self):
-                self.stream = RangeXY()
+                self.plot = hv.Points([])
+                self.stream = hv.streams.RangeXY(source=self.plot)
                 self.stream.add_subscriber(self.on_update)
 
             def on_update(self, x_range=None, y_range=None):
@@ -797,8 +796,7 @@ class TestSubscribers:
         viewer = Viewer()
         ref = weakref.ref(viewer)
         del viewer
-        gc.collect()
-        assert ref() is None, "Viewer instance should be freed after deletion"
+        assert ref() is None
 
 
 class TestStreamSource:
