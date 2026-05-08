@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import gc
+
 import numpy as np
 import pytest
 from bokeh.models import ColumnDataSource, RangeTool
@@ -221,6 +223,18 @@ class TestLinkCallbacks(TestBokehPlot):
             bokeh_renderer.get_plot(a + b)
         except Exception:
             self.fail()
+
+
+def test_link_unlink_after_source_garbage_collected():
+    src = hv.Curve([1, 2, 3])
+    tgt = hv.Curve([1, 2, 3])
+    link = RangeToolLink(src, tgt)
+
+    del src
+    gc.collect()
+    assert link.source is None
+
+    link.unlink()
 
 
 def test_range_tool_link_clones_axis():
