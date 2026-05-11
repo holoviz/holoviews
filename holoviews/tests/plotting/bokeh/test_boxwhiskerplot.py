@@ -108,3 +108,15 @@ class TestBoxWhiskerPlot(TestBokehPlot):
         glyph = plot.handles["vbar_1_glyph"]
         assert_data_equal(source.data["box_line_width"], np.arange(5))
         assert property_to_dict(glyph.line_width) == {"field": "box_line_width"}
+
+    def test_box_whisker_legend_no_duplicates(self, rng):
+        values = rng.uniform(10, 20, size=100)
+        names = rng.choice(["A", "B", "C"], size=100)
+        box = hv.BoxWhisker((names, values), "name", "value").opts(
+            box_color="name", cmap="Set1", show_legend=True
+        )
+        plot = bokeh_renderer.get_plot(box)
+        legend_items = plot.state.legend[0].items
+        legend_labels = [item.label.field for item in legend_items]
+
+        assert len(legend_labels) == len(set(legend_labels))
