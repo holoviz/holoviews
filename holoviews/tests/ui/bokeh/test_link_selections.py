@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 import pytest
 
@@ -52,7 +53,9 @@ def test_link_selections_programmatic_clear_removes_region(serve_hv):
     assert ls.selection_expr is not None
 
     # Ensure at least one new region renderer was created by the interaction
-    post_select_count = count_highlighted_region_renderers(BokehRenderer.get_plot(linked[()]).state)
+    post_select_count = count_highlighted_region_renderers(
+        BokehRenderer.get_plot(linked[()]).state
+    )
     assert post_select_count == initial_count + 1
 
     ls.selection_expr = None

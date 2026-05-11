@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import builtins
 
 import narwhals.stable.v2 as nw
@@ -44,14 +46,6 @@ _EAGER_TYPE = {
 _NO_DROP_NULL = [nw.Implementation.DUCKDB, nw.Implementation.IBIS]
 
 
-def _is_geodataframe(obj) -> True:
-    # Do not use for GeoPandas and SpatialPandas
-    try:
-        return "geo" in type(obj).__name__.lower()
-    except Exception:
-        return False
-
-
 class NarwhalsDtype:
     __slots__ = ("dtype",)
 
@@ -76,13 +70,16 @@ class NarwhalsInterface(Interface):
 
     @classmethod
     def applies(cls, obj):
+        obj_type = type(obj)
+        module = getattr(obj_type, "__module__", "").lower()
+        name = getattr(obj_type, "__name__", "").lower()
         return (
-            isinstance(obj, (nw.Series, nw.DataFrame, nw.LazyFrame))
+            (module.startswith("narwhals.") and name in ("series", "dataframe", "lazyframe"))
             or nw.dependencies.is_into_dataframe(obj)
             or nw.dependencies.is_into_series(obj)
             or nw.dependencies.is_ibis_table(obj)
             or bool(cls.narwhals_backend and isinstance(obj, (dict, tuple, np.ndarray)))
-        ) and not _is_geodataframe(obj)
+        ) and "geo" not in name  # Do not use for GeoPandas and SpatialPandas
 
     @classmethod
     def dimension_type(cls, dataset, dim):
@@ -98,9 +95,7 @@ class NarwhalsInterface(Interface):
             data = nw.from_dict(data, backend=cls.narwhals_backend)
         elif cls.narwhals_backend and isinstance(data, tuple):
             dims = map(str, (*(kdims or ()), *(vdims or ())))
-            data = nw.from_dict(
-                dict(zip(dims, data, strict=False)), backend=cls.narwhals_backend
-            )
+            data = nw.from_dict(dict(zip(dims, data, strict=False)), backend=cls.narwhals_backend)
         elif cls.narwhals_backend and isinstance(data, np.ndarray):
             dims = list(map(str, (*(kdims or ()), *(vdims or ()))))
             data = nw.from_numpy(data, schema=dims, backend=cls.narwhals_backend)
@@ -116,9 +111,7 @@ class NarwhalsInterface(Interface):
                 ndim = min([kdim_param.bounds[1], len(kdim_param.default)])
             else:
                 ndim = None
-            nvdim = (
-                vdim_param.bounds[1] if isinstance(vdim_param.bounds[1], int) else None
-            )
+            nvdim = vdim_param.bounds[1] if isinstance(vdim_param.bounds[1], int) else None
             columns = list(data.collect_schema())
             if kdims and vdims is None:
                 vdims = [c for c in columns if c not in kdims]
@@ -194,9 +187,7 @@ class NarwhalsInterface(Interface):
         else:
             col = nw.col(name)
             if dimension.nodata is not None:
-                df_column = df_column.select(
-                    nw.when(col != dimension.nodata).then(col)
-                )
+                df_column = df_column.select(nw.when(col != dimension.nodata).then(col))
             if dataset.data.implementation not in _NO_DROP_NULL:
                 col = nw.col(name).drop_nulls()
             # NOTE: Some narwhals backends (duckdb) will return nan as
@@ -218,8 +209,7 @@ class NarwhalsInterface(Interface):
         for key, ds in datasets:
             data = cls._narwhals_clone(ds.data)
             new_columns = [
-                nw.lit(val).alias(dim.name)
-                for dim, val in zip(dimensions, key, strict=None)
+                nw.lit(val).alias(dim.name) for dim, val in zip(dimensions, key, strict=None)
             ]
             data = data.with_columns(new_columns)
             dataframes.append(data)
@@ -242,10 +232,7 @@ class NarwhalsInterface(Interface):
             org_data = org_data.collect()
 
         group_by = [d.name for d in index_dims]
-        data = [
-            (k, group_type(v, **group_kwargs))
-            for k, v in org_data.group_by(group_by)
-        ]
+        data = [(k, group_type(v, **group_kwargs)) for k, v in org_data.group_by(group_by)]
 
         if issubclass(container_type, NdMapping):
             with item_check(False), sorted_context(False):
@@ -267,9 +254,7 @@ class NarwhalsInterface(Interface):
                 numeric_cols = [c for c in columns if c not in cols]
             else:
                 numeric_cols = [
-                    k
-                    for k, v in columns.items()
-                    if isinstance(v, nw.dtypes.NumericType)
+                    k for k, v in columns.items() if isinstance(v, nw.dtypes.NumericType)
                 ]
             all_cols = list(set(numeric_cols) | set(cols))
             grouped = reindexed.select(all_cols).group_by(cols)
@@ -326,10 +311,7 @@ class NarwhalsInterface(Interface):
             data.with_columns(mask_series)
             .with_columns(
                 [
-                    nw.when(nw.col("__mask__"))
-                    .then(nw.col(col))
-                    .otherwise(mask_value)
-                    .alias(col)
+                    nw.when(nw.col("__mask__")).then(nw.col(col)).otherwise(mask_value).alias(col)
                     for col in cols
                 ]
             )
@@ -353,7 +335,7 @@ class NarwhalsInterface(Interface):
         df = dataset.data
         only_scalar_selection = True
         if selection_mask is None:
-            column_sel = {k: v for k, v in selection.items()}
+            column_sel = dict(selection.items())
             if column_sel:
                 only_scalar_selection = all(isinstance(v, (str, int)) for v in column_sel.values())
                 selection_mask = cls.select_mask(dataset, column_sel)
@@ -429,9 +411,7 @@ class NarwhalsInterface(Interface):
 
         """
         if isinstance(dataset.data, nw.LazyFrame):
-            raise NotImplementedError(
-                "_select_mask_neighbor does not support LazyFrame"
-            )
+            raise NotImplementedError("_select_mask_neighbor does not support LazyFrame")
         mask = cls.select_mask(dataset, selection)
         return mask | mask.shift(1).fill_null(False) | mask.shift(-1).fill_null(False)
 

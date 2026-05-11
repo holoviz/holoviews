@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import matplotlib.dates as mdates
 import numpy as np
 import pandas as pd
@@ -10,7 +12,6 @@ from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestBarPlot(LoggingComparison, TestMPLPlot):
-
     def test_bars_continuous_data_list_same_interval(self):
         bars = hv.Bars(([0, 1, 2], [10, 20, 30]))
         plot = mpl_renderer.get_plot(bars)
@@ -41,6 +42,18 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
         assert ax.get_xticklabels()[0].get_text() == "01"
         assert ax.get_xticklabels()[-1].get_text() == "10"
 
+    def test_bars_continuous_datetime_single(self):
+        bars = hv.Bars([(pd.Timestamp("2024-01-01"), 5)])
+        plot = mpl_renderer.get_plot(bars)
+        ax = plot.handles["axis"]
+        assert ax.patches[0].get_width() == 0.8
+
+    def test_bars_continuous_datetime_duplicates(self):
+        bars = hv.Bars([(pd.Timestamp("2024-01-01"), 5), (pd.Timestamp("2024-01-01"), 3)])
+        plot = mpl_renderer.get_plot(bars)
+        ax = plot.handles["axis"]
+        assert ax.patches[0].get_width() == 0.8
+
     def test_bars_not_continuous_data_list(self):
         bars = hv.Bars([("A", 1), ("B", 2), ("C", 3)])
         plot = mpl_renderer.get_plot(bars)
@@ -69,7 +82,7 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
         plot = mpl_renderer.get_plot(bars)
         ax = plot.handles["axis"]
 
-        np.testing.assert_almost_equal(ax.get_xlim(), (-0.1333333,  3.6666667))
+        np.testing.assert_almost_equal(ax.get_xlim(), (-0.1333333, 3.6666667))
         assert ax.patches[0].get_width() == 0.26666666666666666
         ticklabels = ax.get_xticklabels()
         expected = [
@@ -136,10 +149,10 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
         plot = mpl_renderer.get_plot(bars)
         ax = plot.handles["axis"]
 
-        np.testing.assert_almost_equal(ax.get_xlim(), (-0.2,  2.6))
+        np.testing.assert_almost_equal(ax.get_xlim(), (-0.2, 2.6))
         assert ax.patches[0].get_width() == 0.4
         assert len(ax.get_xticks()) > 3
 
-        xticklabels = ['A', '1', 'B', 'A', '3', 'B', 'A', '10', 'B']
+        xticklabels = ["A", "1", "B", "A", "3", "B", "A", "10", "B"]
         for i, tick in enumerate(ax.get_xticklabels()):
             assert tick.get_text() == xticklabels[i]

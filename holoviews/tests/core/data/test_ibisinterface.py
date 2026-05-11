@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sqlite3
 from tempfile import NamedTemporaryFile
 
@@ -7,16 +9,16 @@ import pytest
 
 import holoviews as hv
 from holoviews.core.data.ibis import IBIS_VERSION, IbisInterface
+from holoviews.core.util.dependencies import PANDAS_GE_3_0_0
 from holoviews.testing import assert_element_equal
 
-from ...utils import optional_dependencies
+from ...utils import ibis, ibis_skip
 from .base import HeterogeneousColumnTests, InterfaceTests, ScalarColumnTests
-
-ibis, ibis_skip = optional_dependencies("ibis")
 
 
 def create_temp_db(df, name, index=False):
     from ibis import sqlite
+
     with NamedTemporaryFile(delete=False) as my_file:
         filename = my_file.name
     con = sqlite3.Connection(filename)
@@ -68,9 +70,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             columns=["Gender", "Age", "Weight", "Height"],
         )
         hetero_db = create_temp_db(hetero_df, "hetero")
-        self.table = hv.Dataset(
-            hetero_db.table("hetero"), kdims=self.kdims, vdims=self.vdims
-        )
+        self.table = hv.Dataset(hetero_db.table("hetero"), kdims=self.kdims, vdims=self.vdims)
 
         # Create table with aliased dimension names
         self.alias_kdims = [("gender", "Gender"), ("age", "Age")]
@@ -90,7 +90,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         )
 
         self.xs = np.array(range(11))
-        self.xs_2 = self.xs ** 2
+        self.xs_2 = self.xs**2
         self.y_ints = self.xs * 2
         self.ys = np.linspace(0, 1, 11)
         self.zs = np.sin(self.xs)
@@ -161,11 +161,12 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         pytest.skip("Not supported")
 
     def test_dataset_dataset_ht_dtypes(self):
-        int_dtype = "int64" if IBIS_VERSION >= (9, 0, 0) else "int32"
+        int_dtype = np.dtype("int64" if IBIS_VERSION >= (9, 0, 0) else "int32")
+        object_dtype = pd.StringDtype(na_value=np.nan) if PANDAS_GE_3_0_0 else np.dtype("object")
         ds = self.table
-        assert ds.interface.dtype(ds, "Gender") == np.dtype("object")
-        assert ds.interface.dtype(ds, "Age") == np.dtype(int_dtype)
-        assert ds.interface.dtype(ds, "Weight") == np.dtype(int_dtype)
+        assert ds.interface.dtype(ds, "Gender") == object_dtype
+        assert ds.interface.dtype(ds, "Age") == int_dtype
+        assert ds.interface.dtype(ds, "Weight") == int_dtype
         assert ds.interface.dtype(ds, "Height") == np.dtype("float64")
 
     def test_dataset_dtypes(self):
@@ -187,9 +188,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             kdims=self.kdims[:1],
             vdims=self.vdims,
         )
-        assert_element_equal(
-            self.table.aggregate(["Gender"], np.mean).sort(), aggregated.sort()
-        )
+        assert_element_equal(self.table.aggregate(["Gender"], np.mean).sort(), aggregated.sort())
 
     def test_dataset_aggregate_ht_alias(self):
         aggregated = hv.Dataset(
@@ -211,9 +210,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             ],
             kdims=["Gender"],
         )
-        assert_element_equal(
-            self.table.groupby(["Gender"]).apply("sort"), grouped.apply("sort")
-        )
+        assert_element_equal(self.table.groupby(["Gender"]).apply("sort"), grouped.apply("sort"))
 
     def test_dataset_groupby_alias(self):
         group1 = {"age": [10, 16], "weight": [15, 18], "height": [0.8, 0.6]}
@@ -242,17 +239,26 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         )
         assert_element_equal(self.table.groupby(["Age"]), grouped)
 
-    @pytest.mark.parametrize("agg", [
-         np.min, np.nanmin, np.max, np.nanmax, np.mean, np.nanmean,
-         np.sum, np.nansum, len, np.count_nonzero,
-         # TODO: var-based operations failing this test
-         # np.std, np.nanstd, np.var, np.nanvar
-     ])
+    @pytest.mark.parametrize(
+        "agg",
+        [
+            np.min,
+            np.nanmin,
+            np.max,
+            np.nanmax,
+            np.mean,
+            np.nanmean,
+            np.sum,
+            np.nansum,
+            len,
+            np.count_nonzero,
+            # TODO: var-based operations failing this test
+            # np.std, np.nanstd, np.var, np.nanvar
+        ],
+    )
     def test_aggregation_operations(self, agg):
         data = self.table.dframe()
-        expected = self.table.clone(
-            data=data
-        ).aggregate("Gender", agg).sort()
+        expected = self.table.clone(data=data).aggregate("Gender", agg).sort()
 
         result = self.table.aggregate("Gender", agg).sort()
         assert_element_equal(expected, result)

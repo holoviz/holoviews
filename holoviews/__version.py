@@ -4,6 +4,8 @@ Called __version.py as setuptools_scm will create a _version.py
 
 """
 
+from __future__ import annotations
+
 import os.path
 
 PACKAGE = "holoviews"

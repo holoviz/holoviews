@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from datetime import datetime
 
@@ -7,8 +9,10 @@ import pytest
 
 import holoviews as hv
 from holoviews.core.data import NarwhalsInterface
+from holoviews.core.util.dependencies import _no_import_version
 from holoviews.testing import assert_data_equal
 
+from ...utils import pl_skip
 from .base import HeterogeneousColumnTests, InterfaceTests
 
 
@@ -135,7 +139,7 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         assert len(self.table.data.filter(select_neighbor)) == 3
 
     def test_histogram(self):
-        df = nw.from_native(self.frame({'values': [1, 1, 2, 2, 2, 3, 3, 4, 4, 5]}))
+        df = nw.from_native(self.frame({"values": [1, 1, 2, 2, 2, 3, 3, 4, 4, 5]}))
         bins = [1, 2, 3, 4, 5, 6]
 
         hist, edges = NarwhalsInterface.histogram(df, bins=bins)
@@ -148,18 +152,26 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         assert np.all(hist >= 0)
 
     def test_scalar_getitem(self):
-        df = nw.from_native(self.frame({
-            "day": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-            "count": [1, 2, 3, 4, 5, 6, 7],
-        }))
+        df = nw.from_native(
+            self.frame(
+                {
+                    "day": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+                    "count": [1, 2, 3, 4, 5, 6, 7],
+                }
+            )
+        )
         ds = hv.Dataset(df, kdims=["day"], vdims=["count"])
         assert ds["Mon"] == 1
 
     def test_non_scalar_getitem(self):
-        df = nw.from_native(self.frame({
-            "day": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-            "count": [1, 2, 3, 4, 5, 6, 7],
-        }))
+        df = nw.from_native(
+            self.frame(
+                {
+                    "day": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+                    "count": [1, 2, 3, 4, 5, 6, 7],
+                }
+            )
+        )
         ds = hv.Dataset(df, kdims=["day"], vdims=["count"])
         result = ds[["Mon"]].data
         assert isinstance(result, self.data_type)
@@ -315,30 +327,72 @@ class CudfNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
             super().test_dataset_groupby_dynamic()
 
     def test_dataset_sample_hm(self):
-        samples = self.dataset_hm.sample([0, 5, 10]).dimension_values('y')
+        samples = self.dataset_hm.sample([0, 5, 10]).dimension_values("y")
         assert samples.implementation == nw.Implementation.CUDF
         assert_data_equal(np.array([0, 10, 20]), samples.to_numpy())
 
     def test_dataset_sample_hm_alias(self):
-        samples = self.dataset_hm_alias.sample([0, 5, 10]).dimension_values('y')
+        samples = self.dataset_hm_alias.sample([0, 5, 10]).dimension_values("y")
         assert samples.implementation == nw.Implementation.CUDF
         assert_data_equal(np.array([0, 10, 20]), samples.to_numpy())
 
     def test_dataset_add_dimensions_value_hm(self):
-        table = self.dataset_hm.add_dimension('z', 1, 0)
-        assert table.kdims[1] == 'z'
-        data = table.dimension_values('z')
+        table = self.dataset_hm.add_dimension("z", 1, 0)
+        assert table.kdims[1] == "z"
+        data = table.dimension_values("z")
         assert data.implementation == nw.Implementation.CUDF
         assert_data_equal(np.zeros(table.shape[0]), data.to_numpy())
 
     def test_dataset_add_dimensions_values_hm(self):
-        table =  self.dataset_hm.add_dimension('z', 1, range(1,12))
-        assert table.kdims[1] == 'z'
-        data = table.dimension_values('z')
+        table = self.dataset_hm.add_dimension("z", 1, range(1, 12))
+        assert table.kdims[1] == "z"
+        data = table.dimension_values("z")
         assert data.implementation == nw.Implementation.CUDF
-        assert_data_equal(np.array(list(range(1,12))), data.to_numpy())
+        assert_data_equal(np.array(list(range(1, 12))), data.to_numpy())
 
     def test_dataset_sample_ht(self):
-        samples = self.dataset_ht.sample([0, 5, 10]).dimension_values('y')
+        samples = self.dataset_ht.sample([0, 5, 10]).dimension_values("y")
         assert samples.implementation == nw.Implementation.CUDF
         assert_data_equal(np.array([0, 0.5, 1]), samples.to_numpy())
+
+
+@pl_skip
+def test_applies_for_all_versions():
+    import narwhals as nwm
+    import narwhals.stable.v1 as nw1
+    import narwhals.stable.v2 as nw2
+    import polars as pl
+
+    from holoviews.core.data.narwhals import NarwhalsInterface
+
+    df = pl.DataFrame({"A": [1, 2, 3]})
+    converters = [nwm.from_native, nw1.from_native, nw2.from_native]
+    for c in converters:
+        cdf = c(df)
+        assert NarwhalsInterface.applies(cdf)
+        assert NarwhalsInterface.applies(cdf.lazy())
+        assert NarwhalsInterface.applies(cdf["A"])
+
+
+@pl_skip
+@pytest.mark.skipif(
+    _no_import_version("narwhals") < (2, 19, 0),
+    reason="Version 2.19.0 or higher of narwhals is required",
+)
+def test_init_for_all_versions():
+    import narwhals as nwm
+    import narwhals.stable.v1 as nw1
+    import narwhals.stable.v2 as nw2
+    import polars as pl
+
+    from holoviews.core.data.narwhals import NarwhalsInterface
+
+    df = pl.DataFrame({"A": [1, 2, 3]})
+    converters = [nwm.from_native, nw1.from_native, nw2.from_native]
+    get_init_type = lambda x: type(NarwhalsInterface.init(hv.Dataset, x, ["A"], None)[0])
+
+    for c in converters:
+        cdf = c(df)
+        assert get_init_type(cdf) is nw2.DataFrame
+        assert get_init_type(cdf.lazy()) is nw2.LazyFrame
+        assert get_init_type(cdf["A"]) is nw2.DataFrame

@@ -4,7 +4,7 @@ import numpy as np
 
 from .accessors import Apply, Redim
 from .boundingregion import AARectangle, BoundingBox, BoundingEllipse
-from .data import Dataset
+from .data import Dataset, Interface
 from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
 from .element import Collator, Element, Element2D, Element3D, Tabular
 from .io import FileArchive
@@ -22,21 +22,21 @@ archive = FileArchive()
 
 # Define default type formatters
 Dimension.type_formatters[int] = "%d"
-Dimension.type_formatters[np.uint16] = '%d'
-Dimension.type_formatters[np.int16] = '%d'
-Dimension.type_formatters[np.uint32] = '%d'
-Dimension.type_formatters[np.int32] = '%d'
-Dimension.type_formatters[np.uint64] = '%d'
-Dimension.type_formatters[np.int64] = '%d'
+Dimension.type_formatters[np.uint16] = "%d"
+Dimension.type_formatters[np.int16] = "%d"
+Dimension.type_formatters[np.uint32] = "%d"
+Dimension.type_formatters[np.int32] = "%d"
+Dimension.type_formatters[np.uint64] = "%d"
+Dimension.type_formatters[np.int64] = "%d"
 Dimension.type_formatters[float] = "%.5g"
 Dimension.type_formatters[np.float32] = "%.5g"
 Dimension.type_formatters[np.float64] = "%.5g"
-Dimension.type_formatters[np.datetime64] = '%Y-%m-%d %H:%M:%S'
-Dimension.type_formatters[datetime] = '%Y-%m-%d %H:%M:%S'
-Dimension.type_formatters[date] = '%Y-%m-%d'
+Dimension.type_formatters[np.datetime64] = "%Y-%m-%d %H:%M:%S"
+Dimension.type_formatters[datetime] = "%Y-%m-%d %H:%M:%S"
+Dimension.type_formatters[date] = "%Y-%m-%d"
 # First one is for Pandas <3 and second for Pandas 3+
-Dimension.type_formatters['pandas._libs.tslibs.timestamps.Timestamp'] = "%Y-%m-%d %H:%M:%S"
-Dimension.type_formatters['pandas.Timestamp'] = "%Y-%m-%d %H:%M:%S"
+Dimension.type_formatters["pandas._libs.tslibs.timestamps.Timestamp"] = "%Y-%m-%d %H:%M:%S"
+Dimension.type_formatters["pandas.Timestamp"] = "%Y-%m-%d %H:%M:%S"
 
 
 __all__ = [
@@ -60,6 +60,7 @@ __all__ = [
     "GridMatrix",
     "GridSpace",
     "HoloMap",
+    "Interface",
     "Layout",
     "MultiDimensionalMapping",
     "NdLayout",

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":enablePreCommit"], // ":maintainLockFilesMonthly"
+  "schedule": ["on tuesday"],
+  "enabledManagers": ["github-actions", "pre-commit"],  // pixi
+  "commitMessagePrefix": "chore:",
+  "automerge": true,
+  "minimumReleaseAge": "7 days",
+  "packageRules": [
+    {
+      "groupName": "GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "description": "Weekly update of GitHub Actions",
+      "pinDigests": true
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["holoviz-dev/holoviz_tasks"],
+      "minimumReleaseAge": "0 days"
+    },
+    {
+      "groupName": "pre-commit dependencies",
+      "matchManagers": ["pre-commit"],
+      "description": "Weekly update of pre-commit"
+    }
+    // {
+    //   "groupName": "Pixi",
+    //   "matchManagers": ["pixi"]
+    // },
+    // {
+    //   "groupName": "Pixi-Lock",
+    //   "matchManagers": ["pixi"],
+    //   "matchUpdateTypes": ["lockFileMaintenance"]
+    // },
+  ]
+}

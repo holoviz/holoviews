@@ -85,6 +85,7 @@
     "VectorField",
     "VectorizedAnnotation",
     "Violin",
+    "Waterfall",
     "__version__",
     "annotate",
     "archive",
@@ -131,6 +132,7 @@
     "GridMatrix",
     "GridSpace",
     "HoloMap",
+    "Interface",
     "Layout",
     "MultiDimensionalMapping",
     "NdLayout",
@@ -224,6 +226,7 @@
     "VectorField",
     "VectorizedAnnotation",
     "Violin",
+    "Waterfall",
     "circular_layout",
     "stamen_sources",
     "tile_sources"

@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import holoviews as hv
 
 from .test_plot import TestPlotlyPlot
 
 
 class TestImagePlot(TestPlotlyPlot):
-
     def test_image_state(self):
         img = hv.Points([(0, 0)]).opts(width=345, height=456)
         state = self._get_plot_state(img)
