@@ -157,8 +157,8 @@ class AggregationOperation(ResampleOperation2D):
         "count_cat": rd.count_cat,
     }
 
-    @classmethod
-    def _overlay_wide_mapping(cls, element, elements):
+    @staticmethod
+    def _overlay_wide_mapping(element, elements):
         if not isinstance(element, NdOverlay):
             return False, []
         ydims = [el.dimensions()[1] for el in elements]
@@ -167,8 +167,8 @@ class AggregationOperation(ResampleOperation2D):
         )
         return is_wide, ydims
 
-    @classmethod
-    def _resolve_agg_column_name(cls, element, inner_element, column, is_wide, ydims):
+    @staticmethod
+    def _resolve_agg_column_name(element, inner_element, column, is_wide, ydims):
         if not isinstance(column, str):
             return column
         dimension = inner_element.get_dimension(column)
@@ -477,7 +477,6 @@ class aggregate(LineAggregationOperation):
         kdims = list(obj.kdims)
         vdims = list(obj.vdims)
         dims = obj.dimensions()[:2]
-        is_wide = False
         if isinstance(obj, Path):
             glyph = "line"
             for p in obj.split(datatype="dataframe"):
@@ -501,12 +500,11 @@ class aggregate(LineAggregationOperation):
                 {yd.name for yd in ydims}
             ) == len(obj)
             if is_ndoverlay and is_wide:
-                ydim = next(iter(ydims))
+                ydim = ydims[0]
                 paths = [
                     df.rename(columns={yd.name: yd.label})
                     for yd, path in zip(ydims, paths, strict=True)
                 ]
-                is_wide = True
                 dims = (dims[0], ydim.clone(ydim.label, label=ydim.label))
 
             if element is None:
