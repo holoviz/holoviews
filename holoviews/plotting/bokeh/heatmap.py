@@ -179,6 +179,8 @@ class HeatMapPlot(ColorbarPlot):
             else:
                 xs = element.dimension_values(x, expanded=False)
                 xdiff = np.diff(xs)
+                if dtype_kind(xdiff) == "m":
+                    xdiff = xdiff.view(np.int64)
                 x_index = (
                     ranges[x]["data"][0]
                     if (not xdiff.size or np.allclose(xdiff, xdiff[0]))
@@ -190,6 +192,8 @@ class HeatMapPlot(ColorbarPlot):
             else:
                 ys = element.dimension_values(y, expanded=False)
                 ydiff = np.diff(ys)
+                if dtype_kind(ydiff) == "m":
+                    ydiff = ydiff.view(np.int64)
                 y_index = (
                     ranges[y]["data"][0]
                     if (not ydiff.size or np.allclose(ydiff, ydiff[0]))
