@@ -1,0 +1,41 @@
+name: Validate PR title
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
+permissions:
+  pull-requests: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/validate-pr-title@ci_pr_title
+        with:
+          title: ${{ github.event.pull_request.title }}
+          types: |
+            build
+            chore
+            ci
+            compat
+            docs
+            enh
+            feat
+            fix
+            perf
+            refactor
+            test
+            type
+          scopes: |
+            dev
+            data
+            plotting
+            bokeh
+            matplotlib
+            plotly
+            notebook
