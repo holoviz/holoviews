@@ -1,4 +1,4 @@
-name: Validate PR title
+name: title
 
 on:
   pull_request:
