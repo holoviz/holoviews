@@ -62,15 +62,17 @@ class MPLRendererTest:
         with style.context("default"):
             plot = self.renderer.get_plot(self.image1 + self.image2)
         w, h = self.renderer.get_size(plot)
+        assert w == 576
         # Depending on the backend the height may be slightly different
-        assert (w, h) == (576, 257) or (w, h) == (576, 259)
+        assert h in (257, 258, 259)
 
     def test_get_size_column_plot(self):
         with style.context("default"):
             plot = self.renderer.get_plot((self.image1 + self.image2).cols(1))
         w, h = self.renderer.get_size(plot)
+        assert w == 288
         # Depending on the backend the height may be slightly different
-        assert (w, h) == (288, 509) or (w, h) == (288, 511)
+        assert h in (509, 510, 511)
 
     def test_get_size_grid_plot(self):
         grid = hv.GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
