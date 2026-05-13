@@ -30,7 +30,7 @@ from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import color_intervals, dim_range_key, process_cmap
 from .plot import MPLPlot, mpl_rc_context
-from .util import MPL_VERSION, EqHistNormalize, validate, wrap_formatter
+from .util import MPL_GE_3_11_0, MPL_VERSION, EqHistNormalize, validate, wrap_formatter
 
 
 class ElementPlot(GenericElementPlot, MPLPlot):
@@ -587,7 +587,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         elif isinstance(ticks, (list, tuple)):
             labels = None
             if all(isinstance(t, tuple) for t in ticks):
-                ticks, labels = zip(*ticks, strict=None)
+                ticks, labels = zip(*ticks, strict=True)
             axis.set_ticks(ticks)
             if labels:
                 axis.set_ticklabels(labels)
@@ -1211,13 +1211,25 @@ class ColorbarPlot(ElementPlot):
                     )
             cmap = mpl_colors.ListedColormap(palette)
 
-        cmap = copy.copy(cmap)
-        if "max" in colors:
-            cmap.set_over(**colors["max"])
-        if "min" in colors:
-            cmap.set_under(**colors["min"])
-        if "NaN" in colors:
-            cmap.set_bad(**colors["NaN"])
+        if MPL_GE_3_11_0:
+
+            def _dict_to_rgba(name):
+                dct = colors.get(name)
+                if dct is None:
+                    return None
+                return mpl_colors.to_rgba(dct["color"], alpha=dct.get("alpha"))
+
+            cmap = cmap.with_extremes(
+                over=_dict_to_rgba("max"), under=_dict_to_rgba("min"), bad=_dict_to_rgba("NaN")
+            )
+        else:
+            cmap = copy.copy(cmap)
+            if "max" in colors:
+                cmap.set_over(**colors["max"])
+            if "min" in colors:
+                cmap.set_under(**colors["min"])
+            if "NaN" in colors:
+                cmap.set_bad(**colors["NaN"])
         opts[prefix + "cmap"] = cmap
 
 
