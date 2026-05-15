@@ -46,15 +46,15 @@ jobs:
     steps:
       - uses: holoviz-dev/holoviz_tasks/pre-commit@ffddda04b2894fea39b407f64d3622d2f19e5a9f # v1
 
-  png_optimize:
-    name: Run pre-commit
+  optimize_png:
+    name: optimize-png
     needs: [setup]
     runs-on: "ubuntu-latest"
-    if: needs.setup.outputs.img_change == 'true'
+    # if: needs.setup.outputs.img_change == 'true'
     permissions:
       contents: write
     steps:
-      - uses: holoviz-dev/holoviz_tasks/png-optimize@optimize-png
+      - uses: holoviz-dev/holoviz_tasks/optimize-png@optimize-png
 
   setup:
     name: Setup workflow
@@ -251,7 +251,7 @@ jobs:
         ui_test_suite,
         core_test_suite,
         type_suite,
-        png_optimize,
+        optimize_png,
       ]
     if: always()
     runs-on: ubuntu-latest
