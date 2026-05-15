@@ -811,13 +811,19 @@ class SpreadPlot(ElementPlot):
     _plot_methods = dict(single="patch")
     _stream_data = False  # Plot does not support streaming data
 
+    @staticmethod
+    def _create_nan(data):
+        if dtype_kind(data) in "mM":
+            return np.array(["nat"], dtype=data.dtype)
+        else:
+            return np.array([np.nan])
+
     def _split_area(self, xs, lower, upper):
         """Splits area plots at nans and returns x- and y-coordinates for
         each area separated by nans.
 
         """
-        xnan = np.array([np.datetime64("nat") if dtype_kind(xs) == "M" else np.nan])
-        ynan = np.array([np.datetime64("nat") if dtype_kind(lower) == "M" else np.nan])
+        xnan, ynan = self._create_nan(xs), self._create_nan(lower)
         split = np.where(~isfinite(xs) | ~isfinite(lower) | ~isfinite(upper))[0]
         xvals = np.split(xs, split)
         lower = np.split(lower, split)
