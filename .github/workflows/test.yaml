@@ -46,16 +46,6 @@ jobs:
     steps:
       - uses: holoviz-dev/holoviz_tasks/pre-commit@ffddda04b2894fea39b407f64d3622d2f19e5a9f # v1
 
-  optimize_png:
-    name: optimize-png
-    needs: [setup]
-    runs-on: "ubuntu-latest"
-    # if: needs.setup.outputs.img_change == 'true'
-    permissions:
-      contents: write
-    steps:
-      - uses: holoviz-dev/holoviz_tasks/optimize-png@optimize-png
-
   setup:
     name: Setup workflow
     runs-on: ubuntu-latest
@@ -63,7 +53,6 @@ jobs:
       pull-requests: read
     outputs:
       code_change: ${{ steps.filter.outputs.code }}
-      img_change: ${{ steps.filter.outputs.img }}
       matrix: ${{ env.MATRIX }}
       matrix_option: ${{ env.MATRIX_OPTION }}
     steps:
@@ -82,8 +71,6 @@ jobs:
               - 'pixi.toml'
               - 'pyproject.toml'
               - '.github/workflows/test.yaml'
-            img:
-              - '**/*.png'
       - name: Set matrix option
         env:
           GITHUB_EVENT_INPUTS_TARGET: ${{ github.event.inputs.target }}
@@ -245,14 +232,7 @@ jobs:
 
   result_test_suite:
     name: result:test
-    needs:
-      [
-        unit_test_suite,
-        ui_test_suite,
-        core_test_suite,
-        type_suite,
-        optimize_png,
-      ]
+    needs: [unit_test_suite, ui_test_suite, core_test_suite, type_suite]
     if: always()
     runs-on: ubuntu-latest
     steps:
