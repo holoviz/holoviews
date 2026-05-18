@@ -123,6 +123,25 @@ class TestHeatMapPlot(TestBokehPlot):
         assert data["dw"] == [1]
         assert data["dh"] == [1]
 
+    @pytest.mark.parametrize("kdims", [["datetime", "number"], ["number", "datetime"]])
+    def test_heatmap_datetime(self, kdims):
+        data = {
+            "datetime": pd.date_range(start="2023-01-01", periods=5, freq="h"),
+            "number": np.arange(5),
+            "z": np.random.randn(5, 5),
+        }
+        hm = hv.HeatMap(data, kdims=kdims, vdims="z")
+        plot = bokeh_renderer.get_plot(hm)
+        assert plot._is_contiguous_gridded is True
+        assert isinstance(plot.handles["glyph"], bkImage)
+
+        data = plot.handles["source"].data
+        first_dt = kdims[0] == "datetime"
+        assert isinstance(data["x"][0], np.datetime64 if first_dt else np.number)
+        assert isinstance(data["y"][0], np.number if first_dt else np.datetime64)
+        assert isinstance(data["dw"][0], np.timedelta64 if first_dt else np.number)
+        assert isinstance(data["dh"][0], np.number if first_dt else np.timedelta64)
+
     def test_heatmap_dilate(self):
         hmap = hv.HeatMap([("A", 1, 1), ("B", 2, 2)]).opts(dilate=True)
         plot = bokeh_renderer.get_plot(hmap)
@@ -173,31 +192,11 @@ class TestHeatMapPlot(TestBokehPlot):
         df = pd.DataFrame(
             {
                 "X": pd.Series(
-                    [
-                        "a",
-                        "a",
-                        "a",
-                        "b",
-                        "b",
-                        "b",
-                        "c",
-                        "c",
-                        "c",
-                    ],
+                    ["a", "a", "a", "b", "b", "b", "c", "c", "c"],
                     dtype="category",
                 ),
                 "Y": pd.Series(
-                    [
-                        "O",
-                        "P",
-                        "Q",
-                        "O",
-                        "P",
-                        "Q",
-                        "O",
-                        "P",
-                        "Q",
-                    ],
+                    ["O", "P", "Q", "O", "P", "Q", "O", "P", "Q"],
                     dtype="category",
                 ),
                 "Z": [1, 2, 3, 4, 5, 6, 7, 8, 9],
