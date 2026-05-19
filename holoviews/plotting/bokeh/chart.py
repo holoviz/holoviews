@@ -1512,11 +1512,6 @@ class DonutPlot(DonutMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         the vdim name as keys. None disables the center label.""",
     )
 
-    center_text_font_size = param.String(
-        default="12pt",
-        doc="Font size for the center label, as a CSS string (e.g. '16pt').",
-    )
-
     center_text_align = param.Selector(
         default="center",
         objects=["left", "right", "center"],
@@ -1532,6 +1527,11 @@ class DonutPlot(DonutMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
     center_text_color = param.Color(
         default="black",
         doc="Color for the center label.",
+    )
+
+    center_text_font_size = param.String(
+        default="12pt",
+        doc="Font size for the center label, as a CSS string (e.g. '16pt').",
     )
 
     inner_radius = param.Number(
@@ -1580,7 +1580,6 @@ class DonutPlot(DonutMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         doc="Rotation offset in radians for the first wedge.",
     )
 
-    # Map each glyph to a style group
     _style_groups = {
         "annular_wedge": "wedge",
         "text": "label",
@@ -1600,14 +1599,13 @@ class DonutPlot(DonutMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         super().__init__(*args, **kwargs)
         self.xaxis = None
         self.yaxis = None
+        self._donut_data = None
 
     def _get_factors(self, element, ranges):
         return ([], [])
 
     def _axis_properties(self, *args, **kwargs):
-        """Override default axis properties — the donut has no
-        Cartesian axes; tick labels are drawn via the text glyph.
-        """
+        """No Cartesian axes for the donut."""
         return {}
 
     def _postprocess_hover(self, renderer, source):
@@ -1628,7 +1626,7 @@ class DonutPlot(DonutMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         vdim = element.vdims[0]
         kdim_san = dimension_sanitizer(kdim.name)
 
-        # Colour mapper
+        # Color mapper
         color_style = style.pop("color", None)
         if color_style is not None:
             raise ValueError(
@@ -1705,7 +1703,7 @@ class DonutPlot(DonutMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         self._draw_center_label(plot, element)
 
     def _draw_center_label(self, plot, element):
-        """Draw a centre annotation (e.g. total value)."""
+        """Draw a center annotation (e.g. total value)."""
         if self._donut_data is None:
             return
         text = self._resolve_center_text(self._donut_data["values"], element)
@@ -1727,7 +1725,6 @@ class DonutPlot(DonutMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     def _update_glyphs(self, element, ranges, style):
         super()._update_glyphs(element, ranges, style)
-        # Refresh the manually-drawn centre label
         if "center_label" in self.handles and self._donut_data is not None:
             text = self._resolve_center_text(self._donut_data["values"], element)
             if text is not None:
