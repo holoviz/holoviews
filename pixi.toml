@@ -98,7 +98,6 @@ holoviews = { path = "." }
 [feature.required.tasks]
 check-latest-packages = 'python scripts/check_latest_packages.py'
 download-data = 'python scripts/download_data.py'
-install = 'python -c "print("not needed")'
 sync-git-tags = 'python scripts/sync_git_tags.py holoviews'
 
 [feature.required.activation.env]
