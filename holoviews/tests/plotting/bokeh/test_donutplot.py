@@ -12,7 +12,7 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 class TestDonutPlot(TestBokehPlot):
     def _get_plot_source(self, donut):
         plot = bokeh_renderer.get_plot(donut)
-        return plot, plot.handles["source"]
+        return plot, plot.handles["annular_wedge_1_source"]
 
     def _get_width_fractions(self, source):
         starts = source.data["start_angle"]
@@ -56,19 +56,19 @@ class TestDonutPlot(TestBokehPlot):
     def test_donut_inner_radius(self):
         d = hv.Donut([("A", 30), ("B", 70)]).opts(inner_radius=0.6)
         plot = bokeh_renderer.get_plot(d)
-        glyph = plot.handles["glyph"]
+        glyph = plot.handles["annular_wedge_1_glyph"]
         assert glyph.inner_radius == 0.6
 
     def test_donut_outer_radius(self):
         d = hv.Donut([("A", 30), ("B", 70)]).opts(outer_radius=2.0)
         plot = bokeh_renderer.get_plot(d)
-        glyph = plot.handles["glyph"]
+        glyph = plot.handles["annular_wedge_1_glyph"]
         assert glyph.outer_radius == 2.0
 
     def test_donut_inner_radius_zero(self):
         d = hv.Donut([("A", 30), ("B", 70)]).opts(inner_radius=0)
         plot = bokeh_renderer.get_plot(d)
-        glyph = plot.handles["glyph"]
+        glyph = plot.handles["annular_wedge_1_glyph"]
         assert glyph.inner_radius == 0
 
     def test_donut_hover_data(self):
@@ -95,8 +95,8 @@ class TestDonutPlot(TestBokehPlot):
     def test_donut_show_labels(self):
         d = hv.Donut([("A", 30), ("B", 70)]).opts(show_labels=True)
         plot = bokeh_renderer.get_plot(d)
-        assert "label_source" in plot.handles
-        label_data = plot.handles["label_source"].data
+        assert "text_1_source" in plot.handles
+        label_data = plot.handles["text_1_source"].data
         assert list(label_data["text"]) == ["A", "B"]
 
     @pytest.mark.parametrize(
@@ -127,13 +127,13 @@ class TestDonutPlot(TestBokehPlot):
 
     def test_donut_datetime_labels_are_formatted(self, datetime_donut):
         plot = bokeh_renderer.get_plot(datetime_donut.opts(show_labels="{date}\n{fraction:.2%}"))
-        source = plot.handles["source"]
+        source = plot.handles["annular_wedge_1_source"]
         assert list(source.data["date"]) == [
             "2024-01-01 00:00:00",
             "2024-01-02 00:00:00",
             "2024-01-03 00:00:00",
         ]
-        assert list(plot.handles["label_source"].data["text"]) == [
+        assert list(plot.handles["text_1_source"].data["text"]) == [
             "2024-01-01 00:00:00\n66.67%",
             "2024-01-02 00:00:00\n22.22%",
             "2024-01-03 00:00:00\n11.11%",
@@ -162,7 +162,7 @@ class TestDonutPlot(TestBokehPlot):
     )
     def test_donut_datetime_label_templates(self, datetime_donut, template, expected):
         plot = bokeh_renderer.get_plot(datetime_donut.opts(show_labels=template))
-        assert list(plot.handles["label_source"].data["text"]) == expected
+        assert list(plot.handles["text_1_source"].data["text"]) == expected
 
     @pytest.mark.parametrize(
         ("cmap", "n_colors"),
