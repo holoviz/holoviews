@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import sys
 
 import param
 
@@ -22,11 +21,6 @@ project = "HoloViews"
 authors = "HoloViz developers"
 copyright = "2005 " + authors
 description = "Stop plotting your data - annotate your data and let it visualize itself."
-
-# Setting this to not error out if no install is done
-root_path = os.path.dirname(os.path.dirname(__file__))
-sys.path.insert(0, root_path)
-os.environ["PYTHONPATH"] = root_path
 
 import holoviews as hv
 
