@@ -1589,7 +1589,7 @@ class DonutPlot(DonutMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     style_opts = (
         ["wedge_" + p for p in base_properties + fill_properties + line_properties]
-        + ["label_" + p for p in text_properties]
+        + ["label_" + p for p in text_properties if p != "text_align"]
         + ["cmap", "color"]
     )
 
