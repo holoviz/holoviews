@@ -3,7 +3,7 @@
   "extends": ["config:recommended", ":enablePreCommit"], // ":maintainLockFilesMonthly"
   "schedule": ["on tuesday"],
   "enabledManagers": ["github-actions", "pre-commit"],  // pixi
-  "commitMessagePrefix": "chore:",
+  "commitMessagePrefix": "chore(bot):",
   "automerge": true,
   "minimumReleaseAge": "7 days",
   "packageRules": [
