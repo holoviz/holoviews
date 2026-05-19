@@ -27,15 +27,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  pixi_lock:
-    name: Pixi lock
-    runs-on: ubuntu-latest
-    steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-lock@ab994f6a87c4fdb1363925d26c85a5bab2144f28 # v1.0.0
-
   docs_build:
     name: Build Documentation
-    needs: [pixi_lock]
     runs-on: "macos-latest"
     timeout-minutes: 180
     env:
