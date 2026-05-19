@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import numpy as np
+
 import holoviews as hv
 
 from .test_plot import TestMPLPlot, mpl_renderer
@@ -100,5 +102,5 @@ class TestPointPlot(TestMPLPlot):
         assert x_range[1] == 2.2
         assert y_range[0] == 0.8
         assert y_range[1] == 3.2
-        assert z_range[0] == 1.8660659830736146
-        assert z_range[1] == 4.2870938501451725
+        assert np.isclose(z_range[0], 1.8660659830736146)
+        assert np.isclose(z_range[1], 4.2870938501451725)

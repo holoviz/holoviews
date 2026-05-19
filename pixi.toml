@@ -306,6 +306,7 @@ ty = "==0.0.34"
 pandas-stubs = "*"
 typing-extensions = "*"
 param = "==2.4.0rc2" # >=2.4.0
+numpy = ">=2.0.0" # Remove when Python 3.11
 
 [feature.type-task.tasks]
 type-ty = 'ty check .'

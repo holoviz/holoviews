@@ -15,10 +15,10 @@ class TestErrorBarsPlot(TestBokehPlot):
         errorbars = hv.ErrorBars([(1, 1, 0.5), (2, 2, 0.5), (3, 3, 0.5)]).opts(padding=0.1)
         plot = bokeh_renderer.get_plot(errorbars)
         x_range, y_range = plot.handles["x_range"], plot.handles["y_range"]
-        assert x_range.start == 0.8
-        assert x_range.end == 3.2
-        assert y_range.start == 0.19999999999999996
-        assert y_range.end == 3.8
+        assert np.isclose(x_range.start, 0.8)
+        assert np.isclose(x_range.end, 3.2)
+        assert np.isclose(y_range.start, 0.2)
+        assert np.isclose(y_range.end, 3.8)
 
     def test_errorbars_padding_hard_range(self):
         errorbars = (
@@ -52,10 +52,10 @@ class TestErrorBarsPlot(TestBokehPlot):
         )
         plot = bokeh_renderer.get_plot(errorbars)
         x_range, y_range = plot.handles["x_range"], plot.handles["y_range"]
-        assert x_range.start == 0.9
-        assert x_range.end == 3.1
-        assert y_range.start == 0.19999999999999996
-        assert y_range.end == 3.8
+        assert np.isclose(x_range.start, 0.9)
+        assert np.isclose(x_range.end, 3.1)
+        assert np.isclose(y_range.start, 0.2)
+        assert np.isclose(y_range.end, 3.8)
 
     def test_errorbars_padding_logx(self):
         errorbars = hv.ErrorBars([(1, 1, 0.5), (2, 2, 0.5), (3, 3, 0.5)]).opts(
@@ -63,10 +63,10 @@ class TestErrorBarsPlot(TestBokehPlot):
         )
         plot = bokeh_renderer.get_plot(errorbars)
         x_range, y_range = plot.handles["x_range"], plot.handles["y_range"]
-        assert x_range.start == 0.89595845984076228
-        assert x_range.end == 3.3483695221017129
-        assert y_range.start == 0.19999999999999996
-        assert y_range.end == 3.8
+        assert np.isclose(x_range.start, 0.89595845984076228)
+        assert np.isclose(x_range.end, 3.3483695221017129)
+        assert np.isclose(y_range.start, 0.2)
+        assert np.isclose(y_range.end, 3.8)
 
     def test_errorbars_padding_logy(self):
         errorbars = hv.ErrorBars([(1, 1, 0.5), (2, 2, 0.5), (3, 3, 0.5)]).opts(
@@ -74,10 +74,10 @@ class TestErrorBarsPlot(TestBokehPlot):
         )
         plot = bokeh_renderer.get_plot(errorbars)
         x_range, y_range = plot.handles["x_range"], plot.handles["y_range"]
-        assert x_range.start == 0.8
-        assert x_range.end == 3.2
-        assert y_range.start == 0.41158562699652224
-        assert y_range.end == 4.2518491541367327
+        assert np.isclose(x_range.start, 0.8)
+        assert np.isclose(x_range.end, 3.2)
+        assert np.isclose(y_range.start, 0.41158562699652224)
+        assert np.isclose(y_range.end, 4.2518491541367327)
 
     ###########################
     #    Styling mapping      #

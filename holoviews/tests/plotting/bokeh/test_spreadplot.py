@@ -101,19 +101,19 @@ class TestSpreadPlot(TestBokehPlot):
         spread = hv.Spread([(1, 1, 0.5), (2, 2, 0.5), (3, 3, 0.5)]).opts(padding=0.1, logx=True)
         plot = bokeh_renderer.get_plot(spread)
         x_range, y_range = plot.handles["x_range"], plot.handles["y_range"]
-        assert x_range.start == 0.89595845984076228
-        assert x_range.end == 3.3483695221017129
-        assert y_range.start == 0.19999999999999996
-        assert y_range.end == 3.8
+        assert np.isclose(x_range.start, 0.89595845984076228)
+        assert np.isclose(x_range.end, 3.3483695221017129)
+        assert np.isclose(y_range.start, 0.2)
+        assert np.isclose(y_range.end, 3.8)
 
     def test_spread_padding_logy(self):
         spread = hv.Spread([(1, 1, 0.5), (2, 2, 0.5), (3, 3, 0.5)]).opts(padding=0.1, logy=True)
         plot = bokeh_renderer.get_plot(spread)
         x_range, y_range = plot.handles["x_range"], plot.handles["y_range"]
-        assert x_range.start == 0.8
-        assert x_range.end == 3.2
-        assert y_range.start == 0.41158562699652224
-        assert y_range.end == 4.2518491541367327
+        assert np.isclose(x_range.start, 0.8)
+        assert np.isclose(x_range.end, 3.2)
+        assert np.isclose(y_range.start, 0.41158562699652224)
+        assert np.isclose(y_range.end, 4.2518491541367327)
 
     def test_spread_datetime_x(self):
         dates = np.array(["2020-01-01", "2020-01-02", "2020-01-03"], dtype="datetime64[ns]")
