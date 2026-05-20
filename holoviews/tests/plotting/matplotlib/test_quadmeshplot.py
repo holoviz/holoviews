@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import numpy as np
+from matplotlib.colors import Normalize
 
 import holoviews as hv
 
 from .test_plot import MPL_GE_3_8_0, TestMPLPlot, mpl_renderer
-
-from matplotlib.colors import Normalize
 
 class TestQuadMeshPlot(TestMPLPlot):
     def test_quadmesh_invert_axes(self):
