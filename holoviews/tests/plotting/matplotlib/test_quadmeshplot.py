@@ -62,7 +62,7 @@ class TestQuadMeshPlot(TestMPLPlot):
     def test_quadmesh_with_norm(self):
         arr = np.array([[0, 1, 2], [3, 4, 5]])
 
-        qmesh = hv.QuadMesh(hv.Image(arr)).opts(norm=Normalize())
+        qmesh = hv.QuadMesh(hv.Image(arr)).opts(norm=Normalize(), cmap="viridis")
 
         # Before PR 6889, getting the plot would raise a ValueError from
         # matplotlib because vmin and vmax were passed alongside the norm.
