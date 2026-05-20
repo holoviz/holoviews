@@ -7,6 +7,7 @@ import holoviews as hv
 
 from .test_plot import MPL_GE_3_8_0, TestMPLPlot, mpl_renderer
 
+
 class TestQuadMeshPlot(TestMPLPlot):
     def test_quadmesh_invert_axes(self):
         arr = np.array([[0, 1, 2], [3, 4, 5]])
