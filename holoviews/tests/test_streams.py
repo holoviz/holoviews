@@ -14,6 +14,7 @@ from panel.widgets import IntSlider
 
 import holoviews as hv
 from holoviews.core.util import NUMPY_GE_2_0_0, PARAM_VERSION
+from holoviews.plotting.renderer import PANEL_VERSION
 from holoviews.streams import (
     Buffer,
     Derived,
@@ -354,8 +355,9 @@ class TestParamsStream(LoggingComparison):
         assert len(p.hashkey) == 3  # the two widgets + _memoize_key
 
     def test_params_identical_names(self):
-        a = IntSlider(name="Name")
-        b = IntSlider(name="Name")
+        nl = "label" if PANEL_VERSION >= (1, 9, 0) else "name"
+        a = IntSlider(**{nl: nl})
+        b = IntSlider(**{nl: nl})
         p = Params(parameters=[a.param.value, b.param.value])
         assert len(p.hashkey) == 3  # the two widgets + _memoize_key
 
@@ -695,7 +697,7 @@ def test_dynamicmap_partial_bind_and_streams():
     def make_plot(z, x_range, y_range):
         return hv.Curve([1, 2, 3, 4, z])
 
-    slider = IntSlider(name="Slider", start=0, end=10)
+    slider = IntSlider(start=0, end=10)
     range_xy = RangeXY()
 
     dmap = hv.DynamicMap(param.bind(make_plot, z=slider), streams=[range_xy])
