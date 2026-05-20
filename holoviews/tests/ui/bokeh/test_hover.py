@@ -414,7 +414,7 @@ def test_hover_tooltips_selector_update_plot(serve_panel):
         plot = plot.opts(tools=["hover"], title=color_by)
         return plot
 
-    scb = pn.widgets.Select(name="Color By", options=["option1", "option2"])
+    scb = pn.widgets.Select(options=["option1", "option2"])
     layout = pn.Row(scb, pn.bind(get_plot, scb))
 
     page = serve_panel(layout)
