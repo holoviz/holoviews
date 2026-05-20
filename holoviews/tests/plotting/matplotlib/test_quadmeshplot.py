@@ -64,7 +64,7 @@ class TestQuadMeshPlot(TestMPLPlot):
 
         qmesh = hv.QuadMesh(hv.Image(arr)).opts(norm=Normalize())
 
-        # Before PR 6889, getting the plot would raise a ValueError from 
+        # Before PR 6889, getting the plot would raise a ValueError from
         # matplotlib because vmin and vmax were passed alongside the norm.
         plot = mpl_renderer.get_plot(qmesh)
 
