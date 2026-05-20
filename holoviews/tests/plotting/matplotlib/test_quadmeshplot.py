@@ -6,6 +6,7 @@ import holoviews as hv
 
 from .test_plot import MPL_GE_3_8_0, TestMPLPlot, mpl_renderer
 
+from matplotlib.colors import Normalize
 
 class TestQuadMeshPlot(TestMPLPlot):
     def test_quadmesh_invert_axes(self):
@@ -57,3 +58,16 @@ class TestQuadMeshPlot(TestMPLPlot):
         np.testing.assert_allclose(
             [cbar.vmin, cbar.vmax], [-1.7481711049213744, 1.7008913273857975]
         )
+
+def test_quadmesh_with_norm(self):
+        arr = np.array([[0, 1, 2], [3, 4, 5]])
+        
+        qmesh = hv.QuadMesh(hv.Image(arr)).opts(norm=Normalize())
+        
+        # Before PR 6889, getting the plot would raise a ValueError from 
+        # matplotlib because vmin and vmax were passed alongside the norm.
+        plot = mpl_renderer.get_plot(qmesh)
+        
+        # Verify the plot handles were created and the norm is correctly applied
+        artist = plot.handles["artist"]
+        assert isinstance(artist.norm, Normalize)
