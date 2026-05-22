@@ -1717,7 +1717,7 @@ def get_param_values(data):
     return params
 
 
-def is_param_method(obj, has_deps=False):
+def is_param_method(obj, has_deps=False) -> bool:
     """Whether the object is a method on a parameterized object.
 
     Parameters
@@ -1739,7 +1739,7 @@ def is_param_method(obj, has_deps=False):
         get_method_owner(obj), param.Parameterized
     )
     if parameterized and has_deps:
-        return getattr(obj, "_dinfo", {}).get("dependencies")
+        return bool(getattr(obj, "_dinfo", {}).get("dependencies"))
     return parameterized
 
 

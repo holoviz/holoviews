@@ -6,6 +6,7 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 
 from __future__ import annotations
 
+import inspect
 import typing as t
 import weakref
 from collections import defaultdict
@@ -51,6 +52,36 @@ POPUP_POSITIONS = [
 
 class _SkipTrigger:
     pass
+
+
+class _WeakMethodSubscriber:
+    def __init__(self, method):
+        self._ref = weakref.WeakMethod(method)
+        self._hash = self._generate_hash(method)
+        self._is_param_method = util.is_param_method(method)
+
+    def __bool__(self) -> bool:
+        method = self._ref()
+        return method is not None and not self._is_param_method
+
+    def __call__(self, *args, **kwargs):
+        method = self._ref()
+        if method is not None:
+            return method(*args, **kwargs)
+
+    @staticmethod
+    def _generate_hash(method) -> int:
+        return hash((id(method.__func__), id(method.__self__)))
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, _WeakMethodSubscriber):
+            return self._hash == other._hash
+        if inspect.ismethod(other):
+            return self._hash == self._generate_hash(other)
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        return self._hash
 
 
 @contextmanager
@@ -367,6 +398,8 @@ class Stream(param.Parameterized):
         """
         if not callable(subscriber):
             raise TypeError("Subscriber must be a callable.")
+        if inspect.ismethod(subscriber):
+            subscriber = _WeakMethodSubscriber(subscriber)
         self._subscribers.append((precedence, subscriber))
 
     def _validate_rename(self, mapping):
