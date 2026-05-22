@@ -27,7 +27,7 @@ repos:
       - id: clean-notebook
         args: [--strip-trailing-newlines]
   - repo: https://github.com/crate-ci/typos
-    rev: bbaefadf97b0ec5fdc942684b647f1a6ab250274 # frozen: v1.46.0
+    rev: 5374cbf686e897b15713110e233094e2874de7ef # frozen: v1.46.1
     hooks:
       - id: typos
   - repo: https://github.com/shellcheck-py/shellcheck-py
@@ -38,7 +38,7 @@ repos:
     rev: fb4fd26ea947350ec231580772317ec7261c8e21 # frozen: v3.8.3
     hooks:
       - id: prettier
-        exclude: conda.recipe/meta.yaml
+        exclude: conda.recipe/meta.yaml|pull_request_template.md
         types_or:
           - markdown
           - yaml

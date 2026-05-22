@@ -216,11 +216,11 @@ class QuadMeshPlot(ColorbarPlot):
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         locs = plot_kwargs.pop("locs", None)
-        artist = ax.pcolormesh(*plot_args, **plot_kwargs)
-        colorbar = self.handles.get("cbar")
         if "norm" in plot_kwargs:  # vmin/vmax should now be exclusively in norm
             plot_kwargs.pop("vmin", None)
             plot_kwargs.pop("vmax", None)
+        artist = ax.pcolormesh(*plot_args, **plot_kwargs)
+        colorbar = self.handles.get("cbar")
         if colorbar and MPL_VERSION < (3, 1, 0):
             colorbar.set_norm(artist.norm)
             if hasattr(colorbar, "set_array"):

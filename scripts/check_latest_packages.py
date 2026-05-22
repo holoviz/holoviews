@@ -4,11 +4,13 @@ import json
 import os
 import re
 import sys
+from datetime import datetime, timezone
 from importlib.metadata import version
 from subprocess import DEVNULL, check_output
 
 PYTHON_VERSION = sys.version_info[:2]
 PLATFORM = {"linux": "linux-64", "darwin": "osx-arm64", "win32": "win-64"}[sys.platform]
+TODAY = datetime.now(tz=timezone.utc).date()
 
 if sys.stdout.isatty() or os.environ.get("GITHUB_ACTIONS"):
     GREEN, RED, RESET = "\033[92m", "\033[91m", "\033[0m"
@@ -45,11 +47,21 @@ def get_data(package):
     return [*raw.get("noarch", ()), *raw.get(PLATFORM, ())]
 
 
+def released_today(item) -> bool:
+    ts = item.get("timestamp")
+    if ts is None:
+        return False
+    released = datetime.fromtimestamp(ts / 1000, tz=timezone.utc).date()
+    return released == TODAY
+
+
 def main(*packages):
     all_latest = True
     for package in sorted(packages):
         data = get_data(package)
-        versions = {item["version"] for item in data if python_check(item)}
+        versions = {
+            item["version"] for item in data if python_check(item) and not released_today(item)
+        }
         latest = max(versions, key=convert_int)
         current = version(package)
         is_latest = convert_int(current) >= convert_int(latest)

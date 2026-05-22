@@ -138,7 +138,12 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
                 element = agg
             else:
                 element = element.clone([(agg,)])
-        return super()._apply_transforms(element, data, ranges, style, group)
+        result = super()._apply_transforms(element, data, ranges, style, group)
+        # Remove legend_field to prevent duplicate legend entries for the two
+        # boxes (#6486). Legend is controlled via the mapping dict in
+        # get_data().
+        result.pop("legend_field", None)
+        return result
 
     def _get_factors(self, element, ranges):
         """Get factors for categorical axes."""
