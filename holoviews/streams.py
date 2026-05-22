@@ -58,10 +58,11 @@ class _WeakMethodSubscriber:
     def __init__(self, method):
         self._ref = weakref.WeakMethod(method)
         self._hash = self._generate_hash(method)
+        self._is_param_method = util.is_param_method(method)
 
     def __bool__(self) -> bool:
         method = self._ref()
-        return bool(method is not None and not util.is_param_method(method))
+        return method is not None and not self._is_param_method
 
     def __call__(self, *args, **kwargs):
         method = self._ref()
