@@ -40,7 +40,8 @@ from holoviews.streams import (
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 from holoviews.util import Dynamic
 
-from .utils import LoggingComparison, shapely_skip
+from ._deps import shapely_skip
+from .utils import LoggingComparison
 
 PARAM_GE_2_0_0 = PARAM_VERSION >= (2, 0, 0)
 

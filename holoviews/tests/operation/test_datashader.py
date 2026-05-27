@@ -15,7 +15,7 @@ from holoviews.operation import apply_when
 from holoviews.streams import Tap
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from ..utils import ds, spd, spd_skip
+from .._deps import ds, pl, pl_skip, spd, spd_skip
 
 if not ds:
     pytest.skip("datashader not installed", allow_module_level=True)
@@ -2038,27 +2038,12 @@ def test_datashade_count_cat_no_change_inplace():
     assert df["c"].dtype == expected_dtype
 
 
+@pl_skip
 @pytest.mark.parametrize("lazy", [False, True])
 @pytest.mark.parametrize("op", [aggregate, rasterize, datashade])
 def test_points_polars(lazy, op):
-    pl = pytest.importorskip("polars")
-    data = {
-        "x": [0.2, 0.4, 0.0],
-        "y": [0.3, 0.7, 0.99],
-    }
-    op_kwargs = dict(
-        dynamic=False,
-        x_range=(
-            0,
-            1,
-        ),
-        y_range=(
-            0,
-            1,
-        ),
-        width=2,
-        height=2,
-    )
+    data = {"x": [0.2, 0.4, 0.0], "y": [0.3, 0.7, 0.99]}
+    op_kwargs = dict(dynamic=False, x_range=(0, 1), y_range=(0, 1), width=2, height=2)
 
     polars_df = pl.LazyFrame(data) if lazy else pl.DataFrame(data)
     polars_img = op(hv.Points(polars_df), **op_kwargs)

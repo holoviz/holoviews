@@ -9,6 +9,7 @@ import holoviews as hv
 from holoviews.plotting.bokeh.raster import ImageStackPlot
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0
 
+from ..._deps import ds, ds_skip, xr, xr_skip
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
@@ -129,8 +130,8 @@ class TestRasterPlot(TestBokehPlot):
         assert cdata["dw"] == [1.0]
         assert cdata["y"] == [-0.5]
 
+    @xr_skip
     def test_image_datetime_hover(self):
-        xr = pytest.importorskip("xarray")
         ts = pd.Timestamp("2020-01-01")
         data = xr.Dataset(
             coords={"x": [-0.5, 0.5], "y": [-0.5, 0.5]},
@@ -269,9 +270,8 @@ class _ImageStackBase(TestRasterPlot):
         assert source.data["dh"][0] == self.ysize
         assert isinstance(plot, ImageStackPlot)
 
+    @xr_skip
     def test_image_stack_xarray_dataset(self):
-        xr = pytest.importorskip("xarray")
-
         x = np.arange(self.xsize)
         y = np.arange(self.ysize) + 5
         a, b, c = self.a, self.b, self.c
@@ -292,9 +292,8 @@ class _ImageStackBase(TestRasterPlot):
         assert source.data["dh"][0] == self.ysize
         assert isinstance(plot, ImageStackPlot)
 
+    @xr_skip
     def test_image_stack_xarray_dataarray(self):
-        xr = pytest.importorskip("xarray")
-
         x = np.arange(self.xsize)
         y = np.arange(self.ysize) + 5
         a, b, c = self.a, self.b, self.c
@@ -465,11 +464,11 @@ class TestImageStackUneven2(_ImageStackBase):
         super().setup_method()
 
 
+@ds_skip
 class TestSyntheticLegendPlot(TestBokehPlot):
     __test__ = True
 
     def setup_method(self):
-        ds = pytest.importorskip("datashader")
         super().setup_method()
 
         from holoviews.operation.datashader import datashade, rasterize

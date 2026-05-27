@@ -12,7 +12,7 @@ from holoviews.core.util.dependencies import (
 )
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from ...utils import dask, dask_skip, dd
+from ..._deps import dask, dask_skip, dd
 from .test_pandasinterface import BasePandasInterfaceTests
 
 _DASK_CONVERT_STRING = _no_import_version("dask") >= (2023, 7, 1) and dask.config.get(

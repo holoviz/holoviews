@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 from matplotlib.colors import ListedColormap
 
 import holoviews as hv
 from holoviews.plotting.mpl.raster import RGBPlot
 
+from ..._deps import ds_skip
 from .test_plot import TestMPLPlot, mpl_renderer
 
 
@@ -74,9 +74,8 @@ class TestRasterPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(img)
         assert plot.handles["cbar"].extend == "neither"
 
+    @ds_skip
     def test_image_stack(self):
-        pytest.importorskip("datashader")
-
         x = np.arange(0, 3)
         y = np.arange(5, 8)
         a = np.array([[np.nan, np.nan, 1], [np.nan] * 3, [np.nan] * 3])

@@ -10,7 +10,7 @@ import numpy as np
 import holoviews as hv
 from holoviews.plotting import bokeh  # noqa: F401
 
-from ..utils import mpl, mpl_skip
+from .._deps import mpl, mpl_skip
 
 if mpl:
     import holoviews.plotting.mpl

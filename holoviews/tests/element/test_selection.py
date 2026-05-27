@@ -12,7 +12,7 @@ import holoviews as hv
 from holoviews.element.selection import spatial_select_columnar
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 
-from ..utils import dd, dd_skip, ds_skip, shapely_skip, spd_skip
+from .._deps import dd, dd_skip, ds_skip, shapely_skip, spd_skip
 
 
 class TestIndexExpr:
@@ -245,13 +245,18 @@ class TestSelection2DExpr:
         assert_data_equal(expr.apply(points), np.array([False, True, True, False, False]))
         assert_element_equal(region, hv.Rectangles([(0, 1, 2, 3)]) * hv.Path([]))
 
-    @pytest.mark.parametrize("module", ["spatialpandas", "shapely"])
+    @pytest.mark.parametrize(
+        "module",
+        [
+            pytest.param("spatialpandas", marks=spd_skip),
+            pytest.param("shapely", marks=shapely_skip),
+        ],
+    )
     def test_points_selection_geom(self, unimport, module):
         # Will import _posixshmem on Linux + Python 3.14 + spatialpandas
         # which does not work with unimport
         import multiprocessing.resource_tracker  # noqa: F401
 
-        pytest.importorskip(module)
         unimport("spatialpandas" if module == "shapely" else "shapely")
         points = hv.Points([3, 2, 1, 3, 4])
         geom = np.array([(-0.1, -0.1), (1.4, 0), (1.4, 2.2), (-0.1, 2.2)])
@@ -262,13 +267,18 @@ class TestSelection2DExpr:
         assert_data_equal(expr.apply(points), np.array([False, True, False, False, False]))
         assert_element_equal(region, hv.Rectangles([]) * hv.Path([[*geom, (-0.1, -0.1)]]))
 
-    @pytest.mark.parametrize("module", ["spatialpandas", "shapely"])
+    @pytest.mark.parametrize(
+        "module",
+        [
+            pytest.param("spatialpandas", marks=spd_skip),
+            pytest.param("shapely", marks=shapely_skip),
+        ],
+    )
     def test_points_selection_geom_inverted(self, unimport, module):
         # Will import _posixshmem on Linux + Python 3.14 + spatialpandas
         # which does not work with unimport
         import multiprocessing.resource_tracker  # noqa: F401
 
-        pytest.importorskip(module)
         unimport("spatialpandas" if module == "shapely" else "shapely")
         points = hv.Points([3, 2, 1, 3, 4]).opts(invert_axes=True)
         geom = np.array([(-0.1, -0.1), (1.4, 0), (1.4, 2.2), (-0.1, 2.2)])

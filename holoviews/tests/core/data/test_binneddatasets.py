@@ -11,6 +11,8 @@ import holoviews as hv
 from holoviews.core.data.interface import DataError
 from holoviews.testing import assert_data_equal, assert_element_equal
 
+from ..._deps import xr, xr_skip
+
 
 class Binned1DTest:
     def setup_method(self):
@@ -193,8 +195,8 @@ class Irregular2DBinsTest:
         assert_data_equal(dataset.dimension_values("y"), self.ys.T.flatten())
         assert_data_equal(dataset.dimension_values("z"), self.zs.T.flatten())
 
+    @xr_skip
     def test_construct_from_xarray(self):
-        xr = pytest.importorskip("xarray")
         coords = {"lat": (("y", "x"), self.ys), "lon": (("y", "x"), self.xs)}
         da = xr.DataArray(self.zs, dims=["y", "x"], coords=coords, name="z")
         dataset = hv.Dataset(da)
@@ -208,8 +210,8 @@ class Irregular2DBinsTest:
         assert_data_equal(dataset.dimension_values("lat", flat=False), self.ys)
         assert_data_equal(dataset.dimension_values("z"), self.zs.T.flatten())
 
+    @xr_skip
     def test_construct_3d_from_xarray(self):
-        xr = pytest.importorskip("xarray")
         zs = np.arange(48).reshape(2, 4, 6)
         da = xr.DataArray(
             zs,
@@ -223,8 +225,8 @@ class Irregular2DBinsTest:
         assert_data_equal(dataset.dimension_values("z", expanded=False), np.array([0, 1]))
         assert_data_equal(dataset.dimension_values("A"), zs.T.flatten())
 
+    @xr_skip
     def test_construct_from_xarray_with_invalid_irregular_coordinate_arrays(self):
-        xr = pytest.importorskip("xarray")
         zs = np.arange(48 * 6).reshape(2, 4, 6, 6)
         da = xr.DataArray(
             zs,
@@ -235,8 +237,8 @@ class Irregular2DBinsTest:
         with pytest.raises(DataError):
             hv.Dataset(da, ["z", "lon", "lat"])
 
+    @xr_skip
     def test_3d_xarray_with_constant_dim_canonicalized_to_2d(self):
-        xr = pytest.importorskip("xarray")
         zs = np.arange(24).reshape(1, 4, 6)
         # Construct DataArray with additional constant dimension
         da = xr.DataArray(
@@ -250,8 +252,8 @@ class Irregular2DBinsTest:
         # Ensure that canonicalization drops the constant dimension
         assert_data_equal(dataset.dimension_values("A", flat=False), zs[0])
 
+    @xr_skip
     def test_groupby_3d_from_xarray(self):
-        xr = pytest.importorskip("xarray")
         zs = np.arange(48).reshape(2, 4, 6)
         da = xr.DataArray(
             zs,

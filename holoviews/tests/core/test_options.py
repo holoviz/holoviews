@@ -12,7 +12,7 @@ from holoviews.core.options import OptionError, OptionTree, options_policy
 from holoviews.plotting import bokeh  # noqa: F401
 from holoviews.testing import assert_element_equal
 
-from ..utils import mpl, mpl_skip, plotly, plotly_skip
+from .._deps import mpl, mpl_skip, plotly, plotly_skip
 
 hv.Options.skip_invalid = False
 
