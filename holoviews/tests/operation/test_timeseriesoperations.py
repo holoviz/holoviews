@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-import pytest
 
 import holoviews as hv
 from holoviews.operation.timeseries import resample, rolling, rolling_outlier_std
 from holoviews.testing import assert_element_equal
 
-from ..utils import scipy_skip
+from ..utils import scipy_skip, xr, xr_skip
 
 
 class TimeseriesOperationTests:
@@ -74,8 +73,8 @@ class TimeseriesOperationTests:
         outliers = rolling_outlier_std(self.date_outliers, rolling_window=2, sigma=1)
         assert_element_equal(outliers, hv.Scatter([(pd.Timestamp("2016-01-05"), 10)]))
 
+    @xr_skip
     def test_rolling_outliers_std_dataset(self):
-        xr = pytest.importorskip("xarray")
         # create Dataset explicitly
         ds = xr.Dataset(data_vars={"y": ("x", self.outliers)}, coords={"x": self.dates})
         curve = hv.Curve(ds, ["x"], ["y"])

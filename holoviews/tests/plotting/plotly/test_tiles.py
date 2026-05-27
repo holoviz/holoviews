@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 import holoviews as hv
 from holoviews.element.tiles import _ATTRIBUTIONS, StamenTerrain
@@ -12,6 +11,7 @@ from holoviews.plotting.plotly.util import (
 )
 from holoviews.testing import assert_data_equal
 
+from ..utils import xyzservices, xyzservices_skip
 from .test_plot import TestPlotlyPlot, plotly_renderer
 
 
@@ -112,9 +112,8 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         assert layer["maxzoom"] == 7
         assert layer["sourceattribution"] == _ATTRIBUTIONS[("stamen", "png")]
 
-    # xyzservices input
+    @xyzservices_skip
     def test_xyzservices_tileprovider(self):
-        xyzservices = pytest.importorskip("xyzservices")
         osm = xyzservices.providers.OpenStreetMap.Mapnik
         tiles = hv.Tiles(osm, name="xyzservices").redim.range(x=self.x_range, y=self.y_range)
 

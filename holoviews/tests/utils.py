@@ -187,53 +187,67 @@ def optional_dependencies(*names: tuple[str]):
 
 
 if TYPE_CHECKING:
+    import cftime
     import dask
     import dask.array as da
     import dask.dataframe as dd
     import datashader as ds
+    import duckdb
     import ibis
+    import IPython
     import matplotlib as mpl
     import networkx as nx
     import notebook
     import plotly
     import polars as pl
+    import pyarrow as pa
     import scipy
     import shapely
     import spatialpandas as spd
     import tsdownsample
     import xarray as xr
+    import xyzservices
 else:
+    cftime = optional_dependencies("cftime")
     dask = optional_dependencies("dask")
     da = optional_dependencies("dask.array")
     dd = optional_dependencies("dask.dataframe", "pyarrow")
     ds = optional_dependencies("datashader")
+    duckdb = optional_dependencies("duckdb")
     ibis = optional_dependencies("ibis")
+    IPython = optional_dependencies("IPython")
     mpl = optional_dependencies("matplotlib")
     nx = optional_dependencies("networkx")
     notebook = optional_dependencies("notebook")
     plotly = optional_dependencies("plotly")
     pl = optional_dependencies("polars")
+    pa = optional_dependencies("pyarrow")
     scipy = optional_dependencies("scipy")
     shapely = optional_dependencies("shapely")
     spd = optional_dependencies("spatialpandas")
     tsdownsample = optional_dependencies("tsdownsample")
     xr = optional_dependencies("xarray")
+    xyzservices = optional_dependencies("xyzservices")
 
 
-dask_skip = pytest.mark.skipif(dask is None, reason="dask is not installed")
-da_skip = pytest.mark.skipif(da is None, reason="dask.array is not installed")
-dd_skip = pytest.mark.skipif(dd is None, reason="dask.dataframe is not installed")
-ds_skip = pytest.mark.skipif(ds is None, reason="datashader is not installed")
-ibis_skip = pytest.mark.skipif(ibis is None, reason="ibis is not installed")
-mpl_skip = pytest.mark.skipif(mpl is None, reason="matplotlib is not installed")
-nx_skip = pytest.mark.skipif(nx is None, reason="networkx is not installed")
-notebook_skip = pytest.mark.skipif(notebook is None, reason="notebook is not installed")
-plotly_skip = pytest.mark.skipif(plotly is None, reason="plotly is not installed")
-pl_skip = pytest.mark.skipif(pl is None, reason="polars is not installed")
-scipy_skip = pytest.mark.skipif(scipy is None, reason="scipy is not installed")
-shapely_skip = pytest.mark.skipif(shapely is None, reason="shapely is not installed")
-spd_skip = pytest.mark.skipif(spd is None, reason="spatialpandas is not installed")
-tsdownsample_skip = pytest.mark.skipif(
-    tsdownsample is None, reason="tsdownsample is not installed"
-)
-xr_skip = pytest.mark.skipif(xr is None, reason="xarray is not installed")
+_skip = lambda module, name: pytest.mark.skipif(module is None, reason=f"{name} is not installed")
+cftime_skip = _skip(cftime, "cftime")
+dask_skip = _skip(dask, "dask")
+da_skip = _skip(da, "dask.array")
+dd_skip = _skip(dd, "dask.dataframe")
+ds_skip = _skip(ds, "datashader")
+duckdb_skip = _skip(duckdb, "duckdb")
+ibis_skip = _skip(ibis, "ibis")
+ipython_skip = _skip(IPython, "IPython")
+mpl_skip = _skip(mpl, "matplotlib")
+nx_skip = _skip(nx, "networkx")
+notebook_skip = _skip(notebook, "notebook")
+plotly_skip = _skip(plotly, "plotly")
+pl_skip = _skip(pl, "polars")
+pa_skip = _skip(pa, "pyarrow")
+scipy_skip = _skip(scipy, "scipy")
+shapely_skip = _skip(shapely, "shapely")
+spd_skip = _skip(spd, "spatialpandas")
+tsdownsample_skip = _skip(tsdownsample, "tsdownsample")
+xr_skip = _skip(xr, "xarray")
+xyzservices_skip = _skip(xyzservices, "xyzservices")

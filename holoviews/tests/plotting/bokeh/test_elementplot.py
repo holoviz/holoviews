@@ -26,7 +26,7 @@ from holoviews.plotting.util import process_cmap
 from holoviews.streams import Pipe, PointDraw, Stream
 from holoviews.testing import assert_data_equal
 
-from ...utils import LoggingComparison
+from ...utils import LoggingComparison, cftime, cftime_skip, pd, pd_skip, pl, pl_skip
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
@@ -452,8 +452,8 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         assert xaxis.major_label_text_font_size == "18pt"
         assert xaxis.group_text_font_size == "18pt"
 
+    @cftime_skip
     def test_cftime_transform_gregorian_no_warn(self):
-        cftime = pytest.importorskip("cftime")
         gregorian_dates = [
             cftime.DatetimeGregorian(2000, 2, 28),
             cftime.DatetimeGregorian(2000, 3, 1),
@@ -464,8 +464,8 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         xs = plot.handles["cds"].data["x"]
         assert_data_equal(xs.astype("int64"), np.array([951696000000, 951868800000, 951955200000]))
 
+    @cftime_skip
     def test_cftime_transform_noleap_warn(self):
-        cftime = pytest.importorskip("cftime")
         gregorian_dates = [
             cftime.DatetimeNoLeap(2000, 2, 28),
             cftime.DatetimeNoLeap(2000, 3, 1),
@@ -963,30 +963,24 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         # works with no issue
         pipe.send(True)
 
+    @pl_skip
     @pytest.mark.skipif(not BOKEH_GE_3_8_0, reason="requires Bokeh >= 3.8")
     def test_timedelta_axis_polars(self):
         from bokeh.models.axes import TimedeltaAxis
 
-        pl = pytest.importorskip("polars")
-        df = pl.DataFrame(
-            {
-                "duration": [1000, 2000, 3000],
-                "data": [1, 2, 3],
-            }
-        ).with_columns(pl.col("duration").cast(pl.Duration("ns")))
+        df = pl.DataFrame({"duration": [1000, 2000, 3000], "data": [1, 2, 3]}).with_columns(
+            pl.col("duration").cast(pl.Duration("ns"))
+        )
         el = hv.Curve(df)
         assert isinstance(hv.render(el).below[0], TimedeltaAxis)
 
+    @pd_skip
     @pytest.mark.skipif(not BOKEH_GE_3_8_0, reason="requires Bokeh >= 3.8")
     def test_timedelta_axis_pandas(self):
         from bokeh.models.axes import TimedeltaAxis
 
-        pd = pytest.importorskip("pandas")
         df = pd.DataFrame(
-            {
-                "duration": pd.to_timedelta([1000, 2000, 3000]),
-                "data": [1, 2, 3],
-            }
+            {"duration": pd.to_timedelta([1000, 2000, 3000]), "data": [1, 2, 3]},
         )
         el = hv.Curve(df)
         assert isinstance(hv.render(el).below[0], TimedeltaAxis)
@@ -1471,19 +1465,10 @@ class TestApplyHardBounds(TestBokehPlot):
         assert plot.handles["x_range"].bounds == (0, 20)
 
 
+@pl_skip
 def test_rectangles_colormapping_with_polars():
     # Test for https://github.com/holoviz/holoviews/issues/6728
-    pl = pytest.importorskip("polars")
-
-    df = pl.DataFrame(
-        {
-            "a": [3, 4],
-            "b": [3, 4],
-            "c": [10, 20],
-            "d": [10, 20],
-            "e": [1, 2],
-        }
-    )
+    df = pl.DataFrame({"a": [3, 4], "b": [3, 4], "c": [10, 20], "d": [10, 20], "e": [1, 2]})
     rectangles = hv.Rectangles(df, kdims=["a", "b", "c", "d"]).opts(color="e")
     plot = bokeh_renderer.get_plot(rectangles)
     glyph_renderer = plot.handles["glyph_renderer"]

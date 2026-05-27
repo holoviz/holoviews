@@ -15,7 +15,7 @@ import pytest
 import holoviews as hv
 from holoviews.testing import assert_element_equal
 
-from ..utils import da, dask, dd, xr, xr_skip
+from ..utils import da, dask, dd, shapely_skip, spd_skip, xr, xr_skip
 
 dask_conversion_warning = pytest.mark.filterwarnings(
     "ignore:Dask currently has limited support for converting pandas extension dtypes to arrays:UserWarning"
@@ -463,13 +463,15 @@ class TestDimTransforms:
         assert repr(expr) == repr(expr2)
 
 
-@pytest.mark.parametrize("module", ["spatialpandas", "shapely"])
+@pytest.mark.parametrize(
+    "module",
+    [pytest.param("spatialpandas", marks=spd_skip), pytest.param("shapely", marks=shapely_skip)],
+)
 def test_dataset_transform_by_spatial_select_expr_index_not_0_based(unimport, module):
     """Ensure 'spatial_select' expression works when index not zero-based.
     Use 'spatial_select' defined by four nodes to select index 104, 105.
     Apply expression to dataset.transform to generate new 'flag' column where True
     for the two indexes."""
-    pytest.importorskip(module)
     unimport("spatialpandas" if module == "shapely" else "shapely")
     df = pd.DataFrame(
         {"a": [7, 3, 0.5, 2, 1, 1], "b": [3, 4, 3, 2, 2, 1]}, index=list(range(101, 107))

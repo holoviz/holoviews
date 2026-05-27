@@ -5,10 +5,11 @@ Unit tests of Raster elements
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 import holoviews as hv
 from holoviews.testing import assert_data_equal, assert_element_equal
+
+from ..utils import xr, xr_skip
 
 
 class TestRaster:
@@ -48,8 +49,8 @@ class TestRGB:
         rgb = hv.RGB(([0, 1, 2], [0, 1, 2], self.rgb_array))
         assert len(rgb.vdims) == 4
 
+    @xr_skip
     def test_construct_from_xarray_dataset_with_alpha(self):
-        xr = pytest.importorskip("xarray")
         xr_dataset = xr.DataArray(
             data=self.rgb_array, coords={"y": [0, 1, 2], "x": [0, 1, 2], "band": list("RGBA")}
         ).to_dataset(dim="band")
