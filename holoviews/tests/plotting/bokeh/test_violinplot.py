@@ -8,7 +8,7 @@ from holoviews.operation.stats import univariate_kde
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.testing import assert_data_equal
 
-from ...utils import scipy_skip
+from ..._deps import scipy_skip
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 

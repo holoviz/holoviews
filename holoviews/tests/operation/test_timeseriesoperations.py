@@ -7,7 +7,7 @@ import holoviews as hv
 from holoviews.operation.timeseries import resample, rolling, rolling_outlier_std
 from holoviews.testing import assert_element_equal
 
-from ..utils import scipy_skip, xr, xr_skip
+from .._deps import scipy_skip, xr, xr_skip
 
 
 class TimeseriesOperationTests:

@@ -26,7 +26,8 @@ from holoviews.plotting.util import process_cmap
 from holoviews.streams import Pipe, PointDraw, Stream
 from holoviews.testing import assert_data_equal
 
-from ...utils import LoggingComparison, cftime, cftime_skip, pd, pd_skip, pl, pl_skip
+from ..._deps import cftime, cftime_skip, pd, pd_skip, pl, pl_skip
+from ...utils import LoggingComparison
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 

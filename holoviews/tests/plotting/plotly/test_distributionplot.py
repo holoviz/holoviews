@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import holoviews as hv
 
-from ...utils import scipy_skip
+from ..._deps import scipy_skip
 from .test_plot import TestPlotlyPlot
 
 

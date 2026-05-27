@@ -9,7 +9,7 @@ import holoviews as hv
 from holoviews.plotting.bokeh.raster import ImageStackPlot
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0
 
-from ..utils import ds, ds_skip, xr, xr_skip
+from ..._deps import ds, ds_skip, xr, xr_skip
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 

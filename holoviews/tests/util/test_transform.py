@@ -15,7 +15,7 @@ import pytest
 import holoviews as hv
 from holoviews.testing import assert_element_equal
 
-from ..utils import da, dask, dd, shapely_skip, spd_skip, xr, xr_skip
+from .._deps import da, dask, dd, shapely_skip, spd_skip, xr, xr_skip
 
 dask_conversion_warning = pytest.mark.filterwarnings(
     "ignore:Dask currently has limited support for converting pandas extension dtypes to arrays:UserWarning"

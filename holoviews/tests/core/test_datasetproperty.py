@@ -9,7 +9,7 @@ from holoviews.core import Apply, Redim
 from holoviews.operation import function, histogram
 from holoviews.testing import assert_element_equal
 
-from ..utils import dask, dask_skip, dd, ds, ds_skip
+from .._deps import dask, dask_skip, dd, ds, ds_skip
 
 if ds:
     from holoviews.operation.datashader import datashade, dynspread, rasterize

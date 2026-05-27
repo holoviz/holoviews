@@ -7,7 +7,7 @@ import pytest
 import holoviews as hv
 from holoviews.core.options import Compositor
 
-from ..utils import scipy_skip
+from .._deps import scipy_skip
 
 
 class TestStatisticalElement:

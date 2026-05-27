@@ -9,7 +9,7 @@ import numpy as np
 import holoviews as hv
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from ..utils import xr, xr_skip
+from .._deps import xr, xr_skip
 
 
 class TestRaster:

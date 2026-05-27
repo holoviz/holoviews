@@ -26,7 +26,7 @@ from holoviews.operation.element import (
 )
 from holoviews.testing import assert_element_equal
 
-from ..utils import (
+from .._deps import (
     da,
     da_skip,
     dd,

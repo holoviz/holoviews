@@ -48,7 +48,7 @@ from holoviews.core.util.types import masked_types
 from holoviews.streams import PointerXY
 from holoviews.testing import assert_data_equal
 
-from ..utils import pa_skip, pl, pl_skip
+from .._deps import pa_skip, pl, pl_skip
 
 sanitize_identifier = sanitize_identifier_fn.instance()
 

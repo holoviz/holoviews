@@ -6,7 +6,7 @@ import pytest
 
 import holoviews as hv
 
-from ..utils import ipython_skip
+from .._deps import ipython_skip
 
 
 @contextmanager

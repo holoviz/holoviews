@@ -15,7 +15,7 @@ from holoviews.operation import apply_when
 from holoviews.streams import Tap
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from ..utils import ds, pl, pl_skip, spd, spd_skip
+from .._deps import ds, pl, pl_skip, spd, spd_skip
 
 if not ds:
     pytest.skip("datashader not installed", allow_module_level=True)

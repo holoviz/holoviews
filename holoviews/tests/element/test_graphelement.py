@@ -12,7 +12,7 @@ import holoviews as hv
 from holoviews.element.util import circular_layout, connect_edges, connect_edges_pd
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from ..utils import nx, nx_skip, scipy_skip
+from .._deps import nx, nx_skip, scipy_skip
 
 
 class GraphTests:

@@ -4,7 +4,7 @@ import sys
 from subprocess import check_output
 from textwrap import dedent
 
-from ..utils import ipython_skip, mpl_skip
+from .._deps import ipython_skip, mpl_skip
 
 
 def test_no_blocklist_imports():

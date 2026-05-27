@@ -11,7 +11,7 @@ from holoviews.plotting.plotly.util import (
 )
 from holoviews.testing import assert_data_equal
 
-from ..utils import xyzservices, xyzservices_skip
+from ..._deps import xyzservices, xyzservices_skip
 from .test_plot import TestPlotlyPlot, plotly_renderer
 
 

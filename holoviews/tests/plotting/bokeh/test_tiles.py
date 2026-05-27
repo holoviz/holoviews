@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import holoviews as hv
 
-from ...utils import xyzservices, xyzservices_skip
+from ..._deps import xyzservices, xyzservices_skip
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 

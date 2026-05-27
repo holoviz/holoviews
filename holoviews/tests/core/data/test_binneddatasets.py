@@ -11,7 +11,7 @@ import holoviews as hv
 from holoviews.core.data.interface import DataError
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from ..utils import xr, xr_skip
+from ..._deps import xr, xr_skip
 
 
 class Binned1DTest:

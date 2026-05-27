@@ -12,7 +12,7 @@ from holoviews.core.data import NarwhalsInterface
 from holoviews.core.util.dependencies import _no_import_version
 from holoviews.testing import assert_data_equal
 
-from ...utils import (
+from ..._deps import (
     dd,
     dd_skip,
     duckdb,

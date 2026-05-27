@@ -12,7 +12,7 @@ import holoviews as hv
 from holoviews.element.selection import spatial_select_columnar
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 
-from ..utils import dd, dd_skip, ds_skip, shapely_skip, spd_skip
+from .._deps import dd, dd_skip, ds_skip, shapely_skip, spd_skip
 
 
 class TestIndexExpr:

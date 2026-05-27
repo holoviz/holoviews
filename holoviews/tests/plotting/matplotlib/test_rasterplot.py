@@ -6,7 +6,7 @@ from matplotlib.colors import ListedColormap
 import holoviews as hv
 from holoviews.plotting.mpl.raster import RGBPlot
 
-from ..utils import ds_skip
+from ..._deps import ds_skip
 from .test_plot import TestMPLPlot, mpl_renderer
 
 
