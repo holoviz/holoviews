@@ -157,6 +157,35 @@ class TestBarPlot(TestBokehPlot):
         source = plot.handles["source"]
         assert_data_equal(source.data["bottom"], np.array([1.0, 2.0, 1.5]))
 
+    def test_bars_baseline_floating_inverted(self):
+        # invert_axes draws hbars: bottom/top map to the left/right ends.
+        df = pd.DataFrame({"x": ["a", "b", "c"], "high": [3, 5, 4], "low": [1, 2, 1.5]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low", invert_axes=True)
+        plot = bokeh_renderer.get_plot(bars)
+        source = plot.handles["source"]
+        glyph = plot.handles["glyph"]
+        assert_data_equal(source.data["bottom"], np.array([1, 2, 1.5]))
+        assert property_to_dict(glyph.left) == "bottom"
+        assert property_to_dict(glyph.right) == "high"
+
+    def test_bars_baseline_floating_timedelta(self):
+        # Gantt-style: timedelta value dimensions float between Start and End.
+        df = pd.DataFrame(
+            {
+                "Task": ["Build", "Test", "Deploy"],
+                "Start": pd.to_timedelta(["1h", "3h", "5h30m"]),
+                "End": pd.to_timedelta(["3h", "5h30m", "7h"]),
+            }
+        )
+        bars = hv.Bars(df, "Task", ["End", "Start"]).opts(baseline="Start", invert_axes=True)
+        plot = bokeh_renderer.get_plot(bars)
+        source = plot.handles["source"]
+        glyph = plot.handles["glyph"]
+        assert_data_equal(source.data["bottom"], bars.dimension_values("Start"))
+        assert_data_equal(source.data["End"], bars.dimension_values("End"))
+        assert property_to_dict(glyph.left) == "bottom"
+        assert property_to_dict(glyph.right) == "End"
+
     def test_bars_baseline_floating_range_excludes_zero(self):
         # Floating bars span [low, high]; 0 must not be forced into the range.
         df = pd.DataFrame({"x": ["a", "b"], "high": [30.0, 40.0], "low": [10.0, 20.0]})
@@ -198,16 +227,27 @@ class TestBarPlot(TestBokehPlot):
         assert f"Could not use baseline dimension {baseline!r}" in log_msg
         assert "bottom" not in plot.handles["source"].data
 
-    def test_bars_baseline_ignored_when_grouped(self):
-        # Floating bars are only supported for a single key dimension.
+    def test_bars_baseline_grouped(self):
+        # Each grouped bar floats from its baseline (Low) up to vdims[0] (High).
         bars = hv.Bars(
-            [("a", 0, 1), ("a", 1, 2), ("b", 0, 3)], kdims=["x", "g"], vdims=["v"]
-        ).opts(baseline="v")
-        with ParamLogStream() as log:
-            plot = bokeh_renderer.get_plot(bars)
-        log_msg = log.stream.read()
-        assert "only supported for ungrouped" in log_msg
-        assert "bottom" not in plot.handles["source"].data
+            [("Q1", "E", 10, 2), ("Q1", "W", 7, 1), ("Q2", "E", 12, 3), ("Q2", "W", 9, 4)],
+            kdims=["Quarter", "Region"],
+            vdims=["High", "Low"],
+        ).opts(baseline="Low")
+        plot = bokeh_renderer.get_plot(bars)
+        source = plot.handles["source"]
+        # Order depends on the group iteration, so compare order-independently.
+        assert property_to_dict(plot.handles["glyph"].bottom) == "bottom"
+        assert sorted(source.data["bottom"]) == [1, 2, 3, 4]
+        assert sorted(source.data["High"]) == [7, 9, 10, 12]
+
+    def test_bars_baseline_stacked_errors(self):
+        # Stacking defines the segment baselines, so a baseline is a usage error.
+        bars = hv.Bars(
+            [("A", 0, 1), ("A", 1, -1), ("B", 0, 2)], kdims=["Index", "Category"], vdims=["Value"]
+        ).opts(stacked=True, baseline="Value")
+        with pytest.raises(ValueError, match="stacked"):
+            bokeh_renderer.get_plot(bars)
 
     def test_bars_logy(self):
         bars = hv.Bars([("A", 1), ("B", 2), ("C", 3)], kdims=["Index"], vdims=["Value"])

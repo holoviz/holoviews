@@ -175,6 +175,19 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
         assert_data_equal(state["data"][0]["base"], np.array([1.0, 2.0, 1.5]))
         assert_data_equal(state["data"][0]["y"], np.array([2.0, 3.0, 2.5]))
 
+    def test_bars_baseline_floating_datetime(self):
+        df = pd.DataFrame(
+            {
+                "x": pd.date_range("2024-01-01", periods=3),
+                "high": [3.0, 5.0, 4.0],
+                "low": [1.0, 2.0, 1.5],
+            }
+        )
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
+        state = self._get_plot_state(bars)
+        assert_data_equal(state["data"][0]["base"], np.array([1.0, 2.0, 1.5]))
+        assert_data_equal(state["data"][0]["y"], np.array([2.0, 3.0, 2.5]))
+
     def test_bars_baseline_floating_inverted(self):
         df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, 2.0]})
         bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low", invert_axes=True)
@@ -205,12 +218,22 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
         assert "base" not in state["data"][0]
         self.log_handler.assert_contains("WARNING", "Could not use baseline dimension 'high'")
 
-    def test_bars_baseline_ignored_when_grouped(self):
-        bars = hv.Bars([("A", 1, 1), ("B", 2, 2), ("C", 2, 3)], kdims=["A", "B"]).opts(
-            baseline="A"
+    def test_bars_baseline_grouped(self):
+        # Each grouped bar floats from its baseline (Low) up to vdims[0] (High).
+        bars = hv.Bars(
+            [("Q1", "E", 10, 2), ("Q1", "W", 7, 1), ("Q2", "E", 12, 3), ("Q2", "W", 9, 4)],
+            kdims=["Quarter", "Region"],
+            vdims=["High", "Low"],
+        ).opts(baseline="Low")
+        state = self._get_plot_state(bars)
+        assert sorted(state["data"][0]["base"]) == [1.0, 2.0, 3.0, 4.0]
+
+    def test_bars_baseline_stacked_errors(self):
+        bars = hv.Bars([("A", "x", 1), ("A", "y", 2), ("B", "x", 3)], kdims=["A", "B"]).opts(
+            stacked=True, baseline="A"
         )
-        self._get_plot_state(bars)
-        self.log_handler.assert_contains("WARNING", "only supported for ungrouped")
+        with pytest.raises(ValueError, match="stacked"):
+            self._get_plot_state(bars)
 
     def test_bars_baseline_unresolved_warns(self):
         df = pd.DataFrame({"x": ["a", "b"], "high": [3, 5]})

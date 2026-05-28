@@ -194,8 +194,9 @@ class BarPlot(BarsMixin, ElementPlot):
         each bar), making the bars float between two value dimensions
         instead of growing from a zero baseline. Accepts a dimension
         name or index; vdims[0] supplies one end and this dimension the
-        other. Only supported for a single key dimension (ungrouped,
-        unstacked) Bars.""",
+        other, and must be the lower end of every bar. Supported for
+        ungrouped and grouped Bars; combining it with stacked raises an
+        error.""",
     )
 
     multi_level = param.Boolean(
@@ -294,30 +295,41 @@ class BarPlot(BarsMixin, ElementPlot):
                 els.items(), key=lambda x: order.index(x[0]) if x[0] in order else -1
             )
             for k, el in sorted_groups[::-1]:
-                values = []
+                values, bases = [], []
                 for v in xvals:
                     sel = el[[v]]
-                    values.append(sel.iloc[0, 1] if len(sel) else 0)
-                bars.append(
-                    {
-                        "orientation": orientation,
-                        "name": group_dim.pprint_value(k),
-                        x: xvals,
-                        y: np.nan_to_num(values),
-                    }
-                )
-        else:
-            values = element.dimension_values(vdim)
-            bars.append(
-                {
+                    top = sel.iloc[0, 1] if len(sel) else 0
+                    if baseline_dim is None:
+                        values.append(top)
+                        continue
+                    base = sel.dimension_values(baseline_dim)[0] if len(sel) else 0
+                    values.append(top - base)
+                    bases.append(base)
+                bar = {
                     "orientation": orientation,
-                    x: [
-                        [d.pprint_value(v) for v in element.dimension_values(d)]
-                        for d in (xdim, group_dim)
-                    ],
+                    "name": group_dim.pprint_value(k),
+                    x: xvals,
                     y: np.nan_to_num(values),
                 }
-            )
+                if baseline_dim is not None:
+                    bar["base"] = np.nan_to_num(bases)
+                bars.append(bar)
+        else:
+            values = element.dimension_values(vdim)
+            bar = {
+                "orientation": orientation,
+                x: [
+                    [d.pprint_value(v) for v in element.dimension_values(d)]
+                    for d in (xdim, group_dim)
+                ],
+                y: np.nan_to_num(values),
+            }
+            if baseline_dim is not None:
+                # Floating grouped bars: base is the lower end, y the length.
+                base = element.dimension_values(baseline_dim)
+                bar[y] = np.nan_to_num(values - base)
+                bar["base"] = np.nan_to_num(base)
+            bars.append(bar)
 
         return bars
 

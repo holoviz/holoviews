@@ -330,22 +330,29 @@ class BarsMixin:
         """Resolve the value dimension used as a per-bar baseline for
         floating bars, or None when not applicable.
 
-        Floating bars are only supported for a single key dimension
-        (ungrouped, unstacked). The `baseline` param is declared on each
-        backend's BarPlot rather than this mixin, so all consumers expose
-        the attribute.
+        Floating bars are supported for ungrouped and grouped Bars (one
+        floating bar per category combination) but not stacked Bars, where
+        the segment baselines are defined by the cumulative stack. The
+        `baseline` param is declared on each backend's BarPlot rather than
+        this mixin, so all consumers expose the attribute.
 
         Returns None when the baseline cannot be used as a distinct lower
-        end: unset, not a single-kdim element, an unresolved dimension, or
-        the same dimension as vdims[0] (which would give zero-height bars).
-        Callers warn about the misconfigured cases.
+        end: unset, an unresolved dimension, or the same dimension as
+        vdims[0] (which would give zero-height bars). Callers warn about
+        those fall-back cases.
 
-        Raises ValueError if the baseline runs past vdims[0] for any bar:
-        the baseline must be the lower end of every bar, so an inverted
-        range is a usage error rather than a bar drawn upside down.
+        Raises ValueError if the baseline is combined with stacking, or if
+        it runs past vdims[0] for any bar: the baseline must be the lower
+        end of every bar, so an inverted range is a usage error rather than
+        a bar drawn upside down.
         """
-        if self.baseline is None or self.stacked or element.ndims != 1:
+        if self.baseline is None:
             return None
+        if self.stacked:
+            raise ValueError(
+                "baseline is not supported for stacked Bars; set stacked=False "
+                "to draw floating bars."
+            )
         baseline_dim = element.get_dimension(self.baseline)
         if baseline_dim is None or baseline_dim == element.vdims[0]:
             return None
@@ -361,22 +368,12 @@ class BarsMixin:
         return baseline_dim
 
     def _warn_unused_baseline(self, element, baseline_dim):
-        """Warn when a baseline was requested but cannot be applied.
-
-        `baseline_dim` is the result of `_baseline_dimension`; None here means
-        the baseline is being ignored, either because the Bars are grouped or
-        stacked or because the dimension is unresolved or identical to vdims[0].
-        Kept separate from `_baseline_dimension` so range computation can
-        resolve the baseline without emitting warnings.
+        """Warn when a resolvable baseline was requested but falls back to
+        a zero baseline because the dimension is unresolved or identical to
+        vdims[0]. Kept separate from `_baseline_dimension` so range
+        computation can resolve the baseline without emitting warnings.
         """
-        if self.baseline is None or baseline_dim is not None:
-            return
-        if self.stacked or element.ndims != 1:
-            self.param.warning(
-                "baseline is only supported for ungrouped, unstacked Bars with a "
-                "single key dimension; ignoring."
-            )
-        else:
+        if self.baseline is not None and baseline_dim is None:
             self.param.warning(
                 f"Could not use baseline dimension {self.baseline!r}: it must name "
                 "a value dimension other than the first; drawing bars from a zero "

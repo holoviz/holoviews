@@ -167,6 +167,20 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
         np.testing.assert_allclose([p.get_y() for p in ax.patches], [1.0, 2.0, 1.5])
         np.testing.assert_allclose([p.get_height() for p in ax.patches], [2.0, 3.0, 2.5])
 
+    def test_bars_baseline_floating_datetime(self):
+        df = pd.DataFrame(
+            {
+                "x": pd.date_range("2024-01-01", periods=3),
+                "high": [3.0, 5.0, 4.0],
+                "low": [1.0, 2.0, 1.5],
+            }
+        )
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
+        plot = mpl_renderer.get_plot(bars)
+        ax = plot.handles["axis"]
+        np.testing.assert_allclose([p.get_y() for p in ax.patches], [1.0, 2.0, 1.5])
+        np.testing.assert_allclose([p.get_height() for p in ax.patches], [2.0, 3.0, 2.5])
+
     def test_bars_baseline_floating_nan(self):
         df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, np.nan]})
         bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
@@ -212,18 +226,23 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
         np.testing.assert_allclose([p.get_y() for p in plot.handles["axis"].patches], [0.0, 0.0])
         self.log_handler.assert_contains("WARNING", "Could not use baseline dimension 'high'")
 
-    def test_bars_baseline_ignored_when_grouped(self):
-        bars = (
-            hv.Bars(
-                ([3, 10, 1] * 10, ["A", "B"] * 15, np.random.randn(30)),
-                ["Group", "Category"],
-                "Value",
-            )
-            .aggregate(function=np.mean)
-            .opts(baseline="Value")
-        )
-        mpl_renderer.get_plot(bars)
-        self.log_handler.assert_contains("WARNING", "only supported for ungrouped")
+    def test_bars_baseline_grouped(self):
+        # Each grouped bar floats from its baseline (Low) up to vdims[0] (High).
+        bars = hv.Bars(
+            [("Q1", "E", 10, 2), ("Q1", "W", 7, 1), ("Q2", "E", 12, 3), ("Q2", "W", 9, 4)],
+            kdims=["Quarter", "Region"],
+            vdims=["High", "Low"],
+        ).opts(baseline="Low")
+        plot = mpl_renderer.get_plot(bars)
+        ax = plot.handles["axis"]
+        assert sorted(p.get_y() for p in ax.patches) == [1.0, 2.0, 3.0, 4.0]
+
+    def test_bars_baseline_stacked_errors(self):
+        bars = hv.Bars(
+            [("A", 0, 1), ("A", 1, -1), ("B", 0, 2)], kdims=["Index", "Category"], vdims=["Value"]
+        ).opts(stacked=True, baseline="Value")
+        with pytest.raises(ValueError, match="stacked"):
+            mpl_renderer.get_plot(bars)
 
     def test_bars_baseline_unresolved_warns(self):
         df = pd.DataFrame({"x": ["a", "b"], "high": [3, 5]})

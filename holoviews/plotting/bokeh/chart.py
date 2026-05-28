@@ -1005,8 +1005,9 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         each bar), making the bars float between two value dimensions
         instead of growing from a zero baseline. Accepts a dimension
         name or index; vdims[0] supplies one end and this dimension the
-        other. Only supported for a single key dimension (ungrouped,
-        unstacked) Bars.""",
+        other, and must be the lower end of every bar. Supported for
+        ungrouped and grouped Bars; combining it with stacked raises an
+        error.""",
     )
 
     multi_level = param.Boolean(
@@ -1212,7 +1213,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         if grouping == "stacked":
             mapping = {"x": xdim.name, "top": "top", "bottom": "bottom", "width": width}
         elif grouping == "grouped":
-            mapping = {"x": "xoffsets", "top": ydim.name, "bottom": bottom, "width": width}
+            bar_bottom = "bottom" if baseline_dim is not None else bottom
+            mapping = {"x": "xoffsets", "top": ydim.name, "bottom": bar_bottom, "width": width}
         else:
             # Floating bars carry a per-bar lower coordinate in a "bottom"
             # column (as the stacked branch does), otherwise it is the scalar 0.
@@ -1288,6 +1290,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 ]
                 data["xoffsets"].append(xoffsets)
                 data[ydim.name].append(ys)
+                if baseline_dim is not None:
+                    data["bottom"].append(ds.dimension_values(baseline_dim))
                 if hover:
                     data[xdim.name].append(xs)
                 if group_dim not in ds.dimensions():
