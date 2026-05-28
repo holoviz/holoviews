@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import pytest
 
 import holoviews as hv
 from holoviews.plotting.plotly.util import PLOTLY_VERSION
 from holoviews.testing import assert_data_equal
 
+from ...utils import LoggingComparison
 from .test_plot import TestPlotlyPlot
 
 
-class TestBarsPlot(TestPlotlyPlot):
+class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
     def test_bars_plot(self):
         bars = hv.Bars([3, 2, 1])
         state = self._get_plot_state(bars)
@@ -164,6 +166,57 @@ class TestBarsPlot(TestPlotlyPlot):
         plot = self._get_plot_state(bars)
         np.testing.assert_equal(set(plot["data"][0]["x"]), set(pets))
         np.testing.assert_equal(plot["data"][0]["y"], np.array([8, 7, 6, 7]))
+
+    def test_bars_baseline_floating(self):
+        df = pd.DataFrame({"x": ["a", "b", "c"], "high": [3.0, 5.0, 4.0], "low": [1.0, 2.0, 1.5]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
+        state = self._get_plot_state(bars)
+        # The trace base holds the baseline; y holds the bar length (high - low).
+        assert_data_equal(state["data"][0]["base"], np.array([1.0, 2.0, 1.5]))
+        assert_data_equal(state["data"][0]["y"], np.array([2.0, 3.0, 2.5]))
+
+    def test_bars_baseline_floating_inverted(self):
+        df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, 2.0]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low", invert_axes=True)
+        state = self._get_plot_state(bars)
+        assert_data_equal(state["data"][0]["base"], np.array([1.0, 2.0]))
+        assert_data_equal(state["data"][0]["x"], np.array([2.0, 3.0]))
+
+    def test_bars_baseline_floating_range_excludes_zero(self):
+        df = pd.DataFrame({"x": ["a", "b"], "high": [30.0, 40.0], "low": [10.0, 20.0]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low", padding=0)
+        state = self._get_plot_state(bars)
+        y0, y1 = state["layout"]["yaxis"]["range"]
+        assert y0 == 10.0
+        assert y1 == 40.0
+
+    def test_bars_baseline_exceeds_errors(self):
+        # The baseline must be the lower end of every bar; an inverted range
+        # (low > high) is a usage error.
+        df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [6.0, 8.0]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
+        with pytest.raises(ValueError, match="exceed"):
+            self._get_plot_state(bars)
+
+    def test_bars_baseline_same_as_value_dim_warns(self):
+        df = pd.DataFrame({"x": ["a", "b"], "high": [3, 5], "low": [1, 2]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="high")
+        state = self._get_plot_state(bars)
+        assert "base" not in state["data"][0]
+        self.log_handler.assert_contains("WARNING", "Could not use baseline dimension 'high'")
+
+    def test_bars_baseline_ignored_when_grouped(self):
+        bars = hv.Bars([("A", 1, 1), ("B", 2, 2), ("C", 2, 3)], kdims=["A", "B"]).opts(
+            baseline="A"
+        )
+        self._get_plot_state(bars)
+        self.log_handler.assert_contains("WARNING", "only supported for ungrouped")
+
+    def test_bars_baseline_unresolved_warns(self):
+        df = pd.DataFrame({"x": ["a", "b"], "high": [3, 5]})
+        bars = hv.Bars(df, "x", ["high"]).opts(baseline="nope")
+        self._get_plot_state(bars)
+        self.log_handler.assert_contains("WARNING", "Could not use baseline dimension 'nope'")
 
     def test_bar_color(self):
         data = pd.DataFrame({"A": range(5)})

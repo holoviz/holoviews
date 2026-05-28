@@ -326,6 +326,63 @@ class AreaMixin:
 
 
 class BarsMixin:
+    def _baseline_dimension(self, element):
+        """Resolve the value dimension used as a per-bar baseline for
+        floating bars, or None when not applicable.
+
+        Floating bars are only supported for a single key dimension
+        (ungrouped, unstacked). The `baseline` param is declared on each
+        backend's BarPlot rather than this mixin, so all consumers expose
+        the attribute.
+
+        Returns None when the baseline cannot be used as a distinct lower
+        end: unset, not a single-kdim element, an unresolved dimension, or
+        the same dimension as vdims[0] (which would give zero-height bars).
+        Callers warn about the misconfigured cases.
+
+        Raises ValueError if the baseline runs past vdims[0] for any bar:
+        the baseline must be the lower end of every bar, so an inverted
+        range is a usage error rather than a bar drawn upside down.
+        """
+        if self.baseline is None or self.stacked or element.ndims != 1:
+            return None
+        baseline_dim = element.get_dimension(self.baseline)
+        if baseline_dim is None or baseline_dim == element.vdims[0]:
+            return None
+        top = element.dimension_values(element.vdims[0])
+        base = element.dimension_values(baseline_dim)
+        # NaN comparisons are False, so missing values are left to the backend.
+        if np.any(base > top):
+            raise ValueError(
+                f"baseline dimension {baseline_dim.name!r} has values that exceed "
+                f"the {element.vdims[0].name!r} dimension; the baseline must be the "
+                "lower end of every bar."
+            )
+        return baseline_dim
+
+    def _warn_unused_baseline(self, element, baseline_dim):
+        """Warn when a baseline was requested but cannot be applied.
+
+        `baseline_dim` is the result of `_baseline_dimension`; None here means
+        the baseline is being ignored, either because the Bars are grouped or
+        stacked or because the dimension is unresolved or identical to vdims[0].
+        Kept separate from `_baseline_dimension` so range computation can
+        resolve the baseline without emitting warnings.
+        """
+        if self.baseline is None or baseline_dim is not None:
+            return
+        if self.stacked or element.ndims != 1:
+            self.param.warning(
+                "baseline is only supported for ungrouped, unstacked Bars with a "
+                "single key dimension; ignoring."
+            )
+        else:
+            self.param.warning(
+                f"Could not use baseline dimension {self.baseline!r}: it must name "
+                "a value dimension other than the first; drawing bars from a zero "
+                "baseline."
+            )
+
     def _get_axis_dims(self, element):
         if element.ndims > 1 and not (self.stacked or not self.multi_level):
             xdims = element.kdims
@@ -348,10 +405,15 @@ class BarsMixin:
                 ranges[kd.label]["combined"] = overlay.range(kd)
 
         vdim = element.vdims[0].label
-        s0, s1 = ranges[vdim]["soft"]
-        s0 = min(s0, 0) if util.isfinite(s0) else 0
-        s1 = max(s1, 0) if util.isfinite(s1) else 0
-        ranges[vdim]["soft"] = (s0, s1)
+        # Floating bars (a value dimension used as per-bar baseline) must
+        # not force 0 into the value-axis range; the lower end is data.
+        baseline_dim = self._baseline_dimension(element)
+        floating = baseline_dim is not None
+        if not floating:
+            s0, s1 = ranges[vdim]["soft"]
+            s0 = min(s0, 0) if util.isfinite(s0) else 0
+            s1 = max(s1, 0) if util.isfinite(s1) else 0
+            ranges[vdim]["soft"] = (s0, s1)
         l, b, r, t = super().get_extents(element, ranges, range_type, ydim=element.vdims[0])
         if range_type not in ("combined", "data"):
             return l, b, r, t
@@ -363,6 +425,12 @@ class BarsMixin:
             pos_range = ds.select(**{vdim: (0, None)}).aggregate(xdim, function=np.sum).range(vdim)
             neg_range = ds.select(**{vdim: (None, 0)}).aggregate(xdim, function=np.sum).range(vdim)
             y0, y1 = util.max_range([pos_range, neg_range])
+        elif floating:
+            # Span both ends from the data directly so the value axis
+            # covers the baseline as well as vdims[0]. Note: this reads
+            # from the element rather than the combined ranges, so an
+            # overlay of floating Bars is not range-combined.
+            y0, y1 = util.max_range([element.range(element.vdims[0]), element.range(baseline_dim)])
         else:
             y0, y1 = ranges[vdim]["combined"]
 

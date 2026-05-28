@@ -996,6 +996,19 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
     """
 
+    baseline = param.ClassSelector(
+        default=None,
+        class_=(str, int),
+        allow_None=True,
+        doc="""
+        Value dimension to use as a per-bar baseline (the other end of
+        each bar), making the bars float between two value dimensions
+        instead of growing from a zero baseline. Accepts a dimension
+        name or index; vdims[0] supplies one end and this dimension the
+        other. Only supported for a single key dimension (ungrouped,
+        unstacked) Bars.""",
+    )
+
     multi_level = param.Boolean(
         default=True,
         doc="Whether the Bars should be grouped into a second categorical axis level.",
@@ -1146,6 +1159,10 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         data = defaultdict(list)
         xdim = element.get_dimension(0)
         ydim = element.vdims[0]
+
+        baseline_dim = self._baseline_dimension(element)
+        self._warn_unused_baseline(element, baseline_dim)
+
         no_cidx = self.color_index is None
         color_index = (group_dim or stack_dim) if no_cidx else self.color_index
         color_dim = element.get_dimension(color_index)
@@ -1197,7 +1214,10 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         elif grouping == "grouped":
             mapping = {"x": "xoffsets", "top": ydim.name, "bottom": bottom, "width": width}
         else:
-            mapping = {"x": xdim.name, "top": ydim.name, "bottom": bottom, "width": width}
+            # Floating bars carry a per-bar lower coordinate in a "bottom"
+            # column (as the stacked branch does), otherwise it is the scalar 0.
+            bar_bottom = "bottom" if baseline_dim is not None else bottom
+            mapping = {"x": xdim.name, "top": ydim.name, "bottom": bar_bottom, "width": width}
 
         # Get colors
         cdim = color_dim or group_dim
@@ -1276,6 +1296,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             else:
                 data[xdim.name].append(xvals)
                 data[ydim.name].append(ds.dimension_values(ydim))
+                if baseline_dim is not None:
+                    data["bottom"].append(ds.dimension_values(baseline_dim))
 
             if hover and grouping != "stacked":
                 for vd in ds.vdims[1:]:

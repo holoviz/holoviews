@@ -185,6 +185,19 @@ class ErrorBarsPlot(ChartPlot, ColorbarPlot):
 
 
 class BarPlot(BarsMixin, ElementPlot):
+    baseline = param.ClassSelector(
+        default=None,
+        class_=(str, int),
+        allow_None=True,
+        doc="""
+        Value dimension to use as a per-bar baseline (the other end of
+        each bar), making the bars float between two value dimensions
+        instead of growing from a zero baseline. Accepts a dimension
+        name or index; vdims[0] supplies one end and this dimension the
+        other. Only supported for a single key dimension (ungrouped,
+        unstacked) Bars.""",
+    )
+
     multi_level = param.Boolean(
         default=True,
         doc="Whether the Bars should be grouped into a second categorical axis level.",
@@ -225,6 +238,8 @@ class BarPlot(BarsMixin, ElementPlot):
         # Get x, y, group, stack and color dimensions
         xdim = element.kdims[0]
         vdim = element.vdims[0]
+        baseline_dim = self._baseline_dimension(element)
+        self._warn_unused_baseline(element, baseline_dim)
         group_dim, stack_dim = None, None
         if element.ndims == 1:
             pass
@@ -250,18 +265,27 @@ class BarPlot(BarsMixin, ElementPlot):
 
         bars = []
         if element.ndims == 1:
-            values = []
+            values, bases = [], []
             for v in xvals:
                 sel = element[[v]]
-                values.append(sel.iloc[0, 1] if len(sel) else 0)
-            bars.append(
-                {
-                    "orientation": orientation,
-                    "showlegend": False,
-                    x: xvals,
-                    y: np.nan_to_num(values),
-                }
-            )
+                top = sel.iloc[0, 1] if len(sel) else 0
+                if baseline_dim is None:
+                    values.append(top)
+                    continue
+                # Floating bars: the trace base sets the lower end and the bar
+                # length is measured from it, so y holds top minus baseline.
+                base = sel.dimension_values(baseline_dim)[0] if len(sel) else 0
+                values.append(top - base)
+                bases.append(base)
+            bar = {
+                "orientation": orientation,
+                "showlegend": False,
+                x: xvals,
+                y: np.nan_to_num(values),
+            }
+            if baseline_dim is not None:
+                bar["base"] = np.nan_to_num(bases)
+            bars.append(bar)
         elif stack_dim or not self.multi_level:
             group_dim = stack_dim or group_dim
             order = list(svals if stack_dim else gvals)

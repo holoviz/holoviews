@@ -980,6 +980,19 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         doc="Defines the padding between groups.",
     )
 
+    baseline = param.ClassSelector(
+        default=None,
+        class_=(str, int),
+        allow_None=True,
+        doc="""
+        Value dimension to use as a per-bar baseline (the other end of
+        each bar), making the bars float between two value dimensions
+        instead of growing from a zero baseline. Accepts a dimension
+        name or index; vdims[0] supplies one end and this dimension the
+        other. Only supported for a single key dimension (ungrouped,
+        unstacked) Bars.""",
+    )
+
     multi_level = param.Boolean(
         default=True,
         doc="Whether the Bars should be grouped into a second categorical axis level.",
@@ -1084,6 +1097,9 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         # Get values dimensions, and style information
         (gdim, cdim, sdim), values = self._get_values(element, ranges)
 
+        baseline_dim = self._baseline_dimension(element)
+        self._warn_unused_baseline(element, baseline_dim)
+
         cats = None
         style_dim = None
         xslice = slice(None)
@@ -1166,20 +1182,30 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                     val = float(vals[0]) if len(vals) else np.nan
                     xval = xpos
 
+                    # Floating bars span from a per-bar baseline dimension up
+                    # to vdims[0] rather than growing from the stacked base.
+                    if baseline_dim is not None:
+                        bvals = el.dimension_values(baseline_dim)
+                        bottom_val = float(bvals[0]) if len(bvals) else 0.0
+                        height_val = val - bottom_val
+                    else:
+                        bottom_val = prev
+                        height_val = val
+
                     if label in bar_data:
                         group = bar_data[label]
                         group[x].append(xval)
-                        group[y].append(val)
-                        group[bottom].append(prev)
+                        group[y].append(height_val)
+                        group[bottom].append(bottom_val)
                     else:
                         bar_style = dict(style, **style_map.get(label, {}))
                         with abbreviated_exception():
                             bar_style = self._apply_transforms(el, ranges, bar_style)
                         bar_data[label] = {
                             x: [xval],
-                            y: [val],
+                            y: [height_val],
                             w: width,
-                            bottom: [prev],
+                            bottom: [bottom_val],
                             "label": label,
                         }
                         bar_data[label].update(bar_style)

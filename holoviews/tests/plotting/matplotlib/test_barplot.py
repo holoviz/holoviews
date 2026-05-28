@@ -3,6 +3,7 @@ from __future__ import annotations
 import matplotlib.dates as mdates
 import numpy as np
 import pandas as pd
+import pytest
 from matplotlib.text import Text
 
 import holoviews as hv
@@ -156,3 +157,76 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
         xticklabels = ["A", "1", "B", "A", "3", "B", "A", "10", "B"]
         for i, tick in enumerate(ax.get_xticklabels()):
             assert tick.get_text() == xticklabels[i]
+
+    def test_bars_baseline_floating(self):
+        df = pd.DataFrame({"x": ["a", "b", "c"], "high": [3.0, 5.0, 4.0], "low": [1.0, 2.0, 1.5]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
+        plot = mpl_renderer.get_plot(bars)
+        ax = plot.handles["axis"]
+        # Bottom of each bar is the baseline, height spans up to vdims[0].
+        np.testing.assert_allclose([p.get_y() for p in ax.patches], [1.0, 2.0, 1.5])
+        np.testing.assert_allclose([p.get_height() for p in ax.patches], [2.0, 3.0, 2.5])
+
+    def test_bars_baseline_floating_nan(self):
+        df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, np.nan]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
+        plot = mpl_renderer.get_plot(bars)
+        ax = plot.handles["axis"]
+        bottoms = [p.get_y() for p in ax.patches]
+        heights = [p.get_height() for p in ax.patches]
+        assert bottoms[0] == 1.0
+        assert heights[0] == 2.0
+        # A NaN baseline propagates rather than silently snapping to zero.
+        assert np.isnan(bottoms[1])
+        assert np.isnan(heights[1])
+
+    def test_bars_baseline_floating_inverted(self):
+        df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, 2.0]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low", invert_axes=True)
+        plot = mpl_renderer.get_plot(bars)
+        ax = plot.handles["axis"]
+        np.testing.assert_allclose([p.get_x() for p in ax.patches], [1.0, 2.0])
+        np.testing.assert_allclose([p.get_width() for p in ax.patches], [2.0, 3.0])
+
+    def test_bars_baseline_floating_ylim_excludes_zero(self):
+        df = pd.DataFrame({"x": ["a", "b"], "high": [30.0, 40.0], "low": [10.0, 20.0]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low", padding=0)
+        plot = mpl_renderer.get_plot(bars)
+        y0, y1 = plot.handles["axis"].get_ylim()
+        assert y0 == 10.0
+        assert y1 == 40.0
+
+    def test_bars_baseline_exceeds_errors(self):
+        # The baseline must be the lower end of every bar; an inverted range
+        # (low > high) is a usage error.
+        df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [6.0, 8.0]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
+        with pytest.raises(ValueError, match="exceed"):
+            mpl_renderer.get_plot(bars)
+
+    def test_bars_baseline_same_as_value_dim_warns(self):
+        df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, 2.0]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="high")
+        plot = mpl_renderer.get_plot(bars)
+        # Rejected (would give zero-height bars); falls back to a zero baseline.
+        np.testing.assert_allclose([p.get_y() for p in plot.handles["axis"].patches], [0.0, 0.0])
+        self.log_handler.assert_contains("WARNING", "Could not use baseline dimension 'high'")
+
+    def test_bars_baseline_ignored_when_grouped(self):
+        bars = (
+            hv.Bars(
+                ([3, 10, 1] * 10, ["A", "B"] * 15, np.random.randn(30)),
+                ["Group", "Category"],
+                "Value",
+            )
+            .aggregate(function=np.mean)
+            .opts(baseline="Value")
+        )
+        mpl_renderer.get_plot(bars)
+        self.log_handler.assert_contains("WARNING", "only supported for ungrouped")
+
+    def test_bars_baseline_unresolved_warns(self):
+        df = pd.DataFrame({"x": ["a", "b"], "high": [3, 5]})
+        bars = hv.Bars(df, "x", ["high"]).opts(baseline="nope")
+        mpl_renderer.get_plot(bars)
+        self.log_handler.assert_contains("WARNING", "Could not use baseline dimension 'nope'")

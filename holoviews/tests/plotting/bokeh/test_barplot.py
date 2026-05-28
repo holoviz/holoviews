@@ -117,6 +117,98 @@ class TestBarPlot(TestBokehPlot):
         assert_data_equal(source.data["top"], np.array([0, 1, 2]))
         assert_data_equal(source.data["bottom"], np.array([-1, 0, 0]))
 
+    def test_bars_baseline_floating_source_data(self):
+        df = pd.DataFrame({"x": ["a", "b", "c"], "high": [3, 5, 4], "low": [1, 2, 1.5]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
+        plot = bokeh_renderer.get_plot(bars)
+        source = plot.handles["source"]
+        glyph = plot.handles["glyph"]
+        assert_data_equal(source.data["high"], np.array([3, 5, 4]))
+        assert_data_equal(source.data["bottom"], np.array([1, 2, 1.5]))
+        # Both ends are column references (floating), not the scalar 0 baseline.
+        assert property_to_dict(glyph.top) == "high"
+        assert property_to_dict(glyph.bottom) == "bottom"
+
+    def test_bars_baseline_by_index(self):
+        # baseline accepts a dimension index; 'low' is dimension 2 (x, high, low)
+        df = pd.DataFrame({"x": ["a", "b"], "high": [3, 5], "low": [1, 2]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline=2)
+        plot = bokeh_renderer.get_plot(bars)
+        source = plot.handles["source"]
+        assert_data_equal(source.data["bottom"], np.array([1, 2]))
+
+    def test_bars_baseline_floating_nan(self):
+        df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, np.nan]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
+        plot = bokeh_renderer.get_plot(bars)
+        source = plot.handles["source"]
+        assert_data_equal(source.data["bottom"], np.array([1.0, np.nan]))
+
+    def test_bars_baseline_floating_datetime(self):
+        df = pd.DataFrame(
+            {
+                "x": pd.date_range("2024-01-01", periods=3),
+                "high": [3.0, 5.0, 4.0],
+                "low": [1.0, 2.0, 1.5],
+            }
+        )
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
+        plot = bokeh_renderer.get_plot(bars)
+        source = plot.handles["source"]
+        assert_data_equal(source.data["bottom"], np.array([1.0, 2.0, 1.5]))
+
+    def test_bars_baseline_floating_range_excludes_zero(self):
+        # Floating bars span [low, high]; 0 must not be forced into the range.
+        df = pd.DataFrame({"x": ["a", "b"], "high": [30.0, 40.0], "low": [10.0, 20.0]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low", padding=0)
+        plot = bokeh_renderer.get_plot(bars)
+        y_range = plot.handles["y_range"]
+        assert y_range.start == 10.0
+        assert y_range.end == 40.0
+
+    def test_bars_baseline_range_includes_zero_without_baseline(self):
+        # Without baseline the same data is anchored at 0 (regression guard).
+        df = pd.DataFrame({"x": ["a", "b"], "high": [30.0, 40.0], "low": [10.0, 20.0]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(padding=0)
+        plot = bokeh_renderer.get_plot(bars)
+        y_range = plot.handles["y_range"]
+        assert y_range.start == 0
+
+    @pytest.mark.parametrize("low", [[6.0, 8.0], [1.0, 8.0]], ids=["all_exceed", "one_exceeds"])
+    def test_bars_baseline_exceeds_errors(self, low):
+        # The baseline must be the lower end of every bar; an inverted range
+        # (low > high) is a usage error, even for a single bar.
+        df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": low})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
+        with pytest.raises(ValueError, match="exceed"):
+            bokeh_renderer.get_plot(bars)
+
+    @pytest.mark.parametrize(
+        ("vdims", "baseline"),
+        [(["high"], "nope"), (["high"], "high"), (["high", "low"], "high")],
+        ids=["unresolved", "single_vdim", "same_as_value_dim"],
+    )
+    def test_bars_baseline_unusable_warns(self, vdims, baseline):
+        # Unresolved or value-dimension baselines fall back to a zero baseline.
+        df = pd.DataFrame({"x": ["a", "b"], "high": [3, 5], "low": [1, 2]})
+        bars = hv.Bars(df, "x", vdims).opts(baseline=baseline)
+        with ParamLogStream() as log:
+            plot = bokeh_renderer.get_plot(bars)
+        log_msg = log.stream.read()
+        assert f"Could not use baseline dimension {baseline!r}" in log_msg
+        assert "bottom" not in plot.handles["source"].data
+
+    def test_bars_baseline_ignored_when_grouped(self):
+        # Floating bars are only supported for a single key dimension.
+        bars = hv.Bars(
+            [("a", 0, 1), ("a", 1, 2), ("b", 0, 3)], kdims=["x", "g"], vdims=["v"]
+        ).opts(baseline="v")
+        with ParamLogStream() as log:
+            plot = bokeh_renderer.get_plot(bars)
+        log_msg = log.stream.read()
+        assert "only supported for ungrouped" in log_msg
+        assert "bottom" not in plot.handles["source"].data
+
     def test_bars_logy(self):
         bars = hv.Bars([("A", 1), ("B", 2), ("C", 3)], kdims=["Index"], vdims=["Value"])
         plot = bokeh_renderer.get_plot(bars.opts(logy=True))
