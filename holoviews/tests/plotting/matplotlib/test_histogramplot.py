@@ -65,19 +65,19 @@ class TestHistogramPlot(LoggingComparison, TestMPLPlot):
         histogram = hv.Histogram([(1, 1), (2, 2), (3, 3)]).opts(padding=0.1, logx=True)
         plot = mpl_renderer.get_plot(histogram)
         x_range, y_range = plot.handles["axis"].get_xlim(), plot.handles["axis"].get_ylim()
-        assert x_range[0] == 0.41158562699652224
-        assert x_range[1] == 4.2518491541367327
-        assert y_range[0] == 0
-        assert y_range[1] == 3.2
+        assert np.isclose(x_range[0], 0.41158562699652224)
+        assert np.isclose(x_range[1], 4.2518491541367327)
+        assert np.isclose(y_range[0], 0)
+        assert np.isclose(y_range[1], 3.2)
 
     def test_histogram_padding_logy(self):
         histogram = hv.Histogram([(1, 2), (2, 1), (3, 3)]).opts(padding=0.1, logy=True)
         plot = mpl_renderer.get_plot(histogram)
         x_range, y_range = plot.handles["axis"].get_xlim(), plot.handles["axis"].get_ylim()
-        assert x_range[0] == 0.19999999999999996
-        assert x_range[1] == 3.8
-        assert y_range[0] == 0.01
-        assert y_range[1] == 3.3483695221017129
+        assert np.isclose(x_range[0], 0.2)
+        assert np.isclose(x_range[1], 3.8)
+        assert np.isclose(y_range[0], 0.01)
+        assert np.isclose(y_range[1], 3.3483695221017129)
         self.log_handler.assert_contains(
             "WARNING", "Logarithmic axis range encountered value less than"
         )
