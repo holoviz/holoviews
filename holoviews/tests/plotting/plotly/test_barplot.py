@@ -211,15 +211,16 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
         with pytest.raises(ValueError, match="exceed"):
             self._get_plot_state(bars)
 
-    def test_bars_baseline_same_as_value_dim_warns(self):
-        df = pd.DataFrame({"x": ["a", "b"], "high": [3, 5], "low": [1, 2]})
-        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="high")
+    def test_bars_baseline_low_first(self):
+        # Order-flexible: ['low', 'high'] + baseline='low' spans low -> high.
+        df = pd.DataFrame({"x": ["a", "b", "c"], "low": [1.0, 2.0, 1.5], "high": [3.0, 5.0, 4.0]})
+        bars = hv.Bars(df, "x", ["low", "high"]).opts(baseline="low")
         state = self._get_plot_state(bars)
-        assert "base" not in state["data"][0]
-        self.log_handler.assert_contains("WARNING", "Could not use baseline dimension 'high'")
+        assert_data_equal(state["data"][0]["base"], np.array([1.0, 2.0, 1.5]))
+        assert_data_equal(state["data"][0]["y"], np.array([2.0, 3.0, 2.5]))
 
     def test_bars_baseline_grouped(self):
-        # Each grouped bar floats from its baseline (Low) up to vdims[0] (High).
+        # Each grouped bar floats from its baseline (Low) up to the upper dim (High).
         bars = hv.Bars(
             [("Q1", "E", 10, 2), ("Q1", "W", 7, 1), ("Q2", "E", 12, 3), ("Q2", "W", 9, 4)],
             kdims=["Quarter", "Region"],

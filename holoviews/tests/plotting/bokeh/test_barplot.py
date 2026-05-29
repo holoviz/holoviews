@@ -181,8 +181,16 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(bars)
         source = plot.handles["source"]
         glyph = plot.handles["glyph"]
-        assert_data_equal(source.data["bottom"], bars.dimension_values("Start"))
-        assert_data_equal(source.data["End"], bars.dimension_values("End"))
+        # Normalize timedelta units before comparing (assert_data_equal uses
+        # almost-equal, which cannot promote timedelta64 to float).
+        np.testing.assert_array_equal(
+            np.asarray(source.data["bottom"]).astype("timedelta64[ns]"),
+            np.asarray(bars.dimension_values("Start")).astype("timedelta64[ns]"),
+        )
+        np.testing.assert_array_equal(
+            np.asarray(source.data["End"]).astype("timedelta64[ns]"),
+            np.asarray(bars.dimension_values("End")).astype("timedelta64[ns]"),
+        )
         assert property_to_dict(glyph.left) == "bottom"
         assert property_to_dict(glyph.right) == "End"
 
@@ -212,13 +220,27 @@ class TestBarPlot(TestBokehPlot):
         with pytest.raises(ValueError, match="exceed"):
             bokeh_renderer.get_plot(bars)
 
+    def test_bars_baseline_low_first(self):
+        # Order-flexible: baseline names the lower dim and the remaining value
+        # dimension is the upper end, so ['Low', 'High'] + baseline='Low' works.
+        df = pd.DataFrame({"x": ["a", "b", "c"], "low": [1, 2, 1.5], "high": [3, 5, 4]})
+        bars = hv.Bars(df, "x", ["low", "high"]).opts(baseline="low")
+        plot = bokeh_renderer.get_plot(bars)
+        source = plot.handles["source"]
+        glyph = plot.handles["glyph"]
+        assert_data_equal(source.data["high"], np.array([3, 5, 4]))
+        assert_data_equal(source.data["bottom"], np.array([1, 2, 1.5]))
+        assert property_to_dict(glyph.top) == "high"
+        assert property_to_dict(glyph.bottom) == "bottom"
+
     @pytest.mark.parametrize(
         ("vdims", "baseline"),
-        [(["high"], "nope"), (["high"], "high"), (["high", "low"], "high")],
-        ids=["unresolved", "single_vdim", "same_as_value_dim"],
+        [(["high"], "nope"), (["high"], "high")],
+        ids=["unresolved", "only_value_dim"],
     )
     def test_bars_baseline_unusable_warns(self, vdims, baseline):
-        # Unresolved or value-dimension baselines fall back to a zero baseline.
+        # An unresolved baseline, or one that leaves no other value dimension
+        # as the upper end, falls back to a zero baseline.
         df = pd.DataFrame({"x": ["a", "b"], "high": [3, 5], "low": [1, 2]})
         bars = hv.Bars(df, "x", vdims).opts(baseline=baseline)
         with ParamLogStream() as log:

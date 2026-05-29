@@ -987,11 +987,12 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         doc="""
         Value dimension to use as a per-bar baseline (the other end of
         each bar), making the bars float between two value dimensions
-        instead of growing from a zero baseline. Accepts a dimension
-        name or index; vdims[0] supplies one end and this dimension the
-        other, and must be the lower end of every bar. Supported for
-        ungrouped and grouped Bars; combining it with stacked raises an
-        error.""",
+        instead of growing from a zero baseline. Accepts a dimension name
+        or index naming the lower end of each bar; the first remaining value
+        dimension (once the baseline is removed) is the upper end, so
+        vdims=['Low', 'High'] with baseline='Low' spans Low to High. The
+        baseline must be the lower end of every bar. Supported for ungrouped
+        and grouped Bars; combining it with stacked raises an error.""",
     )
 
     multi_level = param.Boolean(
@@ -1098,8 +1099,11 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         # Get values dimensions, and style information
         (gdim, cdim, sdim), values = self._get_values(element, ranges)
 
-        baseline_dim = self._baseline_dimension(element)
+        top_dim, baseline_dim = self._baseline_dimensions(element)
         self._warn_unused_baseline(element, baseline_dim)
+        # For floating bars the upper end is top_dim (the value dimension left
+        # once the baseline is removed); otherwise the plotted value is vdims[0].
+        value_dim = top_dim if baseline_dim is not None else element.vdims[0]
 
         cats = None
         style_dim = None
@@ -1179,12 +1183,12 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                         label = sdim.pprint_value(stk)
                         sel_key[sdim.name] = [stk]
                     el = element.select(**sel_key)
-                    vals = el.dimension_values(element.vdims[0].name)
+                    vals = el.dimension_values(value_dim)
                     val = float(vals[0]) if len(vals) else np.nan
                     xval = xpos
 
                     # Floating bars span from a per-bar baseline dimension up
-                    # to vdims[0] rather than growing from the stacked base.
+                    # to the upper dimension rather than growing from the base.
                     if baseline_dim is not None:
                         bvals = el.dimension_values(baseline_dim)
                         bottom_val = float(bvals[0]) if len(bvals) else 0.0

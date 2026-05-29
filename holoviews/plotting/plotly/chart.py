@@ -192,11 +192,12 @@ class BarPlot(BarsMixin, ElementPlot):
         doc="""
         Value dimension to use as a per-bar baseline (the other end of
         each bar), making the bars float between two value dimensions
-        instead of growing from a zero baseline. Accepts a dimension
-        name or index; vdims[0] supplies one end and this dimension the
-        other, and must be the lower end of every bar. Supported for
-        ungrouped and grouped Bars; combining it with stacked raises an
-        error.""",
+        instead of growing from a zero baseline. Accepts a dimension name
+        or index naming the lower end of each bar; the first remaining value
+        dimension (once the baseline is removed) is the upper end, so
+        vdims=['Low', 'High'] with baseline='Low' spans Low to High. The
+        baseline must be the lower end of every bar. Supported for ungrouped
+        and grouped Bars; combining it with stacked raises an error.""",
     )
 
     multi_level = param.Boolean(
@@ -227,7 +228,9 @@ class BarPlot(BarsMixin, ElementPlot):
             xdims = element.kdims
         else:
             xdims = element.kdims[0]
-        return (xdims, element.vdims[0])
+        # Floating bars: label the value axis with the upper dimension.
+        top_dim, _ = self._baseline_dimensions(element)
+        return (xdims, top_dim if top_dim is not None else element.vdims[0])
 
     def get_extents(self, element, ranges, range_type="combined", **kwargs):
         x0, y0, x1, y1 = BarsMixin.get_extents(self, element, ranges, range_type)
@@ -239,7 +242,9 @@ class BarPlot(BarsMixin, ElementPlot):
         # Get x, y, group, stack and color dimensions
         xdim = element.kdims[0]
         vdim = element.vdims[0]
-        baseline_dim = self._baseline_dimension(element)
+        # Floating bars span baseline_dim (bottom) up to top_dim (the value
+        # dimension left once the baseline is removed).
+        top_dim, baseline_dim = self._baseline_dimensions(element)
         self._warn_unused_baseline(element, baseline_dim)
         group_dim, stack_dim = None, None
         if element.ndims == 1:
@@ -269,12 +274,12 @@ class BarPlot(BarsMixin, ElementPlot):
             values, bases = [], []
             for v in xvals:
                 sel = element[[v]]
-                top = sel.iloc[0, 1] if len(sel) else 0
                 if baseline_dim is None:
-                    values.append(top)
+                    values.append(sel.iloc[0, 1] if len(sel) else 0)
                     continue
                 # Floating bars: the trace base sets the lower end and the bar
                 # length is measured from it, so y holds top minus baseline.
+                top = sel.dimension_values(top_dim)[0] if len(sel) else 0
                 base = sel.dimension_values(baseline_dim)[0] if len(sel) else 0
                 values.append(top - base)
                 bases.append(base)
@@ -298,10 +303,10 @@ class BarPlot(BarsMixin, ElementPlot):
                 values, bases = [], []
                 for v in xvals:
                     sel = el[[v]]
-                    top = sel.iloc[0, 1] if len(sel) else 0
                     if baseline_dim is None:
-                        values.append(top)
+                        values.append(sel.iloc[0, 1] if len(sel) else 0)
                         continue
+                    top = sel.dimension_values(top_dim)[0] if len(sel) else 0
                     base = sel.dimension_values(baseline_dim)[0] if len(sel) else 0
                     values.append(top - base)
                     bases.append(base)
@@ -315,7 +320,8 @@ class BarPlot(BarsMixin, ElementPlot):
                     bar["base"] = np.nan_to_num(bases)
                 bars.append(bar)
         else:
-            values = element.dimension_values(vdim)
+            value_dim = top_dim if baseline_dim is not None else vdim
+            values = element.dimension_values(value_dim)
             bar = {
                 "orientation": orientation,
                 x: [
