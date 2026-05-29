@@ -158,41 +158,52 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
         for i, tick in enumerate(ax.get_xticklabels()):
             assert tick.get_text() == xticklabels[i]
 
-    def test_bars_baseline_floating(self):
-        df = pd.DataFrame({"x": ["a", "b", "c"], "high": [3.0, 5.0, 4.0], "low": [1.0, 2.0, 1.5]})
-        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
-        plot = mpl_renderer.get_plot(bars)
-        ax = plot.handles["axis"]
-        # Bottom of each bar is the baseline, height spans up to the upper dim.
-        np.testing.assert_allclose([p.get_y() for p in ax.patches], [1.0, 2.0, 1.5])
-        np.testing.assert_allclose([p.get_height() for p in ax.patches], [2.0, 3.0, 2.5])
-
-    def test_bars_baseline_floating_datetime(self):
-        df = pd.DataFrame(
-            {
-                "x": pd.date_range("2024-01-01", periods=3),
-                "high": [3.0, 5.0, 4.0],
-                "low": [1.0, 2.0, 1.5],
-            }
-        )
-        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
-        plot = mpl_renderer.get_plot(bars)
-        ax = plot.handles["axis"]
-        np.testing.assert_allclose([p.get_y() for p in ax.patches], [1.0, 2.0, 1.5])
-        np.testing.assert_allclose([p.get_height() for p in ax.patches], [2.0, 3.0, 2.5])
-
-    def test_bars_baseline_floating_nan(self):
-        df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, np.nan]})
-        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
-        plot = mpl_renderer.get_plot(bars)
-        ax = plot.handles["axis"]
-        bottoms = [p.get_y() for p in ax.patches]
-        heights = [p.get_height() for p in ax.patches]
-        assert bottoms[0] == 1.0
-        assert heights[0] == 2.0
-        # A NaN baseline propagates rather than silently snapping to zero.
-        assert np.isnan(bottoms[1])
-        assert np.isnan(heights[1])
+    @pytest.mark.parametrize(
+        ("df", "baseline", "bottoms", "heights"),
+        [
+            (
+                pd.DataFrame(
+                    {"x": ["a", "b", "c"], "high": [3.0, 5.0, 4.0], "low": [1.0, 2.0, 1.5]}
+                ),
+                "low",
+                [1.0, 2.0, 1.5],
+                [2.0, 3.0, 2.5],
+            ),
+            # baseline by dimension index; 'low' is dimension 2 (x, high, low)
+            (
+                pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, 2.0]}),
+                2,
+                [1.0, 2.0],
+                [2.0, 3.0],
+            ),
+            # A NaN baseline propagates rather than silently snapping to zero.
+            (
+                pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, np.nan]}),
+                "low",
+                [1.0, np.nan],
+                [2.0, np.nan],
+            ),
+            (
+                pd.DataFrame(
+                    {
+                        "x": pd.date_range("2024-01-01", periods=3),
+                        "high": [3.0, 5.0, 4.0],
+                        "low": [1.0, 2.0, 1.5],
+                    }
+                ),
+                "low",
+                [1.0, 2.0, 1.5],
+                [2.0, 3.0, 2.5],
+            ),
+        ],
+        ids=["by_name", "by_index", "nan", "datetime_x"],
+    )
+    def test_bars_baseline_floating(self, df, baseline, bottoms, heights):
+        # Bottom of each bar is the baseline; height spans up to the upper dim.
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline=baseline)
+        ax = mpl_renderer.get_plot(bars).handles["axis"]
+        np.testing.assert_allclose([p.get_y() for p in ax.patches], bottoms)
+        np.testing.assert_allclose([p.get_height() for p in ax.patches], heights)
 
     def test_bars_baseline_floating_inverted(self):
         df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, 2.0]})

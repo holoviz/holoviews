@@ -167,26 +167,45 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
         np.testing.assert_equal(set(plot["data"][0]["x"]), set(pets))
         np.testing.assert_equal(plot["data"][0]["y"], np.array([8, 7, 6, 7]))
 
-    def test_bars_baseline_floating(self):
-        df = pd.DataFrame({"x": ["a", "b", "c"], "high": [3.0, 5.0, 4.0], "low": [1.0, 2.0, 1.5]})
-        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
-        state = self._get_plot_state(bars)
+    @pytest.mark.parametrize(
+        ("df", "baseline", "base", "length"),
+        [
+            (
+                pd.DataFrame(
+                    {"x": ["a", "b", "c"], "high": [3.0, 5.0, 4.0], "low": [1.0, 2.0, 1.5]}
+                ),
+                "low",
+                [1.0, 2.0, 1.5],
+                [2.0, 3.0, 2.5],
+            ),
+            # baseline by dimension index; 'low' is dimension 2 (x, high, low)
+            (
+                pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, 2.0]}),
+                2,
+                [1.0, 2.0],
+                [2.0, 3.0],
+            ),
+            (
+                pd.DataFrame(
+                    {
+                        "x": pd.date_range("2024-01-01", periods=3),
+                        "high": [3.0, 5.0, 4.0],
+                        "low": [1.0, 2.0, 1.5],
+                    }
+                ),
+                "low",
+                [1.0, 2.0, 1.5],
+                [2.0, 3.0, 2.5],
+            ),
+        ],
+        ids=["by_name", "by_index", "datetime_x"],
+    )
+    def test_bars_baseline_floating(self, df, baseline, base, length):
         # The trace base holds the baseline; y holds the bar length (high - low).
-        assert_data_equal(state["data"][0]["base"], np.array([1.0, 2.0, 1.5]))
-        assert_data_equal(state["data"][0]["y"], np.array([2.0, 3.0, 2.5]))
-
-    def test_bars_baseline_floating_datetime(self):
-        df = pd.DataFrame(
-            {
-                "x": pd.date_range("2024-01-01", periods=3),
-                "high": [3.0, 5.0, 4.0],
-                "low": [1.0, 2.0, 1.5],
-            }
-        )
-        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline=baseline)
         state = self._get_plot_state(bars)
-        assert_data_equal(state["data"][0]["base"], np.array([1.0, 2.0, 1.5]))
-        assert_data_equal(state["data"][0]["y"], np.array([2.0, 3.0, 2.5]))
+        assert_data_equal(state["data"][0]["base"], np.array(base))
+        assert_data_equal(state["data"][0]["y"], np.array(length))
 
     def test_bars_baseline_floating_inverted(self):
         df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, 2.0]})

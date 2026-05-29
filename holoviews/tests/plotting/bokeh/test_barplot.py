@@ -117,45 +117,44 @@ class TestBarPlot(TestBokehPlot):
         assert_data_equal(source.data["top"], np.array([0, 1, 2]))
         assert_data_equal(source.data["bottom"], np.array([-1, 0, 0]))
 
-    def test_bars_baseline_floating_source_data(self):
-        df = pd.DataFrame({"x": ["a", "b", "c"], "high": [3, 5, 4], "low": [1, 2, 1.5]})
-        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
+    @pytest.mark.parametrize(
+        ("df", "baseline", "expected_bottom"),
+        [
+            (
+                pd.DataFrame({"x": ["a", "b", "c"], "high": [3, 5, 4], "low": [1, 2, 1.5]}),
+                "low",
+                [1, 2, 1.5],
+            ),
+            # baseline by dimension index; 'low' is dimension 2 (x, high, low)
+            (pd.DataFrame({"x": ["a", "b"], "high": [3, 5], "low": [1, 2]}), 2, [1, 2]),
+            (
+                pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, np.nan]}),
+                "low",
+                [1.0, np.nan],
+            ),
+            (
+                pd.DataFrame(
+                    {
+                        "x": pd.date_range("2024-01-01", periods=3),
+                        "high": [3.0, 5.0, 4.0],
+                        "low": [1.0, 2.0, 1.5],
+                    }
+                ),
+                "low",
+                [1.0, 2.0, 1.5],
+            ),
+        ],
+        ids=["by_name", "by_index", "nan", "datetime_x"],
+    )
+    def test_bars_baseline_floating_source_data(self, df, baseline, expected_bottom):
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline=baseline)
         plot = bokeh_renderer.get_plot(bars)
         source = plot.handles["source"]
         glyph = plot.handles["glyph"]
-        assert_data_equal(source.data["high"], np.array([3, 5, 4]))
-        assert_data_equal(source.data["bottom"], np.array([1, 2, 1.5]))
+        assert_data_equal(source.data["bottom"], np.array(expected_bottom))
         # Both ends are column references (floating), not the scalar 0 baseline.
         assert property_to_dict(glyph.top) == "high"
         assert property_to_dict(glyph.bottom) == "bottom"
-
-    def test_bars_baseline_by_index(self):
-        # baseline accepts a dimension index; 'low' is dimension 2 (x, high, low)
-        df = pd.DataFrame({"x": ["a", "b"], "high": [3, 5], "low": [1, 2]})
-        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline=2)
-        plot = bokeh_renderer.get_plot(bars)
-        source = plot.handles["source"]
-        assert_data_equal(source.data["bottom"], np.array([1, 2]))
-
-    def test_bars_baseline_floating_nan(self):
-        df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, np.nan]})
-        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
-        plot = bokeh_renderer.get_plot(bars)
-        source = plot.handles["source"]
-        assert_data_equal(source.data["bottom"], np.array([1.0, np.nan]))
-
-    def test_bars_baseline_floating_datetime(self):
-        df = pd.DataFrame(
-            {
-                "x": pd.date_range("2024-01-01", periods=3),
-                "high": [3.0, 5.0, 4.0],
-                "low": [1.0, 2.0, 1.5],
-            }
-        )
-        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
-        plot = bokeh_renderer.get_plot(bars)
-        source = plot.handles["source"]
-        assert_data_equal(source.data["bottom"], np.array([1.0, 2.0, 1.5]))
 
     def test_bars_baseline_floating_inverted(self):
         # invert_axes draws hbars: bottom/top map to the left/right ends.
