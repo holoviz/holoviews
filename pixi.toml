@@ -287,10 +287,10 @@ lint-install = 'pre-commit install'
 # =================== TYPE ====================
 # =============================================
 [feature.type.dependencies]
-ty = "==0.0.34"
+ty = "==0.0.40"
 pandas-stubs = "*"
 typing-extensions = "*"
-param = "==2.4.0rc2" # >=2.4.0
+param = ">=2.4.0"
 
 [feature.type-task.tasks]
 type-ty = 'ty check .'

@@ -253,10 +253,6 @@ class TestSelection2DExpr:
         ],
     )
     def test_points_selection_geom(self, unimport, module):
-        # Will import _posixshmem on Linux + Python 3.14 + spatialpandas
-        # which does not work with unimport
-        import multiprocessing.resource_tracker  # noqa: F401
-
         unimport("spatialpandas" if module == "shapely" else "shapely")
         points = hv.Points([3, 2, 1, 3, 4])
         geom = np.array([(-0.1, -0.1), (1.4, 0), (1.4, 2.2), (-0.1, 2.2)])
@@ -275,10 +271,6 @@ class TestSelection2DExpr:
         ],
     )
     def test_points_selection_geom_inverted(self, unimport, module):
-        # Will import _posixshmem on Linux + Python 3.14 + spatialpandas
-        # which does not work with unimport
-        import multiprocessing.resource_tracker  # noqa: F401
-
         unimport("spatialpandas" if module == "shapely" else "shapely")
         points = hv.Points([3, 2, 1, 3, 4]).opts(invert_axes=True)
         geom = np.array([(-0.1, -0.1), (1.4, 0), (1.4, 2.2), (-0.1, 2.2)])
