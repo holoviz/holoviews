@@ -7,6 +7,8 @@ import pytest
 import holoviews as hv
 from holoviews.core.options import Compositor
 
+from .._deps import scipy_skip
+
 
 class TestStatisticalElement:
     def test_distribution_array_constructor(self):
@@ -102,11 +104,9 @@ class TestStatisticalElement:
         assert dist.kdims == points.kdims
 
 
+@scipy_skip
 @pytest.mark.usefixtures("mpl_backend")
 class TestStatisticalCompositor:
-    def setup_method(self):
-        pytest.importorskip("scipy")
-
     def test_distribution_composite(self):
         dist = hv.Distribution(np.array([0, 1, 2]))
         area = Compositor.collapse_element(dist, backend="matplotlib")

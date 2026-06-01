@@ -727,7 +727,7 @@ class XArrayInterface(GridInterface):
         import xarray as xr
 
         if not vdim:
-            raise Exception("Cannot add key dimension to a dense representation.")
+            raise TypeError("Cannot add key dimension to a dense representation.")
         dim = dimension_name(dimension)
         coords = {d.name: cls.coords(dataset, d.name) for d in dataset.kdims}
         arr = xr.DataArray(

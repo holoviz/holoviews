@@ -2,7 +2,7 @@ import sys
 
 import numpy as np
 from bokeh.palettes import all_palettes
-from param import concrete_descendents
+from param import descendents
 
 from ...core import (
     AdjointLayout,
@@ -32,6 +32,7 @@ from ...element import (
     Dendrogram,
     Distribution,
     Div,
+    Donut,
     EdgePaths,
     Ellipse,
     ErrorBars,
@@ -94,6 +95,7 @@ from .chart import (
     AreaPlot,
     BarPlot,
     CurvePlot,
+    DonutPlot,
     ErrorPlot,
     HistogramPlot,
     PointPlot,
@@ -137,6 +139,7 @@ associations = {
     Curve: CurvePlot,
     Bars: BarPlot,
     Waterfall: WaterfallPlot,
+    Donut: DonutPlot,
     Points: PointPlot,
     Scatter: PointPlot,
     ErrorBars: ErrorPlot,
@@ -204,7 +207,7 @@ associations = {
 Store.register(associations, "bokeh")
 
 if config.no_padding:
-    for plot in concrete_descendents(ElementPlot).values():
+    for plot in descendents(ElementPlot):
         plot.padding = 0
 
 # Raster types, Path types and VectorField should have frames
@@ -266,6 +269,18 @@ options.ErrorBars = Options("style", color="black")
 options.Spread = Options("style", color=Cycle(), alpha=0.6, line_color="black", muted_alpha=0.2)
 options.Bars = Options("style", color=Cycle(), line_color="black", bar_width=0.8, muted_alpha=0.2)
 options.Waterfall = Options("style", line_color="black", bar_width=0.8, muted_alpha=0.2)
+options.Donut = Options(
+    "plot",
+    xaxis=None,
+    yaxis=None,
+    tools=["hover"],
+    show_frame=False,
+    legend_position="center",
+    inner_radius=0.8,
+)
+options.Donut = Options(
+    "style", cmap="Category20", wedge_line_color="black", label_text_font_size="9pt"
+)
 options.Spikes = Options("style", color="black", cmap=dflt_cmap, muted_alpha=0.2)
 options.Area = Options("style", color=Cycle(), alpha=1, line_color="black", muted_alpha=0.2)
 options.VectorField = Options("style", color="black", muted_alpha=0.2)

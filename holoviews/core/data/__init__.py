@@ -593,7 +593,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             dimension = Dimension(dimension)
 
         if dimension.name in self.kdims:
-            raise Exception(f"{dimension.name} dimension already defined")
+            raise ValueError(f"{dimension.name} dimension already defined")
 
         if vdim:
             dims = self.vdims[:]
@@ -856,7 +856,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         if samples is None:
             samples = []
         if kwargs and samples != []:
-            raise Exception("Supply explicit list of samples or kwargs, not both.")
+            raise ValueError("Supply explicit list of samples or kwargs, not both.")
         elif kwargs:
             sample = [slice(None) for _ in range(self.ndims)]
             for dim, val in kwargs.items():
@@ -967,7 +967,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         if dimensions is None:
             dimensions = []
         if any(dim in self.vdims for dim in dimensions):
-            raise Exception("Reduce cannot be applied to value dimensions")
+            raise ValueError("Reduce cannot be applied to value dimensions")
         function, dims = self._reduce_map(dimensions, function, reductions)
         dims = [d for d in self.kdims if d not in dims]
         return self.aggregate(dims, function, spreadfn)

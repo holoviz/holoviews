@@ -7,6 +7,7 @@ also enables slicing over multiple dimension ranges.
 from __future__ import annotations
 
 import typing as t
+from contextlib import contextmanager
 from itertools import cycle
 from operator import itemgetter
 
@@ -36,43 +37,35 @@ def _has_split_overlays(obj) -> TypeIs[HoloMap]:
     return hasattr(obj, "_split_overlays")
 
 
-class item_check:
+@contextmanager
+def item_check(enabled):
     """Context manager to allow creating NdMapping types without
     performing the usual item_checks, providing significant
     speedups when there are a lot of items. Should only be
     used when both keys and values are guaranteed to be the
     right type, as is the case for many internal operations.
-
     """
-
-    def __init__(self, enabled):
-        self.enabled = enabled
-
-    def __enter__(self):
-        self._enabled = MultiDimensionalMapping._check_items
-        MultiDimensionalMapping._check_items = self.enabled
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        MultiDimensionalMapping._check_items = self._enabled
+    prev = MultiDimensionalMapping._check_items
+    try:
+        MultiDimensionalMapping._check_items = enabled
+        yield
+    finally:
+        MultiDimensionalMapping._check_items = prev
 
 
-class sorted_context:
+@contextmanager
+def sorted_context(enabled):
     """Context manager to temporarily disable sorting on NdMapping
     types. Retains the current sort order, which can be useful as
     an optimization on NdMapping instances where sort=True but the
     items are already known to have been sorted.
-
     """
-
-    def __init__(self, enabled):
-        self.enabled = enabled
-
-    def __enter__(self):
-        self._enabled = MultiDimensionalMapping.sort
-        MultiDimensionalMapping.sort = self.enabled
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        MultiDimensionalMapping.sort = self._enabled  # ty:ignore[invalid-assignment]
+    prev = MultiDimensionalMapping.sort
+    try:
+        MultiDimensionalMapping.sort = enabled
+        yield
+    finally:
+        MultiDimensionalMapping.sort = prev  # ty:ignore[invalid-assignment]
 
 
 class MultiDimensionalMapping(Dimensioned):
@@ -357,10 +350,10 @@ class MultiDimensionalMapping(Dimensioned):
         dimension = asdim(dimension)
 
         if dimension in self.dimensions():
-            raise Exception(f"{dimension.name} dimension already defined")
+            raise ValueError(f"{dimension.name} dimension already defined")
 
         if vdim and _is_deep_indexable(self):
-            raise Exception("Cannot add value dimension to object that is deep indexable")
+            raise TypeError("Cannot add value dimension to object that is deep indexable")
 
         if vdim:
             dims = self.vdims[:]
@@ -460,7 +453,9 @@ class MultiDimensionalMapping(Dimensioned):
         dimensions = [self.get_dimension(d) for d in kdims if d not in reduced_dims]
 
         if len(set(keys)) != len(keys) and not force:
-            raise Exception("Given dimension labels not sufficientto address all values uniquely")
+            raise ValueError(
+                "Given dimension labels not sufficient to address all values uniquely"
+            )
 
         if keys:
             cdims = {self.get_dimension(d): self.dimension_values(d)[0] for d in reduced_dims}

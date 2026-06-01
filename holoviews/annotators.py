@@ -4,7 +4,7 @@ import typing as t
 from inspect import getmro
 
 import param
-from panel.layout import Row, Tabs
+from panel.layout import ListPanel, Row, Tabs
 from panel.pane import PaneBase
 from panel.util import param_name
 
@@ -278,8 +278,8 @@ class Annotator(PaneBase):
     name: str
 
     @classmethod
-    def applies(cls, obj):
-        return isinstance(obj, cls.param.object.class_)
+    def applies(cls, object):
+        return isinstance(object, cls.param.object.class_)
 
     @property
     def _element_type(self):
@@ -303,14 +303,14 @@ class Annotator(PaneBase):
         self._update_table()
         self._update_links()
         self.param.watch(self._update, self._triggers)
-        self.layout[:] = [self.plot, self.editor]  # ty:ignore[invalid-assignment], fix in panel
+        self.layout[:] = [self.plot, self.editor]
 
     @param.depends("annotations", "object", "default_opts")
     def _get_plot(self):
         return self._process_element(self.object)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        return self.layout._get_model(doc, root, parent, comm)
+        return t.cast("ListPanel", self.layout)._get_model(doc, root, parent, comm)
 
     @preprocess
     def _update(self, event=None):
@@ -345,7 +345,7 @@ class Annotator(PaneBase):
         self._table_row[:] = [self._table]
 
     def select(self, selector=None):
-        return self.layout.select(selector)
+        return t.cast("ListPanel", self.layout).select(selector)
 
     @classmethod
     def compose(cls, *annotators):

@@ -16,7 +16,6 @@ from matplotlib.markers import MarkerStyle
 from matplotlib.patches import Path, PathPatch
 from matplotlib.rcsetup import validate_fontsize, validate_fonttype, validate_hatch
 from matplotlib.transforms import Affine2D, Bbox, TransformedBbox
-from packaging.version import Version
 
 try:  # starting Matplotlib 3.4.0
     from matplotlib._enums import (
@@ -37,14 +36,16 @@ except ImportError:
     nc_axis_available = False
 
 from ...core.util import arraylike_types, cftime_types, is_number
+from ...core.util.dependencies import _no_import_version
 from ...element import RGB, Polygons, Raster
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 
-MPL_VERSION = Version(mpl.__version__).release
+MPL_VERSION = _no_import_version("matplotlib")
 MPL_GE_3_7_0 = MPL_VERSION >= (3, 7, 0)
 MPL_GE_3_9_0 = MPL_VERSION >= (3, 9, 0)
 MPL_GE_3_10_0 = MPL_VERSION >= (3, 10, 0)
 MPL_GE_3_10_1 = MPL_VERSION >= (3, 10, 1)
+MPL_GE_3_11_0 = MPL_VERSION >= (3, 11, 0)
 
 
 def is_color(color):

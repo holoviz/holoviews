@@ -146,7 +146,7 @@ class Raster(Element2D):
             # Indices inverted for indexing
             sample_ind = self.get_dimension_index(dimension)
             if sample_ind is None:
-                raise Exception(f"Dimension {dimension} not found during sampling")
+                raise KeyError(f"Dimension {dimension} not found during sampling")
             other_dimension = [d for i, d in enumerate(self.kdims) if i != sample_ind]
 
             # Generate sample slice

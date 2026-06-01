@@ -37,7 +37,7 @@ from ..plot import (
     GenericLayoutPlot,
 )
 from ..util import attach_streams, collate, displayable
-from .util import compute_ratios, fix_aspect, get_old_rcparams
+from .util import MPL_GE_3_11_0, compute_ratios, fix_aspect, get_old_rcparams
 
 
 @contextmanager
@@ -450,7 +450,7 @@ class GridPlot(CompositePlot):
         self, layout, axis=None, create_axes=True, ranges=None, layout_num=1, keys=None, **params
     ):
         if not isinstance(layout, GridSpace):
-            raise Exception("GridPlot only accepts GridSpace.")
+            raise TypeError("GridPlot only accepts GridSpace.")
         super().__init__(layout, layout_num=layout_num, ranges=ranges, keys=keys, **params)
         # Compute ranges layoutwise
         grid_kwargs = {}
@@ -1048,6 +1048,10 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         # Explicitly clear Matplotlib figures to avoid
         # "Auto-removal of overlapping axes" warning.
         self.handles["fig"].clf()
+        if MPL_GE_3_11_0:
+            # https://github.com/matplotlib/matplotlib/pull/27183
+            l, b, r, t = self.fig_bounds
+            self.handles["fig"].subplots_adjust(left=l, bottom=b, right=r, top=t)
 
         # Situate all the Layouts in the grid and compute the gridspec
         # indices for all the axes required by each LayoutPlot.

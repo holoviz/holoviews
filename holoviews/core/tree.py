@@ -101,7 +101,7 @@ class AttrTree:
 
         """
         if not isinstance(other, AttrTree):
-            raise Exception("Can only update with another AttrTree type.")
+            raise TypeError("Can only update with another AttrTree type.")
         fixed_status = (self.fixed, other.fixed)
         (self.fixed, other.fixed) = (False, False)
         for identifier, element in other.items():
@@ -120,7 +120,7 @@ class AttrTree:
 
         disallowed = [p for p in path if not type(self)._sanitizer.allowable(p)]
         if any(disallowed):
-            raise Exception(
+            raise ValueError(
                 "Attribute strings in path elements cannot be correctly escaped : {}".format(
                     ",".join(repr(el) for el in disallowed)
                 )
@@ -180,7 +180,7 @@ class AttrTree:
         elif isinstance(key, tuple) and self.parent is None:
             self.set_path(key, val)
         else:
-            raise Exception("Multi-level item setting only allowed from root node.")
+            raise ValueError("Multi-level item setting only allowed from root node.")
 
     def __getitem__(self, key):
         """For a given non-root node, access a child element by identifier.

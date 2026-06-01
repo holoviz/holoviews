@@ -33,7 +33,15 @@ ALIASES = {"key_dimensions": "kdims", "value_dimensions": "vdims", "constant_dim
 
 title_format = "{name}: {val}{unit}"
 
-redim = Redim  # pickle compatibility - remove in 2.0
+
+class redim(Redim):
+    def __init__(self, *args, **kwargs):
+        from ..util.warnings import deprecated
+
+        # exists because of pickle compatibility
+        deprecated("1.24.0", "redim", "Redim")
+        super().__init__(*args, **kwargs)
+
 
 if t.TYPE_CHECKING:
     from typing_extensions import Self
@@ -1025,7 +1033,7 @@ class Dimensioned(LabelledData):
             if isinstance(dim, Dimension):
                 dim = dim.name
             if dim not in self.kdims:
-                raise Exception(f"Supplied dimensions {dim} not found.")
+                raise KeyError(f"Supplied dimensions {dim} not found.")
             valid_dimensions.append(dim)
         return valid_dimensions
 
@@ -1170,7 +1178,7 @@ class Dimensioned(LabelledData):
             dimensions = self.kdims + self.vdims
             return next(i for i, d in enumerate(dimensions) if d == dim)
         except StopIteration:
-            raise Exception(f"Dimension {dim} not found in {self.__class__.__name__}.") from None
+            raise KeyError(f"Dimension {dim} not found in {self.__class__.__name__}.") from None
 
     def get_dimension_type(self, dim):
         """Get the type of the requested dimension.
@@ -1332,7 +1340,7 @@ class Dimensioned(LabelledData):
         if val:
             return np.array([val])
         else:
-            raise Exception(f"Dimension {dimension} not found in {self.__class__.__name__}.")
+            raise KeyError(f"Dimension {dimension} not found in {self.__class__.__name__}.")
 
     def range(self, dimension, data_range=True, dimension_range=True):
         """Return the lower and upper bounds of values along dimension.

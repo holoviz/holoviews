@@ -289,7 +289,11 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                 stream._subscribers = [
                     (p, subscriber)
                     for p, subscriber in stream._subscribers
-                    if not is_param_method(subscriber) or get_method_owner(subscriber) not in plots
+                    if subscriber
+                    and (
+                        not is_param_method(subscriber)
+                        or get_method_owner(subscriber) not in plots
+                    )
                 ]
 
     def _fontsize(self, key, label="fontsize", common=True):
@@ -576,7 +580,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
 
     def __init__(self, layout, ranges=None, layout_num=1, keys=None, **params):
         if not isinstance(layout, GridSpace):
-            raise Exception("GridPlot only accepts GridSpace.")
+            raise TypeError("GridPlot only accepts GridSpace.")
         super().__init__(layout=layout, layout_num=layout_num, ranges=ranges, keys=keys, **params)
         self.cols, self.rows = layout.shape
         self.subplots, self.layout = self._create_subplots(layout, ranges)

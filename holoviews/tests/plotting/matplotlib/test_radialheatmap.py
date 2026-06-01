@@ -7,7 +7,7 @@ import numpy as np
 import holoviews as hv
 from holoviews.testing import assert_data_equal
 
-from ...utils import mpl, mpl_skip
+from ..._deps import mpl, mpl_skip
 from .test_plot import TestMPLPlot, mpl_renderer
 
 if mpl:

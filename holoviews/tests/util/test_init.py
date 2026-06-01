@@ -4,7 +4,7 @@ import sys
 from subprocess import check_output
 from textwrap import dedent
 
-import pytest
+from .._deps import ipython_skip, mpl_skip
 
 
 def test_no_blocklist_imports():
@@ -23,9 +23,8 @@ def test_no_blocklist_imports():
     assert output == b""
 
 
+@ipython_skip
 def test_no_blocklist_imports_IPython():
-    pytest.importorskip("IPython")
-
     check = """\
     import sys
     import holoviews as hv
@@ -41,10 +40,9 @@ def test_no_blocklist_imports_IPython():
     assert output == b""
 
 
+@mpl_skip
 def test_mpl_cycle_colors_are_hex_strings():
     # Test for https://github.com/holoviz/holoviews/pull/6798
-    pytest.importorskip("matplotlib")
-
     check = """\
     import holoviews.plotting.bokeh
     import holoviews.plotting.mpl

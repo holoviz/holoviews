@@ -237,7 +237,7 @@ class OutputSettings(KeywordSettings):
     backend_list = []  # List of possible backends
 
     def missing_dependency_exception(value, keyword, allowed):
-        raise Exception(f"Format {value!r} does not appear to be supported.")
+        raise ValueError(f"Format {value!r} does not appear to be supported.")
 
     def missing_backend_exception(value, keyword, allowed):
         if value in OutputSettings.backend_list:

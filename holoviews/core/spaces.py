@@ -266,7 +266,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
             elif other_in_self:  # self is superset
                 super_keys = self._dimension_keys()
             else:  # neither is superset
-                raise Exception("One set of keys needs to be a strict subset of the other.")
+                raise ValueError("One set of keys needs to be a strict subset of the other.")
 
             if isinstance(self, DynamicMap) or isinstance(other, DynamicMap):
                 return self._dynamic_mul(dimensions, other, super_keys)
@@ -447,7 +447,7 @@ class HoloMap(Layoutable, UniformNdMapping, Overlayable):
             map_range = None
         else:
             if dimension is None:
-                raise Exception("Please supply the dimension to compute a histogram for.")
+                raise ValueError("Please supply the dimension to compute a histogram for.")
             map_range = self.range(kwargs["dimension"])
 
         bin_range = map_range if bin_range is None else bin_range
@@ -929,15 +929,15 @@ class DynamicMap(HoloMap):
         if self.callback.noargs:
             prefix = "DynamicMaps using generators (or callables without arguments)"
             if self.kdims:
-                raise Exception(prefix + " must be declared without key dimensions")
+                raise ValueError(prefix + " must be declared without key dimensions")
             if len(self.streams) > 1:
-                raise Exception(
+                raise ValueError(
                     prefix
                     + " must have either streams=[] or a single, "
                     + "stream instance without any stream parameters"
                 )
             if self._stream_parameters() != []:
-                raise Exception(prefix + " cannot accept any stream parameters")
+                raise ValueError(prefix + " cannot accept any stream parameters")
 
         if self.positional_stream_args:
             self._posarg_keys = None
@@ -1265,9 +1265,9 @@ class DynamicMap(HoloMap):
         """
         slices = [el for el in tuple_key if isinstance(el, slice)]
         if any(el.step for el in slices):
-            raise Exception("DynamicMap slices cannot have a step argument")
+            raise ValueError("DynamicMap slices cannot have a step argument")
         elif len(slices) not in [0, len(tuple_key)]:
-            raise Exception("Slices must be used exclusively or not at all")
+            raise ValueError("Slices must be used exclusively or not at all")
         elif not slices:
             return None
 
@@ -1275,9 +1275,9 @@ class DynamicMap(HoloMap):
         for i, slc in enumerate(tuple_key):
             (start, stop) = slc.start, slc.stop
             if start is not None and start < sliced.kdims[i].range[0]:
-                raise Exception("Requested slice below defined dimension range.")
+                raise ValueError("Requested slice below defined dimension range.")
             if stop is not None and stop > sliced.kdims[i].range[1]:
-                raise Exception("Requested slice above defined dimension range.")
+                raise ValueError("Requested slice above defined dimension range.")
             sliced.kdims[i].soft_range = (start, stop)
         if data_slice:
             if not isinstance(sliced, DynamicMap):
@@ -1720,7 +1720,7 @@ class DynamicMap(HoloMap):
         if (not outer_dynamic and any(not d.values for d in outer_kdims)) or (
             not inner_dynamic and any(not d.values for d in inner_kdims)
         ):
-            raise Exception("Dimensions must specify sampling via values to apply a groupby")
+            raise ValueError("Dimensions must specify sampling via values to apply a groupby")
 
         if outer_dynamic:
 
@@ -1916,7 +1916,7 @@ class DynamicMap(HoloMap):
         if self.callback.noargs:
             return self[()]
         else:
-            raise Exception(
+            raise TypeError(
                 "The next method can only be used for DynamicMaps using"
                 "generators (or callables without arguments)"
             )
@@ -1937,7 +1937,7 @@ class GridSpace(Layoutable, UniformNdMapping):
     def __init__(self, initial_items=None, kdims=None, **params):
         super().__init__(initial_items, kdims=kdims, **params)
         if self.ndims > 2:
-            raise Exception("Grids can have no more than two dimensions.")
+            raise ValueError("Grids can have no more than two dimensions.")
 
     def __lshift__(self, other):
         """Adjoins another object to the GridSpace"""

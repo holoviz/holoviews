@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-import importlib
 import logging
 import os
 import sys
-from typing import TYPE_CHECKING
 
 import param
 import pytest
 
-from holoviews.core.util.dependencies import _is_installed
 from holoviews.util.warnings import deprecated
 
 cwd = os.path.abspath(os.path.split(__file__)[0])
@@ -178,62 +175,3 @@ class LoggingComparison:
             for level, msgs in messages.items():
                 for msg in msgs:
                     log.log(LEVELS[level], msg)
-
-
-def optional_dependencies(*names: tuple[str]):
-    """Check if a dependency is installed and return the module and a fixture that skips test."""
-    if all(map(_is_installed, names)):
-        return importlib.import_module(names[0])
-
-
-if TYPE_CHECKING:
-    import dask
-    import dask.array as da
-    import dask.dataframe as dd
-    import datashader as ds
-    import ibis
-    import matplotlib as mpl
-    import networkx as nx
-    import notebook
-    import plotly
-    import polars as pl
-    import scipy
-    import shapely
-    import spatialpandas as spd
-    import tsdownsample
-    import xarray as xr
-else:
-    dask = optional_dependencies("dask")
-    da = optional_dependencies("dask.array")
-    dd = optional_dependencies("dask.dataframe", "pyarrow")
-    ds = optional_dependencies("datashader")
-    ibis = optional_dependencies("ibis")
-    mpl = optional_dependencies("matplotlib")
-    nx = optional_dependencies("networkx")
-    notebook = optional_dependencies("notebook")
-    plotly = optional_dependencies("plotly")
-    pl = optional_dependencies("polars")
-    scipy = optional_dependencies("scipy")
-    shapely = optional_dependencies("shapely")
-    spd = optional_dependencies("spatialpandas")
-    tsdownsample = optional_dependencies("tsdownsample")
-    xr = optional_dependencies("xarray")
-
-
-dask_skip = pytest.mark.skipif(dask is None, reason="dask is not installed")
-da_skip = pytest.mark.skipif(da is None, reason="dask.array is not installed")
-dd_skip = pytest.mark.skipif(dd is None, reason="dask.dataframe is not installed")
-ds_skip = pytest.mark.skipif(ds is None, reason="datashader is not installed")
-ibis_skip = pytest.mark.skipif(ibis is None, reason="ibis is not installed")
-mpl_skip = pytest.mark.skipif(mpl is None, reason="matplotlib is not installed")
-nx_skip = pytest.mark.skipif(nx is None, reason="networkx is not installed")
-notebook_skip = pytest.mark.skipif(notebook is None, reason="notebook is not installed")
-plotly_skip = pytest.mark.skipif(plotly is None, reason="plotly is not installed")
-pl_skip = pytest.mark.skipif(pl is None, reason="polars is not installed")
-scipy_skip = pytest.mark.skipif(scipy is None, reason="scipy is not installed")
-shapely_skip = pytest.mark.skipif(shapely is None, reason="shapely is not installed")
-spd_skip = pytest.mark.skipif(spd is None, reason="spatialpandas is not installed")
-tsdownsample_skip = pytest.mark.skipif(
-    tsdownsample is None, reason="tsdownsample is not installed"
-)
-xr_skip = pytest.mark.skipif(xr is None, reason="xarray is not installed")

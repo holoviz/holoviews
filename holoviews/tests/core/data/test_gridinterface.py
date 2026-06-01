@@ -12,7 +12,7 @@ from holoviews.core.data.interface import DataError
 from holoviews.core.util import date_range
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from ...utils import da, da_skip
+from ..._deps import da, da_skip
 from .base import (
     DatatypeContext,
     GriddedInterfaceTests,

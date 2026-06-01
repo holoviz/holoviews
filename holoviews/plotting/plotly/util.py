@@ -5,13 +5,13 @@ import copy
 import re
 
 import numpy as np
-from packaging.version import Version
-from plotly import __version__, colors
+from plotly import colors
 
 from ...core.util import isfinite, max_range
+from ...core.util.dependencies import _no_import_version
 from ..util import color_intervals, process_cmap
 
-PLOTLY_VERSION = Version(__version__).release
+PLOTLY_VERSION = _no_import_version("plotly")
 PLOTLY_GE_6_0_0 = PLOTLY_VERSION >= (6, 0, 0)
 PLOTLY_SCATTERMAP = "scattermap" if PLOTLY_GE_6_0_0 else "scattermapbox"
 PLOTLY_MAP = "map" if PLOTLY_GE_6_0_0 else "mapbox"

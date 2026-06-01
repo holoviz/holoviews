@@ -5,7 +5,7 @@ import numpy as np
 import holoviews as hv
 from holoviews.plotting.plotly import RGBPlot
 
-from ...utils import ds_skip
+from ..._deps import ds_skip
 from .test_plot import TestPlotlyPlot, plotly_renderer
 
 

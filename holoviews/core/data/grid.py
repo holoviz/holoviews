@@ -765,7 +765,7 @@ class GridInterface(DictInterface):
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
         if not vdim:
-            raise Exception("Cannot add key dimension to a dense representation.")
+            raise TypeError("Cannot add key dimension to a dense representation.")
         dim = dimension_name(dimension)
         return dict(dataset.data, **{dim: values})
 
@@ -776,7 +776,7 @@ class GridInterface(DictInterface):
         if not by or by in [dataset.kdims, dataset.dimensions()]:
             return dataset.data
         else:
-            raise Exception(
+            raise TypeError(
                 "Compressed format cannot be sorted, either instantiate "
                 "in the desired order or use the expanded format."
             )
