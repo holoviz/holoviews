@@ -333,11 +333,8 @@ class GridInterface(DictInterface):
             for name in data_coords
             if isinstance(cls.coords(dataset, name), get_array_types())
         ]
-        dropped = [
-            dims.index(d)
-            for d in dims
-            if not any(d == dimension_name(dim) for dim in dataset.kdims + virtual_coords)
-        ]
+        dim_names = [dimension_name(dim) for dim in dataset.kdims + virtual_coords]
+        dropped = [dims.index(d) for d in dims if not any(d == dim for dim in dim_names)]
         if dropped:
             if len(dropped) == data.ndim:
                 data = data.flatten()

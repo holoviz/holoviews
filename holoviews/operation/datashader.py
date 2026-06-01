@@ -6,7 +6,6 @@ from collections.abc import Callable, Iterable
 from functools import partial
 from typing import TYPE_CHECKING
 
-import datashader as ds
 import datashader.reductions as rd
 import datashader.transfer_functions as tf
 import narwhals.stable.v2 as nw
@@ -17,6 +16,8 @@ import xarray as xr
 from datashader.colors import color_lookup
 from packaging.version import Version
 from param.parameterized import bothmethod
+
+import datashader as ds
 
 from ..core import (
     CompositeOverlay,
@@ -301,7 +302,7 @@ class AggregationOperation(ResampleOperation2D):
         elif agg_name == "Summary":
             vdims = list(agg_fn.keys)
         elif column:
-            dims = [d for d in element.dimensions("ranges") if d == column]
+            dims = [d for d in element.dimensions("ranges") if column in (d.name, d.label)]
             if not dims:
                 raise ValueError(
                     f"Aggregation column '{column}' not found on '{element}' element. "
@@ -484,26 +485,20 @@ class aggregate(LineAggregationOperation):
         elif isinstance(obj, CompositeOverlay):
             element = None
             is_ndoverlay = isinstance(obj, NdOverlay)
-            ydims = []
             for key, el in obj.data.items():
                 x, y, element, glyph = cls.get_agg_data(el)
                 dims = (x, y)
                 df = PandasInterface.as_dframe(element)
                 if is_ndoverlay:
                     df = df.assign(**dict(zip(obj.dimensions("key", True), key, strict=None)))
-                    y_dim = el.get_dimension(y)
-                    ydims.append(y_dim)
                 paths.append(df)
 
-            # If data is in wide format we align the column names on the Dimension.label
-            is_wide = len({yd.label for yd in ydims}) == 1 and len(
-                {yd.name for yd in ydims}
-            ) == len(obj)
-            if is_ndoverlay and is_wide:
+            is_wide, ydims = cls._overlay_wide_mapping(obj, obj.values())
+            if is_wide:
                 ydim = ydims[0]
                 paths = [
                     df.rename(columns={yd.name: yd.label})
-                    for yd, path in zip(ydims, paths, strict=True)
+                    for yd, df in zip(ydims, paths, strict=True)
                 ]
                 dims = (dims[0], ydim.clone(ydim.label, label=ydim.label))
 
