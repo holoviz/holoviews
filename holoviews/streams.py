@@ -245,14 +245,18 @@ class Stream(param.Parameterized):
         )
 
         with triggering_streams(streams):
+            errors = []
             for subscriber in subscribers:
                 try:
                     subscriber(**dict(union))
-                except Exception:
+                except Exception as e:
                     logger.exception(
                         "Stream subscriber %r exception raised; continuing remaining subscribers...",
                         getattr(subscriber, "__name__", type(subscriber).__name__),
                     )
+                    errors.append(e)
+            if errors:
+                raise errors[0]
 
         for stream in streams:
             with util.disable_constant(stream):
