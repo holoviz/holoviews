@@ -1242,6 +1242,8 @@ class DynamicMap(HoloMap):
                 val = cache[key]
             else:
                 val = self._execute_callback(*key)
+                if not self.unbounded:
+                    self._cache(key, val)
             if data_slice:
                 val = self._dataslice(val, data_slice)
             data.append((key, val))
