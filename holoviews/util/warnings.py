@@ -3,10 +3,10 @@ from __future__ import annotations
 import inspect
 import os
 import sys
+import typing as t
 import warnings
 
 import param
-from packaging.version import Version
 
 __all__ = (
     "HoloviewsDeprecationWarning",
@@ -43,7 +43,7 @@ def find_stack_level():
     )
 
     if ipc := sys.modules.get("IPython.core"):
-        ignore_paths = (*ignore_paths, os.path.dirname(ipc.__file__))
+        ignore_paths = (*ignore_paths, os.path.dirname(t.cast("str", ipc.__file__)))
 
     frame = inspect.currentframe()
     try:
@@ -64,16 +64,15 @@ def find_stack_level():
 
 def deprecated(remove_version, old, new=None, extra=None, *, repr_old=True, repr_new=True):
     import holoviews as hv
+    from holoviews.core.util.dependencies import _convert_int
 
-    full_version = Version(hv.__version__)
-    current_version = Version(full_version.base_version)
+    is_alpha = "a" in hv.__version__
+    current_version = _convert_int(hv.__version__)
 
     if isinstance(remove_version, str):
-        remove_version = Version(remove_version)
+        remove_version = _convert_int(remove_version)
 
-    if remove_version <= current_version and not (
-        full_version.is_prerelease and full_version.pre[0] == "a"
-    ):
+    if remove_version <= current_version and not is_alpha:
         # This error is mainly for developers to remove the deprecated.
         raise ValueError(
             f"{old!r} should have been removed in {remove_version}, current version {current_version}."

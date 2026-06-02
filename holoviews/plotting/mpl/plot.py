@@ -13,7 +13,7 @@ from matplotlib import (
     rcParams,
 )
 from matplotlib.font_manager import font_scalings
-from mpl_toolkits.mplot3d import Axes3D  # noqa (For 3D plots)
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 (For 3D plots)
 
 from ...core import (
     AdjointLayout,
@@ -37,7 +37,7 @@ from ..plot import (
     GenericLayoutPlot,
 )
 from ..util import attach_streams, collate, displayable
-from .util import compute_ratios, fix_aspect, get_old_rcparams
+from .util import MPL_GE_3_11_0, compute_ratios, fix_aspect, get_old_rcparams
 
 
 @contextmanager
@@ -450,7 +450,7 @@ class GridPlot(CompositePlot):
         self, layout, axis=None, create_axes=True, ranges=None, layout_num=1, keys=None, **params
     ):
         if not isinstance(layout, GridSpace):
-            raise Exception("GridPlot only accepts GridSpace.")
+            raise TypeError("GridPlot only accepts GridSpace.")
         super().__init__(layout, layout_num=layout_num, ranges=ranges, keys=keys, **params)
         # Compute ranges layoutwise
         grid_kwargs = {}
@@ -498,9 +498,7 @@ class GridPlot(CompositePlot):
         subplots, subaxes = {}, {}
         frame_ranges = self.compute_ranges(layout, None, ranges)
         keys = self.keys[:1] if self.dynamic else self.keys
-        frame_ranges = dict(
-            [(key, self.compute_ranges(layout, key, frame_ranges)) for key in keys]
-        )
+        frame_ranges = {key: self.compute_ranges(layout, key, frame_ranges) for key in keys}
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         r, c = (0, 0)
         for coord in layout.keys(full_grid=True):
@@ -1050,6 +1048,10 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         # Explicitly clear Matplotlib figures to avoid
         # "Auto-removal of overlapping axes" warning.
         self.handles["fig"].clf()
+        if MPL_GE_3_11_0:
+            # https://github.com/matplotlib/matplotlib/pull/27183
+            l, b, r, t = self.fig_bounds
+            self.handles["fig"].subplots_adjust(left=l, bottom=b, right=r, top=t)
 
         # Situate all the Layouts in the grid and compute the gridspec
         # indices for all the axes required by each LayoutPlot.
@@ -1059,9 +1061,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
         keys = self.keys[:1] if self.dynamic else self.keys
-        frame_ranges = dict(
-            [(key, self.compute_ranges(layout, key, frame_ranges)) for key in keys]
-        )
+        frame_ranges = {key: self.compute_ranges(layout, key, frame_ranges) for key in keys}
         layout_subplots, layout_axes = {}, {}
         for r, c in self.coords:
             # Compute the layout type from shape

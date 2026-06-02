@@ -144,7 +144,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         glyphs_mapped = self.plot.get_default_mapping(None, None).keys()
         glyphs_plain = {x[:-2] for x in glyphs_mapped}
 
-        assert all([x in glyphs_plain for x in glyphs])
+        assert all(x in glyphs_plain for x in glyphs)
 
     def test_get_seg_labels_data(self):
         """Test correct computation of a single segment label data point."""
@@ -236,7 +236,7 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         for check in [data, mapping]:
             glyphs_mapped = check.keys()
             glyphs_plain = {x[:-2] for x in glyphs_mapped}
-            assert all([x in glyphs_plain for x in glyphs])
+            assert all(x in glyphs_plain for x in glyphs)
 
     def test_plot_data_source(self):
         """Test initialization of ColumnDataSources."""

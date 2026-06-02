@@ -26,11 +26,20 @@ from holoviews.operation.element import (
 )
 from holoviews.testing import assert_element_equal
 
-from ..utils import optional_dependencies
-
-mpl, mpl_skip = optional_dependencies("matplotlib")
-da, dask_skip = optional_dependencies("dask.array")
-ibis, ibis_skip = optional_dependencies("ibis")
+from .._deps import (
+    da,
+    da_skip,
+    dd,
+    dd_skip,
+    ibis,
+    ibis_skip,
+    mpl_skip,
+    pl,
+    pl_skip,
+    scipy_skip,
+    xr,
+    xr_skip,
+)
 
 
 class OperationTests:
@@ -539,10 +548,8 @@ class OperationTests:
             np.testing.assert_equal(exp, h.data["xy"])
             assert (h.data["xy_count"] == 5).all()
 
-    @dask_skip
+    @da_skip
     def test_dataset_histogram_dask(self):
-        import dask.array as da
-
         ds = hv.Dataset(
             (da.from_array(np.array(range(10), dtype="f"), chunks=(3)),), ["x"], datatype=["dask"]
         )
@@ -554,10 +561,8 @@ class OperationTests:
         assert isinstance(op_hist.data["x_frequency"], da.Array)
         assert_element_equal(op_hist, hist)
 
-    @dask_skip
+    @da_skip
     def test_dataset_cumulative_histogram_dask(self):
-        import dask.array as da
-
         ds = hv.Dataset(
             (da.from_array(np.array(range(10), dtype="f"), chunks=(3)),), ["x"], datatype=["dask"]
         )
@@ -567,10 +572,8 @@ class OperationTests:
         assert isinstance(op_hist.data["x_frequency"], da.Array)
         assert_element_equal(op_hist, hist)
 
-    @dask_skip
+    @da_skip
     def test_dataset_weighted_histogram_dask(self):
-        import dask.array as da
-
         ds = hv.Dataset(
             (
                 da.from_array(np.array(range(10), dtype="f"), chunks=3),
@@ -780,8 +783,8 @@ class OperationTests:
         hist = hv.Histogram(([0, 3, 6, 9], [3, 3, 4]), vdims=("x_count", "Count"))
         assert_element_equal(op_hist, hist)
 
+    @pl_skip
     def test_histogram_narwhals_polars(self):
-        pl = pytest.importorskip("polars")
         df = pl.DataFrame({"x": range(10)})
         ds = hv.Dataset(df, vdims="x")
         op_hist = histogram(ds, num_bins=3, normed=False)
@@ -789,8 +792,8 @@ class OperationTests:
         hist = hv.Histogram(([0, 3, 6, 9], [3, 3, 4]), vdims=("x_count", "Count"))
         assert_element_equal(op_hist, hist)
 
+    @pl_skip
     def test_histogram_narwhals_polars_lazy(self):
-        pl = pytest.importorskip("polars")
         df = pl.LazyFrame({"x": range(10)})
         ds = hv.Dataset(df, vdims="x")
         op_hist = histogram(ds, num_bins=3, normed=False)
@@ -798,8 +801,8 @@ class OperationTests:
         hist = hv.Histogram(([0, 3, 6, 9], [3, 3, 4]), vdims=("x_count", "Count"))
         assert_element_equal(op_hist, hist)
 
+    @pl_skip
     def test_histogram_narwhals_polars_lazy_groupby(self):
-        pl = pytest.importorskip("polars")
         df = pl.LazyFrame({"x": [1, 2], "y": [1, 2]})
         ds = hv.Dataset(df)
         op_hist = histogram(ds, num_bins=2, groupby="x")
@@ -810,11 +813,10 @@ class OperationTests:
 
         assert_element_equal(op_hist, expected)
 
+    @dd_skip
     @pytest.mark.usefixtures("mpl_backend")
     def test_histogram_dask_array_mpl(self):
         # Regression test for https://github.com/holoviz/holoviews/issues/5111
-        dd = pytest.importorskip("dask.dataframe")
-
         data = {
             "carrier": ["A", "A", "A", "A", "B", "B", "B", "B", "B"],
             "depdelay": [127.0, 3.0, -3.0, 19.0, 264.0, -6.0, 1.0, 2.0, 83.0],
@@ -995,11 +997,10 @@ class OperationTests:
         pd.testing.assert_series_equal(data["y"], output["y"])
 
 
+@scipy_skip
 @pytest.mark.usefixtures("bokeh_backend")
 class TestDendrogramOperation:
     def setup_class(self):
-        pytest.importorskip("scipy")
-
         random.seed(1)
         self.df = pd.DataFrame(
             [(i, chr(65 + j), random.random()) for j in range(10) for i in range(5)],
@@ -1188,16 +1189,15 @@ class TestDendrogramOperation:
 
         assert main1.y_range.factors == main2.y_range.factors
 
+    @xr_skip
     @pytest.mark.parametrize(
         "adjoint_dims",
         [["cluster"], ["gene"], ["gene", "cluster"]],
         ids=["right", "top", "both"],
     )
     def test_gridded_dataset(self, adjoint_dims, rng):
-        xr = pytest.importorskip("xarray")
-
         N = 10
-        da = xr.DataArray(
+        xda = xr.DataArray(
             rng.normal(size=(N, N)),
             name="main",
             dims=("cluster", "gene"),
@@ -1207,7 +1207,7 @@ class TestDendrogramOperation:
             },
         )
 
-        dendro = dendrogram(hv.Dataset(da), adjoint_dims=adjoint_dims, main_dim="main")
+        dendro = dendrogram(hv.Dataset(xda), adjoint_dims=adjoint_dims, main_dim="main")
         assert isinstance(dendro, hv.AdjointLayout)
 
     def test_failed_linkage(self):

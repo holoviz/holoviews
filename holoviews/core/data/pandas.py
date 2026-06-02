@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy as np
 
 from .. import util
@@ -9,14 +7,11 @@ from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..util import dtype_kind
-from ..util.dependencies import PANDAS_GE_2_1_0, _LazyModule
+from ..util.dependencies import PANDAS_GE_2_1_0, _is_installed, pd
 from .interface import DataError, Interface
 from .util import finite_range
 
-if TYPE_CHECKING:
-    import pandas as pd
-else:
-    pd = _LazyModule("pandas")
+_PANDAS_INSTALLED = _is_installed("pandas")
 
 
 class PandasAPI:
@@ -38,8 +33,8 @@ class PandasInterface(Interface, PandasAPI):
     @classmethod
     def loaded(cls):
         # 2025-02: As long as it is a required dependency and to not break
-        # existing behavior we will for now always return True
-        return bool(pd)
+        # existing behavior we will for now always return True if installed
+        return _PANDAS_INSTALLED
 
     @classmethod
     def applies(cls, obj):
@@ -121,7 +116,7 @@ class PandasInterface(Interface, PandasAPI):
             columns = list(util.unique_iterator([dimension_name(d) for d in kdims + vdims]))
 
             if isinstance(data, dict) and all(c in data for c in columns):
-                data = dict((d, data[d]) for d in columns)
+                data = {d: data[d] for d in columns}
             elif isinstance(data, list) and len(data) == 0:
                 data = {c: np.array([]) for c in columns}
             elif isinstance(data, (list, dict)) and data in ([], {}):
@@ -143,7 +138,7 @@ class PandasInterface(Interface, PandasAPI):
                     *((util.wrap_tuple(k) + util.wrap_tuple(v)) for k, v in column_data),
                     strict=None,
                 )
-                data = dict(((c, col) for c, col in zip(columns, column_data, strict=None)))
+                data = dict(zip(columns, column_data, strict=None))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:
                     if eltype._auto_indexable_1d and len(kdims) + len(vdims) > 1:

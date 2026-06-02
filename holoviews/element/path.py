@@ -525,6 +525,4 @@ class Bounds(BaseShape):
         super().__init__(lbrt=lbrt, **params)
         (l, b, r, t) = self.lbrt
         xdim, ydim = self.kdims
-        self.data = [
-            dict([(xdim.name, np.array([l, l, r, r, l])), (ydim.name, np.array([b, t, t, b, b]))])
-        ]
+        self.data = [{xdim.name: np.array([l, l, r, r, l]), ydim.name: np.array([b, t, t, b, b])}]

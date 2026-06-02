@@ -11,13 +11,11 @@ from contextlib import contextmanager
 from functools import partial
 from io import BytesIO, StringIO
 
-import panel as pn
 import param
 from bokeh.document import Document
 from bokeh.embed import file_html
 from bokeh.io import curdoc
 from bokeh.resources import CDN, INLINE
-from packaging.version import Version
 from panel import config
 from panel.io.notebook import (
     JupyterCommManagerBinary,
@@ -39,11 +37,12 @@ from ..core.data import disable_pipeline
 from ..core.io import Exporter
 from ..core.options import Compositor, SkipRendering, Store, StoreOptions
 from ..core.util import unbound_dimensions
+from ..core.util.dependencies import _no_import_version
 from ..streams import Stream
 from . import Plot
 from .util import collate, displayable, initialize_dynamic
 
-PANEL_VERSION = Version(pn.__version__).release
+PANEL_VERSION = _no_import_version("panel")
 
 # Tags used when visual output is to be embedded in HTML
 IMAGE_TAG = "<img src='{src}' style='max-width:100%; margin: auto; display: block; {css}'/>"
@@ -363,7 +362,7 @@ class Renderer(Exporter):
 
         all_formats = set(fig_formats + holomap_formats)
         if fmt not in all_formats:
-            raise Exception(
+            raise ValueError(
                 f"Format {fmt!r} not supported by mode {self.mode!r}. Allowed formats: {fig_formats + holomap_formats!r}"
             )
         self.last_plot = plot
@@ -650,7 +649,7 @@ class Renderer(Exporter):
         if key is None:
             key = {}
         if info or key:
-            raise Exception("Renderer does not support saving metadata to file.")
+            raise NotImplementedError("Renderer does not support saving metadata to file.")
 
         if kwargs:
             param.main.param.warning(
@@ -742,7 +741,7 @@ class Renderer(Exporter):
             load_notebook(inline)
         with param.logging_level("ERROR"):
             try:
-                ip = get_ipython()  # noqa
+                ip = get_ipython()  # noqa: F821
             except Exception:
                 ip = None
             if not ip or not hasattr(ip, "kernel"):

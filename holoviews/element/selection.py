@@ -5,13 +5,13 @@ elements.
 
 from __future__ import annotations
 
-import sys
 from importlib.util import find_spec
 
 import numpy as np
 
 from ..core import Dataset, NdOverlay, util
 from ..core.util import dtype_kind
+from ..core.util.dependencies import cp, cudf, dd, pd
 from ..streams import Lasso, Selection1D, SelectionXY
 from ..util.transform import dim
 from .annotation import HSpan, VSpan
@@ -87,7 +87,6 @@ def spatial_select_gridded(xvals, yvals, geometry):
 
 
 def _cuspatial_old(xvals, yvals, geometry):
-    import cudf
     import cuspatial
 
     result = cuspatial.point_in_polygon(
@@ -102,7 +101,6 @@ def _cuspatial_old(xvals, yvals, geometry):
 
 
 def _cuspatial_new(xvals, yvals, geometry):
-    import cudf
     import cuspatial
     import geopandas
     from shapely.geometry import Polygon
@@ -115,12 +113,7 @@ def _cuspatial_new(xvals, yvals, geometry):
 
 
 def spatial_select_columnar(xvals, yvals, geometry, geom_method=None):
-    import pandas as pd
-
-    if "cudf" in sys.modules:
-        import cudf
-        import cupy as cp
-
+    if cudf:
         if isinstance(xvals, cudf.Series):
             xvals = xvals.values.astype("float")
             yvals = yvals.values.astype("float")
@@ -132,9 +125,7 @@ def spatial_select_columnar(xvals, yvals, geometry, geom_method=None):
             except ImportError:
                 xvals = cp.asnumpy(xvals)
                 yvals = cp.asnumpy(yvals)
-    if "dask" in sys.modules:
-        import dask.dataframe as dd
-
+    if dd:
         if isinstance(xvals, dd.Series):
             try:
                 xvals.name = "xvals"

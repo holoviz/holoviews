@@ -77,10 +77,15 @@ outside of the actual matrix.
 
 from __future__ import annotations
 
+import typing as t
+
 import numpy as np
 
 from .boundingregion import BoundingBox
 from .util import datetime_types, dtype_kind
+
+if t.TYPE_CHECKING:
+    from numpy.dtypes import _DateTimeUnit
 
 # Note about the 'bounds-master' approach we have adopted
 # =======================================================
@@ -149,7 +154,7 @@ class SheetCoordinateSystem:
 
     # Determines the unit of time densities are defined relative to
     # when one or both axes are datetime types
-    _time_unit = "us"
+    _time_unit: _DateTimeUnit = "us"
 
     def __init__(self, bounds, xdensity, ydensity=None):
         """Store the bounds (as l,b,r,t in an array), xdensity, and

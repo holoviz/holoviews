@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import typing as t
 from collections import defaultdict
 
 from ..core import Store
+
+if t.TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class KeywordSettings:
@@ -13,7 +17,7 @@ class KeywordSettings:
 
     # Dictionary from keywords to allowed bounds/values
     allowed = {}
-    defaults = dict([])  # Default keyword values.
+    defaults = {}  # Default keyword values.
     options = dict(defaults.items())  # Current options
 
     # Callables accepting (value, keyword, allowed) for custom exceptions
@@ -82,7 +86,6 @@ class KeywordSettings:
         unprocessed = list(reversed(line.split("=")))
         while unprocessed:
             chunk = unprocessed.pop()
-            key = None
             if chunk.strip() in cls.allowed:
                 key = chunk.strip()
             else:
@@ -169,9 +172,8 @@ class OutputSettings(KeywordSettings):
             "right_top",
             "right_bottom",
         ],
-        "css": {
-            k: str
-            for k in [
+        "css": dict.fromkeys(
+            [
                 "width",
                 "height",
                 "padding",
@@ -182,27 +184,26 @@ class OutputSettings(KeywordSettings):
                 "min-height",
                 "outline",
                 "float",
-            ]
-        },
+            ],
+            str,
+        ),
     }
 
-    defaults = dict(
-        [
-            ("backend", None),
-            ("center", True),
-            ("fig", None),
-            ("holomap", None),
-            ("widgets", None),
-            ("fps", None),
-            ("max_frames", 500),
-            ("size", None),
-            ("dpi", None),
-            ("filename", None),
-            ("info", False),
-            ("widget_location", None),
-            ("css", None),
-        ]
-    )
+    defaults = {
+        "backend": None,
+        "center": True,
+        "fig": None,
+        "holomap": None,
+        "widgets": None,
+        "fps": None,
+        "max_frames": 500,
+        "size": None,
+        "dpi": None,
+        "filename": None,
+        "info": False,
+        "widget_location": None,
+        "css": None,
+    }
 
     # Defines the options the OutputSettings remembers. All other options
     # are held by the backend specific Renderer.
@@ -236,7 +237,7 @@ class OutputSettings(KeywordSettings):
     backend_list = []  # List of possible backends
 
     def missing_dependency_exception(value, keyword, allowed):
-        raise Exception(f"Format {value!r} does not appear to be supported.")
+        raise ValueError(f"Format {value!r} does not appear to be supported.")
 
     def missing_backend_exception(value, keyword, allowed):
         if value in OutputSettings.backend_list:
@@ -480,7 +481,7 @@ class OutputSettings(KeywordSettings):
         # Switch format if mode does not allow it
         for p in ["fig", "holomap"]:
             if backend_options.get(p) not in cls.allowed[p]:
-                backend_options[p] = cls.allowed[p][0]
+                backend_options[p] = t.cast("Sequence", cls.allowed[p])[0]
 
         # Ensure backend and mode are set
         backend_options["backend"] = backend_spec
@@ -493,7 +494,7 @@ class OutputSettings(KeywordSettings):
         cls.backend_list = backend_list
         backend = Store.current_backend
         if backend in Store.renderers:
-            cls.options = dict({k: cls.defaults[k] for k in cls.remembered})
+            cls.options = {k: cls.defaults[k] for k in cls.remembered}
             cls.set_backend(backend)
         else:
             cls.options["backend"] = None

@@ -86,11 +86,11 @@ class NotebookArchive(FileArchive):
             raise ImportError("HoloViews does not seem to be imported")
         matches = [
             k
-            for k, v in get_ipython().user_ns.items()  # noqa (get_ipython)
+            for k, v in get_ipython().user_ns.items()  # noqa: F821
             if not k.startswith("_") and v is sys.modules["holoviews"]
         ]
         if len(matches) == 0:
-            raise Exception("Could not find holoviews module in namespace")
+            raise RuntimeError("Could not find holoviews module in namespace")
         return f"{matches[0]}.archive"
 
     def last_export_status(self):
@@ -139,7 +139,7 @@ class NotebookArchive(FileArchive):
     def export(self, timestamp=None):
         """Get the current notebook data and export."""
         if self._timestamp is None:
-            raise Exception("No timestamp set. Has the archive been initialized?")
+            raise RuntimeError("No timestamp set. Has the archive been initialized?")
         if self.skip_notebook_export:
             super().export(timestamp=self._timestamp, info={"notebook": self.notebook_name})
             return
@@ -260,7 +260,7 @@ class NotebookArchive(FileArchive):
         """Load captured notebook node"""
         size = len(self._notebook_data)
         if size == 0:
-            raise Exception("Captured buffer size for notebook node is zero.")
+            raise RuntimeError("Captured buffer size for notebook node is zero.")
         node = reader.reads(self._notebook_data)
         self.nbversion = reader.get_version(node)
         return node

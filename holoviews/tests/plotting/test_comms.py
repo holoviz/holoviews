@@ -17,7 +17,7 @@ class TestComm:
 
     def test_handle_message_error_reply(self):
         def raise_error(msg=None, metadata=None):
-            raise Exception("Test")
+            raise Exception("Test")  # noqa: TRY002
 
         def assert_error(msg=None, metadata=None):
             assert metadata["msg_type"] == "Error"

@@ -83,8 +83,11 @@ class Link(param.Parameterized):
 
     def unlink(self):
         """Unregisters the Link"""
-        links = self.registry.get(self.source)
-        if self in links:
+        source = self.source
+        if source is None:
+            return
+        links = self.registry.get(source)
+        if links and self in links:
             links.pop(links.index(self))
 
 

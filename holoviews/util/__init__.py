@@ -2,6 +2,7 @@ import inspect
 import os
 import shutil
 import sys
+import typing as t
 from collections import defaultdict
 from inspect import Parameter, Signature
 from pathlib import Path
@@ -28,6 +29,8 @@ from ..streams import Params, Stream, streams_list_from_dict
 from .settings import OutputSettings, list_backends, list_formats
 
 Store.output_settings = OutputSettings
+
+_BackendT: t.TypeAlias = t.Literal["bokeh", "matplotlib", "plotly"]
 
 _STR_OPTIONS_ERR = (
     "String-based options specification is no longer supported. "
@@ -59,7 +62,7 @@ class OptsMeta(param.parameterized.ParameterizedMetaclass):
 
     def __getattr__(self, attr):
         try:
-            return super().__getattr__(attr)
+            return super().__getattr__(attr)  # ty:ignore[unresolved-attribute]
         except AttributeError:
             msg = (
                 f"No entry for {attr!r} registered; this name may not refer to a valid object "
@@ -135,7 +138,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         """Format option group kwargs into canonical options format"""
         groups = Options._option_groups
         if set(kwargs.keys()) - set(groups):
-            raise Exception(
+            raise ValueError(
                 "Keyword options {} must be one of  {}".format(
                     groups, ",".join(repr(g) for g in groups)
                 )
@@ -143,12 +146,12 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         elif not all(isinstance(v, dict) for v in kwargs.values()):
             options_str = ",".join([repr(k) for k in kwargs.keys()])
             msg = f"The {options_str} options must be specified using dictionary groups"
-            raise Exception(msg)
+            raise ValueError(msg)
 
         # Check whether the user is specifying targets (such as 'Image.Foo')
         targets = [grp and all(k[0].isupper() for k in grp) for grp in kwargs.values()]
         if any(targets) and not all(targets):
-            raise Exception(
+            raise ValueError(
                 "Cannot mix target specification keys such as 'Image' with non-target keywords."
             )
         elif not any(targets):
@@ -163,7 +166,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             else:
                 identifier = obj.__class__.__name__
 
-            options = {identifier: {grp: kws for (grp, kws) in kwargs.items()}}
+            options = {identifier: dict(kwargs.items())}
         else:
             dfltdict = defaultdict(dict)
             for grp, entries in kwargs.items():
@@ -201,7 +204,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
                 filtered = {k: v for k, v in groups.items() if k != "output"}
                 dfltdict[groups["output"]["backend"]][spec.strip()] = filtered
             else:
-                raise Exception("The output options group must have the backend keyword")
+                raise ValueError("The output options group must have the backend keyword")
 
         return [(bk, bk_opts) for (bk, bk_opts) in dfltdict.items()]
 
@@ -306,7 +309,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             The plotting extension the options apply to
         """
         if kwargs and len(kwargs) != 1 and next(iter(kwargs.keys())) != "backend":
-            raise Exception('opts.defaults only accepts "backend" keyword argument')
+            raise TypeError('opts.defaults only accepts "backend" keyword argument')
 
         backend = kwargs.get("backend")
         expanded = cls._expand_options(util.merge_options_to_dict(options), backend=backend)
@@ -532,7 +535,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             [Parameter("spec", Parameter.POSITIONAL_OR_KEYWORD)]
             + [Parameter(kw, Parameter.KEYWORD_ONLY) for kw in sorted_kw_set]
         )
-        builder.__signature__ = signature
+        builder.__signature__ = signature  # ty:ignore[unresolved-attribute]
         return classmethod(builder)
 
     @classmethod
@@ -576,7 +579,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             [Parameter("args", Parameter.VAR_POSITIONAL)]
             + [Parameter(kw, Parameter.KEYWORD_ONLY) for kw in sorted_kw_set]
         )
-        cls.__init__.__signature__ = signature
+        cls.__init__.__signature__ = signature  # ty:ignore[unresolved-attribute]
 
 
 Store._backend_switch_hooks.append(opts._update_backend)
@@ -671,10 +674,10 @@ class output(param.ParameterizedFunction):
 
 
 output.__doc__ = Store.output_settings._generate_docstring(signature=False)
-output.__init__.__signature__ = Store.output_settings._generate_signature()
+output.__init__.__signature__ = Store.output_settings._generate_signature()  # ty:ignore[unresolved-attribute]
 
 
-def renderer(name):
+def renderer(name: _BackendT):
     """Helper utility to access the active renderer for a given extension."""
     try:
         if name not in Store.renderers:
@@ -718,11 +721,14 @@ class extension(_pyviz_extension):
 
     _loaded = False
 
-    def __call__(self, *args, **params):
+    def __new__(cls, *backends: _BackendT, **kwargs) -> t.Any:
+        return super().__new__(cls, *backends, **kwargs)
+
+    def __call__(self, *backends, **params):
         # Get requested backends
         config = params.pop("config", {})
         util.config.param.update(**config)
-        imports = [(arg, self._backends[arg]) for arg in args if arg in self._backends]
+        imports = [(b, self._backends[b]) for b in backends if b in self._backends]
         for p, _val in sorted(params.items()):
             if p in self._backends:
                 imports.append((p, self._backends[p]))
@@ -733,7 +739,6 @@ class extension(_pyviz_extension):
             )
             raise TypeError(msg)
 
-        args = list(args)
         selected_backend = None
         for backend, imp in imports:
             try:
@@ -780,11 +785,11 @@ class extension(_pyviz_extension):
 
         if pn.config.comms == "default":
             if "google.colab" in sys.modules:
-                pn.config.comms = "colab"
+                pn.config.comms = "colab"  # ty:ignore[invalid-assignment]
                 return
 
             if "VSCODE_CWD" in os.environ or "VSCODE_PID" in os.environ:
-                pn.config.comms = "vscode"
+                pn.config.comms = "vscode"  # ty:ignore[invalid-assignment]
                 self._ignore_bokeh_warnings()
                 return
 
@@ -882,7 +887,7 @@ def save(
     return renderer_obj.save(obj, filename, fmt=fmt, resources=resources, title=title)
 
 
-def render(obj, backend=None, **kwargs):
+def render(obj, backend: _BackendT | None = None, **kwargs):
     """Renders the HoloViews object to the corresponding object in the
     specified backend, e.g. a Matplotlib or Bokeh figure.
 
@@ -993,7 +998,7 @@ class Dynamic(param.ParameterizedFunction):
                 kwargs["plot_id"] = map_obj._plot_id
             dmap = map_obj.clone(**kwargs)
             if self.p.shared_data:
-                dmap.data = dict([(k, callback.callable(*k)) for k, v in dmap.data])
+                dmap.data = {k: callback.callable(*k) for k, v in dmap.data}
         else:
             dmap = self._make_dynamic(map_obj, callback, streams)
         return dmap
@@ -1162,11 +1167,11 @@ class Dynamic(param.ParameterizedFunction):
             if isinstance(hmap, Overlay):
                 dmap.callback.inputs[:] = list(hmap)
             return dmap
-        dim_values = zip(*hmap.data.keys(), strict=None)
+        dim_values = zip(*hmap.data.keys(), strict=True)
         params = util.get_param_values(hmap)
         kdims = [
             d.clone(values=list(util.unique_iterator(values)))
-            for d, values in zip(hmap.kdims, dim_values, strict=None)
+            for d, values in zip(hmap.kdims, dim_values, strict=False)
         ]
         return DynamicMap(dynamic_fn, streams=streams, **dict(params, kdims=kdims))
 

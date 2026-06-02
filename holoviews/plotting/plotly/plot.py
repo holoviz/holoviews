@@ -81,9 +81,7 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         layout_count = 0
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
-        frame_ranges = dict(
-            [(key, self.compute_ranges(layout, key, frame_ranges)) for key in self.keys]
-        )
+        frame_ranges = {key: self.compute_ranges(layout, key, frame_ranges) for key in self.keys}
         layout_items = layout.grid_items()
         layout_dimensions = layout.kdims if isinstance(layout, NdLayout) else None
         layout_subplots, layouts, paths = {}, {}, {}
@@ -307,7 +305,7 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
 
     def __init__(self, layout, ranges=None, layout_num=1, **params):
         if not isinstance(layout, GridSpace):
-            raise Exception("GridPlot only accepts GridSpace.")
+            raise TypeError("GridPlot only accepts GridSpace.")
         super().__init__(layout=layout, layout_num=layout_num, ranges=ranges, **params)
         self.cols, self.rows = layout.shape
         self.subplots, self.layout = self._create_subplots(layout, ranges)
@@ -318,9 +316,7 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
     def _create_subplots(self, layout, ranges):
         subplots = {}
         frame_ranges = self.compute_ranges(layout, None, ranges)
-        frame_ranges = dict(
-            [(key, self.compute_ranges(layout, key, frame_ranges)) for key in self.keys]
-        )
+        frame_ranges = {key: self.compute_ranges(layout, key, frame_ranges) for key in self.keys}
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         for coord in layout.keys(full_grid=True):
             if not isinstance(coord, tuple):

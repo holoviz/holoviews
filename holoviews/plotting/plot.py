@@ -201,8 +201,11 @@ class Plot(param.Parameterized):
                 stream._subscribers = [
                     (p, subscriber)
                     for p, subscriber in stream._subscribers
-                    if not util.is_param_method(subscriber)
-                    or util.get_method_owner(subscriber) not in plots
+                    if subscriber
+                    and (
+                        not util.is_param_method(subscriber)
+                        or util.get_method_owner(subscriber) not in plots
+                    )
                 ]
 
     def _session_destroy(self, session_context):
@@ -338,11 +341,11 @@ class PlotSelector:
             for mismatch_set in mismatching_sets:
                 print("Mismatching plot options:", mismatch_set)
 
-            raise Exception("All selectable plot classes must have identical plot options.")
+            raise ValueError("All selectable plot classes must have identical plot options.")
         styles = [plot.style_opts for plot in plots]
 
         if not allow_mismatch and not all(style == styles[0] for style in styles):
-            raise Exception("All selectable plot classes must have identical style options.")
+            raise ValueError("All selectable plot classes must have identical style options.")
 
         plot_params = {p: v for params in parameters for p, v in params.items()}
         return [s for style in styles for s in style], plot_params
@@ -355,7 +358,7 @@ class PlotSelector:
         key = self.selector(obj)
         if key not in self.plot_classes:
             msg = "Key %s returned by selector not in set: %s"
-            raise Exception(msg % (key, ", ".join(self.plot_classes.keys())))
+            raise ValueError(msg % (key, ", ".join(self.plot_classes.keys())))
         return self.plot_classes[key]
 
     def __setattr__(self, label, value):
@@ -364,7 +367,7 @@ class PlotSelector:
         except Exception as e:
             plot_cls_str = ", ".join(str(cls) for cls in self.__dict__["plot_classes"].values())
             msg = f"Please set class parameters directly on classes {plot_cls_str}"
-            raise Exception(msg) from e
+            raise AttributeError(msg) from e
 
     def params(self):
         return self.plot_options
@@ -2023,21 +2026,17 @@ class GenericOverlayPlot(GenericElementPlot):
         if keys and ranges and dimensions and not defaultdim:
             dim_inds = [dimensions.index(d) for d in holomap.kdims]
             sliced_keys = [tuple(k[i] for i in dim_inds) for k in keys]
-            frame_ranges = dict(
-                [
-                    (slckey, self.compute_ranges(holomap, key, ranges[key]))
-                    for key, slckey in zip(keys, sliced_keys, strict=None)
-                    if slckey in holomap.data.keys()
-                ]
-            )
+            frame_ranges = {
+                slckey: self.compute_ranges(holomap, key, ranges[key])
+                for key, slckey in zip(keys, sliced_keys, strict=None)
+                if slckey in holomap.data.keys()
+            }
         else:
             mapwise_ranges = self.compute_ranges(holomap, None, None)
-            frame_ranges = dict(
-                [
-                    (key, self.compute_ranges(holomap, key, mapwise_ranges))
-                    for key in holomap.data.keys()
-                ]
-            )
+            frame_ranges = {
+                key: self.compute_ranges(holomap, key, mapwise_ranges)
+                for key in holomap.data.keys()
+            }
         ranges = frame_ranges.values()
 
         with disable_pipeline():

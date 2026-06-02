@@ -44,7 +44,7 @@ class DictInterface(Interface):
         ):
             raise ValueError("DictInterface could not find specified dimensions in the data.")
         elif isinstance(data, tuple):
-            data = {d: v for d, v in zip(dimensions, data, strict=None)}
+            data = dict(zip(dimensions, data, strict=None))
         elif util.is_dataframe(data) and all(d in data for d in dimensions):
             data = {d: data[d] for d in dimensions}
         elif isinstance(data, np.ndarray):
@@ -77,7 +77,7 @@ class DictInterface(Interface):
             isinstance(data, tuple(t for t in interface.types if t is not None))
             for interface in cls.interfaces.values()
         ):
-            data = {k: v for k, v in zip(dimensions, zip(*data, strict=None), strict=None)}
+            data = dict(zip(dimensions, zip(*data, strict=None), strict=None))
         elif (
             isinstance(data, dict)
             and not any(isinstance(v, np.ndarray) for v in data.values())
@@ -240,7 +240,7 @@ class DictInterface(Interface):
 
         template = datasets[0][1]
         dims = dimensions + template.dimensions()
-        return dict([(d.name, np.concatenate(columns[d.name])) for d in dims])
+        return {d.name: np.concatenate(columns[d.name]) for d in dims}
 
     @classmethod
     def mask(cls, dataset, mask, mask_value=np.nan):
@@ -261,12 +261,10 @@ class DictInterface(Interface):
         else:
             arrays = [dataset.dimension_values(d) for d in by]
             sorting = util.arglexsort(arrays)
-        return dict(
-            [
-                (d, v if isscalar(v) else (v[sorting][::-1] if reverse else v[sorting]))
-                for d, v in dataset.data.items()
-            ]
-        )
+        return {
+            d: v if isscalar(v) else (v[sorting][::-1] if reverse else v[sorting])
+            for d, v in dataset.data.items()
+        }
 
     @classmethod
     def range(cls, dataset, dimension):
@@ -299,7 +297,7 @@ class DictInterface(Interface):
     @classmethod
     def reindex(cls, dataset, kdims, vdims):
         dimensions = [dataset.get_dimension(d).name for d in kdims + vdims]
-        return dict([(d, dataset.dimension_values(d)) for d in dimensions])
+        return {d: dataset.dimension_values(d) for d in dimensions}
 
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
@@ -329,15 +327,12 @@ class DictInterface(Interface):
         grouped_data = []
         for unique_key in util.unique_iterator(keys):
             mask = cls.select_mask(dataset, dict(zip(dimensions, unique_key, strict=None)))
-            group_data = dict(
-                (
-                    d.name,
-                    dataset.data[d.name]
-                    if isscalar(dataset.data[d.name])
-                    else dataset.data[d.name][mask],
-                )
+            group_data = {
+                d.name: dataset.data[d.name]
+                if isscalar(dataset.data[d.name])
+                else dataset.data[d.name][mask]
                 for d in kdims + vdims
-            )
+            }
             group_data = group_type(group_data, **group_kwargs)
             grouped_data.append((unique_key, group_data))
 
@@ -389,7 +384,7 @@ class DictInterface(Interface):
         kdims = [dataset.get_dimension(d, strict=True).name for d in kdims]
         vdims = dataset.dimensions("value", label="name")
         groups = cls.groupby(dataset, kdims, list, dict)
-        aggregated = dict([(k, []) for k in kdims + vdims])
+        aggregated = {k: [] for k in kdims + vdims}
 
         dropped = []
         for key, group in groups:

@@ -48,6 +48,8 @@ from holoviews.core.util.types import masked_types
 from holoviews.streams import PointerXY
 from holoviews.testing import assert_data_equal
 
+from .._deps import pa_skip, pl, pl_skip
+
 sanitize_identifier = sanitize_identifier_fn.instance()
 
 
@@ -93,13 +95,13 @@ class TestDeepHash:
         assert deephash({1: "a", 2: "b"}) != deephash({2: "b", 1: "c"})
 
     def test_deephash_odict_equality_v1(self):
-        odict1 = dict([(1, "a"), (2, "b")])
-        odict2 = dict([(1, "a"), (2, "b")])
+        odict1 = {1: "a", 2: "b"}
+        odict2 = {1: "a", 2: "b"}
         assert deephash(odict1) == deephash(odict2)
 
     def test_deephash_odict_equality_v2(self):
-        odict1 = dict([(1, "a"), (2, "b")])
-        odict2 = dict([(1, "a"), (2, "c")])
+        odict1 = {1: "a", 2: "b"}
+        odict2 = {1: "a", 2: "c"}
         assert deephash(odict1) != deephash(odict2)
 
     def test_deephash_numpy_equality(self):
@@ -182,7 +184,7 @@ class TestDeepHash:
             pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
             np.array([1, 2, 3]),
             {"a": "b", "1": True},
-            dict([(1, "a"), (2, "b")]),
+            {1: "a", 2: "b"},
             np.int64(34),
         ]
         obj2 = [
@@ -191,7 +193,7 @@ class TestDeepHash:
             pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
             np.array([1, 2, 3]),
             {"a": "b", "1": True},
-            dict([(1, "a"), (2, "b")]),
+            {1: "a", 2: "b"},
             np.int64(34),
         ]
         assert deephash(obj1) == deephash(obj2)
@@ -203,7 +205,7 @@ class TestDeepHash:
             pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
             np.array([1, 2, 3]),
             {"a": "b", "2": True},
-            dict([(1, "a"), (2, "b")]),
+            {1: "a", 2: "b"},
             np.int64(34),
         ]
         obj2 = [
@@ -212,7 +214,7 @@ class TestDeepHash:
             pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
             np.array([1, 2, 3]),
             {"a": "b", "1": True},
-            dict([(1, "a"), (2, "b")]),
+            {1: "a", 2: "b"},
             np.int64(34),
         ]
         assert deephash(obj1) != deephash(obj2)
@@ -1090,8 +1092,8 @@ def test_is_null_or_na_scalar():
     assert not is_null_or_na_scalar(pd.DataFrame([1, 2]))
 
 
+@pl_skip
 def test_is_null_or_na_scalar_polars():
-    pl = pytest.importorskip("polars")
     assert is_null_or_na_scalar(pl.Null)
     assert not is_null_or_na_scalar(pl.DataFrame([1, 2]))
     assert not is_null_or_na_scalar(pl.LazyFrame([1, 2]))
@@ -1245,8 +1247,8 @@ def test_parse_datetime(test_input, expected_output, with_pandas, monkeypatch):
     assert result == expected_output
 
 
+@pa_skip
 def test_isdatetime_pyarrow():
-    pytest.importorskip("pyarrow")
     ser = pd.to_datetime(["2024-01-01", "2024-01-02"]).astype("date32[pyarrow]")
     assert isinstance(ser.dtype, pd.core.dtypes.dtypes.ArrowDtype)
     assert isdatetime(ser)

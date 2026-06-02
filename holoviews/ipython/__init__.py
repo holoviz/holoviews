@@ -93,7 +93,7 @@ class notebook_extension(extension):
         super().__call__(*args, **params)
         # Abort if IPython not found
         try:
-            ip = params.pop("ip", None) or get_ipython()  # noqa (get_ipython)
+            ip = params.pop("ip", None) or get_ipython()  # noqa: F821
         except Exception:
             return
 

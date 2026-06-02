@@ -10,6 +10,7 @@ from holoviews.core.data.pandas import PandasInterface
 from holoviews.core.util.dependencies import PANDAS_GE_3_0_0
 from holoviews.testing import assert_element_equal
 
+from ..._deps import spd, spd_skip
 from .base import HeterogeneousColumnTests, InterfaceTests
 
 
@@ -243,7 +244,7 @@ class PandasInterfaceMultiIndexTests(HeterogeneousColumnTests, InterfaceTests):
         # Indexing relies on knowing the lexsort_depth but this is a
         # private import so we want to know should this import ever
         # be changed
-        from pandas.core.indexes.multi import _lexsort_depth  # noqa
+        from pandas.core.indexes.multi import _lexsort_depth  # noqa: F401
 
     def test_no_kdims(self):
         ds = hv.Dataset(self.df)
@@ -465,8 +466,8 @@ class PandasInterfaceMultiIndexTests(HeterogeneousColumnTests, InterfaceTests):
         )
 
 
+@spd_skip
 def test_no_subclasse_interface_applies():
-    spd = pytest.importorskip("spatialpandas")
     square = spd.geometry.Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
     sdf = spd.GeoDataFrame({"geometry": spd.GeoSeries([square, square]), "name": ["A", "B"]})
     assert PandasInterface.applies(sdf) is False

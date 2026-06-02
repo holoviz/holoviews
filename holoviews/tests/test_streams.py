@@ -4,6 +4,7 @@ Unit test of the streams system
 
 from __future__ import annotations
 
+import weakref
 from collections import defaultdict
 
 import numpy as np
@@ -14,6 +15,7 @@ from panel.widgets import IntSlider
 
 import holoviews as hv
 from holoviews.core.util import NUMPY_GE_2_0_0, PARAM_VERSION
+from holoviews.plotting.renderer import PANEL_VERSION
 from holoviews.streams import (
     Buffer,
     Derived,
@@ -38,9 +40,8 @@ from holoviews.streams import (
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 from holoviews.util import Dynamic
 
-from .utils import LoggingComparison, optional_dependencies
-
-_, shapely_skip = optional_dependencies("shapely")
+from ._deps import shapely_skip
+from .utils import LoggingComparison
 
 PARAM_GE_2_0_0 = PARAM_VERSION >= (2, 0, 0)
 
@@ -66,11 +67,11 @@ def test_all_linked_stream_parameters_owners():
         for name, p in stream_class.param.objects().items():
             if name != "name" and (p.owner != stream_class):
                 msg = (
-                    "Linked stream %r has parameter %r which is "
-                    "inherited from %s. Parameter needs to be redeclared "
+                    f"Linked stream {stream_class!r} has parameter {name!r} which is "
+                    f"inherited from {p.owner}. Parameter needs to be redeclared "
                     "in the class definition of this linked stream."
                 )
-                raise Exception(msg % (stream_class, name, p.owner))
+                pytest.fail(msg)
 
 
 class TestStreamsDefine:
@@ -356,8 +357,9 @@ class TestParamsStream(LoggingComparison):
         assert len(p.hashkey) == 3  # the two widgets + _memoize_key
 
     def test_params_identical_names(self):
-        a = IntSlider(name="Name")
-        b = IntSlider(name="Name")
+        nl = "label" if PANEL_VERSION >= (1, 9, 0) else "name"
+        a = IntSlider(**{nl: nl})
+        b = IntSlider(**{nl: nl})
         p = Params(parameters=[a.param.value, b.param.value])
         assert len(p.hashkey) == 3  # the two widgets + _memoize_key
 
@@ -697,7 +699,7 @@ def test_dynamicmap_partial_bind_and_streams():
     def make_plot(z, x_range, y_range):
         return hv.Curve([1, 2, 3, 4, z])
 
-    slider = IntSlider(name="Slider", start=0, end=10)
+    slider = IntSlider(start=0, end=10)
     range_xy = RangeXY()
 
     dmap = hv.DynamicMap(param.bind(make_plot, z=slider), streams=[range_xy])
@@ -783,6 +785,21 @@ class TestSubscribers:
         # Ensure call count was incremented on init, the subscriber
         # and the callback
         assert subscriber.call_count == 3
+
+    def test_bound_method_subscriber_does_not_pin_instance(self):
+        class Viewer:
+            def __init__(self):
+                self.plot = hv.Points([])
+                self.stream = hv.streams.RangeXY(source=self.plot)
+                self.stream.add_subscriber(self.on_update)
+
+            def on_update(self, x_range=None, y_range=None):
+                pass
+
+        viewer = Viewer()
+        ref = weakref.ref(viewer)
+        del viewer
+        assert ref() is None
 
 
 class TestStreamSource:

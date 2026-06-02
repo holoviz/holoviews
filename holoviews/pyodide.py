@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import sys
+import typing as t
 
 from bokeh.document import Document
 from bokeh.embed.elements import script_for_render_items
@@ -9,10 +10,14 @@ from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
 from panel.io.pyodide import _link_docs
 from panel.pane import panel as as_panel
+from panel.viewable import Viewable
 
 from .core.dimension import LabelledData
 from .core.options import Store
 from .util import extension as _extension
+
+if t.TYPE_CHECKING:
+    from bokeh.core.types import ID
 
 # -----------------------------------------------------------------------------
 # Private API
@@ -37,17 +42,19 @@ def render_html(obj):
     from js import document
 
     if hasattr(sys.stdout, "_out"):
-        target = sys.stdout._out  # type: ignore
+        target = t.cast("ID", sys.stdout._out)
     else:
-        raise ValueError("Could not determine target node to write to.")
+        msg = "Could not determine target node to write to."
+        raise ValueError(msg)
     doc = Document()
-    as_panel(obj).server_doc(doc, location=False)
-    (
-        docs_json,
-        [
-            render_item,
-        ],
-    ) = standalone_docs_json_and_render_items(doc.roots, suppress_callback_warning=True)
+    obj = as_panel(obj)
+    if not isinstance(obj, Viewable):
+        msg = "Object could not be converted to a Panel viewable."
+        raise ValueError(msg)
+    obj.server_doc(doc, location=False)
+    docs_json, [render_item] = standalone_docs_json_and_render_items(
+        doc.roots, suppress_callback_warning=True
+    )
     for root in doc.roots:
         render_item.roots._roots[root] = target
     document.getElementById(target).classList.add("bk-root")

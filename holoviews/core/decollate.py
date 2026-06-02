@@ -13,9 +13,9 @@ from .operation import OperationCallable
 from .overlay import NdOverlay, Overlay
 from .spaces import Callable, DynamicMap, GridSpace, HoloMap
 
-Expr = namedtuple("HoloviewsExpr", ["fn", "args", "kwargs"])
+Expr = namedtuple("Expr", ["fn", "args", "kwargs"])
 StreamIndex = namedtuple("StreamIndex", ["index"])
-KDimIndex = namedtuple("KDim", ["index"])
+KDimIndex = namedtuple("KDimIndex", ["index"])
 
 
 def to_expr_extract_streams(

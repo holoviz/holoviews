@@ -26,4 +26,4 @@ def test_save_suppresses_bokeh_fixed_sizing_mode(tmp_path, caplog, opts):
         hv.save(curve, out)
 
     assert out.exists()
-    assert all(["FIXED_SIZING_MODE" not in e.msg for e in caplog.records])
+    assert all("FIXED_SIZING_MODE" not in e.msg for e in caplog.records)

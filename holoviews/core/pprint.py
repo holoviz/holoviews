@@ -15,12 +15,16 @@ from __future__ import annotations
 
 import re
 import textwrap
+import typing as t
 
 import param
 from param.ipython import ParamPager
 from param.parameterized import bothmethod
 
-from .util import group_sanitizer, label_sanitizer
+from .util import _is_deep_indexable, group_sanitizer, label_sanitizer
+
+if t.TYPE_CHECKING:
+    from .options import Store
 
 
 class ParamFilter(param.ParameterizedFunction):
@@ -91,7 +95,7 @@ class InfoPrinter:
     headings = ["\x1b[1;35m%s\x1b[0m", "\x1b[1;32m%s\x1b[0m"]
     ansi_escape = re.compile(r"\x1b[^m]*m")
     ppager = ParamPager()
-    store = None
+    store: Store | None = None
     elements = []
 
     @classmethod
@@ -148,6 +152,9 @@ class InfoPrinter:
 
         isclass = isinstance(obj, type)
         name = obj.__name__ if isclass else obj.__class__.__name__
+        if cls.store is None:
+            msg = f"Store is not set on InfoPrinter. Cannot look up plot class for backend {backend!r}."
+            raise RuntimeError(msg)
         backend_registry = cls.store.registry.get(backend, {})
         plot_class = backend_registry.get(obj if isclass else type(obj), None)
         # Special case to handle PlotSelectors
@@ -159,6 +166,8 @@ class InfoPrinter:
                 obj = ParamFilter(obj, ParamFilter.regexp_filter(pattern))
                 if len(list(obj.param)) <= 1:
                     return f"No {name!r} parameters found matching specified pattern {pattern!r}"
+            import param.ipython
+
             info = param.ipython.ParamPager()(obj)
             if ansi is False:
                 info = ansi_escape.sub("", info)
@@ -188,7 +197,7 @@ class InfoPrinter:
             return ""
 
         targets = obj.traverse(cls.get_target)
-        elements, containers = zip(*targets, strict=None)
+        elements, containers = zip(*targets, strict=True)
         element_set = {el for el in elements if el is not None}
         container_set = {c for c in containers if c is not None}
 
@@ -220,7 +229,7 @@ class InfoPrinter:
 
     @classmethod
     def object_info(cls, obj, name, backend, ansi=False):
-        element = not getattr(obj, "_deep_indexable", False)
+        element = not _is_deep_indexable(obj)
         element_url = "https://holoviews.org/reference/elements/{backend}/{obj}.html"
         container_url = "https://holoviews.org/reference/containers/{backend}/{obj}.html"
         url = element_url if element else container_url
@@ -351,7 +360,7 @@ class PrettyPrinter(param.Parameterized):
             opts = cls_or_slf.option_info(node)
         elif hasattr(node, "main"):
             (lvl, lines) = cls_or_slf.adjointlayout_info(node, siblings, level, value_dims)
-        elif getattr(node, "_deep_indexable", False):
+        elif _is_deep_indexable(node):
             (lvl, lines) = cls_or_slf.ndmapping_info(node, siblings, level, value_dims)
         elif hasattr(node, "unit_format"):
             (lvl, lines) = level, [(level, repr(node))]
@@ -433,7 +442,7 @@ class PrettyPrinter(param.Parameterized):
             return level, lines
         # .last has different semantics for GridSpace
         last = list(node.data.values())[-1]
-        if last is not None and last._deep_indexable and not hasattr(last, "children"):
+        if last is not None and _is_deep_indexable(last) and not hasattr(last, "children"):
             level, additional_lines = cls_or_slf.ndmapping_info(last, [], level, value_dims)
         else:
             additional_lines = cls_or_slf.recurse(last, level=level, value_dims=value_dims)
