@@ -176,7 +176,8 @@ class TestStreamsDefine:
         xy.add_subscriber(good_subscriber)
 
         with caplog.at_level(logging.ERROR, logger="holoviews.streams"):
-            Stream.trigger([xy])
+            with pytest.raises(RuntimeError):
+                Stream.trigger([xy])
 
         assert "simulated upstream bug" in caplog.text
         assert "bad_subscriber" in caplog.text
