@@ -1006,14 +1006,16 @@ class OperationTests:
                 "category": ["A", "B", "A", "B", "A"],
             }
         )
-        points = Points(df, kdims=["x", "y"], vdims=["category"])
+        points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
         bars = categorical_agg(points, dimension="category")
 
-        assert isinstance(bars, Bars)
+        assert isinstance(bars, hv.Bars)
         assert bars.kdims[0].name == "category"
         assert bars.vdims[0].name == "Count"
         # A appears 3 times, B appears 2 times
-        data = dict(zip(bars.dimension_values("category"), bars.dimension_values("Count")))
+        data = dict(
+            zip(bars.dimension_values("category"), bars.dimension_values("Count"), strict=True)
+        )
         assert data["A"] == 3
         assert data["B"] == 2
 
@@ -1026,7 +1028,7 @@ class OperationTests:
                 "category": ["A", "B", "A", "B"],
             }
         )
-        points = Points(df, kdims=["x", "y"], vdims=["category"])
+        points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
         bars = categorical_agg(
             points,
             dimension="category",
@@ -1034,9 +1036,11 @@ class OperationTests:
             function=np.sum,
         )
 
-        assert isinstance(bars, Bars)
+        assert isinstance(bars, hv.Bars)
         assert bars.vdims[0].name == "sum(y)"
-        data = dict(zip(bars.dimension_values("category"), bars.dimension_values("sum(y)")))
+        data = dict(
+            zip(bars.dimension_values("category"), bars.dimension_values("sum(y)"), strict=True)
+        )
         assert data["A"] == 40  # 10 + 30
         assert data["B"] == 60  # 20 + 40
 
@@ -1049,17 +1053,14 @@ class OperationTests:
                 "category": ["A", "B", "A", "B"],
             }
         )
-        points = Points(df, kdims=["x", "y"], vdims=["category"])
-        bars = categorical_agg(
-            points,
-            dimension="category",
-            value_dimension="y",
-            function=np.mean,
-        )
+        points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
+        bars = categorical_agg(points, dimension="category", value_dimension="y", function=np.mean)
 
-        assert isinstance(bars, Bars)
+        assert isinstance(bars, hv.Bars)
         assert bars.vdims[0].name == "mean(y)"
-        data = dict(zip(bars.dimension_values("category"), bars.dimension_values("mean(y)")))
+        data = dict(
+            zip(bars.dimension_values("category"), bars.dimension_values("mean(y)"), strict=True)
+        )
         assert data["A"] == 20.0  # (10 + 30) / 2
         assert data["B"] == 30.0  # (20 + 40) / 2
 
@@ -1072,12 +1073,8 @@ class OperationTests:
                 "category": ["A", "B", "A"],
             }
         )
-        points = Points(df, kdims=["x", "y"], vdims=["category"])
-        bars = categorical_agg(
-            points,
-            dimension="category",
-            label="Total",
-        )
+        points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
+        bars = categorical_agg(points, dimension="category", label="Total")
 
         assert bars.vdims[0].name == "Total"
 
@@ -1099,7 +1096,7 @@ class OperationTests:
         points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
         bars = categorical_agg(points, dimension="category")
 
-        assert isinstance(bars, Bars)
+        assert isinstance(bars, hv.Bars)
         assert len(bars) == 0
 
     def test_categorical_agg_preserves_lineage(self):

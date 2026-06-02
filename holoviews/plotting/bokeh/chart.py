@@ -1018,7 +1018,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
     selection_display = BokehOverlaySelectionDisplay()
 
     default_tools = param.List(
-        default=['save', 'pan', 'wheel_zoom', 'box_zoom', 'reset', 'tap'],
+        default=["save", "pan", "wheel_zoom", "box_zoom", "reset", "tap"],
         doc="Default tools for BarPlot. Includes tap for click-to-select with link_selections.",
     )
 

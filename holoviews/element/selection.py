@@ -583,10 +583,10 @@ class SelectionBarsExpr(Selection1DExpr):
     _selection_uses_selection1d_without_index_cols = True
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
-        index = kwargs.get('index')
-        index_cols = kwargs.get('index_cols')
+        index = kwargs.get("index")
+        index_cols = kwargs.get("index_cols")
 
-        if 'index' in kwargs and index_cols is None:
+        if "index" in kwargs and index_cols is None:
             if not index:
                 return None, None, None
             kdim = self.kdims[0]
