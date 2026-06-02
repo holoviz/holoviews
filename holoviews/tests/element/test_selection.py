@@ -10,6 +10,7 @@ import pytest
 
 import holoviews as hv
 from holoviews.element.selection import spatial_select_columnar
+from holoviews.streams import Selection1D, SelectionXY
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 
 from .._deps import dd, dd_skip, ds_skip, shapely_skip, spd_skip
@@ -222,8 +223,6 @@ class TestSelection1DExpr:
 
 
 class TestSelectionBarsExpr:
-    """Tests for SelectionBarsExpr — tap/click-to-select on Bars elements."""
-
     def setup_method(self):
         import holoviews.plotting.bokeh  # noqa: F401
 
@@ -234,16 +233,11 @@ class TestSelectionBarsExpr:
         hv.Store.current_backend = self._backend
 
     def _make_bars(self):
-        from holoviews.element import Bars
-
-        return Bars(
-            (["A", "B", "C", "D"], [10, 20, 5, 15]),
-            kdims=["category"],
-            vdims=["count"],
+        return hv.Bars(
+            (["A", "B", "C", "D"], [10, 20, 5, 15]), kdims=["category"], vdims=["count"]
         )
 
     def test_bars_tap_single_category(self):
-        """Clicking the second bar (index 1 → 'B') returns isin(['B'])."""
         bars = self._make_bars()
         expr, bbox, region = bars._get_selection_expr_for_stream_value(index=[1])
         assert bbox is None
@@ -255,7 +249,6 @@ class TestSelectionBarsExpr:
         )
 
     def test_bars_tap_multiple_categories(self):
-        """Clicking bars at indices 0 and 2 returns isin(['A', 'C'])."""
         bars = self._make_bars()
         expr, bbox, region = bars._get_selection_expr_for_stream_value(index=[0, 2])
         assert bbox is None
@@ -267,7 +260,6 @@ class TestSelectionBarsExpr:
         )
 
     def test_bars_tap_empty_index(self):
-        """An empty index list (clicked outside all bars) returns (None, None, None)."""
         bars = self._make_bars()
         expr, bbox, region = bars._get_selection_expr_for_stream_value(index=[])
         assert expr is None
@@ -275,13 +267,11 @@ class TestSelectionBarsExpr:
         assert region is None
 
     def test_bars_tap_no_index_kwarg(self):
-        """No index kwarg at all falls through to the parent (no-op for no bounds)."""
         bars = self._make_bars()
         expr, _bbox, _region = bars._get_selection_expr_for_stream_value()
         assert expr is None
 
     def test_bars_box_select_categorical(self):
-        """Box-select over categorical x-axis still works via Selection1DExpr."""
         bars = self._make_bars()
         expr, bbox, _region = bars._get_selection_expr_for_stream_value(
             bounds=(0, 0, 2, 25), x_selection=["A", "B", "C"]
@@ -293,13 +283,10 @@ class TestSelectionBarsExpr:
         )
 
     def test_bars_selection_streams_include_selection1d(self):
-        from holoviews.streams import Selection1D, SelectionXY
-
         assert Selection1D in hv.Bars._selection_streams
         assert SelectionXY in hv.Bars._selection_streams
 
     def test_barplot_default_tools_include_tap(self):
-        import holoviews.plotting.bokeh  # noqa: F401
         from holoviews.plotting.bokeh.chart import BarPlot
 
         assert "tap" in BarPlot.param.default_tools.default

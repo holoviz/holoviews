@@ -997,8 +997,9 @@ class OperationTests:
         pd.testing.assert_series_equal(data["x"], output["x"])
         pd.testing.assert_series_equal(data["y"], output["y"])
 
+
+class TestCategoricalAgg:
     def test_categorical_agg_count(self):
-        """Default aggregation counts rows per category."""
         df = pd.DataFrame(
             {
                 "x": [1, 2, 3, 4, 5],
@@ -1020,13 +1021,8 @@ class OperationTests:
         assert data["B"] == 2
 
     def test_categorical_agg_sum(self):
-        """Sum aggregation on a value dimension."""
         df = pd.DataFrame(
-            {
-                "x": [1, 2, 3, 4],
-                "y": [10, 20, 30, 40],
-                "category": ["A", "B", "A", "B"],
-            }
+            {"x": [1, 2, 3, 4], "y": [10, 20, 30, 40], "category": ["A", "B", "A", "B"]}
         )
         points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
         bars = categorical_agg(
@@ -1045,13 +1041,8 @@ class OperationTests:
         assert data["B"] == 60  # 20 + 40
 
     def test_categorical_agg_mean(self):
-        """Mean aggregation on a value dimension."""
         df = pd.DataFrame(
-            {
-                "x": [1, 2, 3, 4],
-                "y": [10, 20, 30, 40],
-                "category": ["A", "B", "A", "B"],
-            }
+            {"x": [1, 2, 3, 4], "y": [10, 20, 30, 40], "category": ["A", "B", "A", "B"]}
         )
         points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
         bars = categorical_agg(points, dimension="category", value_dimension="y", function=np.mean)
@@ -1065,33 +1056,23 @@ class OperationTests:
         assert data["B"] == 30.0  # (20 + 40) / 2
 
     def test_categorical_agg_custom_label(self):
-        """Custom label overrides auto-generated label."""
-        df = pd.DataFrame(
-            {
-                "x": [1, 2, 3],
-                "y": [10, 20, 30],
-                "category": ["A", "B", "A"],
-            }
-        )
+        df = pd.DataFrame({"x": [1, 2, 3], "y": [10, 20, 30], "category": ["A", "B", "A"]})
         points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
         bars = categorical_agg(points, dimension="category", label="Total")
 
         assert bars.vdims[0].name == "Total"
 
     def test_categorical_agg_missing_dimension_error(self):
-        """Raises ValueError when the specified dimension doesn't exist."""
         points = hv.Points([(1, 2), (3, 4)])
         with pytest.raises(ValueError, match="not found"):
             categorical_agg(points, dimension="nonexistent")
 
     def test_categorical_agg_no_dimension_error(self):
-        """Raises ValueError when dimension param is not provided."""
         points = hv.Points([(1, 2), (3, 4)])
         with pytest.raises(ValueError, match="required"):
             categorical_agg(points)
 
     def test_categorical_agg_empty_element(self):
-        """Returns an empty Bars element when the input is empty."""
         df = pd.DataFrame({"x": [], "y": [], "category": []})
         points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
         bars = categorical_agg(points, dimension="category")
@@ -1100,14 +1081,7 @@ class OperationTests:
         assert len(bars) == 0
 
     def test_categorical_agg_preserves_lineage(self):
-        """Operation output has a pipeline that references the source element."""
-        df = pd.DataFrame(
-            {
-                "x": [1, 2, 3],
-                "y": [10, 20, 30],
-                "category": ["A", "B", "A"],
-            }
-        )
+        df = pd.DataFrame({"x": [1, 2, 3], "y": [10, 20, 30], "category": ["A", "B", "A"]})
         points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
         bars = categorical_agg(points, dimension="category")
 

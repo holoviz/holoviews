@@ -3260,7 +3260,7 @@ class ColorbarPlot(ElementPlot):
         cmapper = self.handles.get(name)
         if cmapper is not None:
             try:
-                palette_changed = cmapper.palette != palette
+                palette_changed = bool(cmapper.palette != palette)
             except Exception:
                 palette_changed = True
             if palette_changed:
