@@ -1001,14 +1001,12 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         class_=(str, int),
         allow_None=True,
         doc="""
-        Value dimension to use as a per-bar baseline (the other end of
-        each bar), making the bars float between two value dimensions
-        instead of growing from a zero baseline. Accepts a dimension name
-        or index naming the lower end of each bar; the first remaining value
-        dimension (once the baseline is removed) is the upper end, so
-        vdims=['Low', 'High'] with baseline='Low' spans Low to High. The
-        baseline must be the lower end of every bar. Supported for ungrouped
-        and grouped Bars; combining it with stacked raises an error.""",
+        Value dimension naming the lower end of each bar, making bars
+        float between two value dimensions instead of growing from zero.
+        The first remaining value dimension is the upper end, so
+        vdims=['Low', 'High'] with baseline='Low' spans Low to High.
+        Supported for ungrouped and grouped Bars; combining it with
+        stacked raises an error.""",
     )
 
     multi_level = param.Boolean(
@@ -1162,9 +1160,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         xdim = element.get_dimension(0)
         ydim = element.vdims[0]
 
-        # Floating bars span baseline_dim (bottom) up to top_dim (the value
-        # dimension left once the baseline is removed). Treat top_dim as the
-        # plotted value so the existing top/data handling applies unchanged.
+        # Floating bars span baseline_dim (bottom) up to top_dim (the
+        # remaining value dimension); treat top_dim as the plotted value.
         top_dim, baseline_dim = self._baseline_dimensions(element)
         self._warn_unused_baseline(element, baseline_dim)
         if baseline_dim is not None:
@@ -1222,8 +1219,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             bar_bottom = "bottom" if baseline_dim is not None else bottom
             mapping = {"x": "xoffsets", "top": ydim.name, "bottom": bar_bottom, "width": width}
         else:
-            # Floating bars carry a per-bar lower coordinate in a "bottom"
-            # column (as the stacked branch does), otherwise it is the scalar 0.
+            # Floating bars carry a per-bar lower coordinate in "bottom",
+            # otherwise it is the scalar 0.
             bar_bottom = "bottom" if baseline_dim is not None else bottom
             mapping = {"x": xdim.name, "top": ydim.name, "bottom": bar_bottom, "width": width}
 

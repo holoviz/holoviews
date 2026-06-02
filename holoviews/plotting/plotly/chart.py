@@ -190,14 +190,12 @@ class BarPlot(BarsMixin, ElementPlot):
         class_=(str, int),
         allow_None=True,
         doc="""
-        Value dimension to use as a per-bar baseline (the other end of
-        each bar), making the bars float between two value dimensions
-        instead of growing from a zero baseline. Accepts a dimension name
-        or index naming the lower end of each bar; the first remaining value
-        dimension (once the baseline is removed) is the upper end, so
-        vdims=['Low', 'High'] with baseline='Low' spans Low to High. The
-        baseline must be the lower end of every bar. Supported for ungrouped
-        and grouped Bars; combining it with stacked raises an error.""",
+        Value dimension naming the lower end of each bar, making bars
+        float between two value dimensions instead of growing from zero.
+        The first remaining value dimension is the upper end, so
+        vdims=['Low', 'High'] with baseline='Low' spans Low to High.
+        Supported for ungrouped and grouped Bars; combining it with
+        stacked raises an error.""",
     )
 
     multi_level = param.Boolean(
@@ -242,8 +240,7 @@ class BarPlot(BarsMixin, ElementPlot):
         # Get x, y, group, stack and color dimensions
         xdim = element.kdims[0]
         vdim = element.vdims[0]
-        # Floating bars span baseline_dim (bottom) up to top_dim (the value
-        # dimension left once the baseline is removed).
+        # Floating bars span baseline_dim (bottom) up to top_dim.
         top_dim, baseline_dim = self._baseline_dimensions(element)
         self._warn_unused_baseline(element, baseline_dim)
         group_dim, stack_dim = None, None
@@ -277,8 +274,7 @@ class BarPlot(BarsMixin, ElementPlot):
                 if baseline_dim is None:
                     values.append(sel.iloc[0, 1] if len(sel) else 0)
                     continue
-                # Floating bars: the trace base sets the lower end and the bar
-                # length is measured from it, so y holds top minus baseline.
+                # Floating bars: base sets the lower end, y the bar length.
                 top = sel.dimension_values(top_dim)[0] if len(sel) else 0
                 base = sel.dimension_values(baseline_dim)[0] if len(sel) else 0
                 values.append(top - base)

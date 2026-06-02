@@ -985,14 +985,12 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         class_=(str, int),
         allow_None=True,
         doc="""
-        Value dimension to use as a per-bar baseline (the other end of
-        each bar), making the bars float between two value dimensions
-        instead of growing from a zero baseline. Accepts a dimension name
-        or index naming the lower end of each bar; the first remaining value
-        dimension (once the baseline is removed) is the upper end, so
-        vdims=['Low', 'High'] with baseline='Low' spans Low to High. The
-        baseline must be the lower end of every bar. Supported for ungrouped
-        and grouped Bars; combining it with stacked raises an error.""",
+        Value dimension naming the lower end of each bar, making bars
+        float between two value dimensions instead of growing from zero.
+        The first remaining value dimension is the upper end, so
+        vdims=['Low', 'High'] with baseline='Low' spans Low to High.
+        Supported for ungrouped and grouped Bars; combining it with
+        stacked raises an error.""",
     )
 
     multi_level = param.Boolean(
@@ -1101,8 +1099,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         top_dim, baseline_dim = self._baseline_dimensions(element)
         self._warn_unused_baseline(element, baseline_dim)
-        # For floating bars the upper end is top_dim (the value dimension left
-        # once the baseline is removed); otherwise the plotted value is vdims[0].
+        # For floating bars the upper end is top_dim; otherwise it is vdims[0].
         value_dim = top_dim if baseline_dim is not None else element.vdims[0]
 
         cats = None
@@ -1187,8 +1184,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                     val = float(vals[0]) if len(vals) else np.nan
                     xval = xpos
 
-                    # Floating bars span from a per-bar baseline dimension up
-                    # to the upper dimension rather than growing from the base.
+                    # Floating bars span from a per-bar baseline up to the
+                    # upper dimension rather than growing from the base.
                     if baseline_dim is not None:
                         bvals = el.dimension_values(baseline_dim)
                         bottom_val = float(bvals[0]) if len(bvals) else 0.0
