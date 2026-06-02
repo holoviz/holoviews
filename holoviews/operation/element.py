@@ -1275,7 +1275,16 @@ class interpolate_curve(Operation):
         return dtype
 
     @classmethod
+    def _empty_plot(cls, x, values):
+        empty_x = np.empty(0, dtype=x.dtype if hasattr(x, "dtype") else float)
+        empty_vals = tuple(np.empty(0, dtype=cls._get_dtype(v)) for v in values)
+        return empty_x, empty_vals
+
+    @classmethod
     def pts_to_prestep(cls, x, values):
+        if len(x) == 0:
+            return cls._empty_plot(x, values)
+
         steps = np.zeros(2 * len(x) - 1)
         value_steps = tuple(np.empty(2 * len(x) - 1, dtype=cls._get_dtype(v)) for v in values)
 
@@ -1292,6 +1301,9 @@ class interpolate_curve(Operation):
 
     @classmethod
     def pts_to_midstep(cls, x, values):
+        if len(x) == 0:
+            return cls._empty_plot(x, values)
+
         steps = np.zeros(2 * len(x))
         value_steps = tuple(np.empty(2 * len(x), dtype=cls._get_dtype(v)) for v in values)
 
@@ -1308,6 +1320,9 @@ class interpolate_curve(Operation):
 
     @classmethod
     def pts_to_poststep(cls, x, values):
+        if len(x) == 0:
+            return cls._empty_plot(x, values)
+
         steps = np.zeros(2 * len(x) - 1)
         value_steps = tuple(np.empty(2 * len(x) - 1, dtype=cls._get_dtype(v)) for v in values)
 
