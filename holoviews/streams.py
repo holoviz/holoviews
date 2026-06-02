@@ -7,6 +7,7 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 from __future__ import annotations
 
 import inspect
+import logging
 import typing as t
 import weakref
 from collections import defaultdict
@@ -22,6 +23,8 @@ import param
 from .core import util
 from .core.ndmapping import UniformNdMapping
 from .core.util.dependencies import pd
+
+logger = logging.getLogger(__name__)
 
 if t.TYPE_CHECKING:
     from collections.abc import Sequence
@@ -243,7 +246,13 @@ class Stream(param.Parameterized):
 
         with triggering_streams(streams):
             for subscriber in subscribers:
-                subscriber(**dict(union))
+                try:
+                    subscriber(**dict(union))
+                except Exception:
+                    logger.exception(
+                        "Stream subscriber %r exception raised; continuing remaining subscribers...",
+                        getattr(subscriber, "__name__", type(subscriber).__name__),
+                    )
 
         for stream in streams:
             with util.disable_constant(stream):
