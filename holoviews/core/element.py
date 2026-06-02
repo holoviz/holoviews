@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from itertools import groupby
 
 import numpy as np
@@ -22,7 +24,7 @@ class Element(ViewableElement, Composable, Overlayable):
 
     """
 
-    group = param.String(default='Element', constant=True)
+    group = param.String(default="Element", constant=True)
 
     __abstract = True
 
@@ -31,8 +33,7 @@ class Element(ViewableElement, Composable, Overlayable):
     def _get_selection_expr_for_stream_value(self, **kwargs):
         return None, None, None
 
-    def hist(self, dimension=None, num_bins=20, bin_range=None,
-             adjoin=True, **kwargs):
+    def hist(self, dimension=None, num_bins=20, bin_range=None, adjoin=True, **kwargs):
         """Computes and adjoins histogram along specified dimension(s).
 
         Defaults to first value dimension if present otherwise falls
@@ -55,11 +56,12 @@ class Element(ViewableElement, Composable, Overlayable):
         histogram
         """
         from ..operation import histogram
-        if not isinstance(dimension, list): dimension = [dimension]
+
+        if not isinstance(dimension, list):
+            dimension = [dimension]
         hists = []
         for d in dimension[::-1]:
-            hist = histogram(self, num_bins=num_bins, bin_range=bin_range,
-                             dimension=d, **kwargs)
+            hist = histogram(self, num_bins=num_bins, bin_range=bin_range, dimension=d, **kwargs)
             hists.append(hist)
         if adjoin:
             layout = self
@@ -71,10 +73,9 @@ class Element(ViewableElement, Composable, Overlayable):
             layout = hists[0]
         return layout
 
-    #======================#
+    # ======================#
     # Subclassable methods #
-    #======================#
-
+    # ======================#
 
     def __getitem__(self, key):
         if key == ():
@@ -92,16 +93,12 @@ class Element(ViewableElement, Composable, Overlayable):
         return True
 
     def __contains__(self, dimension):
-        """Whether element contains the Dimension
-
-        """
+        """Whether element contains the Dimension"""
         return dimension in self.dimensions()
 
     def __iter__(self):
-        """Disable iterator interface.
-
-        """
-        raise NotImplementedError('Iteration on Elements is not supported.')
+        """Disable iterator interface."""
+        raise NotImplementedError("Iteration on Elements is not supported.")
 
     def closest(self, coords, **kwargs):
         """Snap list or dict of coordinates to closest position.
@@ -166,7 +163,6 @@ class Element(ViewableElement, Composable, Overlayable):
             samples = []
         raise NotImplementedError
 
-
     def reduce(self, dimensions=None, function=None, spreadfn=None, **reduction):
         """Applies reduction along the specified dimension(s).
 
@@ -205,25 +201,24 @@ class Element(ViewableElement, Composable, Overlayable):
             dimensions = []
         raise NotImplementedError
 
-
     def _reduce_map(self, dimensions, function, reduce_map):
         if dimensions and reduce_map:
-            raise Exception("Pass reduced dimensions either as an argument "
-                            "or as part of the kwargs not both.")
+            raise ValueError(
+                "Pass reduced dimensions either as an argument or as part of the kwargs not both."
+            )
         if len(set(reduce_map.values())) > 1:
-            raise Exception("Cannot define reduce operations with more than "
-                            "one function at a time.")
+            raise ValueError(
+                "Cannot define reduce operations with more than one function at a time."
+            )
         if reduce_map:
             reduce_map = reduce_map.items()
         if dimensions:
             reduce_map = [(d, function) for d in dimensions]
         elif not reduce_map:
             reduce_map = [(d, function) for d in self.kdims]
-        reduced = [(self.get_dimension(d, strict=True).name, fn)
-                   for d, fn in reduce_map]
+        reduced = [(self.get_dimension(d, strict=True).name, fn) for d, fn in reduce_map]
         grouped = [(fn, [dim for dim, _ in grp]) for fn, grp in groupby(reduced, lambda x: x[1])]
         return grouped[0]
-
 
     def dframe(self, dimensions=None, multi_index=False):
         """Convert dimension values to DataFrame.
@@ -249,12 +244,11 @@ class Element(ViewableElement, Composable, Overlayable):
         else:
             dimensions = [self.get_dimension(d, strict=True).name for d in dimensions]
         column_names = dimensions
-        dim_vals = dict([(dim, self.dimension_values(dim)) for dim in column_names])
+        dim_vals = {dim: self.dimension_values(dim) for dim in column_names}
         df = pd.DataFrame(dim_vals)
         if multi_index:
             df = df.set_index([d for d in dimensions if d in self.kdims])
         return df
-
 
     def array(self, dimensions=None):
         """Convert dimension values to columnar array.
@@ -269,7 +263,7 @@ class Element(ViewableElement, Composable, Overlayable):
         Array of columns corresponding to each dimension
         """
         if dimensions is None:
-            dims = [d for d in self.kdims + self.vdims]
+            dims = list(self.kdims + self.vdims)
         else:
             dims = [self.get_dimension(d, strict=True) for d in dimensions]
 
@@ -279,7 +273,7 @@ class Element(ViewableElement, Composable, Overlayable):
             columns.append(column)
             types.append(dtype_kind(column))
         if len(set(types)) > 1:
-            columns = [c.astype('object') for c in columns]
+            columns = [c.astype("object") for c in columns]
         return np.column_stack(columns)
 
 
@@ -291,20 +285,22 @@ class Tabular(Element):
 
     __abstract = True
 
+    # Defined in Dataset
+    iloc: property
+
+    def __len__(self):
+        # Defined in Dataset
+        raise NotImplementedError
+
     @property
     def rows(self):
-        """Number of rows in table (including header)
-
-        """
+        """Number of rows in table (including header)"""
         return len(self) + 1
 
     @property
     def cols(self):
-        """Number of columns in table
-
-        """
+        """Number of columns in table"""
         return len(self.dimensions())
-
 
     def pprint_cell(self, row, col):
         """Formatted contents of table cell.
@@ -322,20 +318,19 @@ class Tabular(Element):
         """
         ndims = self.ndims
         if col >= self.cols:
-            raise Exception(f"Maximum column index is {self.cols-1}")
+            raise IndexError(f"Maximum column index is {self.cols - 1}")
         elif row >= self.rows:
-            raise Exception(f"Maximum row index is {self.cols-1}")
+            raise IndexError(f"Maximum row index is {self.cols - 1}")
         elif row == 0:
             if col >= ndims:
                 if self.vdims:
                     return self.vdims[col - ndims].pprint_label
                 else:
-                    return ''
+                    return ""
             return self.kdims[col].pprint_label
         else:
-            dim = self.get_dimension(col)
-            return dim.pprint_value(self.iloc[row-1, col])
-
+            dim = self.get_dimension(col, strict=True)
+            return dim.pprint_value(self.iloc[row - 1, col])
 
     def cell_type(self, row, col):
         """Type of the table cell, either 'data' or 'heading'
@@ -351,24 +346,27 @@ class Tabular(Element):
         -------
         Type of the table cell, either 'data' or 'heading'
         """
-        return 'heading' if row == 0 else 'data'
-
+        return "heading" if row == 0 else "data"
 
 
 class Element2D(Element):
-
-    extents = param.Tuple(default=(None, None, None, None),doc="""
+    extents = param.Tuple(
+        default=(None, None, None, None),
+        doc="""
         Allows overriding the extents of the Element in 2D space defined
-        as four-tuple defining the (left, bottom, right and top) edges.""")
+        as four-tuple defining the (left, bottom, right and top) edges.""",
+    )
 
     __abstract = True
 
 
 class Element3D(Element2D):
-
-    extents = param.Tuple(default=(None, None, None, None, None, None), doc="""
+    extents = param.Tuple(
+        default=(None, None, None, None, None, None),
+        doc="""
         Allows overriding the extents of the Element in 3D space
-        defined as (xmin, ymin, zmin, xmax, ymax, zmax).""")
+        defined as (xmin, ymin, zmin, xmax, ymax, zmax).""",
+    )
 
     __abstract = True
 
@@ -385,55 +383,75 @@ class Collator(NdMapping):
 
     """
 
-    drop = param.List(default=[], doc="""
+    drop = param.List(
+        default=[],
+        doc="""
         List of dimensions to drop when collating data, specified
-        as strings.""")
+        as strings.""",
+    )
 
-    drop_constant = param.Boolean(default=False, doc="""
+    drop_constant = param.Boolean(
+        default=False,
+        doc="""
         Whether to demote any non-varying key dimensions to
-        constant dimensions.""")
+        constant dimensions.""",
+    )
 
-    filters = param.List(default=[], doc="""
+    filters = param.List(
+        default=[],
+        doc="""
         List of paths to drop when collating data, specified
-        as strings or tuples.""")
+        as strings or tuples.""",
+    )
 
-    group = param.String(default='Collator')
+    group = param.String(default="Collator")
 
-    progress_bar = param.Parameter(default=None, doc="""
-         The progress bar instance used to report progress. Set to
-         None to disable progress bars.""")
+    progress_bar = param.Parameter(
+        default=None,
+        doc="""
+        The progress bar instance used to report progress. Set to
+        None to disable progress bars.""",
+    )
 
-    merge_type = param.ClassSelector(class_=NdMapping, default=HoloMap,
-                                     is_instance=False,instantiate=False)
+    merge_type = param.ClassSelector(
+        class_=NdMapping, default=HoloMap, is_instance=False, instantiate=False
+    )
 
-    value_transform = param.Callable(default=None, doc="""
+    value_transform = param.Callable(
+        default=None,
+        doc="""
         If supplied the function will be applied on each Collator
         value during collation. This may be used to apply an operation
         to the data or load references from disk before they are collated
-        into a displayable HoloViews object.""")
+        into a displayable HoloViews object.""",
+    )
 
-    vdims = param.List(default=[], doc="""
-         Collator operates on HoloViews objects, if vdims are specified
-         a value_transform function must also be supplied.""")
+    vdims = param.List(
+        default=[],
+        doc="""
+        Collator operates on HoloViews objects, if vdims are specified
+        a value_transform function must also be supplied.""",
+    )
 
     _deep_indexable = False
     _auxiliary_component = False
 
-    _nest_order = {HoloMap: ViewableElement,
-                   GridSpace: (HoloMap, CompositeOverlay, ViewableElement),
-                   NdLayout: (GridSpace, HoloMap, ViewableElement),
-                   NdOverlay: Element}
+    _nest_order: dict[type[NdMapping], type | tuple[type, ...]] = {
+        HoloMap: ViewableElement,
+        GridSpace: (HoloMap, CompositeOverlay, ViewableElement),
+        NdLayout: (GridSpace, HoloMap, ViewableElement),
+        NdOverlay: Element,
+    }
 
     def __init__(self, data=None, **params):
         if isinstance(data, Element):
             params = dict(get_param_values(data), **params)
-            if 'kdims' not in params:
-                params['kdims'] = data.kdims
-            if 'vdims' not in params:
-                params['vdims'] = data.vdims
+            if "kdims" not in params:
+                params["kdims"] = data.kdims
+            if "vdims" not in params:
+                params["vdims"] = data.vdims
             data = data.mapping()
         super().__init__(data, **params)
-
 
     def __call__(self):
         """Filter each Layout in the Collator with the supplied
@@ -451,21 +469,26 @@ class Collator(NdMapping):
             if isinstance(data, AttrTree):
                 data = data.filter(self.filters)
             if len(self.vdims) and self.value_transform:
-                vargs = dict(zip(self.dimensions('value', label=True), data, strict=None))
+                vargs = dict(zip(self.dimensions("value", label=True), data, strict=False))
                 data = self.value_transform(vargs)
             if not isinstance(data, Dimensioned):
-                raise ValueError("Collator values must be Dimensioned objects "
-                                 "before collation.")
+                raise ValueError("Collator values must be Dimensioned objects before collation.")
 
-            varying_keys = [(d, k) for d, k in zip(self.kdims, key, strict=None) if not self.drop_constant or
-                            (d not in constant_dims and d not in self.drop)]
-            constant_keys = {d: k for d, k in zip(self.kdims, key, strict=None) if d in constant_dims
-                             and d not in self.drop and self.drop_constant}
+            varying_keys = [
+                (d, k)
+                for d, k in zip(self.kdims, key, strict=False)
+                if not self.drop_constant or (d not in constant_dims and d not in self.drop)
+            ]
+            constant_keys = {
+                d: k
+                for d, k in zip(self.kdims, key, strict=False)
+                if d in constant_dims and d not in self.drop and self.drop_constant
+            }
             if varying_keys or constant_keys:
                 data = self._add_dimensions(data, varying_keys, constant_keys)
             ndmapping[key] = data
             if self.progress_bar is not None:
-                self.progress_bar(float(idx+1)/num_elements*100)
+                self.progress_bar(float(idx + 1) / num_elements * 100)
 
         components = ndmapping.values()
         accumulator = ndmapping.last.clone(components[0].data)
@@ -473,18 +496,14 @@ class Collator(NdMapping):
             accumulator.update(component)
         return accumulator
 
-
     @property
     def static_dimensions(self):
-        """Return all constant dimensions.
-
-        """
+        """Return all constant dimensions."""
         dimensions = []
         for dim in self.kdims:
             if len(set(self.dimension_values(dim.name))) == 1:
                 dimensions.append(dim)
         return dimensions
-
 
     def _add_dimensions(self, item, dims, constant_keys):
         """Recursively descend through an Layout and NdMapping objects
@@ -495,8 +514,7 @@ class Collator(NdMapping):
         if isinstance(item, Layout):
             item.fixed = False
 
-        dim_vals = [(dim, val) for dim, val in dims[::-1]
-                    if dim not in self.drop]
+        dim_vals = [(dim, val) for dim, val in dims[::-1] if dim not in self.drop]
         if isinstance(item, self.merge_type):
             new_item = item.clone(cdims=constant_keys)
             for dim, val in dim_vals:
@@ -505,9 +523,10 @@ class Collator(NdMapping):
                     new_item = new_item.add_dimension(dim, 0, val)
         elif isinstance(item, self._nest_order[self.merge_type]):
             if dim_vals:
-                dimensions, key = zip(*dim_vals, strict=None)
-                new_item = self.merge_type({key: item}, kdims=list(dimensions),
-                                           cdims=constant_keys)
+                dimensions, key = zip(*dim_vals, strict=True)
+                new_item = self.merge_type(
+                    {key: item}, kdims=list(dimensions), cdims=constant_keys
+                )
             else:
                 new_item = item
         else:
@@ -520,5 +539,19 @@ class Collator(NdMapping):
         return new_item
 
 
-__all__ = list({_k for _k, _v in locals().items()
-                    if isinstance(_v, type) and issubclass(_v, Dimensioned)})
+__all__ = [
+    "Collator",
+    "CompositeOverlay",
+    "Dimensioned",
+    "Element",
+    "Element2D",
+    "Element3D",
+    "GridSpace",
+    "HoloMap",
+    "Layout",
+    "NdLayout",
+    "NdMapping",
+    "NdOverlay",
+    "Tabular",
+    "ViewableElement",
+]

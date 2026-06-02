@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import platform
 import sys
@@ -74,7 +76,7 @@ def _panel_comms():
 
 
 def _hv_rc_file():
-    rc_file = os.getenv('HOLOVIEWSRC')
+    rc_file = os.getenv("HOLOVIEWSRC")
     if rc_file:
         print(f"{'HoloViews config':20}:  {rc_file}")
 

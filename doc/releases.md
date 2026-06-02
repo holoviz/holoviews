@@ -717,7 +717,7 @@ Enhancements:
 Maintenance:
 
 - Fix failing tests ([#5742](https://github.com/holoviz/holoviews/pull/5742))
-- Misc. mainteance ([#5717](https://github.com/holoviz/holoviews/pull/5717))
+- Misc. maintenance ([#5717](https://github.com/holoviz/holoviews/pull/5717))
 
 ### Version 1.16.1
 

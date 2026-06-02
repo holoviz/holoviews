@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import contextlib
 import sys
-from collections.abc import Callable
+import typing as t
 
 import numpy as np
 import panel as pn
@@ -9,6 +11,9 @@ from panel.tests.conftest import port, server_cleanup  # noqa: F401
 from panel.tests.util import serve_and_wait
 
 import holoviews as hv
+
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
 
 CUSTOM_MARKS = ("ui", "gpu")
 
@@ -52,7 +57,6 @@ with contextlib.suppress(ImportError):
     import matplotlib as mpl
 
     mpl.use("agg")
-
 
 
 @pytest.fixture
@@ -122,6 +126,7 @@ def serve_hv(page, port):  # noqa: F811
 
     return serve_and_return_page
 
+
 @pytest.fixture
 def serve_panel(page, port):  # noqa: F811
     def serve_and_return_page(pn_obj):
@@ -130,6 +135,7 @@ def serve_panel(page, port):  # noqa: F811
         return page
 
     return serve_and_return_page
+
 
 @pytest.fixture(autouse=True, scope="module")
 def reset_store():
