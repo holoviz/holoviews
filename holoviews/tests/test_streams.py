@@ -4,6 +4,7 @@ Unit test of the streams system
 
 from __future__ import annotations
 
+import logging
 import weakref
 from collections import defaultdict
 
@@ -159,6 +160,28 @@ class TestStreamsDefine:
         assert isinstance(self.ExplicitTest.param["test"], param.Integer) is True
         assert self.ExplicitTest.param["test"].default == 42
         assert self.ExplicitTest.param["test"].doc == "Test docstring"
+
+    def test_subscriber_error_logging_isolation(self, caplog):
+        xy = self.XY()
+        calls = []
+
+        def bad_subscriber(**kw):
+            calls.append("bad")
+            raise RuntimeError("simulated upstream bug")
+
+        def good_subscriber(**kw):
+            calls.append("good")
+
+        xy.add_subscriber(bad_subscriber)
+        xy.add_subscriber(good_subscriber)
+
+        with caplog.at_level(logging.ERROR, logger="holoviews.streams"):
+            Stream.trigger([xy])
+
+        assert "simulated upstream bug" in caplog.text
+        assert "bad_subscriber" in caplog.text
+        assert len(calls) == 2
+        assert calls == ["bad", "good"]
 
 
 class _Subscriber:
