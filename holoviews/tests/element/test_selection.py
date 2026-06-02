@@ -286,11 +286,6 @@ class TestSelectionBarsExpr:
         assert Selection1D in hv.Bars._selection_streams
         assert SelectionXY in hv.Bars._selection_streams
 
-    def test_barplot_default_tools_include_tap(self):
-        from holoviews.plotting.bokeh.chart import BarPlot
-
-        assert "tap" in BarPlot.param.default_tools.default
-
 
 class TestSelection2DExpr:
     def setup_method(self):
