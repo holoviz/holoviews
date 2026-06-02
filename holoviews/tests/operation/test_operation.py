@@ -13,6 +13,7 @@ from holoviews.core.data.grid import GridInterface
 from holoviews.core.data.ibis import IBIS_VERSION
 from holoviews.core.options import Compositor, SkipRendering
 from holoviews.operation.element import (
+    categorical_agg,
     chain,
     contours,
     decimate,
@@ -995,6 +996,97 @@ class OperationTests:
         output = decimated.data[()].data
         pd.testing.assert_series_equal(data["x"], output["x"])
         pd.testing.assert_series_equal(data["y"], output["y"])
+
+
+class TestCategoricalAgg:
+    def test_categorical_agg_count(self):
+        df = pd.DataFrame(
+            {
+                "x": [1, 2, 3, 4, 5],
+                "y": [10, 20, 30, 40, 50],
+                "category": ["A", "B", "A", "B", "A"],
+            }
+        )
+        points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
+        bars = categorical_agg(points, dimension="category")
+
+        assert isinstance(bars, hv.Bars)
+        assert bars.kdims[0].name == "category"
+        assert bars.vdims[0].name == "Count"
+        # A appears 3 times, B appears 2 times
+        data = dict(
+            zip(bars.dimension_values("category"), bars.dimension_values("Count"), strict=True)
+        )
+        assert data["A"] == 3
+        assert data["B"] == 2
+
+    def test_categorical_agg_sum(self):
+        df = pd.DataFrame(
+            {"x": [1, 2, 3, 4], "y": [10, 20, 30, 40], "category": ["A", "B", "A", "B"]}
+        )
+        points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
+        bars = categorical_agg(
+            points,
+            dimension="category",
+            value_dimension="y",
+            function=np.sum,
+        )
+
+        assert isinstance(bars, hv.Bars)
+        assert bars.vdims[0].name == "sum(y)"
+        data = dict(
+            zip(bars.dimension_values("category"), bars.dimension_values("sum(y)"), strict=True)
+        )
+        assert data["A"] == 40  # 10 + 30
+        assert data["B"] == 60  # 20 + 40
+
+    def test_categorical_agg_mean(self):
+        df = pd.DataFrame(
+            {"x": [1, 2, 3, 4], "y": [10, 20, 30, 40], "category": ["A", "B", "A", "B"]}
+        )
+        points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
+        bars = categorical_agg(points, dimension="category", value_dimension="y", function=np.mean)
+
+        assert isinstance(bars, hv.Bars)
+        assert bars.vdims[0].name == "mean(y)"
+        data = dict(
+            zip(bars.dimension_values("category"), bars.dimension_values("mean(y)"), strict=True)
+        )
+        assert data["A"] == 20.0  # (10 + 30) / 2
+        assert data["B"] == 30.0  # (20 + 40) / 2
+
+    def test_categorical_agg_custom_label(self):
+        df = pd.DataFrame({"x": [1, 2, 3], "y": [10, 20, 30], "category": ["A", "B", "A"]})
+        points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
+        bars = categorical_agg(points, dimension="category", label="Total")
+
+        assert bars.vdims[0].name == "Total"
+
+    def test_categorical_agg_missing_dimension_error(self):
+        points = hv.Points([(1, 2), (3, 4)])
+        with pytest.raises(ValueError, match="not found"):
+            categorical_agg(points, dimension="nonexistent")
+
+    def test_categorical_agg_no_dimension_error(self):
+        points = hv.Points([(1, 2), (3, 4)])
+        with pytest.raises(ValueError, match="required"):
+            categorical_agg(points)
+
+    def test_categorical_agg_empty_element(self):
+        df = pd.DataFrame({"x": [], "y": [], "category": []})
+        points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
+        bars = categorical_agg(points, dimension="category")
+
+        assert isinstance(bars, hv.Bars)
+        assert len(bars) == 0
+
+    def test_categorical_agg_preserves_lineage(self):
+        df = pd.DataFrame({"x": [1, 2, 3], "y": [10, 20, 30], "category": ["A", "B", "A"]})
+        points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
+        bars = categorical_agg(points, dimension="category")
+
+        assert bars.pipeline is not None
+        assert bars.dataset is not None
 
 
 @scipy_skip

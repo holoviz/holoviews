@@ -10,6 +10,7 @@ import pytest
 
 import holoviews as hv
 from holoviews.element.selection import spatial_select_columnar
+from holoviews.streams import Selection1D, SelectionXY
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 
 from .._deps import dd, dd_skip, ds_skip, shapely_skip, spd_skip
@@ -219,6 +220,71 @@ class TestSelection1DExpr:
             np.array([False, False, False, True, True, True, True, True, False, False]),
         )
         assert_element_equal(region, hv.NdOverlay({0: hv.HSpan(3, 7)}))
+
+
+class TestSelectionBarsExpr:
+    def setup_method(self):
+        import holoviews.plotting.bokeh  # noqa: F401
+
+        self._backend = hv.Store.current_backend
+        hv.Store.set_current_backend("bokeh")
+
+    def teardown_method(self):
+        hv.Store.current_backend = self._backend
+
+    def _make_bars(self):
+        return hv.Bars(
+            (["A", "B", "C", "D"], [10, 20, 5, 15]), kdims=["category"], vdims=["count"]
+        )
+
+    def test_bars_tap_single_category(self):
+        bars = self._make_bars()
+        expr, bbox, region = bars._get_selection_expr_for_stream_value(index=[1])
+        assert bbox is None
+        assert region is None
+        assert expr == hv.dim("category").isin(["B"])
+        assert_data_equal(
+            expr.apply(bars),
+            np.array([False, True, False, False]),
+        )
+
+    def test_bars_tap_multiple_categories(self):
+        bars = self._make_bars()
+        expr, bbox, region = bars._get_selection_expr_for_stream_value(index=[0, 2])
+        assert bbox is None
+        assert region is None
+        assert expr == hv.dim("category").isin(["A", "C"])
+        assert_data_equal(
+            expr.apply(bars),
+            np.array([True, False, True, False]),
+        )
+
+    def test_bars_tap_empty_index(self):
+        bars = self._make_bars()
+        expr, bbox, region = bars._get_selection_expr_for_stream_value(index=[])
+        assert expr is None
+        assert bbox is None
+        assert region is None
+
+    def test_bars_tap_no_index_kwarg(self):
+        bars = self._make_bars()
+        expr, _bbox, _region = bars._get_selection_expr_for_stream_value()
+        assert expr is None
+
+    def test_bars_box_select_categorical(self):
+        bars = self._make_bars()
+        expr, bbox, _region = bars._get_selection_expr_for_stream_value(
+            bounds=(0, 0, 2, 25), x_selection=["A", "B", "C"]
+        )
+        assert bbox == {"category": ["A", "B", "C"]}
+        assert_data_equal(
+            expr.apply(bars),
+            np.array([True, True, True, False]),
+        )
+
+    def test_bars_selection_streams_include_selection1d(self):
+        assert Selection1D in hv.Bars._selection_streams
+        assert SelectionXY in hv.Bars._selection_streams
 
 
 class TestSelection2DExpr:
