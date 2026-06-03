@@ -7,7 +7,6 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 from __future__ import annotations
 
 import inspect
-import logging
 import typing as t
 import weakref
 from collections import defaultdict
@@ -23,8 +22,6 @@ import param
 from .core import util
 from .core.ndmapping import UniformNdMapping
 from .core.util.dependencies import pd
-
-logger = logging.getLogger(__name__)
 
 if t.TYPE_CHECKING:
     from collections.abc import Sequence
@@ -250,13 +247,19 @@ class Stream(param.Parameterized):
                 try:
                     subscriber(**dict(union))
                 except Exception as e:
-                    logger.exception(
-                        "Stream subscriber %r exception raised; continuing remaining subscribers...",
-                        getattr(subscriber, "__name__", type(subscriber).__name__),
-                    )
                     errors.append(e)
-            if errors:
+
+            # Re-raise a single error directly to preserve its original exception
+            # type (e.g. AbbreviatedException in some existing tests).
+            # Once Python 3.10 support is dropped, `errors[0].add_note()` can be used instead to attach
+            # the informative message below without changing the exception type.
+            if len(errors) == 1:
                 raise errors[0]
+            elif errors:
+                raise RuntimeError(
+                    f"{len(errors)} stream subscribers raised an exception. "
+                    "All subscribers were invoked regardless."
+                ) from Exception(*errors)
 
         for stream in streams:
             with util.disable_constant(stream):
