@@ -145,3 +145,18 @@ class TestStoreOptionsCustomIdGrowth:
         # each call, so per-step growth quickly exceeds any small bound.
         growth = [b - a for a, b in itertools.pairwise(max_ids)]
         assert max(growth) <= 4, f"id growth per call is not bounded: {max_ids}"
+
+    def test_cross_backend_recustomization_keeps_children_distinct(self):
+        # Children customized in bokeh hold distinct ids that are absent from
+        # the matplotlib store. Re-customizing the overlay in matplotlib with a
+        # spec targeting the children must relocate each child id to a distinct
+        # new id; collapsing them onto a single id aliases the children and
+        # loses their distinct bokeh styles.
+        c1 = hv.Curve([1, 2, 3]).opts(color="red", backend="bokeh")
+        c2 = hv.Curve([3, 2, 1]).opts(color="green", backend="bokeh")
+        ov = (c1 * c2).opts({"Curve": {"linewidth": 3}}, backend="matplotlib")
+
+        first, second = ov.Curve.I, ov.Curve.II
+        assert first.id != second.id
+        assert hv.Store.lookup_options("bokeh", first, "style").kwargs["color"] == "red"
+        assert hv.Store.lookup_options("bokeh", second, "style").kwargs["color"] == "green"
