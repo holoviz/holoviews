@@ -250,9 +250,8 @@ class Stream(param.Parameterized):
                     errors.append(e)
 
             # Re-raise a single error directly to preserve its original exception
-            # type (e.g. AbbreviatedException in some existing tests).
-            # Once Python 3.10 support is dropped, `errors[0].add_note()` can be used instead to attach
-            # the informative message below without changing the exception type.
+            # type e.g. AbbreviatedException.
+            # NOTE: With Python 3.11 we can use an ExceptionGroup.
             if len(errors) == 1:
                 raise errors[0]
             elif errors:
