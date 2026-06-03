@@ -160,3 +160,25 @@ class TestStoreOptionsCustomIdGrowth:
         assert first.id != second.id
         assert hv.Store.lookup_options("bokeh", first, "style").kwargs["color"] == "red"
         assert hv.Store.lookup_options("bokeh", second, "style").kwargs["color"] == "green"
+
+    def test_overlay_subset_update_keeps_ids_bounded(self):
+        # A dashboard overlay where only a subset of curves receives fresh data
+        # each restyle cycle (e.g. jittered streaming updates where some curves
+        # have no new message). Curves that skip an update are the same retained
+        # objects carrying their previous ids; restyling the overlay relocates
+        # them, and deriving the new id from the old value doubled them every
+        # cycle. No static/reference curve is required -- the retention comes
+        # purely from the partial updates.
+        names = list("abc")
+        curves = {k: hv.Curve([(0, 0)], label=k) for k in names}
+        base = self._max_custom_id()
+        max_ids = []
+        for cycle in range(15):
+            k = names[cycle % len(names)]  # only one curve gets fresh data
+            curves[k] = hv.Curve([(x, x + cycle) for x in range(cycle + 2)], label=k)
+            hv.Overlay(list(curves.values())).opts({"Curve": {"linewidth": 2}})
+            max_ids.append(self._max_custom_id() - base)
+
+        # Polynomial growth after the fix; exponential (doubling per cycle)
+        # before it, so the final value blows far past any polynomial bound.
+        assert max_ids[-1] < 500, f"id growth is not polynomial: {max_ids}"
