@@ -10,8 +10,8 @@ Fixes #{issue}
 ## AI Disclosure
 <!-- Delete this section if AI was not used, else specify the tool/model (e.g. Cursor + Sonnet 4.6, Claude Code + Opus 4.6, ChatGPT) and briefly describe how it was used. Failure to disclose AI usage may result in a ban. -->
 
-- Tool & Model:
-- Usage:
+Tool & Model:
+Usage:
 
 - [ ] I have tested all AI-generated content in my PR.
 - [ ] I take responsibility for all AI-generated content in my PR.
