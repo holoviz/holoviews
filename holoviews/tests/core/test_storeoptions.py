@@ -188,26 +188,22 @@ class TestStoreOptionsCustomIdGrowth:
         # Allocating ids from a recomputed max(store)+1 offset gives concurrent
         # calls the same block, so one thread's freshly stored tree is reused
         # by another and the id is gone by the time it is propagated, raising
-        # "New option id ... does not match any option trees".
+        # "New option id ... does not match any option trees". future.result()
+        # re-raises any such error from the worker threads, failing the test.
         import threading
+        from concurrent.futures import ThreadPoolExecutor
 
-        errors = []
-        barrier = threading.Barrier(8)
+        n_workers = 8
+        barrier = threading.Barrier(n_workers)
 
         def worker(w):
-            try:
-                barrier.wait()
-                for i in range(60):
-                    el = hv.Curve([1, 2, 3], label=f"w{w}")
-                    for _ in range(4):
-                        el = el.opts(linewidth=(i % 5) + 1)
-            except Exception as exc:
-                errors.append(exc)
+            barrier.wait()
+            for i in range(60):
+                el = hv.Curve([1, 2, 3], label=f"w{w}")
+                for _ in range(4):
+                    el = el.opts(linewidth=(i % 5) + 1)
 
-        threads = [threading.Thread(target=worker, args=(w,)) for w in range(8)]
-        for thread in threads:
-            thread.start()
-        for thread in threads:
-            thread.join()
-
-        assert not errors, f"concurrent customization raised: {errors[:3]}"
+        with ThreadPoolExecutor(max_workers=n_workers) as executor:
+            futures = [executor.submit(worker, w) for w in range(n_workers)]
+            for future in futures:
+                future.result()
