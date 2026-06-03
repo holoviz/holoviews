@@ -1275,18 +1275,11 @@ class interpolate_curve(Operation):
         return dtype
 
     @classmethod
-    def _empty_plot(cls, x, values):
-        empty_x = np.empty(0, dtype=x.dtype if hasattr(x, "dtype") else float)
-        empty_vals = tuple(np.empty(0, dtype=cls._get_dtype(v)) for v in values)
-        return empty_x, empty_vals
-
-    @classmethod
     def pts_to_prestep(cls, x, values):
-        if len(x) == 0:
-            return cls._empty_plot(x, values)
-
-        steps = np.zeros(2 * len(x) - 1)
-        value_steps = tuple(np.empty(2 * len(x) - 1, dtype=cls._get_dtype(v)) for v in values)
+        # Make sure `size` is never < 0. See https://github.com/holoviz/holoviews/issues/6893
+        size = max(2 * len(x) - 1, 0)
+        steps = np.zeros(size)
+        value_steps = tuple(np.empty(size, dtype=cls._get_dtype(v)) for v in values)
 
         steps[0::2] = x
         steps[1::2] = steps[0:-2:2]
@@ -1301,14 +1294,12 @@ class interpolate_curve(Operation):
 
     @classmethod
     def pts_to_midstep(cls, x, values):
-        if len(x) == 0:
-            return cls._empty_plot(x, values)
-
         steps = np.zeros(2 * len(x))
         value_steps = tuple(np.empty(2 * len(x), dtype=cls._get_dtype(v)) for v in values)
 
-        steps[1:-1:2] = steps[2::2] = x[:-1] + (x[1:] - x[:-1]) / 2
-        steps[0], steps[-1] = x[0], x[-1]
+        if len(x):
+            steps[1:-1:2] = steps[2::2] = x[:-1] + (x[1:] - x[:-1]) / 2
+            steps[0], steps[-1] = x[0], x[-1]
 
         val_arrays = []
         for v, s in zip(values, value_steps, strict=True):
@@ -1320,11 +1311,9 @@ class interpolate_curve(Operation):
 
     @classmethod
     def pts_to_poststep(cls, x, values):
-        if len(x) == 0:
-            return cls._empty_plot(x, values)
-
-        steps = np.zeros(2 * len(x) - 1)
-        value_steps = tuple(np.empty(2 * len(x) - 1, dtype=cls._get_dtype(v)) for v in values)
+        size = max(2 * len(x) - 1, 0)
+        steps = np.zeros(size)
+        value_steps = tuple(np.empty(size, dtype=cls._get_dtype(v)) for v in values)
 
         steps[0::2] = x
         steps[1::2] = steps[2::2]
