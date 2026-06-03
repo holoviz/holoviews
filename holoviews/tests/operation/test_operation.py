@@ -997,6 +997,17 @@ class OperationTests:
         pd.testing.assert_series_equal(data["x"], output["x"])
         pd.testing.assert_series_equal(data["y"], output["y"])
 
+    @pytest.mark.parametrize("steps", ["steps-post", "steps-pre", "linear", "steps-mid"])
+    def test_empty_curve_interpolation(self, steps):
+        empty_curve = hv.Curve(([], []), "x", "y").opts(interpolation=steps)
+        hv.renderer("bokeh").get_plot(empty_curve)
+
+        x_values = empty_curve.data[("x")]
+        y_values = empty_curve.data[("y")]
+
+        assert len(x_values) == 0
+        assert len(y_values) == 0
+
 
 class TestCategoricalAgg:
     def test_categorical_agg_count(self):
