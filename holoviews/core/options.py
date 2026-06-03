@@ -1754,18 +1754,23 @@ class StoreOptions:
                 }
 
         custom_options = Store.custom_options(backend=backend)
-        for tree_id in obj_ids:
+        # Relocate the object's trees to a fresh contiguous block above the
+        # offset. Ids are opaque keys into Store._custom_options; the only
+        # requirements are that the new ids are disjoint from existing keys
+        # (guaranteed by the offset) and that distinct old ids map to distinct
+        # new ids. Indexing by position keeps the maximum id linear in the
+        # number of live customizations; deriving it from the old id's value
+        # (tree_id + offset + 1) doubles the maximum on every re-customization.
+        for new_id, tree_id in enumerate(obj_ids, start=offset):
             if tree_id is not None and tree_id in custom_options:
                 original = custom_options[tree_id]
                 clone = OptionTree(
                     items=original.items(), groups=original.groups, backend=original.backend
                 )
-                clones[tree_id + offset + 1] = clone
-                id_mapping.append((tree_id, tree_id + offset + 1))
             else:
                 clone = OptionTree(groups=available_options.groups, backend=backend)
-                clones[offset] = clone
-                id_mapping.append((tree_id, offset))
+            clones[new_id] = clone
+            id_mapping.append((tree_id, new_id))
 
             # Nodes needed to ensure allowed_keywords is respected
             for obj_type, opts in used_options.items():
