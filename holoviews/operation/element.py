@@ -1276,7 +1276,6 @@ class interpolate_curve(Operation):
 
     @classmethod
     def pts_to_prestep(cls, x, values):
-        # Make sure `size` is never < 0. See https://github.com/holoviz/holoviews/issues/6893
         size = max(2 * len(x) - 1, 0)
         steps = np.zeros(size)
         value_steps = tuple(np.empty(size, dtype=cls._get_dtype(v)) for v in values)
