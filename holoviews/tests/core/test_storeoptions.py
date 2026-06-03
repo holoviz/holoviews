@@ -182,3 +182,32 @@ class TestStoreOptionsCustomIdGrowth:
         # Polynomial growth after the fix; exponential (doubling per cycle)
         # before it, so the final value blows far past any polynomial bound.
         assert max_ids[-1] < 500, f"id growth is not polynomial: {max_ids}"
+
+    def test_concurrent_recustomization_is_thread_safe(self):
+        # Customizing from multiple threads must not collide on relocated ids.
+        # Allocating ids from a recomputed max(store)+1 offset gives concurrent
+        # calls the same block, so one thread's freshly stored tree is reused
+        # by another and the id is gone by the time it is propagated, raising
+        # "New option id ... does not match any option trees".
+        import threading
+
+        errors = []
+        barrier = threading.Barrier(8)
+
+        def worker(w):
+            try:
+                barrier.wait()
+                for i in range(60):
+                    el = hv.Curve([1, 2, 3], label=f"w{w}")
+                    for _ in range(4):
+                        el = el.opts(linewidth=(i % 5) + 1)
+            except Exception as exc:
+                errors.append(exc)
+
+        threads = [threading.Thread(target=worker, args=(w,)) for w in range(8)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        assert not errors, f"concurrent customization raised: {errors[:3]}"
