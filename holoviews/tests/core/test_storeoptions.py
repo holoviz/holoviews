@@ -5,6 +5,8 @@ Store as used by the %opts magic.
 
 from __future__ import annotations
 
+import itertools
+
 import numpy as np
 
 import holoviews as hv
@@ -111,3 +113,35 @@ class TestStoreOptsMethod:
 
     def test_holomap_options_empty_no_exception(self):
         hv.HoloMap({0: hv.Image(np.random.rand(10, 10))}).options()
+
+
+@mpl_skip
+class TestStoreOptionsCustomIdGrowth:
+    """
+    Re-customizing a retained, already-customized object must not grow the
+    custom-option ids exponentially. The buggy behaviour minted a new id of
+    ``old_id + max(all_ids) + 2``, which doubles the maximum id on every call
+    when the object already holds the store's largest id.
+    """
+
+    def setup_method(self):
+        hv.Store.current_backend = "matplotlib"
+
+    @staticmethod
+    def _max_custom_id():
+        keys = list(hv.Store._custom_options.get("matplotlib", {}).keys())
+        return max(keys) if keys else 0
+
+    def test_recustomization_id_growth_is_not_exponential(self):
+        el = hv.Curve([1, 2, 3])
+        max_ids = []
+        for _ in range(20):
+            el = el.opts(color="red")
+            max_ids.append(self._max_custom_id())
+
+        # The object carries a single custom-option id, so a correct
+        # relocation grows the maximum by a small constant per call (linear).
+        # The exponential bug instead grows it by roughly the current maximum
+        # each call, so per-step growth quickly exceeds any small bound.
+        growth = [b - a for a, b in itertools.pairwise(max_ids)]
+        assert max(growth) <= 4, f"id growth per call is not bounded: {max_ids}"
