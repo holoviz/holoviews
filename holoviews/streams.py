@@ -242,8 +242,23 @@ class Stream(param.Parameterized):
         )
 
         with triggering_streams(streams):
+            errors = []
             for subscriber in subscribers:
-                subscriber(**dict(union))
+                try:
+                    subscriber(**dict(union))
+                except Exception as e:
+                    errors.append(e)
+
+            # Re-raise a single error directly to preserve its original exception
+            # type e.g. AbbreviatedException.
+            # NOTE: With Python 3.11 we can use an ExceptionGroup.
+            if len(errors) == 1:
+                raise errors[0]
+            elif errors:
+                raise RuntimeError(
+                    f"{len(errors)} stream subscribers raised an exception. "
+                    "All subscribers were invoked regardless."
+                ) from Exception(*errors)
 
         for stream in streams:
             with util.disable_constant(stream):
