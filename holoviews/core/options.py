@@ -37,7 +37,6 @@ from __future__ import annotations
 import difflib
 import inspect
 import pickle
-import threading
 import traceback
 import typing as t
 from collections import defaultdict
@@ -1214,12 +1213,6 @@ class Store:
     _weakrefs = {}
     _options_context = False
 
-    # Monotonic high-water mark for custom-option ids and the lock guarding
-    # its allocation. Ids are never reused, so concurrent customizations
-    # receive disjoint id blocks instead of colliding on a recomputed offset.
-    _id_counter = 0
-    _id_lock = threading.Lock()
-
     # Backend option caches
     _lookup_cache = {}
 
@@ -1742,8 +1735,8 @@ class StoreOptions:
         """
         clones, id_mapping = {}, []
         obj_ids = cls.get_object_ids(obj)
+        offset = cls.id_offset()
         obj_ids = [None] if len(obj_ids) == 0 else obj_ids
-        offset = cls.reserve_ids(len(obj_ids))
 
         used_obj_types = [(opt.split(".")[0],) for opt in options]
         backend = backend or Store.current_backend
@@ -1761,23 +1754,18 @@ class StoreOptions:
                 }
 
         custom_options = Store.custom_options(backend=backend)
-        # Relocate the object's trees to a fresh contiguous block above the
-        # offset. Ids are opaque keys into Store._custom_options; the only
-        # requirements are that the new ids are disjoint from existing keys
-        # (guaranteed by the offset) and that distinct old ids map to distinct
-        # new ids. Indexing by position keeps the maximum id linear in the
-        # number of live customizations; deriving it from the old id's value
-        # (tree_id + offset + 1) doubles the maximum on every re-customization.
-        for new_id, tree_id in enumerate(obj_ids, start=offset):
+        for tree_id in obj_ids:
             if tree_id is not None and tree_id in custom_options:
                 original = custom_options[tree_id]
                 clone = OptionTree(
                     items=original.items(), groups=original.groups, backend=original.backend
                 )
+                clones[tree_id + offset + 1] = clone
+                id_mapping.append((tree_id, tree_id + offset + 1))
             else:
                 clone = OptionTree(groups=available_options.groups, backend=backend)
-            clones[new_id] = clone
-            id_mapping.append((tree_id, new_id))
+                clones[offset] = clone
+                id_mapping.append((tree_id, offset))
 
             # Nodes needed to ensure allowed_keywords is respected
             for obj_type, opts in used_options.items():
@@ -1882,24 +1870,6 @@ class StoreOptions:
             max_ids.append(max_id)
         # If no backends defined (e.g. plotting not imported) return zero
         return max(max_ids) if max_ids else 0
-
-    @classmethod
-    def reserve_ids(cls, n):
-        """Atomically reserve a contiguous block of ``n`` fresh custom-option
-        ids and return its first id.
-
-        Ids are drawn from a monotonic counter that never decreases, so a
-        block is never reused even as store entries are reclaimed, and
-        concurrent customizations receive disjoint blocks rather than
-        colliding on a recomputed offset. The counter is floored by
-        ``id_offset`` so it also clears any ids already present in the store
-        (e.g. restored by unpickling).
-
-        """
-        with Store._id_lock:
-            base = max(Store._id_counter, cls.id_offset())
-            Store._id_counter = base + n
-            return base
 
     @classmethod
     def update_backends(cls, id_mapping, custom_trees, backend=None):
