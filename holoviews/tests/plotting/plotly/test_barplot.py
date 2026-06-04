@@ -201,7 +201,6 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
         ids=["by_name", "by_index", "datetime_x"],
     )
     def test_bars_baseline_floating(self, df, baseline, base, length):
-        # The trace base holds the baseline; y holds the bar length (high - low).
         bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline=baseline)
         state = self._get_plot_state(bars)
         assert_data_equal(state["data"][0]["base"], np.array(base))
@@ -223,15 +222,12 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
         assert y1 == 40.0
 
     def test_bars_baseline_exceeds_errors(self):
-        # The baseline must be the lower end of every bar; an inverted range
-        # (low > high) is a usage error.
         df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [6.0, 8.0]})
         bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
         with pytest.raises(ValueError, match="exceed"):
             self._get_plot_state(bars)
 
     def test_bars_baseline_low_first(self):
-        # Order-flexible: ['low', 'high'] + baseline='low' spans low -> high.
         df = pd.DataFrame({"x": ["a", "b", "c"], "low": [1.0, 2.0, 1.5], "high": [3.0, 5.0, 4.0]})
         bars = hv.Bars(df, "x", ["low", "high"]).opts(baseline="low")
         state = self._get_plot_state(bars)
@@ -239,7 +235,6 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
         assert_data_equal(state["data"][0]["y"], np.array([2.0, 3.0, 2.5]))
 
     def test_bars_baseline_grouped(self):
-        # Each grouped bar floats from its baseline (Low) up to the upper dim (High).
         bars = hv.Bars(
             [("Q1", "E", 10, 2), ("Q1", "W", 7, 1), ("Q2", "E", 12, 3), ("Q2", "W", 9, 4)],
             kdims=["Quarter", "Region"],

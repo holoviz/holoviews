@@ -199,7 +199,6 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
         ids=["by_name", "by_index", "nan", "datetime_x"],
     )
     def test_bars_baseline_floating(self, df, baseline, bottoms, heights):
-        # Bottom of each bar is the baseline; height spans up to the upper dim.
         bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline=baseline)
         ax = mpl_renderer.get_plot(bars).handles["axis"]
         np.testing.assert_allclose([p.get_y() for p in ax.patches], bottoms)
@@ -222,15 +221,12 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
         assert y1 == 40.0
 
     def test_bars_baseline_exceeds_errors(self):
-        # The baseline must be the lower end of every bar; an inverted range
-        # (low > high) is a usage error.
         df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [6.0, 8.0]})
         bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
         with pytest.raises(ValueError, match="exceed"):
             mpl_renderer.get_plot(bars)
 
     def test_bars_baseline_low_first(self):
-        # Order-flexible: ['low', 'high'] + baseline='low' spans low -> high.
         df = pd.DataFrame({"x": ["a", "b", "c"], "low": [1.0, 2.0, 1.5], "high": [3.0, 5.0, 4.0]})
         bars = hv.Bars(df, "x", ["low", "high"]).opts(baseline="low")
         plot = mpl_renderer.get_plot(bars)
@@ -239,7 +235,6 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
         np.testing.assert_allclose([p.get_height() for p in ax.patches], [2.0, 3.0, 2.5])
 
     def test_bars_baseline_grouped(self):
-        # Each grouped bar floats from its baseline (Low) up to the upper dim (High).
         bars = hv.Bars(
             [("Q1", "E", 10, 2), ("Q1", "W", 7, 1), ("Q2", "E", 12, 3), ("Q2", "W", 9, 4)],
             kdims=["Quarter", "Region"],
