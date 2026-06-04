@@ -171,6 +171,8 @@ class AggregationOperation(ResampleOperation2D):
         dimension = inner_element.get_dimension(column)
         if dimension is None and isinstance(element, NdOverlay):
             dimension = element.get_dimension(column)
+        if dimension is None:
+            return column
         return dimension.label if is_wide and dimension in ydims else dimension.name
 
     @classmethod

@@ -1526,6 +1526,18 @@ def test_rasterize_where_agg_with_column(point_plot, agg_input_fn):
     np.testing.assert_array_equal(img["s"], img_no_column["s"])
 
 
+@pytest.mark.parametrize("agg_input_fn", [ds.first, ds.last, ds.min, ds.max])
+def test_rasterize_where_agg_with_undeclared_selector_column(point_data, agg_input_fn):
+    points = hv.Points(point_data, kdims=["x", "y"], vdims=["val"])
+    agg_fn = ds.where(agg_input_fn("s"), "val")
+    rast_input = dict(dynamic=False, x_range=(-1, 1), y_range=(-1, 1), width=2, height=2)
+    img = rasterize(points, aggregator=agg_fn, **rast_input)
+
+    assert list(img.data) == ["val"]
+    img_full = rasterize(hv.Points(point_data), aggregator=agg_fn, **rast_input)
+    np.testing.assert_array_equal(img["val"], img_full["val"])
+
+
 def test_rasterize_summarize(point_plot):
     agg_fn_count, agg_fn_first = ds.count(), ds.first("val")
     agg_fn = ds.summary(count=agg_fn_count, first=agg_fn_first)
