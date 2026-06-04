@@ -27,8 +27,8 @@ class TestSankeyPlot(TestBokehPlot):
         text_source = plot.handles["text_1_source"]
         patch_source = plot.handles["patches_1_source"]
 
-        scatter_index = ["A", "B", "X", "Y", "Z"]
-        assert scatter_source.data["index"] == scatter_index
+        scatter_index = np.arange(5, dtype=np.int32)
+        assert_data_equal(scatter_source.data["index"], scatter_index)
 
         text_data = {
             "x": np.array([18.75, 18.75, 1003.75, 1003.75, 1003.75]),

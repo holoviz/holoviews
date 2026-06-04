@@ -47,15 +47,6 @@ class SankeyPlot(GraphPlot):
         doc="Sort nodes in ascending breadth.",
     )
 
-    # Deprecated options
-
-    color_index = param.ClassSelector(
-        default=2,
-        class_=(str, int),
-        allow_None=True,
-        doc="Index of the dimension from which the node labels will be drawn",
-    )
-
     label_index = param.ClassSelector(
         default=2,
         class_=(str, int),

@@ -549,14 +549,6 @@ class TestColorbarPlot(TestMPLPlot):
         assert cmap._rgba_under == (1.0, 0, 0, 1)
         assert cmap._rgba_over == (0, 0, 1.0, 1)
 
-    def test_colorbar_label(self):
-        scatter = hv.Scatter(np.random.rand(100, 3), vdims=["y", "color"]).opts(
-            color_index=2, colorbar=True
-        )
-        plot = mpl_renderer.get_plot(scatter)
-        cbar_ax = plot.handles["cax"]
-        assert cbar_ax.get_ylabel() == "color"
-
     def test_colorbar_empty_clabel(self):
         img = hv.Image(np.array([[1, 1, 1, 2], [2, 2, 3, 4]])).opts(clabel="", colorbar=True)
         plot = mpl_renderer.get_plot(img)

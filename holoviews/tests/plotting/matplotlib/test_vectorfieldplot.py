@@ -7,7 +7,6 @@ import holoviews as hv
 from holoviews.core.options import AbbreviatedException
 from holoviews.testing import assert_data_equal
 
-from ..utils import ParamLogStream
 from .test_plot import TestMPLPlot, mpl_renderer
 
 
@@ -113,17 +112,3 @@ class TestVectorFieldPlot(TestMPLPlot):
         assert artist.get_linewidths() == [1, 4, 8]
         plot.update((1,))
         assert artist.get_linewidths() == [3, 2, 5]
-
-    def test_vectorfield_color_index_color_clash(self):
-        vectorfield = hv.VectorField(
-            [(0, 0, 0, 1, 0), (0, 1, 0, 1, 1), (0, 2, 0, 1, 2)], vdims=["A", "M", "color"]
-        ).opts(color="color", color_index="A")
-        with ParamLogStream() as log:
-            mpl_renderer.get_plot(vectorfield)
-        log_msg = log.stream.read()
-        warning = (
-            "The `color_index` parameter is deprecated in favor of color style mapping, e.g. "
-            "`color=dim('color')` or `line_color=dim('color')`\nCannot declare style mapping "
-            "for 'color' option and declare a color_index; ignoring the color_index.\n"
-        )
-        assert log_msg == warning

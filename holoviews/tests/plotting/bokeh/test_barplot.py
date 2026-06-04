@@ -14,7 +14,6 @@ import holoviews as hv
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.testing import assert_data_equal
 
-from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
@@ -315,20 +314,6 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay)
         for subplot, color in zip(plot.subplots.values(), colors, strict=True):
             assert subplot.handles["glyph"].fill_color == color
-
-    def test_bars_color_index_color_clash(self):
-        bars = hv.Bars([(0, 0, 0), (0, 1, 1), (0, 2, 2)], vdims=["y", "color"]).opts(
-            color="color", color_index="color"
-        )
-        with ParamLogStream() as log:
-            bokeh_renderer.get_plot(bars)
-        log_msg = log.stream.read()
-        warning = (
-            "The `color_index` parameter is deprecated in favor of color style mapping, "
-            "e.g. `color=dim('color')` or `line_color=dim('color')`\nCannot declare style "
-            "mapping for 'color' option and declare a color_index; ignoring the color_index.\n"
-        )
-        assert log_msg == warning
 
     def test_bars_continuous_data_list_same_interval(self):
         bars = hv.Bars(([0, 1, 2], [10, 20, 30]))

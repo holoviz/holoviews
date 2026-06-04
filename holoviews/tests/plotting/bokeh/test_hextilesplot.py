@@ -5,7 +5,7 @@ import numpy as np
 import holoviews as hv
 from holoviews.plotting.bokeh.hex_tiles import hex_binning
 from holoviews.plotting.bokeh.util import property_to_dict
-from holoviews.testing import assert_data_equal, assert_element_equal
+from holoviews.testing import assert_element_equal
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -69,20 +69,6 @@ class TestHexTilesPlot(TestBokehPlot):
         glyph = plot.handles["glyph"]
         assert glyph.size == 0.13333333333333333
         assert glyph.aspect_scale == 0.5
-
-    def test_hex_tiles_scale(self):
-        tiles = hv.HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).opts(
-            size_index=2, gridsize=3
-        )
-        plot = bokeh_renderer.get_plot(tiles)
-        source = plot.handles["source"]
-        assert_data_equal(source.data["scale"], np.array([0.45, 0.45, 0.9]))
-
-    def test_hex_tiles_scale_all_equal(self):
-        tiles = hv.HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).opts(size_index=2)
-        plot = bokeh_renderer.get_plot(tiles)
-        source = plot.handles["source"]
-        assert_data_equal(source.data["scale"], np.array([0.9, 0.9, 0.9, 0.9]))
 
     def test_hex_tiles_hover_count(self):
         tiles = hv.HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).opts(tools=["hover"])

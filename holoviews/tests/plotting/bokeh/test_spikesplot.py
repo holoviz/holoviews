@@ -9,16 +9,10 @@ import holoviews as hv
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.testing import assert_data_equal
 
-from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestSpikesPlot(TestBokehPlot):
-    def test_spikes_colormapping(self):
-        spikes = hv.Spikes(np.random.rand(20, 2), vdims=["Intensity"])
-        color_spikes = spikes.opts(color_index=1)
-        self._test_colormapping(color_spikes, 1)
-
     def test_empty_spikes_plot(self):
         spikes = hv.Spikes([], vdims=["Intensity"])
         plot = bokeh_renderer.get_plot(spikes)
@@ -243,17 +237,3 @@ class TestSpikesPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay)
         for subplot, color in zip(plot.subplots.values(), colors, strict=True):
             assert subplot.handles["glyph"].line_color == color
-
-    def test_spikes_color_index_color_clash(self):
-        spikes = hv.Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)], vdims=["y", "color"]).opts(
-            color="color", color_index="color"
-        )
-        with ParamLogStream() as log:
-            bokeh_renderer.get_plot(spikes)
-        log_msg = log.stream.read()
-        warning = (
-            "The `color_index` parameter is deprecated in favor of color style mapping, e.g. "
-            "`color=dim('color')` or `line_color=dim('color')`\nCannot declare style mapping "
-            "for 'color' option and declare a color_index; ignoring the color_index.\n"
-        )
-        assert log_msg == warning
