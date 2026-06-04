@@ -28,7 +28,6 @@ from holoviews.operation.datashader import (
     AggregationOperation,
     aggregate,
     datashade,
-    directly_connect_edges,
     dynspread,
     inspect,
     inspect_points,
@@ -1843,17 +1842,13 @@ class DatashaderStackTests:
         assert_element_equal(combined, self.rgb2)
 
 
-class GraphBundlingTests:
-    def setup_method(self):
-        if DATASHADER_VERSION <= (0, 7, 0):
-            pytest.skip("Regridding operations require datashader>=0.7.0")
-        self.source = np.arange(8)
-        self.target = np.zeros(8)
-        self.graph = hv.Graph(((self.source, self.target),))
+def test_directly_connect_paths(bokeh_backend):
+    # Import here to avoid slow collect time
+    from holoviews.operation._datashader_bundling import directly_connect_edges
 
-    def test_directly_connect_paths(self):
-        direct = directly_connect_edges(self.graph)._split_edgepaths
-        assert_element_equal(direct, self.graph.edgepaths)
+    graph = hv.Graph(((np.arange(8), np.zeros(8)),))
+    direct = directly_connect_edges(graph)._split_edgepaths
+    assert_element_equal(direct, graph.edgepaths)
 
 
 class InspectorTests:
