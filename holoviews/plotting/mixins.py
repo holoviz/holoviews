@@ -420,8 +420,9 @@ class BarsMixin:
             neg_range = ds.select(**{vdim: (None, 0)}).aggregate(xdim, function=np.sum).range(vdim)
             y0, y1 = util.max_range([pos_range, neg_range])
         elif floating:
-            # Span both ends from the element directly (overlays are not range-combined).
-            y0, y1 = util.max_range([element.range(top_dim), element.range(baseline_dim)])
+            y0, y1 = util.max_range(
+                [ranges[top_dim.label]["data"], ranges[baseline_dim.label]["data"]]
+            )
         else:
             y0, y1 = ranges[vdim]["combined"]
 
@@ -431,8 +432,9 @@ class BarsMixin:
 
         padding = 0 if self.overlaid else self.padding
         _, ypad, _ = get_axis_padding(padding)
+        ydim_label = top_dim.label if floating else vdim
         y0, y1 = util.dimension_range(
-            y0, y1, ranges[vdim]["hard"], ranges[vdim]["soft"], ypad, self.logy
+            y0, y1, ranges[ydim_label]["hard"], ranges[ydim_label]["soft"], ypad, self.logy
         )
         y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
         return (x0, y0, x1, y1)

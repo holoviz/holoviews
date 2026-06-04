@@ -210,6 +210,15 @@ class TestBarPlot(TestBokehPlot):
         y_range = plot.handles["y_range"]
         assert y_range.start == 0
 
+    def test_bars_baseline_range_uses_top_dim_when_baseline_is_vdims0(self):
+        low_dim = hv.Dimension("low", soft_range=(0, None))
+        df = pd.DataFrame({"x": ["a", "b"], "high": [30.0, 40.0], "low": [10.0, 20.0]})
+        bars = hv.Bars(df, "x", [low_dim, "high"]).opts(baseline="low", padding=0)
+        plot = bokeh_renderer.get_plot(bars)
+        y_range = plot.handles["y_range"]
+        assert y_range.start == 10.0
+        assert y_range.end == 40.0
+
     @pytest.mark.parametrize("low", [[6.0, 8.0], [1.0, 8.0]], ids=["all_exceed", "one_exceeds"])
     def test_bars_baseline_exceeds_errors(self, low):
         # The baseline must be the lower end of every bar; an inverted range
