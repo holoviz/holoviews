@@ -118,40 +118,28 @@ class TestBarPlot(TestBokehPlot):
         assert_data_equal(source.data["bottom"], np.array([-1, 0, 0]))
 
     @pytest.mark.parametrize(
-        ("df", "baseline", "expected_bottom"),
+        ("data", "baseline"),
         [
+            ({"x": ["a", "b", "c"], "high": [3, 5, 4], "low": [1, 2, 1.5]}, "low"),
+            ({"x": ["a", "b"], "high": [3, 5], "low": [1, 2]}, 2),
+            ({"x": ["a", "b"], "high": [3, 5], "low": [1, np.nan]}, "low"),
             (
-                pd.DataFrame({"x": ["a", "b", "c"], "high": [3, 5, 4], "low": [1, 2, 1.5]}),
+                {
+                    "x": pd.date_range("2024-01-01", periods=3),
+                    "high": [3.0, 5.0, 4.0],
+                    "low": [1.0, 2.0, 1.5],
+                },
                 "low",
-                [1, 2, 1.5],
-            ),
-            # baseline by dimension index; 'low' is dimension 2 (x, high, low)
-            (pd.DataFrame({"x": ["a", "b"], "high": [3, 5], "low": [1, 2]}), 2, [1, 2]),
-            (
-                pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, np.nan]}),
-                "low",
-                [1.0, np.nan],
-            ),
-            (
-                pd.DataFrame(
-                    {
-                        "x": pd.date_range("2024-01-01", periods=3),
-                        "high": [3.0, 5.0, 4.0],
-                        "low": [1.0, 2.0, 1.5],
-                    }
-                ),
-                "low",
-                [1.0, 2.0, 1.5],
             ),
         ],
         ids=["by_name", "by_index", "nan", "datetime_x"],
     )
-    def test_bars_baseline_floating_source_data(self, df, baseline, expected_bottom):
-        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline=baseline)
+    def test_bars_baseline_floating_source_data(self, data, baseline):
+        bars = hv.Bars(pd.DataFrame(data), "x", ["high", "low"]).opts(baseline=baseline)
         plot = bokeh_renderer.get_plot(bars)
         source = plot.handles["source"]
         glyph = plot.handles["glyph"]
-        assert_data_equal(source.data["bottom"], np.array(expected_bottom))
+        assert_data_equal(source.data["bottom"], np.array(data["low"]))
         assert property_to_dict(glyph.top) == "high"
         assert property_to_dict(glyph.bottom) == "bottom"
 

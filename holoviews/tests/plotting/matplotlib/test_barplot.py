@@ -159,50 +159,37 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
             assert tick.get_text() == xticklabels[i]
 
     @pytest.mark.parametrize(
-        ("df", "baseline", "bottoms", "heights"),
+        ("data", "baseline"),
         [
             (
-                pd.DataFrame(
-                    {"x": ["a", "b", "c"], "high": [3.0, 5.0, 4.0], "low": [1.0, 2.0, 1.5]}
-                ),
+                {"x": ["a", "b", "c"], "high": [3.0, 5.0, 4.0], "low": [1.0, 2.0, 1.5]},
                 "low",
-                [1.0, 2.0, 1.5],
-                [2.0, 3.0, 2.5],
             ),
-            # baseline by dimension index; 'low' is dimension 2 (x, high, low)
             (
-                pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, 2.0]}),
+                {"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, 2.0]},
                 2,
-                [1.0, 2.0],
-                [2.0, 3.0],
-            ),
-            # A NaN baseline propagates rather than silently snapping to zero.
-            (
-                pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, np.nan]}),
-                "low",
-                [1.0, np.nan],
-                [2.0, np.nan],
             ),
             (
-                pd.DataFrame(
-                    {
-                        "x": pd.date_range("2024-01-01", periods=3),
-                        "high": [3.0, 5.0, 4.0],
-                        "low": [1.0, 2.0, 1.5],
-                    }
-                ),
+                {"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, np.nan]},
                 "low",
-                [1.0, 2.0, 1.5],
-                [2.0, 3.0, 2.5],
+            ),
+            (
+                {
+                    "x": pd.date_range("2024-01-01", periods=3),
+                    "high": [3.0, 5.0, 4.0],
+                    "low": [1.0, 2.0, 1.5],
+                },
+                "low",
             ),
         ],
         ids=["by_name", "by_index", "nan", "datetime_x"],
     )
-    def test_bars_baseline_floating(self, df, baseline, bottoms, heights):
+    def test_bars_baseline_floating(self, data, baseline):
+        df = pd.DataFrame(data)
         bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline=baseline)
         ax = mpl_renderer.get_plot(bars).handles["axis"]
-        np.testing.assert_allclose([p.get_y() for p in ax.patches], bottoms)
-        np.testing.assert_allclose([p.get_height() for p in ax.patches], heights)
+        np.testing.assert_allclose([p.get_y() for p in ax.patches], data["low"])
+        np.testing.assert_allclose([p.get_height() for p in ax.patches], df["high"] - df["low"])
 
     def test_bars_baseline_floating_inverted(self):
         df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, 2.0]})
