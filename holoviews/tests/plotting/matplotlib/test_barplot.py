@@ -3,6 +3,7 @@ from __future__ import annotations
 import matplotlib.dates as mdates
 import numpy as np
 import pandas as pd
+import pytest
 from matplotlib.text import Text
 
 import holoviews as hv
@@ -156,3 +157,89 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
         xticklabels = ["A", "1", "B", "A", "3", "B", "A", "10", "B"]
         for i, tick in enumerate(ax.get_xticklabels()):
             assert tick.get_text() == xticklabels[i]
+
+    @pytest.mark.parametrize(
+        ("data", "baseline"),
+        [
+            (
+                {"x": ["a", "b", "c"], "high": [3.0, 5.0, 4.0], "low": [1.0, 2.0, 1.5]},
+                "low",
+            ),
+            (
+                {"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, 2.0]},
+                2,
+            ),
+            (
+                {"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, np.nan]},
+                "low",
+            ),
+            (
+                {
+                    "x": pd.date_range("2024-01-01", periods=3),
+                    "high": [3.0, 5.0, 4.0],
+                    "low": [1.0, 2.0, 1.5],
+                },
+                "low",
+            ),
+        ],
+        ids=["by_name", "by_index", "nan", "datetime_x"],
+    )
+    def test_bars_baseline_floating(self, data, baseline):
+        df = pd.DataFrame(data)
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline=baseline)
+        ax = mpl_renderer.get_plot(bars).handles["axis"]
+        np.testing.assert_allclose([p.get_y() for p in ax.patches], data["low"])
+        np.testing.assert_allclose([p.get_height() for p in ax.patches], df["high"] - df["low"])
+
+    def test_bars_baseline_floating_inverted(self):
+        df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [1.0, 2.0]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low", invert_axes=True)
+        plot = mpl_renderer.get_plot(bars)
+        ax = plot.handles["axis"]
+        np.testing.assert_allclose([p.get_x() for p in ax.patches], [1.0, 2.0])
+        np.testing.assert_allclose([p.get_width() for p in ax.patches], [2.0, 3.0])
+
+    def test_bars_baseline_floating_ylim_excludes_zero(self):
+        df = pd.DataFrame({"x": ["a", "b"], "high": [30.0, 40.0], "low": [10.0, 20.0]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low", padding=0)
+        plot = mpl_renderer.get_plot(bars)
+        y0, y1 = plot.handles["axis"].get_ylim()
+        assert y0 == 10.0
+        assert y1 == 40.0
+
+    def test_bars_baseline_exceeds_errors(self):
+        df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": [6.0, 8.0]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
+        with pytest.raises(ValueError, match="exceed"):
+            mpl_renderer.get_plot(bars)
+
+    def test_bars_baseline_low_first(self):
+        df = pd.DataFrame({"x": ["a", "b", "c"], "low": [1.0, 2.0, 1.5], "high": [3.0, 5.0, 4.0]})
+        bars = hv.Bars(df, "x", ["low", "high"]).opts(baseline="low")
+        plot = mpl_renderer.get_plot(bars)
+        ax = plot.handles["axis"]
+        np.testing.assert_allclose([p.get_y() for p in ax.patches], [1.0, 2.0, 1.5])
+        np.testing.assert_allclose([p.get_height() for p in ax.patches], [2.0, 3.0, 2.5])
+
+    def test_bars_baseline_grouped(self):
+        bars = hv.Bars(
+            [("Q1", "E", 10, 2), ("Q1", "W", 7, 1), ("Q2", "E", 12, 3), ("Q2", "W", 9, 4)],
+            kdims=["Quarter", "Region"],
+            vdims=["High", "Low"],
+        ).opts(baseline="Low")
+        plot = mpl_renderer.get_plot(bars)
+        ax = plot.handles["axis"]
+        assert sorted(p.get_y() for p in ax.patches) == [1.0, 2.0, 3.0, 4.0]
+
+    def test_bars_baseline_stacked_errors(self):
+        bars = hv.Bars(
+            [("A", 0, 1), ("A", 1, -1), ("B", 0, 2)], kdims=["Index", "Category"], vdims=["Value"]
+        ).opts(stacked=True, baseline="Value")
+        with pytest.raises(ValueError, match="stacked"):
+            mpl_renderer.get_plot(bars)
+
+    def test_bars_baseline_unresolved_warns(self):
+        df = pd.DataFrame({"x": ["a", "b"], "high": [3, 5]})
+        bars = hv.Bars(df, "x", ["high"]).opts(baseline="nope")
+        mpl_renderer.get_plot(bars)
+        self.log_handler.assert_contains("WARNING", "Could not use baseline dimension 'nope'")

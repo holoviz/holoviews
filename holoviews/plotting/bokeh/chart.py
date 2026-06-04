@@ -858,6 +858,19 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
     """
 
+    baseline = param.ClassSelector(
+        default=None,
+        class_=(str, int),
+        allow_None=True,
+        doc="""
+        Value dimension naming the lower end of each bar, making bars
+        float between two value dimensions instead of growing from zero.
+        The first remaining value dimension is the upper end, so
+        vdims=['Low', 'High'] with baseline='Low' spans Low to High.
+        Supported for ungrouped and grouped Bars; combining it with
+        stacked raises an error.""",
+    )
+
     multi_level = param.Boolean(
         default=True,
         doc="Whether the Bars should be grouped into a second categorical axis level.",
@@ -1002,6 +1015,15 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         data = defaultdict(list)
         xdim = element.get_dimension(0)
         ydim = element.vdims[0]
+
+        # Floating bars span baseline_dim (bottom) up to top_dim (the
+        # remaining value dimension); treat top_dim as the plotted value.
+        top_dim, baseline_dim = self._baseline_dimensions(element)
+        self._warn_unused_baseline(element, baseline_dim)
+        if baseline_dim is not None:
+            self._validate_baseline(element, top_dim, baseline_dim)
+            ydim = top_dim
+
         color_dim = element.get_dimension(group_dim or stack_dim)
 
         # Define style information
@@ -1047,9 +1069,13 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         if grouping == "stacked":
             mapping = {"x": xdim.name, "top": "top", "bottom": "bottom", "width": width}
         elif grouping == "grouped":
-            mapping = {"x": "xoffsets", "top": ydim.name, "bottom": bottom, "width": width}
+            bar_bottom = "bottom" if baseline_dim is not None else bottom
+            mapping = {"x": "xoffsets", "top": ydim.name, "bottom": bar_bottom, "width": width}
         else:
-            mapping = {"x": xdim.name, "top": ydim.name, "bottom": bottom, "width": width}
+            # Floating bars carry a per-bar lower coordinate in "bottom",
+            # otherwise it is the scalar 0.
+            bar_bottom = "bottom" if baseline_dim is not None else bottom
+            mapping = {"x": xdim.name, "top": ydim.name, "bottom": bar_bottom, "width": width}
 
         # Get colors
         cdim = color_dim or group_dim
@@ -1114,6 +1140,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 ]
                 data["xoffsets"].append(xoffsets)
                 data[ydim.name].append(ys)
+                if baseline_dim is not None:
+                    data["bottom"].append(ds.dimension_values(baseline_dim))
                 if hover:
                     data[xdim.name].append(xs)
                 if group_dim not in ds.dimensions():
@@ -1122,6 +1150,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             else:
                 data[xdim.name].append(xvals)
                 data[ydim.name].append(ds.dimension_values(ydim))
+                if baseline_dim is not None:
+                    data["bottom"].append(ds.dimension_values(baseline_dim))
 
             if hover and grouping != "stacked":
                 for vd in ds.vdims[1:]:

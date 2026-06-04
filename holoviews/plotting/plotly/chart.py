@@ -170,6 +170,19 @@ class ErrorBarsPlot(ChartPlot, ColorbarPlot):
 
 
 class BarPlot(BarsMixin, ElementPlot):
+    baseline = param.ClassSelector(
+        default=None,
+        class_=(str, int),
+        allow_None=True,
+        doc="""
+        Value dimension naming the lower end of each bar, making bars
+        float between two value dimensions instead of growing from zero.
+        The first remaining value dimension is the upper end, so
+        vdims=['Low', 'High'] with baseline='Low' spans Low to High.
+        Supported for ungrouped and grouped Bars; combining it with
+        stacked raises an error.""",
+    )
+
     multi_level = param.Boolean(
         default=True,
         doc="Whether the Bars should be grouped into a second categorical axis level.",
@@ -198,7 +211,9 @@ class BarPlot(BarsMixin, ElementPlot):
             xdims = element.kdims
         else:
             xdims = element.kdims[0]
-        return (xdims, element.vdims[0])
+        # Floating bars: label the value axis with the upper dimension.
+        top_dim, _ = self._baseline_dimensions(element)
+        return (xdims, top_dim if top_dim is not None else element.vdims[0])
 
     def get_extents(self, element, ranges, range_type="combined", **kwargs):
         x0, y0, x1, y1 = BarsMixin.get_extents(self, element, ranges, range_type)
@@ -210,6 +225,11 @@ class BarPlot(BarsMixin, ElementPlot):
         # Get x, y, group, stack and color dimensions
         xdim = element.kdims[0]
         vdim = element.vdims[0]
+        # Floating bars span baseline_dim (bottom) up to top_dim.
+        top_dim, baseline_dim = self._baseline_dimensions(element)
+        self._warn_unused_baseline(element, baseline_dim)
+        if baseline_dim is not None:
+            self._validate_baseline(element, top_dim, baseline_dim)
         group_dim, stack_dim = None, None
         if element.ndims == 1:
             pass
@@ -235,18 +255,26 @@ class BarPlot(BarsMixin, ElementPlot):
 
         bars = []
         if element.ndims == 1:
-            values = []
+            values, bases = [], []
             for v in xvals:
                 sel = element[[v]]
-                values.append(sel.iloc[0, 1] if len(sel) else 0)
-            bars.append(
-                {
-                    "orientation": orientation,
-                    "showlegend": False,
-                    x: xvals,
-                    y: np.nan_to_num(values),
-                }
-            )
+                if baseline_dim is None:
+                    values.append(sel.iloc[0, 1] if len(sel) else 0)
+                    continue
+                # Floating bars: base sets the lower end, y the bar length.
+                top = sel.dimension_values(top_dim)[0] if len(sel) else 0
+                base = sel.dimension_values(baseline_dim)[0] if len(sel) else 0
+                values.append(top - base)
+                bases.append(base)
+            bar = {
+                "orientation": orientation,
+                "showlegend": False,
+                x: xvals,
+                y: np.nan_to_num(values),
+            }
+            if baseline_dim is not None:
+                bar["base"] = np.nan_to_num(bases)
+            bars.append(bar)
         elif stack_dim or not self.multi_level:
             group_dim = stack_dim or group_dim
             order = list(svals if stack_dim else gvals)
@@ -255,30 +283,42 @@ class BarPlot(BarsMixin, ElementPlot):
                 els.items(), key=lambda x: order.index(x[0]) if x[0] in order else -1
             )
             for k, el in sorted_groups[::-1]:
-                values = []
+                values, bases = [], []
                 for v in xvals:
                     sel = el[[v]]
-                    values.append(sel.iloc[0, 1] if len(sel) else 0)
-                bars.append(
-                    {
-                        "orientation": orientation,
-                        "name": group_dim.pprint_value(k),
-                        x: xvals,
-                        y: np.nan_to_num(values),
-                    }
-                )
-        else:
-            values = element.dimension_values(vdim)
-            bars.append(
-                {
+                    if baseline_dim is None:
+                        values.append(sel.iloc[0, 1] if len(sel) else 0)
+                        continue
+                    top = sel.dimension_values(top_dim)[0] if len(sel) else 0
+                    base = sel.dimension_values(baseline_dim)[0] if len(sel) else 0
+                    values.append(top - base)
+                    bases.append(base)
+                bar = {
                     "orientation": orientation,
-                    x: [
-                        [d.pprint_value(v) for v in element.dimension_values(d)]
-                        for d in (xdim, group_dim)
-                    ],
+                    "name": group_dim.pprint_value(k),
+                    x: xvals,
                     y: np.nan_to_num(values),
                 }
-            )
+                if baseline_dim is not None:
+                    bar["base"] = np.nan_to_num(bases)
+                bars.append(bar)
+        else:
+            value_dim = top_dim if baseline_dim is not None else vdim
+            values = element.dimension_values(value_dim)
+            bar = {
+                "orientation": orientation,
+                x: [
+                    [d.pprint_value(v) for v in element.dimension_values(d)]
+                    for d in (xdim, group_dim)
+                ],
+                y: np.nan_to_num(values),
+            }
+            if baseline_dim is not None:
+                # Floating grouped bars: base is the lower end, y the length.
+                base = element.dimension_values(baseline_dim)
+                bar[y] = np.nan_to_num(values - base)
+                bar["base"] = np.nan_to_num(base)
+            bars.append(bar)
 
         return bars
 

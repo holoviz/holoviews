@@ -14,6 +14,7 @@ import holoviews as hv
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.testing import assert_data_equal
 
+from ...plotting.utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
@@ -115,6 +116,143 @@ class TestBarPlot(TestBokehPlot):
         assert list(source.data["Index"]) == ["A", "A", "B"]
         assert_data_equal(source.data["top"], np.array([0, 1, 2]))
         assert_data_equal(source.data["bottom"], np.array([-1, 0, 0]))
+
+    @pytest.mark.parametrize(
+        ("data", "baseline"),
+        [
+            ({"x": ["a", "b", "c"], "high": [3, 5, 4], "low": [1, 2, 1.5]}, "low"),
+            ({"x": ["a", "b"], "high": [3, 5], "low": [1, 2]}, 2),
+            ({"x": ["a", "b"], "high": [3, 5], "low": [1, np.nan]}, "low"),
+            (
+                {
+                    "x": pd.date_range("2024-01-01", periods=3),
+                    "high": [3.0, 5.0, 4.0],
+                    "low": [1.0, 2.0, 1.5],
+                },
+                "low",
+            ),
+        ],
+        ids=["by_name", "by_index", "nan", "datetime_x"],
+    )
+    def test_bars_baseline_floating_source_data(self, data, baseline):
+        bars = hv.Bars(pd.DataFrame(data), "x", ["high", "low"]).opts(baseline=baseline)
+        plot = bokeh_renderer.get_plot(bars)
+        source = plot.handles["source"]
+        glyph = plot.handles["glyph"]
+        assert_data_equal(source.data["bottom"], np.array(data["low"]))
+        assert property_to_dict(glyph.top) == "high"
+        assert property_to_dict(glyph.bottom) == "bottom"
+
+    def test_bars_baseline_floating_inverted(self):
+        df = pd.DataFrame({"x": ["a", "b", "c"], "high": [3, 5, 4], "low": [1, 2, 1.5]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low", invert_axes=True)
+        plot = bokeh_renderer.get_plot(bars)
+        source = plot.handles["source"]
+        glyph = plot.handles["glyph"]
+        assert_data_equal(source.data["bottom"], np.array([1, 2, 1.5]))
+        assert property_to_dict(glyph.left) == "bottom"
+        assert property_to_dict(glyph.right) == "high"
+
+    def test_bars_baseline_floating_timedelta(self):
+        df = pd.DataFrame(
+            {
+                "Task": ["Build", "Test", "Deploy"],
+                "Start": pd.to_timedelta(["1h", "3h", "5h30m"]),
+                "End": pd.to_timedelta(["3h", "5h30m", "7h"]),
+            }
+        )
+        bars = hv.Bars(df, "Task", ["End", "Start"]).opts(baseline="Start", invert_axes=True)
+        plot = bokeh_renderer.get_plot(bars)
+        source = plot.handles["source"]
+        glyph = plot.handles["glyph"]
+        # Normalize timedelta units before comparing (assert_data_equal uses
+        # almost-equal, which cannot promote timedelta64 to float).
+        np.testing.assert_array_equal(
+            np.asarray(source.data["bottom"]).astype("timedelta64[ns]"),
+            np.asarray(bars.dimension_values("Start")).astype("timedelta64[ns]"),
+        )
+        np.testing.assert_array_equal(
+            np.asarray(source.data["End"]).astype("timedelta64[ns]"),
+            np.asarray(bars.dimension_values("End")).astype("timedelta64[ns]"),
+        )
+        assert property_to_dict(glyph.left) == "bottom"
+        assert property_to_dict(glyph.right) == "End"
+
+    def test_bars_baseline_floating_range_excludes_zero(self):
+        df = pd.DataFrame({"x": ["a", "b"], "high": [30.0, 40.0], "low": [10.0, 20.0]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low", padding=0)
+        plot = bokeh_renderer.get_plot(bars)
+        y_range = plot.handles["y_range"]
+        assert y_range.start == 10.0
+        assert y_range.end == 40.0
+
+    def test_bars_baseline_range_includes_zero_without_baseline(self):
+        df = pd.DataFrame({"x": ["a", "b"], "high": [30.0, 40.0], "low": [10.0, 20.0]})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(padding=0)
+        plot = bokeh_renderer.get_plot(bars)
+        y_range = plot.handles["y_range"]
+        assert y_range.start == 0
+
+    def test_bars_baseline_range_uses_top_dim_when_baseline_is_vdims0(self):
+        low_dim = hv.Dimension("low", soft_range=(0, None))
+        df = pd.DataFrame({"x": ["a", "b"], "high": [30.0, 40.0], "low": [10.0, 20.0]})
+        bars = hv.Bars(df, "x", [low_dim, "high"]).opts(baseline="low", padding=0)
+        plot = bokeh_renderer.get_plot(bars)
+        y_range = plot.handles["y_range"]
+        assert y_range.start == 10.0
+        assert y_range.end == 40.0
+
+    @pytest.mark.parametrize("low", [[6.0, 8.0], [1.0, 8.0]], ids=["all_exceed", "one_exceeds"])
+    def test_bars_baseline_exceeds_errors(self, low):
+        df = pd.DataFrame({"x": ["a", "b"], "high": [3.0, 5.0], "low": low})
+        bars = hv.Bars(df, "x", ["high", "low"]).opts(baseline="low")
+        with pytest.raises(ValueError, match="exceed"):
+            bokeh_renderer.get_plot(bars)
+
+    def test_bars_baseline_low_first(self):
+        df = pd.DataFrame({"x": ["a", "b", "c"], "low": [1, 2, 1.5], "high": [3, 5, 4]})
+        bars = hv.Bars(df, "x", ["low", "high"]).opts(baseline="low")
+        plot = bokeh_renderer.get_plot(bars)
+        source = plot.handles["source"]
+        glyph = plot.handles["glyph"]
+        assert_data_equal(source.data["high"], np.array([3, 5, 4]))
+        assert_data_equal(source.data["bottom"], np.array([1, 2, 1.5]))
+        assert property_to_dict(glyph.top) == "high"
+        assert property_to_dict(glyph.bottom) == "bottom"
+
+    @pytest.mark.parametrize(
+        ("vdims", "baseline"),
+        [(["high"], "nope"), (["high"], "high")],
+        ids=["unresolved", "only_value_dim"],
+    )
+    def test_bars_baseline_unusable_warns(self, vdims, baseline):
+        df = pd.DataFrame({"x": ["a", "b"], "high": [3, 5], "low": [1, 2]})
+        bars = hv.Bars(df, "x", vdims).opts(baseline=baseline)
+        with ParamLogStream() as log:
+            plot = bokeh_renderer.get_plot(bars)
+        log_msg = log.stream.read()
+        assert f"Could not use baseline dimension {baseline!r}" in log_msg
+        assert "bottom" not in plot.handles["source"].data
+
+    def test_bars_baseline_grouped(self):
+        bars = hv.Bars(
+            [("Q1", "E", 10, 2), ("Q1", "W", 7, 1), ("Q2", "E", 12, 3), ("Q2", "W", 9, 4)],
+            kdims=["Quarter", "Region"],
+            vdims=["High", "Low"],
+        ).opts(baseline="Low")
+        plot = bokeh_renderer.get_plot(bars)
+        source = plot.handles["source"]
+        # Order depends on the group iteration, so compare order-independently.
+        assert property_to_dict(plot.handles["glyph"].bottom) == "bottom"
+        assert sorted(source.data["bottom"]) == [1, 2, 3, 4]
+        assert sorted(source.data["High"]) == [7, 9, 10, 12]
+
+    def test_bars_baseline_stacked_errors(self):
+        bars = hv.Bars(
+            [("A", 0, 1), ("A", 1, -1), ("B", 0, 2)], kdims=["Index", "Category"], vdims=["Value"]
+        ).opts(stacked=True, baseline="Value")
+        with pytest.raises(ValueError, match="stacked"):
+            bokeh_renderer.get_plot(bars)
 
     def test_bars_logy(self):
         bars = hv.Bars([("A", 1), ("B", 2), ("C", 3)], kdims=["Index"], vdims=["Value"])
