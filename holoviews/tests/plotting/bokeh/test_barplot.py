@@ -14,6 +14,7 @@ import holoviews as hv
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.testing import assert_data_equal
 
+from ...plotting.utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
