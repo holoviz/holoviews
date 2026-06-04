@@ -194,3 +194,25 @@ class TestStoreOptionsCustomIdGrowth:
             sys.setswitchinterval(old)
 
         assert mismatches == 0, f"concurrent customizations collided on ids: {mismatches}"
+
+    def test_concurrent_id_reservation_yields_disjoint_blocks(self):
+        n_workers = 8
+        barrier = threading.Barrier(n_workers)
+
+        def worker(_):
+            barrier.wait()
+            ids = []
+            for n in range(1, 120):
+                start = hv.StoreOptions.reserve_ids(n)
+                ids.extend(range(start, start + n))
+            return ids
+
+        old = sys.getswitchinterval()
+        sys.setswitchinterval(1e-6)  # force interleaving of the read-modify-write
+        try:
+            with ThreadPoolExecutor(max_workers=n_workers) as executor:
+                reserved = [i for block in executor.map(worker, range(n_workers)) for i in block]
+        finally:
+            sys.setswitchinterval(old)
+
+        assert len(reserved) == len(set(reserved)), "reserved id blocks overlap"
