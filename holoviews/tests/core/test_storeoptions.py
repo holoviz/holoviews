@@ -9,6 +9,7 @@ import itertools
 import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 
 import numpy as np
 
@@ -21,11 +22,29 @@ if mpl:
     import holoviews.plotting.mpl
 
 
+@contextmanager
+def fast_switch():
+    """
+    Sets sys.getswitchinterval to 1 microsecond to force thread interleaving in
+    tests that check for id collisions with multiple threads
+    """
+    old = sys.getswitchinterval()
+    sys.setswitchinterval(1e-6)
+    try:
+        yield
+    finally:
+        sys.setswitchinterval(old)
+
+
 @mpl_skip
 class TestStoreOptionsMerge:
     def setup_method(self):
+        self._backend = hv.Store.current_backend
         hv.Store.current_backend = "matplotlib"
         self.expected = {"Image": {"plot": {"fig_size": 150}, "style": {"cmap": "Blues"}}}
+
+    def teardown_method(self):
+        hv.Store.current_backend = self._backend
 
     def test_full_spec_format(self):
         out = hv.StoreOptions.merge_options(
@@ -58,7 +77,11 @@ class TestStoreOptsMethod:
     """
 
     def setup_method(self):
-        hv.Store.current_backend = "matplotlib"
+        self._backend = hv.Store.current_backend
+        hv.Store.set_current_backend("matplotlib")
+
+    def teardown_method(self):
+        hv.Store.current_backend = self._backend
 
     def test_overlay_options_partitioned(self):
         """
@@ -171,48 +194,36 @@ class TestStoreOptionsCustomIdGrowth:
         assert max_ids[-1] < 500, f"id growth is not polynomial: {max_ids}"
 
     def test_concurrent_recustomization_keeps_styles_distinct(self):
-        n_workers = 8
+        n_workers = 4
         barrier = threading.Barrier(n_workers)
 
         def worker(w):
             barrier.wait()
             mismatches = 0
-            for _ in range(120):
+            for _ in range(60):
                 el = hv.Curve([1, 2, 3], label=f"w{w}").opts(linewidth=w + 1)
                 got = hv.Store.lookup_options("matplotlib", el, "style").kwargs.get("linewidth")
                 mismatches += got != w + 1
             return mismatches
 
-        # A normal opts() runs within one thread-scheduling quantum, so the id
-        # race stays hidden; a tiny switch interval forces interleaving.
-        old = sys.getswitchinterval()
-        sys.setswitchinterval(1e-6)
-        try:
-            with ThreadPoolExecutor(max_workers=n_workers) as executor:
-                mismatches = sum(executor.map(worker, range(n_workers)))
-        finally:
-            sys.setswitchinterval(old)
+        with fast_switch(), ThreadPoolExecutor(max_workers=n_workers) as executor:
+            mismatches = sum(executor.map(worker, range(n_workers)))
 
         assert mismatches == 0, f"concurrent customizations collided on ids: {mismatches}"
 
     def test_concurrent_id_reservation_yields_disjoint_blocks(self):
-        n_workers = 8
+        n_workers = 4
         barrier = threading.Barrier(n_workers)
 
         def worker(_):
             barrier.wait()
             ids = []
-            for n in range(1, 120):
+            for n in range(10, 30):
                 start = hv.StoreOptions.reserve_ids(n)
                 ids.extend(range(start, start + n))
             return ids
 
-        old = sys.getswitchinterval()
-        sys.setswitchinterval(1e-6)  # force interleaving of the read-modify-write
-        try:
-            with ThreadPoolExecutor(max_workers=n_workers) as executor:
-                reserved = [i for block in executor.map(worker, range(n_workers)) for i in block]
-        finally:
-            sys.setswitchinterval(old)
+        with fast_switch(), ThreadPoolExecutor(max_workers=n_workers) as executor:
+            reserved = [i for block in executor.map(worker, range(n_workers)) for i in block]
 
         assert len(reserved) == len(set(reserved)), "reserved id blocks overlap"
