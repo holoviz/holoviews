@@ -180,15 +180,6 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
         doc="Amount of offset to apply to labels along x-axis.",
     )
 
-    # Deprecated options
-
-    color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of color style mapping, e.g. `color=dim('color')`",
-    )
-
     selection_display = BokehOverlaySelectionDisplay()
 
     style_opts = [
@@ -225,19 +216,6 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
         self._categorize_data(data, (xdim, ydim), element.dimensions())
 
         self._get_hover_data(data, element)
-
-        cdim = element.get_dimension(self.color_index)
-        if cdim is None:
-            return data, mapping, style
-
-        cdata, cmapping = self._get_color_data(element, ranges, style, name="text_color")
-        if dims[2] is cdim and cdata:
-            # If color dim is same as text dim, rename color column
-            data["text_color"] = cdata[tdim]
-            mapping["text_color"] = dict(cmapping["text_color"], field="text_color")
-        else:
-            data.update(cdata)
-            mapping.update(cmapping)
         return data, mapping, style
 
 

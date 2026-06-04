@@ -237,6 +237,7 @@ class XArrayInterface(GridInterface):
                 cls,
             )
 
+        kdim_names = [kd.name for kd in kdims]
         for vdim in vdims:
             if packed:
                 continue
@@ -247,10 +248,10 @@ class XArrayInterface(GridInterface):
                 continue
             undeclared = []
             for c in da.coords:
-                if c in kdims or len(da[c].shape) != 1 or da[c].shape[0] <= 1:
+                if c in kdim_names or len(da[c].shape) != 1 or da[c].shape[0] <= 1:
                     # Skip if coord is declared, represents irregular coordinates or is constant
                     continue
-                elif all(d in kdims for d in da[c].dims):
+                elif all(d in kdim_names for d in da[c].dims):
                     continue  # Skip if coord is alias for another dimension
                 elif any(all(d in da[kd.name].dims for d in da[c].dims) for kd in kdims):
                     # Skip if all the dims on the coord are present on another coord
@@ -395,20 +396,20 @@ class XArrayInterface(GridInterface):
         import xarray as xr
 
         dim = dataset.get_dimension(dimension)
-        dim = dimension if dim is None else dim.name
-        irregular = cls.irregular(dataset, dim)
+        dim_name = dimension if dim is None else dim.name
+        irregular = cls.irregular(dataset, dim_name)
         if irregular or expanded:
             if irregular:
-                data = dataset.data[dim]
+                data = dataset.data[dim_name]
             else:
-                data = util.expand_grid_coords(dataset, dim)
+                data = util.expand_grid_coords(dataset, dim_name)
             if edges:
                 data = cls._infer_interval_breaks(data, axis=1)
                 data = cls._infer_interval_breaks(data, axis=0)
 
             return data.values if isinstance(data, xr.DataArray) else data
 
-        dim_data = dataset.data[dim].data
+        dim_data = dataset.data[dim_name].data
         if getattr(dim_data, "tz", None):
             dim_data = dim_data.tz_localize(None)
         data = np.atleast_1d(dim_data)

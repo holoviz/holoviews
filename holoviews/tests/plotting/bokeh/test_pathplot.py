@@ -73,25 +73,6 @@ class TestPathPlot(TestBokehPlot):
         obj = obj.opts(opts)
         self._test_hover_info(obj, [("Test", "@{Test}")])
 
-    def test_path_colored_and_split_with_extra_vdims(self):
-        xs = [1, 2, 3, 4]
-        ys = xs[::-1]
-        color = [0, 0.25, 0.5, 0.75]
-        other = ["A", "B", "C", "D"]
-        data = {"x": xs, "y": ys, "color": color, "other": other}
-        path = hv.Path([data], vdims=["color", "other"]).opts(color_index="color", tools=["hover"])
-        plot = bokeh_renderer.get_plot(path)
-        source = plot.handles["source"]
-
-        np.testing.assert_array_equal(
-            source.data["xs"], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])]
-        )
-        np.testing.assert_array_equal(
-            source.data["ys"], [np.array([4, 3]), np.array([3, 2]), np.array([2, 1])]
-        )
-        np.testing.assert_array_equal(source.data["other"], np.array(["A", "B", "C"]))
-        np.testing.assert_array_equal(source.data["color"], np.array([0, 0.25, 0.5]))
-
     def test_path_colored_dim_split_with_extra_vdims(self):
         xs = [1, 2, 3, 4]
         ys = xs[::-1]
@@ -112,33 +93,6 @@ class TestPathPlot(TestBokehPlot):
         )
         np.testing.assert_array_equal(source.data["other"], np.array(["A", "B", "C"]))
         np.testing.assert_array_equal(source.data["color"], np.array([0, 0.5, 1]))
-
-    def test_path_colored_by_levels_single_value(self):
-        xs = [1, 2, 3, 4]
-        ys = xs[::-1]
-        color = [998, 999, 998, 998]
-        date = np.datetime64(dt.datetime(2018, 8, 1))
-        data = {"x": xs, "y": ys, "color": color, "date": date}
-        levels = [0, 38, 73, 95, 110, 130, 156, 999]
-        colors = ["#5ebaff", "#00faf4", "#ffffcc", "#ffe775", "#ffc140", "#ff8f20", "#ff6060"]
-        path = hv.Path([data], vdims=["color", "date"]).opts(
-            color_index="color", color_levels=levels, cmap=colors, tools=["hover"]
-        )
-        plot = bokeh_renderer.get_plot(path)
-        source = plot.handles["source"]
-        cmapper = plot.handles["color_mapper"]
-
-        np.testing.assert_array_equal(
-            source.data["xs"], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])]
-        )
-        np.testing.assert_array_equal(
-            source.data["ys"], [np.array([4, 3]), np.array([3, 2]), np.array([2, 1])]
-        )
-        np.testing.assert_array_equal(source.data["color"], np.array([998, 999, 998]))
-        np.testing.assert_array_equal(source.data["date"], np.array([date] * 3))
-        assert cmapper.low == 998
-        assert cmapper.high == 999
-        assert cmapper.palette == colors[-1:]
 
     def test_path_continuously_varying_color_op(self):
         xs = [1, 2, 3, 4]
@@ -713,6 +667,51 @@ class TestContoursPlot(TestBokehPlot):
         glyph = plot.handles["glyph"]
         assert property_to_dict(glyph.line_width) == {"field": "line_width"}
         assert list(cds.data["line_width"]) == [7, 3]
+
+    def test_contours_vdim_auto_color(self):
+        contours = hv.Contours(
+            [
+                {("x", "y"): [(0, 0), (0, 1), (1, 0)], "level": 7},
+                {("x", "y"): [(1, 0), (1, 1), (0, 1)], "level": 3},
+            ],
+            vdims=["level"],
+        )
+        plot = bokeh_renderer.get_plot(contours)
+        cds = plot.handles["source"]
+        glyph = plot.handles["glyph"]
+        cmapper = plot.handles["color_mapper"]
+        assert property_to_dict(glyph.line_color) == {"field": "level", "transform": cmapper}
+        assert list(cds.data["level"]) == [7, 3]
+        assert isinstance(cmapper, LinearColorMapper)
+
+    def test_contours_explicit_color_not_overridden_by_vdim(self):
+        contours = hv.Contours(
+            [
+                {("x", "y"): [(0, 0), (0, 1), (1, 0)], "hover_info": "A"},
+                {("x", "y"): [(1, 0), (1, 1), (0, 1)], "hover_info": "B"},
+            ],
+            vdims=["hover_info"],
+        ).opts(color="black")
+        plot = bokeh_renderer.get_plot(contours)
+        glyph = plot.handles["glyph"]
+        assert glyph.line_color == "black"
+
+    def test_contours_explicit_dim_color_not_overridden_by_vdim(self):
+        contours = hv.Contours(
+            [
+                {("x", "y"): [(0, 0), (0, 1), (1, 0)], "level": 7, "other": 1},
+                {("x", "y"): [(1, 0), (1, 1), (0, 1)], "level": 3, "other": 2},
+            ],
+            vdims=["level", "other"],
+        ).opts(color=hv.dim("other"))
+        plot = bokeh_renderer.get_plot(contours)
+        cds = plot.handles["source"]
+        glyph = plot.handles["glyph"]
+        cmapper = plot.handles["color_color_mapper"]
+        assert property_to_dict(glyph.line_color) == {"field": "color", "transform": cmapper}
+        assert list(cds.data["color"]) == [1, 2]
+        assert cmapper.low == 1
+        assert cmapper.high == 2
 
 
 class TestDendrogramPlot(TestBokehPlot):

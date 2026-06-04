@@ -20,30 +20,10 @@ from holoviews.plotting.bokeh.util import BOKEH_GE_3_8_0, property_to_dict
 from holoviews.streams import Stream
 from holoviews.testing import assert_data_equal
 
-from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestPointPlot(TestBokehPlot):
-    def test_points_colormapping(self):
-        points = hv.Points(np.random.rand(10, 4), vdims=["a", "b"]).opts(color_index=3)
-        self._test_colormapping(points, 3)
-
-    def test_points_colormapping_with_nonselection(self):
-        opts = dict(color_index=3, nonselection_color="red")
-        points = hv.Points(np.random.rand(10, 4), vdims=["a", "b"]).opts(**opts)
-        self._test_colormapping(points, 3)
-
-    def test_points_colormapping_categorical(self):
-        points = hv.Points(
-            [(i, i * 2, i * 3, chr(65 + i)) for i in range(10)], vdims=["a", "b"]
-        ).opts(color_index="b")
-        plot = bokeh_renderer.get_plot(points)
-        plot.initialize_plot()
-        cmapper = plot.handles["color_mapper"]
-        assert isinstance(cmapper, CategoricalColorMapper)
-        assert cmapper.factors == list(points["b"])
-
     def test_points_color_selection_nonselection(self):
         opts = dict(color="green", selection_color="red", nonselection_color="blue")
         points = hv.Points(
@@ -182,18 +162,6 @@ class TestPointPlot(TestBokehPlot):
         )
         plot = bokeh_renderer.get_plot(points)
         assert plot.state.legend[0].items[0].renderers[0].glyph.marker == marker
-
-    def test_points_non_numeric_size_warning(self):
-        data = (np.arange(10), np.arange(10), list(map(chr, range(94, 104))))
-        points = hv.Points(data, vdims=["z"]).opts(size_index=2)
-        with ParamLogStream() as log:
-            bokeh_renderer.get_plot(points)
-        log_msg = log.stream.read()
-        warning = (
-            "The `size_index` parameter is deprecated in favor of size style mapping, e.g. "
-            "`size=dim('size')**2`.\nz dimension is not numeric, cannot use to scale Points size.\n"
-        )
-        assert log_msg == warning
 
     def test_points_categorical_xaxis(self):
         points = hv.Points((["A", "B", "C"], (1, 2, 3)))
@@ -549,45 +517,6 @@ class TestPointPlot(TestBokehPlot):
         ):
             assert isinstance(subplot.handles["glyph"], glyph_type)
             assert subplot.handles["glyph"].marker == marker
-
-    def test_point_color_index_color_clash(self):
-        points = hv.Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)], vdims="color").opts(
-            color="color", color_index="color"
-        )
-        with ParamLogStream() as log:
-            bokeh_renderer.get_plot(points)
-        log_msg = log.stream.read()
-        warning = (
-            "The `color_index` parameter is deprecated in favor of color style mapping, e.g. "
-            "`color=dim('color')` or `line_color=dim('color')`\nCannot declare style mapping "
-            "for 'color' option and declare a color_index; ignoring the color_index.\n"
-        )
-        assert log_msg == warning
-
-    def test_point_color_index_color_no_clash(self):
-        points = hv.Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)], vdims="color").opts(
-            fill_color="color", color_index="color"
-        )
-        plot = bokeh_renderer.get_plot(points)
-        glyph = plot.handles["glyph"]
-        cmapper = plot.handles["fill_color_color_mapper"]
-        cmapper2 = plot.handles["color_mapper"]
-        assert property_to_dict(glyph.fill_color) == {"field": "fill_color", "transform": cmapper}
-        assert property_to_dict(glyph.line_color) == {"field": "color", "transform": cmapper2}
-
-    def test_point_size_index_size_clash(self):
-        points = hv.Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)], vdims="size").opts(
-            size="size", size_index="size"
-        )
-        with ParamLogStream() as log:
-            bokeh_renderer.get_plot(points)
-        log_msg = log.stream.read()
-        warning = (
-            "The `size_index` parameter is deprecated in favor of size style mapping, e.g. "
-            "`size=dim('size')**2`.\nCannot declare style mapping for 'size' option and declare a "
-            "size_index; ignoring the size_index.\n"
-        )
-        assert log_msg == warning
 
     def test_point_radius(self):
         x, y = 4, 5

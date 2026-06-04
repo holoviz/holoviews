@@ -7,7 +7,6 @@ import holoviews as hv
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.testing import assert_data_equal, assert_dict_equal
 
-from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
@@ -60,50 +59,6 @@ class TestLabelsPlot(TestBokehPlot):
         assert glyph.x == "y"
         assert glyph.y == "x"
         assert glyph.text == "Label"
-
-    def test_labels_color_mapped_text_vals(self):
-        labels = hv.Labels([(0, 1, 0.33333), (1, 0, 0.66666)]).opts(color_index=2)
-        plot = bokeh_renderer.get_plot(labels)
-        source = plot.handles["source"]
-        glyph = plot.handles["glyph"]
-        cmapper = plot.handles["color_mapper"]
-        expected = {
-            "x": np.array([0, 1]),
-            "y": np.array([1, 0]),
-            "Label": ["0.33333", "0.66666"],
-            "text_color": np.array([0.33333, 0.66666]),
-        }
-        for k, vals in expected.items():
-            np.testing.assert_array_equal(source.data[k], vals)
-        assert glyph.x == "x"
-        assert glyph.y == "y"
-        assert glyph.text == "Label"
-        assert property_to_dict(glyph.text_color) == {"field": "text_color", "transform": cmapper}
-        assert cmapper.low == 0.33333
-        assert cmapper.high == 0.66666
-
-    def test_labels_color_mapped(self):
-        labels = hv.Labels([(0, 1, 0.33333, 2), (1, 0, 0.66666, 1)], vdims=["text", "color"]).opts(
-            color_index=3
-        )
-        plot = bokeh_renderer.get_plot(labels)
-        source = plot.handles["source"]
-        glyph = plot.handles["glyph"]
-        cmapper = plot.handles["color_mapper"]
-        expected = {
-            "x": np.array([0, 1]),
-            "y": np.array([1, 0]),
-            "text": ["0.33333", "0.66666"],
-            "color": np.array([2, 1]),
-        }
-        for k, vals in expected.items():
-            np.testing.assert_array_equal(source.data[k], vals)
-        assert glyph.x == "x"
-        assert glyph.y == "y"
-        assert glyph.text == "text"
-        assert property_to_dict(glyph.text_color) == {"field": "color", "transform": cmapper}
-        assert cmapper.low == 1
-        assert cmapper.high == 2
 
     ###########################
     #    Styling mapping      #
@@ -183,21 +138,6 @@ class TestLabelsPlot(TestBokehPlot):
         glyph = plot.handles["glyph"]
         assert cds.data["text_font_size"] == ["10pt", "4pt", "8pt"]
         assert property_to_dict(glyph.text_font_size) == {"field": "text_font_size"}
-
-    def test_labels_color_index_color_clash(self):
-        labels = hv.Labels([(0, 0, 0), (0, 1, 1), (0, 2, 2)], vdims="color").opts(
-            text_color="color", color_index="color"
-        )
-        with ParamLogStream() as log:
-            bokeh_renderer.get_plot(labels)
-        log_msg = log.stream.read()
-        warning = (
-            "The `color_index` parameter is deprecated in favor of color style mapping, "
-            "e.g. `color=dim('color')` or `line_color=dim('color')`\nCannot declare style "
-            "mapping for 'text_color' option and declare a color_index; ignoring the "
-            "color_index.\n"
-        )
-        assert log_msg == warning
 
     def test_labels_text_color_cycle(self):
         hm = hv.HoloMap(

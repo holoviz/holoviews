@@ -160,6 +160,26 @@ class TestStreamsDefine:
         assert self.ExplicitTest.param["test"].default == 42
         assert self.ExplicitTest.param["test"].doc == "Test docstring"
 
+    def test_subscriber_error_logging_isolation(self):
+        xy = self.XY()
+        calls = []
+
+        def bad_subscriber(**kw):
+            calls.append("bad")
+            raise RuntimeError("bad subscriber")
+
+        def good_subscriber(**kw):
+            calls.append("good")
+
+        xy.add_subscriber(bad_subscriber)
+        xy.add_subscriber(good_subscriber)
+
+        with pytest.raises(RuntimeError, match="bad subscriber"):
+            Stream.trigger([xy])
+
+        assert len(calls) == 2
+        assert calls == ["bad", "good"]
+
 
 class _Subscriber:
     def __init__(self, cb=None):

@@ -8,7 +8,7 @@ import pytest
 from holoviews.core.util.dependencies import _is_installed
 
 
-def optional_dependencies(*names: tuple[str]):
+def optional_dependencies(*names: str):
     """Check if a dependency is installed and return the module and a fixture that skips test."""
     if all(map(_is_installed, names)):
         return importlib.import_module(names[0])
@@ -82,3 +82,9 @@ spd_skip = _skip(spd, "spatialpandas")
 tsdownsample_skip = _skip(tsdownsample, "tsdownsample")
 xr_skip = _skip(xr, "xarray")
 xyzservices_skip = _skip(xyzservices, "xyzservices")
+
+
+if spd:
+    # Will import _posixshmem on Linux + Python 3.14 + spatialpandas
+    # which does not work with our pytest.fixture unimport
+    import multiprocessing.resource_tracker  # noqa: F401

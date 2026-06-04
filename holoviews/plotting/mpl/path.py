@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from types import NoneType
+
 import numpy as np
 import param
 from matplotlib.collections import LineCollection, PatchCollection
@@ -7,7 +9,7 @@ from matplotlib.dates import DateFormatter, date2num
 
 from ...core import util
 from ...core.dimension import Dimension
-from ...core.options import abbreviated_exception
+from ...core.options import Cycle, abbreviated_exception
 from ...core.util import dtype_kind
 from ...element import Polygons
 from ...util.transform import dim
@@ -21,13 +23,6 @@ class PathPlot(ColorbarPlot):
         doc="""
         PathPlots axes usually define single space so aspect of Paths
         follows aspect in data coordinates by default.""",
-    )
-
-    color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Index of the dimension from which the color will the drawn",
     )
 
     show_legend = param.Boolean(
@@ -51,18 +46,16 @@ class PathPlot(ColorbarPlot):
         return {"artist": collection}
 
     def get_data(self, element, ranges, style):
-        cdim = element.get_dimension(self.color_index)
-
-        if cdim is None:
-            color_style = style.get("color")
-            if isinstance(color_style, str):
-                cdim = element.get_dimension(color_style)
-            elif isinstance(color_style, Dimension):
-                cdim = element.get_dimension(color_style.label)
-            elif isinstance(color_style, dim) and not color_style.ops:
-                cdim = element.get_dimension(color_style.dimension.label)
-            if cdim:
-                style["color"] = cdim
+        cdim = None
+        color_style = style.get("color")
+        if isinstance(color_style, str):
+            cdim = element.get_dimension(color_style)
+        elif isinstance(color_style, Dimension):
+            cdim = element.get_dimension(color_style.label)
+        elif isinstance(color_style, dim) and not color_style.ops:
+            cdim = element.get_dimension(color_style.dimension.label)
+        if cdim:
+            style["color"] = cdim
 
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
@@ -87,10 +80,9 @@ class PathPlot(ColorbarPlot):
                 yarr = date2num(yarr)
                 dims[1] = ydim(value_format=DateFormatter(dt_format))
             arr = np.column_stack([xarr, yarr])
-            # If neither color_index nor array-style mapping nor is present,
-            # keep whole paths; otherwise, segment into (len(x)-1) segments for
-            # correct mapping.
-            if not (self.color_index is not None or style_mapping):
+            # If not array-style mapping is present, keep whole paths;
+            # otherwise, segment into (len(x)-1) segments for correct mapping.
+            if not style_mapping:
                 paths.append(arr)
                 continue
             length = len(xarr)
@@ -106,10 +98,7 @@ class PathPlot(ColorbarPlot):
                 paths.append(arr[s1 : s2 + 1])
         if self.invert_axes:
             paths = [p[::-1] for p in paths]
-        if not (self.color_index or style_mapping or cdim):
-            if cdim:
-                style["array"] = style.pop("c")
-                style["clim"] = style.pop("vmin", None), style.pop("vmax", None)
+        if not (style_mapping or cdim):
             return (paths,), style, {"dimensions": dims}
         if cdim:
             self._norm_kwargs(element, ranges, style, cdim)
@@ -141,13 +130,6 @@ class PathPlot(ColorbarPlot):
 
 
 class ContourPlot(PathPlot):
-    color_index = param.ClassSelector(
-        default=0,
-        class_=(str, int),
-        allow_None=True,
-        doc="Index of the dimension from which the color will the drawn",
-    )
-
     def get_data(self, element, ranges, style):
         if isinstance(element, Polygons):
             color_prop = "facecolors"
@@ -166,14 +148,12 @@ class ContourPlot(PathPlot):
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
 
-        # Determine color dimension before processing 'c' style option
-        # This is needed because 'c' gets converted to 'array' but we still
-        # need to know the dimension for categorical color handling
-        cdim = None
-        if "array" not in style:
-            cidx = self.color_index + 2 if isinstance(self.color_index, int) else self.color_index
-            cdim = element.get_dimension(cidx)
-
+        raw_color = self.lookup_options(element, "style").kwargs.get("color")
+        cdim = (
+            element.vdims[0]
+            if element.vdims and isinstance(raw_color, (Cycle, NoneType))
+            else None
+        )
         if "c" in style:
             style["array"] = style.pop("c")
             style["clim"] = style.pop("vmin"), style.pop("vmax")
@@ -194,6 +174,7 @@ class ContourPlot(PathPlot):
         if dtype_kind(array) not in "uif":
             array = util.search_indices(array, util.unique_array(array))
         style["array"] = array
+        style.pop("color", None)
         self._norm_kwargs(element, ranges, style, cdim)
         return (paths,), style, {}
 

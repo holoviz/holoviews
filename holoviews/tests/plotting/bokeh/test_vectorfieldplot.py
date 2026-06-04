@@ -7,7 +7,6 @@ import holoviews as hv
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.testing import assert_data_equal
 
-from ..utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
@@ -83,20 +82,6 @@ class TestVectorFieldPlot(TestBokehPlot):
         glyph = plot.handles["glyph"]
         assert_data_equal(cds.data["line_width"], np.array([1, 4, 8, 1, 4, 8, 1, 4, 8]))
         assert property_to_dict(glyph.line_width) == {"field": "line_width"}
-
-    def test_vectorfield_color_index_color_clash(self):
-        vectorfield = hv.VectorField([(0, 0, 0), (0, 1, 1), (0, 2, 2)], vdims="color").opts(
-            line_color="color", color_index="color"
-        )
-        with ParamLogStream() as log:
-            bokeh_renderer.get_plot(vectorfield)
-        log_msg = log.stream.read()
-        warning = (
-            "The `color_index` parameter is deprecated in favor of color style mapping, e.g. "
-            "`color=dim('color')` or `line_color=dim('color')`\nCannot declare style mapping "
-            "for 'line_color' option and declare a color_index; ignoring the color_index.\n"
-        )
-        assert log_msg == warning
 
     def test_vectorfield_no_hover_columns(self):
         vectorfield = hv.VectorField([(0, 0, 0), (0, 1, 1), (0, 2, 2)], vdims="color").opts(

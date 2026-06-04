@@ -262,6 +262,7 @@ include = [
     "holoviews/*.py",
     "holoviews/core/*.py",
     "holoviews/core/util/*.py",
+    "holoviews/tests/_deps.py",
     "holoviews/util/*.py",
     "scripts/*.py",
 ]

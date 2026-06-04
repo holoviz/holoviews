@@ -383,27 +383,6 @@ def undisplayable_info(obj, html=False):
         )
 
 
-def compute_sizes(sizes, size_fn, scaling_factor, scaling_method, base_size):
-    """Scales point sizes according to a scaling factor,
-    base size and size_fn, which will be applied before
-    scaling.
-
-    """
-    if dtype_kind(sizes) not in ("i", "f"):
-        return None
-    if scaling_method == "area":
-        pass
-    elif scaling_method == "width":
-        scaling_factor = scaling_factor**2
-    else:
-        raise ValueError(
-            f'Invalid value for argument "scaling_method": "{scaling_method}". '
-            'Valid values are: "width", "area".'
-        )
-    sizes = size_fn(sizes)
-    return base_size * scaling_factor * sizes
-
-
 def get_axis_padding(padding):
     """Process a padding value supplied as a tuple or number and returns
     padding values for x-, y- and z-axis.

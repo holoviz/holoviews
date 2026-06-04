@@ -7,9 +7,11 @@ from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..util import dtype_kind
-from ..util.dependencies import PANDAS_GE_2_1_0, pd
+from ..util.dependencies import PANDAS_GE_2_1_0, _is_installed, pd
 from .interface import DataError, Interface
 from .util import finite_range
+
+_PANDAS_INSTALLED = _is_installed("pandas")
 
 
 class PandasAPI:
@@ -31,8 +33,8 @@ class PandasInterface(Interface, PandasAPI):
     @classmethod
     def loaded(cls):
         # 2025-02: As long as it is a required dependency and to not break
-        # existing behavior we will for now always return True
-        return True
+        # existing behavior we will for now always return True if installed
+        return _PANDAS_INSTALLED
 
     @classmethod
     def applies(cls, obj):

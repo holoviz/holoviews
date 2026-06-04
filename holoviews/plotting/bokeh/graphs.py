@@ -16,18 +16,17 @@ from bokeh.models import (
 )
 
 from ...core.data import Dataset
-from ...core.options import Cycle, abbreviated_exception
-from ...core.util import dimension_sanitizer, dtype_kind, unique_array
+from ...core.options import abbreviated_exception
+from ...core.util import dimension_sanitizer, dtype_kind
 from ...util.transform import dim
 from ..mixins import ChordMixin, GraphMixin
-from ..util import get_directed_graph_paths, process_cmap
+from ..util import get_directed_graph_paths
 from .chart import PointPlot
 from .element import ColorbarPlot, CompositeElementPlot, LegendPlot
 from .styles import (
     base_properties,
     fill_properties,
     line_properties,
-    rgba_tuple,
     text_properties,
 )
 
@@ -66,22 +65,6 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
     tools = param.List(
         default=["hover", "tap"],
         doc="A list of plugin tools to use on the plot.",
-    )
-
-    # Deprecated options
-
-    color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of color style mapping, e.g. `node_color=dim('color')`",
-    )
-
-    edge_color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of color style mapping, e.g. `edge_color=dim('color')`",
     )
 
     # Map each glyph to a style group
@@ -126,55 +109,6 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         else:
             dims = []
         return dims, {}
-
-    def _get_edge_colors(self, element, ranges, edge_data, edge_mapping, style):
-        cdim = element.get_dimension(self.edge_color_index)
-        if not cdim:
-            return
-        elstyle = self.lookup_options(element, "style")
-        cycle = elstyle.kwargs.get("edge_color")
-        if not isinstance(cycle, Cycle):
-            cycle = None
-
-        idx = element.get_dimension_index(cdim)
-        field = dimension_sanitizer(cdim.name)
-        cvals = element.dimension_values(cdim)
-        if idx in self._node_columns:
-            factors = element.nodes.dimension_values(2, expanded=False)
-        elif idx == 2 and dtype_kind(cvals) in "uif":
-            factors = None
-        else:
-            factors = unique_array(cvals)
-
-        default_cmap = "viridis" if factors is None else "tab20"
-        cmap = style.get("edge_cmap", style.get("cmap", default_cmap))
-        nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
-        if factors is None or (dtype_kind(factors) in "uif" and idx not in self._node_columns):
-            colors, factors = None, None
-        else:
-            if dtype_kind(factors) == "f":
-                cvals = cvals.astype(np.int32)
-                factors = factors.astype(np.int32)
-            if dtype_kind(factors) not in "SU":
-                field += "_str__"
-                cvals = [str(f) for f in cvals]
-                factors = (str(f) for f in factors)
-            factors = list(factors)
-            if isinstance(cmap, dict):
-                colors = [cmap.get(f, nan_colors.get("NaN", self._default_nan)) for f in factors]
-            else:
-                colors = process_cmap(cycle or cmap, len(factors))
-        if field not in edge_data:
-            edge_data[field] = cvals
-        edge_style = dict(style, cmap=cmap)
-        mapper = self._get_colormapper(
-            cdim, element, ranges, edge_style, factors, colors, "edge", "edge_colormapper"
-        )
-        transform = {"field": field, "transform": mapper}
-        color_type = "fill_color" if self.filled else "line_color"
-        edge_mapping["edge_" + color_type] = transform
-        edge_mapping["edge_nonselection_" + color_type] = transform
-        edge_mapping["edge_selection_" + color_type] = transform
 
     def _get_edge_paths(self, element, ranges):
         path_data, mapping = {}, {}
@@ -230,33 +164,6 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
 
         point_data = {"index": index}
 
-        # Handle node colors
-        fixed_color = style.pop("node_color", None)
-        cycle = self.lookup_options(element, "style").kwargs.get("node_color")
-        if isinstance(cycle, Cycle) and "cmap" not in style:
-            colors = cycle
-        else:
-            colors = None
-        cdata, cmapping = self._get_color_data(
-            element.nodes,
-            ranges,
-            style,
-            name="node_fill_color",
-            colors=colors,
-            int_categories=True,
-        )
-        if fixed_color is not None and not cdata:
-            style["node_color"] = fixed_color
-        point_data.update(cdata)
-        point_mapping = cmapping
-        if "node_fill_color" in point_mapping:
-            style = {
-                k: v
-                for k, v in style.items()
-                if k not in ["node_fill_color", "node_nonselection_fill_color"]
-            }
-            point_mapping["node_nonselection_fill_color"] = point_mapping["node_fill_color"]
-
         # Handle edge colors
         edge_mapping = {}
         nan_node = index.max() + 1 if len(index) else 0
@@ -267,7 +174,6 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
             start = np.array([node_indices.get(x, nan_node) for x in start], dtype=np.int32)
             end = np.array([node_indices.get(y, nan_node) for y in end], dtype=np.int32)
         path_data = dict(start=start, end=end)
-        self._get_edge_colors(element, ranges, path_data, edge_mapping, style)
         if not static:
             pdata, pmapping = self._get_edge_paths(element, ranges)
             path_data.update(pdata)
@@ -289,7 +195,7 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
                         dim_name += "_values"
                     path_data[dim_name] = element.dimension_values(d)
         data = {"scatter_1": point_data, self.edge_glyph: path_data, "layout": layout}
-        mapping = {"scatter_1": point_mapping, self.edge_glyph: edge_mapping}
+        mapping = {"scatter_1": {}, self.edge_glyph: edge_mapping}
         return data, mapping, style
 
     def _update_datasource(self, source, data):
@@ -553,7 +459,7 @@ class TriMeshPlot(GraphPlot):
         style = self.style[self.cyclic_index]
         edge_color = style.get("edge_color")
         if edge_color not in element.nodes:
-            edge_color = self.edge_color_index
+            edge_color = None
         simplex_dim = element.get_dimension(edge_color)
         vertex_dim = element.nodes.get_dimension(edge_color)
         if vertex_dim and not simplex_dim:

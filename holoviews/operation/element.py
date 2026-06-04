@@ -44,7 +44,7 @@ from ..core.util import (
     label_sanitizer,
 )
 from ..core.util.dependencies import _no_import_version, cp
-from ..element.chart import Histogram, Scatter
+from ..element.chart import Bars, Histogram, Scatter
 from ..element.path import Contours, Dendrogram, Polygons
 from ..element.raster import RGB, HeatMap, Image
 from ..element.util import categorical_aggregate2d  # noqa: F401
@@ -1101,6 +1101,69 @@ class histogram(Operation):
         return Histogram((edges, hist), kdims=[dim], label=element.label, **params)
 
 
+class categorical_agg(Operation):
+    """Aggregates a categorical dimension of an element into a Bars element.
+
+    Because it is an Operation subclass it preserves data lineage,
+    allowing link_selections to cross-filter through the aggregation.
+    """
+
+    dimension = param.String(
+        default=None,
+        allow_None=True,
+        doc="Categorical dimension to group by.",
+    )
+
+    value_dimension = param.String(
+        default=None,
+        allow_None=True,
+        doc="Numeric dimension to aggregate. If None, counts rows per category.",
+    )
+
+    function = param.Callable(
+        default=np.size,
+        doc="Aggregation function applied to value_dimension values.",
+    )
+
+    label = param.String(
+        default=None,
+        allow_None=True,
+        doc="Label for the value axis. Auto-generated from function name if None.",
+    )
+
+    def _process(self, element, key=None):
+        if self.p.dimension is None:
+            raise ValueError("The dimension parameter is required for categorical_agg.")
+
+        cat_dim = element.get_dimension(self.p.dimension)
+        if cat_dim is None:
+            raise ValueError(f"Dimension '{self.p.dimension}' not found on the input element.")
+
+        cat_vals = element.dimension_values(self.p.dimension, expanded=True)
+        unique_cats = np.unique(cat_vals)
+
+        if self.p.value_dimension is None:
+            _, counts = np.unique(cat_vals, return_counts=True)
+            agg_label = self.p.label or "Count"
+            data = list(zip(unique_cats, counts, strict=True))
+        else:
+            val_dim = element.get_dimension(self.p.value_dimension)
+            if val_dim is None:
+                raise ValueError(
+                    f"Value dimension '{self.p.value_dimension}' not found on the input element."
+                )
+            num_vals = element.dimension_values(self.p.value_dimension, expanded=True)
+            results = []
+            for cat in unique_cats:
+                mask = cat_vals == cat
+                results.append(self.p.function(num_vals[mask]))
+            func_name = getattr(self.p.function, "__name__", "agg")
+            agg_label = self.p.label or f"{func_name}({self.p.value_dimension})"
+            data = list(zip(unique_cats, results, strict=True))
+
+        return Bars(data, kdims=[self.p.dimension], vdims=[agg_label])
+
+
 class decimate(Operation):
     """Decimates any column based Element to a specified number of random
     rows if the current element defined by the x_range and y_range
@@ -1213,8 +1276,9 @@ class interpolate_curve(Operation):
 
     @classmethod
     def pts_to_prestep(cls, x, values):
-        steps = np.zeros(2 * len(x) - 1)
-        value_steps = tuple(np.empty(2 * len(x) - 1, dtype=cls._get_dtype(v)) for v in values)
+        size = max(2 * len(x) - 1, 0)
+        steps = np.zeros(size)
+        value_steps = tuple(np.empty(size, dtype=cls._get_dtype(v)) for v in values)
 
         steps[0::2] = x
         steps[1::2] = steps[0:-2:2]
@@ -1232,8 +1296,9 @@ class interpolate_curve(Operation):
         steps = np.zeros(2 * len(x))
         value_steps = tuple(np.empty(2 * len(x), dtype=cls._get_dtype(v)) for v in values)
 
-        steps[1:-1:2] = steps[2::2] = x[:-1] + (x[1:] - x[:-1]) / 2
-        steps[0], steps[-1] = x[0], x[-1]
+        if len(x):
+            steps[1:-1:2] = steps[2::2] = x[:-1] + (x[1:] - x[:-1]) / 2
+            steps[0], steps[-1] = x[0], x[-1]
 
         val_arrays = []
         for v, s in zip(values, value_steps, strict=True):
@@ -1245,8 +1310,9 @@ class interpolate_curve(Operation):
 
     @classmethod
     def pts_to_poststep(cls, x, values):
-        steps = np.zeros(2 * len(x) - 1)
-        value_steps = tuple(np.empty(2 * len(x) - 1, dtype=cls._get_dtype(v)) for v in values)
+        size = max(2 * len(x) - 1, 0)
+        steps = np.zeros(size)
+        value_steps = tuple(np.empty(size, dtype=cls._get_dtype(v)) for v in values)
 
         steps[0::2] = x
         steps[1::2] = steps[2::2]
