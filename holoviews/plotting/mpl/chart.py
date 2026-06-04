@@ -952,6 +952,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         top_dim, baseline_dim = self._baseline_dimensions(element)
         self._warn_unused_baseline(element, baseline_dim)
+        if baseline_dim is not None:
+            self._validate_baseline(element, top_dim, baseline_dim)
         # For floating bars the upper end is top_dim; otherwise it is vdims[0].
         value_dim = top_dim if baseline_dim is not None else element.vdims[0]
 

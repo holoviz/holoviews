@@ -1021,6 +1021,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         top_dim, baseline_dim = self._baseline_dimensions(element)
         self._warn_unused_baseline(element, baseline_dim)
         if baseline_dim is not None:
+            self._validate_baseline(element, top_dim, baseline_dim)
             ydim = top_dim
 
         color_dim = element.get_dimension(group_dim or stack_dim)

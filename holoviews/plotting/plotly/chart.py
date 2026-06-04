@@ -228,6 +228,8 @@ class BarPlot(BarsMixin, ElementPlot):
         # Floating bars span baseline_dim (bottom) up to top_dim.
         top_dim, baseline_dim = self._baseline_dimensions(element)
         self._warn_unused_baseline(element, baseline_dim)
+        if baseline_dim is not None:
+            self._validate_baseline(element, top_dim, baseline_dim)
         group_dim, stack_dim = None, None
         if element.ndims == 1:
             pass

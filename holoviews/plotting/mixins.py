@@ -334,7 +334,7 @@ class BarsMixin:
         ['High', 'Low'] both span Low -> High with baseline='Low'. Returns
         (None, None) when the baseline is unset, unresolved, not a value
         dimension, or the only value dimension. Raises ValueError for
-        stacked Bars or when the baseline exceeds its upper dimension.
+        stacked Bars.
         """
         if self.baseline is None:
             return None, None
@@ -350,17 +350,21 @@ class BarsMixin:
         remaining = [vd for vd in element.vdims if vd.name != baseline_dim.name]
         if not remaining:
             return None, None
-        top_dim = remaining[0]
+        return remaining[0], baseline_dim
+
+    def _validate_baseline(self, element, top_dim, baseline_dim):
+        """Raise if any baseline value exceeds its top value.
+
+        NaN comparisons are False, so missing values fall through to the backend.
+        """
         base = element.dimension_values(baseline_dim)
         top = element.dimension_values(top_dim)
-        # NaN comparisons are False, so missing values fall through to the backend.
         if np.any(base > top):
             raise ValueError(
                 f"baseline dimension {baseline_dim.name!r} has values that exceed "
                 f"the {top_dim.name!r} dimension; the baseline must be the lower "
                 "end of every bar."
             )
-        return top_dim, baseline_dim
 
     def _warn_unused_baseline(self, element, baseline_dim):
         """Warn when a requested baseline can't be used and falls back to zero."""
