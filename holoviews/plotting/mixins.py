@@ -330,11 +330,20 @@ class BarsMixin:
         """Resolve the (top, bottom) value dimensions for floating bars.
 
         `baseline` names the lower end of each bar; the first remaining
-        value dimension is the upper end, so ['Low', 'High'] and
-        ['High', 'Low'] both span Low -> High with baseline='Low'. Returns
-        (None, None) when the baseline is unset, unresolved, not a value
-        dimension, or the only value dimension. Raises ValueError for
-        stacked Bars.
+        value dimension is the upper end, so `['Low', 'High']` and
+        `['High', 'Low']` both span Low -> High with `baseline='Low'`.
+
+        Returns
+        -------
+        tuple[Dimension | None, Dimension | None]
+            `(top_dim, baseline_dim)`, or `(None, None)` when the
+            baseline is unset, unresolved, not a value dimension, or the
+            only value dimension.
+
+        Raises
+        ------
+        ValueError
+            If both `self.stacked` and `self.baseline` are set.
         """
         if self.baseline is None:
             return None, None
