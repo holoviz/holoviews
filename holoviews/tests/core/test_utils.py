@@ -54,19 +54,18 @@ sanitize_identifier = sanitize_identifier_fn.instance()
 
 
 @pytest.fixture
-def with_pandas(request, monkeypatch):
+def with_pandas(request, monkeypatch, unimport):
     """Fixture to control pandas availability"""
     if request.param:
         pytest.importorskip("pandas")
     else:
         monkeypatch.setattr(util, "pd", None)
+        unimport("pandas")
 
 
-def with_and_without_pandas(func):
-    """Decorator to test both with and without pandas"""
-    return pytest.mark.parametrize(
-        "with_pandas", [True, False], indirect=True, ids=["with_pandas", "without_pandas"]
-    )(func)
+with_and_without_pandas = pytest.mark.parametrize(
+    "with_pandas", [True, False], indirect=True, ids=["with_pandas", "without_pandas"]
+)
 
 
 class TestDeepHash:
@@ -1090,13 +1089,18 @@ def test_is_null_or_na_scalar():
     assert not is_null_or_na_scalar(slice(None))
     assert not is_null_or_na_scalar(np.array([1, 2]))
     assert not is_null_or_na_scalar(pd.DataFrame([1, 2]))
+    assert not is_null_or_na_scalar(nw.from_native(pd.Series([1, 2]), allow_series=True))
+    assert not is_null_or_na_scalar(nw.from_native(pd.DataFrame([1, 2])))
 
 
 @pl_skip
 def test_is_null_or_na_scalar_polars():
-    assert is_null_or_na_scalar(pl.Null)
+    assert not is_null_or_na_scalar(pl.Series([1, 2]))
     assert not is_null_or_na_scalar(pl.DataFrame([1, 2]))
     assert not is_null_or_na_scalar(pl.LazyFrame([1, 2]))
+    assert not is_null_or_na_scalar(nw.from_native(pl.Series([1, 2]), allow_series=True))
+    assert not is_null_or_na_scalar(nw.from_native(pl.DataFrame([1, 2])))
+    assert not is_null_or_na_scalar(nw.from_native(pl.LazyFrame([1, 2])))
 
 
 @pytest.mark.parametrize(
