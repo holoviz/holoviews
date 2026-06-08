@@ -98,8 +98,8 @@ class TestOHLCPlot(TestMPLPlot):
         assert np.isnan(bodies[1].get_height())
 
     def test_yrange_envelopes_low_high(self):
-        # padding is zeroed by TestMPLPlot, so the y-limits match low..high exactly
-        ohlc = hv.OHLC([(0, 10, 20, 5, 11), (1, 11, 18, 6, 12)])
+        # zero padding so the y-limits match low..high exactly
+        ohlc = hv.OHLC([(0, 10, 20, 5, 11), (1, 11, 18, 6, 12)]).opts(padding=0)
         plot = mpl_renderer.get_plot(ohlc)
         b, t = plot.handles["axis"].get_ylim()
         np.testing.assert_almost_equal(b, 5)
