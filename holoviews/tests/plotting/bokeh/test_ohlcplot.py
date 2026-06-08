@@ -47,10 +47,9 @@ class TestOHLCPlot(TestBokehPlot):
 
     def test_body_outline_matches_fill(self):
         ohlc = hv.OHLC([(0, 10, 12, 9, 11), (1, 11, 13, 10, 10.5)])
-        _, quad, _ = self._sources(ohlc)
-        np.testing.assert_array_equal(
-            np.asarray(quad["line_color"]), np.asarray(quad["fill_color"])
-        )
+        plot, _, _ = self._sources(ohlc)
+        quad_glyph = plot.handles["quad_1_glyph"]
+        assert _field(quad_glyph.line_color) == _field(quad_glyph.fill_color) == "fill_color"
 
     def test_wick_spans_low_high(self):
         ohlc = hv.OHLC([(0, 10, 12, 9, 11)])
@@ -103,6 +102,21 @@ class TestOHLCPlot(TestBokehPlot):
         ohlc = hv.OHLC([], vdims=["open", "high", "low", "close"])
         # should construct a plot without raising
         bokeh_renderer.get_plot(ohlc)
+
+    def test_extra_vdim_renders(self):
+        df = pd.DataFrame(
+            {
+                "x": [0, 1],
+                "open": [10, 11],
+                "high": [12, 13],
+                "low": [9, 10],
+                "close": [11, 10.5],
+                "volume": [100, 200],
+            }
+        )
+        ohlc = hv.OHLC(df, "x", ["open", "high", "low", "close", "volume"])
+        _, quad, _ = self._sources(ohlc)
+        np.testing.assert_equal(np.asarray(quad["bottom"]), np.array([10, 10.5]))
 
     def test_datetime_axis_width_pandas(self):
         dates = pd.date_range("2024-01-01", periods=3, freq="D")

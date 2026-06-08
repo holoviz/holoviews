@@ -96,3 +96,19 @@ class TestOHLCPlot(TestMPLPlot):
         b, t = plot.handles["axis"].get_ylim()
         np.testing.assert_almost_equal(b, 5)
         np.testing.assert_almost_equal(t, 20)
+
+    def test_extra_vdim_renders(self):
+        df = pd.DataFrame(
+            {
+                "x": [0, 1],
+                "open": [10, 11],
+                "high": [12, 13],
+                "low": [9, 10],
+                "close": [11, 10.5],
+                "volume": [100, 200],
+            }
+        )
+        ohlc = hv.OHLC(df, "x", ["open", "high", "low", "close", "volume"])
+        _, bodies, _, _, _ = self._data(ohlc)
+        assert len(bodies) == 2
+        np.testing.assert_almost_equal(bodies[0].get_y(), 10)

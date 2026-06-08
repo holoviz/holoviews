@@ -1273,7 +1273,6 @@ class OHLCPlot(OHLCMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
             "top": top,
             "bottom": bottom,
             "fill_color": color,
-            "line_color": color,
         }
         seg_data = {"x": x, "low": low, "high": high}
 

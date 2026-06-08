@@ -54,3 +54,25 @@ class TestOHLCPlot(TestPlotlyPlot):
         trace = self._get_plot_state(ohlc)["data"][0]
         assert trace["type"] == "candlestick"
         assert len(trace["x"]) == 3
+
+    def test_nan_values(self):
+        ohlc = hv.OHLC([(0, 10, 12, 9, 11), (1, np.nan, 13, 10, np.nan)])
+        trace = self._get_plot_state(ohlc)["data"][0]
+        assert np.isnan(np.asarray(trace["open"], dtype=float)[1])
+        assert np.isnan(np.asarray(trace["close"], dtype=float)[1])
+
+    def test_extra_vdim_renders(self):
+        df = pd.DataFrame(
+            {
+                "x": [0, 1],
+                "open": [10, 11],
+                "high": [12, 13],
+                "low": [9, 10],
+                "close": [11, 10.5],
+                "volume": [100, 200],
+            }
+        )
+        ohlc = hv.OHLC(df, "x", ["open", "high", "low", "close", "volume"])
+        trace = self._get_plot_state(ohlc)["data"][0]
+        assert trace["type"] == "candlestick"
+        assert_data_equal(trace["close"], np.array([11, 10.5]))

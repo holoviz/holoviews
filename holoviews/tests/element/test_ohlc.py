@@ -82,3 +82,8 @@ class TestOHLCElement:
         assert len(ohlc) == 2
         close = np.asarray(ohlc.dimension_values("close"), dtype=float)
         assert np.isnan(close[1])
+
+    def test_empty_element(self):
+        ohlc = hv.OHLC([], vdims=["open", "high", "low", "close"])
+        assert len(ohlc) == 0
+        assert [vd.name for vd in ohlc.vdims[:4]] == ["open", "high", "low", "close"]
