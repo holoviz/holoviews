@@ -58,6 +58,21 @@ class TestOHLCPlot(TestBokehPlot):
         assert "body_fill_alpha" in plot.style_opts
         assert "wick_line_color" in plot.style_opts
 
+    def test_hover_columns_on_body(self):
+        ohlc = hv.OHLC([(0, 10, 12, 9, 11), (1, 11, 13, 10, 10.5)]).opts(tools=["hover"])
+        _, quad, _ = self._sources(ohlc)
+        for col in ("x", "open", "high", "low", "close"):
+            assert col in quad
+        np.testing.assert_equal(np.asarray(quad["open"]), np.array([10, 11]))
+        np.testing.assert_equal(np.asarray(quad["close"]), np.array([11, 10.5]))
+
+    def test_hover_only_targets_body(self):
+        ohlc = hv.OHLC([(0, 10, 12, 9, 11)]).opts(tools=["hover"])
+        plot = bokeh_renderer.get_plot(ohlc)
+        hover = plot.handles["hover"]
+        assert plot.handles["quad_1_glyph_renderer"] in hover.renderers
+        assert plot.handles["segment_1_glyph_renderer"] not in hover.renderers
+
     def test_wick_spans_low_high(self):
         ohlc = hv.OHLC([(0, 10, 12, 9, 11)])
         _, _, seg = self._sources(ohlc)

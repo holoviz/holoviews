@@ -1278,6 +1278,12 @@ class OHLCPlot(OHLCMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         }
         seg_data = {"x": x, "low": low, "high": high}
 
+        # Carry every dimension onto the body source (by sanitized name) so
+        # hover tooltips resolve; the wick is excluded as a hover target.
+        if "hover" in self.handles:
+            for d in element.dimensions():
+                quad_data[dimension_sanitizer(d.name)] = element.dimension_values(d)
+
         if self.invert_axes:
             quad_map = {
                 "left": "bottom",
@@ -1302,6 +1308,12 @@ class OHLCPlot(OHLCMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         data = {"quad_1": quad_data, "segment_1": seg_data}
         mapping = {"quad_1": quad_map, "segment_1": seg_map}
         return data, mapping, style
+
+    def _postprocess_hover(self, renderer, source):
+        # Only the body carries hover; the wick source lacks the full columns.
+        if renderer is not self.handles.get("quad_1_glyph_renderer"):
+            return
+        super()._postprocess_hover(renderer, source)
 
 
 class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
