@@ -1244,8 +1244,7 @@ class OHLCPlot(OHLCMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
     # Draw the wick first so the bar renders on top of it.
     _draw_order = ["segment", "quad"]
 
-    # Bar fill is the direction color (pos_color/neg_color), so the fill
-    # color options are excluded; bar_line_color styles the box outline.
+    # Fill is the direction color, so the fill-color options are excluded.
     style_opts = [
         "bar_" + p
         for p in base_properties + fill_properties + line_properties
@@ -1280,8 +1279,7 @@ class OHLCPlot(OHLCMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         }
         seg_data = {"x": x, "low": low, "high": high}
 
-        # Carry every dimension onto the body source (by sanitized name) so
-        # hover tooltips resolve; the wick is excluded as a hover target.
+        # Add dimension columns (sanitized names) so hover tooltips resolve.
         if "hover" in self.handles:
             for d in element.dimensions():
                 quad_data[dimension_sanitizer(d.name)] = element.dimension_values(d)
@@ -1310,7 +1308,7 @@ class OHLCPlot(OHLCMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         return data, mapping, style
 
     def _postprocess_hover(self, renderer, source):
-        # Only the body carries hover; the wick source lacks the full columns.
+        # Hover targets the body only; the wick lacks the OHLC columns.
         if renderer is not self.handles.get("quad_1_glyph_renderer"):
             return
         super()._postprocess_hover(renderer, source)
