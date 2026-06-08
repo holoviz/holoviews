@@ -3,9 +3,9 @@ from __future__ import annotations
 import matplotlib as mpl
 import numpy as np
 import param
-from matplotlib.collections import LineCollection
+from matplotlib.collections import LineCollection, PatchCollection
 from matplotlib.dates import DateFormatter, date2num
-from matplotlib.patches import Patch, Wedge
+from matplotlib.patches import Patch, Rectangle, Wedge
 
 from ...core.dimension import Dimension
 from ...core.options import Store, abbreviated_exception
@@ -21,7 +21,7 @@ from ...core.util import (
 from ...element import HeatMap, Raster
 from ...operation import interpolate_curve
 from ...util.transform import dim
-from ..mixins import AreaMixin, BarsMixin, DonutMixin, SpikesMixin, WaterfallMixin
+from ..mixins import AreaMixin, BarsMixin, DonutMixin, OHLCMixin, SpikesMixin, WaterfallMixin
 from ..plot import PlotSelector
 from ..util import dim_range_key, get_min_distance, get_sideplot_ranges, process_cmap
 from .element import ColorbarPlot, ElementPlot, LegendPlot
@@ -1248,6 +1248,119 @@ class SideSpikesPlot(AdjoinedPlot, SpikesPlot):
         all axis labels including ticks and ylabel. Valid options are 'left',
         'right', 'bare' 'left-bare' and 'right-bare'.""",
     )
+
+
+class OHLCPlot(OHLCMixin, ColorbarPlot, LegendPlot):
+    """Renders an OHLC element as a candlestick chart: a filled body
+    spanning the open and close values together with a high-low wick,
+    colored by direction (a close at or above the open is "up", a
+    close below the open is "down").
+    """
+
+    bar_width = param.Number(
+        default=0.5,
+        bounds=(0, None),
+        doc="""
+        Width of each candle body as a fraction of the smallest spacing
+        between adjacent x-coordinates.""",
+    )
+
+    neg_color = param.String(
+        default="#e44e4e",
+        doc="""
+        Body color for down candles, where the close is below the open.""",
+    )
+
+    pos_color = param.String(
+        default="#3eaf7c",
+        doc="""
+        Body color for up candles, where the close is at or above the open.""",
+    )
+
+    show_legend = param.Boolean(
+        default=False,
+        doc="Whether to show a legend for the plot.",
+    )
+
+    wick_color = param.String(
+        default="black",
+        doc="Color of the high-low wick lines.",
+    )
+
+    style_opts = ["alpha", "linewidth", "edgecolor", "visible"]
+
+    _nonvectorized_styles = ["visible"]
+
+    def get_data(self, element, ranges, style):
+        with abbreviated_exception():
+            style = self._apply_transforms(element, ranges, style)
+
+        xdim = element.kdims[0]
+        odim, hdim, ldim, cdim = element.vdims[:4]
+        xs = element.dimension_values(xdim)
+        open_ = element.dimension_values(odim)
+        high = element.dimension_values(hdim)
+        low = element.dimension_values(ldim)
+        close = element.dimension_values(cdim)
+
+        dims = element.dimensions()
+        if isdatetime(xs):
+            # Matplotlib works in float "date numbers"; convert and attach a
+            # date formatter so the axis renders as dates.
+            xs = date2num(xs)
+            dimtype = element.get_dimension_type(0)
+            dt_format = Dimension.type_formatters.get(dimtype, "%Y-%m-%d %H:%M:%S")
+            dims[0] = dims[0].clone(value_format=DateFormatter(dt_format))
+
+        half = self._half_width(xs, self.bar_width)
+        bottom = np.minimum(open_, close)
+        top = np.maximum(open_, close)
+        colors = self._ohlc_colors(element)
+
+        if self.invert_axes:
+            bodies = [
+                Rectangle((b, x - half), t - b, 2 * half)
+                for x, b, t in zip(xs, bottom, top, strict=None)
+            ]
+            wicks = [[(lo, x), (hi, x)] for x, lo, hi in zip(xs, low, high, strict=None)]
+        else:
+            bodies = [
+                Rectangle((x - half, b), 2 * half, t - b)
+                for x, b, t in zip(xs, bottom, top, strict=None)
+            ]
+            wicks = [[(x, lo), (x, hi)] for x, lo, hi in zip(xs, low, high, strict=None)]
+        return (bodies, wicks, colors), style, {"dimensions": dims}
+
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        bodies, wicks, colors = plot_args
+        zorder = plot_kwargs.get("zorder", self.zorder)
+        linewidth = plot_kwargs.get("linewidth", 1)
+        alpha = plot_kwargs.get("alpha", 1)
+        visible = plot_kwargs.get("visible", True)
+        edgecolors = plot_kwargs.get("edgecolor", colors)
+
+        # Draw the wick first, then the body on top of it.
+        wick_artist = LineCollection(
+            wicks, colors=self.wick_color, linewidths=linewidth, zorder=zorder, visible=visible
+        )
+        ax.add_collection(wick_artist)
+        body_artist = PatchCollection(
+            bodies,
+            facecolors=colors,
+            edgecolors=edgecolors,
+            linewidths=linewidth,
+            alpha=alpha,
+            zorder=zorder + 1,
+            visible=visible,
+        )
+        ax.add_collection(body_artist)
+        return {"artist": body_artist, "wicks": wick_artist}
+
+    def teardown_handles(self):
+        if "artist" in self.handles:
+            self.handles["artist"].remove()
+        if "wicks" in self.handles:
+            self.handles["wicks"].remove()
 
 
 class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):

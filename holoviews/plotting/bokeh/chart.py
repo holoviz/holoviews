@@ -16,7 +16,7 @@ from ...core.util import dimension_sanitizer, dtype_kind, isdatetime, isfinite
 from ...operation import interpolate_curve
 from ...util.transform import dim
 from ...util.warnings import warn
-from ..mixins import AreaMixin, BarsMixin, DonutMixin, SpikesMixin, WaterfallMixin
+from ..mixins import AreaMixin, BarsMixin, DonutMixin, OHLCMixin, SpikesMixin, WaterfallMixin
 from ..util import get_min_distance, rgb2hex
 from .element import ColorbarPlot, CompositeElementPlot, ElementPlot, LegendPlot, OverlayPlot
 from .selection import BokehOverlaySelectionDisplay
@@ -1201,6 +1201,106 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             )
 
         return sanitized_data, mapping, style
+
+
+class OHLCPlot(OHLCMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
+    """Renders an OHLC element as a candlestick chart: a filled body
+    spanning the open and close values together with a high-low wick,
+    colored by direction (a close at or above the open is "up", a
+    close below the open is "down").
+    """
+
+    bar_width = param.Number(
+        default=0.5,
+        bounds=(0, None),
+        doc="""
+        Width of each candle body as a fraction of the smallest spacing
+        between adjacent x-coordinates.""",
+    )
+
+    neg_color = param.String(
+        default="#e44e4e",
+        doc="""
+        Body color for down candles, where the close is below the open.""",
+    )
+
+    pos_color = param.String(
+        default="#3eaf7c",
+        doc="""
+        Body color for up candles, where the close is at or above the open.""",
+    )
+
+    show_legend = param.Boolean(
+        default=False,
+        doc="Whether to show a legend for the plot.",
+    )
+
+    # Glyph keys take the form "<method>_<n>"; the body is a quad and
+    # the high-low wick a segment. Coordinates are emitted in data units
+    # (datetime-aware) rather than as bar widths, so datetime axes work
+    # without converting widths to milliseconds.
+    _style_groups = {"quad": "body", "segment": "wick"}
+
+    # Draw the wick first so the body renders on top of it.
+    _draw_order = ["segment", "quad"]
+
+    style_opts = ["body_" + p for p in base_properties + fill_properties + line_properties] + [
+        "wick_" + p for p in base_properties + line_properties
+    ]
+
+    _nonvectorized_styles = base_properties
+
+    def get_data(self, element, ranges, style):
+        xdim = element.kdims[0]
+        odim, hdim, ldim, cdim = element.vdims[:4]
+
+        x = element.dimension_values(xdim)
+        open_ = element.dimension_values(odim)
+        high = element.dimension_values(hdim)
+        low = element.dimension_values(ldim)
+        close = element.dimension_values(cdim)
+
+        half = self._half_width(x, self.bar_width)
+        left = x - half
+        right = x + half
+        bottom = np.minimum(open_, close)
+        top = np.maximum(open_, close)
+        color = self._ohlc_colors(element)
+
+        quad_data = {
+            "left": left,
+            "right": right,
+            "top": top,
+            "bottom": bottom,
+            "fill_color": color,
+            "line_color": color,
+        }
+        seg_data = {"x": x, "low": low, "high": high}
+
+        if self.invert_axes:
+            quad_map = {
+                "left": "bottom",
+                "right": "top",
+                "bottom": "left",
+                "top": "right",
+                "fill_color": "fill_color",
+                "line_color": "fill_color",
+            }
+            seg_map = {"x0": "low", "x1": "high", "y0": "x", "y1": "x"}
+        else:
+            quad_map = {
+                "left": "left",
+                "right": "right",
+                "top": "top",
+                "bottom": "bottom",
+                "fill_color": "fill_color",
+                "line_color": "fill_color",
+            }
+            seg_map = {"x0": "x", "x1": "x", "y0": "low", "y1": "high"}
+
+        data = {"quad_1": quad_data, "segment_1": seg_data}
+        mapping = {"quad_1": quad_map, "segment_1": seg_map}
+        return data, mapping, style
 
 
 class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
