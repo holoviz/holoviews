@@ -1244,9 +1244,11 @@ class OHLCPlot(OHLCMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
     # Draw the wick first so the body renders on top of it.
     _draw_order = ["segment", "quad"]
 
-    style_opts = ["body_" + p for p in base_properties + fill_properties + line_properties] + [
-        "wick_" + p for p in base_properties + line_properties
-    ]
+    style_opts = [
+        "body_" + p
+        for p in base_properties + fill_properties + line_properties
+        if p not in ("color", "fill_color", "line_color")
+    ] + ["wick_" + p for p in base_properties + line_properties]
 
     _nonvectorized_styles = base_properties
 

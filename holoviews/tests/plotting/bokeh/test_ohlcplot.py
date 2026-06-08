@@ -51,6 +51,13 @@ class TestOHLCPlot(TestBokehPlot):
         quad_glyph = plot.handles["quad_1_glyph"]
         assert _field(quad_glyph.line_color) == _field(quad_glyph.fill_color) == "fill_color"
 
+    def test_body_base_color_not_a_style_option(self):
+        plot = bokeh_renderer.get_plot(hv.OHLC([(0, 10, 12, 9, 11)]))
+        for opt in ("body_color", "body_fill_color", "body_line_color"):
+            assert opt not in plot.style_opts
+        assert "body_fill_alpha" in plot.style_opts
+        assert "wick_line_color" in plot.style_opts
+
     def test_wick_spans_low_high(self):
         ohlc = hv.OHLC([(0, 10, 12, 9, 11)])
         _, _, seg = self._sources(ohlc)
