@@ -285,7 +285,7 @@ options.Donut = Options(
     "style", cmap="Category20", wedge_line_color="black", label_text_font_size="9pt"
 )
 options.Spikes = Options("style", color="black", cmap=dflt_cmap, muted_alpha=0.2)
-options.OHLC = Options("style", wick_line_color="black", body_line_width=1)
+options.OHLC = Options("style", bar_line_color="black", wick_line_color="black", bar_line_width=1)
 options.Area = Options("style", color=Cycle(), alpha=1, line_color="black", muted_alpha=0.2)
 options.VectorField = Options("style", color="black", muted_alpha=0.2)
 

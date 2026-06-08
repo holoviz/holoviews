@@ -45,17 +45,21 @@ class TestOHLCPlot(TestBokehPlot):
         expected = plot.pos_color if up else plot.neg_color
         assert quad["fill_color"][0] == expected
 
-    def test_body_outline_matches_fill(self):
-        ohlc = hv.OHLC([(0, 10, 12, 9, 11), (1, 11, 13, 10, 10.5)])
-        plot, _, _ = self._sources(ohlc)
+    def test_bar_line_color_default_and_option(self):
+        # outline defaults to black and is set independently of the fill
+        plot, _, _ = self._sources(hv.OHLC([(0, 10, 12, 9, 11)]))
+        assert _field(plot.handles["quad_1_glyph"].line_color) == "black"
+        plot, _, _ = self._sources(hv.OHLC([(0, 10, 12, 9, 11)]).opts(bar_line_color="navy"))
         quad_glyph = plot.handles["quad_1_glyph"]
-        assert _field(quad_glyph.line_color) == _field(quad_glyph.fill_color) == "fill_color"
+        assert _field(quad_glyph.line_color) == "navy"
+        assert _field(quad_glyph.fill_color) == "fill_color"
 
-    def test_body_base_color_not_a_style_option(self):
+    def test_fill_color_not_a_style_option(self):
+        # fill stays direction-driven; outline is settable, wick is separate
         plot = bokeh_renderer.get_plot(hv.OHLC([(0, 10, 12, 9, 11)]))
-        for opt in ("body_color", "body_fill_color", "body_line_color"):
+        for opt in ("bar_color", "bar_fill_color"):
             assert opt not in plot.style_opts
-        assert "body_fill_alpha" in plot.style_opts
+        assert "bar_line_color" in plot.style_opts
         assert "wick_line_color" in plot.style_opts
 
     def test_hover_columns_on_body(self):

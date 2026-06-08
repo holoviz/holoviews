@@ -397,6 +397,13 @@ class OHLCPlot(OHLCMixin, ElementPlot):
         doc="Whether to show a legend for the plot.",
     )
 
+    wick_color = param.String(
+        default="black",
+        doc="""
+        Color of the high-low wick and candle outline. Plotly ties the two
+        together, so this colors both.""",
+    )
+
     style_opts = ["visible"]
 
     @classmethod
@@ -410,9 +417,9 @@ class OHLCPlot(OHLCMixin, ElementPlot):
 
     def graph_options(self, element, ranges, style, is_geo=False, **kwargs):
         opts = super().graph_options(element, ranges, style, is_geo=is_geo, **kwargs)
-        # Direction colors map onto Plotly's increasing/decreasing groups.
-        opts["increasing"] = {"line": {"color": self.pos_color}, "fillcolor": self.pos_color}
-        opts["decreasing"] = {"line": {"color": self.neg_color}, "fillcolor": self.neg_color}
+        # Direction sets the fill; the wick/outline color is shared across both.
+        opts["increasing"] = {"line": {"color": self.wick_color}, "fillcolor": self.pos_color}
+        opts["decreasing"] = {"line": {"color": self.wick_color}, "fillcolor": self.neg_color}
         return opts
 
     def init_layout(self, key, element, ranges, is_geo=False):

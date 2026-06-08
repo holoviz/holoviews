@@ -1235,19 +1235,21 @@ class OHLCPlot(OHLCMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         doc="Whether to show a legend for the plot.",
     )
 
-    # Glyph keys take the form "<method>_<n>"; the body is a quad and
-    # the high-low wick a segment. Coordinates are emitted in data units
-    # (datetime-aware) rather than as bar widths, so datetime axes work
-    # without converting widths to milliseconds.
-    _style_groups = {"quad": "body", "segment": "wick"}
+    # Glyph keys take the form "<method>_<n>"; the bar (candle body) is a
+    # quad and the high-low wick a segment. Coordinates are emitted in data
+    # units (datetime-aware) rather than as bar widths, so datetime axes
+    # work without converting widths to milliseconds.
+    _style_groups = {"quad": "bar", "segment": "wick"}
 
-    # Draw the wick first so the body renders on top of it.
+    # Draw the wick first so the bar renders on top of it.
     _draw_order = ["segment", "quad"]
 
+    # Bar fill is the direction color (pos_color/neg_color), so the fill
+    # color options are excluded; bar_line_color styles the box outline.
     style_opts = [
-        "body_" + p
+        "bar_" + p
         for p in base_properties + fill_properties + line_properties
-        if p not in ("color", "fill_color", "line_color")
+        if p not in ("color", "fill_color")
     ] + ["wick_" + p for p in base_properties + line_properties]
 
     _nonvectorized_styles = base_properties
@@ -1291,7 +1293,6 @@ class OHLCPlot(OHLCMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
                 "bottom": "left",
                 "top": "right",
                 "fill_color": "fill_color",
-                "line_color": "fill_color",
             }
             seg_map = {"x0": "low", "x1": "high", "y0": "x", "y1": "x"}
         else:
@@ -1301,7 +1302,6 @@ class OHLCPlot(OHLCMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
                 "top": "top",
                 "bottom": "bottom",
                 "fill_color": "fill_color",
-                "line_color": "fill_color",
             }
             seg_map = {"x0": "x", "x1": "x", "y0": "low", "y1": "high"}
 

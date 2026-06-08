@@ -27,6 +27,16 @@ class TestOHLCPlot(TestPlotlyPlot):
         assert trace["increasing"]["fillcolor"] == "#123456"
         assert trace["decreasing"]["fillcolor"] == "#654321"
 
+    def test_wick_color_default_and_override(self):
+        trace = self._get_plot_state(hv.OHLC([(0, 10, 12, 9, 11)]))["data"][0]
+        assert trace["increasing"]["line"]["color"] == "black"
+        assert trace["decreasing"]["line"]["color"] == "black"
+        trace = self._get_plot_state(hv.OHLC([(0, 10, 12, 9, 11)]).opts(wick_color="gray"))[
+            "data"
+        ][0]
+        assert trace["increasing"]["line"]["color"] == "gray"
+        assert trace["decreasing"]["line"]["color"] == "gray"
+
     def test_rangeslider_hidden(self):
         ohlc = hv.OHLC([(0, 10, 12, 9, 11)])
         state = self._get_plot_state(ohlc)

@@ -17,6 +17,14 @@ class TestOHLCPlot(TestMPLPlot):
         (bodies, wicks, colors), _style, axis_kwargs = plot.get_data(ohlc, {}, {})
         return plot, bodies, wicks, colors, axis_kwargs
 
+    def test_bar_edgecolor_default_and_option(self):
+        from matplotlib.colors import to_rgba
+
+        plot = mpl_renderer.get_plot(hv.OHLC([(0, 10, 12, 9, 11)]))
+        np.testing.assert_allclose(plot.handles["artist"].get_edgecolor()[0], to_rgba("black"))
+        plot = mpl_renderer.get_plot(hv.OHLC([(0, 10, 12, 9, 11)]).opts(bar_edgecolor="navy"))
+        np.testing.assert_allclose(plot.handles["artist"].get_edgecolor()[0], to_rgba("navy"))
+
     def test_body_geometry(self):
         # tuple order (x, open, high, low, close)
         ohlc = hv.OHLC([(0, 10, 12, 9, 11), (1, 11, 13, 10, 10.5)])

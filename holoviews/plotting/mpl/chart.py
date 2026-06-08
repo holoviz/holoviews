@@ -1287,7 +1287,7 @@ class OHLCPlot(OHLCMixin, ColorbarPlot, LegendPlot):
         doc="Color of the high-low wick lines.",
     )
 
-    style_opts = ["alpha", "linewidth", "edgecolor", "visible"]
+    style_opts = ["alpha", "bar_edgecolor", "linewidth", "visible"]
 
     _nonvectorized_styles = ["visible"]
 
@@ -1337,7 +1337,7 @@ class OHLCPlot(OHLCMixin, ColorbarPlot, LegendPlot):
         linewidth = plot_kwargs.get("linewidth", 1)
         alpha = plot_kwargs.get("alpha", 1)
         visible = plot_kwargs.get("visible", True)
-        edgecolors = plot_kwargs.get("edgecolor", colors)
+        edgecolors = plot_kwargs.get("bar_edgecolor", "black")
 
         # Draw the wick first, then the body on top of it.
         wick_artist = LineCollection(
