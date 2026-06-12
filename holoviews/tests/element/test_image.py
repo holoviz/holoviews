@@ -101,7 +101,6 @@ class TestImage(LoggingComparison):
             "the Image constructor.",
         )
 
-    @pytest.mark.xfail
     @pytest.mark.parametrize(
         "x",
         [
