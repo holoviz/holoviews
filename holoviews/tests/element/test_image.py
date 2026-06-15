@@ -118,8 +118,8 @@ class TestImage(LoggingComparison):
         Constructing an Image with an evenly spaced date-time coordinate does not warn
         about irregular sampling, even when the ratio of the date-time granularity to
         the coordinate step is greater than the default `image_rtol` (or twice
-        `image_rtol` for `datetime.datetime` types because of how they round when
-        multiplied by a `float`).
+        `image_rtol` for `dt.datetime` types because of how `dt.timedelta` instances
+        round when multiplied by a `float`).
         """
         y = np.arange(2)
         hv.Image((x, y, np.zeros((len(y), len(x)))))
