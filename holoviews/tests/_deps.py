@@ -7,11 +7,23 @@ import pytest
 
 from holoviews.core.util.dependencies import _is_installed
 
+_mods = {}
+
 
 def optional_dependencies(*names: str):
-    """Check if a dependency is installed and return the module and a fixture that skips test."""
-    if all(map(_is_installed, names)):
-        return importlib.import_module(names[0])
+    """Return a lazy-loading proxy for the first item in names if all `names` are installed else `None`."""
+    if not all(map(_is_installed, names)):
+        return None
+
+    name = names[0]
+
+    @staticmethod
+    def __getattr__(attr):
+        if name not in _mods:
+            _mods[name] = importlib.import_module(name)
+        return getattr(_mods[name], attr)
+
+    return type(name, (), {"__getattr__": __getattr__})()
 
 
 if TYPE_CHECKING:

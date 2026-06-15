@@ -8,16 +8,11 @@ import holoviews as hv
 from holoviews.core.util.dependencies import (
     PANDAS_GE_3_0_0,
     PANDAS_VERSION,
-    _no_import_version,
 )
 from holoviews.testing import assert_data_equal, assert_element_equal
 
 from ..._deps import dask, dask_skip, dd
 from .test_pandasinterface import BasePandasInterfaceTests
-
-_DASK_CONVERT_STRING = _no_import_version("dask") >= (2023, 7, 1) and dask.config.get(
-    "dataframe.convert-string"
-) in (True, None)
 
 
 @dask_skip
@@ -149,7 +144,7 @@ class DaskDatasetTest(BasePandasInterfaceTests):
 
     def test_dataset_dataset_ht_dtypes(self):
         ds = self.table
-        if _DASK_CONVERT_STRING:
+        if dask.config.get("dataframe.convert-string") in (True, None):
             string_dtype = pd.StringDtype(na_value=pd.NA, storage="pyarrow")
         elif PANDAS_GE_3_0_0:
             string_dtype = pd.StringDtype(na_value=np.nan)
