@@ -55,12 +55,19 @@ def released_today(item) -> bool:
     return released == TODAY
 
 
+def full_release(item) -> bool:
+    v = item.get("version")
+    return "a" not in v and "b" not in v and "rc" not in v
+
+
 def main(*packages):
     all_latest = True
     for package in sorted(packages):
         data = get_data(package)
         versions = {
-            item["version"] for item in data if python_check(item) and not released_today(item)
+            item["version"]
+            for item in data
+            if python_check(item) and not released_today(item) and full_release(item)
         }
         latest = max(versions, key=convert_int)
         current = version(package)
