@@ -2309,6 +2309,27 @@ class GenericOverlayPlot(GenericElementPlot):
         if not (("multi_y" in self.param) and self.multi_y):
             y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
 
+        # Seed any RangeX/RangeY/RangeXY streams (e.g. those driving a
+        # datashader operation) with the padded extents on the initial draw.
+        # Without this an overlay of rasterized elements would aggregate over
+        # the unpadded data range until a range event (e.g. clicking Reset)
+        # supplies the displayed range. See ElementPlot.get_extents for the
+        # equivalent logic used for non-overlay plots.
+        if not self.drawn:
+            x_range, y_range = ((y0, y1), (x0, x1)) if self.invert_axes else ((x0, x1), (y0, y1))
+            for stream in getattr(self, "source_streams", []):
+                if isinstance(stream, RangeX):
+                    params = {"x_range": x_range}
+                elif isinstance(stream, RangeY):
+                    params = {"y_range": y_range}
+                elif isinstance(stream, RangeXY):
+                    params = {"x_range": x_range, "y_range": y_range}
+                else:
+                    continue
+                stream.update(**params)
+                if stream not in self._trigger and (self.xlim or self.ylim):
+                    self._trigger.append(stream)
+
         if isinstance(self.projection, str) and self.projection == "3d":
             z0, z1 = util.dimension_range(
                 z0, z1, getattr(self, "zlim", (None, None)), (None, None)
