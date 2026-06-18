@@ -1666,24 +1666,14 @@ def test_selector_datashade_bad_column_name(point_data):
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_rasterize_overlay_seeds_range_streams():
-    # https://github.com/holoviz/holoviews/issues/6921
-    # An overlay of rasterized elements must seed its RangeXY stream with the
-    # padded extents on the initial draw. Otherwise the initial render is
-    # aggregated over the unpadded data range and looks incomplete until a
-    # range event (e.g. clicking Reset in the Bokeh toolbar) supplies the
-    # displayed range.
     s1 = hv.Scatter((np.array([0, 10]), np.array([0, 0])), "x", "y")
     s2 = hv.Scatter((np.array([0, 10]), np.array([5, 5])), "x", "y")
     overlay = rasterize(s1 * s2).opts(padding=0.1)
 
     plot = hv.renderer("bokeh").get_plot(overlay)
 
-    range_streams = [s for s in plot.source_streams if isinstance(s, RangeXY)]
-    assert range_streams, "RangeXY stream should be attached to the overlay plot"
-    stream = range_streams[0]
-
-    # Combined data range is x=(0, 10), y=(0, 5); with padding=0.1 the displayed
-    # (and therefore aggregated) range must be x=(-1, 11), y=(-0.5, 5.5).
+    stream = next((s for s in plot.source_streams if isinstance(s, RangeXY)), None)
+    assert stream
     assert stream.x_range == (-1.0, 11.0)
     assert stream.y_range == (-0.5, 5.5)
 

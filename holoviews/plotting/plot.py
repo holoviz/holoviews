@@ -1704,6 +1704,7 @@ class GenericElementPlot(DimensionedPlot):
             x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
             y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
 
+        # Should match what is done in GenericOverlayPlot.get_extents
         if not self.drawn:
             x_range, y_range = ((y0, y1), (x0, x1)) if self.invert_axes else ((x0, x1), (y0, y1))
             for stream in getattr(self, "source_streams", []):
@@ -2309,12 +2310,7 @@ class GenericOverlayPlot(GenericElementPlot):
         if not (("multi_y" in self.param) and self.multi_y):
             y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
 
-        # Seed any RangeX/RangeY/RangeXY streams (e.g. those driving a
-        # datashader operation) with the padded extents on the initial draw.
-        # Without this an overlay of rasterized elements would aggregate over
-        # the unpadded data range until a range event (e.g. clicking Reset)
-        # supplies the displayed range. See ElementPlot.get_extents for the
-        # equivalent logic used for non-overlay plots.
+        # Should match what is done in ElementPlot.get_extents
         if not self.drawn:
             x_range, y_range = ((y0, y1), (x0, x1)) if self.invert_axes else ((x0, x1), (y0, y1))
             for stream in getattr(self, "source_streams", []):
