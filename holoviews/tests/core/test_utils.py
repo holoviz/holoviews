@@ -849,11 +849,11 @@ class TestNumericUtilities:
         assert isfinite(dt64)
 
     def test_isfinite_datetime64_nat(self):
-        dt64 = np.datetime64("NaT")
+        dt64 = np.datetime64("NaT", "ns")
         assert not isfinite(dt64)
 
     def test_isfinite_timedelta64_nat(self):
-        dt64 = np.timedelta64("NaT")
+        dt64 = np.timedelta64("NaT", "ns")
         assert not isfinite(dt64)
 
     def test_isfinite_pandas_timestamp_nat(self):
@@ -906,7 +906,7 @@ class TestNumericUtilities:
 
     def test_isfinite_datetime64_array_with_nat(self):
         dts = [np.datetime64(datetime.datetime(2017, 1, i)) for i in range(1, 4)]
-        dt64 = np.array([*dts, np.datetime64("NaT")])
+        dt64 = np.array([*dts, np.datetime64("NaT", "ns")])
         assert_data_equal(isfinite(dt64), np.array([True, True, True, False]))
 
     def test_isfinite_masked_numpy(self):
@@ -1076,7 +1076,7 @@ def test_is_null_or_na_scalar():
     assert is_null_or_na_scalar(pd.NA)
     assert is_null_or_na_scalar(pd.NaT)
     assert is_null_or_na_scalar(None)
-    assert is_null_or_na_scalar(np.datetime64("NAT"))
+    assert is_null_or_na_scalar(np.datetime64("NAT", "ns"))
 
     assert not is_null_or_na_scalar(datetime.datetime.today())
     assert not is_null_or_na_scalar(pd.Timestamp.now())

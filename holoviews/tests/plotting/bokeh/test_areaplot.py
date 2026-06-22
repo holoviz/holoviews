@@ -35,7 +35,7 @@ class TestAreaPlot(LoggingComparison, TestBokehPlot):
 
     def test_area_datetime_nat(self):
         values = [(np.datetime64(dt.datetime(2017, 1, i)), i) for i in range(1, 4)]
-        values.append((np.datetime64("nat"), np.nan))
+        values.append((np.datetime64("nat", "ns"), np.nan))
         values += [(np.datetime64(dt.datetime(2017, 1, i)), i) for i in range(4, 6)]
         area = hv.Area(values)
         plot = bokeh_renderer.get_plot(area)

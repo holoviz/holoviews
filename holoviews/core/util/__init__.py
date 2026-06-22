@@ -77,6 +77,7 @@ _TIME_SCALES = {
     "D": 1 / 86400,
     "W": 1 / 604800,
 }
+nat_as_integer = -9223372036854775808  # np.datetime64("NAT", "ns").view("i8") or (- 2 ** 64 // 2)
 _ARRAY_SIZE_LARGE = 1_000_000
 _ARRAY_SAMPLE_SIZE = 1_000_000
 _DATAFRAME_ROWS_LARGE = 1_000_000
@@ -934,9 +935,6 @@ def asarray(arraylike, strict=True):
     elif strict:
         raise ValueError(f"Could not convert {type(arraylike)} type to array")
     return arraylike
-
-
-nat_as_integer = np.datetime64("NAT").view("i8")
 
 
 def isnat(val):
