@@ -12,10 +12,11 @@ import numpy as np
 import holoviews as hv
 import holoviews.plotting.bokeh
 
-renderer = hv.renderer('bokeh')
-xs = np.linspace(0, np.pi*2)
-dmap = (hv.DynamicMap(lambda f, p: hv.Curve(np.sin(xs*f+p)), kdims=['f', 'p'])
-    .redim(p=dict(range=(0, np.pi*2), step=0.1), f=dict(range=(1, 5), step=0.1)))
+renderer = hv.renderer("bokeh")
+xs = np.linspace(0, np.pi * 2)
+dmap = hv.DynamicMap(lambda f, p: hv.Curve(np.sin(xs * f + p)), kdims=["f", "p"]).redim(
+    p=dict(range=(0, np.pi * 2), step=0.1), f=dict(range=(1, 5), step=0.1)
+)
 
 doc = renderer.server_doc(dmap)
-doc.title = 'Sine Demo'
+doc.title = "Sine Demo"

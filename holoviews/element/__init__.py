@@ -1,16 +1,53 @@
 from ..core import HoloMap
 from ..core.data import DataConversion, Dataset
-from .annotation import *
-from .chart import *
-from .chart3d import *
-from .geom import *
-from .graphs import *
-from .path import *
-from .raster import *
-from .sankey import *
-from .stats import *
-from .tabular import *
-from .tiles import *
+from ..core.element import Element
+from .annotation import (
+    Annotation,
+    Arrow,
+    Div,
+    HLine,
+    HLines,
+    HSpan,
+    HSpans,
+    Labels,
+    Slope,
+    Spline,
+    Text,
+    VectorizedAnnotation,
+    VLine,
+    VLines,
+    VSpan,
+    VSpans,
+)
+from .chart import (
+    Area,
+    Bars,
+    Chart,  # noqa: F401
+    Curve,
+    Donut,
+    ErrorBars,
+    Histogram,
+    Scatter,
+    Spikes,
+    Spread,
+    Waterfall,
+)
+from .chart3d import Path3D, Scatter3D, Surface, TriSurface
+from .geom import Geometry, Points, Rectangles, Segments, VectorField
+from .graphs import (
+    Chord,
+    EdgePaths,
+    Graph,
+    Nodes,
+    TriMesh,
+)
+from .path import Bounds, Box, Contours, Dendrogram, Ellipse, Path, Polygons
+from .raster import HSV, RGB, HeatMap, Image, ImageStack, QuadMesh, Raster
+from .sankey import Sankey
+from .stats import Bivariate, BoxWhisker, Distribution, HexTiles, Violin
+from .tabular import ItemTable, Table
+from .tiles import Tiles, stamen_sources, tile_sources
+from .util import circular_layout
 
 
 class ElementConversion(DataConversion):
@@ -42,21 +79,23 @@ class ElementConversion(DataConversion):
             if self._element.vdims:
                 dim = self._element.vdims[0]
             else:
-                raise Exception('Must supply an explicit value dimension '
-                                'if no value dimensions are defined ')
+                raise ValueError(
+                    "Must supply an explicit value dimension if no value dimensions are defined "
+                )
         if groupby:
             reindexed = self._element.reindex(groupby, [dim])
-            kwargs['kdims'] = dim
-            kwargs['vdims'] = None
+            kwargs["kdims"] = dim
+            kwargs["vdims"] = None
             return reindexed.groupby(groupby, HoloMap, Distribution, **kwargs)
         else:
             element = self._element
-            params = dict(kdims=[element.get_dimension(dim)],
-                          label=element.label)
-            if element.group != element.param['group'].default:
-                params['group'] = element.group
-            return Distribution((element.dimension_values(dim),),
-                                **dict(params, **kwargs))
+            params = dict(kdims=[element.get_dimension(dim)], label=element.label)
+            if element.group != element.param["group"].default:
+                params["group"] = element.group
+            return Distribution((element.dimension_values(dim),), **dict(params, **kwargs))
+
+    def donut(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Donut, kdims, vdims, groupby, **kwargs)
 
     def heatmap(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(HeatMap, kdims, vdims, groupby, **kwargs)
@@ -96,6 +135,9 @@ class ElementConversion(DataConversion):
     def violin(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(Violin, kdims, vdims, groupby, **kwargs)
 
+    def waterfall(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Waterfall, kdims, vdims, groupby, **kwargs)
+
     def labels(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(Labels, kdims, vdims, groupby, **kwargs)
 
@@ -115,9 +157,75 @@ class ElementConversion(DataConversion):
 Dataset._conversion_interface = ElementConversion
 
 
-def public(obj):
-    if not isinstance(obj, type) or getattr(obj, 'abstract', False) and obj is not Element:
-        return False
-    return issubclass(obj, Element)
+__all__ = [
+    "HSV",
+    "RGB",
+    "Annotation",
+    "Area",
+    "Arrow",
+    "Bars",
+    "Bivariate",
+    "Bounds",
+    "Box",
+    "BoxWhisker",
+    "Chord",
+    "Contours",
+    "Curve",
+    "Dataset",
+    "Dendrogram",
+    "Distribution",
+    "Div",
+    "Donut",
+    "EdgePaths",
+    "Element",
+    "Ellipse",
+    "ErrorBars",
+    "Geometry",
+    "Graph",
+    "HLine",
+    "HLines",
+    "HSpan",
+    "HSpans",
+    "HeatMap",
+    "HexTiles",
+    "Histogram",
+    "Image",
+    "ImageStack",
+    "ItemTable",
+    "Labels",
+    "Nodes",
+    "Path",
+    "Path3D",
+    "Points",
+    "Polygons",
+    "QuadMesh",
+    "Raster",
+    "Rectangles",
+    "Sankey",
+    "Scatter",
+    "Scatter3D",
+    "Segments",
+    "Slope",
+    "Spikes",
+    "Spline",
+    "Spread",
+    "Surface",
+    "Table",
+    "Text",
+    "Tiles",
+    "TriMesh",
+    "TriSurface",
+    "VLine",
+    "VLines",
+    "VSpan",
+    "VSpans",
+    "VectorField",
+    "VectorizedAnnotation",
+    "Violin",
+    "Waterfall",
+    "circular_layout",
+    "stamen_sources",
+    "tile_sources",
+]
 
-__all__ = list({_k for _k, _v in locals().items() if public(_v)})
+elements_list = sorted(set(__all__) - {"stamen_sources", "tile_sources", "circular_layout"})

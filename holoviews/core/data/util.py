@@ -1,13 +1,9 @@
-from typing import TYPE_CHECKING
+from __future__ import annotations
 
 import numpy as np
 
-from .. import util
-
-if TYPE_CHECKING:
-    import dask.array as da
-else:
-    da = util._LazyModule("dask.array", bool_use_sys_modules=True)
+from ..util.dependencies import da
+from ..util.types import datetime_types
 
 
 def finite_range(column, cmin, cmax):
@@ -19,13 +15,12 @@ def finite_range(column, cmin, cmax):
         max_inf = np.isinf(cmax)
     except TypeError:
         max_inf = False
-    if (min_inf or max_inf):
+    if min_inf or max_inf:
         column = column[np.isfinite(column)]
         if len(column):
             cmin = np.nanmin(column) if min_inf else cmin
             cmax = np.nanmax(column) if max_inf else cmax
             if is_dask(column):
-                import dask.array as da
                 if min_inf and max_inf:
                     cmin, cmax = da.compute(cmin, cmax)
                 elif min_inf:
@@ -38,9 +33,10 @@ def finite_range(column, cmin, cmax):
         cmin = cmin[()]
     if isinstance(cmax, np.ndarray) and cmax.shape == ():
         cmax = cmax[()]
-    cmin = cmin if np.isscalar(cmin) or isinstance(cmin, util.datetime_types) else cmin.item()
-    cmax = cmax if np.isscalar(cmax) or isinstance(cmax, util.datetime_types) else cmax.item()
+    cmin = cmin if np.isscalar(cmin) or isinstance(cmin, datetime_types) else cmin.item()
+    cmax = cmax if np.isscalar(cmax) or isinstance(cmax, datetime_types) else cmax.item()
     return cmin, cmax
+
 
 def get_array_types():
     array_types = (np.ndarray,)
@@ -48,16 +44,18 @@ def get_array_types():
         array_types += (da.Array,)
     return array_types
 
+
 def dask_array_module():
     return da if da else None
+
 
 def is_dask(array):
     return da and isinstance(array, da.Array)
 
-def cached(method):
-    """Decorates an Interface method and using a cached version
 
-    """
+def cached(method):
+    """Decorates an Interface method and using a cached version"""
+
     def cached(*args, **kwargs):
         cache = args[1]._cached
         if cache is None:
@@ -65,4 +63,5 @@ def cached(method):
         else:
             args = (cache, *args[2:])
             return getattr(cache.interface, method.__name__)(*args, **kwargs)
+
     return cached
