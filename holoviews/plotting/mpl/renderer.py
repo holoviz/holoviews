@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import os
 from contextlib import contextmanager, suppress
@@ -16,18 +18,17 @@ from ...core.options import Store
 from ..renderer import HTML_TAGS, MIME_TYPES, Renderer
 from .util import get_old_rcparams, get_tight_bbox
 
-
-class OutputWarning(param.Parameterized):pass
-outputwarning = OutputWarning(name='Warning')
-
 # <format name> : (animation writer, format,  anim_kwargs, extra_args)
 ANIMATION_OPTS = {
-    'webm': ('ffmpeg', 'webm', {},
-             ['-vcodec', 'libvpx-vp9', '-b', '1000k']),
-    'mp4': ('ffmpeg', 'mp4', {'codec': 'libx264'},
-            ['-pix_fmt', 'yuv420p']),
-    'gif': ('pillow', 'gif', {'fps': 10}, []),
-    'scrubber': ('html', None, {'fps': 5}, None)
+    "webm": (
+        "ffmpeg",
+        "webm",
+        {},
+        ["-vcodec", "libvpx-vp9", "-b", "1000k", "-pix_fmt", "yuv420p"],
+    ),
+    "mp4": ("ffmpeg", "mp4", {"codec": "libx264"}, ["-pix_fmt", "yuv420p"]),
+    "gif": ("pillow", "gif", {"fps": 10}, []),
+    "scrubber": ("html", None, {"fps": 5}, None),
 }
 
 
@@ -47,32 +48,42 @@ class MPLRenderer(Renderer):
 
     drawn = {}
 
-    backend = param.String('matplotlib', doc="The backend name.")
+    backend = param.String("matplotlib", doc="The backend name.")
 
-    dpi=param.Integer(default=72, doc="""
-        The render resolution in dpi (dots per inch)""")
+    dpi = param.Integer(
+        default=72,
+        doc="The render resolution in dpi (dots per inch)",
+    )
 
-    fig = param.Selector(default='auto',
-                               objects=['png', 'svg', 'pdf', 'pgf',
-                                        'html', None, 'auto'], doc="""
+    fig = param.Selector(
+        default="auto",
+        objects=["png", "svg", "pdf", "pgf", "html", None, "auto"],
+        doc="""
         Output render format for static figures. If None, no figure
-        rendering will occur. """)
+        rendering will occur. """,
+    )
 
-    holomap = param.Selector(default='auto',
-                                   objects=['widgets', 'scrubber', 'webm','mp4', 'gif', None, 'auto'], doc="""
+    holomap = param.Selector(
+        default="auto",
+        objects=["widgets", "scrubber", "webm", "mp4", "gif", None, "auto"],
+        doc="""
         Output render multi-frame (typically animated) format. If
-        None, no multi-frame rendering will occur.""")
+        None, no multi-frame rendering will occur.""",
+    )
 
-    interactive = param.Boolean(default=False, doc="""
+    interactive = param.Boolean(
+        default=False,
+        doc="""
         Whether to enable interactive plotting allowing interactive
-        plotting with explicitly calling show.""")
+        plotting with explicitly calling show.""",
+    )
 
-    mode = param.Selector(default='default', objects=['default'])
+    mode = param.Selector(default="default", objects=["default"])
 
-
-    mode_formats = {'fig':     ['png', 'svg', 'pdf', 'pgf', 'html', None, 'auto'],
-                    'holomap': ['widgets', 'scrubber', 'webm','mp4', 'gif',
-                                'html', None, 'auto']}
+    mode_formats = {
+        "fig": ["png", "svg", "pdf", "pgf", "html", None, "auto"],
+        "holomap": ["widgets", "scrubber", "webm", "mp4", "gif", "html", None, "auto"],
+    }
 
     counter = 0
 
@@ -87,6 +98,7 @@ class MPLRenderer(Renderer):
             return self.get_plot(obj)
 
         from .plot import MPLPlot
+
         MPLPlot._close_figures = False
         try:
             plots = []
@@ -99,7 +111,6 @@ class MPLRenderer(Renderer):
         finally:
             MPLPlot._close_figures = True
         return plots[0] if len(plots) == 1 else plots
-
 
     @classmethod
     def plot_options(cls, obj, percent_size):
@@ -116,23 +127,21 @@ class MPLRenderer(Renderer):
 
         """
         from .plot import MPLPlot
+
         factor = percent_size / 100.0
         obj = obj.last if isinstance(obj, HoloMap) else obj
-        options = Store.lookup_options(cls.backend, obj, 'plot').options
-        fig_size = options.get('fig_size', MPLPlot.fig_size)*factor
+        options = Store.lookup_options(cls.backend, obj, "plot").options
+        fig_size = options.get("fig_size", MPLPlot.fig_size) * factor
 
-        return dict({'fig_size':fig_size},
-                    **MPLPlot.lookup_options(obj, 'plot').options)
-
+        return dict({"fig_size": fig_size}, **MPLPlot.lookup_options(obj, "plot").options)
 
     @bothmethod
     def get_size(self_or_cls, plot):
         w, h = plot.state.get_size_inches()
         dpi = self_or_cls.dpi if self_or_cls.dpi else plot.state.dpi
-        return (int(w*dpi), int(h*dpi))
+        return (int(w * dpi), int(h * dpi))
 
-
-    def _figure_data(self, plot, fmt, bbox_inches='tight', as_script=False, **kwargs):
+    def _figure_data(self, plot, fmt, bbox_inches="tight", as_script=False, **kwargs):
         """Render matplotlib figure object and return the corresponding
         data.  If as_script is True, the content will be split in an
         HTML and a JS component.
@@ -141,17 +150,20 @@ class MPLRenderer(Renderer):
         any IPython dependency.
 
         """
-        if fmt in ['gif', 'mp4', 'webm']:
+        if fmt in ["gif", "mp4", "webm"]:
             with mpl.rc_context(rc=plot.fig_rcparams):
+                if bbox_inches == "tight":
+                    self._adjust_figure_for_anim(plot, fmt)
                 anim = plot.anim(fps=self.fps)
             data = self._anim_data(anim, fmt)
         else:
             fig = plot.state
 
-            traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
+            traverse_fn = lambda x: x.handles.get("bbox_extra_artists", None)
             extra_artists = list(
-                chain.from_iterable(artists for artists in plot.traverse(traverse_fn)
-                                    if artists is not None)
+                chain.from_iterable(
+                    artists for artists in plot.traverse(traverse_fn) if artists is not None
+                )
             )
 
             kw = dict(
@@ -160,7 +172,7 @@ class MPLRenderer(Renderer):
                 edgecolor=fig.get_edgecolor(),
                 dpi=self.dpi,
                 bbox_inches=bbox_inches,
-                bbox_extra_artists=extra_artists
+                bbox_extra_artists=extra_artists,
             )
             kw.update(kwargs)
 
@@ -175,33 +187,31 @@ class MPLRenderer(Renderer):
         if as_script:
             b64 = base64.b64encode(data).decode("utf-8")
             (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
-            src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
-            html = tag.format(src=src, mime_type=mime_type, css='')
+            src = HTML_TAGS["base64"].format(mime_type=mime_type, b64=b64)
+            html = tag.format(src=src, mime_type=mime_type, css="")
             return html
-        if fmt == 'svg':
-            data = data.decode('utf-8')
+        if fmt == "svg":
+            data = data.decode("utf-8")
         return data
 
-
     def _anim_data(self, anim, fmt):
-        """Render a matplotlib animation object and return the corresponding data.
-
-        """
+        """Render a matplotlib animation object and return the corresponding data."""
         (writer, _, anim_kwargs, extra_args) = ANIMATION_OPTS[fmt]
         if extra_args != []:
             anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
 
-        if self.fps is not None: anim_kwargs['fps'] = max([int(self.fps), 1])
-        if self.dpi is not None: anim_kwargs['dpi'] = self.dpi
-        if not hasattr(anim, '_encoded_video'):
+        if self.fps is not None:
+            anim_kwargs["fps"] = max([int(self.fps), 1])
+        if self.dpi is not None:
+            anim_kwargs["dpi"] = self.dpi
+        if not hasattr(anim, "_encoded_video"):
             # Windows will throw PermissionError with auto-delete
-            with NamedTemporaryFile(suffix=f'.{fmt}', delete=False) as f:
+            with NamedTemporaryFile(suffix=f".{fmt}", delete=False) as f:
                 anim.save(f.name, writer=writer, **anim_kwargs)
                 video = f.read()
             f.close()
             os.remove(f.name)
         return video
-
 
     def _compute_bbox(self, fig, kw):
         """Compute the tight bounding box for each figure once, reducing
@@ -214,18 +224,90 @@ class MPLRenderer(Renderer):
 
         """
         fig_id = id(fig)
-        if kw['bbox_inches'] == 'tight':
+        if kw["bbox_inches"] == "tight":
             if fig_id not in MPLRenderer.drawn:
                 fig.set_dpi(self.dpi)
                 fig.canvas.draw()
                 extra_artists = kw.pop("bbox_extra_artists", [])
-                pad = mpl.rcParams['savefig.pad_inches']
+                pad = mpl.rcParams["savefig.pad_inches"]
                 bbox_inches = get_tight_bbox(fig, extra_artists, pad=pad)
                 MPLRenderer.drawn[fig_id] = bbox_inches
-                kw['bbox_inches'] = bbox_inches
+                kw["bbox_inches"] = bbox_inches
             else:
-                kw['bbox_inches'] = MPLRenderer.drawn[fig_id]
+                kw["bbox_inches"] = MPLRenderer.drawn[fig_id]
         return kw
+
+    def _adjust_figure_for_anim(self, plot, fmt):
+        """Adjust figure size and subplot positions to tightly fit all content.
+
+        Matplotlib's animation writers do not support bbox_inches='tight',
+        so animations can have clipped labels and titles. This method
+        computes the tight bounding box of the rendered figure and adjusts
+        the figure dimensions and axes positions so that all content fits
+        within the figure bounds without clipping.
+        """
+        from matplotlib.backends.backend_agg import FigureCanvasAgg
+
+        fig = plot.state
+
+        traverse_fn = lambda x: x.handles.get("bbox_extra_artists", None)
+        extra_artists = list(
+            chain.from_iterable(
+                artists for artists in plot.traverse(traverse_fn) if artists is not None
+            )
+        )
+
+        pad = mpl.rcParams["savefig.pad_inches"]
+
+        # Ensure we have a non-interactive canvas for rendering, since
+        # the figure may have been closed (plt.close) but still retain
+        # a Tk/Qt canvas that errors on resize operations.
+        if type(fig.canvas) is not FigureCanvasAgg:
+            fig.canvas.manager = None
+            FigureCanvasAgg(fig)
+
+        dpi = self.dpi or fig.dpi
+        fig.set_dpi(dpi)
+        fig.canvas.draw()
+        bbox_inches = get_tight_bbox(fig, extra_artists, pad=pad)
+
+        orig_w, orig_h = fig.get_size_inches()
+        new_w = bbox_inches.width
+        new_h = bbox_inches.height
+
+        # Video codecs like libx264 require even pixel dimensions.
+        # Round up to the nearest even number of pixels for video formats.
+        if fmt in ("mp4", "webm"):
+            pw, ph = int(new_w * dpi), int(new_h * dpi)
+            new_w = (pw + pw % 2) / dpi
+            new_h = (ph + ph % 2) / dpi
+
+        # Compute how to transform positions from old figure coordinates
+        # to new figure coordinates. The tight bbox defines the visible
+        # region in the old coordinate system; we need to map that region
+        # to fill the new (resized) figure.
+        x_shift = -bbox_inches.x0 / orig_w
+        y_shift = -bbox_inches.y0 / orig_h
+        x_scale = orig_w / new_w
+        y_scale = orig_h / new_h
+
+        for ax in fig.axes:
+            pos = ax.get_position()
+            new_pos = [
+                (pos.x0 + x_shift) * x_scale,
+                (pos.y0 + y_shift) * y_scale,
+                pos.width * x_scale,
+                pos.height * y_scale,
+            ]
+            ax.set_position(new_pos)
+
+        # Reposition figure-level texts (e.g. suptitle) which use
+        # figure-fraction coordinates and are not moved by axes adjustment.
+        for text in fig.texts:
+            x, y = text.get_position()
+            text.set_position(((x + x_shift) * x_scale, (y + y_shift) * y_scale))
+
+        fig.set_size_inches(new_w, new_h)
 
     @classmethod
     @contextmanager
@@ -238,13 +320,11 @@ class MPLRenderer(Renderer):
             mpl.rcParams.clear()
             mpl.rcParams.update(cls._rcParams)
 
-
     @classmethod
     def load_nb(cls, inline=True):
-        """Initialize matplotlib backend
-
-        """
+        """Initialize matplotlib backend"""
         import matplotlib.pyplot as plt
+
         backend = plt.get_backend()
-        if backend not in ['agg', 'module://ipykernel.pylab.backend_inline']:
-            plt.switch_backend('agg')
+        if backend not in ["agg", "module://ipykernel.pylab.backend_inline"]:
+            plt.switch_backend("agg")

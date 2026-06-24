@@ -1,15 +1,13 @@
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 import pytest
 
-from holoviews.core.overlay import NdOverlay, Overlay
-from holoviews.element import Curve
+import holoviews as hv
 from holoviews.operation.downsample import _ALGORITHMS, downsample1d
 
-try:
-    import tsdownsample
-except ImportError:
-    tsdownsample = None
+from .._deps import tsdownsample_skip
 
 algorithms = _ALGORITHMS.copy()
 algorithms.pop("viewport", None)  # viewport return slice(len(data)) no matter the width
@@ -21,9 +19,9 @@ def test_downsample1d_multi(plottype):
     assert N > downsample1d.width
 
     if plottype == "overlay":
-        figure = Overlay([Curve(range(N)), Curve(range(N))])
+        figure = hv.Overlay([hv.Curve(range(N)), hv.Curve(range(N))])
     elif plottype == "ndoverlay":
-        figure = NdOverlay({"A": Curve(range(N)), "B": Curve(range(N))})
+        figure = hv.NdOverlay({"A": hv.Curve(range(N)), "B": hv.Curve(range(N))})
 
     figure_values = downsample1d(figure, dynamic=False).data.values()
     for n in figure_values:
@@ -31,13 +29,15 @@ def test_downsample1d_multi(plottype):
             assert value.size == downsample1d.width
 
 
-@pytest.mark.skipif(not tsdownsample, reason="tsdownsample not installed")
+@tsdownsample_skip
 @pytest.mark.parametrize("algorithm", algorithms)
 def test_downsample1d_non_contiguous(algorithm):
     x = np.arange(20)
     y = np.arange(40).reshape(1, 40)[0, ::2]
 
-    downsampled = downsample1d(Curve((x, y), datatype=['array']), dynamic=False, width=10, algorithm=algorithm)
+    downsampled = downsample1d(
+        hv.Curve((x, y), datatype=["array"]), dynamic=False, width=10, algorithm=algorithm
+    )
     assert len(downsampled)
 
 
@@ -53,7 +53,7 @@ def test_downsample1d_shared_data():
 
     N = 1000
     df = pd.DataFrame({c: range(N) for c in "xyz"})
-    figure = Overlay([Curve(df, kdims="x", vdims=c) for c in "yz"])
+    figure = hv.Overlay([hv.Curve(df, kdims="x", vdims=c) for c in "yz"])
 
     # We set x_range to trigger _compute_mask
     mocksample(figure, dynamic=False, x_range=(0, 500))
@@ -72,7 +72,7 @@ def test_downsample1d_shared_data_index():
 
     N = 1000
     df = pd.DataFrame({c: range(N) for c in "xyz"})
-    figure = Overlay([Curve(df, kdims="index", vdims=c) for c in "xyz"])
+    figure = hv.Overlay([hv.Curve(df, kdims="index", vdims=c) for c in "xyz"])
 
     # We set x_range to trigger _compute_mask
     mocksample(figure, dynamic=False, x_range=(0, 500))
@@ -95,7 +95,7 @@ def test_downsample_algorithm(algorithm, unimport):
         assert result.size == width
 
 
-@pytest.mark.skipif(not tsdownsample, reason="tsdownsample not installed")
+@tsdownsample_skip
 @pytest.mark.parametrize("algorithm", algorithms.values(), ids=algorithms)
 def test_downsample_algorithm_with_tsdownsample(algorithm):
     x = np.arange(1000)

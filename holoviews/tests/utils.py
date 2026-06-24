@@ -1,17 +1,19 @@
+from __future__ import annotations
+
 import logging
 import os
 import sys
 
 import param
+import pytest
 
-from holoviews.element.comparison import ComparisonTestCase
+from holoviews.util.warnings import deprecated
 
 cwd = os.path.abspath(os.path.split(__file__)[0])
-sys.path.insert(0, os.path.join(cwd, '..'))
+sys.path.insert(0, os.path.join(cwd, ".."))
 
 
-LEVELS = {'CRITICAL': 50, 'ERROR': 40, 'WARNING': 30, 'INFO': 20,
-          'DEBUG': 10, 'VERBOSE': 0}
+LEVELS = {"CRITICAL": 50, "ERROR": 40, "WARNING": 30, "INFO": 20, "DEBUG": 10, "VERBOSE": 0}
 
 
 class MockLoggingHandler(logging.Handler):
@@ -24,13 +26,20 @@ class MockLoggingHandler(logging.Handler):
     'info', etc.)."""
 
     def __init__(self, *args, **kwargs):
-        self.messages = {'DEBUG': [], 'INFO': [], 'WARNING': [],
-                         'ERROR': [], 'CRITICAL': [], 'VERBOSE':[]}
+        self.messages = {
+            "DEBUG": [],
+            "INFO": [],
+            "WARNING": [],
+            "ERROR": [],
+            "CRITICAL": [],
+            "VERBOSE": [],
+        }
         self.param_methods = {
-            'WARNING':'param.param.warning()',
-            'INFO':'param.param.message()',
-            'VERBOSE':'param.param.verbose()',
-            'DEBUG':'param.param.debug()'}
+            "WARNING": "param.param.warning()",
+            "INFO": "param.param.message()",
+            "VERBOSE": "param.param.verbose()",
+            "DEBUG": "param.param.debug()",
+        }
         super().__init__(*args, **kwargs)
 
     def emit(self, record):
@@ -43,8 +52,14 @@ class MockLoggingHandler(logging.Handler):
 
     def reset(self):
         self.acquire()
-        self.messages = {'DEBUG': [], 'INFO': [], 'WARNING': [],
-                         'ERROR': [], 'CRITICAL': [], 'VERBOSE':[]}
+        self.messages = {
+            "DEBUG": [],
+            "INFO": [],
+            "WARNING": [],
+            "ERROR": [],
+            "CRITICAL": [],
+            "VERBOSE": [],
+        }
         self.release()
 
     def tail(self, level, n=1):
@@ -52,40 +67,55 @@ class MockLoggingHandler(logging.Handler):
         return [str(el) for el in self.messages[level][-n:]]
 
     def assertEndsWith(self, level, substring):
+        deprecated("1.25.0", "assertEndsWith", "assert_endswith")
+        self.assert_endswith(level, substring)
+
+    def assert_endswith(self, level, substring):
         """
         Assert that the last line captured at the given level ends with
         a particular substring.
         """
-        msg='\n\n{method}: {last_line}\ndoes not end with:\n{substring}'
+        msg = "\n\n{method}: {last_line}\ndoes not end with:\n{substring}"
         last_line = self.tail(level, n=1)
         if len(last_line) == 0:
-            raise AssertionError(f'Missing {self.param_methods[level]} output: {substring!r}')
+            raise AssertionError(f"Missing {self.param_methods[level]} output: {substring!r}")
         if not last_line[0].endswith(substring):
-            raise AssertionError(msg.format(method=self.param_methods[level],
-                                            last_line=repr(last_line[0]),
-                                            substring=repr(substring)))
+            raise AssertionError(
+                msg.format(
+                    method=self.param_methods[level],
+                    last_line=repr(last_line[0]),
+                    substring=repr(substring),
+                )
+            )
         else:
             self.messages[level].pop(-1)
 
-
     def assertContains(self, level, substring):
+        deprecated("1.25.0", "assertEndsWith", "assert_endswith")
+        self.assert_contains(level, substring)
+
+    def assert_contains(self, level, substring):
         """
         Assert that the last line captured at the given level contains a
         particular substring.
         """
-        msg='\n\n{method}: {last_line}\ndoes not contain:\n{substring}'
+        msg = "\n\n{method}: {last_line}\ndoes not contain:\n{substring}"
         last_line = self.tail(level, n=1)
         if len(last_line) == 0:
-            raise AssertionError(f'Missing {self.param_methods[level]} output: {substring!r}')
+            raise AssertionError(f"Missing {self.param_methods[level]} output: {substring!r}")
         if substring not in last_line[0]:
-            raise AssertionError(msg.format(method=self.param_methods[level],
-                                            last_line=repr(last_line[0]),
-                                            substring=repr(substring)))
+            raise AssertionError(
+                msg.format(
+                    method=self.param_methods[level],
+                    last_line=repr(last_line[0]),
+                    substring=repr(substring),
+                )
+            )
         else:
             self.messages[level].pop(-1)
 
 
-class LoggingComparisonTestCase(ComparisonTestCase):
+class LoggingComparisonTestCase:
     """
     ComparisonTestCase with support for capturing param logging output.
 
@@ -94,16 +124,23 @@ class LoggingComparisonTestCase(ComparisonTestCase):
     self.log_handler.tail and self.log_handler.assertEndsWith methods.
     """
 
-    def setUp(self):
-        super().setUp()
+    def __init_subclass__(self, *args, **kwargs):
+        deprecated(
+            "1.25.0",
+            "Inheriting from 'holoviews.tests.utils.LoggingComparisonTestCase'",
+            "holoviews.tests.utils.LoggingComparison",
+            repr_old=False,
+        )
+        super().__init_subclass__(*args, **kwargs)
+
+    def setup_method(self):
         log = param.parameterized.get_logger()
         self.handlers = log.handlers
         log.handlers = []
-        self.log_handler = MockLoggingHandler(level='DEBUG')
+        self.log_handler = MockLoggingHandler(level="DEBUG")
         log.addHandler(self.log_handler)
 
-    def tearDown(self):
-        super().tearDown()
+    def teardown_method(self):
         log = param.parameterized.get_logger()
         log.handlers = self.handlers
         messages = self.log_handler.messages
@@ -111,3 +148,30 @@ class LoggingComparisonTestCase(ComparisonTestCase):
         for level, msgs in messages.items():
             for msg in msgs:
                 log.log(LEVELS[level], msg)
+
+
+class LoggingComparison:
+    """
+    Comparison with support for capturing param logging output.
+
+    Testing can then be done via the
+    self.log_handler.tail and self.log_handler.assertEndsWith methods.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup_logger(self):
+        log = param.parameterized.get_logger()
+        self.handlers = log.handlers
+        log.handlers = []
+        self.log_handler = MockLoggingHandler(level="DEBUG")
+        log.addHandler(self.log_handler)
+        try:
+            yield
+        finally:
+            log = param.parameterized.get_logger()
+            log.handlers = self.handlers
+            messages = self.log_handler.messages
+            self.log_handler.reset()
+            for level, msgs in messages.items():
+                for msg in msgs:
+                    log.log(LEVELS[level], msg)

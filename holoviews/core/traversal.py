@@ -4,6 +4,8 @@ or mutate the matching elements.
 
 """
 
+from __future__ import annotations
+
 from collections import defaultdict
 from operator import itemgetter
 
@@ -13,9 +15,10 @@ from .util import merge_dimensions
 
 def create_ndkey(length, indexes, values):
     key = [None] * length
-    for i, v in zip(indexes, values, strict=None):
+    for i, v in zip(indexes, values, strict=False):
         key[i] = v
     return tuple(key)
+
 
 def uniform(obj):
     """Finds all common dimension keys in the object including subsets of
@@ -24,15 +27,15 @@ def uniform(obj):
 
     """
     from .spaces import HoloMap
-    dim_groups = obj.traverse(lambda x: tuple(x.kdims),
-                              (HoloMap,))
+
+    dim_groups = obj.traverse(lambda x: tuple(x.kdims), (HoloMap,))
     if dim_groups:
         dgroups = [frozenset(d.name for d in dg) for dg in dim_groups]
         return all(g1 <= g2 or g1 >= g2 for g1 in dgroups for g2 in dgroups)
     return True
 
 
-def unique_dimkeys(obj, default_dim='Frame'):
+def unique_dimkeys(obj, default_dim="Frame"):
     """Finds all common dimension keys in the object including subsets of
     dimensions. If there are is no common subset of dimensions, None
     is returned.
@@ -43,28 +46,30 @@ def unique_dimkeys(obj, default_dim='Frame'):
     """
     from .ndmapping import NdMapping, item_check
     from .spaces import HoloMap
-    key_dims = obj.traverse(lambda x: (tuple(x.kdims),
-                                       list(x.data.keys())), (HoloMap,))
+
+    key_dims = obj.traverse(lambda x: (tuple(x.kdims), list(x.data.keys())), (HoloMap,))
     if not key_dims:
         return [Dimension(default_dim)], [(0,)]
-    dim_groups, keys = zip(*sorted(key_dims, key=lambda x: -len(x[0])), strict=None)
+    dim_groups, keys = zip(*sorted(key_dims, key=lambda x: -len(x[0])), strict=True)
     dgroups = [frozenset(d.name for d in dg) for dg in dim_groups]
     subset = all(g1 <= g2 or g1 >= g2 for g1 in dgroups for g2 in dgroups)
     # Find unique keys
     if subset:
         dims = merge_dimensions(dim_groups)
-        all_dims = sorted(dims, key=lambda x: dim_groups[0].index(x))
+        all_dims = sorted(dims, key=dim_groups[0].index)
     else:
         # Handle condition when HoloMap/DynamicMap dimensions do not overlap
-        hmaps = obj.traverse(lambda x: x, ['HoloMap'])
+        hmaps = obj.traverse(lambda x: x, ["HoloMap"])
         if hmaps:
-            raise ValueError('When combining HoloMaps into a composite plot '
-                             'their dimensions must be subsets of each other.')
+            raise ValueError(
+                "When combining HoloMaps into a composite plot "
+                "their dimensions must be subsets of each other."
+            )
         dimensions = merge_dimensions(dim_groups)
         dim_keys = {}
         for dims, keys in key_dims:
             for key in keys:
-                for d, k in zip(dims, key, strict=None):
+                for d, k in zip(dims, key, strict=False):
                     dim_keys[d.name] = k
         if dim_keys:
             keys = [tuple(dim_keys.get(dim.name) for dim in dimensions)]
@@ -74,19 +79,21 @@ def unique_dimkeys(obj, default_dim='Frame'):
 
     ndims = len(all_dims)
     unique_keys = []
-    for group, subkeys in zip(dim_groups, keys, strict=None):
+    for group, subkeys in zip(dim_groups, keys, strict=True):
         dim_idxs = [all_dims.index(dim) for dim in group]
         for key in subkeys:
             padded_key = create_ndkey(ndims, dim_idxs, key)
-            matches = [item for item in unique_keys
-                       if padded_key == tuple(k if k is None else i
-                                              for i, k in zip(item, padded_key, strict=None))]
+            matches = [
+                item
+                for item in unique_keys
+                if padded_key
+                == tuple(k if k is None else i for i, k in zip(item, padded_key, strict=False))
+            ]
             if not matches:
                 unique_keys.append(padded_key)
 
     with item_check(False):
-        sorted_keys = NdMapping({key: None for key in unique_keys},
-                                kdims=all_dims).data.keys()
+        sorted_keys = NdMapping(dict.fromkeys(unique_keys), kdims=all_dims).data.keys()
     return all_dims, list(sorted_keys)
 
 
@@ -117,9 +124,8 @@ def hierarchical(keys):
     ndims = len(keys[0])
     if ndims <= 1:
         return True
-    dim_vals = list(zip(*keys, strict=None))
-    combinations = (zip(*dim_vals[i:i+2], strict=None)
-                    for i in range(ndims-1))
+    dim_vals = list(zip(*keys, strict=True))
+    combinations = (zip(*dim_vals[i : i + 2], strict=True) for i in range(ndims - 1))
     hierarchies = []
     for combination in combinations:
         hierarchy = True
