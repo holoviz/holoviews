@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import datetime as dt
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -14,6 +16,7 @@ import holoviews as hv
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.testing import assert_data_equal
 
+from ..._deps import pl, pl_skip
 from ...plotting.utils import ParamLogStream
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -507,6 +510,19 @@ class TestBarPlot(TestBokehPlot):
             }
         )
         bars = hv.Bars(data, ["x", "cat"], ["y"]).opts(stacked=True)
+        plot = bokeh_renderer.get_plot(bars)
+        assert isinstance(plot.handles["xaxis"], DatetimeAxis)
+
+    @pl_skip
+    def test_bars_continuous_datetime_stacked_narwhals(self):
+        timestamps = [
+            dt.datetime(2020, 1, 1),
+            dt.datetime(2020, 1, 2),
+            dt.datetime(2020, 1, 1),
+            dt.datetime(2020, 1, 2),
+        ]
+        df = pl.DataFrame({"x": timestamps, "cat": ["A", "A", "B", "B"], "y": [1, 2, 3, 4]})
+        bars = hv.Bars(df, kdims=["x", "cat"], vdims=["y"]).opts(stacked=True)
         plot = bokeh_renderer.get_plot(bars)
         assert isinstance(plot.handles["xaxis"], DatetimeAxis)
 
