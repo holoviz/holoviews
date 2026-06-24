@@ -12,7 +12,7 @@ import pytest
 import holoviews as hv
 from holoviews.core.util.dependencies import PANDAS_GE_3_0_0
 from holoviews.operation import apply_when
-from holoviews.streams import Tap
+from holoviews.streams import RangeXY, Tap
 from holoviews.testing import assert_data_equal, assert_element_equal
 
 from .._deps import ds, pl, pl_skip, spd, spd_skip
@@ -1662,6 +1662,20 @@ def test_selector_datashade_bad_column_name(point_data):
     msg = "Cannot use 'R', 'G', 'B', or 'A' as columns, when using datashade with selector"
     with pytest.raises(ValueError, match=msg):
         datashade(point_plot, selector=ds.min("val"), **inputs)
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+def test_rasterize_overlay_seeds_range_streams():
+    s1 = hv.Scatter((np.array([0, 10]), np.array([0, 0])), "x", "y")
+    s2 = hv.Scatter((np.array([0, 10]), np.array([5, 5])), "x", "y")
+    overlay = rasterize(s1 * s2).opts(padding=0.1)
+
+    plot = hv.renderer("bokeh").get_plot(overlay)
+
+    stream = next((s for s in plot.source_streams if isinstance(s, RangeXY)), None)
+    assert stream
+    assert stream.x_range == (-1.0, 11.0)
+    assert stream.y_range == (-0.5, 5.5)
 
 
 @pytest.mark.usefixtures("bokeh_backend")

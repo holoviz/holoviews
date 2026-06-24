@@ -1704,6 +1704,7 @@ class GenericElementPlot(DimensionedPlot):
             x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
             y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
 
+        # Should match what is done in GenericOverlayPlot.get_extents
         if not self.drawn:
             x_range, y_range = ((y0, y1), (x0, x1)) if self.invert_axes else ((x0, x1), (y0, y1))
             for stream in getattr(self, "source_streams", []):
@@ -2308,6 +2309,22 @@ class GenericOverlayPlot(GenericElementPlot):
         x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
         if not (("multi_y" in self.param) and self.multi_y):
             y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
+
+        # Should match what is done in ElementPlot.get_extents
+        if not self.drawn:
+            x_range, y_range = ((y0, y1), (x0, x1)) if self.invert_axes else ((x0, x1), (y0, y1))
+            for stream in getattr(self, "source_streams", []):
+                if isinstance(stream, RangeX):
+                    params = {"x_range": x_range}
+                elif isinstance(stream, RangeY):
+                    params = {"y_range": y_range}
+                elif isinstance(stream, RangeXY):
+                    params = {"x_range": x_range, "y_range": y_range}
+                else:
+                    continue
+                stream.update(**params)
+                if stream not in self._trigger and (self.xlim or self.ylim):
+                    self._trigger.append(stream)
 
         if isinstance(self.projection, str) and self.projection == "3d":
             z0, z1 = util.dimension_range(
