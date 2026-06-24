@@ -26,7 +26,7 @@ import narwhals.stable.v2 as nw
 import numpy as np
 import param
 
-from ...util.warnings import warn
+from ...util.warnings import deprecated, warn
 from .dependencies import (  # noqa: F401
     NUMPY_GE_2_0_0,
     NUMPY_VERSION,
@@ -77,7 +77,6 @@ _TIME_SCALES = {
     "D": 1 / 86400,
     "W": 1 / 604800,
 }
-nat_as_integer = -9223372036854775808  # np.datetime64("NAT", "ns").view("i8") or (- 2 ** 64 // 2)
 _ARRAY_SIZE_LARGE = 1_000_000
 _ARRAY_SAMPLE_SIZE = 1_000_000
 _DATAFRAME_ROWS_LARGE = 1_000_000
@@ -115,6 +114,14 @@ _PANDAS_FUNC_LOOKUP = {
     np.cumsum: "cumsum",
     np.nancumsum: "cumsum",
 }
+
+
+def __getattr__(attr):
+    if attr == "nat_as_integer":
+        deprecated("1.25.0", old="nat_as_integer", new=-9223372036854775808)
+        # np.datetime64("NAT", "ns").view("i8") or (- 2 ** 64 // 2)
+        return np.int64(-9223372036854775808)
+    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
 
 
 class Config(param.ParameterizedFunction):
