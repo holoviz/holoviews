@@ -5,7 +5,7 @@ HoloViews is maintained by a core development team who coordinate contributions 
 1. **Ongoing maintenance, improved documentation and examples**:
    As always, there are various bugs and usability issues reported on the issue tracker, and we will address these as time permits. This includes reviewing and closing old issues and pull requests as part of regular project maintenance to keep the project organized and ensure relevant issues get attention.
 
-2. **Donut plot**:
+2. **Donut plot** ([#6848](https://github.com/holoviz/holoviews/pull/6848))
    Introduce a donut plot as a first-class visualization type in HoloViews.
 
 3. **Backend consistency**:
@@ -17,13 +17,13 @@ HoloViews is maintained by a core development team who coordinate contributions 
 5. **Test suite modernization** ([#6735](https://github.com/holoviz/holoviews/pull/6735)):
    Migrate the existing test suite from unittest to pytest. This modernization will make it easier for new contributors to write and understand tests, improve test discoverability, and provide better test output and debugging capabilities.
 
-6. **Code formatting**:
+6. **Code formatting** ([#6810](https://github.com/holoviz/holoviews/pull/6810)):
    Adopt ruff for formatting to provide a consistent contributor experience. Automated formatting reduces friction in code reviews and ensures the codebase maintains a uniform style, making it easier for contributors to focus on functionality rather than style issues.
 
 7. **Typing improvements**:
    Improve type coverage for Non-Parameterized classes to support better editor integration and autocomplete. Better type hints will enhance the developer experience by providing more accurate IDE suggestions and catching potential type-related bugs earlier in development.
 
-8. **Import cleanup**:
+8. **Import cleanup** ([#6802](https://github.com/holoviz/holoviews/pull/6802)):
    Remove star imports across the codebase to improve clarity and maintainability. Explicit imports make it easier to understand dependencies, improve code navigation in editors, and help avoid naming conflicts.
 
 9. **Versioned documentation**:
