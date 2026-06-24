@@ -76,53 +76,27 @@ class TestImage(LoggingComparison):
         hv.Image({"vals": vals, "xs": xs, "ys": ys}, ["xs", "ys"], "vals")
         hv.config.image_rtol = image_rtol
 
-    @pytest.mark.parametrize(
-        "x",
-        [
-            # max(|step|) / min(|step|) - 1 = 0.0015
-            [dt.datetime(2017, 1, 1, 0, 0, 0, ms) for ms in [0, 10000, 20015]],
-            *(
-                np.array([0, 10000, 20015]).astype(f"datetime64[{unit}]")
-                for unit in ["D", "h", "m", "s", "ms", "us"]
-            ),
-        ],
-    )
-    def test_image_datetime_rtol_failure(self, x):
-        """
-        Constructing an Image with a date-time coordinate warns about irregular sampling
-        if, approximately speaking, one less than the ratio of the max and min steps
-        exceeds the default `image_rtol`.
-        """
-        y = np.arange(2)
-        hv.Image((x, y, np.zeros((len(y), len(x)))))
+    @pytest.mark.parametrize("unit", ["py-datetime", "D", "h", "m", "s", "ms", "us", "ns"])
+    def test_image_datetime_rtol_failure(self, unit):
+        if unit == "py-datetime":
+            x = [dt.datetime(2017, 1, 1, 0, 0, 0, ms) for ms in [0, 10000, 20015]]
+        else:
+            x = np.array([0, 10000, 20015]).astype(f"datetime64[{unit}]")
+        hv.Image((x, [0, 1], np.zeros((2, 3))))
         self.log_handler.assert_endswith(
             "WARNING",
             "set a higher tolerance on hv.config.image_rtol or the rtol parameter in "
             "the Image constructor.",
         )
 
-    @pytest.mark.parametrize(
-        "x",
-        [
-            # |granularity / step| = 1/400 = 0.0025
-            [dt.datetime(2017, 1, 1, 0, 0, 0, ms) for ms in [0, 400]],
-            # |granularity / step| = 1/800 = 0.00125
-            *(
-                np.array([10000, 10800]).astype(f"datetime64[{unit}]")
-                for unit in ["D", "h", "m", "s", "ms", "us"]
-            ),
-        ],
-    )
-    def test_image_datetime_rtol_granularity(self, x):
-        """
-        Constructing an Image with an evenly spaced date-time coordinate does not warn
-        about irregular sampling, even when the ratio of the date-time granularity to
-        the coordinate step is greater than the default `image_rtol` (or twice
-        `image_rtol` for `dt.datetime` types because of how `dt.timedelta` instances
-        round when multiplied by a `float`).
-        """
-        y = np.arange(2)
-        hv.Image((x, y, np.zeros((len(y), len(x)))))
+    @pytest.mark.parametrize("unit", ["py-datetime", "D", "h", "m", "s", "ms", "us"])
+    def test_image_datetime_rtol_granularity(self, unit):
+        if unit == "py-datetime":
+            x = [dt.datetime(2017, 1, 1, 0, 0, 0, ms) for ms in [0, 400]]
+        else:
+            # ns excluded: 400ns rounds to 0 in dt.timedelta causing ZeroDivisionError
+            x = np.array([0, 400]).astype(f"datetime64[{unit}]")
+        hv.Image((x, [0, 1], np.zeros((2, 2))))
         assert len(self.log_handler.tail("WARNING", n=1)) == 0
 
     def test_image_clone(self):
