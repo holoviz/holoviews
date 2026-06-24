@@ -259,7 +259,7 @@ class BarPlot(BarsMixin, ElementPlot):
             for v in xvals:
                 sel = element[[v]]
                 if baseline_dim is None:
-                    values.append(sel.iloc[0, 1] if len(sel) else 0)
+                    values.append(sel.dimension_values(1)[0] if len(sel) else 0)
                     continue
                 # Floating bars: base sets the lower end, y the bar length.
                 top = sel.dimension_values(top_dim)[0] if len(sel) else 0
@@ -287,7 +287,7 @@ class BarPlot(BarsMixin, ElementPlot):
                 for v in xvals:
                     sel = el[[v]]
                     if baseline_dim is None:
-                        values.append(sel.iloc[0, 1] if len(sel) else 0)
+                        values.append(sel.dimension_values(1)[0] if len(sel) else 0)
                         continue
                     top = sel.dimension_values(top_dim)[0] if len(sel) else 0
                     base = sel.dimension_values(baseline_dim)[0] if len(sel) else 0
