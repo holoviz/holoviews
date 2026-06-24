@@ -28,7 +28,7 @@ Breaking changes:
 Deprecations:
 
 - Deprecate dash support, removal in 1.24.0 ([#6867](https://github.com/holoviz/holoviews/pull/6867))
-- Warning about deprecated old API, removal in 1.24.0 ([#6863](https://github.com/holoviz/holoviews/pull/6863))
+- Warning about deprecated old API (`holoviews.core.options.Opts` and `holoviews.core.dimension.redim`), removal in 1.24.0 ([#6863](https://github.com/holoviz/holoviews/pull/6863))
 - Deprecation of `holoviews.element.comparison` for `holoviews.testing`, removal in 1.25.0 ([#6735](https://github.com/holoviz/holoviews/pull/6735))
 
 Enhancements:
@@ -37,7 +37,7 @@ Enhancements:
 - Small improvements to `Spread` ([#6883](https://github.com/holoviz/holoviews/pull/6883))
 - Remove use of explicit `raise Exception` ([#6866](https://github.com/holoviz/holoviews/pull/6866))
 - Support all narwhals stable versions ([#6844](https://github.com/holoviz/holoviews/pull/6844))
-- Handle dataset for `rolling_outliers_std` ([#6763](https://github.com/holoviz/holoviews/pull/6763))
+- Handle xarray `Dataset` for `rolling_outliers_std` ([#6763](https://github.com/holoviz/holoviews/pull/6763))
 - Support `selector` and `ds.summary` for `geom_aggregator` ([#6743](https://github.com/holoviz/holoviews/pull/6743))
 
 Bug Fixes:
@@ -110,6 +110,10 @@ Refactoring:
 - Remove `*` imports and update `__all__` to be static ([#6802](https://github.com/holoviz/holoviews/pull/6802))
 - Don't have test inheriting from `unittest.TestCase` ([#6735](https://github.com/holoviz/holoviews/pull/6735))
 
+Governance:
+
+- Add governance ([#6752](https://github.com/holoviz/holoviews/pull/6752))
+
 Documentation:
 
 - Import panel in Flask + Bokeh deployment example ([#6881](https://github.com/holoviz/holoviews/pull/6881))
@@ -117,7 +121,6 @@ Documentation:
 - Update docstring for interface ([#6789](https://github.com/holoviz/holoviews/pull/6789))
 - Improve Scatter docstring ([#6778](https://github.com/holoviz/holoviews/pull/6778))
 - Move hover tool's example import up ([#6773](https://github.com/holoviz/holoviews/pull/6773))
-- Add governance ([#6752](https://github.com/holoviz/holoviews/pull/6752))
 - Add documentation for `legend_opts` ([#6751](https://github.com/holoviz/holoviews/pull/6751))
 - Update tools description ([#6768](https://github.com/holoviz/holoviews/pull/6768))
 - Update roadmap ([#6756](https://github.com/holoviz/holoviews/pull/6756))
