@@ -824,7 +824,7 @@ class spread_aggregate(area_aggregate):
         if df is element.data:
             df = df.copy()
 
-        pos, neg = element.vdims[1:3] if len(element.vdims) > 2 else element.vdims[1:2] * 2
+        neg, pos = element.vdims[1:3] if len(element.vdims) > 2 else element.vdims[1:2] * 2
         yvals = df[y.name]
         df[y.name] = yvals + df[pos.name]
         df["_lower"] = yvals - df[neg.name]
