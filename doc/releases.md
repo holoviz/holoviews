@@ -1,5 +1,134 @@
 # Releases
 
+## Version 1.23
+
+### Version 1.23.0
+
+**June 24, 2026**
+
+This release introduces new chart types including `Donut` and `Waterfall`, along with significant performance improvements, and numerous bug fixes.
+
+Many thanks to [@AR21SM](https://github.com/AR21SM) (first contribution), [@Chetansahney](https://github.com/Chetansahney) (first contribution), [@ghostiee-11](https://github.com/ghostiee-11) (first contribution), [@mvanhorn](https://github.com/mvanhorn) (first contribution), [@SimonHeybrock](https://github.com/SimonHeybrock) (first contribution), [@ahuang11](https://github.com/ahuang11), [@Azaya89](https://github.com/Azaya89), [@JulianGiles](https://github.com/JulianGiles), [@MarcSkovMadsen](https://github.com/MarcSkovMadsen), [@philippjfr](https://github.com/philippjfr), [@stanwest](https://github.com/stanwest), [@thuydotm](https://github.com/thuydotm), and [@hoxbro](https://github.com/hoxbro) for their contributions.
+
+Features:
+
+- Add `Donut` chart ([#6848](https://github.com/holoviz/holoviews/pull/6848))
+- Add `Waterfall` chart ([#6847](https://github.com/holoviz/holoviews/pull/6847))
+- Add `categorical_agg` operation for linked selections with categorical Bars ([#6804](https://github.com/holoviz/holoviews/pull/6804))
+
+Breaking changes:
+
+- Removal of deprecated parameters: `color_index`, `size_index`, `scaling_factor`, `scaling_method`, `size_fn` ([#6819](https://github.com/holoviz/holoviews/pull/6819))
+- Removal of HoloViews IPython magic, deprecated since 1.21.0 ([#6781](https://github.com/holoviz/holoviews/pull/6781))
+- Only support `HOLOVIEWSRC` environment variable for custom config, deprecated since 1.21.0 ([#6782](https://github.com/holoviz/holoviews/pull/6782))
+- Removal of old location of IPTestCase, deprecated since 1.21.0 ([#6782](https://github.com/holoviz/holoviews/pull/6782))
+- Removal of streamz support, deprecated since 1.21.0 ([#6782](https://github.com/holoviz/holoviews/pull/6782))
+- Removal of binder links ([#6822](https://github.com/holoviz/holoviews/pull/6822))
+
+Deprecations:
+
+- Deprecate dash support, removal in 1.24.0 ([#6867](https://github.com/holoviz/holoviews/pull/6867))
+- Warning about deprecated old API (`holoviews.core.options.Opts` and `holoviews.core.dimension.redim`), removal in 1.24.0 ([#6863](https://github.com/holoviz/holoviews/pull/6863))
+- Deprecation of `holoviews.element.comparison` for `holoviews.testing`, removal in 1.25.0 ([#6735](https://github.com/holoviz/holoviews/pull/6735))
+
+Enhancements:
+
+- Add baseline opt to `Bars` for floating bar charts ([#6896](https://github.com/holoviz/holoviews/pull/6896))
+- Small improvements to `Spread` ([#6883](https://github.com/holoviz/holoviews/pull/6883))
+- Remove use of explicit `raise Exception` ([#6866](https://github.com/holoviz/holoviews/pull/6866))
+- Support all narwhals stable versions ([#6844](https://github.com/holoviz/holoviews/pull/6844))
+- Handle xarray `Dataset` for `rolling_outliers_std` ([#6763](https://github.com/holoviz/holoviews/pull/6763))
+- Support `selector` and `ds.summary` for `geom_aggregator` ([#6743](https://github.com/holoviz/holoviews/pull/6743))
+
+Bug Fixes:
+
+- Remove extra space in some warnings of irregular sampling ([#6916](https://github.com/holoviz/holoviews/pull/6916))
+- Allow image coordinate irregularity equal to the tolerance ([#6915](https://github.com/holoviz/holoviews/pull/6915))
+- Handle undeclared aggregator column in `_resolve_agg_column_name` ([#6908](https://github.com/holoviz/holoviews/pull/6908))
+- Prevent exponential custom-option id growth on re-customization ([#6904](https://github.com/holoviz/holoviews/pull/6904))
+- Interpolation curves crash on empty input ([#6903](https://github.com/holoviz/holoviews/pull/6903))
+- Add exception logging to `Stream.trigger` ([#6902](https://github.com/holoviz/holoviews/pull/6902))
+- Norm and vmin/vmax in raster.py ([#6889](https://github.com/holoviz/holoviews/pull/6889))
+- Datetime with HeatMap ([#6877](https://github.com/holoviz/holoviews/pull/6877))
+- Memory leak in `Stream._subscribers` ([#6875](https://github.com/holoviz/holoviews/pull/6875))
+- HMAC-sign Dash store data ([#6867](https://github.com/holoviz/holoviews/pull/6867))
+- Missing Interface import ([#6854](https://github.com/holoviz/holoviews/pull/6854))
+- Avoid trying to match dimension by name ([#6853](https://github.com/holoviz/holoviews/pull/6853))
+- Add timezone handling for xarray backend ([#6849](https://github.com/holoviz/holoviews/pull/6849))
+- Don't clip matplotlib animation ([#6845](https://github.com/holoviz/holoviews/pull/6845))
+- Check `narwhals.Series` is also `arraylike` ([#6829](https://github.com/holoviz/holoviews/pull/6829))
+- Fix Bars crash with datetime x-axis for single or duplicate values ([#6820](https://github.com/holoviz/holoviews/pull/6820))
+- Raise error if RGB getitem uses Ellipsis with bad name ([#6818](https://github.com/holoviz/holoviews/pull/6818))
+- Self passed in `super().__init__` ([#6817](https://github.com/holoviz/holoviews/pull/6817))
+- Display colorbar label from value dimension in Bokeh ([#6815](https://github.com/holoviz/holoviews/pull/6815))
+- Prevent duplicate legend entries in `BoxWhisker` plot in Bokeh ([#6809](https://github.com/holoviz/holoviews/pull/6809))
+- Labels with offset raising unreachable code in Bokeh ([#6800](https://github.com/holoviz/holoviews/pull/6800))
+- Prevent Matplotlib from overriding `Cycle.default_cycles` with RGB tuples ([#6798](https://github.com/holoviz/holoviews/pull/6798))
+- BoxEdit stream data not initialized for Rectangles ([#6786](https://github.com/holoviz/holoviews/pull/6786))
+- Sync visibility with PolyDraw/PolyEdit ([#6784](https://github.com/holoviz/holoviews/pull/6784))
+- Support pandas dtypes for interpolation ([#6783](https://github.com/holoviz/holoviews/pull/6783))
+- Handle `NdMapping` with explicit tuple set slicing with dimension values ([#6780](https://github.com/holoviz/holoviews/pull/6780))
+- Check for zero height in `get_aspect` to prevent ZeroDivisionError ([#6779](https://github.com/holoviz/holoviews/pull/6779))
+- Fix extra hover tooltips for labels ([#6774](https://github.com/holoviz/holoviews/pull/6774))
+- Categorical color mapping for Polygons in mpl backend ([#6762](https://github.com/holoviz/holoviews/pull/6762))
+- Categorical color error for Scatter plotly plot ([#6758](https://github.com/holoviz/holoviews/pull/6758))
+- Handle datetime with timezone in rasterize ([#6757](https://github.com/holoviz/holoviews/pull/6757))
+- `isdatetime` check for arraylike ([#6755](https://github.com/holoviz/holoviews/pull/6755))
+- Seed range streams on initial draw of overlay plots ([#6922](https://github.com/holoviz/holoviews/pull/6922))
+
+Performance:
+
+- Cache static layout properties in `_update_plot` in Bokeh ([#6839](https://github.com/holoviz/holoviews/pull/6839))
+- Skip param.update when plot options unchanged ([#6837](https://github.com/holoviz/holoviews/pull/6837))
+- Skip Bokeh property validation in `_update_datasource` in Bokeh ([#6835](https://github.com/holoviz/holoviews/pull/6835))
+- Disable pipeline bookkeeping during plot refresh ([#6832](https://github.com/holoviz/holoviews/pull/6832))
+- Cache `gen_types` type tuples ([#6831](https://github.com/holoviz/holoviews/pull/6831))
+- Remove dead `hasattr` check triggering difflib in Bokeh ([#6830](https://github.com/holoviz/holoviews/pull/6830))
+- Add numeric fast path to `max_range` and `dimension_range` ([#6806](https://github.com/holoviz/holoviews/pull/6806))
+- Remove `packaging` dependency for `regex` ([#6857](https://github.com/holoviz/holoviews/pull/6857))
+
+Type Annotations:
+
+- Add type checking on isolated and utility files ([#6851](https://github.com/holoviz/holoviews/pull/6851))
+- Support latest param dev release and use param.descendents ([#6869](https://github.com/holoviz/holoviews/pull/6869))
+- Update ty version and small fixes ([#6859](https://github.com/holoviz/holoviews/pull/6859))
+- Enable type checking ruff rules ([#6850](https://github.com/holoviz/holoviews/pull/6850))
+
+Compatibility:
+
+- Numpy 2.5.0 ([#6924](https://github.com/holoviz/holoviews/pull/6924))
+- cuDF 25.12 to 26.06 ([#6754](https://github.com/holoviz/holoviews/pull/6754), [#6795](https://github.com/holoviz/holoviews/pull/6795), [#6852](https://github.com/holoviz/holoviews/pull/6852), [#6907](https://github.com/holoviz/holoviews/pull/6907))
+- Panel 1.9.0 ([#6890](https://github.com/holoviz/holoviews/pull/6890))
+- Matplotlib 3.11.0 ([#6856](https://github.com/holoviz/holoviews/pull/6856))
+- Ibis 12 ([#6840](https://github.com/holoviz/holoviews/pull/6840))
+
+Refactoring:
+
+- Enable flake8-comprehensions (C4) and pygrep-hooks (PGH) ([#6865](https://github.com/holoviz/holoviews/pull/6865))
+- Enable ruff formatting ([#6810](https://github.com/holoviz/holoviews/pull/6810))
+- Make test use `hv.` import if it is top-level import ([#6803](https://github.com/holoviz/holoviews/pull/6803))
+- Remove `*` imports and update `__all__` to be static ([#6802](https://github.com/holoviz/holoviews/pull/6802))
+- Don't have test inheriting from `unittest.TestCase` ([#6735](https://github.com/holoviz/holoviews/pull/6735))
+
+Governance:
+
+- Add governance ([#6752](https://github.com/holoviz/holoviews/pull/6752))
+
+Documentation:
+
+- Import panel in Flask + Bokeh deployment example ([#6881](https://github.com/holoviz/holoviews/pull/6881))
+- Convert `.rst` files to `.md` ([#6823](https://github.com/holoviz/holoviews/pull/6823))
+- Update docstring for interface ([#6789](https://github.com/holoviz/holoviews/pull/6789))
+- Improve Scatter docstring ([#6778](https://github.com/holoviz/holoviews/pull/6778))
+- Move hover tool's example import up ([#6773](https://github.com/holoviz/holoviews/pull/6773))
+- Add documentation for `legend_opts` ([#6751](https://github.com/holoviz/holoviews/pull/6751))
+- Update tools description ([#6768](https://github.com/holoviz/holoviews/pull/6768))
+- Update roadmap ([#6756](https://github.com/holoviz/holoviews/pull/6756))
+
+CI/CD:
+
+- Harden CI with zizmor ([#6860](https://github.com/holoviz/holoviews/pull/6860))
+
 ## Version 1.22
 
 ### Version 1.22.1
