@@ -2252,7 +2252,7 @@ def validate_regular_sampling(values, rtol=10e-6):
     if len(diffs) < 1:
         return True
     min_diff = diffs.min()
-    return abs(min_diff - diffs.max()) < abs(min_diff * rtol)
+    return abs(min_diff - diffs.max()) <= abs(min_diff * rtol)
 
 
 def compute_density(start, end, length, time_unit="us"):
