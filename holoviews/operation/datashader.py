@@ -396,7 +396,7 @@ class AggregationOperation(ResampleOperation2D):
                 elif kind == "O":
                     val[neg1] = "-"
                 elif kind == "M":
-                    val[neg1] = np.datetime64("NaT")
+                    val[neg1] = np.datetime64("NaT", "ns")
                 else:
                     val = val.astype(np.float64)
                     val[neg1] = np.nan
