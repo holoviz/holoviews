@@ -1041,7 +1041,11 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             is_dt = isdatetime(xvals)
             if is_dt or dtype_kind(xvals) not in "OU":
                 xslice = stack_idx if stack_order else slice(None)
-                xdiff = np.abs(np.diff(xvals[xslice]))
+                if element.interface.name == "NarwhalsInterface":
+                    # The first value is nullable with narwhals diff
+                    xdiff = xvals.filter(xslice).diff()[1:].abs().to_numpy()
+                else:
+                    xdiff = np.abs(np.diff(xvals[xslice]))
                 diff_size = len(np.unique(xdiff))
                 if diff_size == 0 or (diff_size == 1 and xdiff[0].view(np.int64) == 0):
                     xdiff = np.array([np.timedelta64(1, "D")]) if is_dt else 1
