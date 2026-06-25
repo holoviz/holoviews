@@ -751,8 +751,8 @@ class DatashaderAggregateTests:
         )
         agg = rasterize(spread, width=4, height=4, dynamic=False)
         xs = [0.25, 0.75, 1.25, 1.75]
-        ys = [0.6125, 1.4375, 2.2625, 3.0875]
-        arr = np.array([[0, 0, 0, 0], [1, 0, 0, 0], [0, 1, 1, 0], [0, 0, 1, 1]])
+        ys = [1.025, 1.875, 2.725, 3.575]
+        arr = np.array([[0, 0, 0, 0], [1, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 1]])
         expected = hv.Image((xs, ys, arr), vdims=hv.Dimension("Count", nodata=0))
         assert_element_equal(agg, expected)
 
