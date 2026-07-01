@@ -443,7 +443,13 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                         cmap = style.get("cmap")
                         if isinstance(cmap, dict):
                             style = dict(style)
-                            style["cmap"] = [cmap.get(c) for c in categories]
+                            style["cmap"] = [c for cat in categories if (c := cmap.get(cat))]
+                            if len(style["cmap"]) != len(categories):
+                                missing = ", ".join(
+                                    map(repr, sorted(set(categories) - set(cmap.keys())))
+                                )
+                                msg = f"Missing color(s) for categories: {missing}"
+                                raise ValueError(msg)
 
                         copts = self.get_color_opts(v, element, ranges, style)
                         copts.update({"cmin": 0, "cmax": len(categories) - 1, "cauto": False})

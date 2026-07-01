@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 import holoviews as hv
 from holoviews.plotting.plotly.util import PLOTLY_MAP, PLOTLY_SCATTERMAP
@@ -72,6 +73,13 @@ class TestScatterPlot(TestPlotlyPlot):
         assert marker["colorscale"] == [[0, "black"], [1, "red"]]
         assert marker["cmin"] == 0
         assert marker["cmax"] == 1
+
+    def test_scatter_categorical_color_cmap_dict_missing(self):
+        scatter = hv.Scatter([(0, 1, "A"), (1, 2, "B")], vdims=["y", "category"])
+        scatter.opts(color="category", cmap={"A": "black"})
+        msg = "Missing color\\(s\\) for categories: 'B'"
+        with pytest.raises(ValueError, match=msg):
+            self._get_plot_state(scatter)
 
     def test_scatter_markers(self):
         scatter = hv.Scatter(
