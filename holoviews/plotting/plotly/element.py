@@ -440,6 +440,11 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                     if not is_plotly_allowed_colors:
                         val = cat_indices
 
+                        cmap = style.get("cmap")
+                        if isinstance(cmap, dict):
+                            style = dict(style)
+                            style["cmap"] = [cmap.get(c) for c in categories]
+
                         copts = self.get_color_opts(v, element, ranges, style)
                         copts.update({"cmin": 0, "cmax": len(categories) - 1, "cauto": False})
 

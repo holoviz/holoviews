@@ -62,6 +62,17 @@ class TestScatterPlot(TestPlotlyPlot):
         assert state["data"][0]["marker"]["cmin"] == 0
         assert state["data"][0]["marker"]["cmax"] == 2
 
+    def test_scatter_categorical_color_cmap_dict(self):
+        scatter = hv.Scatter([(0, 1, "A"), (1, 2, "B")], vdims=["y", "category"])
+        scatter.opts(color="category", cmap={"A": "black", "B": "red"})
+        state = self._get_plot_state(scatter)
+
+        marker = state["data"][0]["marker"]
+        np.testing.assert_array_equal(marker["color"], [0, 1])
+        assert marker["colorscale"] == [[0, "black"], [1, "red"]]
+        assert marker["cmin"] == 0
+        assert marker["cmax"] == 1
+
     def test_scatter_markers(self):
         scatter = hv.Scatter(
             [(0, 1, "square"), (1, 2, "circle"), (2, 3, "triangle-up")], vdims=["y", "marker"]
