@@ -26,19 +26,34 @@ def pytest_addoption(parser):
             default=False,
             help=f"Run {marker} related tests",
         )
+    parser.addoption(
+        "--issue",
+        action="store",
+        default=None,
+        type=int,
+        help="Only run tests covering the given GitHub issue number",
+    )
 
 
 def pytest_configure(config):
     for marker in CUSTOM_MARKS:
         config.addinivalue_line("markers", f"{marker}: {marker} test marker")
+    config.addinivalue_line("markers", "issue(id): mark test as covering a specific GitHub issue")
 
 
 def pytest_collection_modifyitems(config, items):
     skipped, selected = [], []
     markers = [m for m in CUSTOM_MARKS if config.getoption(f"--{m}")]
     empty = not markers
+    issue = config.getoption("--issue")
     for item in items:
-        if empty and any(m in item.keywords for m in CUSTOM_MARKS):
+        if issue is not None:
+            marker = item.get_closest_marker("issue")
+            if marker and issue in marker.args:
+                selected.append(item)
+            else:
+                skipped.append(item)
+        elif empty and any(m in item.keywords for m in CUSTOM_MARKS):
             skipped.append(item)
         elif empty:
             selected.append(item)

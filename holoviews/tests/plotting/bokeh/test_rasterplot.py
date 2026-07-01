@@ -152,8 +152,8 @@ class TestRasterPlot(TestBokehPlot):
         else:
             assert isinstance(hover.formatters["@{Timestamp}"], CustomJSHover)
 
+    @pytest.mark.issue(6101)
     def test_image_hover_with_custom_js(self):
-        # Regression for https://github.com/holoviz/holoviews/issues/6101
         hover_tool = HoverTool(
             tooltips=[("x", "$x{custom}")],
             formatters={"x": CustomJSHover(code="return value + '2'")},

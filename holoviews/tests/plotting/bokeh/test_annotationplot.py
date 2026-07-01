@@ -596,9 +596,8 @@ class TestHVSpansPlot(TestBokehPlot):
         assert plot_el.handles["y_range"].start == plot_dmap.handles["y_range"].start
         assert plot_el.handles["y_range"].end == plot_dmap.handles["y_range"].end
 
+    @pytest.mark.issue(6289)
     def test_hspans_no_upper_range(self):
-        # Test for: https://github.com/holoviz/holoviews/issues/6289
-
         dim = hv.Dimension("p", label="prob", range=(0, None))
         fig = hv.Curve([(0, 0.6), (1, 0.3), (2, 0.4), (3, 0.45)], kdims="x", vdims=dim)
         spans = hv.HSpans([(0, 0.2), (0.4, 0.6)], kdims=["x", dim])

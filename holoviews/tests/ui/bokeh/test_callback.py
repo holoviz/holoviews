@@ -253,9 +253,8 @@ def test_multi_axis_tap_datetime(serve_hv):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
+@pytest.mark.issue(6013)
 def test_bind_trigger(serve_hv):
-    # Regression test for https://github.com/holoviz/holoviews/issues/6013
-
     BOUND_COUNT, RANGE_COUNT = [0], [0]
 
     def bound_function():
