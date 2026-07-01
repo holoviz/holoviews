@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 from bokeh.models import ColorBar
 
 import holoviews as hv
@@ -65,8 +66,8 @@ class TestQuadMeshPlot(TestBokehPlot):
         source = plot.handles["source"]
         assert_data_equal(source.data["z"], flattened)
 
+    @pytest.mark.issue(6460)
     def test_quadmesh_non_sanitized_name(self):
-        # https://github.com/holoviz/holoviews/issues/6460
         xs = [0, 1, 2]
         ys = [2, 1, 0]
         data = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
@@ -78,8 +79,8 @@ class TestQuadMeshPlot(TestBokehPlot):
         sanitized_name = "z_left_parenthesis_x_comma_y_right_parenthesis"
         np.testing.assert_equal(source.data[sanitized_name], flattened)
 
+    @pytest.mark.issue(6460)
     def test_quadmesh_non_sanitized_name_grid(self):
-        # https://github.com/holoviz/holoviews/issues/6460
         xs = [0, 1, 2]
         ys = [2, 1, 0]
         data = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])

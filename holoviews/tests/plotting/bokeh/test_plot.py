@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 import pyviz_comms as comms
 from bokeh.models import (
     ColumnDataSource,
@@ -176,8 +177,8 @@ def test_sync_three_plots():
                 assert v[1].code == "dst.muted = src.muted"
 
 
+@pytest.mark.issue(6386)
 def test_span_not_cloned_crosshair():
-    # See https://github.com/holoviz/holoviews/issues/6386
     height = Span(dimension="height")
     cht = CrosshairTool(overlay=height)
 

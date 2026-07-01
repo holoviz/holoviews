@@ -712,9 +712,9 @@ class TestParamMethodStream:
         assert values_y == [{}]
 
 
+@pytest.mark.issue(6008)
 @pytest.mark.usefixtures("bokeh_backend")
 def test_dynamicmap_partial_bind_and_streams():
-    # Ref: https://github.com/holoviz/holoviews/issues/6008
 
     def make_plot(z, x_range, y_range):
         return hv.Curve([1, 2, 3, 4, z])

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 import holoviews as hv
 
@@ -14,10 +15,8 @@ if mpl:
 
 class TestOverlayPlot(LoggingComparison, TestMPLPlot):
     @mpl_skip
+    @pytest.mark.issue(41)
     def test_interleaved_overlay(self):
-        """
-        Test to avoid regression after fix of https://github.com/holoviz/holoviews/issues/41
-        """
         o = hv.Overlay(
             [hv.Curve(np.array([[0, 1]])), hv.Scatter([[1, 1]]), hv.Curve(np.array([[0, 1]]))]
         )

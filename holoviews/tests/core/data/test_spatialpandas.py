@@ -371,8 +371,8 @@ class DaskSpatialPandasTest(GeomTests, RoundTripTests):
         pytest.skip("Not supported")
 
 
+@pytest.mark.issue(6519)
 def test_regression_get_value_array():
-    # See: https://github.com/holoviz/holoviews/pull/6519
     df = pd.DataFrame(
         {"Longitude": [0, 1, 2], "Latitude": [0, 1, 2], "Sensor": ["S1", "S2", "S1"]}
     )

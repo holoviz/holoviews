@@ -470,8 +470,8 @@ def test_msg_with_base64_array():
     assert np.equal(data_expected, data_after).all()
 
 
+@pytest.mark.issue(6532)
 def test_msg_with_polyedit_polyline():
-    # Account for issue seen in https://github.com/holoviz/holoviews/issues/6532
     data_before = {
         "xs": [
             [10.0, 20.0, 30.0, 40.0],
