@@ -54,11 +54,15 @@ class _SkipTrigger:
     pass
 
 
-class _WeakMethodSubscriber:
-    def __init__(self, method):
-        self._ref = weakref.WeakMethod(method)
-        self._hash = self._generate_hash(method)
-        self._is_param_method = util.is_param_method(method)
+class _WeakSubscriber:
+    def __init__(self, subscriber):
+        if inspect.ismethod(subscriber):
+            self._ref = weakref.WeakMethod(subscriber)
+        else:
+            self._ref = weakref.ref(subscriber)
+
+        self._hash = self._generate_hash(subscriber)
+        self._is_param_method = util.is_param_method(subscriber)
 
     def __bool__(self) -> bool:
         method = self._ref()
@@ -70,13 +74,22 @@ class _WeakMethodSubscriber:
             return method(*args, **kwargs)
 
     @staticmethod
-    def _generate_hash(method) -> int:
-        return hash((id(method.__func__), id(method.__self__)))
+    def check(subscriber):
+        while isinstance(subscriber, partial):
+            subscriber = subscriber.func
+        return inspect.ismethod(subscriber)
+
+    @staticmethod
+    def _generate_hash(subscriber) -> int:
+        if inspect.ismethod(subscriber):
+            return hash((id(subscriber.__func__), id(subscriber.__self__)))
+        else:
+            return hash(id(subscriber))
 
     def __eq__(self, other) -> bool:
-        if isinstance(other, _WeakMethodSubscriber):
+        if isinstance(other, _WeakSubscriber):
             return self._hash == other._hash
-        if inspect.ismethod(other):
+        if self.check(other):
             return self._hash == self._generate_hash(other)
         return NotImplemented
 
@@ -413,8 +426,8 @@ class Stream(param.Parameterized):
         """
         if not callable(subscriber):
             raise TypeError("Subscriber must be a callable.")
-        if inspect.ismethod(subscriber):
-            subscriber = _WeakMethodSubscriber(subscriber)
+        if _WeakSubscriber.check(subscriber):
+            subscriber = _WeakSubscriber(subscriber)
         self._subscribers.append((precedence, subscriber))
 
     def _validate_rename(self, mapping):

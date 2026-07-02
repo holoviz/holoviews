@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import weakref
 from collections import defaultdict
+from functools import partial
 
 import numpy as np
 import pandas as pd
@@ -806,20 +807,35 @@ class TestSubscribers:
         # and the callback
         assert subscriber.call_count == 3
 
-    def test_bound_method_subscriber_does_not_pin_instance(self):
-        class Viewer:
-            def __init__(self):
-                self.plot = hv.Points([])
-                self.stream = hv.streams.RangeXY(source=self.plot)
-                self.stream.add_subscriber(self.on_update)
 
-            def on_update(self, x_range=None, y_range=None):
-                pass
-
+class TestWeakSubscriber:
+    def check(self, Viewer):
         viewer = Viewer()
         ref = weakref.ref(viewer)
         del viewer
         assert ref() is None
+
+    def test_bound_method(self):
+        class Viewer:
+            def __init__(self):
+                self.plot = hv.Points([])
+                self.stream = hv.streams.RangeX(source=self.plot)
+                self.stream.add_subscriber(self.on_update)
+
+            def on_update(self, x_range=None): ...
+
+        self.check(Viewer)
+
+    def test_bound_method_partial(self):
+        class Viewer:
+            def __init__(self):
+                self.plot = hv.Points([])
+                self.stream = hv.streams.RangeX(source=self.plot)
+                self.stream.add_subscriber(partial(self.on_update, extra=1))
+
+            def on_update(self, x_range=None, extra=0): ...
+
+        self.check(Viewer)
 
 
 class TestStreamSource:
