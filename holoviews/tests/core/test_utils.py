@@ -44,11 +44,14 @@ from holoviews.core.util import (
     unique_array,
     wrap_tuple_streams,
 )
+from holoviews.core.util.dependencies import _no_import_version
 from holoviews.core.util.types import masked_types
 from holoviews.streams import PointerXY
 from holoviews.testing import assert_data_equal
 
 from .._deps import pa_skip, pl, pl_skip
+
+NW_VERSION = _no_import_version("narwhals")
 
 sanitize_identifier = sanitize_identifier_fn.instance()
 
@@ -1122,7 +1125,9 @@ def test_is_null_or_na_scalar_polars():
             [1.1, 2.2, 3.3],
             "float16",
             "f",
-            marks=pytest.mark.xfail(reason="narwhals don't support float16"),
+            marks=pytest.mark.xfail(
+                condition=NW_VERSION < (2, 23, 0), reason="narwhals don't support float16"
+            ),
         ),
         ([1.1, 2.2, 3.3], "float32", "f"),
         ([1.1, 2.2, 3.3], "float64", "f"),
