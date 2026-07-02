@@ -212,8 +212,12 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
                 if not subplots:
                     legend = axis.get_legend()
+                    if legend is None and self.show_legend and not self.overlaid:
+                        # Explicitly enabled legend for a single labeled element
+                        if any(axis.get_legend_handles_labels()[1]):
+                            legend = axis.legend(**getattr(self, "_legend_opts", {}))
                     if legend:
-                        legend.set_visible(self.show_legend)
+                        legend.set_visible(self.show_legend is not False)
                         self.handles["bbox_extra_artists"] += [legend]
                     # Apply grid settings
                     self._update_grid(axis)
@@ -636,7 +640,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         self.style = style.max_cycles(max_cycles) if max_cycles else style
 
         labels = getattr(self, "legend_labels", {})
-        label = element.label if self.show_legend else ""
+        label = element.label if self.show_legend is not False else ""
         style = dict(
             label=labels.get(label, label), zorder=self.zorder, **self.style[self.cyclic_index]
         )
@@ -673,7 +677,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         ranges = util.match_spec(element, ranges)
 
         style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
-        if self.show_legend:
+        if self.show_legend is not False:
             style["label"] = element.label
         handles, axis_kwargs = self.render_artists(element, ranges, style, ax)
         self.handles.update(handles)
@@ -1235,8 +1239,12 @@ class ColorbarPlot(ElementPlot):
 
 class LegendPlot(ElementPlot):
     show_legend = param.Boolean(
-        default=True,
-        doc="Whether to show legend for the plot.",
+        default=None,
+        doc="""
+        Whether to show legend for the plot. The default of None defers
+        to the backend behavior, which is to hide legends with a single
+        entry. Setting it to True explicitly will also display a legend
+        with a single entry, while False disables the legend entirely.""",
     )
 
     legend_cols = param.Integer(
@@ -1376,7 +1384,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         labels = self.legend_labels
         for key, subplot in self.subplots.items():
             element = overlay.data.get(key, False)
-            if not subplot.show_legend or not element:
+            if subplot.show_legend is False or not element:
                 continue
             title = ", ".join([d.name for d in dimensions])
             handle = subplot.traverse(
@@ -1410,7 +1418,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             if handle and (handle not in data) and label and label not in used_labels:
                 data[handle] = label
                 used_labels.append(label)
-        if (not len(set(data.values())) > 0) or not self.show_legend:
+        if (not len(set(data.values())) > 0) or self.show_legend is False:
             legend = axis.get_legend()
             if legend and not (legend_plot or self.show_legend):
                 legend.set_visible(False)
@@ -1439,7 +1447,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                 frame = element.get(k, None)
                 subplot.current_frame = frame
 
-        if self.show_legend and element is not None:
+        if self.show_legend is not False and element is not None:
             self._adjust_legend(element, axis)
 
         return self._finalize_axis(
@@ -1487,7 +1495,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         plot_opts.update(**{k: v[0] for k, v in inherited.items() if k not in plot_opts})
         self._apply_plot_opts(plot_opts)
 
-        if self.show_legend and not empty:
+        if self.show_legend is not False and not empty:
             self._adjust_legend(element, axis)
 
         self._finalize_axis(key, element=element, ranges=ranges)

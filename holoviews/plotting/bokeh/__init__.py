@@ -286,7 +286,6 @@ options.Area = Options("style", color=Cycle(), alpha=1, line_color="black", mute
 options.VectorField = Options("style", color="black", muted_alpha=0.2)
 
 # Paths
-options.Contours = Options("plot", show_legend=True)
 options.Contours = Options("style", color=Cycle(), cmap=dflt_cmap)
 options.Path = Options("style", color=Cycle(), cmap=dflt_cmap)
 options.Box = Options("style", color="black")

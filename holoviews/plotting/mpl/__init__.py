@@ -356,7 +356,6 @@ options.Donut = Options(
     xaxis=None,
     yaxis=None,
     show_frame=False,
-    show_legend=True,
     legend_position="center",
     inner_radius=0.8,
 )
@@ -416,7 +415,6 @@ options.Labels = Options("style", color=Cycle())
 options.Arrow = Options("style", color="k", linewidth=2, textsize=13)
 # Paths
 options.Contours = Options("style", color=Cycle(), cmap=dflt_cmap)
-options.Contours = Options("plot", show_legend=True)
 options.Path = Options("style", color=Cycle(), cmap=dflt_cmap)
 options.Dendrogram = Options("style", color="black")
 options.Dendrogram = Options("plot", xaxis=None, yaxis=None)
@@ -463,5 +461,4 @@ options.Sankey = Options(
 
 # Statistics
 options.Distribution = Options("style", facecolor=Cycle(), edgecolor="black", alpha=0.5)
-options.Distribution = Options("plot", show_legend=True)
 options.Violin = Options("style", facecolors=Cycle(), showextrema=False, alpha=0.7)

@@ -1252,8 +1252,13 @@ class GenericElementPlot(DimensionedPlot):
     )
 
     show_legend = param.Boolean(
-        default=True,
-        doc="Whether to show legend for the plot.",
+        default=None,
+        doc="""
+        Whether to show legend for the plot. The default of None defers
+        to the backend behavior, which is to only show a legend for
+        overlaid or categorically colormapped plots. Setting it to True
+        explicitly will also display a legend for a single labeled
+        element, while False disables the legend entirely.""",
     )
 
     show_grid = param.Boolean(
@@ -1941,8 +1946,12 @@ class GenericOverlayPlot(GenericElementPlot):
     )
 
     show_legend = param.Boolean(
-        default=True,
-        doc="Whether to show legend for the plot.",
+        default=None,
+        doc="""
+        Whether to show legend for the plot. The default of None defers
+        to the backend behavior, which is to hide legends with a single
+        entry. Setting it to True explicitly will also display a legend
+        with a single entry, while False disables the legend entirely.""",
     )
 
     style_grouping = param.Integer(
@@ -2033,7 +2042,7 @@ class GenericOverlayPlot(GenericElementPlot):
             batched
             and batchedplot
             and "batched" in batchedplot._plot_methods
-            and (not self.show_legend or len(ordering) > self.legend_limit)
+            and (self.show_legend is False or len(ordering) > self.legend_limit)
         ):
             self.batched = True
             keys, vmaps = [()], [self.hmap]

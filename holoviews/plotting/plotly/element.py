@@ -486,6 +486,9 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             plot_bgcolor=self.bgcolor,
             uirevision=True,
         )
+        if self.show_legend and not self.overlaid and not isinstance(self, GenericOverlayPlot):
+            # Plotly hides single entry legends unless explicitly enabled
+            layout["showlegend"] = True
         if not self.responsive:
             layout["width"] = self.width
             layout["height"] = self.height

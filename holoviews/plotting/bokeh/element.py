@@ -2054,7 +2054,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return coords
 
     def _process_legend(self):
-        """Disables legends if show_legend is disabled."""
+        """Disables legends unless show_legend was explicitly enabled."""
+        if self.show_legend:
+            return
         for l in self.handles["plot"].legend:
             l.items[:] = []
             l.border_line_alpha = 0
@@ -2217,7 +2219,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                         else:
                             formatter = str
                         data[field] = [formatter(d) for d in val]
-                    if getattr(self, "show_legend", False):
+                    if getattr(self, "show_legend", False) is not False:
                         legend_labels = getattr(self, "legend_labels", False)
                         if legend_labels:
                             label_field = f"_{field}_labels"
@@ -2272,14 +2274,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _glyph_properties(self, plot, element, source, ranges, style, group=None):
         properties = dict(style, source=source)
-        if self.show_legend:
+        if self.show_legend is not False:
             if self.overlay_dims:
                 legend = ", ".join(
                     [d.pprint_value(v, print_unit=True) for d, v in self.overlay_dims.items()]
                 )
             else:
                 legend = element.label
-            if legend and self.overlaid:
+            if legend and (self.overlaid or self.show_legend):
                 properties["legend_label"] = legend
         return properties
 
@@ -3391,10 +3393,20 @@ class LegendPlot(ElementPlot):
             for cmapper in self.handles.values()
             if isinstance(cmapper, CategoricalColorMapper)
         ]
-        categorical = bool(cmappers)
+        # Data-driven legends declared with a legend_field are grouped by
+        # bokeh at render time and should not be treated as a single entry
+        field_items = any(
+            isinstance(property_to_dict(item.label), dict)
+            and "field" in property_to_dict(item.label)
+            for item in legend.items
+        )
+        categorical = bool(cmappers) or field_items
         if (
-            not categorical and not self.overlaid and len(legend.items) == 1
-        ) or not self.show_legend:
+            not categorical
+            and not self.overlaid
+            and len(legend.items) == 1
+            and not self.show_legend
+        ) or self.show_legend is False:
             legend.items[:] = []
         else:
             if self.legend_cols:
@@ -3535,7 +3547,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         )
         non_annotation = [p for p in subplots if not isinstance(p, (AnnotationPlot, OverlayPlot))]
         if (
-            not self.show_legend
+            self.show_legend is False
             or len(plot.legend) == 0
             or (len(non_annotation) <= 1 and not (self.dynamic or legend_plots))
         ):

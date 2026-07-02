@@ -194,8 +194,12 @@ class BarPlot(BarsMixin, ElementPlot):
     )
 
     show_legend = param.Boolean(
-        default=True,
-        doc="Whether to show legend for the plot.",
+        default=None,
+        doc="""
+        Whether to show legend for the plot. The default of None defers
+        to the backend behavior, which is to hide legends with a single
+        entry. Setting it to True explicitly will also display a legend
+        for a single trace, while False disables the legend entirely.""",
     )
 
     style_opts = ["visible", "color"]
@@ -268,7 +272,7 @@ class BarPlot(BarsMixin, ElementPlot):
                 bases.append(base)
             bar = {
                 "orientation": orientation,
-                "showlegend": False,
+                "showlegend": self.show_legend is True,
                 x: xvals,
                 y: np.nan_to_num(values),
             }

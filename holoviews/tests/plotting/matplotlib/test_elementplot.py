@@ -232,6 +232,29 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
         ticklabels = [ticklabel.get_text() for ticklabel in colorbar.ax.get_yticklabels()]
         assert ticklabels == ["A", "B"]
 
+    def test_element_legend_single_labeled(self):
+        curve = hv.Curve([1, 2, 3], label="A").opts(show_legend=True)
+        plot = mpl_renderer.get_plot(curve)
+        legend = plot.handles["axis"].get_legend()
+        assert legend is not None
+        assert legend.get_visible()
+        assert [text.get_text() for text in legend.get_texts()] == ["A"]
+
+    def test_element_legend_single_labeled_default_hidden(self):
+        curve = hv.Curve([1, 2, 3], label="A")
+        plot = mpl_renderer.get_plot(curve)
+        assert plot.handles["axis"].get_legend() is None
+
+    def test_element_legend_single_labeled_disabled(self):
+        curve = hv.Curve([1, 2, 3], label="A").opts(show_legend=False)
+        plot = mpl_renderer.get_plot(curve)
+        assert plot.handles["axis"].get_legend() is None
+
+    def test_element_legend_single_unlabeled(self):
+        curve = hv.Curve([1, 2, 3]).opts(show_legend=True)
+        plot = mpl_renderer.get_plot(curve)
+        assert plot.handles["axis"].get_legend() is None
+
     def test_element_backend_opts_method(self):
         a = hv.Curve([1, 2, 3], label="a")
         b = hv.Curve([1, 4, 9], label="b")

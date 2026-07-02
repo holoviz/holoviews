@@ -255,7 +255,7 @@ class ContourPlot(PathPlot):
     )
 
     show_legend = param.Boolean(
-        default=False,
+        default=None,
         doc="Whether to show legend for the plot.",
     )
 
@@ -350,7 +350,7 @@ class ContourPlot(PathPlot):
             factors = util.unique_array(values)
         cmapper = self._get_colormapper(cdim, element, ranges, style, factors)
         mapping[self._color_style] = {"field": dim_name, "transform": cmapper}
-        if self.show_legend:
+        if self.show_legend is not False:
             mapping["legend_field"] = dim_name
         return data, mapping, style
 
@@ -373,6 +373,11 @@ class ContourPlot(PathPlot):
 
 
 class PolygonPlot(ContourPlot):
+    show_legend = param.Boolean(
+        default=False,
+        doc="Whether to show legend for the plot.",
+    )
+
     style_opts = base_properties + line_properties + fill_properties + ["cmap"]
     _plot_methods = dict(single="patches", batched="patches")
     _batched_style_opts = line_properties + fill_properties

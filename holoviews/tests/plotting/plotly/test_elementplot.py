@@ -45,6 +45,24 @@ class TestElementPlot(TestPlotlyPlot):
         plot = plotly_renderer.get_plot(curve)
         assert plot.state["layout"]["title"]["font"]["size"] == 42
 
+    def test_element_legend_single_labeled(self):
+        curve = hv.Curve([1, 2, 3], label="A").opts(show_legend=True)
+        state = self._get_plot_state(curve)
+        assert state["data"][0]["showlegend"] is True
+        assert state["layout"]["showlegend"] is True
+
+    def test_element_legend_single_labeled_default_hidden(self):
+        curve = hv.Curve([1, 2, 3], label="A")
+        state = self._get_plot_state(curve)
+        assert state["data"][0]["showlegend"] is False
+        assert state["layout"].get("showlegend") is None
+
+    def test_element_legend_single_labeled_disabled(self):
+        curve = hv.Curve([1, 2, 3], label="A").opts(show_legend=False)
+        state = self._get_plot_state(curve)
+        assert state["data"][0]["showlegend"] is False
+        assert state["layout"].get("showlegend") is None
+
     ### Axis labelling ###
 
     def test_element_plot_xlabel(self):

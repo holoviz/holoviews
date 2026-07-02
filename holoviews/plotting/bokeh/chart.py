@@ -18,7 +18,7 @@ from ...util.transform import dim
 from ...util.warnings import warn
 from ..mixins import AreaMixin, BarsMixin, DonutMixin, SpikesMixin, WaterfallMixin
 from ..util import get_min_distance, rgb2hex
-from .element import ColorbarPlot, CompositeElementPlot, ElementPlot, LegendPlot, OverlayPlot
+from .element import ColorbarPlot, CompositeElementPlot, LegendPlot, OverlayPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import (
     base_properties,
@@ -386,7 +386,7 @@ class VectorFieldPlot(ColorbarPlot):
         return data, mapping, style
 
 
-class CurvePlot(ElementPlot):
+class CurvePlot(LegendPlot):
     padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
     interpolation = param.Selector(
@@ -465,7 +465,7 @@ class CurvePlot(ElementPlot):
         return data, mapping, style
 
 
-class HistogramPlot(ColorbarPlot):
+class HistogramPlot(ColorbarPlot, LegendPlot):
     selection_display = BokehOverlaySelectionDisplay(color_prop=["color", "fill_color"])
 
     style_opts = base_properties + fill_properties + line_properties + ["cmap"]
@@ -613,7 +613,7 @@ class SideHistogramPlot(HistogramPlot):
         return ret
 
 
-class ErrorPlot(ColorbarPlot):
+class ErrorPlot(ColorbarPlot, LegendPlot):
     selected = param.List(
         default=None,
         doc="""
@@ -680,7 +680,7 @@ class ErrorPlot(ColorbarPlot):
         return None, glyph
 
 
-class SpreadPlot(ElementPlot):
+class SpreadPlot(LegendPlot):
     padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
     selection_display = BokehOverlaySelectionDisplay()
@@ -775,11 +775,6 @@ class SpikesPlot(SpikesMixin, ColorbarPlot):
     position = param.Number(
         default=0.0,
         doc="The position of the lower end of each spike.",
-    )
-
-    show_legend = param.Boolean(
-        default=True,
-        doc="Whether to show legend for the plot.",
     )
 
     selection_display = BokehOverlaySelectionDisplay()
@@ -974,7 +969,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         # Enable legend if colormapper is categorical
         legend_prop = "legend_field"
-        if self.show_legend and is_categorical:
+        if self.show_legend is not False and is_categorical:
             mapping[legend_prop] = cdim.name
 
         if not self.stacked and ds.ndims > 1 and self.multi_level:
@@ -1545,7 +1540,7 @@ class DonutPlot(DonutMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
             end_angle="end_angle",
             fill_color={"field": kdim_san, "transform": cmapper},
         )
-        if self.show_legend:
+        if self.show_legend is not False:
             map_wedge["legend_field"] = kdim_san
 
         # --- text label data & mapping -----------------------------------

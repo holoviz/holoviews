@@ -130,6 +130,11 @@ class PathPlot(ColorbarPlot):
 
 
 class ContourPlot(PathPlot):
+    show_legend = param.Boolean(
+        default=None,
+        doc="Whether to show legend for the plot.",
+    )
+
     def get_data(self, element, ranges, style):
         if isinstance(element, Polygons):
             color_prop = "facecolors"

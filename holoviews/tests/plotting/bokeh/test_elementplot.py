@@ -986,6 +986,33 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         el = hv.Curve(df)
         assert isinstance(hv.render(el).below[0], TimedeltaAxis)
 
+    def test_element_legend_single_labeled(self):
+        curve = hv.Curve([1, 2, 3], label="A").opts(show_legend=True)
+        plot = bokeh_renderer.get_plot(curve)
+        (legend,) = plot.state.legend
+        assert [item.label["value"] for item in legend.items] == ["A"]
+
+    def test_element_legend_single_labeled_position(self):
+        curve = hv.Curve([1, 2, 3], label="A").opts(show_legend=True, legend_position="top_left")
+        plot = bokeh_renderer.get_plot(curve)
+        (legend,) = plot.state.legend
+        assert legend.location == "top_left"
+
+    def test_element_legend_single_labeled_default_hidden(self):
+        curve = hv.Curve([1, 2, 3], label="A")
+        plot = bokeh_renderer.get_plot(curve)
+        assert all(not legend.items for legend in plot.state.legend)
+
+    def test_element_legend_single_labeled_disabled(self):
+        curve = hv.Curve([1, 2, 3], label="A").opts(show_legend=False)
+        plot = bokeh_renderer.get_plot(curve)
+        assert all(not legend.items for legend in plot.state.legend)
+
+    def test_element_legend_single_unlabeled(self):
+        curve = hv.Curve([1, 2, 3]).opts(show_legend=True)
+        plot = bokeh_renderer.get_plot(curve)
+        assert all(not legend.items for legend in plot.state.legend)
+
 
 @pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.skipif(not BOKEH_GE_3_4_0, reason="requires Bokeh >= 3.4")
@@ -1284,6 +1311,12 @@ class TestOverlayPlot(TestBokehPlot):
         legend = plot.state.legend
         assert legend.background_fill_alpha == 0.5
         assert legend.background_fill_color == "red"
+
+    def test_overlay_legend_single_entry_forced(self):
+        overlay = hv.Overlay([hv.Curve([1, 2, 3], label="A")]).opts(show_legend=True)
+        plot = bokeh_renderer.get_plot(overlay)
+        (legend,) = plot.state.legend
+        assert [item.label["value"] for item in legend.items] == ["A"]
 
     def test_active_tools_drag(self):
         curve = hv.Curve([1, 2, 3])

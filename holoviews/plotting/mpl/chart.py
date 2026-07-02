@@ -34,7 +34,7 @@ class ChartPlot(ElementPlot):
     """Baseclass to plot Chart elements."""
 
 
-class CurvePlot(ChartPlot):
+class CurvePlot(ChartPlot, LegendPlot):
     """CurvePlot can plot Curve and ViewMaps of Curve, which can be
     displayed as a single frame or animation. Axes, titles and legends
     are automatically generated from dim_info.
@@ -73,11 +73,6 @@ class CurvePlot(ChartPlot):
     show_grid = param.Boolean(
         default=False,
         doc="Enable axis grid.",
-    )
-
-    show_legend = param.Boolean(
-        default=True,
-        doc="Whether to show legend for the plot.",
     )
 
     style_opts = ["alpha", "color", "visible", "linewidth", "linestyle", "marker", "ms"]
@@ -121,7 +116,7 @@ class CurvePlot(ChartPlot):
         return axis_kwargs
 
 
-class ErrorPlot(ColorbarPlot):
+class ErrorPlot(ColorbarPlot, LegendPlot):
     """ErrorPlot plots the ErrorBar Element type and supporting
     both horizontal and vertical error bars via the 'horizontal'
     plot option.
@@ -231,13 +226,8 @@ class ErrorPlot(ColorbarPlot):
         return axis_kwargs
 
 
-class AreaPlot(AreaMixin, ChartPlot):
+class AreaPlot(AreaMixin, ChartPlot, LegendPlot):
     padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
-
-    show_legend = param.Boolean(
-        default=False,
-        doc="Whether to show legend for the plot.",
-    )
 
     style_opts = [
         "color",
@@ -307,11 +297,6 @@ class SpreadPlot(AreaPlot):
 
     padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
-    show_legend = param.Boolean(
-        default=False,
-        doc="Whether to show legend for the plot.",
-    )
-
     def __init__(self, element, **params):
         super().__init__(element, **params)
 
@@ -329,7 +314,7 @@ class SpreadPlot(AreaPlot):
         return ChartPlot.get_extents(self, element, ranges, range_type)
 
 
-class HistogramPlot(ColorbarPlot):
+class HistogramPlot(ColorbarPlot, LegendPlot):
     """HistogramPlot can plot DataHistograms and ViewMaps of
     DataHistograms, which can be displayed as a single frame or
     animation.
@@ -400,7 +385,7 @@ class HistogramPlot(ColorbarPlot):
                 )
 
         # Plot bars and make any adjustments
-        legend = hist.label if self.show_legend else ""
+        legend = hist.label if self.show_legend is not False else ""
         bars = self.plotfn(
             edges, hvals, widths, zorder=self.zorder, label=legend, align="edge", **style
         )
@@ -856,11 +841,6 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         doc="Whether the bars should be stacked or grouped.",
     )
 
-    show_legend = param.Boolean(
-        default=True,
-        doc="Whether to show legend for the plot.",
-    )
-
     style_opts = [
         "alpha",
         "color",
@@ -1083,7 +1063,11 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             title = cdim.pprint_label
             if self.multi_level:
                 ax_dims.append(cdim)
-        if self.show_legend and any(len(l) for l in labels) and (sdim or not self.multi_level):
+        if (
+            self.show_legend is not False
+            and any(len(l) for l in labels)
+            and (sdim or not self.multi_level)
+        ):
             leg_spec = self.legend_specs[self.legend_position]
             if self.legend_cols:
                 leg_spec["ncol"] = self.legend_cols
@@ -1555,11 +1539,6 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         (e.g. '{Category}: {Amount}').""",
     )
 
-    show_legend = param.Boolean(
-        default=True,
-        doc="Whether to show legend for the plot.",
-    )
-
     start_angle = param.Number(
         default=0,
         doc="Rotation offset in radians for the first wedge.",
@@ -1686,7 +1665,7 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
             )
 
         # Legend
-        if self.show_legend and n > 0:
+        if self.show_legend is not False and n > 0:
             handles = [
                 Patch(facecolor=colors[i], edgecolor="none", label=display_labels[i])
                 for i in range(n)
