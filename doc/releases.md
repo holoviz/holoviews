@@ -2,6 +2,19 @@
 
 ## Version 1.23
 
+### Version 1.23.1
+
+**July 2, 2026**
+
+This patch release includes a number of bug fixes. Thanks to [@hoxbro](https://github.com/hoxbro) for their contributions.
+
+Bug Fixes:
+
+- Avoid memory leak from `hv.streams` when using `partial.functools` with methods ([#6941](https://github.com/holoviz/holoviews/pull/6941))
+- Allow dictionary as an `cmap` input for categorical data with the Plotly backend ([#6940](https://github.com/holoviz/holoviews/pull/6940))
+- Fix `rasterize` on `hv.Spread` swapped order of positive and negative error bars ([#6933](https://github.com/holoviz/holoviews/pull/6933))
+- Support stacked `hv.Bars` with narwhals backend ([#6930](https://github.com/holoviz/holoviews/pull/6930))
+
 ### Version 1.23.0
 
 **June 24, 2026**
