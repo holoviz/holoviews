@@ -147,6 +147,29 @@ class TestCallbacks(CallbackTestCase):
         bokeh_renderer.get_plot(points)
         assert stream.index == [0, 2]
 
+    async def test_popup_skips_partial_selection_event(self, monkeypatch):
+        callback = object.__new__(TapCallback)
+        callback._panel = object()
+        callback._selection_event = None
+        processed = []
+        event = namedtuple("Event", "final")
+
+        async def on_msg(_self, _msg):
+            pass
+
+        async def process_selection_event():
+            processed.append(callback._selection_event)
+
+        monkeypatch.setattr(Callback, "on_msg", on_msg)
+        monkeypatch.setattr(callback, "_process_selection_event", process_selection_event)
+        await callback.on_msg({})
+        callback._selection_event = event(False)
+        await callback.on_msg({})
+        callback._selection_event = event(True)
+        await callback.on_msg({})
+
+        assert [event.final if event else None for event in processed] == [None, True]
+
 
 class TestResetCallback(CallbackTestCase):
     async def test_reset_callback(self):

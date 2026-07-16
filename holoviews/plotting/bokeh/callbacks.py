@@ -730,7 +730,7 @@ class PopupMixin:
     async def on_msg(self, msg):
         await super().on_msg(msg)
         if hasattr(self, "_panel") and (
-            self._selection_event is not None and self._selection_event.final
+            self._selection_event is None or self._selection_event.final
         ):
             await self._process_selection_event()
 
