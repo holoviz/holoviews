@@ -24,6 +24,8 @@ from holoviews.plotting.mpl import CurvePlot, MPLRenderer
 from holoviews.plotting.renderer import Renderer
 from holoviews.streams import Stream
 
+from ..._deps import notebook_skip
+
 
 class MPLRendererTest:
     """
@@ -271,3 +273,34 @@ class TestAnimationBbox:
         h_px = int(fig.get_size_inches()[1] * dpi)
         assert w_px % 2 == 0
         assert h_px % 2 == 0
+
+
+@notebook_skip
+@pytest.mark.parametrize(
+    "cell_code",
+    [
+        """
+        import matplotlib as mpl
+        print(mpl.get_backend())
+        """,
+        """
+        import matplotlib as mpl
+        import holoviews as hv
+        hv.extension("matplotlib")
+        print(mpl.get_backend())
+        """,
+    ],
+    ids=["plain", "with_holoviews"],
+)
+def test_backend_jupyter_default(cell_code):
+    import nbformat
+    from nbclient import NotebookClient
+
+    nb = nbformat.v4.new_notebook()
+    nb.cells = [nbformat.v4.new_code_cell(cell_code)]
+
+    client = NotebookClient(nb)
+    client.execute()
+
+    output = nb.cells[0].outputs[-1]["text"].strip()
+    assert output == "module://matplotlib_inline.backend_inline"
