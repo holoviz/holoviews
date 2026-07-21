@@ -293,7 +293,7 @@ class Annotator(PaneBase):
         super().__init__(None, **params)
         self.object = self._process_element(object)
         self._table_row = Row()
-        self.editor = Tabs((f"{param_name(self.name)}", self._table_row))
+        self.editor = Tabs((f"{param_name(t.cast('str', self.name))}", self._table_row))
         self.plot = DynamicMap(self._get_plot)
         self.plot.callback.inputs[:] = [self.object]
         self._tables = []
@@ -338,7 +338,7 @@ class Annotator(PaneBase):
         object = self.object
         for transform in self.table_transforms:
             object = transform(object)
-        self._table = Table(object, label=param_name(self.name)).opts(
+        self._table = Table(object, label=param_name(t.cast("str", self.name))).opts(
             show_title=False, **self.table_opts
         )
         self._update_links()
