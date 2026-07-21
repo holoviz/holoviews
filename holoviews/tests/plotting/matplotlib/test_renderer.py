@@ -276,6 +276,7 @@ class TestAnimationBbox:
 
 
 @jupyter_skip
+@pytest.mark.skipif(sys.platform == "win32", reason="zmq does not work with Proactor event loop")
 @pytest.mark.parametrize(
     "cell_code",
     [
