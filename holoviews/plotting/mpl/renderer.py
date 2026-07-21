@@ -31,6 +31,12 @@ ANIMATION_OPTS = {
     "scrubber": ("html", None, {"fps": 5}, None),
 }
 
+_MPL_BACKENDS_ALLOWLIST = [
+    "agg",
+    "module://ipykernel.pylab.backend_inline",
+    "module://matplotlib_inline.backend_inline",
+]
+
 
 class MPLRenderer(Renderer):
     """Exporter used to render data from matplotlib, either to a stream
@@ -327,5 +333,5 @@ class MPLRenderer(Renderer):
         import matplotlib.pyplot as plt
 
         backend = plt.get_backend()
-        if backend not in ["agg", "module://ipykernel.pylab.backend_inline"]:
+        if backend not in _MPL_BACKENDS_ALLOWLIST:
             plt.switch_backend("agg")
