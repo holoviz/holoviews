@@ -24,7 +24,7 @@ from holoviews.plotting.mpl import CurvePlot, MPLRenderer
 from holoviews.plotting.renderer import Renderer
 from holoviews.streams import Stream
 
-from ..._deps import notebook_skip
+from ..._deps import jupyter_skip
 
 
 class MPLRendererTest:
@@ -275,7 +275,7 @@ class TestAnimationBbox:
         assert h_px % 2 == 0
 
 
-@notebook_skip
+@jupyter_skip
 @pytest.mark.parametrize(
     "cell_code",
     [
