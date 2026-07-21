@@ -336,11 +336,49 @@ class Area(Curve):
 
     group = param.String(default="Area", constant=True)
 
+    @staticmethod
+    def _stack_offset(y, offset):
+        """Compute the lowest baseline for a stack of layers.
+
+        ``y`` is a (layers, samples) array of layer heights in stacking
+        order. Returns the y-position of the bottom of the first layer,
+        following the baselines described in Byron & Wattenberg, "Stacked
+        Graphs - Geometry & Aesthetics".
+
+        """
+        if offset == "sym":
+            return -np.sum(y, 0) * 0.5
+        if offset == "wiggle":
+            m = y.shape[0]
+            return -(y * (m - 0.5 - np.arange(m)[:, None])).sum(0) / m
+        if offset == "weighted_wiggle":
+            total = np.sum(y, 0)
+            # Multiply by 1/total (or zero) to avoid infinities in the division
+            inv_total = np.zeros_like(total)
+            mask = total > 0
+            inv_total[mask] = 1.0 / total[mask]
+            increase = np.hstack((y[:, 0:1], np.diff(y)))
+            below_size = total - np.cumsum(y, 0) + 0.5 * y
+            move_up = below_size * inv_total
+            move_up[:, 0] = 0.5
+            center = np.cumsum(((move_up - 0.5) * increase).sum(0))
+            return center - 0.5 * total
+        raise ValueError(
+            f"Invalid offset {offset!r}, must be one of 'zero', 'sym', 'wiggle' "
+            f"or 'weighted_wiggle'."
+        )
+
     @classmethod
-    def stack(cls, areas, baseline_name="Baseline"):
+    def stack(cls, areas, baseline_name="Baseline", offset="zero"):
         """Stacks an (Nd)Overlay of Area or Curve Elements by offsetting
         their baselines. To stack a HoloMap or DynamicMap use the map
         method.
+
+        The offset controls where the lowest baseline sits: 'zero' for a
+        conventional stacked area chart, 'sym' to center the stack on
+        zero (also called a ThemeRiver), and 'wiggle' or
+        'weighted_wiggle' to minimize the slope of the layers, producing
+        a streamgraph.
 
         """
         if not len(areas):
@@ -351,23 +389,31 @@ class Area(Curve):
         df = areas.dframe(multi_index=True)
         levels = list(range(areas.ndims))
         vdims = [[el.vdims[0], baseline_name] for el in areas]
-        baseline = None
         stacked = areas.clone(shared_data=False)
         if len(levels) == 1:
             # Pandas 2.1 gives the following FutureWarning:
             #   Creating a Groupby object with a length-1 list-like level parameter
             #   will yield indexes as tuples in a future version.
             levels = levels[0]
-        for (key, sdf), element_vdims in zip(
-            df.groupby(level=levels, sort=False), vdims, strict=None
-        ):
+        index = df.index.unique(-1)
+        groups = [
+            (key, sdf.droplevel(levels).reindex(index=index, fill_value=0))
+            for key, sdf in df.groupby(level=levels, sort=False)
+        ]
+        if offset == "zero":
+            baseline = 0
+        else:
+            ys = np.vstack(
+                [
+                    sdf[element_vdims[0].name].to_numpy(dtype=float)
+                    for (_, sdf), element_vdims in zip(groups, vdims, strict=None)
+                ]
+            )
+            baseline = cls._stack_offset(ys, offset)
+        for (key, sdf), element_vdims in zip(groups, vdims, strict=None):
             vdim = element_vdims[0]
-            sdf = sdf.droplevel(levels).reindex(index=df.index.unique(-1), fill_value=0)
-            if baseline is None:
-                sdf[baseline_name] = 0
-            else:
-                sdf[vdim.name] = sdf[vdim.name] + baseline
-                sdf[baseline_name] = baseline
+            sdf[vdim.name] = sdf[vdim.name] + baseline
+            sdf[baseline_name] = baseline
             baseline = sdf[vdim.name]
             stacked[key] = areas[key].clone(sdf, vdims=element_vdims)
         return Overlay(stacked.values()) if is_overlay else stacked
