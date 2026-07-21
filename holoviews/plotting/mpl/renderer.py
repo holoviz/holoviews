@@ -272,15 +272,16 @@ class MPLRenderer(Renderer):
         bbox_inches = get_tight_bbox(fig, extra_artists, pad=pad)
 
         orig_w, orig_h = fig.get_size_inches()
-        new_w = bbox_inches.width
-        new_h = bbox_inches.height
+
+        # Use round to avoid floating point error
+        pw, ph = round(bbox_inches.width * dpi), round(bbox_inches.height * dpi)
 
         # Video codecs like libx264 require even pixel dimensions.
         # Round up to the nearest even number of pixels for video formats.
         if fmt in ("mp4", "webm"):
-            pw, ph = int(new_w * dpi), int(new_h * dpi)
-            new_w = (pw + pw % 2) / dpi
-            new_h = (ph + ph % 2) / dpi
+            pw, ph = pw + pw % 2, ph + ph % 2
+
+        new_w, new_h = pw / dpi, ph / dpi
 
         # Compute how to transform positions from old figure coordinates
         # to new figure coordinates. The tight bbox defines the visible
