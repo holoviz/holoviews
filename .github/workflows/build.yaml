@@ -71,7 +71,7 @@ jobs:
           token: ${{ secrets.CONDA_UPLOAD_TOKEN }}
           channel: pyviz
           packages: dist/*.conda
-          label: ${{ (contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc')) && 'dev' || 'main,dev' }}
+          labels: ${{ (contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc')) && 'dev' || 'main,dev' }}
 
   pip_build:
     name: Build PyPI
