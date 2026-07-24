@@ -4,6 +4,7 @@ Unit test of the streams system
 
 from __future__ import annotations
 
+import gc
 import weakref
 from collections import defaultdict
 from functools import partial
@@ -866,6 +867,53 @@ class TestWeakSubscriber:
         assert len(subscribers) == 2
         viewer.stream.event(index=[0])
         assert sorted(kwargs["tag"] for _, kwargs in viewer.calls) == ["a", "b"]
+
+    @staticmethod
+    def _destroy_session(doc):
+        for callback in list(doc.callbacks._session_destroyed_callbacks):
+            callback(None)
+        doc.callbacks._session_destroyed_callbacks.clear()
+
+    def test_served_session_keeps_subscriber_alive(self):
+        # In a served session a subscriber whose instance is only reachable
+        # through the subscription must stay alive and fire (#6945).
+        from bokeh.document import Document
+        from panel.io.state import set_curdoc
+
+        doc = Document()
+
+        def make():
+            with set_curdoc(doc):
+                viewer = self._make_viewer(lambda method: partial(method, value="value"))
+            return viewer.stream, weakref.ref(viewer)
+
+        stream, ref = make()
+        gc.collect()
+        assert ref() is not None
+        assert all(bool(s) for s in stream.subscribers)
+        stream.event(index=[0])
+        assert ref().calls == [((), {"index": [0], "value": "value"})]
+
+    def test_session_destroyed_releases_subscriber(self):
+        # Destroying the session releases the strong reference so the instance
+        # can be garbage collected (#6934).
+        from bokeh.document import Document
+        from panel.io.state import set_curdoc
+
+        doc = Document()
+
+        def make():
+            with set_curdoc(doc):
+                viewer = self._make_viewer(lambda method: partial(method, value="value"))
+            return weakref.ref(viewer)
+
+        ref = make()
+        gc.collect()
+        assert ref() is not None  # kept alive for the session
+
+        self._destroy_session(doc)
+        gc.collect()
+        assert ref() is None
 
 
 class TestStreamSource:

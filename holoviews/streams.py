@@ -107,6 +107,30 @@ class _WeakSubscriber:
         return self._hash
 
 
+def _keep_subscriber_alive(subscriber):
+    """Keep a strong reference to a weakly-referenced subscriber for the
+    lifetime of a served Panel session.
+
+    Method subscribers are held weakly (see ``_WeakSubscriber``) so the objects
+    they are bound to can be garbage collected once a session ends, avoiding the
+    leak in #6934. But when the bound object is *only* reachable through the
+    subscription -- common for ``pn.viewable.Viewer`` apps -- it would be
+    collected immediately and the subscriber would never fire (#6945). Tying a
+    strong reference to the current session's document keeps the subscriber
+    working while the plot is displayed and releases it when the session is
+    destroyed. Outside a served session (e.g. notebooks) there is no document to
+    tie to and the weak reference is used as-is.
+    """
+    import panel as pn
+
+    doc = pn.state.curdoc
+    if doc is None or not hasattr(doc, "on_session_destroyed"):
+        return
+    # The closure over ``subscriber`` is held by the document until the session
+    # is destroyed, at which point it -- and the subscriber -- are released.
+    doc.on_session_destroyed(lambda context, _sub=subscriber: None)
+
+
 @contextmanager
 def triggering_streams(streams):
     """Temporarily declares the streams as being in a triggered state.
@@ -437,6 +461,7 @@ class Stream(param.Parameterized):
         if not callable(subscriber):
             raise TypeError("Subscriber must be a callable.")
         if _WeakSubscriber.check(subscriber):
+            _keep_subscriber_alive(subscriber)
             subscriber = _WeakSubscriber(subscriber)
         self._subscribers.append((precedence, subscriber))
 
