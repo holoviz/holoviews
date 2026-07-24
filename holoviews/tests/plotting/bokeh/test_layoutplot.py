@@ -4,7 +4,7 @@ import datetime as dt
 import re
 
 import numpy as np
-from bokeh.models import Div, GlyphRenderer, GridPlot, Spacer, Tabs, Title, Toolbar
+from bokeh.models import Div, GlyphRenderer, GridPlot, Plot, Spacer, Tabs, Title, Toolbar
 from bokeh.models.layouts import TabPanel
 from bokeh.plotting import figure
 
@@ -342,6 +342,17 @@ class TestLayoutPlot(LoggingComparison, TestBokehPlot):
         x_range2, y_range2 = plot2.handles["x_range"], plot2.handles["y_range"]
         assert x_range1 is x_range2
         assert y_range1 is y_range2
+
+    def test_shared_axes_categorical(self):
+        xs = [f"cat{i}" for i in range(5)]
+        c1 = hv.Curve((xs, [1, 2, 3, 4, 5]), "x", "y1")
+        c2 = hv.Curve((xs, [5, 4, 3, 2, 1]), "x", "y2")
+
+        layout = (c1 + c2).opts(shared_axes=True)
+        model = hv.render(layout, backend="bokeh")
+
+        figs = list(model.select(dict(type=Plot)))
+        assert len({id(f.x_range) for f in figs}) == 1
 
     def test_shared_axes_disable(self):
         curve = hv.Curve(range(10))
