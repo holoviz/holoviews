@@ -598,7 +598,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 axis.set_ticklabels(labels)
         for tick in axis.get_ticklabels():
             tick.set_rotation(rotation)
-            if axis.axis_name in "xy":
+            if MPL_GE_3_11_0 and axis.axis_name in "xy":
                 tick.set_rotation_mode(f"{axis.axis_name}tick")
 
     @mpl_rc_context

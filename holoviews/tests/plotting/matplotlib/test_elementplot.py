@@ -10,6 +10,7 @@ from matplotlib.projections import PolarAxes
 from matplotlib.ticker import FormatStrFormatter, FuncFormatter, PercentFormatter
 
 import holoviews as hv
+from holoviews.plotting.mpl.util import MPL_GE_3_11_0
 from holoviews.streams import Stream
 from holoviews.testing import assert_data_equal
 
@@ -201,9 +202,10 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
         plot = mpl_renderer.get_plot(heat_map)
         ax = plot.handles["axis"]
         assert {ticklabel.get_rotation() for ticklabel in ax.get_xticklabels()} == {30}
-        assert {ticklabel.get_rotation_mode() for ticklabel in ax.get_xticklabels()} == {"xtick"}
         assert {ticklabel.get_rotation() for ticklabel in ax.get_yticklabels()} == {60}
-        assert {ticklabel.get_rotation_mode() for ticklabel in ax.get_yticklabels()} == {"ytick"}
+        if MPL_GE_3_11_0:
+            assert {ticklabel.get_rotation_mode() for ticklabel in ax.get_xticklabels()} == {"xtick"}
+            assert {ticklabel.get_rotation_mode() for ticklabel in ax.get_yticklabels()} == {"ytick"}
 
     #################################################################
     # Custom opts tests
