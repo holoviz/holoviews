@@ -25,7 +25,7 @@ repos:
     rev: 2e6f506fab3cdfbe16bc18fd0d24e828db773b74 # frozen: v0.2.1
     hooks:
       - id: clean-notebook
-        args: [--strip-trailing-newlines]
+        args: [--strip-trailing-newlines, --ignore, tags]
   - repo: https://github.com/crate-ci/typos
     rev: bee27e3a4fd1ea2111cf90ab89cd076c870fce14 # frozen: v1.48.0
     hooks:
