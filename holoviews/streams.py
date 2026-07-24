@@ -56,13 +56,10 @@ class _SkipTrigger:
 
 class _WeakSubscriber:
     def __init__(self, subscriber):
-        if inspect.ismethod(subscriber):
-            self._ref = weakref.WeakMethod(subscriber)
-        else:
-            self._ref = weakref.ref(subscriber)
-
-        self._hash = self._generate_hash(subscriber)
-        self._is_param_method = util.is_param_method(subscriber)
+        method, self._args, self._kwargs = self._unwrap(subscriber)
+        self._ref = weakref.WeakMethod(method)
+        self._is_param_method = util.is_param_method(method)
+        self._hash = self._generate_hash(method, self._args, self._kwargs)
 
     def __bool__(self) -> bool:
         method = self._ref()
@@ -71,7 +68,16 @@ class _WeakSubscriber:
     def __call__(self, *args, **kwargs):
         method = self._ref()
         if method is not None:
-            return method(*args, **kwargs)
+            return method(*self._args, *args, **{**self._kwargs, **kwargs})
+
+    @staticmethod
+    def _unwrap(method):
+        args, kwargs = (), {}
+        while isinstance(method, partial):
+            args = method.args + args
+            kwargs = {**method.keywords, **kwargs}
+            method = method.func
+        return method, args, kwargs
 
     @staticmethod
     def check(subscriber):
@@ -80,17 +86,21 @@ class _WeakSubscriber:
         return inspect.ismethod(subscriber)
 
     @staticmethod
-    def _generate_hash(subscriber) -> int:
-        if inspect.ismethod(subscriber):
-            return hash((id(subscriber.__func__), id(subscriber.__self__)))
-        else:
-            return hash(id(subscriber))
+    def _generate_hash(method, args, kwargs) -> int:
+        return hash(
+            (
+                id(method.__func__),
+                id(method.__self__),
+                tuple(map(id, args)),
+                tuple((k, id(v)) for k, v in kwargs.items()),
+            )
+        )
 
     def __eq__(self, other) -> bool:
         if isinstance(other, _WeakSubscriber):
             return self._hash == other._hash
         if self.check(other):
-            return self._hash == self._generate_hash(other)
+            return self._hash == self._generate_hash(*self._unwrap(other))
         return NotImplemented
 
     def __hash__(self) -> int:
