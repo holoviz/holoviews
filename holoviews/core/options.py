@@ -52,6 +52,8 @@ from .tree import AttrTree
 from .util import group_sanitizer, label_sanitizer, sanitize_identifier
 
 if t.TYPE_CHECKING:
+    from holoviews.plotting import Renderer
+
     from ..util import _BackendT
     from ..util.settings import OutputSettings
 
@@ -1193,7 +1195,7 @@ class Store:
 
     """
 
-    renderers = {}  # The set of available Renderers across all backends.
+    renderers: dict[str, Renderer] = {}  # The set of available Renderers across all backends.
 
     # A mapping from ViewableElement types to their corresponding plot
     # types grouped by the backend. Set using the register method.

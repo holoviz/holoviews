@@ -196,6 +196,15 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
         assert isinstance(ax, PolarAxes)
         assert ax.get_xlim() == (0, 2 * np.pi)
 
+    def test_element_tick_label_rotation(self):
+        heat_map = hv.HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(xrotation=30, yrotation=60)
+        plot = mpl_renderer.get_plot(heat_map)
+        ax = plot.handles["axis"]
+        assert {ticklabel.get_rotation() for ticklabel in ax.get_xticklabels()} == {30}
+        assert {ticklabel.get_rotation_mode() for ticklabel in ax.get_xticklabels()} == {"xtick"}
+        assert {ticklabel.get_rotation() for ticklabel in ax.get_yticklabels()} == {60}
+        assert {ticklabel.get_rotation_mode() for ticklabel in ax.get_yticklabels()} == {"ytick"}
+
     #################################################################
     # Custom opts tests
     #################################################################
