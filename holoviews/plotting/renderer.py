@@ -253,7 +253,7 @@ class Renderer(Exporter):
             return data, info
 
     @bothmethod
-    def get_plot(self_or_cls, obj, doc=None, renderer=None, comm=None, **kwargs):
+    def get_plot(self_or_cls, obj, doc=None, renderer=None, comm=None, **kwargs) -> Plot:
         """Given a HoloViews Viewable return a corresponding plot instance."""
         if isinstance(obj, DynamicMap) and obj.unbounded:
             dims = ", ".join(f"{dim!r}" for dim in obj.unbounded)

@@ -4,6 +4,7 @@ import copy
 import math
 import warnings
 from types import FunctionType
+from typing import TYPE_CHECKING
 
 import matplotlib.colors as mpl_colors
 import numpy as np
@@ -31,6 +32,10 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import color_intervals, dim_range_key, process_cmap
 from .plot import MPLPlot, mpl_rc_context
 from .util import MPL_GE_3_11_0, MPL_VERSION, EqHistNormalize, validate, wrap_formatter
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+    from matplotlib.axis import Axis
 
 
 class ElementPlot(GenericElementPlot, MPLPlot):
@@ -249,7 +254,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         super()._execute_hooks(element)
         self._update_backend_opts()
 
-    def _finalize_ticks(self, axis, dimensions, xticks, yticks, zticks):
+    def _finalize_ticks(self, axis: Axes, dimensions, xticks, yticks, zticks):
         """Finalizes the ticks on the axes based on the supplied ticks
         and Elements. Sets the axes position as well as tick positions,
         labels and fontsize.
@@ -560,7 +565,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             )
             axes.spines[pos].set_visible(False)
 
-    def _set_axis_ticks(self, axis, ticks, log=False, rotation=0):
+    def _set_axis_ticks(self, axis: Axis, ticks, log=False, rotation=0):
         """Allows setting the ticks for a particular axis either with
         a tuple of ticks, a tick locator object, an integer number
         of ticks, a list of tuples containing positions and labels
@@ -593,6 +598,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 axis.set_ticklabels(labels)
         for tick in axis.get_ticklabels():
             tick.set_rotation(rotation)
+            if MPL_GE_3_11_0 and axis.axis_name in "xy":
+                tick.set_rotation_mode(f"{axis.axis_name}tick")
 
     @mpl_rc_context
     def update_frame(self, key, ranges=None, element=None):
