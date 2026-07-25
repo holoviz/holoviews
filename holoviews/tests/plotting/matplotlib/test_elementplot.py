@@ -203,9 +203,10 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
         ax = plot.handles["axis"]
         assert {ticklabel.get_rotation() for ticklabel in ax.get_xticklabels()} == {30}
         assert {ticklabel.get_rotation() for ticklabel in ax.get_yticklabels()} == {60}
-        if MPL_GE_3_11_0:
-            assert {ticklabel.get_rotation_mode() for ticklabel in ax.get_xticklabels()} == {"xtick"}
-            assert {ticklabel.get_rotation_mode() for ticklabel in ax.get_yticklabels()} == {"ytick"}
+        if not MPL_GE_3_11_0:
+            return
+        assert {ticklabel.get_rotation_mode() for ticklabel in ax.get_xticklabels()} == {"xtick"}
+        assert {ticklabel.get_rotation_mode() for ticklabel in ax.get_yticklabels()} == {"ytick"}
 
     #################################################################
     # Custom opts tests
