@@ -15,7 +15,7 @@ class LabelPlot(ScatterPlot):
 
     yoffset = param.Number(
         default=None,
-        doc="Amount of offset to apply to labels along x-axis.",
+        doc="Amount of offset to apply to labels along y-axis.",
     )
 
     style_opts = ["visible", "color", "family", "size"]
