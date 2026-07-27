@@ -1017,6 +1017,20 @@ class DatashaderShadeTests:
         )
         assert_element_equal(shaded, expected)
 
+    @pytest.mark.parametrize("aggregator", list(AggregationOperation._agg_methods))
+    def test_datashade_empty_points_transparent(self, aggregator):
+        points = hv.Points([], vdims="val")
+        img = datashade(
+            points,
+            dynamic=False,
+            x_range=(0, 1),
+            y_range=(0, 1),
+            width=2,
+            height=2,
+            aggregator=aggregator,
+        )
+        assert (img.dimension_values("A") == 0).all()
+
     def test_shade_dt_xaxis_constant_yaxis(self):
         df = pd.DataFrame(
             {"y": np.ones(100)}, index=pd.date_range("1980-01-01", periods=100, freq="1min")
