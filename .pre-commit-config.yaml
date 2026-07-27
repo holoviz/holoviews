@@ -17,7 +17,7 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: c59bba8fb259db0fec2bbb77ad8ba51ea7341b56 # frozen: v0.15.20
+    rev: 2700fd5671c633760d912769c041bfcde2b9a01b # frozen: v0.15.22
     hooks:
       - id: ruff-check
       - id: ruff-format
@@ -35,7 +35,7 @@ repos:
     hooks:
       - id: shellcheck
   - repo: https://github.com/hoxbro/prettier-pre-commit
-    rev: 723303adce45b84f96dc1d9f1c697dc9d993ff7e # frozen: v3.9.4
+    rev: f2dfb6d98e1dd163dbf2bfee4cd79e0bb5e6e6bb # frozen: v3.9.5
     hooks:
       - id: prettier
         exclude: conda.recipe/meta.yaml|pull_request_template.md
