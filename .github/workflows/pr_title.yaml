@@ -15,7 +15,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: holoviz-dev/holoviz_tasks/validate-pr-title@1a9884850782b0b80ba2e91b573e7d63d9d3c3dc # v1.0.1
+      - uses: holoviz-dev/holoviz_tasks/validate-pr-title@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
         with:
           title: ${{ github.event.pull_request.title }}
           types: |
