@@ -504,16 +504,19 @@ class TestPlotColorUtils:
             process_cmap({"A", "B", "C"}, 3)
 
     @mpl_skip
-    def test_process_cmap_matplotlib_name_does_not_import_colorcet(self):
-        # Test for https://github.com/holoviz/holoviews/issues/6981
+    def test_process_cmap_imports_colorcet_lazily(self):
+        # Test for https://github.com/holoviz/holoviews/issues/6981. Needs a fresh
+        # interpreter: both properties are about colorcet not having been imported.
         check = """\
         import sys
         from holoviews.plotting.util import process_cmap
 
         process_cmap("viridis", 3)
-
         if "colorcet" in sys.modules:
-            print("colorcet", end="")
+            print("matplotlib name imported colorcet", end="")
+
+        # 'cet_' names resolve through matplotlib, so they must import colorcet
+        process_cmap("cet_fire", 3)
         """
 
         output = check_output([sys.executable, "-c", dedent(check)])
@@ -582,17 +585,8 @@ class TestMPLColormapUtils:
         assert colors == ["#440154", "#30678d", "#35b778", "#fde724"][::-1]
 
     def test_mpl_colormap_colorcet_prefixed(self):
-        # colorcet registers its colormaps with matplotlib under a 'cet_' prefix,
-        # which must resolve on the first call too, i.e. before anything else has
-        # imported colorcet. Run in a subprocess to get that clean state.
-        check = """\
-        from holoviews.plotting.util import process_cmap
-
-        print(process_cmap("cet_fire", 3), end="")
-        """
-
-        output = check_output([sys.executable, "-c", dedent(check)])
-        assert output == b"['#000000', '#ed1400', '#ffffff']"
+        colors = process_cmap("cet_fire", 3, provider="matplotlib")
+        assert colors == ["#000000", "#ed1400", "#ffffff"]
 
 
 @pytest.mark.usefixtures("bokeh_backend")

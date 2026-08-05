@@ -1057,6 +1057,10 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
     elif isinstance(cmap, list):
         palette = cmap
     elif isinstance(cmap, str):
+        if cmap.startswith("cet_"):
+            # colorcet registers its colormaps with matplotlib under a 'cet_' prefix,
+            # so matplotlib only knows these names once colorcet has been imported.
+            import colorcet  # noqa: F401
         # Providers are consulted in order and only until one claims the name, so
         # that a matplotlib or bokeh colormap does not pay for importing colorcet.
         if provider == "matplotlib" or (
@@ -1069,11 +1073,6 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
             palette = bokeh_palette_to_palette(cmap, ncolors, categorical)
         elif provider == "colorcet" or (provider is None and _provides_cmap("colorcet", cmap)):
             palette = colorcet_cmap_to_palette(cmap, ncolors, categorical)
-        elif provider is None and _provides_cmap("matplotlib", cmap, cmap.lower()):
-            # colorcet registers its colormaps with matplotlib under a 'cet_' prefix.
-            # Those names only become visible once the check above has imported it,
-            # so matplotlib is consulted a second time before giving up.
-            palette = mplcmap_to_palette(cmap, ncolors, categorical)
         else:
             raise ValueError(
                 f"Supplied cmap {cmap} not found among {providers_checked} colormaps."
