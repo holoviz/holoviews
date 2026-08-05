@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import sys
+from subprocess import check_output
+from textwrap import dedent
+
 import numpy as np
 import pytest
 
@@ -19,6 +23,8 @@ from holoviews.plotting.util import (
     split_dmap_overlay,
 )
 from holoviews.streams import PointerX
+
+from .._deps import mpl_skip
 
 
 class TestOverlayableZorders:
@@ -497,6 +503,22 @@ class TestPlotColorUtils:
         with pytest.raises(TypeError):
             process_cmap({"A", "B", "C"}, 3)
 
+    @mpl_skip
+    def test_process_cmap_matplotlib_name_does_not_import_colorcet(self):
+        # Test for https://github.com/holoviz/holoviews/issues/6981
+        check = """\
+        import sys
+        from holoviews.plotting.util import process_cmap
+
+        process_cmap("viridis", 3)
+
+        if "colorcet" in sys.modules:
+            print("colorcet", end="")
+        """
+
+        output = check_output([sys.executable, "-c", dedent(check)])
+        assert output == b""
+
 
 @pytest.mark.usefixtures("mpl_backend")
 class TestMPLColormapUtils:
@@ -558,6 +580,19 @@ class TestMPLColormapUtils:
     def test_mpl_colormap_perceptually_uniform_reverse(self):
         colors = mplcmap_to_palette("viridis_r", 4)
         assert colors == ["#440154", "#30678d", "#35b778", "#fde724"][::-1]
+
+    def test_mpl_colormap_colorcet_prefixed(self):
+        # colorcet registers its colormaps with matplotlib under a 'cet_' prefix,
+        # which must resolve on the first call too, i.e. before anything else has
+        # imported colorcet. Run in a subprocess to get that clean state.
+        check = """\
+        from holoviews.plotting.util import process_cmap
+
+        print(process_cmap("cet_fire", 3), end="")
+        """
+
+        output = check_output([sys.executable, "-c", dedent(check)])
+        assert output == b"['#000000', '#ed1400', '#ffffff']"
 
 
 @pytest.mark.usefixtures("bokeh_backend")

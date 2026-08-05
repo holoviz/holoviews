@@ -1040,6 +1040,12 @@ register_cmaps("Uniform Categorical", "colorcet", "cet", "dark", ["glasbey_light
 register_cmaps("Uniform Categorical", "colorcet", "cet", "light", ["glasbey_dark"])
 
 
+def _provides_cmap(provider, *names):
+    """Whether the provider offers a colormap under any of the given names."""
+    cmaps = _list_cmaps(provider)
+    return any(name in cmaps for name in names)
+
+
 def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
     """Convert valid colormap specifications to a list of colors."""
     providers_checked = "matplotlib, bokeh, or colorcet" if provider is None else provider
@@ -1051,19 +1057,23 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
     elif isinstance(cmap, list):
         palette = cmap
     elif isinstance(cmap, str):
-        mpl_cmaps = _list_cmaps("matplotlib")
-        bk_cmaps = _list_cmaps("bokeh")
-        cet_cmaps = _list_cmaps("colorcet")
+        # Providers are consulted in order and only until one claims the name, so
+        # that a matplotlib or bokeh colormap does not pay for importing colorcet.
         if provider == "matplotlib" or (
-            provider is None and (cmap in mpl_cmaps or cmap.lower() in mpl_cmaps)
+            provider is None and _provides_cmap("matplotlib", cmap, cmap.lower())
         ):
             palette = mplcmap_to_palette(cmap, ncolors, categorical)
         elif provider == "bokeh" or (
-            provider is None and (cmap in bk_cmaps or cmap.capitalize() in bk_cmaps)
+            provider is None and _provides_cmap("bokeh", cmap, cmap.capitalize())
         ):
             palette = bokeh_palette_to_palette(cmap, ncolors, categorical)
-        elif provider == "colorcet" or (provider is None and cmap in cet_cmaps):
+        elif provider == "colorcet" or (provider is None and _provides_cmap("colorcet", cmap)):
             palette = colorcet_cmap_to_palette(cmap, ncolors, categorical)
+        elif provider is None and _provides_cmap("matplotlib", cmap, cmap.lower()):
+            # colorcet registers its colormaps with matplotlib under a 'cet_' prefix.
+            # Those names only become visible once the check above has imported it,
+            # so matplotlib is consulted a second time before giving up.
+            palette = mplcmap_to_palette(cmap, ncolors, categorical)
         else:
             raise ValueError(
                 f"Supplied cmap {cmap} not found among {providers_checked} colormaps."
