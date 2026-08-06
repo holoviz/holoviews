@@ -816,8 +816,8 @@ class OperationTests:
 
     @dd_skip
     @pytest.mark.usefixtures("mpl_backend")
+    @pytest.mark.issue(5111)
     def test_histogram_dask_array_mpl(self):
-        # Regression test for https://github.com/holoviz/holoviews/issues/5111
         data = {
             "carrier": ["A", "A", "A", "A", "B", "B", "B", "B", "B"],
             "depdelay": [127.0, 3.0, -3.0, 19.0, 264.0, -6.0, 1.0, 2.0, 83.0],
@@ -1259,16 +1259,10 @@ class TestDendrogramOperation:
                 assert main1.y_range.factors == main2.y_range.factors[::-1]
                 assert main1.x_range.factors == main2.x_range.factors[::-1]
 
-    @pytest.mark.parametrize(
-        "adjoint_dims",
-        [
-            ["cluster"],
-            ["gene"],
-        ],
-        ids=["right", "top"],
-    )
+    @pytest.mark.parametrize("adjoint_dims", [["cluster"], ["gene"]], ids=["right", "top"])
+    @pytest.mark.issue(6625)
     def test_assure_non_adjoined_axis_is_unchanged_points(self, adjoint_dims):
-        # See: https://github.com/holoviz/holoviews/pull/6625#issuecomment-2981268665
+        # https://github.com/holoviz/holoviews/pull/6625#issuecomment-2981268665
         plot = hv.Points(self.df2, kdims=["gene", "cluster"])
         main1 = self.bokeh_renderer.get_plot(plot).handles["plot"]
 
@@ -1281,8 +1275,8 @@ class TestDendrogramOperation:
             case ["gene"]:
                 assert main1.y_range.factors == main2.y_range.factors
 
+    @pytest.mark.issue(6669)
     def test_assure_non_adjoined_axis_is_unchanged_heatmap(self):
-        # Follow up to previous test, see
         # https://github.com/holoviz/holoviews/pull/6669#issuecomment-3237153317
         plot = hv.HeatMap(self.ds)
         main1 = self.bokeh_renderer.get_plot(plot).handles["plot"]

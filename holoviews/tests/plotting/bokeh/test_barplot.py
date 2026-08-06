@@ -97,8 +97,8 @@ class TestBarPlot(TestBokehPlot):
             ("10", "B"),
         ]
 
+    @pytest.mark.issue(5850)
     def test_bars_multi_level_two_factors_in_overlay(self):
-        # See: https://github.com/holoviz/holoviews/pull/5850
         box = hv.Bars(
             (["1", "2", "3"] * 10, ["A", "B"] * 15, np.random.randn(30)),
             ["Group", "Category"],
@@ -486,15 +486,15 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(bars)
         np.testing.assert_almost_equal(plot.handles["glyph"].width, 69120000.0)
 
+    @pytest.mark.issue(6364)
     def test_bars_continuous_datetime_timezone_in_overlay(self):
-        # See: https://github.com/holoviz/holoviews/issues/6364
         bars = hv.Bars((pd.date_range("1/1/2000", periods=10, tz="UTC"), np.random.rand(10)))
         overlay = hv.Overlay([bars])
         plot = bokeh_renderer.get_plot(overlay)
         assert isinstance(plot.handles["xaxis"], DatetimeAxis)
 
+    @pytest.mark.issue(6288)
     def test_bars_continuous_datetime_stacked(self):
-        # See: https://github.com/holoviz/holoviews/issues/6288
         data = pd.DataFrame(
             {
                 "x": pd.to_datetime(
@@ -612,8 +612,8 @@ class TestBarPlot(TestBokehPlot):
 
 
 @pytest.mark.parametrize("stacked", [True, False])
+@pytest.mark.issue(6580)
 def test_grouped_bars_color(stacked):
-    # Test for https://github.com/holoviz/holoviews/issues/6580
     data = {
         "A": ["A1", "A1", "A1", "A1", "A2", "A2", "A2", "A2", "A3", "A3", "A3", "A3"],
         "B": ["B1", "B2", "B3", "B4", "B1", "B2", "B3", "B4", "B1", "B2", "B3", "B4"],

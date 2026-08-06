@@ -187,8 +187,8 @@ class TestHeatMapPlot(TestBokehPlot):
         assert_data_equal(cds.data["alpha"], np.array([0, 1, 0, 0]))
         assert_data_equal(cds.data["zvalues"], np.array([0.5, 0.1, 0.2, 0.6]))
 
+    @pytest.mark.issue(6313)
     def test_heatmap_pandas_categorial(self):
-        # Test for https://github.com/holoviz/holoviews/issues/6313
         df = pd.DataFrame(
             {
                 "X": pd.Series(

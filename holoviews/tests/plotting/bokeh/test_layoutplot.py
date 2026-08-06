@@ -4,6 +4,7 @@ import datetime as dt
 import re
 
 import numpy as np
+import pytest
 from bokeh.models import Div, GlyphRenderer, GridPlot, Spacer, Tabs, Title, Toolbar
 from bokeh.models.layouts import TabPanel
 from bokeh.plotting import figure
@@ -243,8 +244,8 @@ class TestLayoutPlot(LoggingComparison, TestBokehPlot):
         assert f1.height == f2.height
         assert f1.height == 300
 
+    @pytest.mark.issue(5584)
     def test_empty_adjoint_plot_with_renderer(self):
-        # https://github.com/holoviz/holoviews/pull/5584
         scatter = hv.Scatter(range(10))
         adjoin_layout_plot = scatter << hv.Empty() << scatter.hist(adjoin=False)
 

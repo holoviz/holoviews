@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pytest
 from bokeh.models import LinearAxis, LinearScale, LogAxis, LogScale
 
 import holoviews as hv
@@ -319,8 +320,8 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
         assert plot.state.yaxis[1].axis_label == "A"
         assert plot.state.yaxis[1].axis_label_text_font_size == "13pt"
 
+    @pytest.mark.issue(6322)
     def test_multi_y_on_curve(self):
-        # Test for https://github.com/holoviz/holoviews/issues/6322
         overlay = hv.Curve(range(10), vdims="A").opts(multi_y=True)
 
         # Should not error

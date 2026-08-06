@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import pytest
 
 import holoviews as hv
 from holoviews.testing import assert_data_equal, assert_dict_equal
@@ -99,8 +100,8 @@ class TestSankeyPlot(TestBokehPlot):
         assert renderers.index(graph_renderer) < renderers.index(quad_renderer)
         assert renderers.index(quad_renderer) < renderers.index(text_renderer)
 
+    @pytest.mark.issue(5386)
     def test_dimension_label(self):
-        # Ref: https://github.com/holoviz/holoviews/issues/5386
         data = [
             ["source1", "dest1", 3],
             ["source1", "dest2", 1],

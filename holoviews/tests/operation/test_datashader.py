@@ -1449,8 +1449,8 @@ class DatashaderRasterizeTests:
         assert isinstance(overlay, hv.Overlay)
         assert len(overlay) == 2
 
+    @pytest.mark.issue(6326)
     def test_rasterize_path_empty_string_as_cat_sep(self):
-        # https://github.com/holoviz/holoviews/issues/6326
         df = pd.DataFrame(
             {
                 "x": [1, 1, np.nan, 3, 3, np.nan],
@@ -1478,8 +1478,8 @@ class DatashaderRasterizeTests:
         )
         xr.testing.assert_equal(rasterized.data, expected)
 
+    @pytest.mark.issue(5127)
     def test_rasterize_curve_with_timezone_aware_datetime(self):
-        # Test for https://github.com/holoviz/holoviews/issues/5127
         t = pd.date_range(
             start="2020-01-01 10:00", end="2020-01-01 12:00", freq="h", tz="Asia/Shanghai"
         )
@@ -1679,8 +1679,8 @@ def test_rasterize_overlay_seeds_range_streams():
 
 
 @pytest.mark.usefixtures("bokeh_backend")
+@pytest.mark.issue(6595)
 def test_selector_single_categorical():
-    # Test for https://github.com/holoviz/holoviews/issues/6595
     plot = hv.Points(([0, 1], [0, 1], ["A", "A"]), ["X", "Y"], "C")
     plot = rasterize(plot, aggregator=ds.count_cat("C"), selector=ds.first("X"))
     plot = dynspread(plot)
@@ -2060,8 +2060,8 @@ def test_imagestack_datashader_color_key():
     hv.render(op)  # should not error out
 
 
+@pytest.mark.issue(6154)
 def test_imagestack_datashade_count_cat():
-    # Test for https://github.com/holoviz/holoviews/issues/6154
     df = pd.DataFrame({"x": range(3), "y": range(3), "c": range(3)})
     op = datashade(hv.Points(df), aggregator=ds.count_cat("c"))
     hv.render(op)  # should not error out
@@ -2074,8 +2074,8 @@ def test_imagestack_dynspread():
     hv.render(op)  # should not error out
 
 
+@pytest.mark.issue(6324)
 def test_datashade_count_cat_no_change_inplace():
-    # Test for https://github.com/holoviz/holoviews/issues/6324
     df = pd.DataFrame({"x": range(3), "y": range(3), "c": list(map(str, range(3)))})
     expected_dtype = pd.StringDtype(na_value=np.nan) if PANDAS_GE_3_0_0 else "object"
     assert df["c"].dtype == expected_dtype
