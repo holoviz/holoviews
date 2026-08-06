@@ -2313,7 +2313,20 @@ class GenericOverlayPlot(GenericElementPlot):
         # Should match what is done in ElementPlot.get_extents
         if not self.drawn:
             x_range, y_range = ((y0, y1), (x0, x1)) if self.invert_axes else ((x0, x1), (y0, y1))
-            for stream in getattr(self, "source_streams", []):
+            # Individual subplots (e.g. elements that were rasterized/dynspread
+            # before being overlaid) each carry their own source_streams. Their
+            # own get_extents call sees padding=0 (padding is only applied once,
+            # here, at the overlay level) so they must be seeded with this
+            # overlay's combined, padded range too, or their initial dynamic
+            # callback will be invoked with a mismatched, unpadded range.
+            streams = list(getattr(self, "source_streams", []))
+            for subplot in self.subplots.values():
+                if subplot is None:
+                    continue
+                for stream in getattr(subplot, "source_streams", []):
+                    if stream not in streams:
+                        streams.append(stream)
+            for stream in streams:
                 if isinstance(stream, RangeX):
                     params = {"x_range": x_range}
                 elif isinstance(stream, RangeY):
