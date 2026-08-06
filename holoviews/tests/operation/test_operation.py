@@ -965,6 +965,55 @@ class OperationTests:
         area2 = hv.Area(([0, 1, 2], [2, 4, 6], [1, 2, 3]), vdims=["y", "Baseline"])
         assert_element_equal(stacked, hv.NdOverlay([(0, area1), (1, area2)]))
 
+    @pytest.mark.parametrize(
+        ("offset", "expected"),
+        [
+            ("zero", [0, 0, 0, 0, 0]),
+            ("sym", [-4, -4, -5, -5, -4]),
+            ("wiggle", [-11 / 3, -4, -14 / 3, -5, -5]),
+            ("weighted_wiggle", [-4, -3.625, -4.925, -4.625, -2.5]),
+        ],
+    )
+    def test_stack_area_offset(self, offset, expected):
+        # Expected baselines are matplotlib.pyplot.stackplot's for the same data
+        layers = [[1, 2, 3, 4, 5], [5, 4, 3, 2, 1], [2, 2, 4, 4, 2]]
+        overlay = hv.Overlay([hv.Area(ys, label=f"l{i}") for i, ys in enumerate(layers)])
+        stacked = hv.Area.stack(overlay, offset=offset)
+        elements = list(stacked.data.values())
+        np.testing.assert_allclose(elements[0].dimension_values("Baseline"), expected)
+        # every layer keeps its own height regardless of where the stack sits
+        for element, ys in zip(elements, layers, strict=True):
+            heights = element.dimension_values("y") - element.dimension_values("Baseline")
+            np.testing.assert_allclose(heights, ys)
+
+    def test_stack_area_offset_integer_data(self):
+        # integer columns must not truncate the baseline arithmetic
+        layers = [[1, 2, 3, 4, 5], [5, 4, 3, 2, 1], [2, 2, 4, 4, 2]]
+        ints = hv.Overlay([hv.Area(ys, label=f"l{i}") for i, ys in enumerate(layers)])
+        floats = hv.Overlay(
+            [hv.Area(np.array(ys, dtype=float), label=f"l{i}") for i, ys in enumerate(layers)]
+        )
+        for int_el, float_el in zip(
+            hv.Area.stack(ints, offset="weighted_wiggle").data.values(),
+            hv.Area.stack(floats, offset="weighted_wiggle").data.values(),
+            strict=True,
+        ):
+            np.testing.assert_allclose(
+                int_el.dimension_values("Baseline"), float_el.dimension_values("Baseline")
+            )
+
+    def test_stack_area_offset_zero_sample(self):
+        # a sample where every layer is zero must not divide by zero
+        overlay = hv.Overlay([hv.Area([1, 0, 3], label=f"l{i}") for i in range(2)])
+        stacked = hv.Area.stack(overlay, offset="weighted_wiggle")
+        for element in stacked.data.values():
+            assert np.isfinite(element.dimension_values("Baseline")).all()
+
+    def test_stack_area_offset_invalid(self):
+        overlay = hv.Area([1, 2, 3]) * hv.Area([1, 2, 3])
+        with pytest.raises(ValueError, match="Invalid offset 'silhouette'"):
+            hv.Area.stack(overlay, offset="silhouette")
+
     def test_pre_and_postprocess_hooks(self):
         pre_backup = operation._preprocess_hooks
         post_backup = operation._postprocess_hooks
