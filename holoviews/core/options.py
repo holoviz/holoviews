@@ -626,7 +626,7 @@ class OptionTree(AttrTree):
     as a list (i.e. empty initial option groups at the root) or as a
     dictionary (e.g. groups={'style':Option()}). You can also
     initialize the OptionTree with the options argument together with
-    the **kwargs - see StoreOptions.merge_options for more information
+    the `**kwargs` - see StoreOptions.merge_options for more information
     on the options specification syntax.
 
     You can use the string specifier '.' to refer to the root node in
@@ -1930,11 +1930,11 @@ class StoreOptions:
 
         The corresponding value is then a list of Option objects specified
         with an appropriate category ('plot', 'style' or 'norm'). For
-        instance, using the keys described above, the specs could be:
+        instance, using the keys described above, the specs could be::
 
-            {'Image: [Options('style', cmap='jet')]}
+            {'Image': [Options('style', cmap='jet')]}
 
-        Or setting two types of option at once:
+        Or setting two types of option at once::
 
             {"Image.Channel": [
                 Options("plot", size=50),

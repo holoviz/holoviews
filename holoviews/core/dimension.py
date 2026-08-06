@@ -722,7 +722,7 @@ class LabelledData(param.Parameterized):
         ----------
         spec : A function, spec or type to check for a match
             * A 'type[[.group].label]' string which is compared
-            against the type, group and label of this object.
+              against the type, group and label of this object.
 
             * A function which is given the object and returns a boolean.
 
