@@ -333,14 +333,11 @@ def connect_tri_edges_pd(trimesh):
     """
     import pandas as pd
 
-    edges = trimesh.dframe().copy()
-    edges.index.name = "trimesh_edge_index"
-    edges = edges.drop("color", errors="ignore", axis=1).reset_index()
-    nodes = trimesh.nodes.dframe().copy()
-    nodes.index.name = "node_index"
-    nodes = nodes.drop(["color", "z"], errors="ignore", axis=1)
-    v1, v2, v3 = trimesh.kdims
-    x, y, idx = trimesh.nodes.kdims[:3]
+    (v1, v2, v3), (x, y, idx) = trimesh.kdims, trimesh.nodes.kdims[:3]
+    edges = trimesh.dframe()
+    edges = edges[[v1.name, v2.name, v3.name]].reset_index(names="trimesh_edge_index")
+    nodes = trimesh.nodes.dframe()
+    nodes = nodes[[x.name, y.name, idx.name]]
 
     df = pd.merge(edges, nodes, left_on=[v1.name], right_on=[idx.name])
     df = df.rename(columns={x.name: "x0", y.name: "y0"})
