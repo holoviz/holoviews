@@ -1051,9 +1051,9 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
     elif isinstance(cmap, list):
         palette = cmap
     elif isinstance(cmap, str):
+        cet_cmaps = _list_cmaps("colorcet")  # first to register colorcet colormaps with matplotlib
         mpl_cmaps = _list_cmaps("matplotlib")
         bk_cmaps = _list_cmaps("bokeh")
-        cet_cmaps = _list_cmaps("colorcet")
         if provider == "matplotlib" or (
             provider is None and (cmap in mpl_cmaps or cmap.lower() in mpl_cmaps)
         ):
