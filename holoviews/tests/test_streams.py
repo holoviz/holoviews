@@ -4,6 +4,7 @@ Unit test of the streams system
 
 from __future__ import annotations
 
+import gc
 import weakref
 from collections import defaultdict
 from functools import partial
@@ -15,7 +16,7 @@ import pytest
 from panel.widgets import IntSlider
 
 import holoviews as hv
-from holoviews.core.util import NUMPY_GE_2_0_0, PARAM_VERSION
+from holoviews.core.util import NUMPY_GE_2_0_0, PARAM_VERSION, unique_iterator
 from holoviews.plotting.renderer import PANEL_VERSION
 from holoviews.streams import (
     Buffer,
@@ -809,33 +810,110 @@ class TestSubscribers:
 
 
 class TestWeakSubscriber:
-    def check(self, Viewer):
-        viewer = Viewer()
+    @staticmethod
+    def _make_viewer(make_subscriber):
+        class Viewer:
+            def __init__(self):
+                self.calls = []
+                self.plot = hv.Points([(0, 0)])
+                self.stream = hv.streams.Selection1D(source=self.plot)
+                self.stream.add_subscriber(make_subscriber(self.on_update))
+
+            def on_update(self, *args, **kwargs):
+                self.calls.append((args, kwargs))
+
+        return Viewer()
+
+    @pytest.mark.parametrize(
+        "make_subscriber",
+        [lambda method: method, lambda method: partial(method, extra=1)],
+        ids=["bound_method", "partial"],
+    )
+    def test_instance_not_pinned(self, make_subscriber):
+        viewer = self._make_viewer(make_subscriber)
         ref = weakref.ref(viewer)
         del viewer
         assert ref() is None
 
-    def test_bound_method(self):
-        class Viewer:
-            def __init__(self):
-                self.plot = hv.Points([])
-                self.stream = hv.streams.RangeX(source=self.plot)
-                self.stream.add_subscriber(self.on_update)
+    @pytest.mark.parametrize(
+        ("make_subscriber", "expected"),
+        [
+            (
+                lambda method: partial(method, value="value"),
+                ((), {"index": [0], "value": "value"}),
+            ),
+            (
+                lambda method: partial(method, "pos"),
+                (("pos",), {"index": [0]}),
+            ),
+            (
+                lambda method: partial(method, data=[1, 2, 3]),
+                ((), {"index": [0], "data": [1, 2, 3]}),
+            ),
+        ],
+        ids=["keyword", "positional", "unhashable"],
+    )
+    def test_partial_subscriber_is_invoked(self, make_subscriber, expected):
+        viewer = self._make_viewer(make_subscriber)
+        assert all(bool(s) for s in viewer.stream.subscribers)
+        viewer.stream.event(index=[0])
+        assert viewer.calls == [expected]
 
-            def on_update(self, x_range=None): ...
+    def test_distinct_partials_not_deduplicated(self):
+        viewer = self._make_viewer(lambda method: partial(method, tag="a"))
+        viewer.stream.add_subscriber(partial(viewer.on_update, tag="b"))
 
-        self.check(Viewer)
+        subscribers = list(unique_iterator(viewer.stream.subscribers))
+        assert len(subscribers) == 2
+        viewer.stream.event(index=[0])
+        assert sorted(kwargs["tag"] for _, kwargs in viewer.calls) == ["a", "b"]
 
-    def test_bound_method_partial(self):
-        class Viewer:
-            def __init__(self):
-                self.plot = hv.Points([])
-                self.stream = hv.streams.RangeX(source=self.plot)
-                self.stream.add_subscriber(partial(self.on_update, extra=1))
+    @staticmethod
+    def _destroy_session(doc):
+        for callback in list(doc.callbacks._session_destroyed_callbacks):
+            callback(None)
+        doc.callbacks._session_destroyed_callbacks.clear()
 
-            def on_update(self, x_range=None, extra=0): ...
+    def test_served_session_keeps_subscriber_alive(self):
+        # In a served session a subscriber whose instance is only reachable
+        # through the subscription must stay alive and fire (#6945).
+        from bokeh.document import Document
+        from panel.io.state import set_curdoc
 
-        self.check(Viewer)
+        doc = Document()
+
+        def make():
+            with set_curdoc(doc):
+                viewer = self._make_viewer(lambda method: partial(method, value="value"))
+            return viewer.stream, weakref.ref(viewer)
+
+        stream, ref = make()
+        gc.collect()
+        assert ref() is not None
+        assert all(bool(s) for s in stream.subscribers)
+        stream.event(index=[0])
+        assert ref().calls == [((), {"index": [0], "value": "value"})]
+
+    def test_session_destroyed_releases_subscriber(self):
+        # Destroying the session releases the strong reference so the instance
+        # can be garbage collected (#6934).
+        from bokeh.document import Document
+        from panel.io.state import set_curdoc
+
+        doc = Document()
+
+        def make():
+            with set_curdoc(doc):
+                viewer = self._make_viewer(lambda method: partial(method, value="value"))
+            return weakref.ref(viewer)
+
+        ref = make()
+        gc.collect()
+        assert ref() is not None  # kept alive for the session
+
+        self._destroy_session(doc)
+        gc.collect()
+        assert ref() is None
 
 
 class TestStreamSource:
