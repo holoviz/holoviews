@@ -6,29 +6,29 @@ new users that will introduce the core concepts necessary to get you
 working productively with your own data. We recommend reading this guide
 in order if you wish to get an overview of what is offered by HoloViews.
 
-For detailed documentation, please consult our [User Guide](../user_guide/index.html) which we will link to from the appropriate
+For detailed documentation, please consult our [User Guide](../user_guide/index) which we will link to from the appropriate
 sections of this guide. An overview of some interesting HoloViews
-examples can be found in our [Gallery](../gallery/index.html) and if
+examples can be found in our [Gallery](../gallery/index) and if
 you are looking for a specific component (or wish to view the available
-range of primitives), see our [Reference Gallery.](../reference/index.html)
+range of primitives), see our [Reference Gallery.](../reference/index)
 
-[Introduction](Introduction.html)
+[Introduction](Introduction)
 
 : What is HoloViews?
 
-[Customization](Customization.html)
+[Customization](Customization)
 
 : How to customize the visual representation.
 
-[Tabular Datasets](Tabular_Datasets.html)
+[Tabular Datasets](Tabular_Datasets)
 
 : Introduction to working with tabular data.
 
-[Gridded Datasets](Gridded_Datasets.html)
+[Gridded Datasets](Gridded_Datasets)
 
 : Introduction to working with array data.
 
-[Live Data](Live_Data.html)
+[Live Data](Live_Data)
 
 : Working with dynamically generated data.
 
