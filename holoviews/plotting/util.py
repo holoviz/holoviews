@@ -784,12 +784,17 @@ def _list_cmaps(provider=None, records=False):
 def register_cmaps(category, provider, source, bg, names):
     """Maintain descriptions of colormaps that include the following information:
 
-    name     - string name for the colormap
-    category - intended use or purpose, mostly following matplotlib
-    provider - package providing the colormap directly
-    source   - original source or creator of the colormaps
-    bg       - base/background color expected for the map
-               ('light','dark','medium','any' (unknown or N/A))
+    name
+        string name for the colormap
+    category
+        intended use or purpose, mostly following matplotlib
+    provider
+        package providing the colormap directly
+    source
+        original source or creator of the colormaps
+    bg
+        base/background color expected for the map
+        ('light', 'dark', 'medium', 'any' (unknown or N/A))
 
     """
     for name in names:
