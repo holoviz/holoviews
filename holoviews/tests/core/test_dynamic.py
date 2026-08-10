@@ -924,35 +924,25 @@ class TestStreamSubscribersAddandClear:
         self.fn3 = lambda x: x**3
         self.fn4 = lambda x: x**4
 
-    def test_subscriber_clear_all(self):
+    # Precedence one and below is the user range, above one is reserved for
+    # HoloViews, as documented on Stream.add_subscriber
+    @pytest.mark.parametrize(
+        ("policy", "remaining"),
+        [
+            ("all", []),
+            ("user", ["fn3", "fn4"]),
+            ("internal", ["fn1", "fn2"]),
+        ],
+    )
+    def test_subscriber_clear(self, policy, remaining):
         pointerx = PointerX(x=2)
         pointerx.add_subscriber(self.fn1, precedence=0)
         pointerx.add_subscriber(self.fn2, precedence=1)
         pointerx.add_subscriber(self.fn3, precedence=1.5)
         pointerx.add_subscriber(self.fn4, precedence=10)
         assert pointerx.subscribers == [self.fn1, self.fn2, self.fn3, self.fn4]
-        pointerx.clear("all")
-        assert pointerx.subscribers == []
-
-    def test_subscriber_clear_user(self):
-        pointerx = PointerX(x=2)
-        pointerx.add_subscriber(self.fn1, precedence=0)
-        pointerx.add_subscriber(self.fn2, precedence=1)
-        pointerx.add_subscriber(self.fn3, precedence=1.5)
-        pointerx.add_subscriber(self.fn4, precedence=10)
-        assert pointerx.subscribers == [self.fn1, self.fn2, self.fn3, self.fn4]
-        pointerx.clear("user")
-        assert pointerx.subscribers == [self.fn3, self.fn4]
-
-    def test_subscriber_clear_internal(self):
-        pointerx = PointerX(x=2)
-        pointerx.add_subscriber(self.fn1, precedence=0)
-        pointerx.add_subscriber(self.fn2, precedence=1)
-        pointerx.add_subscriber(self.fn3, precedence=1.5)
-        pointerx.add_subscriber(self.fn4, precedence=10)
-        assert pointerx.subscribers == [self.fn1, self.fn2, self.fn3, self.fn4]
-        pointerx.clear("internal")
-        assert pointerx.subscribers == [self.fn1, self.fn2]
+        pointerx.clear(policy)
+        assert pointerx.subscribers == [getattr(self, name) for name in remaining]
 
 
 class TestDynamicStreamReset:
