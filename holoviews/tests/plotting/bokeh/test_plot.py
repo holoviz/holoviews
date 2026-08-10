@@ -1,7 +1,13 @@
 from __future__ import annotations
 
+import gc
+import weakref
+
 import numpy as np
+import panel as pn
+import param
 import pyviz_comms as comms
+from bokeh.document import Document
 from bokeh.models import (
     ColumnDataSource,
     CrosshairTool,
@@ -133,6 +139,70 @@ def test_layout_plot_stream_cleanup():
 
     assert not stream1._subscribers
     assert not stream2._subscribers
+
+
+def test_user_subscriber_survives_stream_cleanup():
+    class App(param.Parameterized):
+        def __init__(self, **params):
+            super().__init__(**params)
+            self.calls = []
+
+        def on_update(self, data):
+            self.calls.append(data)
+
+    app = App()
+    stream = Pipe()
+    dmap = hv.DynamicMap(hv.Curve, streams=[stream])
+    stream.add_subscriber(app.on_update)
+
+    plot = bokeh_renderer.get_plot(dmap)
+    plot.cleanup()
+
+    assert len(stream._subscribers) == 1
+    stream.send([1, 2, 3])
+    assert app.calls == [[1, 2, 3]]
+
+
+def test_stream_cleanup_keeps_other_plot_subscriber():
+    stream = Pipe(data=[1, 2, 3])
+    dmap = hv.DynamicMap(hv.Curve, streams=[stream])
+
+    plot1 = bokeh_renderer.get_plot(dmap)
+    plot2 = bokeh_renderer.get_plot(dmap)
+    assert len(stream._subscribers) == 2
+
+    plot1.cleanup()
+
+    assert stream.subscribers == [plot2.refresh]
+
+    # The surviving plot must still refresh on a stream event
+    stream.send([8, 9])
+    assert len(plot2.current_frame.dimension_values(0)) == 2
+
+    plot2.cleanup()
+    assert not stream._subscribers
+
+
+def test_rendered_plot_is_collected():
+    # The panel#8580 object graph: build holds the only references to it, so
+    # tearing the view down and dropping its frame has to be enough (#6875)
+    def build():
+        points = hv.Points([(0, 0), (1, 1)])
+        rng = hv.streams.RangeXY(source=points)
+        dmap = hv.DynamicMap(lambda x_range, y_range: hv.Curve([]), streams=[rng])
+        doc = Document()
+        pane = pn.pane.HoloViews(points * dmap)
+        model = pane.get_root(doc)
+
+        # What panel does when the session ends, see Viewable._server_destroy
+        pane._cleanup(model)
+        pn.state._views.pop(model.ref["id"], None)
+
+        return {"element": points, "stream": rng, "dmap": dmap, "document": doc, "pane": pane}
+
+    refs = {name: weakref.ref(obj) for name, obj in build().items()}
+    gc.collect()
+    assert not [name for name, ref in refs.items() if ref() is not None]
 
 
 def test_sync_two_plots():

@@ -6,7 +6,6 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 
 from __future__ import annotations
 
-import inspect
 import typing as t
 import weakref
 from collections import defaultdict
@@ -54,47 +53,52 @@ class _SkipTrigger:
     pass
 
 
-class _WeakSubscriber:
-    def __init__(self, subscriber):
-        if inspect.ismethod(subscriber):
-            self._ref = weakref.WeakMethod(subscriber)
-        else:
-            self._ref = weakref.ref(subscriber)
+class _StreamRegistry(weakref.WeakKeyDictionary):
+    """Weak index from a source object to the streams sourced from it.
 
-        self._hash = self._generate_hash(subscriber)
-        self._is_param_method = util.is_param_method(subscriber)
+    Unlike a plain ``WeakKeyDictionary`` the values are held weakly as well.
+    A stream reaches its own source back through its subscribers, so holding
+    the streams strongly here would make the weak key reachable from its own
+    value and every source that ever had a stream would become immortal
+    (#6875). Strong ownership lives on the source instead, see
+    ``LabelledData._streams``, so a source and its streams die together.
 
-    def __bool__(self) -> bool:
-        method = self._ref()
-        return method is not None and not self._is_param_method
+    Reads resolve the references, i.e. this behaves like a mapping of source
+    to a list of live streams.
+    """
 
-    def __call__(self, *args, **kwargs):
-        method = self._ref()
-        if method is not None:
-            return method(*args, **kwargs)
+    def register(self, source, stream):
+        # super().get to see the stored references rather than live streams
+        refs = super().get(source)
+        if refs is None:
+            self[source] = refs = []
+        if not any(ref() is stream for ref in refs):
+            refs.append(weakref.ref(stream))
+
+    def unregister(self, source, stream):
+        refs = super().get(source)
+        if refs is None:
+            return
+        refs[:] = [ref for ref in refs if ref() is not None and ref() is not stream]
+        if not refs:
+            self.pop(source, None)
 
     @staticmethod
-    def check(subscriber):
-        while isinstance(subscriber, partial):
-            subscriber = subscriber.func
-        return inspect.ismethod(subscriber)
+    def _alive(refs):
+        return [stream for stream in (ref() for ref in refs) if stream is not None]
 
-    @staticmethod
-    def _generate_hash(subscriber) -> int:
-        if inspect.ismethod(subscriber):
-            return hash((id(subscriber.__func__), id(subscriber.__self__)))
-        else:
-            return hash(id(subscriber))
+    def __getitem__(self, key):
+        return self._alive(super().__getitem__(key))
 
-    def __eq__(self, other) -> bool:
-        if isinstance(other, _WeakSubscriber):
-            return self._hash == other._hash
-        if self.check(other):
-            return self._hash == self._generate_hash(other)
-        return NotImplemented
+    def get(self, key, default=None):
+        refs = super().get(key)
+        return default if refs is None else self._alive(refs)
 
-    def __hash__(self) -> int:
-        return self._hash
+    def items(self):
+        return [(src, self._alive(refs)) for src, refs in super().items()]
+
+    def values(self):
+        return [self._alive(refs) for refs in super().values()]
 
 
 @contextmanager
@@ -166,10 +170,10 @@ class Stream(param.Parameterized):
 
     """
 
-    # Mapping from a source to a list of streams
-    # WeakKeyDictionary to allow garbage collection
-    # of unreferenced sources
-    registry = weakref.WeakKeyDictionary()
+    # Weak index from a source to the streams sourced from it, see
+    # _StreamRegistry. The sources own their streams, this only allows them
+    # to be looked up from a clone sharing the same _plot_id.
+    registry = _StreamRegistry()
 
     # Mapping to define callbacks by backend and Stream type.
     # e.g. Stream._callbacks['bokeh'][Stream] = Callback
@@ -370,10 +374,28 @@ class Stream(param.Parameterized):
         super().__init__(**params)
         self._rename = self._validate_rename(rename)
         if source is not None:
-            if source in self.registry:
-                self.registry[source].append(self)
-            else:
-                self.registry[source] = [self]
+            self._attach(source)
+
+    def _attach(self, source):
+        """Make ``source`` the owner of this stream.
+
+        The source holds the stream strongly, so a stream stays alive for as
+        long as the object it observes and no longer, while the registry only
+        indexes it weakly.
+        """
+        streams = source._streams
+        if streams is None:
+            source._streams = streams = []
+        if self not in streams:
+            streams.append(self)
+        self.registry.register(source, self)
+
+    def _detach(self, source):
+        """Undo ``_attach``, dropping the source's ownership of this stream."""
+        streams = source._streams
+        if streams is not None and self in streams:
+            streams.remove(self)
+        self.registry.unregister(source, self)
 
     def clone(self):
         """Return new stream with identical properties and no subscribers"""
@@ -426,8 +448,6 @@ class Stream(param.Parameterized):
         """
         if not callable(subscriber):
             raise TypeError("Subscriber must be a callable.")
-        if _WeakSubscriber.check(subscriber):
-            subscriber = _WeakSubscriber(subscriber)
         self._subscribers.append((precedence, subscriber))
 
     def _validate_rename(self, mapping):
@@ -464,21 +484,14 @@ class Stream(param.Parameterized):
     @source.setter
     def source(self, source):
         if self.source is not None:
-            source_list = self.registry[self.source]
-            if self in source_list:
-                source_list.remove(self)
-            if not source_list:
-                self.registry.pop(self.source)
+            self._detach(self.source)
 
         if source is None:
             self._source = None
             return
 
         self._source = weakref.ref(source)
-        if source in self.registry:
-            self.registry[source].append(self)
-        else:
-            self.registry[source] = [self]
+        self._attach(source)
 
     def transform(self):
         """Method that can be overwritten by subclasses to process the
