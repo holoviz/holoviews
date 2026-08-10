@@ -918,23 +918,15 @@ class TestDynamicMapRX:
 
 
 class TestStreamSubscribersAddandClear:
-    def setup_method(self):
+    @pytest.mark.parametrize(
+        ("policy", "remaining"),
+        [("all", []), ("user", ["fn3", "fn4"]), ("internal", ["fn1", "fn2"])],
+    )
+    def test_subscriber_clear(self, policy, remaining):
         self.fn1 = lambda x: x
         self.fn2 = lambda x: x**2
         self.fn3 = lambda x: x**3
         self.fn4 = lambda x: x**4
-
-    # Precedence one and below is the user range, above one is reserved for
-    # HoloViews, as documented on Stream.add_subscriber
-    @pytest.mark.parametrize(
-        ("policy", "remaining"),
-        [
-            ("all", []),
-            ("user", ["fn3", "fn4"]),
-            ("internal", ["fn1", "fn2"]),
-        ],
-    )
-    def test_subscriber_clear(self, policy, remaining):
         pointerx = PointerX(x=2)
         pointerx.add_subscriber(self.fn1, precedence=0)
         pointerx.add_subscriber(self.fn2, precedence=1)

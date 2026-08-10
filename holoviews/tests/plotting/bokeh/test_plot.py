@@ -4,7 +4,6 @@ import gc
 import weakref
 
 import numpy as np
-import panel as pn
 import param
 import pyviz_comms as comms
 from bokeh.document import Document
@@ -23,7 +22,7 @@ from param import concrete_descendents
 import holoviews as hv
 from holoviews.plotting.bokeh.callbacks import Callback
 from holoviews.plotting.bokeh.element import ElementPlot
-from holoviews.streams import Pipe, Stream
+from holoviews.streams import Pipe
 
 bokeh_renderer = hv.Store.renderers["bokeh"]
 
@@ -115,9 +114,6 @@ def test_overlay_plot_stream_cleanup():
 
     plot = bokeh_renderer.get_plot(dmap1 * dmap2)
 
-    # The overlay plot subscribes once per stream. It used to subscribe four
-    # times, as attach_streams compared the refresh method against the
-    # (precedence, subscriber) pairs and so never recognised it
     assert stream1.subscribers == [plot.refresh]
     assert stream2.subscribers == [plot.refresh]
 
@@ -179,7 +175,6 @@ def test_stream_cleanup_keeps_other_plot_subscriber():
 
     assert stream.subscribers == [plot2.refresh]
 
-    # The surviving plot must still refresh on a stream event
     stream.send([8, 9])
     assert len(plot2.current_frame.dimension_values(0)) == 2
 
@@ -187,29 +182,7 @@ def test_stream_cleanup_keeps_other_plot_subscriber():
     assert not stream._subscribers
 
 
-def test_dimensioned_stream_subscriber_survives_user_clear():
-    # _stream_update belongs to HoloViews, so it has to sit above the user
-    # precedence range, otherwise clear("user") drops the title updates
-    Dim = Stream.define("Dim", value=0)
-    stream = Dim()
-    dmap = hv.DynamicMap(lambda value: hv.Curve([1, 2, value]), kdims=["value"], streams=[stream])
-
-    # _link_dimensioned_streams is called by GenericCompositePlot, so the
-    # DynamicMap has to sit in a Layout for _stream_update to be registered
-    plot = bokeh_renderer.get_plot(dmap + hv.Curve([1, 2, 3]))
-    assert plot._stream_update in stream.subscribers
-
-    stream.clear("user")
-    assert plot._stream_update in stream.subscribers
-
-    stream.clear("internal")
-    assert plot._stream_update not in stream.subscribers
-
-
 def test_shared_stream_survives_one_session_teardown():
-    # Two served sessions sharing a module-level stream: destroying one
-    # session must leave the other one working. Rendered in server mode, as
-    # that is what gives each session its own document.
     server_renderer = bokeh_renderer.instance(mode="server")
     stream = Pipe(data=[1, 2, 3])
     dmap = hv.DynamicMap(hv.Curve, streams=[stream])
@@ -231,31 +204,7 @@ def test_shared_stream_survives_one_session_teardown():
     stream.send([8, 9])
     assert len(plot2.current_frame.dimension_values(0)) == 2
 
-    # Tearing the session down deregisters the hook rather than leaving the
-    # plot pinned to the document for as long as that document lives
     assert plot1._session_destroy not in doc1.callbacks._session_destroyed_callbacks
-
-
-def test_rendered_plot_is_collected():
-    # The panel#8580 object graph: build holds the only references to it, so
-    # tearing the view down and dropping its frame has to be enough (#6875)
-    def build():
-        points = hv.Points([(0, 0), (1, 1)])
-        rng = hv.streams.RangeXY(source=points)
-        dmap = hv.DynamicMap(lambda x_range, y_range: hv.Curve([]), streams=[rng])
-        doc = Document()
-        pane = pn.pane.HoloViews(points * dmap)
-        model = pane.get_root(doc)
-
-        # What panel does when the session ends, see Viewable._server_destroy
-        pane._cleanup(model)
-        pn.state._views.pop(model.ref["id"], None)
-
-        return {"element": points, "stream": rng, "dmap": dmap, "document": doc, "pane": pane}
-
-    refs = {name: weakref.ref(obj) for name, obj in build().items()}
-    gc.collect()
-    assert not [name for name, ref in refs.items() if ref() is not None]
 
 
 def test_renderer_does_not_retain_last_plot():

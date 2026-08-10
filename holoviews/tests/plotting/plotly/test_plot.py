@@ -37,9 +37,6 @@ def test_overlay_plot_stream_cleanup():
 
     plot = plotly_renderer.get_plot(dmap1 * dmap2)
 
-    # The overlay plot subscribes once per stream. It used to subscribe four
-    # times, as attach_streams compared the refresh method against the
-    # (precedence, subscriber) pairs and so never recognised it
     assert stream1.subscribers == [plot.refresh]
     assert stream2.subscribers == [plot.refresh]
 

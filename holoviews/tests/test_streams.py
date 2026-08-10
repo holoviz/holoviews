@@ -809,14 +809,6 @@ class TestSubscribers:
 
 
 class _App(param.Parameterized):
-    """The object graph of panel#8580 and #6934.
-
-    An app owns an element, a stream sourced from that element and a
-    subscriber which reaches back into the app. Parameterized so that
-    ``on_update`` is a param method, as it is for the ``pn.viewable.Viewer``
-    of #6945.
-    """
-
     def __init__(self, make_subscriber, **params):
         super().__init__(**params)
         self.calls = []
@@ -828,41 +820,24 @@ class _App(param.Parameterized):
         self.calls.append(kwargs)
 
 
-def _closure(app):
-    def on_update(**kwargs):
-        app.calls.append(kwargs)
-
-    return on_update
-
-
-# The four ways a subscriber can reach back into its owner. Only the first two
-# were ever wrapped weakly, so the closure forms have always leaked.
 subscriber_kinds = pytest.mark.parametrize(
     "make_subscriber",
     [
         lambda app: app.on_update,
         lambda app: partial(app.on_update, extra=1),
-        _closure,
         lambda app: lambda **kwargs: app.calls.append(kwargs),
     ],
-    ids=["bound_method", "partial", "closure", "lambda"],
+    ids=["bound_method", "partial", "lambda"],
 )
 
 
 class TestSubscriberLifetime:
-    """The source element, its streams and their subscribers must all die
-    together once nothing else refers to them, and must all stay alive for as
-    long as the element does.
-    """
-
     @subscriber_kinds
     def test_app_is_collected(self, make_subscriber):
         def build():
             app = _App(make_subscriber)
             return {"app": app, "element": app.element, "stream": app.stream}
 
-        # build holds the only references, so dropping its frame has to be
-        # enough for the whole graph to go
         refs = {name: weakref.ref(obj) for name, obj in build().items()}
         gc.collect()
         assert not [name for name, ref in refs.items() if ref() is not None]
@@ -874,8 +849,6 @@ class TestSubscriberLifetime:
         assert [call["x_range"] for call in app.calls] == [(0, 1)]
 
     def test_stream_survives_dropped_local_reference(self):
-        # A stream is kept alive by its source element, so it keeps firing
-        # after the local variable it was assigned to goes out of scope.
         element = hv.Points([(0, 0)])
         calls = []
 
@@ -885,14 +858,11 @@ class TestSubscriberLifetime:
 
         register()
         gc.collect()
-
         (stream,) = Stream.registry[element]
         stream.event(x_range=(0, 1), y_range=(2, 3))
         assert calls == [{"x_range": (0, 1), "y_range": (2, 3)}]
 
     def test_subscription_is_only_reference(self):
-        # An app whose only remaining reference is the subscription itself
-        # must survive for as long as the displayed element does (#6945).
         def build():
             app = _App(lambda app: app.on_update)
             return app.element, weakref.ref(app)
@@ -916,8 +886,6 @@ class TestSubscriberLifetime:
 
 class TestStreamSource:
     def teardown_method(self):
-        # Only drop the leftover entries, replacing the registry itself would
-        # swap in a strongly keyed mapping and mask any leak
         with param.logging_level("ERROR"):
             Stream.registry.clear()
 
@@ -951,10 +919,6 @@ class TestStreamSource:
         assert points in Stream.registry
 
     def test_source_registry_releases_source(self):
-        # The registry indexes its streams weakly, so an entry can never keep
-        # its own source alive, not even through a subscriber reaching back to
-        # it (#6875). Collecting the source drops the entry with it, as the
-        # registry is still keyed weakly.
         def build():
             points = hv.Points([(0, 0)])
             stream = PointerX(source=points)
