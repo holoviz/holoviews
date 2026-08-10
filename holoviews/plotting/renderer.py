@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import base64
 import os
+import weakref
 from contextlib import contextmanager
 from functools import partial
 from io import BytesIO, StringIO
@@ -234,8 +235,16 @@ class Renderer(Exporter):
     _render_with_panel = False
 
     def __init__(self, **params):
-        self.last_plot = None
+        self._last_plot = None
         super().__init__(**params)
+
+    @property
+    def last_plot(self):
+        return None if self._last_plot is None else self._last_plot()
+
+    @last_plot.setter
+    def last_plot(self, plot):
+        self._last_plot = None if plot is None else weakref.ref(plot)
 
     def __call__(self, obj, fmt="auto", **kwargs):
         plot, fmt = self._validate(obj, fmt)

@@ -236,6 +236,20 @@ def test_rendered_plot_is_collected():
     assert not [name for name, ref in refs.items() if ref() is not None]
 
 
+def test_renderer_does_not_retain_last_plot():
+    # The renderer is a long lived singleton, so holding the last plot
+    # strongly retains it, and the data it displays, for the whole process
+    def build():
+        points = hv.Points([(0, 0), (1, 1)])
+        plot = bokeh_renderer.get_plot(points)
+        plot.cleanup()
+        return {"element": points, "plot": plot}
+
+    refs = {name: weakref.ref(obj) for name, obj in build().items()}
+    gc.collect()
+    assert not [name for name, ref in refs.items() if ref() is not None]
+
+
 def test_sync_two_plots():
     curve = lambda i: hv.Curve(np.arange(10) * i, label="ABC"[i])
     plot1 = curve(0) * curve(1)
