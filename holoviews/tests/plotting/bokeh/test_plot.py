@@ -17,6 +17,7 @@ from bokeh.models import (
     LogColorMapper,
     Span,
 )
+from panel.io.state import set_curdoc
 from param import concrete_descendents
 
 import holoviews as hv
@@ -181,6 +182,36 @@ def test_stream_cleanup_keeps_other_plot_subscriber():
 
     plot2.cleanup()
     assert not stream._subscribers
+
+
+def test_shared_stream_survives_one_session_teardown():
+    # Two served sessions sharing a module-level stream: destroying one
+    # session must leave the other one working. Rendered in server mode, as
+    # that is what gives each session its own document.
+    server_renderer = bokeh_renderer.instance(mode="server")
+    stream = Pipe(data=[1, 2, 3])
+    dmap = hv.DynamicMap(hv.Curve, streams=[stream])
+
+    doc1, doc2 = Document(), Document()
+    with set_curdoc(doc1):
+        plot1 = server_renderer.get_plot(dmap, doc1)
+    with set_curdoc(doc2):
+        plot2 = server_renderer.get_plot(dmap, doc2)
+
+    assert plot1.document is doc1
+    assert plot2.document is doc2
+    destroy_callbacks = list(doc1.callbacks._session_destroyed_callbacks)
+    assert plot1._session_destroy in destroy_callbacks
+
+    for callback in destroy_callbacks:
+        callback(None)
+
+    stream.send([8, 9])
+    assert len(plot2.current_frame.dimension_values(0)) == 2
+
+    # Tearing the session down deregisters the hook rather than leaving the
+    # plot pinned to the document for as long as that document lives
+    assert plot1._session_destroy not in doc1.callbacks._session_destroyed_callbacks
 
 
 def test_rendered_plot_is_collected():

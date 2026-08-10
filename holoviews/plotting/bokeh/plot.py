@@ -267,6 +267,7 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
         """
         plots = self.traverse(lambda x: x, [BokehPlot])
         for plot in plots:
+            plot._unwatch_session()
             if not isinstance(
                 plot, (GenericCompositePlot, GenericElementPlot, GenericOverlayPlot)
             ):
