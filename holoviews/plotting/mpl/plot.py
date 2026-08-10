@@ -356,7 +356,7 @@ class CompositePlot(GenericCompositePlot, MPLPlot):
         """
         streams = [s for s in self.streams if any(k in self.dimensions for k in s.contents)]
         for s in streams:
-            s.add_subscriber(self._stream_update, 1)
+            s.add_subscriber(self._stream_update, 1.05)
 
     def _stream_update(self, **kwargs):
         contents = [k for s in self.streams for k in s.contents]

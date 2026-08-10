@@ -23,7 +23,7 @@ from param import concrete_descendents
 import holoviews as hv
 from holoviews.plotting.bokeh.callbacks import Callback
 from holoviews.plotting.bokeh.element import ElementPlot
-from holoviews.streams import Pipe
+from holoviews.streams import Pipe, Stream
 
 bokeh_renderer = hv.Store.renderers["bokeh"]
 
@@ -185,6 +185,25 @@ def test_stream_cleanup_keeps_other_plot_subscriber():
 
     plot2.cleanup()
     assert not stream._subscribers
+
+
+def test_dimensioned_stream_subscriber_survives_user_clear():
+    # _stream_update belongs to HoloViews, so it has to sit above the user
+    # precedence range, otherwise clear("user") drops the title updates
+    Dim = Stream.define("Dim", value=0)
+    stream = Dim()
+    dmap = hv.DynamicMap(lambda value: hv.Curve([1, 2, value]), kdims=["value"], streams=[stream])
+
+    # _link_dimensioned_streams is called by GenericCompositePlot, so the
+    # DynamicMap has to sit in a Layout for _stream_update to be registered
+    plot = bokeh_renderer.get_plot(dmap + hv.Curve([1, 2, 3]))
+    assert plot._stream_update in stream.subscribers
+
+    stream.clear("user")
+    assert plot._stream_update in stream.subscribers
+
+    stream.clear("internal")
+    assert plot._stream_update not in stream.subscribers
 
 
 def test_shared_stream_survives_one_session_teardown():
