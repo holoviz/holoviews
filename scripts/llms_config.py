@@ -16,7 +16,7 @@ EXCLUDE_FILES = (
     Path("releases.md"),
     Path("roadmap.md"),
     Path("about.md"),
-    Path("FAQ.md"),
+    Path("site_map.rst"),
 )
 
 GETTING_STARTED = {
