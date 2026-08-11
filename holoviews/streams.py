@@ -56,12 +56,10 @@ class _SkipTrigger:
 class _StreamRegistry(weakref.WeakKeyDictionary):
     """Weak index from a source object to the streams sourced from it.
 
-    Unlike a plain ``WeakKeyDictionary`` the values are held weakly as well.
-    A stream reaches its own source back through its subscribers, so holding
-    the streams strongly here would make the weak key reachable from its own
-    value and every source that ever had a stream would become immortal
-    (#6875). Strong ownership lives on the source instead, see
-    ``LabelledData._streams``, so a source and its streams die together.
+    Both the keys and the values are weak, so the registry never keeps a
+    source or a stream alive. Ownership lives on the source, in
+    ``LabelledData._streams``, and a source and its streams are collected
+    together once nothing else refers to them.
 
     Reads resolve the references, i.e. this behaves like a mapping of source
     to a list of live streams.

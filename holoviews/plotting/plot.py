@@ -125,12 +125,12 @@ class Plot(param.Parameterized):
                     plot.document = doc
 
     def _unwatch_session(self):
-        """Drop the session destroy hook registered on the current document.
+        """Drop this plot's session destroy hook from its current document.
 
-        The document holds the callback, and through it this plot, strongly,
-        so a plot which is never deregistered lives as long as its document.
-        Outside a served session that document is the process wide
-        ``curdoc()``, which means every plot ever rendered is retained.
+        A document holds its callbacks, and through them this plot, strongly,
+        so the hook is dropped whenever the plot leaves the document, i.e. on
+        reassignment and on cleanup. Only the hook belonging to this plot is
+        removed.
         """
         doc = self._document
         if doc is None or not hasattr(doc, "callbacks"):

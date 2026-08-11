@@ -208,8 +208,8 @@ def test_shared_stream_survives_one_session_teardown():
 
 
 def test_renderer_does_not_retain_last_plot():
-    # The renderer is a long lived singleton, so holding the last plot
-    # strongly retains it, and the data it displays, for the whole process
+    # The renderer is a long lived singleton which holds last_plot weakly,
+    # so a rendered plot and its data go away with the caller's reference
     def build():
         points = hv.Points([(0, 0), (1, 1)])
         plot = bokeh_renderer.get_plot(points)
