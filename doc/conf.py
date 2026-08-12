@@ -15,7 +15,6 @@ from nbsite.shared_conf import (
     html_context,
     html_css_files,
     html_static_path,
-    setup as nbsite_setup,
 )
 
 # Declare information specific to this project.
@@ -86,28 +85,6 @@ intersphinx_mapping = {
 
 numpydoc_xref_param_type = True
 numpydoc_xref_type = True
-numpydoc_xref_aliases = {
-    "str": "builtins.str",
-    "type": "builtins.type",
-}
-
-
-def _mpltype_role(name, rawtext, text, lineno, inliner, options=None, content=None):
-    """Render matplotlib type roles (e.g. ``:mpltype:`color``) as literals.
-
-    The matplotlib docs load this role via ``matplotlib.sphinxext`` to link to
-    matplotlib's own reference pages, but those targets do not exist in the
-    HoloViews docs, so render the type name as a literal instead.
-    """
-    from docutils import nodes
-
-    return [nodes.literal(rawtext, text, classes=["docutils"])], []
-
-
-def setup(app):
-    nbsite_setup(app)
-    app.add_role("mpltype", _mpltype_role)
-
 
 myst_enable_extensions = ["colon_fence", "deflist"]
 numpydoc_show_inherited_class_members = False
