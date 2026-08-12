@@ -93,17 +93,18 @@ streams <holoviews.streams>
 util <holoviews.util>
 ```
 
-[annotators]: holoviews.annotators
-[core]: holoviews.core
-[core.data]: holoviews.core.data
-[element]: holoviews.element
-[getting started guide]: ../getting_started/index
-[ipython]: holoviews.ipython
-[operation]: holoviews.operation
-[plotting]: holoviews.plotting
-[plotting.bokeh]: holoviews.plotting.bokeh
-[plotting.mpl]: holoviews.plotting.mpl
-[plotting.plotly]: holoviews.plotting.plotly
-[selection]: holoviews.selection
-[streams]: holoviews.streams
-[util]: holoviews.util
+[annotators]: holoviews.annotators.html
+[core]: holoviews.core.html
+[core.data]: holoviews.core.data.html
+[element]: holoviews.element.html
+[getting started guide]: ../getting_started/index.html
+[ipython]: holoviews.ipython.html
+[operation]: holoviews.operation.html
+[plotting]: holoviews.plotting.html
+[plotting.bokeh]: holoviews.plotting.bokeh.html
+[plotting.mpl]: holoviews.plotting.mpl.html
+[plotting.plotly]: holoviews.plotting.plotly.html
+[selection]: holoviews.selection.html
+[streams]: holoviews.streams.html
+[user manual]: ../User_Manual/index.html
+[util]: holoviews.util.html

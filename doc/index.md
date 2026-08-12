@@ -26,7 +26,7 @@ understand how everything works.
 The [User Guide](user_guide/index) goes more deeply into key concepts from
 HoloViews, when you are ready for further study.
 
-The [API](reference_manual/index) is the definitive guide to each HoloViews
+The [API](reference_manual) is the definitive guide to each HoloViews
 object, but the same information is available more conveniently via the
 `hv.help()` command and tab completion in the Jupyter notebook.
 
