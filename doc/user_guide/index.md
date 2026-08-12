@@ -184,37 +184,37 @@ These guides provide detail about specific additional features in HoloViews:
  Continuous Coordinates <Continuous_Coordinates>
 ```
 
-[annotating your data]: Annotating_Data
-[applying customizations]: Applying_Customizations
-[building composite objects]: Building_Composite_Objects
-[colormaps]: Colormaps
-[composing elements]: Composing_Elements
-[configuring holoviews]: Configuring
-[continuous coordinates]: Continuous_Coordinates
-[creating interactive dashboards]: Dashboards
-[custom interactivity]: Custom_Interactivity
-[customizing plots]: Customizing_Plots
-[data processing pipelines]: Data_Pipelines
-[deploying bokeh apps]: Deploying_Bokeh_Apps
-[dimensioned containers]: Dimensioned_Containers
-[exporting and archiving]: Exporting_and_Archiving
-[gallery]: ../gallery/index
-[geometry data]: Geometry_Data
-[getting started]: ../getting_started/index
-[gridded datasets]: Gridded_Datasets
-[indexing and selecting data]: Indexing_and_Selecting_Data
-[interactive hover for big data]: Interactive_Hover_for_Big_Data
-[linking bokeh plots]: Linking_Plots
-[live data]: Live_Data
-[plotting with bokeh]: Plotting_with_Bokeh
-[plotting with matplotlib]: Plotting_with_Matplotlib
-[reference gallery]: ../reference/index
-[responding to events]: Responding_to_Events
-[style mapping]: Style_Mapping
-[tabular datasets]: Tabular_Datasets
-[transforming elements]: Transforming_Elements
-[using annotators to edit and label data]: Annotators
-[using linked brushing to cross-filter complex datasets]: Linked_Brushing
-[working with large data]: Large_Data
-[working with renderers and plots]: Plots_and_Renderers
-[working with streaming data]: Streaming_Data
+[annotating your data]: Annotating_Data.html
+[applying customizations]: Applying_Customizations.html
+[building composite objects]: Building_Composite_Objects.html
+[colormaps]: Colormaps.html
+[composing elements]: Composing_Elements.html
+[configuring holoviews]: Configuring.html
+[continuous coordinates]: Continuous_Coordinates.html
+[creating interactive dashboards]: Dashboards.html
+[custom interactivity]: Custom_Interactivity.html
+[customizing plots]: Customizing_Plots.html
+[data processing pipelines]: Data_Pipelines.html
+[deploying bokeh apps]: Deploying_Bokeh_Apps.html
+[dimensioned containers]: Dimensioned_Containers.html
+[exporting and archiving]: Exporting_and_Archiving.html
+[gallery]: ../gallery/index.html
+[geometry data]: Geometry_Data.html
+[getting started]: ../getting_started/index.html
+[gridded datasets]: Gridded_Datasets.html
+[indexing and selecting data]: Indexing_and_Selecting_Data.html
+[interactive hover for big data]: Interactive_Hover_for_Big_Data.html
+[linking bokeh plots]: Linking_Plots.html
+[live data]: Live_Data.html
+[plotting with bokeh]: Plotting_with_Bokeh.html
+[plotting with matplotlib]: Plotting_with_Matplotlib.html
+[reference gallery]: ../reference/index.html
+[responding to events]: Responding_to_Events.html
+[style mapping]: Style_Mapping.html
+[tabular datasets]: Tabular_Datasets.html
+[transforming elements]: Transforming_Elements.html
+[using annotators to edit and label data]: Annotators.html
+[using linked brushing to cross-filter complex datasets]: Linked_Brushing.html
+[working with large data]: Large_Data.html
+[working with renderers and plots]: Plots_and_Renderers.html
+[working with streaming data]: Streaming_Data.html
