@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended", ":enablePreCommit"], // ":maintainLockFilesMonthly"
-  "schedule": ["after 12am and before 5am on monday"],
+  "schedule": ["after 12am and before 5am on the first monday of the month"],
   "enabledManagers": ["github-actions", "pre-commit"],  // pixi
   "commitMessagePrefix": "chore(bot):",
   "automerge": true,
