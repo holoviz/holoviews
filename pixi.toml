@@ -70,7 +70,7 @@ nomkl = "*"
 pip = "*"
 python-gil = "*"
 # Required
-bokeh = ">=3.1"
+bokeh = ">=3.1,<3.10.0a0" # upper pin until new panel release
 colorcet = "*"
 narwhals = ">=2"
 numpy = ">=1.21"
