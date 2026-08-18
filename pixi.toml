@@ -207,7 +207,7 @@ test-gpu = "pytest holoviews/tests --gpu"
 # =============================================
 [feature.doc.dependencies]
 graphviz = "*"
-nbsite = ">=0.9.0a6,<0.10.0"
+nbsite = ">=0.10.0a0"
 numpydoc = "*"
 pooch = "*"
 python-kaleido = "*"
@@ -225,9 +225,10 @@ SPHINX_APIDOC_OPTIONS = "members,show-inheritance"
 _docs-generate-rst = 'nbsite generate-rst --org holoviz --project-name holoviews'
 _docs-refmanual = 'sphinx-apidoc -e -o doc/reference_manual/ holoviews/ holoviews/tests --ext-autodoc --ext-intersphinx'
 _docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name holoviews'
+_docs_markdown = 'python -m nbsite build-llms --config scripts/llms_config.py'
 
 [feature.doc.tasks.docs-build]
-depends-on = ['_docs-generate-rst', '_docs-refmanual', '_docs-generate']
+depends-on = ['_docs-generate-rst', '_docs-refmanual', '_docs-generate', '_docs_markdown']
 
 # =============================================
 # ================== BUILD ====================
