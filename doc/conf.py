@@ -83,14 +83,12 @@ intersphinx_mapping = {
     "matplotlib": ("https://matplotlib.org/stable/", None),
 }
 
-# Link str/type to the stdlib docs instead of matching same-named project
-# objects (e.g. HoloViews' Dimension.str), which would trigger warnings.
 numpydoc_xref_param_type = True
 numpydoc_xref_type = True
 numpydoc_xref_aliases = {
     "str": "builtins.str",
     "type": "builtins.type",
-}
+}  # Link str/type to the stdlib docs (e.g. holoViews.Dimension.str) to avoid warnings.
 
 myst_enable_extensions = ["colon_fence", "deflist"]
 numpydoc_show_inherited_class_members = False
