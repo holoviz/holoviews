@@ -70,7 +70,7 @@ nomkl = "*"
 pip = "*"
 python-gil = "*"
 # Required
-bokeh = ">=3.1"
+bokeh = ">=3.1,<3.10.0a0" # upper pin until support in panel
 colorcet = "*"
 narwhals = ">=2"
 numpy = ">=1.21"
@@ -108,7 +108,7 @@ python = "3.13.*"
 COVERAGE_CORE = "sysmon"
 
 [feature.py314.dependencies]
-python = "3.14.*,!=3.14.1" # https://github.com/python/cpython/issues/142214
+python = "3.14.*"
 
 [feature.py314.activation.env]
 COVERAGE_CORE = "sysmon"
@@ -160,7 +160,7 @@ pytest = "*"
 pytest-asyncio = "*"
 pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
-pytest-rerunfailures = "!=16.0.0" # https://github.com/pytest-dev/pytest-rerunfailures/issues/303
+pytest-rerunfailures = "*"
 pytest-xdist = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-gpu + test-ui environment
@@ -173,7 +173,8 @@ test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
 nbval = "*"
 
 [feature.test-ui.dependencies]
-playwright = "*"
+playwright = ">=1.61.0"
+playwright-python = ">=1.61.0"
 pytest-playwright = "*"
 
 [feature.test-ui.tasks]
@@ -206,7 +207,7 @@ test-gpu = "pytest holoviews/tests --gpu"
 # =============================================
 [feature.doc.dependencies]
 graphviz = "*"
-nbsite = ">=0.9.0a6,<0.10.0"
+nbsite = ">=0.10.0a0"
 numpydoc = "*"
 pooch = "*"
 python-kaleido = "*"
@@ -224,9 +225,10 @@ SPHINX_APIDOC_OPTIONS = "members,show-inheritance"
 _docs-generate-rst = 'nbsite generate-rst --org holoviz --project-name holoviews'
 _docs-refmanual = 'sphinx-apidoc -e -o doc/reference_manual/ holoviews/ holoviews/tests --ext-autodoc --ext-intersphinx'
 _docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name holoviews'
+_docs_markdown = 'python -m nbsite build-llms --config scripts/llms_config.py'
 
 [feature.doc.tasks.docs-build]
-depends-on = ['_docs-generate-rst', '_docs-refmanual', '_docs-generate']
+depends-on = ['_docs-generate-rst', '_docs-refmanual', '_docs-generate', '_docs_markdown']
 
 # =============================================
 # ================== BUILD ====================
@@ -234,7 +236,7 @@ depends-on = ['_docs-generate-rst', '_docs-refmanual', '_docs-generate']
 [feature.build.dependencies]
 python-build = "*"
 conda-build = "*"
-conda-libmamba-solver = "!=25.11.0" # tmp pin https://github.com/conda/conda-libmamba-solver/issues/790
+conda-libmamba-solver = "*"
 
 [feature.build.tasks]
 build-conda = 'bash scripts/conda/build.sh'
