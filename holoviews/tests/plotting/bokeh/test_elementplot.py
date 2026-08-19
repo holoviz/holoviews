@@ -8,13 +8,18 @@ import param
 import pytest
 from bokeh.document import Document
 from bokeh.models import (
+    CategoricalAxis,
+    CategoricalScale,
     EqHistColorMapper,
+    FactorRange,
     FixedTicker,
+    LinearAxis,
     LinearColorMapper,
     LogColorMapper,
     LogTicker,
     NumeralTickFormatter,
     PrintfTickFormatter,
+    Range1d,
     tools,
 )
 
@@ -530,6 +535,19 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         plot = bokeh_renderer.get_plot(curve)
         x_range = plot.handles["x_range"]
         assert x_range.factors == []
+
+    def test_numeric_dimension_values_not_categorical(self):
+        curve = hv.Curve([(1, 1), (2, 3)]).redim.values(x=[1, 2, 3])
+        plot = bokeh_renderer.get_plot(curve)
+        assert isinstance(plot.handles["x_range"], Range1d)
+        assert isinstance(plot.handles["xaxis"], LinearAxis)
+
+    def test_categorical_axis_ignores_log(self):
+        curve = hv.Curve([("C", 1), ("B", 3)]).opts(logx=True)
+        plot = bokeh_renderer.get_plot(curve)
+        assert isinstance(plot.handles["x_range"], FactorRange)
+        assert isinstance(plot.handles["xaxis"], CategoricalAxis)
+        assert isinstance(plot.state.x_scale, CategoricalScale)
 
     def test_style_map_dimension_object(self):
         x = hv.Dimension("x")

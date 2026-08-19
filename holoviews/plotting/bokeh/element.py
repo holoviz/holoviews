@@ -997,7 +997,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             # more than one dimension on this axis
             or bool(dims and len(dims) > 1)
             # the axis dimension's own declared values/type are string-like
-            or bool(axis_dim and axis_dim.values)
+            or (axis_dim is not None and any(isinstance(v, (str, bytes)) for v in axis_dim.values))
             or (isinstance(dim_type, type) and issubclass(dim_type, (str, bytes)))
             # `ranges` (populated by `Plot._compute_group_range`) recorded factors for the dimension.
             # While `ranges` and `v0`/`v1` are merged by dimension *name* across a layout/overlay,
@@ -1009,7 +1009,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         # If multi_x/y then grab opts from element
         axis_type: AxisType = "log" if (self.logx, self.logy)[pos] else "auto"
-        if not is_categorical and dim_type is not None:
+        if is_categorical:
+            axis_type = "auto"
+        elif dim_type is not None:
             if isinstance(v0, util.datetime_types) or dim_type in util.datetime_types:
                 axis_type = "datetime"
             elif BOKEH_GE_3_8_0 and (
