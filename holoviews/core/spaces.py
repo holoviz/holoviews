@@ -1381,17 +1381,15 @@ class DynamicMap(HoloMap):
 
         Selections may select a specific value, slice or set of values:
 
-        * value: Scalar values will select rows along with an exact match,
-        e.g.:
+        * value: Scalar values will select rows along with an exact match, e.g.::
 
             ds.select(x=3)
 
-        * slice: Slices may be declared as tuples of the upper and lower bound,
-        e.g.:
+        * slice: Slices may be declared as tuples of the upper and lower bound, e.g.::
 
             ds.select(x=(0, 3))
 
-        * values: A list of values may be selected using a list or set, e.g.:
+        * values: A list of values may be selected using a list or set, e.g.::
 
             ds.select(x=[0, 1, 2])
 

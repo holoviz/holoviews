@@ -109,6 +109,7 @@ class Plot(param.Parameterized):
 
     @document.setter
     def document(self, doc):
+        self._unwatch_session()
         if (
             doc
             and hasattr(doc, "on_session_destroyed")
@@ -116,21 +117,29 @@ class Plot(param.Parameterized):
             and not isinstance(self, GenericAdjointLayoutPlot)
         ):
             doc.on_session_destroyed(self._session_destroy)
-            if self._document:
-                if isinstance(self._document.callbacks._session_destroyed_callbacks, set):
-                    self._document.callbacks._session_destroyed_callbacks.discard(
-                        self._session_destroy
-                    )
-                else:
-                    self._document.callbacks._session_destroyed_callbacks.pop(
-                        self._session_destroy, None
-                    )
 
         self._document = doc
         if self.subplots:
             for plot in self.subplots.values():
                 if plot is not None:
                     plot.document = doc
+
+    def _unwatch_session(self):
+        """Drop this plot's session destroy hook from its current document.
+
+        A document holds its callbacks, and through them this plot, strongly,
+        so the hook is dropped whenever the plot leaves the document, i.e. on
+        reassignment and on cleanup. Only the hook belonging to this plot is
+        removed.
+        """
+        doc = self._document
+        if doc is None or not hasattr(doc, "callbacks"):
+            return
+        callbacks = doc.callbacks._session_destroyed_callbacks
+        if isinstance(callbacks, set):
+            callbacks.discard(self._session_destroy)
+        else:
+            callbacks.pop(self._session_destroy, None)
 
     @property
     def pane(self):
@@ -195,17 +204,15 @@ class Plot(param.Parameterized):
         """
         plots = self.traverse(lambda x: x, [Plot])
         for plot in plots:
+            plot._unwatch_session()
             if not isinstance(plot, (GenericElementPlot, GenericOverlayPlot)):
                 continue
             for stream in set(plot.streams):
                 stream._subscribers = [
                     (p, subscriber)
                     for p, subscriber in stream._subscribers
-                    if subscriber
-                    and (
-                        not util.is_param_method(subscriber)
-                        or util.get_method_owner(subscriber) not in plots
-                    )
+                    if not util.is_param_method(subscriber)
+                    or util.get_method_owner(subscriber) not in plots
                 ]
 
     def _session_destroy(self, session_context):

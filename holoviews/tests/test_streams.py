@@ -4,8 +4,8 @@ Unit test of the streams system
 
 from __future__ import annotations
 
+import gc
 import weakref
-from collections import defaultdict
 from functools import partial
 
 import numpy as np
@@ -808,40 +808,86 @@ class TestSubscribers:
         assert subscriber.call_count == 3
 
 
-class TestWeakSubscriber:
-    def check(self, Viewer):
-        viewer = Viewer()
-        ref = weakref.ref(viewer)
-        del viewer
-        assert ref() is None
+class _App(param.Parameterized):
+    def __init__(self, make_subscriber, **params):
+        super().__init__(**params)
+        self.calls = []
+        self.element = hv.Points([(0, 0)])
+        self.stream = RangeXY(source=self.element)
+        self.stream.add_subscriber(make_subscriber(self))
 
-    def test_bound_method(self):
-        class Viewer:
-            def __init__(self):
-                self.plot = hv.Points([])
-                self.stream = hv.streams.RangeX(source=self.plot)
-                self.stream.add_subscriber(self.on_update)
+    def on_update(self, **kwargs):
+        self.calls.append(kwargs)
 
-            def on_update(self, x_range=None): ...
 
-        self.check(Viewer)
+subscriber_kinds = pytest.mark.parametrize(
+    "make_subscriber",
+    [
+        lambda app: app.on_update,
+        lambda app: partial(app.on_update, extra=1),
+        lambda app: lambda **kwargs: app.calls.append(kwargs),
+    ],
+    ids=["bound_method", "partial", "lambda"],
+)
 
-    def test_bound_method_partial(self):
-        class Viewer:
-            def __init__(self):
-                self.plot = hv.Points([])
-                self.stream = hv.streams.RangeX(source=self.plot)
-                self.stream.add_subscriber(partial(self.on_update, extra=1))
 
-            def on_update(self, x_range=None, extra=0): ...
+class TestSubscriberLifetime:
+    @subscriber_kinds
+    def test_app_is_collected(self, make_subscriber):
+        def build():
+            app = _App(make_subscriber)
+            return {"app": app, "element": app.element, "stream": app.stream}
 
-        self.check(Viewer)
+        refs = {name: weakref.ref(obj) for name, obj in build().items()}
+        gc.collect()
+        assert not [name for name, ref in refs.items() if ref() is not None]
+
+    @subscriber_kinds
+    def test_subscriber_is_invoked(self, make_subscriber):
+        app = _App(make_subscriber)
+        app.stream.event(x_range=(0, 1), y_range=(2, 3))
+        assert [call["x_range"] for call in app.calls] == [(0, 1)]
+
+    def test_stream_survives_dropped_local_reference(self):
+        element = hv.Points([(0, 0)])
+        calls = []
+
+        def register():
+            stream = RangeXY(source=element)
+            stream.add_subscriber(lambda **kwargs: calls.append(kwargs))
+
+        register()
+        gc.collect()
+        (stream,) = Stream.registry[element]
+        stream.event(x_range=(0, 1), y_range=(2, 3))
+        assert calls == [{"x_range": (0, 1), "y_range": (2, 3)}]
+
+    def test_subscription_is_only_reference(self):
+        def build():
+            app = _App(lambda app: app.on_update)
+            return app.element, weakref.ref(app)
+
+        element, ref = build()
+        gc.collect()
+        assert ref() is not None
+
+        (stream,) = Stream.registry[element]
+        stream.event(x_range=(0, 1), y_range=(2, 3))
+        assert ref().calls == [{"x_range": (0, 1), "y_range": (2, 3)}]
+
+    def test_distinct_partials_not_deduplicated(self):
+        app = _App(lambda app: partial(app.on_update, tag="a"))
+        app.stream.add_subscriber(partial(app.on_update, tag="b"))
+
+        assert len(app.stream.subscribers) == 2
+        app.stream.event(x_range=(0, 1), y_range=(2, 3))
+        assert sorted(call["tag"] for call in app.calls) == ["a", "b"]
 
 
 class TestStreamSource:
     def teardown_method(self):
         with param.logging_level("ERROR"):
-            Stream.registry = defaultdict(list)
+            Stream.registry.clear()
 
     def test_source_empty_element(self):
         points = hv.Points([])
@@ -871,6 +917,27 @@ class TestStreamSource:
         points = hv.Points([])
         PointerX(source=points)
         assert points in Stream.registry
+
+    def test_source_registry_releases_source(self):
+        def build():
+            points = hv.Points([(0, 0)])
+            stream = PointerX(source=points)
+            stream.add_subscriber(lambda **kwargs: points)
+            assert points in Stream.registry
+            return {"source": points, "stream": stream}
+
+        refs = {name: weakref.ref(obj) for name, obj in build().items()}
+        gc.collect()
+        assert not [name for name, ref in refs.items() if ref() is not None]
+
+    def test_source_remap_releases_previous_source(self):
+        points = hv.Points([])
+        curve = hv.Curve([])
+        stream = PointerX(source=points)
+        stream.source = curve
+
+        assert points._streams == []
+        assert curve._streams == [stream]
 
 
 class TestParameterRenaming:

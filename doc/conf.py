@@ -85,6 +85,10 @@ intersphinx_mapping = {
 
 numpydoc_xref_param_type = True
 numpydoc_xref_type = True
+numpydoc_xref_aliases = {
+    "str": "builtins.str",  # Because of holoviews.util.transform.dim.str
+    "type": "builtins.type",  # Because of holoviews.core.ndmapping.type
+}
 
 myst_enable_extensions = ["colon_fence", "deflist"]
 numpydoc_show_inherited_class_members = False

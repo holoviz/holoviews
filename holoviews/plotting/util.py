@@ -784,12 +784,17 @@ def _list_cmaps(provider=None, records=False):
 def register_cmaps(category, provider, source, bg, names):
     """Maintain descriptions of colormaps that include the following information:
 
-    name     - string name for the colormap
-    category - intended use or purpose, mostly following matplotlib
-    provider - package providing the colormap directly
-    source   - original source or creator of the colormaps
-    bg       - base/background color expected for the map
-               ('light','dark','medium','any' (unknown or N/A))
+    name
+        string name for the colormap
+    category
+        intended use or purpose, mostly following matplotlib
+    provider
+        package providing the colormap directly
+    source
+        original source or creator of the colormaps
+    bg
+        base/background color expected for the map
+        ('light', 'dark', 'medium', 'any' (unknown or N/A))
 
     """
     for name in names:
@@ -1051,9 +1056,9 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
     elif isinstance(cmap, list):
         palette = cmap
     elif isinstance(cmap, str):
+        cet_cmaps = _list_cmaps("colorcet")  # first to register colorcet colormaps with matplotlib
         mpl_cmaps = _list_cmaps("matplotlib")
         bk_cmaps = _list_cmaps("bokeh")
-        cet_cmaps = _list_cmaps("colorcet")
         if provider == "matplotlib" or (
             provider is None and (cmap in mpl_cmaps or cmap.lower() in mpl_cmaps)
         ):
@@ -1163,7 +1168,7 @@ def attach_streams(plot, obj, precedence=1.1):
 
     def append_refresh(dmap):
         for stream in get_nested_streams(dmap):
-            if plot.refresh not in stream._subscribers:
+            if plot.refresh not in stream.subscribers:
                 stream.add_subscriber(plot.refresh, precedence)
 
     return obj.traverse(append_refresh, [DynamicMap])

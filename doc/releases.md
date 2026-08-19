@@ -2638,8 +2638,8 @@ Enhancements:
 Documentation:
 
 - Completed updates from .options to .opts API in the documentation
-  ([#3364]((https://github.com/pyviz/holoviews/pull/3364),
-  [#3367](<(https://github.com/pyviz/holoviews/pull/3367)>)
+  ([#3364](https://github.com/pyviz/holoviews/pull/3364),
+  [#3367](https://github.com/pyviz/holoviews/pull/3367))
 
 ### Version 1.11.0
 
