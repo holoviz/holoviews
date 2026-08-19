@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+import gc
+import weakref
+
 import numpy as np
+import param
 import pyviz_comms as comms
+from bokeh.document import Document
 from bokeh.models import (
     ColumnDataSource,
     CrosshairTool,
@@ -11,6 +16,7 @@ from bokeh.models import (
     LogColorMapper,
     Span,
 )
+from panel.io.state import set_curdoc
 from param import concrete_descendents
 
 import holoviews as hv
@@ -108,8 +114,8 @@ def test_overlay_plot_stream_cleanup():
 
     plot = bokeh_renderer.get_plot(dmap1 * dmap2)
 
-    assert len(stream1._subscribers) == 4
-    assert len(stream2._subscribers) == 4
+    assert stream1.subscribers == [plot.refresh]
+    assert stream2.subscribers == [plot.refresh]
 
     plot.cleanup()
 
@@ -133,6 +139,86 @@ def test_layout_plot_stream_cleanup():
 
     assert not stream1._subscribers
     assert not stream2._subscribers
+
+
+def test_user_subscriber_survives_stream_cleanup():
+    class App(param.Parameterized):
+        def __init__(self, **params):
+            super().__init__(**params)
+            self.calls = []
+
+        def on_update(self, data):
+            self.calls.append(data)
+
+    app = App()
+    stream = Pipe()
+    dmap = hv.DynamicMap(hv.Curve, streams=[stream])
+    stream.add_subscriber(app.on_update)
+
+    plot = bokeh_renderer.get_plot(dmap)
+    plot.cleanup()
+
+    assert len(stream._subscribers) == 1
+    stream.send([1, 2, 3])
+    assert app.calls == [[1, 2, 3]]
+
+
+def test_stream_cleanup_keeps_other_plot_subscriber():
+    stream = Pipe(data=[1, 2, 3])
+    dmap = hv.DynamicMap(hv.Curve, streams=[stream])
+
+    plot1 = bokeh_renderer.get_plot(dmap)
+    plot2 = bokeh_renderer.get_plot(dmap)
+    assert len(stream._subscribers) == 2
+
+    plot1.cleanup()
+
+    assert stream.subscribers == [plot2.refresh]
+
+    stream.send([8, 9])
+    assert len(plot2.current_frame.dimension_values(0)) == 2
+
+    plot2.cleanup()
+    assert not stream._subscribers
+
+
+def test_shared_stream_survives_one_session_teardown():
+    server_renderer = bokeh_renderer.instance(mode="server")
+    stream = Pipe(data=[1, 2, 3])
+    dmap = hv.DynamicMap(hv.Curve, streams=[stream])
+
+    doc1, doc2 = Document(), Document()
+    with set_curdoc(doc1):
+        plot1 = server_renderer.get_plot(dmap, doc1)
+    with set_curdoc(doc2):
+        plot2 = server_renderer.get_plot(dmap, doc2)
+
+    assert plot1.document is doc1
+    assert plot2.document is doc2
+    destroy_callbacks = list(doc1.callbacks._session_destroyed_callbacks)
+    assert plot1._session_destroy in destroy_callbacks
+
+    for callback in destroy_callbacks:
+        callback(None)
+
+    stream.send([8, 9])
+    assert len(plot2.current_frame.dimension_values(0)) == 2
+
+    assert plot1._session_destroy not in doc1.callbacks._session_destroyed_callbacks
+
+
+def test_renderer_does_not_retain_last_plot():
+    # The renderer is a long lived singleton which holds last_plot weakly,
+    # so a rendered plot and its data go away with the caller's reference
+    def build():
+        points = hv.Points([(0, 0), (1, 1)])
+        plot = bokeh_renderer.get_plot(points)
+        plot.cleanup()
+        return {"element": points, "plot": plot}
+
+    refs = {name: weakref.ref(obj) for name, obj in build().items()}
+    gc.collect()
+    assert not [name for name, ref in refs.items() if ref() is not None]
 
 
 def test_sync_two_plots():

@@ -566,6 +566,7 @@ class LabelledData(param.Parameterized):
     )
 
     _deep_indexable = False
+    _streams = None
 
     def __init__(self, data, id=None, plot_id=None, **params):
         """All LabelledData subclasses must supply data to the
@@ -847,6 +848,7 @@ class LabelledData(param.Parameterized):
     def __getstate__(self):
         """Ensures pickles save options applied to this objects."""
         obj_dict = self.__dict__.copy()
+        obj_dict.pop("_streams", None)
         try:
             if Store.save_option_state and (obj_dict.get("_id", None) is not None):
                 custom_key = "_custom_option_{}".format(obj_dict["_id"])
