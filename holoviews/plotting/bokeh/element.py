@@ -992,6 +992,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         )
         is_categorical = not self.subcoordinate_y and (
             # the plot or range declares itself categorical
+            # NOTE: does not seem to be done anywhere in HoloViews.
             any(self.traverse(lambda plot: plot._categorical))
             or range_type is FactorRange
             # more than one dimension on this axis
