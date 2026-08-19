@@ -1263,7 +1263,7 @@ def match_yaxis_type_to_range(
     """Apply match_ax_type to the y-axis found by the given range name"""
     for axis in yax:
         if axis.y_range_name == range_name:
-            return match_ax_type(axis, range_type, is_categorical)
+            return match_ax_type(axis, range_type, is_categorical=is_categorical)
     raise ValueError("No axis with given range found")
 
 

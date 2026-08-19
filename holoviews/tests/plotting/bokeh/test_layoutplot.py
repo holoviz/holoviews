@@ -363,6 +363,19 @@ class TestLayoutPlot(LoggingComparison, TestBokehPlot):
         assert (x_range.start, x_range.end) == (-0.5, 0.5)
         assert (y_range.start, y_range.end) == (-0.5, 0.5)
 
+    def test_shared_axes_multi_y(self):
+        c1 = hv.Curve([1, 2, 3], "x", "y1")
+        c2 = hv.Curve([3, 2, 1], "x", "y2")
+        c3 = hv.Curve([1, 4, 9], "x", "y2")
+        overlay = (c1 * c2).opts(multi_y=True) + c3
+        plot = bokeh_renderer.get_plot(overlay)
+        plot1 = plot.subplots[(0, 0)].subplots["main"]
+        plot2 = plot.subplots[(0, 1)].subplots["main"]
+        x_range1, y_range1 = plot1.handles["x_range"], plot1.handles["y_range"]
+        x_range2, y_range2 = plot2.handles["x_range"], plot2.handles["y_range"]
+        assert x_range1 is x_range2
+        assert y_range1 is not y_range2
+
     def test_layout_empty_subplots(self):
         layout = (
             hv.Curve(range(10))
