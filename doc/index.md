@@ -111,6 +111,7 @@ see [Getting Started](getting_started/index).
 
 Home <self>
 Getting Started <getting_started/index>
+Features <features>
 User Guide <user_guide/index>
 Gallery <gallery/index>
 Reference Gallery <reference/index>
