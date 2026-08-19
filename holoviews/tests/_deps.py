@@ -35,9 +35,9 @@ if TYPE_CHECKING:
     import duckdb
     import ibis
     import IPython
+    import jupyter
     import matplotlib as mpl
     import networkx as nx
-    import notebook
     import pandas as pd
     import plotly
     import polars as pl
@@ -57,9 +57,9 @@ else:
     duckdb = optional_dependencies("duckdb")
     ibis = optional_dependencies("ibis")
     IPython = optional_dependencies("IPython")
+    jupyter = optional_dependencies("jupyter")
     mpl = optional_dependencies("matplotlib")
     nx = optional_dependencies("networkx")
-    notebook = optional_dependencies("notebook")
     pd = optional_dependencies("pandas")
     plotly = optional_dependencies("plotly")
     pl = optional_dependencies("polars")
@@ -83,7 +83,7 @@ ibis_skip = _skip(ibis, "ibis")
 ipython_skip = _skip(IPython, "IPython")
 mpl_skip = _skip(mpl, "matplotlib")
 nx_skip = _skip(nx, "networkx")
-notebook_skip = _skip(notebook, "notebook")
+jupyter_skip = _skip(jupyter, "jupyter")
 pd_skip = _skip(pd, "pandas")
 plotly_skip = _skip(plotly, "plotly")
 pl_skip = _skip(pl, "polars")

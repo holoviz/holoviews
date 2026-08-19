@@ -35,14 +35,14 @@ jobs:
     name: Pixi lock
     runs-on: ubuntu-latest
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-lock@1a9884850782b0b80ba2e91b573e7d63d9d3c3dc # v1.0.1
+      - uses: holoviz-dev/holoviz_tasks/pixi-lock@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
 
   conda_build:
     name: Build Conda
     needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@1a9884850782b0b80ba2e91b573e7d63d9d3c3dc # v1.0.1
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
         with:
           environments: "build"
           download-data: false
@@ -66,25 +66,19 @@ jobs:
         with:
           name: artifacts-conda
           path: dist/
-      - name: anaconda setup
-        run: |
-          pipx install anaconda-client
-          binstar --version || binstar --help  # version broke with typer 0.26.0 and click 8.4.0
-      - name: anaconda dev upload
-        if: contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc')
-        run: |
-          binstar --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev dist/*.conda
-      - name: anaconda upload
-        if: (!(contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc')))
-        run: |
-          binstar --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main dist/*.conda
+      - uses: anaconda/actions/upload-package@a6f488910b4a1e4f3fe01736241ca1b92b4b355a # v0.3.1
+        with:
+          token: ${{ secrets.CONDA_UPLOAD_TOKEN }}
+          channel: pyviz
+          packages: dist/*.conda
+          labels: ${{ (contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc')) && 'dev' || 'main,dev' }}
 
   pip_build:
     name: Build PyPI
     needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@1a9884850782b0b80ba2e91b573e7d63d9d3c3dc # v1.0.1
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
         with:
           environments: "build"
           download-data: false
@@ -131,7 +125,7 @@ jobs:
           name: artifacts-pip
           path: dist/
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1.14
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
 
   announce:
     name: Announce GitHub
@@ -143,7 +137,7 @@ jobs:
     env:
       TAG: ${{ github.ref_name }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1

@@ -566,6 +566,7 @@ class LabelledData(param.Parameterized):
     )
 
     _deep_indexable = False
+    _streams = None
 
     def __init__(self, data, id=None, plot_id=None, **params):
         """All LabelledData subclasses must supply data to the
@@ -722,7 +723,7 @@ class LabelledData(param.Parameterized):
         ----------
         spec : A function, spec or type to check for a match
             * A 'type[[.group].label]' string which is compared
-            against the type, group and label of this object.
+              against the type, group and label of this object.
 
             * A function which is given the object and returns a boolean.
 
@@ -847,6 +848,7 @@ class LabelledData(param.Parameterized):
     def __getstate__(self):
         """Ensures pickles save options applied to this objects."""
         obj_dict = self.__dict__.copy()
+        obj_dict.pop("_streams", None)
         try:
             if Store.save_option_state and (obj_dict.get("_id", None) is not None):
                 custom_key = "_custom_option_{}".format(obj_dict["_id"])

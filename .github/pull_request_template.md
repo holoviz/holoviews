@@ -1,4 +1,4 @@
-<!-- Using AI? READ FIRST: https://holoviz.org/contribute.html#ai-readme -->
+<!-- Using AI? READ FIRST: https://holoviz.org/contribute#ai-readme -->
 <!-- First time contributor: https://www.holoviews.org/developer_guide/index.html#making-a-pull-requests -->
 
 ## Description

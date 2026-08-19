@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import matplotlib as mpl
 import numpy as np
 import param
@@ -28,6 +30,9 @@ from .element import ColorbarPlot, ElementPlot, LegendPlot
 from .path import PathPlot
 from .plot import AdjoinedPlot, mpl_rc_context
 from .util import MPL_GE_3_7_0, MPL_GE_3_9_0, MPL_VERSION
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
 
 
 class ChartPlot(ElementPlot):
@@ -926,7 +931,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             key, ranges=ranges, element=element, dimensions=[xdims, vdim], **kwargs
         )
 
-    def _finalize_ticks(self, axis, element, xticks, yticks, zticks):
+    def _finalize_ticks(self, axis: Axes, element, xticks, yticks, zticks):
         """Apply ticks with appropriate offsets."""
         alignments = None
         ticks = xticks or yticks

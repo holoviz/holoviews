@@ -52,6 +52,8 @@ from .tree import AttrTree
 from .util import group_sanitizer, label_sanitizer, sanitize_identifier
 
 if t.TYPE_CHECKING:
+    from holoviews.plotting import Renderer
+
     from ..util import _BackendT
     from ..util.settings import OutputSettings
 
@@ -624,7 +626,7 @@ class OptionTree(AttrTree):
     as a list (i.e. empty initial option groups at the root) or as a
     dictionary (e.g. groups={'style':Option()}). You can also
     initialize the OptionTree with the options argument together with
-    the **kwargs - see StoreOptions.merge_options for more information
+    the `**kwargs` - see StoreOptions.merge_options for more information
     on the options specification syntax.
 
     You can use the string specifier '.' to refer to the root node in
@@ -1193,7 +1195,7 @@ class Store:
 
     """
 
-    renderers = {}  # The set of available Renderers across all backends.
+    renderers: dict[str, Renderer] = {}  # The set of available Renderers across all backends.
 
     # A mapping from ViewableElement types to their corresponding plot
     # types grouped by the backend. Set using the register method.
@@ -1928,11 +1930,11 @@ class StoreOptions:
 
         The corresponding value is then a list of Option objects specified
         with an appropriate category ('plot', 'style' or 'norm'). For
-        instance, using the keys described above, the specs could be:
+        instance, using the keys described above, the specs could be::
 
-            {'Image: [Options('style', cmap='jet')]}
+            {'Image': [Options('style', cmap='jet')]}
 
-        Or setting two types of option at once:
+        Or setting two types of option at once::
 
             {"Image.Channel": [
                 Options("plot", size=50),
