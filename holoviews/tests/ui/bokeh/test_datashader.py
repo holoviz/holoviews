@@ -14,16 +14,6 @@ pytestmark = [pytest.mark.ui, ds_skip]
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_rasterize_dynspread_per_element_overlay_initial_range(serve_hv):
-    # Regression test for https://github.com/holoviz/holoviews/issues/6954
-    # and https://github.com/holoviz/holoviews/issues/4890
-    #
-    # rasterize/dynspread applied to each element individually before
-    # overlaying (rather than to the overlay as a whole) used to seed each
-    # element's own range stream with its unpadded extent instead of the
-    # padded extent the overlay is actually displayed with. That mismatch
-    # made the initial render incomplete (or, for constant-valued data,
-    # empty) until a pan/zoom/reset re-triggered the callback with the
-    # correct range.
     from holoviews.operation.datashader import dynspread, rasterize
 
     x = np.arange(10_000)
@@ -58,14 +48,6 @@ def test_rasterize_dynspread_per_element_overlay_initial_range(serve_hv):
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_datashade_dynspread_constant_values_overlay_not_empty(serve_hv):
-    # Regression test for https://github.com/holoviz/holoviews/issues/4890
-    #
-    # Two constant-valued Scatters, each individually datashade+dynspread'd
-    # then overlaid. Each element's own data has zero y-span, so without the
-    # fix its range stream was seeded with its own degenerate (v, v) range
-    # instead of the overlay's actual displayed range (its explicit ylim
-    # here), producing a 1x1, fully-transparent image: the points never
-    # showed up until a pan/zoom/reset re-triggered the callback.
     from holoviews.operation.datashader import datashade, dynspread
 
     x = np.arange(10_000)
@@ -78,10 +60,6 @@ def test_datashade_dynspread_constant_values_overlay_not_empty(serve_hv):
     curve_datashade1 = dynspread(datashade(curve1))
     curve_datashade2 = dynspread(datashade(curve2))
 
-    # Attaching explicit streams is what surfaces the bug: it is the
-    # additional RangeXY registered against the same source that ends up
-    # seeded (or not) with the overlay's real, ylim-clamped range instead of
-    # each element's own degenerate (v, v) extent.
     stream1 = RangeXY(source=curve_datashade1)
     stream2 = RangeXY(source=curve_datashade2)
 

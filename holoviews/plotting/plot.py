@@ -2320,12 +2320,9 @@ class GenericOverlayPlot(GenericElementPlot):
         # Should match what is done in ElementPlot.get_extents
         if not self.drawn:
             x_range, y_range = ((y0, y1), (x0, x1)) if self.invert_axes else ((x0, x1), (y0, y1))
-            # Individual subplots (e.g. elements that were rasterized/dynspread
-            # before being overlaid) each carry their own source_streams. Their
-            # own get_extents call sees padding=0 (padding is only applied once,
-            # here, at the overlay level) so they must be seeded with this
-            # overlay's combined, padded range too, or their initial dynamic
-            # callback will be invoked with a mismatched, unpadded range.
+            # Seed subplot streams: padding is only applied at the overlay
+            # level, so without this initial subplot callback sees an unpadded
+            # range. https://github.com/holoviz/holoviews/pull/6964
             streams = list(getattr(self, "source_streams", []))
             for subplot in self.subplots.values():
                 if subplot is None:
