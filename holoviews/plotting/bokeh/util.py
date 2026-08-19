@@ -1238,27 +1238,32 @@ def get_axis_class(axis_type, range_input, dim):  # Copied from bokeh
         raise ValueError(f"Unrecognized axis_type: '{axis_type!r}'")
 
 
-def match_ax_type(ax: Axis, axis_type: AxisType, *, is_categorical: bool) -> bool:
+def match_ax_type(ax: Axis, range_type: AxisType, *, is_categorical: bool | None = None) -> bool:
     """Ensure the range_type matches the axis model being matched."""
+    is_categorical = range_type == "categorical" if is_categorical is None else is_categorical
     if isinstance(ax, CategoricalAxis):
         return is_categorical
     elif is_categorical:
         return False
     elif isinstance(ax, DatetimeAxis):
-        return axis_type == "datetime"
+        return range_type == "datetime"
     elif BOKEH_GE_3_8_0 and isinstance(ax, TimedeltaAxis):
-        return axis_type == "timedelta"
+        return range_type == "timedelta"
     else:
-        return axis_type in {"auto", "log"}
+        return range_type in {"auto", "log"}
 
 
 def match_yaxis_type_to_range(
-    yax: Iterable[Axis], axis_type: AxisType, range_name: str | None, *, is_categorical: bool
+    yax: Iterable[Axis],
+    range_type: AxisType,
+    range_name: str | None,
+    *,
+    is_categorical: bool | None = None,
 ) -> bool:
     """Apply match_ax_type to the y-axis found by the given range name"""
     for axis in yax:
         if axis.y_range_name == range_name:
-            return match_ax_type(axis, axis_type, is_categorical)
+            return match_ax_type(axis, range_type, is_categorical)
     raise ValueError("No axis with given range found")
 
 
