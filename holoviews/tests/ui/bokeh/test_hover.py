@@ -575,8 +575,8 @@ def test_hover_across_dynamicmaps(serve_panel):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
+@pytest.mark.issue(6438)
 def test_hover_heatmap_categorical_outside_plot_area(serve_hv, caplog):
-    # Test for https://github.com/holoviz/holoviews/pull/6438
     df = pd.DataFrame(
         [[0, "A", 10], [0, "B", 20], [1, "A", 20], [1, "B", 30]],
         columns=["key1", "key2", "value"],

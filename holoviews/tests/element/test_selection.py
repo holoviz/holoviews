@@ -26,8 +26,8 @@ class TestIndexExpr:
     def teardown_method(self):
         hv.Store.current_backend = self._backend
 
+    @pytest.mark.issue(6336)
     def test_index_selection_on_id_column(self):
-        # tests issue in https://github.com/holoviz/holoviews/pull/6336
         x, y = np.random.randn(2, 100)
         idx = np.arange(100)
 

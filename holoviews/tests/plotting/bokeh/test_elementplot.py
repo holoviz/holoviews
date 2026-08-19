@@ -1455,8 +1455,8 @@ class TestApplyHardBounds(TestBokehPlot):
 
 
 @pl_skip
+@pytest.mark.issue(6728)
 def test_rectangles_colormapping_with_polars():
-    # Test for https://github.com/holoviz/holoviews/issues/6728
     df = pl.DataFrame({"a": [3, 4], "b": [3, 4], "c": [10, 20], "d": [10, 20], "e": [1, 2]})
     rectangles = hv.Rectangles(df, kdims=["a", "b", "c", "d"]).opts(color="e")
     plot = bokeh_renderer.get_plot(rectangles)

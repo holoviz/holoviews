@@ -210,8 +210,8 @@ class PandasInterfaceTests(BasePandasInterfaceTests):
         data = hv.Dataset(df).dimension_values("dates")
         np.testing.assert_equal(dates, data)
 
+    @pytest.mark.issue(6305)
     def test_data_groupby_categorial(self):
-        # Test for https://github.com/holoviz/holoviews/issues/6305
         df = pd.DataFrame({"y": [1, 2], "by": ["A", "B"]})
         df["by"] = pd.Categorical(df["by"])
         ds = hv.Dataset(df, kdims="index", vdims="y").to(hv.Scatter, groupby="by")
@@ -391,8 +391,8 @@ class PandasInterfaceMultiIndexTests(HeterogeneousColumnTests, InterfaceTests):
         expected = self.df.loc[[2]]
         pd.testing.assert_frame_equal(selected.data, expected)
 
+    @pytest.mark.issue(6578)
     def test_select_index_and_column(self):
-        # See https://github.com/holoviz/holoviews/issues/6578
         frame = pd.DataFrame({"number": [1, 1, 2, 2], "color": ["red", "blue", "red", "blue"]})
         index = pd.MultiIndex.from_frame(frame, names=("number", "color"))
         df = pd.DataFrame({"cat": list("abab"), "values": range(4)}, index=index)
@@ -457,9 +457,8 @@ class PandasInterfaceMultiIndexTests(HeterogeneousColumnTests, InterfaceTests):
         assert ds.interface.dtype(ds, "Weight") == np.dtype(int)
         assert ds.interface.dtype(ds, "Height") == np.dtype("float64")
 
+    @pytest.mark.issue(6298)
     def test_regression_no_auto_index(self):
-        # https://github.com/holoviz/holoviews/issues/6298
-
         plot = hv.Scatter(self.df, kdims="number")
         np.testing.assert_equal(
             plot.dimension_values("number"), self.df.index.get_level_values("number")

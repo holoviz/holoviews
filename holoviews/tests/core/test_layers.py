@@ -26,8 +26,8 @@ class OverlayTest:
         for el, v in zip(overlay, views, strict=True):
             assert_element_equal(el, v)
 
+    @pytest.mark.issue(5315)
     def test_overlay_iterable(self):
-        # Related to https://github.com/holoviz/holoviews/issues/5315
         c1 = hv.Curve([0, 1])
         c2 = hv.Curve([10, 20])
         hv.Overlay({"a": c1, "b": c2}.values())

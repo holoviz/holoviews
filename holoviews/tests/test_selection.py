@@ -891,8 +891,8 @@ class TestLinkSelectionsBokeh(TestLinkSelections):
     def test_overlay_points_errorbars_dynamic(self):
         pass
 
+    @pytest.mark.issue(6106)
     def test_empty_layout(self):
-        # Test for https://github.com/holoviz/holoviews/issues/6106
         df = pd.DataFrame({"x": [1, 2], "y": [1, 2], "cat": ["A", "B"]})
 
         checkboxes = pn.widgets.CheckBoxGroup(options=["A", "B"])

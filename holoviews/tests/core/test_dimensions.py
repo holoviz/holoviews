@@ -100,8 +100,8 @@ class DimensionReprTest:
         dim = hv.Dimension("test", label="Test Dimension", unit="m")
         assert eval(repr(dim), {"Dimension": hv.Dimension}) == dim
 
+    @pytest.mark.issue(5378)
     def test_pprint_value_boolean(self):
-        # https://github.com/holoviz/holoviews/issues/5378
         dim = hv.Dimension("test")
         assert dim.pprint_value(True) == "True"
         assert dim.pprint_value(False) == "False"
