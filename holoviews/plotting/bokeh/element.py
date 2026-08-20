@@ -1944,9 +1944,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             let y_range_name = renderer.model.y_range_name
 
             if (!renderer.glyph.model.tags.includes('no_apply_ranges')) {{
-              const index = glyph_view.index.index
-              for (let pos = 0; pos < index._boxes.length - 4; pos += 4) {{
-                const [x0, y0, x1, y1] = index._boxes.slice(pos, pos+4)
+              // Bokeh 3.10 changed to glyph_view.index._bboxes
+              const boxes = glyph_view.index.index ? glyph_view.index.index._boxes : glyph_view.index._bboxes
+              for (let pos = 0; pos < boxes.length - 4; pos += 4) {{
+                const [x0, y0, x1, y1] = boxes.slice(pos, pos+4)
                 if ({odim}0 > plot.{odim}_range.start && {odim}1 < plot.{odim}_range.end) {{
                   vmin = Math.min(vmin, {dim}0)
                   vmax = Math.max(vmax, {dim}1)
