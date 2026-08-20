@@ -1590,14 +1590,16 @@ class shade(LinkableOperation):
         )
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", r"invalid value encountered in true_divide")
-            is_empty = False
-            if not is_categorical:
-                invalid = array.isnull().data
+            invalid = array.isnull().data
+            if isinstance(element, ImageStack):
+                for i, vdim in enumerate(element.vdims):
+                    if vdim.nodata is not None:
+                        invalid[..., i] |= array.data[..., i] == vdim.nodata
+            else:
                 nodata = element.vdims[0].nodata if element.vdims else None
                 if nodata is not None:
                     invalid |= array.data == nodata
-                is_empty = invalid.all()
-            if is_empty:
+            if invalid.all():
                 xd, yd = kdims[:2]
                 arr = np.zeros((*array.data.shape[:2], 4), dtype=np.uint8)
                 coords = {

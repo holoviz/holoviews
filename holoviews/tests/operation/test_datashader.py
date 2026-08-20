@@ -1017,6 +1017,15 @@ class DatashaderShadeTests:
         )
         assert_element_equal(shaded, expected)
 
+    def test_shade_imagestack_all_nodata_transparent(self):
+        xs, ys = [0.25, 0.75], [0.25, 0.75]
+        img_stack = hv.ImageStack(
+            (xs, ys, np.zeros((2, 2)), np.full((2, 2), -1)),
+            vdims=[hv.Dimension("a", nodata=0), hv.Dimension("b", nodata=-1)],
+        )
+        shaded = shade(img_stack)
+        assert (shaded.dimension_values("A") == 0).all()
+
     @pytest.mark.parametrize("aggregator", list(AggregationOperation._agg_methods))
     def test_datashade_empty_points_transparent(self, aggregator):
         points = hv.Points([], vdims="val")
