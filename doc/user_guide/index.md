@@ -97,6 +97,10 @@ These guides provide detail about specific additional features in HoloViews:
 
 : Information about configuration options.
 
+[Using HoloViews with an AI assistant]
+
+: How to give an AI assistant up-to-date HoloViews documentation context.
+
 [Customizing Plots]
 
 : How to customize plots including their titles, axis labels, ranges, ticks and more.
@@ -182,6 +186,7 @@ These guides provide detail about specific additional features in HoloViews:
  Annotators <Annotators>
  Exporting and Archiving <Exporting_and_Archiving>
  Continuous Coordinates <Continuous_Coordinates>
+ Using HoloViews with an AI assistant <use_llms>
 ```
 
 [annotating your data]: Annotating_Data.html
@@ -218,3 +223,4 @@ These guides provide detail about specific additional features in HoloViews:
 [working with large data]: Large_Data.html
 [working with renderers and plots]: Plots_and_Renderers.html
 [working with streaming data]: Streaming_Data.html
+[using holoviews with an ai assistant]: use_llms.html
