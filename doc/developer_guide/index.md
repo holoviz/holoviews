@@ -249,6 +249,17 @@ You can also disable the reference gallery by setting the environment variable `
 
 A development version of HoloViews can be found [here](https://dev.holoviews.org/). You can ask a maintainer if they want to make a dev release for your PR, but there is no guarantee they will say yes.
 
+### Markdown docs and `llms.txt`
+
+As part of `docs-build`, HoloViews also generates clean Markdown versions of its documentation together with an `llms.txt` index file that points AI assistants at the most relevant pages.
+
+The build produces:
+
+- `builtdocs/markdown/` - a Markdown rendering of the documentation
+- `builtdocs/llms.txt` - an index of the most useful documentation pages for LLM-assisted development
+
+See [Using HoloViews with an AI assistant](../user_guide/use_llms.md) for how to consume these docs with an AI assistant.
+
 ## Build
 
 HoloViews have two build tasks. One is for building packages for Pip, and the other is for building packages for Conda.
