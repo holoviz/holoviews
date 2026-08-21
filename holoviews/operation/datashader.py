@@ -1545,7 +1545,8 @@ class shade(LinkableOperation):
 
         # Compute shading options depending on whether
         # it is a categorical or regular aggregate
-        if element.ndims > 2 or isinstance(element, ImageStack):
+        is_categorical = element.ndims > 2 or isinstance(element, ImageStack)
+        if is_categorical:
             kdims = element.kdims if isinstance(element, ImageStack) else element.kdims[1:]
             categories = array.shape[-1]
             if not self.p.color_key:
@@ -1589,7 +1590,16 @@ class shade(LinkableOperation):
         )
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", r"invalid value encountered in true_divide")
-            if np.isnan(array.data).all():
+            invalid = array.isnull().data
+            if isinstance(element, ImageStack):
+                for i, vdim in enumerate(element.vdims):
+                    if vdim.nodata is not None:
+                        invalid[..., i] |= array.data[..., i] == vdim.nodata
+            else:
+                nodata = element.vdims[0].nodata if element.vdims else None
+                if nodata is not None:
+                    invalid |= array.data == nodata
+            if invalid.all():
                 xd, yd = kdims[:2]
                 arr = np.zeros((*array.data.shape[:2], 4), dtype=np.uint8)
                 coords = {

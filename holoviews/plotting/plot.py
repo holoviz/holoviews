@@ -813,9 +813,15 @@ class DimensionedPlot(Plot):
                 else:
                     dtype = None
 
+                # dtype_kind reports "O" (not "S"/"U") for pandas.StringDtype
+                is_string_dtype = dtype is not None and (
+                    dtype_kind(dtype) in "SU"
+                    or (util.pd and isinstance(dtype, util.pd.StringDtype))
+                )
+
                 if all(util.isfinite(r) for r in el_dim.range):
                     data_range = (None, None)
-                elif dtype is not None and dtype_kind(dtype) in "SU":
+                elif is_string_dtype:
                     data_range = ("", "")
                 elif isinstance(el, Graph) and el_dim in el.kdims[:2]:
                     data_range = el.nodes.range(2, dimension_range=False)
@@ -836,7 +842,7 @@ class DimensionedPlot(Plot):
                 if (
                     any(isinstance(r, str) for r in data_range)
                     or (el_dim.type is not None and issubclass(el_dim.type, str))
-                    or (dtype is not None and dtype_kind(dtype) in "SU")
+                    or is_string_dtype
                 ):
                     categorical_dims.append(el_dim)
 
@@ -942,7 +948,11 @@ class DimensionedPlot(Plot):
                 matching &= (
                     len(
                         {
-                            "date" if isinstance(v, util.datetime_types) else "number"
+                            "date"
+                            if isinstance(v, util.datetime_types)
+                            else "string"
+                            if isinstance(v, (str, bytes))
+                            else "number"
                             for rng in rs
                             for v in rng
                             if util.isfinite(v)

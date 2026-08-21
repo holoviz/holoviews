@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 from bokeh.models import EdgesAndLinkedNodes, NodesAndLinkedEdges, NodesOnly, Patches
 from bokeh.models.mappers import CategoricalColorMapper
 
@@ -362,10 +363,11 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         assert property_to_dict(glyph.line_width) == {"field": "node_line_width"}
         assert_data_equal(cds.data["node_line_width"], np.array([0.2, 0.6, 1, 0.3]))
 
-    def test_trimesh_op_edge_color_linear_mean_node(self):
+    @pytest.mark.parametrize("vname", ["color", "temperature"])
+    def test_trimesh_op_edge_color_linear_mean_node(self, vname):
         edges = [(0, 1, 2), (1, 2, 3)]
         nodes = [(-1, -1, 0, 2), (0, 0, 1, 1), (0, 1, 2, 3), (1, 0, 3, 4)]
-        trimesh = hv.TriMesh((edges, hv.Nodes(nodes, vdims="color"))).opts(edge_color="color")
+        trimesh = hv.TriMesh((edges, hv.Nodes(nodes, vdims=vname))).opts(edge_color=vname)
         plot = bokeh_renderer.get_plot(trimesh)
         cds = plot.handles["multi_line_1_source"]
         glyph = plot.handles["multi_line_1_glyph"]
