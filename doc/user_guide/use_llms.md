@@ -58,7 +58,7 @@ HoloViews publishes a machine-friendly index of its documentation that your assi
 
 2. The index lists the most relevant pages and links to their Markdown versions under:
 
-   `https://holoviews.org/markdown/`, for example `https://holoviews.org/markdown/getting_started/1-Introduction.md`
+   `https://holoviews.org/markdown/`, for example `https://holoviews.org/markdown/getting_started/Introduction.md`
 
 3. Ask your assistant to read the pages relevant to your task before writing code. For example, to create a plot you might have it read the Getting Started tutorial and the API reference page for the method you need.
 
