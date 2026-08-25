@@ -6,7 +6,6 @@ import numpy as np
 import pytest
 
 import holoviews as hv
-from holoviews.plotting.bokeh.renderer import BokehRenderer
 
 from .. import wait_until
 
@@ -75,10 +74,9 @@ def assert_axes(page, x=None, y=None) -> None:
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-def test_gridplot(serve_hv):
+def test_gridspace(serve_hv):
     curves = {(x, y): hv.Curve([0, 1]) for x, y in product(range(2), range(2, 4))}
     gridspace = hv.GridSpace(curves, kdims=["x", "y"])
-
     page = serve_hv(gridspace)
 
     ticks = (0.243902, 0.756098)
@@ -86,12 +84,11 @@ def test_gridplot(serve_hv):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-def test_gridplot_legend_alignment(serve_hv):
+def test_gridspace_legend_alignment(serve_hv):
     plot = hv.NdOverlay({0: hv.Curve([0, 1]), 1: hv.Curve([1, 0])})
     gridspace = hv.GridSpace(kdims=["x", "y"]).opts(show_legend=True)
     for power, amplitude in product(range(3), range(3, 6)):
         gridspace[amplitude, power] = plot
-
     page = serve_hv(gridspace)
 
     ticks = (0.161290, 0.5, 0.838710)
@@ -100,12 +97,11 @@ def test_gridplot_legend_alignment(serve_hv):
 
 @pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize("colorbar", [True, False])
-def test_gridplot_colorbar_alignment(serve_hv, colorbar):
+def test_gridspace_colorbar_alignment(serve_hv, colorbar):
     x, y = np.arange(4), np.arange(3)
     z = np.arange(12).reshape((3, 4))
     img = hv.Image((x, y, z), kdims=["x", "y"], vdims=["z"]).opts(colorbar=colorbar)
     gridspace = hv.GridSpace(dict.fromkeys(range(5), img), kdims=["t"])
-
     page = serve_hv(gridspace)
 
     if colorbar:
@@ -117,45 +113,44 @@ def test_gridplot_colorbar_alignment(serve_hv, colorbar):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-@pytest.mark.parametrize("xaxis", [None, "bottom"])
-@pytest.mark.parametrize("yaxis", [None, "right"])
-def test_gridplot_per_cell_axis_alignment(serve_hv, xaxis, yaxis):
-    # A real (visible) per-cell x/y-axis on every cell adds the same
-    # "leading gutter" to every cell in a row/column, unlike a legend
-    # or colorbar which only widens the one cell that carries it -- a
-    # different code path in bind_dynamic_axis_sizing's leading-edge
-    # tracking. Sparse on purpose, to also exercise empty cells.
-    years = [2023, 2024]
-    months = [5, 6, 7]
-    points = {(2023, 5): [(1, 4)], (2024, 6): [(1, 8)], (2024, 7): [(1, 8)]}
-    items = {
-        (year, month): hv.Scatter(points.get((year, month), []))
-        for year in years
-        for month in months
-    }
-    gridspace = hv.GridSpace(items, kdims=["year", "month"]).opts(
-        hv.opts.Scatter(xaxis=xaxis, yaxis=yaxis, show_legend=False),
-        hv.opts.GridSpace(shared_xaxis=True, shared_yaxis=True),
+@pytest.mark.parametrize("xaxis", [None, "bottom", "top"])
+@pytest.mark.parametrize("yaxis", [None, "right", "left"])
+@pytest.mark.parametrize("shared_xaxis", [True, False])
+@pytest.mark.parametrize("shared_yaxis", [True, False])
+def test_gridspace_axis_alignment(serve_hv, xaxis, yaxis, shared_xaxis, shared_yaxis):
+    curves = {(x, y): hv.Curve([0, 1]) for x, y in product(range(2), range(2, 5))}
+    gridspace = hv.GridSpace(curves, kdims=["x", "y"]).opts(
+        hv.opts.Curve(xaxis=xaxis, yaxis=yaxis),
+        hv.opts.GridSpace(shared_xaxis=shared_xaxis, shared_yaxis=shared_yaxis),
     )
+    page = serve_hv(gridspace)
 
-    plot = BokehRenderer.get_plot(gridspace)
-    page = serve_hv(plot)
+    match shared_yaxis, yaxis:
+        case False, None:
+            x = (71, 317, 0.243902, 0.756098)
+        case False, "left":
+            x = (120, 415, 0.203390, 0.796610)
+        case False, "right":
+            x = (71, 366, 0.203390, 0.796610)
+        case True, None:
+            x = (3, 249, 0.243902, 0.756098)
+        case True, "left":
+            x = (52, 347, 0.203390, 0.796610)
+        case True, "right":
+            x = (3, 298, 0.203390, 0.796610)
 
-    # A real per-cell y-axis grows every cell's horizontal space, which
-    # the fake x-axis has to track; a real per-cell x-axis grows every
-    # cell's vertical space, tracked by the fake y-axis -- crossed, not
-    # matched by name.
-    x_start_end, x_ticks = {
-        None: ((3, 249), [0.243902, 0.756098]),
-        "right": ((3, 289), [0.209790, 0.790210]),
-    }[yaxis]
-    y_start_end, y_ticks = {
-        None: ((92, 464), [0.161290, 0.5, 0.838710]),
-        "bottom": ((92, 548), [0.131579, 0.5, 0.868421]),
-    }[xaxis]
+    match shared_xaxis, xaxis:
+        case False, None:
+            y = (33, 405, 0.161290, 0.5, 0.838710)
+        case False, "bottom":
+            y = (33, 489, 0.131579, 0.5, 0.868421)
+        case False, "top":
+            y = (75, 531, 0.131579, 0.5, 0.868421)
+        case True, None:
+            y = (92, 464, 0.161290, 0.5, 0.838710)
+        case True, "bottom":
+            y = (92, 548, 0.131579, 0.5, 0.868421)
+        case True, "top":
+            y = (134, 590, 0.131579, 0.5, 0.868421)
 
-    assert_axes(
-        page,
-        x=(*x_start_end, *x_ticks),
-        y=(*y_start_end, *y_ticks),
-    )
+    assert_axes(page, x=x, y=y)
