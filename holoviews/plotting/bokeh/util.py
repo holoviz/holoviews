@@ -15,7 +15,7 @@ from bokeh.core.validation import silence
 from bokeh.core.validation.check import is_silenced
 from bokeh.layouts import group_tools
 from bokeh.model import Model
-from bokeh.models import CustomJS, Range, Scale, tools
+from bokeh.models import CustomJS, CustomJSTickFormatter, Range, Scale, tools
 from bokeh.models.axes import (
     CategoricalAxis,
     DatetimeAxis,
@@ -621,14 +621,23 @@ def make_axis(
     tick_size=None,
     axis_height=35,
 ):
+    """Builds a toolbar-less, dataless figure used to draw a categorical
+    axis shared across a GridPlot's grid of subplots.
+
+    ``size`` is only an initial estimate; the true length and tick
+    positions are set later by bind_dynamic_axis_sizing once the grid
+    has actually rendered. Returns (figure, ticker).
+
+    """
     factors = list(map(dim.pprint_value, factors))
     nchars = np.max([len(f) for f in factors])
-    ranges = FactorRange(factors=factors)
-    ranges2 = Range1d(start=0, end=1)
     axis_label = dim_axis_label(dim)
-    reset = "range.setv({start: 0, end: range.factors.length})"
-    customjs = CustomJS(args=dict(range=ranges), code=reset)
-    ranges.js_on_change("start", customjs)
+
+    ticker = FixedTicker(ticks=[])
+    formatter = CustomJSTickFormatter(
+        args=dict(ticker=ticker, labels=factors),
+        code="const i = ticker.ticks.indexOf(tick); return i >= 0 ? String(labels[i]) : ''",
+    )
 
     axis_props = {}
     if label_size:
@@ -655,10 +664,12 @@ def make_axis(
         opts = dict(
             x_axis_type="auto",
             x_axis_label=axis_label,
-            x_range=ranges,
-            y_range=ranges2,
+            x_range=Range1d(start=0, end=1),
+            y_range=Range1d(start=0, end=1),
             height=height,
             width=size,
+            min_border_left=0,
+            min_border_right=0,
         )
     else:
         # Adjust width to compensate for label rotation
@@ -669,7 +680,13 @@ def make_axis(
             + label_px
         )
         opts = dict(
-            y_axis_label=axis_label, x_range=ranges2, y_range=ranges, height=size, width=width
+            y_axis_label=axis_label,
+            x_range=Range1d(start=0, end=1),
+            y_range=Range1d(start=0, end=1),
+            height=size,
+            width=width,
+            min_border_top=0,
+            min_border_bottom=0,
         )
 
     p = figure(toolbar_location=None, tools=[], **opts)
@@ -677,25 +694,155 @@ def make_axis(
     p.grid.grid_line_alpha = 0
 
     if axis == "x":
-        p.align = "end"
+        p.align = "start"
         p.yaxis.visible = False
-        axis = p.xaxis[0]
+        pax = p.xaxis[0]
         if flip:
             p.above = p.below
             p.below = []
             p.xaxis[:] = p.above
     else:
+        p.align = "end"
         p.xaxis.visible = False
-        axis = p.yaxis[0]
+        pax = p.yaxis[0]
         if flip:
             p.right = p.left
             p.left = []
             p.yaxis[:] = p.right
-    axis.major_label_orientation = rotation
-    axis.major_label_text_align = align
-    axis.major_label_text_baseline = "middle"
-    axis.update(**axis_props)
-    return p
+    pax.ticker = ticker
+    pax.formatter = formatter
+    pax.major_label_orientation = rotation
+    pax.major_label_text_align = align
+    pax.major_label_text_baseline = "middle"
+    pax.update(**axis_props)
+    return p, ticker
+
+
+def bind_dynamic_axis_sizing(plots, x_axis=None, x_ticker=None, y_axis=None, y_ticker=None):
+    """Wires a CustomJS callback that measures the grid's real rendered
+    column/row sizes and drives the shared fake x/y axis figures
+    (built by make_axis) to match exactly -- correct regardless of
+    why a subplot's canvas grew beyond its frame_width/frame_height
+    (a legend, a colorbar, an un-merged toolbar, a real per-cell
+    axis, ...), since it reads the real rendered geometry (via
+    Bokeh.index) instead of estimating it.
+
+    The axis figure is sized to the plot frame only, not the full
+    canvas, so its line/label track the actual plot rather than
+    being centered across the plot+border canvas. See the comments
+    in the callback body for the mechanics.
+
+    """
+    if x_axis is None and y_axis is None:
+        return
+    figs = [fig for row in plots for fig in row if fig is not None]
+    if not figs:
+        return
+
+    callback = CustomJS(
+        args=dict(plots=plots, x_axis=x_axis, x_ticker=x_ticker, y_axis=y_axis, y_ticker=y_ticker),
+        code="""
+        // Bokeh.index only holds root-level views; a subplot's own view is
+        // nested under it (child_views), so it has to be found by walking down.
+        function collectViews() {
+            const map = {}
+            function walk(view) {
+                if (view.model != null) map[view.model.id] = view
+                const cv = view.child_views
+                if (cv != null) {
+                    for (const child of cv.values()) walk(child)
+                }
+            }
+            for (const rootId of Object.keys(Bokeh.index)) walk(Bokeh.index[rootId])
+            return map
+        }
+        const views = collectViews()
+        function frameRect(fig) {
+            const view = views[fig.id]
+            if (view == null) return null
+            const outer = view.bbox
+            const inner = view.frame_view ? view.frame_view.bbox : null
+            if (outer == null || inner == null) return null
+            // bbox is parent-relative, frame_view.bbox is canvas-local (0-based)
+            // -- different reference frames, so never mix deltas across them.
+            const outerWidth = outer.x1 - outer.x0
+            const outerHeight = outer.y1 - outer.y0
+            return {
+                outerWidth,
+                outerHeight,
+                frameWidth: inner.x1 - inner.x0,
+                frameHeight: inner.y1 - inner.y0,
+                leadingLeft: inner.x0,
+                leadingBottom: outerHeight - inner.y1,
+            }
+        }
+        // outerSizeOf/leadingOf locate the frame within a cell's full canvas,
+        // for offsets; frameSizeOf is the plot itself, for length/centers.
+        function measureDim(nOuter, nInner, cellAt, outerSizeOf, frameSizeOf, leadingOf) {
+            const outerSizes = [], frameSizes = [], leadings = []
+            for (let o = 0; o < nOuter; o++) {
+                let outerSize = null, frameSize = null, leading = null
+                for (let i = 0; i < nInner; i++) {
+                    const fig = cellAt(o, i)
+                    if (fig == null) continue
+                    const rect = frameRect(fig)
+                    if (rect == null) continue
+                    const os = outerSizeOf(rect)
+                    if (outerSize == null || os > outerSize) {
+                        outerSize = os
+                        frameSize = frameSizeOf(rect)
+                        leading = leadingOf(rect)
+                    }
+                }
+                if (outerSize == null) return null
+                outerSizes.push(outerSize)
+                frameSizes.push(frameSize)
+                leadings.push(leading)
+            }
+            let offset = 0
+            const plotStarts = []
+            for (let i = 0; i < outerSizes.length; i++) {
+                plotStarts.push(offset + leadings[i])
+                offset += outerSizes[i]
+            }
+            // Round before computing centers, not after -- otherwise a tick's
+            // rendered position drifts from its intended one, more so for
+            // later ticks, since width/margin can only be set to whole pixels.
+            const base = Math.round(plotStarts[0])
+            const total = Math.round(plotStarts[plotStarts.length - 1] + frameSizes[frameSizes.length - 1]) - base
+            if (total === 0) return null
+            const centers = plotStarts.map((s, i) => (s - base + frameSizes[i] / 2) / total)
+            return {total, centers, lead: base}
+        }
+        const nRows = plots.length
+        const nCols = nRows > 0 ? plots[0].length : 0
+        if (x_axis != null) {
+            const result = measureDim(
+                nCols, nRows, (c, r) => plots[r][c],
+                (rect) => rect.outerWidth, (rect) => rect.frameWidth, (rect) => rect.leadingLeft,
+            )
+            if (result != null) {
+                x_axis.width = result.total
+                x_ticker.ticks = result.centers
+                x_axis.margin = [0, 0, 0, result.lead]  // shifts past the leading gutter
+            }
+        }
+        if (y_axis != null) {
+            const result = measureDim(
+                nRows, nCols, (r, c) => plots[r][c],
+                (rect) => rect.outerHeight, (rect) => rect.frameHeight, (rect) => rect.leadingBottom,
+            )
+            if (result != null) {
+                y_axis.height = result.total
+                y_ticker.ticks = result.centers
+                y_axis.margin = [0, 0, result.lead, 0]
+            }
+        }
+        """,
+    )
+    for fig in figs:
+        fig.js_on_change("outer_width", callback)
+        fig.js_on_change("outer_height", callback)
 
 
 def hsv_to_rgb(hsv):

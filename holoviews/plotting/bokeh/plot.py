@@ -54,6 +54,7 @@ from ..plot import (
 from ..util import attach_streams, collate, displayable
 from .links import LinkCallback
 from .util import (
+    bind_dynamic_axis_sizing,
     cds_column_replace,
     decode_bytes,
     empty_plot,
@@ -704,7 +705,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         )
         if self.sync_legends:
             sync_legends(plot)
-        plot = self._make_axes(plot)
+        plot = self._make_axes(plot, plots)
         if hasattr(plot, "toolbar") and self.merge_tools:
             plot.toolbar = merge_tools(plots, hide_toolbar=True)
         title = self._get_title_div(self.keys[-1])
@@ -725,9 +726,10 @@ class GridPlot(CompositePlot, GenericCompositePlot):
 
         return self.handles["plot"]
 
-    def _make_axes(self, plot):
+    def _make_axes(self, plot, plots):
         width, height = self.renderer.get_size(plot)
         x_axis, y_axis = None, None
+        x_ticker = y_ticker = None
         keys = self.layout.keys(full_grid=True)
         if self.xaxis:
             flip = self.shared_xaxis
@@ -735,7 +737,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             lsize = self._fontsize("xlabel").get("fontsize")
             tsize = self._fontsize("xticks", common=False).get("fontsize")
             xfactors = list(unique_iterator([wrap_tuple(k)[0] for k in keys]))
-            x_axis = make_axis(
+            x_axis, x_ticker = make_axis(
                 "x",
                 width,
                 xfactors,
@@ -751,7 +753,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             lsize = self._fontsize("ylabel").get("fontsize")
             tsize = self._fontsize("yticks", common=False).get("fontsize")
             yfactors = list(unique_iterator([k[1] for k in keys]))
-            y_axis = make_axis(
+            y_axis, y_ticker = make_axis(
                 "y",
                 height,
                 yfactors,
@@ -761,6 +763,9 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 label_size=lsize,
                 tick_size=tsize,
             )
+        bind_dynamic_axis_sizing(
+            plots, x_axis=x_axis, x_ticker=x_ticker, y_axis=y_axis, y_ticker=y_ticker
+        )
         if x_axis and y_axis:
             plot = filter_toolboxes(plot)
             r1, r2 = ([y_axis, plot], [None, x_axis])
