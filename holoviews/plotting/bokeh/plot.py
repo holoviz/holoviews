@@ -54,7 +54,7 @@ from ..plot import (
 from ..util import attach_streams, collate, displayable
 from .links import LinkCallback
 from .util import (
-    bind_dynamic_axis_sizing,
+    _bind_dynamic_axis_sizing,
     cds_column_replace,
     decode_bytes,
     empty_plot,
@@ -763,7 +763,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 label_size=lsize,
                 tick_size=tsize,
             )
-        bind_dynamic_axis_sizing(
+        _bind_dynamic_axis_sizing(
             plots, x_axis=x_axis, x_ticker=x_ticker, y_axis=y_axis, y_ticker=y_ticker
         )
         if x_axis and y_axis:

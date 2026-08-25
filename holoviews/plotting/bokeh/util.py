@@ -621,14 +621,6 @@ def make_axis(
     tick_size=None,
     axis_height=35,
 ):
-    """Builds a toolbar-less, dataless figure used to draw a categorical
-    axis shared across a GridPlot's grid of subplots.
-
-    ``size`` is only an initial estimate; the true length and tick
-    positions are set later by bind_dynamic_axis_sizing once the grid
-    has actually rendered. Returns (figure, ticker).
-
-    """
     factors = list(map(dim.pprint_value, factors))
     nchars = np.max([len(f) for f in factors])
     axis_label = dim_axis_label(dim)
@@ -718,7 +710,7 @@ def make_axis(
     return p, ticker
 
 
-def bind_dynamic_axis_sizing(plots, x_axis=None, x_ticker=None, y_axis=None, y_ticker=None):
+def _bind_dynamic_axis_sizing(plots, x_axis=None, x_ticker=None, y_axis=None, y_ticker=None):
     """Wires a CustomJS callback that measures the grid's real rendered
     column/row sizes and drives the shared fake x/y axis figures
     (built by make_axis) to match exactly -- correct regardless of
