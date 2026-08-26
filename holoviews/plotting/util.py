@@ -383,27 +383,6 @@ def undisplayable_info(obj, html=False):
         )
 
 
-def compute_sizes(sizes, size_fn, scaling_factor, scaling_method, base_size):
-    """Scales point sizes according to a scaling factor,
-    base size and size_fn, which will be applied before
-    scaling.
-
-    """
-    if dtype_kind(sizes) not in ("i", "f"):
-        return None
-    if scaling_method == "area":
-        pass
-    elif scaling_method == "width":
-        scaling_factor = scaling_factor**2
-    else:
-        raise ValueError(
-            f'Invalid value for argument "scaling_method": "{scaling_method}". '
-            'Valid values are: "width", "area".'
-        )
-    sizes = size_fn(sizes)
-    return base_size * scaling_factor * sizes
-
-
 def get_axis_padding(padding):
     """Process a padding value supplied as a tuple or number and returns
     padding values for x-, y- and z-axis.
@@ -805,12 +784,17 @@ def _list_cmaps(provider=None, records=False):
 def register_cmaps(category, provider, source, bg, names):
     """Maintain descriptions of colormaps that include the following information:
 
-    name     - string name for the colormap
-    category - intended use or purpose, mostly following matplotlib
-    provider - package providing the colormap directly
-    source   - original source or creator of the colormaps
-    bg       - base/background color expected for the map
-               ('light','dark','medium','any' (unknown or N/A))
+    name
+        string name for the colormap
+    category
+        intended use or purpose, mostly following matplotlib
+    provider
+        package providing the colormap directly
+    source
+        original source or creator of the colormaps
+    bg
+        base/background color expected for the map
+        ('light', 'dark', 'medium', 'any' (unknown or N/A))
 
     """
     for name in names:
@@ -1072,9 +1056,9 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
     elif isinstance(cmap, list):
         palette = cmap
     elif isinstance(cmap, str):
+        cet_cmaps = _list_cmaps("colorcet")  # first to register colorcet colormaps with matplotlib
         mpl_cmaps = _list_cmaps("matplotlib")
         bk_cmaps = _list_cmaps("bokeh")
-        cet_cmaps = _list_cmaps("colorcet")
         if provider == "matplotlib" or (
             provider is None and (cmap in mpl_cmaps or cmap.lower() in mpl_cmaps)
         ):
@@ -1184,7 +1168,7 @@ def attach_streams(plot, obj, precedence=1.1):
 
     def append_refresh(dmap):
         for stream in get_nested_streams(dmap):
-            if plot.refresh not in stream._subscribers:
+            if plot.refresh not in stream.subscribers:
                 stream.add_subscriber(plot.refresh, precedence)
 
     return obj.traverse(append_refresh, [DynamicMap])

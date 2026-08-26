@@ -13,6 +13,7 @@ from holoviews.core.data.grid import GridInterface
 from holoviews.core.data.ibis import IBIS_VERSION
 from holoviews.core.options import Compositor, SkipRendering
 from holoviews.operation.element import (
+    categorical_agg,
     chain,
     contours,
     decimate,
@@ -26,7 +27,21 @@ from holoviews.operation.element import (
 )
 from holoviews.testing import assert_element_equal
 
-from ..utils import da, da_skip, ibis, ibis_skip, mpl_skip
+from .._deps import (
+    contourpy_skip,
+    da,
+    da_skip,
+    dd,
+    dd_skip,
+    ibis,
+    ibis_skip,
+    mpl_skip,
+    pl,
+    pl_skip,
+    scipy_skip,
+    xr,
+    xr_skip,
+)
 
 
 class OperationTests:
@@ -125,6 +140,618 @@ class OperationTests:
             img.clone(np.array([[3.162278, 3.162278], [3.162278, 3.162278]]), group="Gradient"),
         )
 
+    def test_points_histogram(self):
+        points = hv.Points([float(i) for i in range(10)])
+        op_hist = histogram(points, num_bins=3, normed=True)
+
+        hist = hv.Histogram(
+            ([0, 3, 6, 9], [0.1, 0.1, 0.133333]), vdims=("x_frequency", "Frequency")
+        )
+        assert_element_equal(op_hist, hist)
+
+    def test_dataset_histogram_empty_explicit_bins(self):
+        ds = hv.Dataset([np.nan, np.nan], ["x"])
+        op_hist = histogram(ds, bins=[0, 1, 2])
+
+        hist = hv.Histogram(([0, 1, 2], [0, 0]), vdims=("x_count", "Count"))
+        assert_element_equal(op_hist, hist)
+
+    def test_dataset_histogram_groupby_range_shared(self):
+        x = np.arange(10)
+        y = np.arange(10) + 10
+        xy = np.concatenate([x, y])
+        label = ["x"] * 10 + ["y"] * 10
+
+        ds = hv.Dataset(pd.DataFrame([xy, label], index=["xy", "label"]).T, vdims=["xy", "label"])
+        hist = histogram(ds, groupby="label", groupby_range="shared")
+        exp = np.linspace(0, 19, 21)
+        for k, v in hist.items():
+            np.testing.assert_equal(exp, v.data["xy"])
+            sel = np.asarray(label) == k
+            assert sel.sum() == 10
+            assert (v.data["xy_count"][sel] == 1).all()
+            assert (v.data["xy_count"][~sel] == 0).all()
+
+    def test_dataset_histogram_groupby_range_separated(self):
+        x = np.arange(10)
+        y = np.arange(10) + 10
+        xy = np.concatenate([x, y])
+        label = ["x"] * 10 + ["y"] * 10
+
+        ds = hv.Dataset(pd.DataFrame([xy, label], index=["xy", "label"]).T, vdims=["xy", "label"])
+        hist = histogram(ds, groupby="label", groupby_range="separated")
+
+        for idx, v in enumerate(hist):
+            exp = np.linspace(idx * 10, 10 * idx + 9, 21)
+            np.testing.assert_equal(exp, v.data["xy"])
+            assert v.data["xy_count"].sum() == 10
+
+    def test_dataset_histogram_groupby_datetime(self):
+        x = pd.date_range("2020-01-01", periods=100)
+        y = pd.date_range("2020-01-01", periods=100)
+        xy = np.concatenate([x, y])
+        label = ["x"] * 100 + ["y"] * 100
+        ds = hv.Dataset(pd.DataFrame([xy, label], index=["xy", "label"]).T, vdims=["xy", "label"])
+        hist = histogram(ds, groupby="label")
+
+        exp = pd.date_range("2020-01-01", "2020-04-09", periods=21)
+        for h in hist:
+            np.testing.assert_equal(exp, h.data["xy"])
+            assert (h.data["xy_count"] == 5).all()
+
+    @da_skip
+    def test_dataset_histogram_dask(self):
+        ds = hv.Dataset(
+            (da.from_array(np.array(range(10), dtype="f"), chunks=(3)),), ["x"], datatype=["dask"]
+        )
+        op_hist = histogram(ds, num_bins=3, normed=True)
+
+        hist = hv.Histogram(
+            ([0, 3, 6, 9], [0.1, 0.1, 0.133333]), vdims=("x_frequency", "Frequency")
+        )
+        assert isinstance(op_hist.data["x_frequency"], da.Array)
+        assert_element_equal(op_hist, hist)
+
+    @da_skip
+    def test_dataset_cumulative_histogram_dask(self):
+        ds = hv.Dataset(
+            (da.from_array(np.array(range(10), dtype="f"), chunks=(3)),), ["x"], datatype=["dask"]
+        )
+        op_hist = histogram(ds, num_bins=3, cumulative=True, normed=True)
+
+        hist = hv.Histogram(([0, 3, 6, 9], [0.3, 0.6, 1]), vdims=("x_frequency", "Frequency"))
+        assert isinstance(op_hist.data["x_frequency"], da.Array)
+        assert_element_equal(op_hist, hist)
+
+    @da_skip
+    def test_dataset_weighted_histogram_dask(self):
+        ds = hv.Dataset(
+            (
+                da.from_array(np.array(range(10), dtype="f"), chunks=3),
+                da.from_array([i / 10.0 for i in range(10)], chunks=3),
+            ),
+            ["x", "y"],
+            datatype=["dask"],
+        )
+        op_hist = histogram(ds, weight_dimension="y", num_bins=3, normed=True)
+
+        hist = hv.Histogram(([0, 3, 6, 9], [0.022222, 0.088889, 0.222222]), vdims="y")
+        assert isinstance(op_hist.data["y"], da.Array)
+        assert_element_equal(op_hist, hist)
+
+    @ibis_skip
+    @pytest.mark.usefixtures("ibis_sqlite_backend")
+    def test_dataset_histogram_ibis(self):
+        df = pd.DataFrame(dict(x=np.arange(10)))
+        t = ibis.memtable(df, **({} if IBIS_VERSION >= (11, 0, 0) else {"name": "t"}))
+        ds = hv.Dataset(t, vdims="x")
+        op_hist = histogram(ds, dimension="x", num_bins=3, normed=True)
+
+        hist = hv.Histogram(
+            ([0, 3, 6, 9], [0.1, 0.1, 0.133333]), vdims=("x_frequency", "Frequency")
+        )
+        assert_element_equal(op_hist, hist)
+
+    @ibis_skip
+    @pytest.mark.usefixtures("ibis_sqlite_backend")
+    def test_dataset_cumulative_histogram_ibis(self):
+        df = pd.DataFrame(dict(x=np.arange(10)))
+        t = ibis.memtable(df, **({} if IBIS_VERSION >= (11, 0, 0) else {"name": "t"}))
+        ds = hv.Dataset(t, vdims="x")
+        op_hist = histogram(ds, num_bins=3, cumulative=True, normed=True)
+
+        hist = hv.Histogram(([0, 3, 6, 9], [0.3, 0.6, 1]), vdims=("x_frequency", "Frequency"))
+        assert_element_equal(op_hist, hist)
+
+    @ibis_skip
+    @pytest.mark.usefixtures("ibis_sqlite_backend")
+    def test_dataset_histogram_explicit_bins_ibis(self):
+        df = pd.DataFrame(dict(x=np.arange(10)))
+        t = ibis.memtable(df, **({} if IBIS_VERSION >= (11, 0, 0) else {"name": "t"}))
+        ds = hv.Dataset(t, vdims="x")
+        op_hist = histogram(ds, bins=[0, 1, 3], normed=False)
+
+        hist = hv.Histogram(([0, 1, 3], [1, 3]), vdims=("x_count", "Count"))
+        assert_element_equal(op_hist, hist)
+
+    @pytest.mark.gpu
+    def test_dataset_histogram_cudf(self):
+        import cudf
+
+        df = pd.DataFrame(dict(x=np.arange(10)))
+        t = cudf.from_pandas(df)
+        ds = hv.Dataset(t, vdims="x")
+        op_hist = histogram(ds, dimension="x", num_bins=3, normed=True)
+
+        hist = hv.Histogram(
+            ([0, 3, 6, 9], [0.1, 0.1, 0.133333]), vdims=("x_frequency", "Frequency")
+        )
+        assert_element_equal(op_hist, hist)
+
+    @pytest.mark.gpu
+    def test_dataset_cumulative_histogram_cudf(self):
+        import cudf
+
+        df = pd.DataFrame(dict(x=np.arange(10)))
+        t = cudf.from_pandas(df)
+        ds = hv.Dataset(t, vdims="x")
+        op_hist = histogram(ds, num_bins=3, cumulative=True, normed=True)
+
+        hist = hv.Histogram(([0, 3, 6, 9], [0.3, 0.6, 1]), vdims=("x_frequency", "Frequency"))
+        assert_element_equal(op_hist, hist)
+
+    @pytest.mark.gpu
+    def test_dataset_histogram_explicit_bins_cudf(self):
+        import cudf
+
+        df = pd.DataFrame(dict(x=np.arange(10)))
+        t = cudf.from_pandas(df)
+        ds = hv.Dataset(t, vdims="x")
+        op_hist = histogram(ds, bins=[0, 1, 3], normed=False)
+
+        hist = hv.Histogram(([0, 1, 3], [1, 3]), vdims=("x_count", "Count"))
+        assert_element_equal(op_hist, hist)
+
+    def test_points_histogram_bin_range(self):
+        points = hv.Points([float(i) for i in range(10)])
+        op_hist = histogram(points, num_bins=3, bin_range=(0, 3), normed=True)
+
+        hist = hv.Histogram(
+            ([0.25, 0.25, 0.5], [0.0, 1.0, 2.0, 3.0]), vdims=("x_frequency", "Frequency")
+        )
+        assert_element_equal(op_hist, hist)
+
+    def test_points_histogram_explicit_bins(self):
+        points = hv.Points([float(i) for i in range(10)])
+        op_hist = histogram(points, bins=[0, 1, 3], normed=False)
+
+        hist = hv.Histogram(([0, 1, 3], [1, 3]), vdims=("x_count", "Count"))
+        assert_element_equal(op_hist, hist)
+
+    def test_points_histogram_cumulative(self):
+        arr = np.arange(4)
+        points = hv.Points(arr)
+        op_hist = histogram(points, cumulative=True, num_bins=3, normed=False)
+
+        hist = hv.Histogram(([0, 1, 2, 3], [1, 2, 4]), vdims=("x_count", "Count"))
+        assert_element_equal(op_hist, hist)
+
+    def test_points_histogram_not_normed(self):
+        points = hv.Points([float(i) for i in range(10)])
+        op_hist = histogram(points, num_bins=3, normed=False)
+
+        hist = hv.Histogram(([0, 3, 6, 9], [3, 3, 4]), vdims=("x_count", "Count"))
+        assert_element_equal(op_hist, hist)
+
+    def test_histogram_operation_datetime(self):
+        dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)])
+        op_hist = histogram(hv.Dataset(dates, "Date"), num_bins=4, normed=True)
+        hist_data = {
+            "Date": np.array(
+                [
+                    "2017-01-01T00:00:00.000000",
+                    "2017-01-01T18:00:00.000000",
+                    "2017-01-02T12:00:00.000000",
+                    "2017-01-03T06:00:00.000000",
+                    "2017-01-04T00:00:00.000000",
+                ],
+                dtype="datetime64[us]",
+            ),
+            "Date_frequency": np.array(
+                [3.85802469e-18, 3.85802469e-18, 3.85802469e-18, 3.85802469e-18]
+            ),
+        }
+        hist = hv.Histogram(hist_data, kdims="Date", vdims=("Date_frequency", "Frequency"))
+        assert_element_equal(op_hist, hist)
+
+    def test_histogram_operation_datetime64(self):
+        dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype("M")
+        op_hist = histogram(hv.Dataset(dates, "Date"), num_bins=4, normed=True)
+        hist_data = {
+            "Date": np.array(
+                [
+                    "2017-01-01T00:00:00.000000",
+                    "2017-01-01T18:00:00.000000",
+                    "2017-01-02T12:00:00.000000",
+                    "2017-01-03T06:00:00.000000",
+                    "2017-01-04T00:00:00.000000",
+                ],
+                dtype="datetime64[us]",
+            ),
+            "Date_frequency": np.array(
+                [3.85802469e-18, 3.85802469e-18, 3.85802469e-18, 3.85802469e-18]
+            ),
+        }
+        hist = hv.Histogram(hist_data, kdims="Date", vdims=("Date_frequency", "Frequency"))
+        assert_element_equal(op_hist, hist)
+
+    def test_histogram_operation_pd_period(self):
+        dates = pd.date_range("2017-01-01", "2017-01-04", freq="D").to_period("D")
+        op_hist = histogram(hv.Dataset(dates, "Date"), num_bins=4, normed=True)
+        hist_data = {
+            "Date": np.array(
+                [
+                    "2017-01-01T00:00:00.000000",
+                    "2017-01-01T18:00:00.000000",
+                    "2017-01-02T12:00:00.000000",
+                    "2017-01-03T06:00:00.000000",
+                    "2017-01-04T00:00:00.000000",
+                ],
+                dtype="datetime64[us]",
+            ),
+            "Date_frequency": np.array(
+                [3.85802469e-18, 3.85802469e-18, 3.85802469e-18, 3.85802469e-18]
+            ),
+        }
+        hist = hv.Histogram(hist_data, kdims="Date", vdims=("Date_frequency", "Frequency"))
+        assert_element_equal(op_hist, hist)
+
+    def test_histogram_categorical(self):
+        series = hv.Dataset(pd.Series(["A", "B", "C"]))
+        kwargs = {"bin_range": ("A", "C"), "normed": False, "cumulative": False, "num_bins": 3}
+        with pytest.raises(ValueError):  # noqa: PT011
+            histogram(series, **kwargs)
+
+    def test_points_histogram_weighted(self):
+        points = hv.Points([float(i) for i in range(10)])
+        op_hist = histogram(points, num_bins=3, weight_dimension="y", normed=True)
+        hist = hv.Histogram(([0.022222, 0.088889, 0.222222], [0, 3, 6, 9]), vdims=["y"])
+        assert_element_equal(op_hist, hist)
+
+    def test_points_histogram_mean_weighted(self):
+        points = hv.Points([float(i) for i in range(10)])
+        op_hist = histogram(
+            points, num_bins=3, weight_dimension="y", mean_weighted=True, normed=True
+        )
+        hist = hv.Histogram(([1.0, 4.0, 7.5], [0, 3, 6, 9]), vdims=["y"])
+        assert_element_equal(op_hist, hist)
+
+    def test_histogram_narwhals_pandas(self):
+        df = pd.DataFrame({"x": range(10)})
+        ds = hv.Dataset(df, vdims="x", datatype=["narwhals"])
+        op_hist = histogram(ds, num_bins=3, normed=False)
+
+        hist = hv.Histogram(([0, 3, 6, 9], [3, 3, 4]), vdims=("x_count", "Count"))
+        assert_element_equal(op_hist, hist)
+
+    @pl_skip
+    def test_histogram_narwhals_polars(self):
+        df = pl.DataFrame({"x": range(10)})
+        ds = hv.Dataset(df, vdims="x")
+        op_hist = histogram(ds, num_bins=3, normed=False)
+
+        hist = hv.Histogram(([0, 3, 6, 9], [3, 3, 4]), vdims=("x_count", "Count"))
+        assert_element_equal(op_hist, hist)
+
+    @pl_skip
+    def test_histogram_narwhals_polars_lazy(self):
+        df = pl.LazyFrame({"x": range(10)})
+        ds = hv.Dataset(df, vdims="x")
+        op_hist = histogram(ds, num_bins=3, normed=False)
+
+        hist = hv.Histogram(([0, 3, 6, 9], [3, 3, 4]), vdims=("x_count", "Count"))
+        assert_element_equal(op_hist, hist)
+
+    @pl_skip
+    def test_histogram_narwhals_polars_lazy_groupby(self):
+        df = pl.LazyFrame({"x": [1, 2], "y": [1, 2]})
+        ds = hv.Dataset(df)
+        op_hist = histogram(ds, num_bins=2, groupby="x")
+
+        hist1 = hv.Histogram(([1, 1.5, 2], [1, 0]), kdims="y", vdims=[("y_count", "Count")])
+        hist2 = hv.Histogram(([1, 1.5, 2], [0, 1]), kdims="y", vdims=[("y_count", "Count")])
+        expected = hv.NdOverlay({(1,): hist1, (2,): hist2}, kdims=["x"])
+
+        assert_element_equal(op_hist, expected)
+
+    @dd_skip
+    @pytest.mark.usefixtures("mpl_backend")
+    def test_histogram_dask_array_mpl(self):
+        # Regression test for https://github.com/holoviz/holoviews/issues/5111
+        data = {
+            "carrier": ["A", "A", "A", "A", "B", "B", "B", "B", "B"],
+            "depdelay": [127.0, 3.0, -3.0, 19.0, 264.0, -6.0, 1.0, 2.0, 83.0],
+        }
+        flights = dd.from_pandas(pd.DataFrame(data), npartitions=2)
+
+        by = "carrier"
+        ds = hv.Dataset(flights, by)
+        ds_grouped = ds.groupby(by)
+        hists = histogram(ds_grouped, dimension="depdelay")
+
+        # Should not error
+        hv.renderer("matplotlib").get_plot(hists)
+
+    def test_interpolate_curve_pre(self):
+        interpolated = interpolate_curve(hv.Curve([0, 0.5, 1]), interpolation="steps-pre")
+        curve = hv.Curve([(0, 0), (0, 0.5), (1, 0.5), (1, 1), (2, 1)])
+        assert_element_equal(interpolated, curve)
+
+    def test_interpolate_curve_pre_with_values(self):
+        interpolated = interpolate_curve(
+            hv.Curve([(0, 0, "A"), (1, 0.5, "B"), (2, 1, "C")], vdims=["y", "z"]),
+            interpolation="steps-pre",
+        )
+        curve = hv.Curve(
+            [(0, 0, "A"), (0, 0.5, "B"), (1, 0.5, "B"), (1, 1, "C"), (2, 1, "C")], vdims=["y", "z"]
+        )
+        assert_element_equal(interpolated, curve)
+
+    def test_interpolate_datetime_curve_pre(self):
+        dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype("M")
+        values = [0, 1, 2, 3]
+        interpolated = interpolate_curve(hv.Curve((dates, values)), interpolation="steps-pre")
+        dates_interp = np.array(
+            [
+                "2017-01-01T00:00:00",
+                "2017-01-01T00:00:00",
+                "2017-01-02T00:00:00",
+                "2017-01-02T00:00:00",
+                "2017-01-03T00:00:00",
+                "2017-01-03T00:00:00",
+                "2017-01-04T00:00:00",
+            ],
+            dtype="datetime64[ns]",
+        )
+        curve = hv.Curve((dates_interp, [0, 1, 1, 2, 2, 3, 3]))
+        assert_element_equal(interpolated, curve)
+
+    def test_interpolate_curve_mid(self):
+        interpolated = interpolate_curve(hv.Curve([0, 0.5, 1]), interpolation="steps-mid")
+        curve = hv.Curve([(0, 0), (0.5, 0), (0.5, 0.5), (1.5, 0.5), (1.5, 1), (2, 1)])
+        assert_element_equal(interpolated, curve)
+
+    def test_interpolate_curve_mid_with_values(self):
+        interpolated = interpolate_curve(
+            hv.Curve([(0, 0, "A"), (1, 0.5, "B"), (2, 1, "C")], vdims=["y", "z"]),
+            interpolation="steps-mid",
+        )
+        curve = hv.Curve(
+            [
+                (0, 0, "A"),
+                (0.5, 0, "A"),
+                (0.5, 0.5, "B"),
+                (1.5, 0.5, "B"),
+                (1.5, 1, "C"),
+                (2, 1, "C"),
+            ],
+            vdims=["y", "z"],
+        )
+        assert_element_equal(interpolated, curve)
+
+    def test_interpolate_datetime_curve_mid(self):
+        dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype("M")
+        values = [0, 1, 2, 3]
+        interpolated = interpolate_curve(hv.Curve((dates, values)), interpolation="steps-mid")
+        dates_interp = np.array(
+            [
+                "2017-01-01T00:00:00",
+                "2017-01-01T12:00:00",
+                "2017-01-01T12:00:00",
+                "2017-01-02T12:00:00",
+                "2017-01-02T12:00:00",
+                "2017-01-03T12:00:00",
+                "2017-01-03T12:00:00",
+                "2017-01-04T00:00:00",
+            ],
+            dtype="datetime64[ns]",
+        )
+        curve = hv.Curve((dates_interp, [0, 0, 1, 1, 2, 2, 3, 3]))
+        assert_element_equal(interpolated, curve)
+
+    def test_interpolate_curve_post(self):
+        interpolated = interpolate_curve(hv.Curve([0, 0.5, 1]), interpolation="steps-post")
+        curve = hv.Curve([(0, 0), (1, 0), (1, 0.5), (2, 0.5), (2, 1)])
+        assert_element_equal(interpolated, curve)
+
+    def test_interpolate_curve_post_with_values(self):
+        interpolated = interpolate_curve(
+            hv.Curve([(0, 0, "A"), (1, 0.5, "B"), (2, 1, "C")], vdims=["y", "z"]),
+            interpolation="steps-post",
+        )
+        curve = hv.Curve(
+            [(0, 0, "A"), (1, 0, "A"), (1, 0.5, "B"), (2, 0.5, "B"), (2, 1, "C")], vdims=["y", "z"]
+        )
+        assert_element_equal(interpolated, curve)
+
+    def test_interpolate_datetime_curve_post(self):
+        dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype("M")
+        values = [0, 1, 2, 3]
+        interpolated = interpolate_curve(hv.Curve((dates, values)), interpolation="steps-post")
+        dates_interp = np.array(
+            [
+                "2017-01-01T00:00:00",
+                "2017-01-02T00:00:00",
+                "2017-01-02T00:00:00",
+                "2017-01-03T00:00:00",
+                "2017-01-03T00:00:00",
+                "2017-01-04T00:00:00",
+                "2017-01-04T00:00:00",
+            ],
+            dtype="datetime64[ns]",
+        )
+        curve = hv.Curve((dates_interp, [0, 0, 1, 1, 2, 2, 3]))
+        assert_element_equal(interpolated, curve)
+
+    @pytest.mark.parametrize("dtype", [pd.Int64Dtype(), np.int64])
+    def test_interpolate_pandas_dtype_curve_post(self, dtype):
+        df = pd.DataFrame(dict(a=[1, 2, 3], b=[3, 4, 5]), dtype=dtype)
+        interpolated = interpolate_curve(hv.Curve(df), interpolation="steps-post")
+        df = pd.DataFrame(dict(a=[1, 2, 2, 3, 3], b=[3, 3, 4, 4, 5]))
+        expected = hv.Curve(df)
+        assert_element_equal(interpolated, expected)
+
+    def test_stack_area_overlay(self):
+        areas = hv.Area([1, 2, 3]) * hv.Area([1, 2, 3])
+        stacked = hv.Area.stack(areas)
+        area1 = hv.Area(([0, 1, 2], [1, 2, 3], [0, 0, 0]), vdims=["y", "Baseline"])
+        area2 = hv.Area(([0, 1, 2], [2, 4, 6], [1, 2, 3]), vdims=["y", "Baseline"])
+        assert_element_equal(stacked, area1 * area2)
+
+    def test_stack_area_ndoverlay(self):
+        areas = hv.NdOverlay([(0, hv.Area([1, 2, 3])), (1, hv.Area([1, 2, 3]))])
+        stacked = hv.Area.stack(areas)
+        area1 = hv.Area(([0, 1, 2], [1, 2, 3], [0, 0, 0]), vdims=["y", "Baseline"])
+        area2 = hv.Area(([0, 1, 2], [2, 4, 6], [1, 2, 3]), vdims=["y", "Baseline"])
+        assert_element_equal(stacked, hv.NdOverlay([(0, area1), (1, area2)]))
+
+    def test_pre_and_postprocess_hooks(self):
+        pre_backup = operation._preprocess_hooks
+        post_backup = operation._postprocess_hooks
+        operation._preprocess_hooks = [lambda op, x: {"label": str(x.id)}]
+        operation._postprocess_hooks = [lambda op, x, **kwargs: x.clone(**kwargs)]
+        curve = hv.Curve([1, 2, 3])
+        assert operation(curve).label == str(curve.id)
+        operation._preprocess_hooks = pre_backup
+        operation._postprocess_hooks = post_backup
+
+    @pytest.mark.usefixtures("bokeh_backend")
+    def test_decimate_ordering(self):
+        x = np.linspace(0, 10, 100)
+        y = np.sin(x)
+        curve = hv.Curve((x, y))
+        decimated = decimate(curve, max_samples=20)
+        hv.renderer("bokeh").get_plot(decimated)
+
+        index = decimated.data[()].data.index
+        assert np.all(index == np.sort(index))
+
+    @pytest.mark.usefixtures("bokeh_backend")
+    def test_decimate_same_y(self):
+        data = pd.DataFrame({"x": np.arange(10), "y": np.ones(10)})
+        points = hv.Points(data, kdims=["x", "y"]).opts(xlim=(0, 10))
+        decimated = decimate(points)
+
+        hv.renderer("bokeh").get_plot(decimated)
+        output = decimated.data[()].data
+        pd.testing.assert_series_equal(data["x"], output["x"])
+        pd.testing.assert_series_equal(data["y"], output["y"])
+
+    @pytest.mark.parametrize("steps", ["steps-post", "steps-pre", "linear", "steps-mid"])
+    def test_empty_curve_interpolation(self, steps):
+        empty_curve = hv.Curve(([], []), "x", "y").opts(interpolation=steps)
+        hv.renderer("bokeh").get_plot(empty_curve)
+
+        x_values = empty_curve.data[("x")]
+        y_values = empty_curve.data[("y")]
+
+        assert len(x_values) == 0
+        assert len(y_values) == 0
+
+
+class TestCategoricalAgg:
+    def test_categorical_agg_count(self):
+        df = pd.DataFrame(
+            {
+                "x": [1, 2, 3, 4, 5],
+                "y": [10, 20, 30, 40, 50],
+                "category": ["A", "B", "A", "B", "A"],
+            }
+        )
+        points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
+        bars = categorical_agg(points, dimension="category")
+
+        assert isinstance(bars, hv.Bars)
+        assert bars.kdims[0].name == "category"
+        assert bars.vdims[0].name == "Count"
+        # A appears 3 times, B appears 2 times
+        data = dict(
+            zip(bars.dimension_values("category"), bars.dimension_values("Count"), strict=True)
+        )
+        assert data["A"] == 3
+        assert data["B"] == 2
+
+    def test_categorical_agg_sum(self):
+        df = pd.DataFrame(
+            {"x": [1, 2, 3, 4], "y": [10, 20, 30, 40], "category": ["A", "B", "A", "B"]}
+        )
+        points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
+        bars = categorical_agg(
+            points,
+            dimension="category",
+            value_dimension="y",
+            function=np.sum,
+        )
+
+        assert isinstance(bars, hv.Bars)
+        assert bars.vdims[0].name == "sum(y)"
+        data = dict(
+            zip(bars.dimension_values("category"), bars.dimension_values("sum(y)"), strict=True)
+        )
+        assert data["A"] == 40  # 10 + 30
+        assert data["B"] == 60  # 20 + 40
+
+    def test_categorical_agg_mean(self):
+        df = pd.DataFrame(
+            {"x": [1, 2, 3, 4], "y": [10, 20, 30, 40], "category": ["A", "B", "A", "B"]}
+        )
+        points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
+        bars = categorical_agg(points, dimension="category", value_dimension="y", function=np.mean)
+
+        assert isinstance(bars, hv.Bars)
+        assert bars.vdims[0].name == "mean(y)"
+        data = dict(
+            zip(bars.dimension_values("category"), bars.dimension_values("mean(y)"), strict=True)
+        )
+        assert data["A"] == 20.0  # (10 + 30) / 2
+        assert data["B"] == 30.0  # (20 + 40) / 2
+
+    def test_categorical_agg_custom_label(self):
+        df = pd.DataFrame({"x": [1, 2, 3], "y": [10, 20, 30], "category": ["A", "B", "A"]})
+        points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
+        bars = categorical_agg(points, dimension="category", label="Total")
+
+        assert bars.vdims[0].name == "Total"
+
+    def test_categorical_agg_missing_dimension_error(self):
+        points = hv.Points([(1, 2), (3, 4)])
+        with pytest.raises(ValueError, match="not found"):
+            categorical_agg(points, dimension="nonexistent")
+
+    def test_categorical_agg_no_dimension_error(self):
+        points = hv.Points([(1, 2), (3, 4)])
+        with pytest.raises(ValueError, match="required"):
+            categorical_agg(points)
+
+    def test_categorical_agg_empty_element(self):
+        df = pd.DataFrame({"x": [], "y": [], "category": []})
+        points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
+        bars = categorical_agg(points, dimension="category")
+
+        assert isinstance(bars, hv.Bars)
+        assert len(bars) == 0
+
+    def test_categorical_agg_preserves_lineage(self):
+        df = pd.DataFrame({"x": [1, 2, 3], "y": [10, 20, 30], "category": ["A", "B", "A"]})
+        points = hv.Points(df, kdims=["x", "y"], vdims=["category"])
+        bars = categorical_agg(points, dimension="category")
+
+        assert bars.pipeline is not None
+        assert bars.dataset is not None
+
+
+@contourpy_skip
+class TestContours:
     def test_image_contours(self):
         img = hv.Image(np.array([[0, 1, 0], [0, 1, 0]]))
         op_contours = contours(img, levels=[0.5])
@@ -476,520 +1103,11 @@ class OperationTests:
         with pytest.raises(RuntimeError, match=msg):
             _ = contours(img, filled=True, levels=[0.5, 1.5])
 
-    def test_points_histogram(self):
-        points = hv.Points([float(i) for i in range(10)])
-        op_hist = histogram(points, num_bins=3, normed=True)
 
-        hist = hv.Histogram(
-            ([0, 3, 6, 9], [0.1, 0.1, 0.133333]), vdims=("x_frequency", "Frequency")
-        )
-        assert_element_equal(op_hist, hist)
-
-    def test_dataset_histogram_empty_explicit_bins(self):
-        ds = hv.Dataset([np.nan, np.nan], ["x"])
-        op_hist = histogram(ds, bins=[0, 1, 2])
-
-        hist = hv.Histogram(([0, 1, 2], [0, 0]), vdims=("x_count", "Count"))
-        assert_element_equal(op_hist, hist)
-
-    def test_dataset_histogram_groupby_range_shared(self):
-        x = np.arange(10)
-        y = np.arange(10) + 10
-        xy = np.concatenate([x, y])
-        label = ["x"] * 10 + ["y"] * 10
-
-        ds = hv.Dataset(pd.DataFrame([xy, label], index=["xy", "label"]).T, vdims=["xy", "label"])
-        hist = histogram(ds, groupby="label", groupby_range="shared")
-        exp = np.linspace(0, 19, 21)
-        for k, v in hist.items():
-            np.testing.assert_equal(exp, v.data["xy"])
-            sel = np.asarray(label) == k
-            assert sel.sum() == 10
-            assert (v.data["xy_count"][sel] == 1).all()
-            assert (v.data["xy_count"][~sel] == 0).all()
-
-    def test_dataset_histogram_groupby_range_separated(self):
-        x = np.arange(10)
-        y = np.arange(10) + 10
-        xy = np.concatenate([x, y])
-        label = ["x"] * 10 + ["y"] * 10
-
-        ds = hv.Dataset(pd.DataFrame([xy, label], index=["xy", "label"]).T, vdims=["xy", "label"])
-        hist = histogram(ds, groupby="label", groupby_range="separated")
-
-        for idx, v in enumerate(hist):
-            exp = np.linspace(idx * 10, 10 * idx + 9, 21)
-            np.testing.assert_equal(exp, v.data["xy"])
-            assert v.data["xy_count"].sum() == 10
-
-    def test_dataset_histogram_groupby_datetime(self):
-        x = pd.date_range("2020-01-01", periods=100)
-        y = pd.date_range("2020-01-01", periods=100)
-        xy = np.concatenate([x, y])
-        label = ["x"] * 100 + ["y"] * 100
-        ds = hv.Dataset(pd.DataFrame([xy, label], index=["xy", "label"]).T, vdims=["xy", "label"])
-        hist = histogram(ds, groupby="label")
-
-        exp = pd.date_range("2020-01-01", "2020-04-09", periods=21)
-        for h in hist:
-            np.testing.assert_equal(exp, h.data["xy"])
-            assert (h.data["xy_count"] == 5).all()
-
-    @da_skip
-    def test_dataset_histogram_dask(self):
-        ds = hv.Dataset(
-            (da.from_array(np.array(range(10), dtype="f"), chunks=(3)),), ["x"], datatype=["dask"]
-        )
-        op_hist = histogram(ds, num_bins=3, normed=True)
-
-        hist = hv.Histogram(
-            ([0, 3, 6, 9], [0.1, 0.1, 0.133333]), vdims=("x_frequency", "Frequency")
-        )
-        assert isinstance(op_hist.data["x_frequency"], da.Array)
-        assert_element_equal(op_hist, hist)
-
-    @da_skip
-    def test_dataset_cumulative_histogram_dask(self):
-        ds = hv.Dataset(
-            (da.from_array(np.array(range(10), dtype="f"), chunks=(3)),), ["x"], datatype=["dask"]
-        )
-        op_hist = histogram(ds, num_bins=3, cumulative=True, normed=True)
-
-        hist = hv.Histogram(([0, 3, 6, 9], [0.3, 0.6, 1]), vdims=("x_frequency", "Frequency"))
-        assert isinstance(op_hist.data["x_frequency"], da.Array)
-        assert_element_equal(op_hist, hist)
-
-    @da_skip
-    def test_dataset_weighted_histogram_dask(self):
-        ds = hv.Dataset(
-            (
-                da.from_array(np.array(range(10), dtype="f"), chunks=3),
-                da.from_array([i / 10.0 for i in range(10)], chunks=3),
-            ),
-            ["x", "y"],
-            datatype=["dask"],
-        )
-        op_hist = histogram(ds, weight_dimension="y", num_bins=3, normed=True)
-
-        hist = hv.Histogram(([0, 3, 6, 9], [0.022222, 0.088889, 0.222222]), vdims="y")
-        assert isinstance(op_hist.data["y"], da.Array)
-        assert_element_equal(op_hist, hist)
-
-    @ibis_skip
-    @pytest.mark.usefixtures("ibis_sqlite_backend")
-    def test_dataset_histogram_ibis(self):
-        df = pd.DataFrame(dict(x=np.arange(10)))
-        t = ibis.memtable(df, **({} if IBIS_VERSION >= (11, 0, 0) else {"name": "t"}))
-        ds = hv.Dataset(t, vdims="x")
-        op_hist = histogram(ds, dimension="x", num_bins=3, normed=True)
-
-        hist = hv.Histogram(
-            ([0, 3, 6, 9], [0.1, 0.1, 0.133333]), vdims=("x_frequency", "Frequency")
-        )
-        assert_element_equal(op_hist, hist)
-
-    @ibis_skip
-    @pytest.mark.usefixtures("ibis_sqlite_backend")
-    def test_dataset_cumulative_histogram_ibis(self):
-        df = pd.DataFrame(dict(x=np.arange(10)))
-        t = ibis.memtable(df, **({} if IBIS_VERSION >= (11, 0, 0) else {"name": "t"}))
-        ds = hv.Dataset(t, vdims="x")
-        op_hist = histogram(ds, num_bins=3, cumulative=True, normed=True)
-
-        hist = hv.Histogram(([0, 3, 6, 9], [0.3, 0.6, 1]), vdims=("x_frequency", "Frequency"))
-        assert_element_equal(op_hist, hist)
-
-    @ibis_skip
-    @pytest.mark.usefixtures("ibis_sqlite_backend")
-    def test_dataset_histogram_explicit_bins_ibis(self):
-        df = pd.DataFrame(dict(x=np.arange(10)))
-        t = ibis.memtable(df, **({} if IBIS_VERSION >= (11, 0, 0) else {"name": "t"}))
-        ds = hv.Dataset(t, vdims="x")
-        op_hist = histogram(ds, bins=[0, 1, 3], normed=False)
-
-        hist = hv.Histogram(([0, 1, 3], [1, 3]), vdims=("x_count", "Count"))
-        assert_element_equal(op_hist, hist)
-
-    @pytest.mark.gpu
-    def test_dataset_histogram_cudf(self):
-        import cudf
-
-        df = pd.DataFrame(dict(x=np.arange(10)))
-        t = cudf.from_pandas(df)
-        ds = hv.Dataset(t, vdims="x")
-        op_hist = histogram(ds, dimension="x", num_bins=3, normed=True)
-
-        hist = hv.Histogram(
-            ([0, 3, 6, 9], [0.1, 0.1, 0.133333]), vdims=("x_frequency", "Frequency")
-        )
-        assert_element_equal(op_hist, hist)
-
-    @pytest.mark.gpu
-    def test_dataset_cumulative_histogram_cudf(self):
-        import cudf
-
-        df = pd.DataFrame(dict(x=np.arange(10)))
-        t = cudf.from_pandas(df)
-        ds = hv.Dataset(t, vdims="x")
-        op_hist = histogram(ds, num_bins=3, cumulative=True, normed=True)
-
-        hist = hv.Histogram(([0, 3, 6, 9], [0.3, 0.6, 1]), vdims=("x_frequency", "Frequency"))
-        assert_element_equal(op_hist, hist)
-
-    @pytest.mark.gpu
-    def test_dataset_histogram_explicit_bins_cudf(self):
-        import cudf
-
-        df = pd.DataFrame(dict(x=np.arange(10)))
-        t = cudf.from_pandas(df)
-        ds = hv.Dataset(t, vdims="x")
-        op_hist = histogram(ds, bins=[0, 1, 3], normed=False)
-
-        hist = hv.Histogram(([0, 1, 3], [1, 3]), vdims=("x_count", "Count"))
-        assert_element_equal(op_hist, hist)
-
-    def test_points_histogram_bin_range(self):
-        points = hv.Points([float(i) for i in range(10)])
-        op_hist = histogram(points, num_bins=3, bin_range=(0, 3), normed=True)
-
-        hist = hv.Histogram(
-            ([0.25, 0.25, 0.5], [0.0, 1.0, 2.0, 3.0]), vdims=("x_frequency", "Frequency")
-        )
-        assert_element_equal(op_hist, hist)
-
-    def test_points_histogram_explicit_bins(self):
-        points = hv.Points([float(i) for i in range(10)])
-        op_hist = histogram(points, bins=[0, 1, 3], normed=False)
-
-        hist = hv.Histogram(([0, 1, 3], [1, 3]), vdims=("x_count", "Count"))
-        assert_element_equal(op_hist, hist)
-
-    def test_points_histogram_cumulative(self):
-        arr = np.arange(4)
-        points = hv.Points(arr)
-        op_hist = histogram(points, cumulative=True, num_bins=3, normed=False)
-
-        hist = hv.Histogram(([0, 1, 2, 3], [1, 2, 4]), vdims=("x_count", "Count"))
-        assert_element_equal(op_hist, hist)
-
-    def test_points_histogram_not_normed(self):
-        points = hv.Points([float(i) for i in range(10)])
-        op_hist = histogram(points, num_bins=3, normed=False)
-
-        hist = hv.Histogram(([0, 3, 6, 9], [3, 3, 4]), vdims=("x_count", "Count"))
-        assert_element_equal(op_hist, hist)
-
-    def test_histogram_operation_datetime(self):
-        dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)])
-        op_hist = histogram(hv.Dataset(dates, "Date"), num_bins=4, normed=True)
-        hist_data = {
-            "Date": np.array(
-                [
-                    "2017-01-01T00:00:00.000000",
-                    "2017-01-01T18:00:00.000000",
-                    "2017-01-02T12:00:00.000000",
-                    "2017-01-03T06:00:00.000000",
-                    "2017-01-04T00:00:00.000000",
-                ],
-                dtype="datetime64[us]",
-            ),
-            "Date_frequency": np.array(
-                [3.85802469e-18, 3.85802469e-18, 3.85802469e-18, 3.85802469e-18]
-            ),
-        }
-        hist = hv.Histogram(hist_data, kdims="Date", vdims=("Date_frequency", "Frequency"))
-        assert_element_equal(op_hist, hist)
-
-    def test_histogram_operation_datetime64(self):
-        dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype("M")
-        op_hist = histogram(hv.Dataset(dates, "Date"), num_bins=4, normed=True)
-        hist_data = {
-            "Date": np.array(
-                [
-                    "2017-01-01T00:00:00.000000",
-                    "2017-01-01T18:00:00.000000",
-                    "2017-01-02T12:00:00.000000",
-                    "2017-01-03T06:00:00.000000",
-                    "2017-01-04T00:00:00.000000",
-                ],
-                dtype="datetime64[us]",
-            ),
-            "Date_frequency": np.array(
-                [3.85802469e-18, 3.85802469e-18, 3.85802469e-18, 3.85802469e-18]
-            ),
-        }
-        hist = hv.Histogram(hist_data, kdims="Date", vdims=("Date_frequency", "Frequency"))
-        assert_element_equal(op_hist, hist)
-
-    def test_histogram_operation_pd_period(self):
-        dates = pd.date_range("2017-01-01", "2017-01-04", freq="D").to_period("D")
-        op_hist = histogram(hv.Dataset(dates, "Date"), num_bins=4, normed=True)
-        hist_data = {
-            "Date": np.array(
-                [
-                    "2017-01-01T00:00:00.000000",
-                    "2017-01-01T18:00:00.000000",
-                    "2017-01-02T12:00:00.000000",
-                    "2017-01-03T06:00:00.000000",
-                    "2017-01-04T00:00:00.000000",
-                ],
-                dtype="datetime64[us]",
-            ),
-            "Date_frequency": np.array(
-                [3.85802469e-18, 3.85802469e-18, 3.85802469e-18, 3.85802469e-18]
-            ),
-        }
-        hist = hv.Histogram(hist_data, kdims="Date", vdims=("Date_frequency", "Frequency"))
-        assert_element_equal(op_hist, hist)
-
-    def test_histogram_categorical(self):
-        series = hv.Dataset(pd.Series(["A", "B", "C"]))
-        kwargs = {"bin_range": ("A", "C"), "normed": False, "cumulative": False, "num_bins": 3}
-        with pytest.raises(ValueError):  # noqa: PT011
-            histogram(series, **kwargs)
-
-    def test_points_histogram_weighted(self):
-        points = hv.Points([float(i) for i in range(10)])
-        op_hist = histogram(points, num_bins=3, weight_dimension="y", normed=True)
-        hist = hv.Histogram(([0.022222, 0.088889, 0.222222], [0, 3, 6, 9]), vdims=["y"])
-        assert_element_equal(op_hist, hist)
-
-    def test_points_histogram_mean_weighted(self):
-        points = hv.Points([float(i) for i in range(10)])
-        op_hist = histogram(
-            points, num_bins=3, weight_dimension="y", mean_weighted=True, normed=True
-        )
-        hist = hv.Histogram(([1.0, 4.0, 7.5], [0, 3, 6, 9]), vdims=["y"])
-        assert_element_equal(op_hist, hist)
-
-    def test_histogram_narwhals_pandas(self):
-        df = pd.DataFrame({"x": range(10)})
-        ds = hv.Dataset(df, vdims="x", datatype=["narwhals"])
-        op_hist = histogram(ds, num_bins=3, normed=False)
-
-        hist = hv.Histogram(([0, 3, 6, 9], [3, 3, 4]), vdims=("x_count", "Count"))
-        assert_element_equal(op_hist, hist)
-
-    def test_histogram_narwhals_polars(self):
-        pl = pytest.importorskip("polars")
-        df = pl.DataFrame({"x": range(10)})
-        ds = hv.Dataset(df, vdims="x")
-        op_hist = histogram(ds, num_bins=3, normed=False)
-
-        hist = hv.Histogram(([0, 3, 6, 9], [3, 3, 4]), vdims=("x_count", "Count"))
-        assert_element_equal(op_hist, hist)
-
-    def test_histogram_narwhals_polars_lazy(self):
-        pl = pytest.importorskip("polars")
-        df = pl.LazyFrame({"x": range(10)})
-        ds = hv.Dataset(df, vdims="x")
-        op_hist = histogram(ds, num_bins=3, normed=False)
-
-        hist = hv.Histogram(([0, 3, 6, 9], [3, 3, 4]), vdims=("x_count", "Count"))
-        assert_element_equal(op_hist, hist)
-
-    def test_histogram_narwhals_polars_lazy_groupby(self):
-        pl = pytest.importorskip("polars")
-        df = pl.LazyFrame({"x": [1, 2], "y": [1, 2]})
-        ds = hv.Dataset(df)
-        op_hist = histogram(ds, num_bins=2, groupby="x")
-
-        hist1 = hv.Histogram(([1, 1.5, 2], [1, 0]), kdims="y", vdims=[("y_count", "Count")])
-        hist2 = hv.Histogram(([1, 1.5, 2], [0, 1]), kdims="y", vdims=[("y_count", "Count")])
-        expected = hv.NdOverlay({(1,): hist1, (2,): hist2}, kdims=["x"])
-
-        assert_element_equal(op_hist, expected)
-
-    @pytest.mark.usefixtures("mpl_backend")
-    def test_histogram_dask_array_mpl(self):
-        # Regression test for https://github.com/holoviz/holoviews/issues/5111
-        dd = pytest.importorskip("dask.dataframe")
-
-        data = {
-            "carrier": ["A", "A", "A", "A", "B", "B", "B", "B", "B"],
-            "depdelay": [127.0, 3.0, -3.0, 19.0, 264.0, -6.0, 1.0, 2.0, 83.0],
-        }
-        flights = dd.from_pandas(pd.DataFrame(data), npartitions=2)
-
-        by = "carrier"
-        ds = hv.Dataset(flights, by)
-        ds_grouped = ds.groupby(by)
-        hists = histogram(ds_grouped, dimension="depdelay")
-
-        # Should not error
-        hv.renderer("matplotlib").get_plot(hists)
-
-    def test_interpolate_curve_pre(self):
-        interpolated = interpolate_curve(hv.Curve([0, 0.5, 1]), interpolation="steps-pre")
-        curve = hv.Curve([(0, 0), (0, 0.5), (1, 0.5), (1, 1), (2, 1)])
-        assert_element_equal(interpolated, curve)
-
-    def test_interpolate_curve_pre_with_values(self):
-        interpolated = interpolate_curve(
-            hv.Curve([(0, 0, "A"), (1, 0.5, "B"), (2, 1, "C")], vdims=["y", "z"]),
-            interpolation="steps-pre",
-        )
-        curve = hv.Curve(
-            [(0, 0, "A"), (0, 0.5, "B"), (1, 0.5, "B"), (1, 1, "C"), (2, 1, "C")], vdims=["y", "z"]
-        )
-        assert_element_equal(interpolated, curve)
-
-    def test_interpolate_datetime_curve_pre(self):
-        dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype("M")
-        values = [0, 1, 2, 3]
-        interpolated = interpolate_curve(hv.Curve((dates, values)), interpolation="steps-pre")
-        dates_interp = np.array(
-            [
-                "2017-01-01T00:00:00",
-                "2017-01-01T00:00:00",
-                "2017-01-02T00:00:00",
-                "2017-01-02T00:00:00",
-                "2017-01-03T00:00:00",
-                "2017-01-03T00:00:00",
-                "2017-01-04T00:00:00",
-            ],
-            dtype="datetime64[ns]",
-        )
-        curve = hv.Curve((dates_interp, [0, 1, 1, 2, 2, 3, 3]))
-        assert_element_equal(interpolated, curve)
-
-    def test_interpolate_curve_mid(self):
-        interpolated = interpolate_curve(hv.Curve([0, 0.5, 1]), interpolation="steps-mid")
-        curve = hv.Curve([(0, 0), (0.5, 0), (0.5, 0.5), (1.5, 0.5), (1.5, 1), (2, 1)])
-        assert_element_equal(interpolated, curve)
-
-    def test_interpolate_curve_mid_with_values(self):
-        interpolated = interpolate_curve(
-            hv.Curve([(0, 0, "A"), (1, 0.5, "B"), (2, 1, "C")], vdims=["y", "z"]),
-            interpolation="steps-mid",
-        )
-        curve = hv.Curve(
-            [
-                (0, 0, "A"),
-                (0.5, 0, "A"),
-                (0.5, 0.5, "B"),
-                (1.5, 0.5, "B"),
-                (1.5, 1, "C"),
-                (2, 1, "C"),
-            ],
-            vdims=["y", "z"],
-        )
-        assert_element_equal(interpolated, curve)
-
-    def test_interpolate_datetime_curve_mid(self):
-        dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype("M")
-        values = [0, 1, 2, 3]
-        interpolated = interpolate_curve(hv.Curve((dates, values)), interpolation="steps-mid")
-        dates_interp = np.array(
-            [
-                "2017-01-01T00:00:00",
-                "2017-01-01T12:00:00",
-                "2017-01-01T12:00:00",
-                "2017-01-02T12:00:00",
-                "2017-01-02T12:00:00",
-                "2017-01-03T12:00:00",
-                "2017-01-03T12:00:00",
-                "2017-01-04T00:00:00",
-            ],
-            dtype="datetime64[ns]",
-        )
-        curve = hv.Curve((dates_interp, [0, 0, 1, 1, 2, 2, 3, 3]))
-        assert_element_equal(interpolated, curve)
-
-    def test_interpolate_curve_post(self):
-        interpolated = interpolate_curve(hv.Curve([0, 0.5, 1]), interpolation="steps-post")
-        curve = hv.Curve([(0, 0), (1, 0), (1, 0.5), (2, 0.5), (2, 1)])
-        assert_element_equal(interpolated, curve)
-
-    def test_interpolate_curve_post_with_values(self):
-        interpolated = interpolate_curve(
-            hv.Curve([(0, 0, "A"), (1, 0.5, "B"), (2, 1, "C")], vdims=["y", "z"]),
-            interpolation="steps-post",
-        )
-        curve = hv.Curve(
-            [(0, 0, "A"), (1, 0, "A"), (1, 0.5, "B"), (2, 0.5, "B"), (2, 1, "C")], vdims=["y", "z"]
-        )
-        assert_element_equal(interpolated, curve)
-
-    def test_interpolate_datetime_curve_post(self):
-        dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype("M")
-        values = [0, 1, 2, 3]
-        interpolated = interpolate_curve(hv.Curve((dates, values)), interpolation="steps-post")
-        dates_interp = np.array(
-            [
-                "2017-01-01T00:00:00",
-                "2017-01-02T00:00:00",
-                "2017-01-02T00:00:00",
-                "2017-01-03T00:00:00",
-                "2017-01-03T00:00:00",
-                "2017-01-04T00:00:00",
-                "2017-01-04T00:00:00",
-            ],
-            dtype="datetime64[ns]",
-        )
-        curve = hv.Curve((dates_interp, [0, 0, 1, 1, 2, 2, 3]))
-        assert_element_equal(interpolated, curve)
-
-    @pytest.mark.parametrize("dtype", [pd.Int64Dtype(), np.int64])
-    def test_interpolate_pandas_dtype_curve_post(self, dtype):
-        df = pd.DataFrame(dict(a=[1, 2, 3], b=[3, 4, 5]), dtype=dtype)
-        interpolated = interpolate_curve(hv.Curve(df), interpolation="steps-post")
-        df = pd.DataFrame(dict(a=[1, 2, 2, 3, 3], b=[3, 3, 4, 4, 5]))
-        expected = hv.Curve(df)
-        assert_element_equal(interpolated, expected)
-
-    def test_stack_area_overlay(self):
-        areas = hv.Area([1, 2, 3]) * hv.Area([1, 2, 3])
-        stacked = hv.Area.stack(areas)
-        area1 = hv.Area(([0, 1, 2], [1, 2, 3], [0, 0, 0]), vdims=["y", "Baseline"])
-        area2 = hv.Area(([0, 1, 2], [2, 4, 6], [1, 2, 3]), vdims=["y", "Baseline"])
-        assert_element_equal(stacked, area1 * area2)
-
-    def test_stack_area_ndoverlay(self):
-        areas = hv.NdOverlay([(0, hv.Area([1, 2, 3])), (1, hv.Area([1, 2, 3]))])
-        stacked = hv.Area.stack(areas)
-        area1 = hv.Area(([0, 1, 2], [1, 2, 3], [0, 0, 0]), vdims=["y", "Baseline"])
-        area2 = hv.Area(([0, 1, 2], [2, 4, 6], [1, 2, 3]), vdims=["y", "Baseline"])
-        assert_element_equal(stacked, hv.NdOverlay([(0, area1), (1, area2)]))
-
-    def test_pre_and_postprocess_hooks(self):
-        pre_backup = operation._preprocess_hooks
-        post_backup = operation._postprocess_hooks
-        operation._preprocess_hooks = [lambda op, x: {"label": str(x.id)}]
-        operation._postprocess_hooks = [lambda op, x, **kwargs: x.clone(**kwargs)]
-        curve = hv.Curve([1, 2, 3])
-        assert operation(curve).label == str(curve.id)
-        operation._preprocess_hooks = pre_backup
-        operation._postprocess_hooks = post_backup
-
-    @pytest.mark.usefixtures("bokeh_backend")
-    def test_decimate_ordering(self):
-        x = np.linspace(0, 10, 100)
-        y = np.sin(x)
-        curve = hv.Curve((x, y))
-        decimated = decimate(curve, max_samples=20)
-        hv.renderer("bokeh").get_plot(decimated)
-
-        index = decimated.data[()].data.index
-        assert np.all(index == np.sort(index))
-
-    @pytest.mark.usefixtures("bokeh_backend")
-    def test_decimate_same_y(self):
-        data = pd.DataFrame({"x": np.arange(10), "y": np.ones(10)})
-        points = hv.Points(data, kdims=["x", "y"]).opts(xlim=(0, 10))
-        decimated = decimate(points)
-
-        hv.renderer("bokeh").get_plot(decimated)
-        output = decimated.data[()].data
-        pd.testing.assert_series_equal(data["x"], output["x"])
-        pd.testing.assert_series_equal(data["y"], output["y"])
-
-
+@scipy_skip
 @pytest.mark.usefixtures("bokeh_backend")
 class TestDendrogramOperation:
     def setup_class(self):
-        pytest.importorskip("scipy")
-
         random.seed(1)
         self.df = pd.DataFrame(
             [(i, chr(65 + j), random.random()) for j in range(10) for i in range(5)],
@@ -1178,14 +1296,13 @@ class TestDendrogramOperation:
 
         assert main1.y_range.factors == main2.y_range.factors
 
+    @xr_skip
     @pytest.mark.parametrize(
         "adjoint_dims",
         [["cluster"], ["gene"], ["gene", "cluster"]],
         ids=["right", "top", "both"],
     )
     def test_gridded_dataset(self, adjoint_dims, rng):
-        xr = pytest.importorskip("xarray")
-
         N = 10
         xda = xr.DataArray(
             rng.normal(size=(N, N)),

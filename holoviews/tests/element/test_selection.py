@@ -10,9 +10,10 @@ import pytest
 
 import holoviews as hv
 from holoviews.element.selection import spatial_select_columnar
+from holoviews.streams import Selection1D, SelectionXY
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 
-from ..utils import dd, dd_skip, ds_skip, shapely_skip, spd_skip
+from .._deps import dd, dd_skip, ds_skip, shapely_skip, spd_skip
 
 
 class TestIndexExpr:
@@ -221,6 +222,71 @@ class TestSelection1DExpr:
         assert_element_equal(region, hv.NdOverlay({0: hv.HSpan(3, 7)}))
 
 
+class TestSelectionBarsExpr:
+    def setup_method(self):
+        import holoviews.plotting.bokeh  # noqa: F401
+
+        self._backend = hv.Store.current_backend
+        hv.Store.set_current_backend("bokeh")
+
+    def teardown_method(self):
+        hv.Store.current_backend = self._backend
+
+    def _make_bars(self):
+        return hv.Bars(
+            (["A", "B", "C", "D"], [10, 20, 5, 15]), kdims=["category"], vdims=["count"]
+        )
+
+    def test_bars_tap_single_category(self):
+        bars = self._make_bars()
+        expr, bbox, region = bars._get_selection_expr_for_stream_value(index=[1])
+        assert bbox is None
+        assert region is None
+        assert expr == hv.dim("category").isin(["B"])
+        assert_data_equal(
+            expr.apply(bars),
+            np.array([False, True, False, False]),
+        )
+
+    def test_bars_tap_multiple_categories(self):
+        bars = self._make_bars()
+        expr, bbox, region = bars._get_selection_expr_for_stream_value(index=[0, 2])
+        assert bbox is None
+        assert region is None
+        assert expr == hv.dim("category").isin(["A", "C"])
+        assert_data_equal(
+            expr.apply(bars),
+            np.array([True, False, True, False]),
+        )
+
+    def test_bars_tap_empty_index(self):
+        bars = self._make_bars()
+        expr, bbox, region = bars._get_selection_expr_for_stream_value(index=[])
+        assert expr is None
+        assert bbox is None
+        assert region is None
+
+    def test_bars_tap_no_index_kwarg(self):
+        bars = self._make_bars()
+        expr, _bbox, _region = bars._get_selection_expr_for_stream_value()
+        assert expr is None
+
+    def test_bars_box_select_categorical(self):
+        bars = self._make_bars()
+        expr, bbox, _region = bars._get_selection_expr_for_stream_value(
+            bounds=(0, 0, 2, 25), x_selection=["A", "B", "C"]
+        )
+        assert bbox == {"category": ["A", "B", "C"]}
+        assert_data_equal(
+            expr.apply(bars),
+            np.array([True, True, True, False]),
+        )
+
+    def test_bars_selection_streams_include_selection1d(self):
+        assert Selection1D in hv.Bars._selection_streams
+        assert SelectionXY in hv.Bars._selection_streams
+
+
 class TestSelection2DExpr:
     def setup_method(self):
         import holoviews.plotting.bokeh  # noqa: F401
@@ -245,13 +311,14 @@ class TestSelection2DExpr:
         assert_data_equal(expr.apply(points), np.array([False, True, True, False, False]))
         assert_element_equal(region, hv.Rectangles([(0, 1, 2, 3)]) * hv.Path([]))
 
-    @pytest.mark.parametrize("module", ["spatialpandas", "shapely"])
+    @pytest.mark.parametrize(
+        "module",
+        [
+            pytest.param("spatialpandas", marks=spd_skip),
+            pytest.param("shapely", marks=shapely_skip),
+        ],
+    )
     def test_points_selection_geom(self, unimport, module):
-        # Will import _posixshmem on Linux + Python 3.14 + spatialpandas
-        # which does not work with unimport
-        import multiprocessing.resource_tracker  # noqa: F401
-
-        pytest.importorskip(module)
         unimport("spatialpandas" if module == "shapely" else "shapely")
         points = hv.Points([3, 2, 1, 3, 4])
         geom = np.array([(-0.1, -0.1), (1.4, 0), (1.4, 2.2), (-0.1, 2.2)])
@@ -262,13 +329,14 @@ class TestSelection2DExpr:
         assert_data_equal(expr.apply(points), np.array([False, True, False, False, False]))
         assert_element_equal(region, hv.Rectangles([]) * hv.Path([[*geom, (-0.1, -0.1)]]))
 
-    @pytest.mark.parametrize("module", ["spatialpandas", "shapely"])
+    @pytest.mark.parametrize(
+        "module",
+        [
+            pytest.param("spatialpandas", marks=spd_skip),
+            pytest.param("shapely", marks=shapely_skip),
+        ],
+    )
     def test_points_selection_geom_inverted(self, unimport, module):
-        # Will import _posixshmem on Linux + Python 3.14 + spatialpandas
-        # which does not work with unimport
-        import multiprocessing.resource_tracker  # noqa: F401
-
-        pytest.importorskip(module)
         unimport("spatialpandas" if module == "shapely" else "shapely")
         points = hv.Points([3, 2, 1, 3, 4]).opts(invert_axes=True)
         geom = np.array([(-0.1, -0.1), (1.4, 0), (1.4, 2.2), (-0.1, 2.2)])

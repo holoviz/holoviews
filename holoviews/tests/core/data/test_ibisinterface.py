@@ -12,7 +12,7 @@ from holoviews.core.data.ibis import IBIS_VERSION, IbisInterface
 from holoviews.core.util.dependencies import PANDAS_GE_3_0_0
 from holoviews.testing import assert_element_equal
 
-from ...utils import ibis, ibis_skip
+from ..._deps import ibis, ibis_skip
 from .base import HeterogeneousColumnTests, InterfaceTests, ScalarColumnTests
 
 

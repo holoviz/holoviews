@@ -80,18 +80,18 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
     way (in appropriate environments such as Jupyter notebooks) using
     completers such as `opts.Curve`, `opts.Image`, `opts.Overlay`, etc.
 
-    To set opts globally you can pass these option objects into `opts.defaults`:
+    To set opts globally you can pass these option objects into `opts.defaults`::
 
         opts.defaults(*options)
 
-    For instance:
+    For instance::
 
         opts.defaults(opts.Curve(color='red'))
 
     To set opts on a specific object, you can supply these option
     objects to the `.options` method.
 
-    For instance:
+    For instance::
 
         curve = hv.Curve([1,2,3])
         curve.options(opts.Curve(color='red'))
@@ -104,16 +104,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
     # Keywords not to be tab-completed (helps with deprecation)
     _no_completion = [
         "title_format",
-        "color_index",
-        "size_index",
-        "scaling_factor",
-        "scaling_method",
-        "size_fn",
         "normalize_lengths",
-        "group_index",
-        "category_index",
-        "stack_index",
-        "color_by",
     ]
 
     strict = param.Boolean(
@@ -218,7 +209,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         'style', and 'norm').
 
         If the options are to be set directly on the object a
-        simple format may be used, e.g.:
+        simple format may be used, e.g.::
 
             opts.apply_groups(
                 obj,
@@ -227,7 +218,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             )
 
         If the object is nested the options must be qualified using
-        a type[.group][.label] specification, e.g.:
+        a type[.group][.label] specification, e.g.::
 
             opts.apply_groups(
                 obj,

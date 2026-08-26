@@ -24,6 +24,7 @@ from .chart import (
     Bars,
     Chart,  # noqa: F401
     Curve,
+    Donut,
     ErrorBars,
     Histogram,
     Scatter,
@@ -92,6 +93,9 @@ class ElementConversion(DataConversion):
             if element.group != element.param["group"].default:
                 params["group"] = element.group
             return Distribution((element.dimension_values(dim),), **dict(params, **kwargs))
+
+    def donut(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Donut, kdims, vdims, groupby, **kwargs)
 
     def heatmap(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(HeatMap, kdims, vdims, groupby, **kwargs)
@@ -171,6 +175,7 @@ __all__ = [
     "Dendrogram",
     "Distribution",
     "Div",
+    "Donut",
     "EdgePaths",
     "Element",
     "Ellipse",

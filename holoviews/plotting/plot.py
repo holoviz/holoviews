@@ -109,6 +109,7 @@ class Plot(param.Parameterized):
 
     @document.setter
     def document(self, doc):
+        self._unwatch_session()
         if (
             doc
             and hasattr(doc, "on_session_destroyed")
@@ -116,21 +117,29 @@ class Plot(param.Parameterized):
             and not isinstance(self, GenericAdjointLayoutPlot)
         ):
             doc.on_session_destroyed(self._session_destroy)
-            if self._document:
-                if isinstance(self._document.callbacks._session_destroyed_callbacks, set):
-                    self._document.callbacks._session_destroyed_callbacks.discard(
-                        self._session_destroy
-                    )
-                else:
-                    self._document.callbacks._session_destroyed_callbacks.pop(
-                        self._session_destroy, None
-                    )
 
         self._document = doc
         if self.subplots:
             for plot in self.subplots.values():
                 if plot is not None:
                     plot.document = doc
+
+    def _unwatch_session(self):
+        """Drop this plot's session destroy hook from its current document.
+
+        A document holds its callbacks, and through them this plot, strongly,
+        so the hook is dropped whenever the plot leaves the document, i.e. on
+        reassignment and on cleanup. Only the hook belonging to this plot is
+        removed.
+        """
+        doc = self._document
+        if doc is None or not hasattr(doc, "callbacks"):
+            return
+        callbacks = doc.callbacks._session_destroyed_callbacks
+        if isinstance(callbacks, set):
+            callbacks.discard(self._session_destroy)
+        else:
+            callbacks.pop(self._session_destroy, None)
 
     @property
     def pane(self):
@@ -195,6 +204,7 @@ class Plot(param.Parameterized):
         """
         plots = self.traverse(lambda x: x, [Plot])
         for plot in plots:
+            plot._unwatch_session()
             if not isinstance(plot, (GenericElementPlot, GenericOverlayPlot)):
                 continue
             for stream in set(plot.streams):
@@ -803,9 +813,15 @@ class DimensionedPlot(Plot):
                 else:
                     dtype = None
 
+                # dtype_kind reports "O" (not "S"/"U") for pandas.StringDtype
+                is_string_dtype = dtype is not None and (
+                    dtype_kind(dtype) in "SU"
+                    or (util.pd and isinstance(dtype, util.pd.StringDtype))
+                )
+
                 if all(util.isfinite(r) for r in el_dim.range):
                     data_range = (None, None)
-                elif dtype is not None and dtype_kind(dtype) in "SU":
+                elif is_string_dtype:
                     data_range = ("", "")
                 elif isinstance(el, Graph) and el_dim in el.kdims[:2]:
                     data_range = el.nodes.range(2, dimension_range=False)
@@ -826,7 +842,7 @@ class DimensionedPlot(Plot):
                 if (
                     any(isinstance(r, str) for r in data_range)
                     or (el_dim.type is not None and issubclass(el_dim.type, str))
-                    or (dtype is not None and dtype_kind(dtype) in "SU")
+                    or is_string_dtype
                 ):
                     categorical_dims.append(el_dim)
 
@@ -932,7 +948,11 @@ class DimensionedPlot(Plot):
                 matching &= (
                     len(
                         {
-                            "date" if isinstance(v, util.datetime_types) else "number"
+                            "date"
+                            if isinstance(v, util.datetime_types)
+                            else "string"
+                            if isinstance(v, (str, bytes))
+                            else "number"
                             for rng in rs
                             for v in rng
                             if util.isfinite(v)
@@ -1354,29 +1374,6 @@ class GenericElementPlot(DimensionedPlot):
     _propagate_options = []
     v17_option_propagation = True
 
-    _deprecations = {
-        "color_index": (
-            "The `color_index` parameter is deprecated in favor of color "
-            "style mapping, e.g. `color=dim('color')` or `line_color=dim('color')`"
-        ),
-        "size_index": (
-            "The `size_index` parameter is deprecated in favor of size "
-            "style mapping, e.g. `size=dim('size')**2`."
-        ),
-        "scaling_method": (
-            "The `scaling_method` parameter is deprecated in favor of size "
-            "style mapping, e.g. `size=dim('size')**2` for area scaling."
-        ),
-        "scaling_factor": (
-            "The `scaling_factor` parameter is deprecated in favor of size "
-            "style mapping, e.g. `size=dim('size')*10`."
-        ),
-        "size_fn": (
-            "The `size_fn` parameter is deprecated in favor of size "
-            "style mapping, e.g. `size=abs(dim('size'))`."
-        ),
-    }
-
     _selection_display = NoOpSelectionDisplay()
 
     _multi_y_propagation = False
@@ -1444,9 +1441,6 @@ class GenericElementPlot(DimensionedPlot):
             plot_opts.update(**{k: v[0] for k, v in inherited.items() if k not in plot_opts})
 
         applied_params = dict(params, **plot_opts)
-        for p, pval in applied_params.items():
-            if p in self.param and p in self._deprecations and pval is not None:
-                self.param.warning(self._deprecations[p])
         super().__init__(keys=keys, dimensions=dimensions, dynamic=dynamic, **applied_params)
         self.batched = batched
         self.streams = get_nested_streams(self.hmap) if streams is None else streams
@@ -1727,6 +1721,7 @@ class GenericElementPlot(DimensionedPlot):
             x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
             y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
 
+        # Should match what is done in GenericOverlayPlot.get_extents
         if not self.drawn:
             x_range, y_range = ((y0, y1), (x0, x1)) if self.invert_axes else ((x0, x1), (y0, y1))
             for stream in getattr(self, "source_streams", []):
@@ -2331,6 +2326,22 @@ class GenericOverlayPlot(GenericElementPlot):
         x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
         if not (("multi_y" in self.param) and self.multi_y):
             y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
+
+        # Should match what is done in ElementPlot.get_extents
+        if not self.drawn:
+            x_range, y_range = ((y0, y1), (x0, x1)) if self.invert_axes else ((x0, x1), (y0, y1))
+            for stream in getattr(self, "source_streams", []):
+                if isinstance(stream, RangeX):
+                    params = {"x_range": x_range}
+                elif isinstance(stream, RangeY):
+                    params = {"y_range": y_range}
+                elif isinstance(stream, RangeXY):
+                    params = {"x_range": x_range, "y_range": y_range}
+                else:
+                    continue
+                stream.update(**params)
+                if stream not in self._trigger and (self.xlim or self.ylim):
+                    self._trigger.append(stream)
 
         if isinstance(self.projection, str) and self.projection == "3d":
             z0, z1 = util.dimension_range(

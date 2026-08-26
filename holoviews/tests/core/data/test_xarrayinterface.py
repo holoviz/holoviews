@@ -10,7 +10,7 @@ import holoviews as hv
 from holoviews.core.data import XArrayInterface, concat
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from ...utils import da, da_skip, xr, xr_skip
+from ..._deps import da, da_skip, xr, xr_skip
 from .test_gridinterface import BaseGridInterfaceTests
 from .test_imageinterface import (
     BaseHSVElementInterfaceTests,

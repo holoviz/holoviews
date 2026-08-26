@@ -6,6 +6,8 @@ import pytest
 
 import holoviews as hv
 
+from .._deps import ipython_skip
+
 
 @contextmanager
 def _set_store(store):
@@ -17,9 +19,9 @@ def _set_store(store):
         hv.core.pprint.InfoPrinter.store = info_store
 
 
+@ipython_skip
 @pytest.mark.usefixtures("bokeh_backend")
 def test_help_pattern(capsys):
-    pytest.importorskip("IPython")
     with _set_store(hv.Store):
         hv.help(hv.Curve, pattern="border")
         captured = capsys.readouterr()

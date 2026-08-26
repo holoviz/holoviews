@@ -496,6 +496,40 @@ class TestDynamicMapMethods:
         with pytest.raises(KeyError):
             dmaps[1][1]
 
+    @pytest.mark.parametrize(
+        ("kdims", "keys"),
+        [
+            ([hv.Dimension("x", values=[1, 2]), "y"], {(1, 0.5)}),
+            ([hv.Dimension("x", values=["1", "2"]), "y"], {("1", 0.5)}),
+            ([hv.Dimension("x", range=(1, 5)), "y"], {(1, 0.5)}),
+            (
+                [hv.Dimension("x", values=[1, 2]), hv.Dimension("y", values=[3, 4])],
+                {(1, 3), (2, 4)},
+            ),
+        ],
+        ids=["int_values", "str_values", "no_values", "multi_key"],
+    )
+    def test_explicit_tuple_set_slicing(self, kdims, keys):
+        call_count = 0
+
+        def callback(x, y):
+            nonlocal call_count
+            call_count += 1
+            return hv.Curve([x, y])
+
+        dmap = hv.DynamicMap(callback, kdims=kdims)
+        assert call_count == 0
+        result = dmap[keys]
+        assert len(result) == len(keys)
+        for key in keys:
+            assert key in result.data
+
+        assert call_count == len(keys)
+
+        # Check we hit cache
+        result = dmap[keys]
+        assert call_count == len(keys)
+
 
 class DynamicMapOptionsTests(CustomBackendTestCase):
     def test_dynamic_options(self):
@@ -884,41 +918,23 @@ class TestDynamicMapRX:
 
 
 class TestStreamSubscribersAddandClear:
-    def setup_method(self):
+    @pytest.mark.parametrize(
+        ("policy", "remaining"),
+        [("all", []), ("user", ["fn3", "fn4"]), ("internal", ["fn1", "fn2"])],
+    )
+    def test_subscriber_clear(self, policy, remaining):
         self.fn1 = lambda x: x
         self.fn2 = lambda x: x**2
         self.fn3 = lambda x: x**3
         self.fn4 = lambda x: x**4
-
-    def test_subscriber_clear_all(self):
         pointerx = PointerX(x=2)
         pointerx.add_subscriber(self.fn1, precedence=0)
         pointerx.add_subscriber(self.fn2, precedence=1)
         pointerx.add_subscriber(self.fn3, precedence=1.5)
         pointerx.add_subscriber(self.fn4, precedence=10)
         assert pointerx.subscribers == [self.fn1, self.fn2, self.fn3, self.fn4]
-        pointerx.clear("all")
-        assert pointerx.subscribers == []
-
-    def test_subscriber_clear_user(self):
-        pointerx = PointerX(x=2)
-        pointerx.add_subscriber(self.fn1, precedence=0)
-        pointerx.add_subscriber(self.fn2, precedence=1)
-        pointerx.add_subscriber(self.fn3, precedence=1.5)
-        pointerx.add_subscriber(self.fn4, precedence=10)
-        assert pointerx.subscribers == [self.fn1, self.fn2, self.fn3, self.fn4]
-        pointerx.clear("user")
-        assert pointerx.subscribers == [self.fn3, self.fn4]
-
-    def test_subscriber_clear_internal(self):
-        pointerx = PointerX(x=2)
-        pointerx.add_subscriber(self.fn1, precedence=0)
-        pointerx.add_subscriber(self.fn2, precedence=1)
-        pointerx.add_subscriber(self.fn3, precedence=1.5)
-        pointerx.add_subscriber(self.fn4, precedence=10)
-        assert pointerx.subscribers == [self.fn1, self.fn2, self.fn3, self.fn4]
-        pointerx.clear("internal")
-        assert pointerx.subscribers == [self.fn1, self.fn2]
+        pointerx.clear(policy)
+        assert pointerx.subscribers == [getattr(self, name) for name in remaining]
 
 
 class TestDynamicStreamReset:

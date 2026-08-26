@@ -26,7 +26,7 @@ import narwhals.stable.v2 as nw
 import numpy as np
 import param
 
-from ...util.warnings import warn
+from ...util.warnings import deprecated, warn
 from .dependencies import (  # noqa: F401
     NUMPY_GE_2_0_0,
     NUMPY_VERSION,
@@ -114,6 +114,14 @@ _PANDAS_FUNC_LOOKUP = {
     np.cumsum: "cumsum",
     np.nancumsum: "cumsum",
 }
+
+
+def __getattr__(attr):
+    if attr == "nat_as_integer":
+        deprecated("1.25.0", old="nat_as_integer", new=-9223372036854775808)
+        # np.datetime64("NAT", "ns").view("i8") or (- 2 ** 64 // 2)
+        return np.int64(-9223372036854775808)
+    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
 
 
 class Config(param.ParameterizedFunction):
@@ -880,23 +888,22 @@ label_sanitizer = sanitize_identifier_fn.instance()
 dimension_sanitizer = sanitize_identifier_fn.instance(capitalize=False)
 
 
-def isscalar(val):
+def isscalar(val) -> bool:
     """Value is scalar or nullable"""
     return is_null_or_na_scalar(val) or np.isscalar(val) or isinstance(val, datetime_types)
 
 
-def is_null_or_na_scalar(val):
+def is_null_or_na_scalar(val) -> bool:
     if hasattr(val, "__len__"):
         return False
     return bool(
         val is None
         or (pd and (val is pd.NA or val is pd.NaT))
-        or (pl and val is pl.Null)
         or (np.isscalar(val) and np.isnan(val))
     )
 
 
-def isnumeric(val):
+def isnumeric(val) -> bool:
     if isinstance(val, (str, bool, np.bool_)):
         return False
     try:
@@ -935,9 +942,6 @@ def asarray(arraylike, strict=True):
     elif strict:
         raise ValueError(f"Could not convert {type(arraylike)} type to array")
     return arraylike
-
-
-nat_as_integer = np.datetime64("NAT").view("i8")
 
 
 def isnat(val):
@@ -1717,7 +1721,7 @@ def get_param_values(data):
     return params
 
 
-def is_param_method(obj, has_deps=False):
+def is_param_method(obj, has_deps=False) -> bool:
     """Whether the object is a method on a parameterized object.
 
     Parameters
@@ -1739,7 +1743,7 @@ def is_param_method(obj, has_deps=False):
         get_method_owner(obj), param.Parameterized
     )
     if parameterized and has_deps:
-        return getattr(obj, "_dinfo", {}).get("dependencies")
+        return bool(getattr(obj, "_dinfo", {}).get("dependencies"))
     return parameterized
 
 
@@ -2255,7 +2259,7 @@ def validate_regular_sampling(values, rtol=10e-6):
     if len(diffs) < 1:
         return True
     min_diff = diffs.min()
-    return abs(min_diff - diffs.max()) < abs(min_diff * rtol)
+    return abs(min_diff - diffs.max()) <= abs(min_diff * rtol)
 
 
 def compute_density(start, end, length, time_unit="us"):

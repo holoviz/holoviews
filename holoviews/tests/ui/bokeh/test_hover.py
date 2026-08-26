@@ -414,7 +414,7 @@ def test_hover_tooltips_selector_update_plot(serve_panel):
         plot = plot.opts(tools=["hover"], title=color_by)
         return plot
 
-    scb = pn.widgets.Select(name="Color By", options=["option1", "option2"])
+    scb = pn.widgets.Select(options=["option1", "option2"])
     layout = pn.Row(scb, pn.bind(get_plot, scb))
 
     page = serve_panel(layout)
@@ -559,6 +559,7 @@ def test_hover_across_dynamicmaps(serve_panel):
 
     for i, cat in enumerate(("A", "B")):
         widget.value = [cat]
+        page.wait_for_timeout(200)
         page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
         page.mouse.up()
         tooltip = page.locator(".bk-Tooltip")
@@ -566,6 +567,7 @@ def test_hover_across_dynamicmaps(serve_panel):
         expect(tooltip.first).to_contain_text(f"category: {cat} x: {i} y: {i}")
 
     widget.value = ["A", "B"]
+    page.wait_for_timeout(200)
     page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
     page.mouse.up()
     tooltip = page.locator(".bk-Tooltip")

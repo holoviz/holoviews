@@ -5,8 +5,8 @@ from collections import defaultdict
 
 import numpy as np
 import param
-from bokeh.models import CategoricalColorMapper, ColumnDataSource, CustomJS, Whisker
-from bokeh.models.glyphs import Segment
+from bokeh.models import CategoricalColorMapper, ColumnDataSource, CustomJS, Label, Whisker
+from bokeh.models.glyphs import AnnularWedge, Segment
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
@@ -16,9 +16,9 @@ from ...core.util import dimension_sanitizer, dtype_kind, isdatetime, isfinite
 from ...operation import interpolate_curve
 from ...util.transform import dim
 from ...util.warnings import warn
-from ..mixins import AreaMixin, BarsMixin, SpikesMixin, WaterfallMixin
-from ..util import compute_sizes, get_min_distance, rgb2hex
-from .element import ColorbarPlot, ElementPlot, LegendPlot, OverlayPlot
+from ..mixins import AreaMixin, BarsMixin, DonutMixin, SpikesMixin, WaterfallMixin
+from ..util import get_min_distance, rgb2hex
+from .element import ColorbarPlot, CompositeElementPlot, ElementPlot, LegendPlot, OverlayPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import (
     base_properties,
@@ -26,6 +26,7 @@ from .styles import (
     fill_properties,
     line_properties,
     mpl_to_bokeh,
+    text_properties,
 )
 from .util import BOKEH_GE_3_8_0, categorize_array
 
@@ -145,45 +146,6 @@ class PointPlot(SizebarMixin, ColorbarPlot):
         to the selected items.""",
     )
 
-    # Deprecated parameters
-
-    color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of color style mapping, e.g. `color=dim('color')`",
-    )
-
-    size_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of size style mapping, e.g. `size=dim('size')`",
-    )
-
-    scaling_method = param.Selector(
-        default="area",
-        objects=["width", "area"],
-        doc="""
-        Deprecated in favor of size style mapping, e.g.
-        size=dim('size')**2.""",
-    )
-
-    scaling_factor = param.Number(
-        default=1,
-        bounds=(0, None),
-        doc="""
-        Scaling factor which is applied to either the width or area
-        of each point, depending on the value of `scaling_method`.""",
-    )
-
-    size_fn = param.Callable(
-        default=np.abs,
-        doc="""
-        Function applied to size values before applying scaling,
-        to remove values lower than zero.""",
-    )
-
     selection_display = BokehOverlaySelectionDisplay()
 
     style_opts = [
@@ -213,33 +175,6 @@ class PointPlot(SizebarMixin, ColorbarPlot):
             properties.pop("radius", None)
         return super()._init_glyph(plot, mapping, properties)
 
-    def _get_size_data(self, element, ranges, style):
-        data, mapping = {}, {}
-        sdim = element.get_dimension(self.size_index)
-        ms = style.get("size", np.sqrt(6))
-        if sdim and ((isinstance(ms, str) and ms in element) or isinstance(ms, dim)):
-            self.param.warning(
-                "Cannot declare style mapping for 'size' option and "
-                "declare a size_index; ignoring the size_index."
-            )
-            sdim = None
-        if not sdim or self.static_source:
-            return data, mapping
-
-        map_key = "size_" + sdim.name
-        ms = ms**2
-        sizes = element.dimension_values(self.size_index)
-        sizes = compute_sizes(sizes, self.size_fn, self.scaling_factor, self.scaling_method, ms)
-        if sizes is None:
-            eltype = type(element).__name__
-            self.param.warning(
-                f"{sdim.pprint_label} dimension is not numeric, cannot use to scale {eltype} size."
-            )
-        else:
-            data[map_key] = np.sqrt(sizes)
-            mapping["size"] = map_key
-        return data, mapping
-
     def get_data(self, element, ranges, style):
         dims = element.dimensions(label=True)
 
@@ -252,14 +187,6 @@ class PointPlot(SizebarMixin, ColorbarPlot):
             data[xdim] = element.dimension_values(xdim)
             data[ydim] = element.dimension_values(ydim)
             self._categorize_data(data, dims[:2], element.dimensions())
-
-        cdata, cmapping = self._get_color_data(element, ranges, style)
-        data.update(cdata)
-        mapping.update(cmapping)
-
-        sdata, smapping = self._get_size_data(element, ranges, style)
-        data.update(sdata)
-        mapping.update(smapping)
 
         if "angle" in style and isinstance(style["angle"], (int, float)):
             style["angle"] = np.deg2rad(style["angle"])
@@ -357,28 +284,6 @@ class VectorFieldPlot(ColorbarPlot):
         smallest non-zero distance between two vectors.""",
     )
 
-    # Deprecated parameters
-
-    color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="""
-        Deprecated in favor of dimension value transform on color option,
-        e.g. `color=dim('Magnitude')`.
-        """,
-    )
-
-    size_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="""
-        Deprecated in favor of the magnitude option, e.g.
-        `magnitude=dim('Magnitude')`.
-        """,
-    )
-
     normalize_lengths = param.Boolean(
         default=True,
         doc="""
@@ -396,16 +301,8 @@ class VectorFieldPlot(ColorbarPlot):
     _plot_methods = dict(single="segment")
 
     def _get_lengths(self, element, ranges):
-        size_dim = element.get_dimension(self.size_index)
         mag_dim = self.magnitude
-        if size_dim and mag_dim:
-            self.param.warning(
-                "Cannot declare style mapping for 'magnitude' option "
-                "and declare a size_index; ignoring the size_index."
-            )
-        elif size_dim:
-            mag_dim = size_dim
-        elif isinstance(mag_dim, str):
+        if isinstance(mag_dim, str):
             mag_dim = element.get_dimension(mag_dim)
 
         if mag_dim:
@@ -435,7 +332,7 @@ class VectorFieldPlot(ColorbarPlot):
     def get_data(self, element, ranges, style):
         input_scale = style.pop("scale", 1.0)
 
-        # Get x, y, angle, magnitude and color data
+        # Get x, y, angle, magnitude data
         rads = element.dimension_values(2)
         if self.invert_axes:
             xidx, yidx = (1, 0)
@@ -443,8 +340,6 @@ class VectorFieldPlot(ColorbarPlot):
         else:
             xidx, yidx = (0, 1)
         lens = self._get_lengths(element, ranges) / input_scale
-        cdim = element.get_dimension(self.color_index)
-        cdata, cmapping = self._get_color_data(element, ranges, style, name="line_color")
 
         # Compute segments and arrowheads
         xs = element.dimension_values(xidx)
@@ -465,7 +360,6 @@ class VectorFieldPlot(ColorbarPlot):
         x0s, x1s = (xs + nxoff, xs - pxoff)
         y0s, y1s = (ys + nyoff, ys - pyoff)
 
-        color = None
         if self.arrow_heads:
             arrow_len = lens / 4.0
             xa1s = x0s - np.cos(rads + np.pi / 4) * arrow_len
@@ -476,17 +370,8 @@ class VectorFieldPlot(ColorbarPlot):
             x1s = np.concatenate([x1s, xa1s, xa2s])
             y0s = np.tile(y0s, 3)
             y1s = np.concatenate([y1s, ya1s, ya2s])
-            if cdim and cdim.name in cdata:
-                color = np.tile(cdata[cdim.name], 3)
-        elif cdim:
-            color = cdata.get(cdim.name)
 
-        data = {
-            "x0": x0s,
-            "x1": x1s,
-            "y0": y0s,
-            "y1": y1s,
-        }
+        data = {"x0": x0s, "x1": x1s, "y0": y0s, "y1": y1s}
         if "hover" in self.handles:
             data.update(
                 {
@@ -498,11 +383,7 @@ class VectorFieldPlot(ColorbarPlot):
                 }
             )
         mapping = dict(x0="x0", x1="x1", y0="y0", y1="y1")
-        if cdim and color is not None:
-            data[cdim.name] = color
-            mapping.update(cmapping)
-
-        return (data, mapping, style)
+        return data, mapping, style
 
 
 class CurvePlot(ElementPlot):
@@ -901,15 +782,6 @@ class SpikesPlot(SpikesMixin, ColorbarPlot):
         doc="Whether to show legend for the plot.",
     )
 
-    # Deprecated parameters
-
-    color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of color style mapping, e.g. `color=dim('color')`",
-    )
-
     selection_display = BokehOverlaySelectionDisplay()
 
     style_opts = base_properties + line_properties + ["cmap", "palette"]
@@ -939,9 +811,6 @@ class SpikesPlot(SpikesMixin, ColorbarPlot):
         else:
             mapping = {"x0": "x", "x1": "x", "y0": "y0", "y1": "y1"}
 
-        cdata, cmapping = self._get_color_data(element, ranges, dict(style))
-        data.update(cdata)
-        mapping.update(cmapping)
         self._get_hover_data(data, element)
 
         return data, mapping, style
@@ -989,6 +858,19 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
     """
 
+    baseline = param.ClassSelector(
+        default=None,
+        class_=(str, int),
+        allow_None=True,
+        doc="""
+        Value dimension naming the lower end of each bar, making bars
+        float between two value dimensions instead of growing from zero.
+        The first remaining value dimension is the upper end, so
+        vdims=['Low', 'High'] with baseline='Low' spans Low to High.
+        Supported for ungrouped and grouped Bars; combining it with
+        stacked raises an error.""",
+    )
+
     multi_level = param.Boolean(
         default=True,
         doc="Whether the Bars should be grouped into a second categorical axis level.",
@@ -999,16 +881,12 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         doc="Whether the bars should be stacked or grouped.",
     )
 
-    # Deprecated parameters
-
-    color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of color style mapping, e.g. `color=dim('color')`",
-    )
-
     selection_display = BokehOverlaySelectionDisplay()
+
+    default_tools = param.List(
+        default=["save", "pan", "wheel_zoom", "box_zoom", "reset", "tap"],
+        doc="Default tools for BarPlot. Includes tap for click-to-select with link_selections.",
+    )
 
     style_opts = base_properties + fill_properties + line_properties + ["bar_width", "cmap"]
 
@@ -1085,35 +963,33 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         return {k: v for k, v in props.items() if k not in ["width", "bar_width"]}
 
     def _add_color_data(self, ds, ranges, style, cdim, data, mapping, factors, colors):
-        cdata, cmapping = self._get_color_data(
-            ds, ranges, dict(style), factors=factors, colors=colors
-        )
-        if "color" not in cmapping:
+        if cdim is None:
             return
 
+        field = dimension_sanitizer(cdim.name)
+        cd = ds.dimension_values(cdim)
+        cmapper = self._get_colormapper(cdim, ds, ranges, style, factors, colors)
+        is_categorical = isinstance(cmapper, CategoricalColorMapper)
+        cmapping = {"color": {"field": field, "transform": cmapper}}
+
         # Enable legend if colormapper is categorical
-        cmapper = cmapping["color"]["transform"]
         legend_prop = "legend_field"
-        if (
-            "color" in cmapping
-            and self.show_legend
-            and isinstance(cmapper, CategoricalColorMapper)
-        ):
+        if self.show_legend and is_categorical:
             mapping[legend_prop] = cdim.name
 
         if not self.stacked and ds.ndims > 1 and self.multi_level:
-            cmapping.pop(legend_prop, None)
             mapping.pop(legend_prop, None)
 
         # Merge data and mappings
         mapping.update(cmapping)
-        for k, cd in cdata.items():
-            if isinstance(cmapper, CategoricalColorMapper) and dtype_kind(cd) in "uif":
-                cd = categorize_array(cd, cdim)
-            if k not in data or (len(data[k]) != next(len(data[key]) for key in data if key != k)):
-                data[k].append(cd)
-            else:
-                data[k][-1] = cd
+        if is_categorical and dtype_kind(cd) in "uif":
+            cd = categorize_array(cd, cdim)
+        if field not in data or (
+            len(data[field]) != next(len(data[key]) for key in data if key != field)
+        ):
+            data[field].append(cd)
+        else:
+            data[field][-1] = cd
 
     def get_data(self, element, ranges, style):
         # Get x, y, group, stack and color dimensions
@@ -1139,11 +1015,16 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         data = defaultdict(list)
         xdim = element.get_dimension(0)
         ydim = element.vdims[0]
-        no_cidx = self.color_index is None
-        color_index = (group_dim or stack_dim) if no_cidx else self.color_index
-        color_dim = element.get_dimension(color_index)
-        if color_dim:
-            self.color_index = color_dim.label
+
+        # Floating bars span baseline_dim (bottom) up to top_dim (the
+        # remaining value dimension); treat top_dim as the plotted value.
+        top_dim, baseline_dim = self._baseline_dimensions(element)
+        self._warn_unused_baseline(element, baseline_dim)
+        if baseline_dim is not None:
+            self._validate_baseline(element, top_dim, baseline_dim)
+            ydim = top_dim
+
+        color_dim = element.get_dimension(group_dim or stack_dim)
 
         # Define style information
         width = style.get("bar_width", style.get("width", 1))
@@ -1160,9 +1041,13 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             is_dt = isdatetime(xvals)
             if is_dt or dtype_kind(xvals) not in "OU":
                 xslice = stack_idx if stack_order else slice(None)
-                xdiff = np.abs(np.diff(xvals[xslice]))
+                if element.interface.name == "NarwhalsInterface":
+                    # The first value is nullable with narwhals diff
+                    xdiff = xvals.filter(xslice).diff()[1:].abs().to_numpy()
+                else:
+                    xdiff = np.abs(np.diff(xvals[xslice]))
                 diff_size = len(np.unique(xdiff))
-                if diff_size == 0 or (diff_size == 1 and xdiff[0] == 0):
+                if diff_size == 0 or (diff_size == 1 and xdiff[0].view(np.int64) == 0):
                     xdiff = np.array([np.timedelta64(1, "D")]) if is_dt else 1
                 if is_dt:
                     width *= xdiff.astype("timedelta64[ms]").astype(np.int64)
@@ -1188,25 +1073,23 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         if grouping == "stacked":
             mapping = {"x": xdim.name, "top": "top", "bottom": "bottom", "width": width}
         elif grouping == "grouped":
-            mapping = {"x": "xoffsets", "top": ydim.name, "bottom": bottom, "width": width}
+            bar_bottom = "bottom" if baseline_dim is not None else bottom
+            mapping = {"x": "xoffsets", "top": ydim.name, "bottom": bar_bottom, "width": width}
         else:
-            mapping = {"x": xdim.name, "top": ydim.name, "bottom": bottom, "width": width}
+            # Floating bars carry a per-bar lower coordinate in "bottom",
+            # otherwise it is the scalar 0.
+            bar_bottom = "bottom" if baseline_dim is not None else bottom
+            mapping = {"x": xdim.name, "top": ydim.name, "bottom": bar_bottom, "width": width}
 
         # Get colors
         cdim = color_dim or group_dim
         style_mapping = [
             v for k, v in style.items() if "color" in k and (isinstance(v, dim) or v in element)
         ]
-        if style_mapping and not no_cidx and self.color_index is not None:
-            self.param.warning(
-                f"Cannot declare style mapping for '{style_mapping[0]}' option "
-                "and declare a color_index; ignoring the color_index."
-            )
-            cdim = None
 
         cvals = element.dimension_values(cdim, expanded=False) if cdim else None
         if cvals is not None:
-            if dtype_kind(cvals) in "uif" and no_cidx:
+            if dtype_kind(cvals) in "uif":
                 cvals = categorize_array(cvals, color_dim)
 
             factors = None if dtype_kind(cvals) in "uif" else list(cvals)
@@ -1261,6 +1144,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 ]
                 data["xoffsets"].append(xoffsets)
                 data[ydim.name].append(ys)
+                if baseline_dim is not None:
+                    data["bottom"].append(ds.dimension_values(baseline_dim))
                 if hover:
                     data[xdim.name].append(xs)
                 if group_dim not in ds.dimensions():
@@ -1269,6 +1154,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             else:
                 data[xdim.name].append(xvals)
                 data[ydim.name].append(ds.dimension_values(ydim))
+                if baseline_dim is not None:
+                    data["bottom"].append(ds.dimension_values(baseline_dim))
 
             if hover and grouping != "stacked":
                 for vd in ds.vdims[1:]:
@@ -1491,3 +1378,240 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
             if len(self._connector_data[1]) >= 2:
                 self.handles["connector_source"].data = self._build_connector_source_data()
         return ret
+
+
+class DonutPlot(DonutMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
+    """Renders a Donut (annular wedge) chart in Bokeh.
+
+    Uses a CompositeElementPlot to draw both annular wedges and
+    optional text labels as separate Bokeh glyphs.  The center
+    annotation is drawn as a manual Label outside the composite
+    lifecycle.
+    """
+
+    center_label = param.String(
+        default=None,
+        allow_None=True,
+        doc="""Text to display in the center of the donut. If set to
+        'total', the sum of all values is shown. Any other string
+        is used as a format template with access to 'total' and
+        the vdim name as keys. None disables the center label.""",
+    )
+
+    center_text_align = param.Selector(
+        default="center",
+        objects=["left", "right", "center"],
+        doc="Horizontal alignment of the center label.",
+    )
+
+    center_text_baseline = param.Selector(
+        default="middle",
+        objects=["top", "middle", "bottom", "alphabetic", "hanging"],
+        doc="Vertical alignment of the center label.",
+    )
+
+    center_text_color = param.Color(
+        default="black",
+        doc="Color for the center label.",
+    )
+
+    center_text_font_size = param.String(
+        default="12pt",
+        doc="Font size for the center label, as a CSS string (e.g. '16pt').",
+    )
+
+    inner_radius = param.Number(
+        default=0.4,
+        bounds=(0, 1),
+        doc="Inner radius of the annulus. Set to 0 for a pie chart.",
+    )
+
+    label_radius = param.Number(
+        default=0.7,
+        bounds=(0, None),
+        doc="""Radial distance of wedge labels as a multiple of outer_radius.
+        1.0 places labels exactly at the outer edge; values above 1
+        push them outside the ring.""",
+    )
+
+    label_text_align = param.Selector(
+        default="auto",
+        objects=["auto", "left", "right", "center"],
+        doc="""Horizontal alignment of wedge labels. 'auto' chooses
+        left/right based on angular position and whether labels are
+        inside or outside the ring.""",
+    )
+
+    outer_radius = param.Number(
+        default=1.0,
+        bounds=(0, None),
+        doc="Outer radius of the annulus.",
+    )
+
+    show_frame = param.Boolean(
+        default=False,
+        doc="Whether or not to show a complete frame around the plot.",
+    )
+
+    show_labels = param.ClassSelector(
+        default=False,
+        class_=(bool, str),
+        doc="""Whether and how to draw text labels next to each wedge.
+        Can be a boolean or a template string using dimension names
+        (e.g. '{Category}: {Amount}').""",
+    )
+
+    start_angle = param.Number(
+        default=0,
+        doc="Rotation offset in radians for the first wedge.",
+    )
+
+    _style_groups = {
+        "annular_wedge": "wedge",
+        "text": "label",
+    }
+
+    _draw_order = ["annular_wedge", "text"]
+
+    style_opts = (
+        ["wedge_" + p for p in base_properties + fill_properties + line_properties]
+        + ["label_" + p for p in text_properties if p != "text_align"]
+        + ["cmap", "color"]
+    )
+
+    selection_display = BokehOverlaySelectionDisplay()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.xaxis = None
+        self.yaxis = None
+        self._donut_data = None
+
+    def _get_factors(self, element, ranges):
+        return ([], [])
+
+    def _axis_properties(self, *args, **kwargs):
+        """No Cartesian axes for the donut."""
+        return {}
+
+    def _postprocess_hover(self, renderer, source):
+        """Limit hover tool to annular wedges only."""
+        if isinstance(renderer.glyph, AnnularWedge):
+            super()._postprocess_hover(renderer, source)
+
+    def get_data(self, element, ranges, style):
+        dd = self._prepare_donut_data(element)
+        values = dd["values"]
+        starts = dd["starts"]
+        ends = dd["ends"]
+        fracs = dd["fracs"]
+        display_labels = dd["display_labels"]
+        valid = dd["valid"]
+
+        kdim = element.kdims[0]
+        vdim = element.vdims[0]
+        kdim_san = dimension_sanitizer(kdim.name)
+
+        # Color mapper
+        color_style = style.pop("color", None)
+        if color_style is not None:
+            raise ValueError(
+                f"Setting color={color_style!r} on a Donut plot is not "
+                "supported. To control wedge colors use the 'cmap' "
+                "option, e.g. .opts(cmap='Category20') or "
+                ".opts(cmap={{'Rent': 'blue', 'Food': 'orange'}})."
+            )
+        factors = list(dict.fromkeys(display_labels))
+        cmapper = self._get_colormapper(kdim, element, ranges, style, factors=factors)
+
+        # --- annular wedge data & mapping --------------------------------
+        data_wedge = dict(
+            start_angle=starts,
+            end_angle=ends,
+            percentage=fracs * 100,
+            **{kdim_san: display_labels, dimension_sanitizer(vdim.name): values},
+            **{
+                dimension_sanitizer(vd.name): element.dimension_values(vd)[valid]
+                for vd in element.vdims[1:]
+            },
+        )
+
+        map_wedge = dict(
+            x=0,
+            y=0,
+            inner_radius=self.inner_radius,
+            outer_radius=self.outer_radius,
+            start_angle="start_angle",
+            end_angle="end_angle",
+            fill_color={"field": kdim_san, "transform": cmapper},
+        )
+        if self.show_legend:
+            map_wedge["legend_field"] = kdim_san
+
+        # --- text label data & mapping -----------------------------------
+        if self.show_labels and len(starts) > 0:
+            xs, ys, aligns = self._compute_label_geometry(starts, ends)
+            texts = self._generate_labels(element, dd["labels"], values, fracs)
+            data_text = dict(x=xs, y=ys, text=texts, text_align=aligns)
+        else:
+            data_text = dict(x=[], y=[], text=[], text_align=[])
+
+        map_text = dict(
+            x="x",
+            y="y",
+            text="text",
+            text_align="text_align",
+        )
+
+        # --- assemble keyed dicts ----------------------------------------
+        data = {
+            "annular_wedge_1": data_wedge,
+            "text_1": data_text,
+        }
+        mapping = {
+            "annular_wedge_1": map_wedge,
+            "text_1": map_text,
+        }
+
+        # Store for center label access
+        self._donut_data = dd
+
+        return data, mapping, style
+
+    def _init_glyph(self, plot, mapping, properties, key):
+        ret = super()._init_glyph(plot, mapping, properties, key)
+        if self.colorbar and "color_mapper" in self.handles:
+            self._draw_colorbar(plot, self.handles["color_mapper"])
+        return ret
+
+    def _init_glyphs(self, plot, element, ranges, source, data=None, mapping=None, style=None):
+        super()._init_glyphs(plot, element, ranges, source, data, mapping, style)
+        self._draw_center_label(plot, element)
+
+    def _draw_center_label(self, plot, element):
+        """Draw a center annotation (e.g. total value)."""
+        if self._donut_data is None:
+            return
+        text = self._resolve_center_text(self._donut_data["values"], element)
+        if text is None:
+            return
+
+        label = Label(
+            x=0,
+            y=0,
+            text=text,
+            text_align=self.center_text_align,
+            text_baseline=self.center_text_baseline,
+            text_font_size=self.center_text_font_size,
+            text_color=self.center_text_color,
+            text_font_style="bold",
+        )
+        plot.add_layout(label)
+        self.handles["center_label"] = label
+
+    def _update_glyphs(self, element, ranges, style):
+        super()._update_glyphs(element, ranges, style)
+        if "center_label" in self.handles and self._donut_data is not None:
+            text = self._resolve_center_text(self._donut_data["values"], element)
+            if text is not None:
+                self.handles["center_label"].text = text

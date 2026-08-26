@@ -390,7 +390,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         )
         dims = None
         if not xvalid:
-            dims = f" {xdim} is " if yvalid else f"(s) {xdim} and {ydim} are"
+            dims = f" {xdim} is" if yvalid else f"(s) {xdim} and {ydim} are"
         elif not yvalid:
             dims = f" {ydim} is"
         if dims:

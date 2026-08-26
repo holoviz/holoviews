@@ -4,6 +4,8 @@ Unit tests of Image elements
 
 from __future__ import annotations
 
+import datetime as dt
+
 import numpy as np
 import pytest
 
@@ -73,6 +75,29 @@ class TestImage(LoggingComparison):
         hv.config.image_rtol = 10e-3
         hv.Image({"vals": vals, "xs": xs, "ys": ys}, ["xs", "ys"], "vals")
         hv.config.image_rtol = image_rtol
+
+    @pytest.mark.parametrize("unit", ["py-datetime", "D", "h", "m", "s", "ms", "us", "ns"])
+    def test_image_datetime_rtol_failure(self, unit):
+        if unit == "py-datetime":
+            x = [dt.datetime(2017, 1, 1, 0, 0, 0, ms) for ms in [0, 10000, 20015]]
+        else:
+            x = np.array([0, 10000, 20015]).astype(f"datetime64[{unit}]")
+        hv.Image((x, [0, 1], np.zeros((2, 3))))
+        self.log_handler.assert_endswith(
+            "WARNING",
+            "set a higher tolerance on hv.config.image_rtol or the rtol parameter in "
+            "the Image constructor.",
+        )
+
+    @pytest.mark.parametrize("unit", ["py-datetime", "D", "h", "m", "s", "ms", "us"])
+    def test_image_datetime_rtol_granularity(self, unit):
+        if unit == "py-datetime":
+            x = [dt.datetime(2017, 1, 1, 0, 0, 0, ms) for ms in [0, 400]]
+        else:
+            # ns excluded: 400ns rounds to 0 in dt.timedelta causing ZeroDivisionError
+            x = np.array([0, 400]).astype(f"datetime64[{unit}]")
+        hv.Image((x, [0, 1], np.zeros((2, 2))))
+        assert len(self.log_handler.tail("WARNING", n=1)) == 0
 
     def test_image_clone(self):
         vals = np.random.rand(20, 20)

@@ -12,7 +12,19 @@ from holoviews.core.data import NarwhalsInterface
 from holoviews.core.util.dependencies import _no_import_version
 from holoviews.testing import assert_data_equal
 
-from ...utils import pl_skip
+from ..._deps import (
+    dd,
+    dd_skip,
+    duckdb,
+    duckdb_skip,
+    ibis,
+    ibis_skip,
+    pa,
+    pa_skip,
+    pd,
+    pl,
+    pl_skip,
+)
 from .base import HeterogeneousColumnTests, InterfaceTests
 
 
@@ -191,12 +203,12 @@ class PolarsNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
     force_sort = True
 
 
+@pa_skip
 class PyarrowNarwhalsInterfaceTests(BaseNarwhalsInterfaceTests):
     __test__ = True
     narwhals_backend = "pyarrow"
 
     def frame(self, *args, **kwargs):
-        pa = pytest.importorskip("pyarrow")
         return pa.table(*args, **kwargs)
 
 
@@ -208,49 +220,39 @@ class BaseNarwhalsLazyInterfaceTests(BaseNarwhalsInterfaceTests):
         super().test_select_with_neighbor()
 
 
+@pl_skip
 class PolarsNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     __test__ = True
     narwhals_backend = "polars"
     force_sort = True
 
     def frame(self, *args, **kwargs):
-        pl = pytest.importorskip("polars")
         return pl.LazyFrame(*args, **kwargs)
 
 
+@dd_skip
 class DaskNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     __test__ = True
     narwhals_backend = "pandas"
     force_sort = True
 
-    def setup_method(self):
-        pytest.importorskip("dask.dataframe")
-        super().setup_method()
-
     def frame(self, *args, **kwargs):
-        import dask.dataframe as dd
-        import pandas as pd
-
         return dd.from_pandas(pd.DataFrame(*args, **kwargs), npartitions=2)
 
 
+@ibis_skip
 class IbisNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     __test__ = True
     narwhals_backend = "pyarrow"
     force_sort = True
 
     def setup_class(self):
-        ibis = pytest.importorskip("ibis")
         ibis.set_backend("sqlite")
 
     def teardown_class(self):
-        import ibis
-
         ibis.set_backend(None)
 
     def frame(self, *args, **kwargs):
-        import ibis
-
         return ibis.memtable(*args, **kwargs)
 
     def test_dataset_get_dframe_by_dimension(self):
@@ -276,19 +278,13 @@ class IbisNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
         return super().test_dataset_aggregate_string_types()
 
 
+@duckdb_skip
 class DuckdbNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     __test__ = True
     narwhals_backend = "pyarrow"
     force_sort = True
 
-    def setup_method(self):
-        pytest.importorskip("duckdb")
-        super().setup_method()
-
     def frame(self, *args, **kwargs):
-        import duckdb
-        import pyarrow as pa
-
         return duckdb.from_arrow(pa.table(*args, **kwargs))
 
     def test_dataset_get_dframe_by_dimension(self):

@@ -34,7 +34,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@ab994f6a87c4fdb1363925d26c85a5bab2144f28 # v1.0.0
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@feab0228afeb2e7dd99782598a16c8bca4911c5a # v1.0.3
         with:
           environments: docs
           install: false
