@@ -258,7 +258,14 @@ convention = "numpy"
 "re.match".msg = "Use re.search with '^' instead of re.match"
 
 [tool.ty.src]
-include = [
+exclude = ["holoviews/*version.py"]
+
+[tool.ty.rules]
+unresolved-import = "ignore"
+
+# Add whole project for LSP features and diagnostics only for the type-checked files
+[[tool.ty.overrides]]
+exclude = [
     "holoviews/*.py",
     "holoviews/core/*.py",
     "holoviews/core/util/*.py",
@@ -266,10 +273,7 @@ include = [
     "holoviews/util/*.py",
     "scripts/*.py",
 ]
-exclude = ["holoviews/*version.py"]
-
-[tool.ty.rules]
-unresolved-import = "ignore"
+rules.all = "ignore"
 
 [tool.typos.default]
 extend-ignore-re = [
