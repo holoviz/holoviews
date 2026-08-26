@@ -35,14 +35,14 @@ jobs:
     name: Pixi lock
     runs-on: ubuntu-latest
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-lock@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
+      - uses: holoviz-dev/holoviz_tasks/pixi-lock@feab0228afeb2e7dd99782598a16c8bca4911c5a # v1.0.3
 
   conda_build:
     name: Build Conda
     needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@feab0228afeb2e7dd99782598a16c8bca4911c5a # v1.0.3
         with:
           environments: "build"
           download-data: false
@@ -78,7 +78,7 @@ jobs:
     needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@feab0228afeb2e7dd99782598a16c8bca4911c5a # v1.0.3
         with:
           environments: "build"
           download-data: false
