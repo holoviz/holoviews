@@ -734,23 +734,8 @@ def _bind_dynamic_axis_sizing(plots, x_axis=None, x_ticker=None, y_axis=None, y_
     callback = CustomJS(
         args=dict(plots=plots, x_axis=x_axis, x_ticker=x_ticker, y_axis=y_axis, y_ticker=y_ticker),
         code="""
-        // Bokeh.index only holds root-level views; a subplot's own view is
-        // nested under it (child_views), so it has to be found by walking down.
-        function collectViews() {
-            const map = {}
-            function walk(view) {
-                if (view.model != null) map[view.model.id] = view
-                const cv = view.child_views
-                if (cv != null) {
-                    for (const child of cv.values()) walk(child)
-                }
-            }
-            for (const rootId of Object.keys(Bokeh.index)) walk(Bokeh.index[rootId])
-            return map
-        }
-        const views = collectViews()
         function frameRect(fig) {
-            const view = views[fig.id]
+            const view = Bokeh.index.find_one_by_id(fig.id)
             if (view == null) return null
             const outer = view.bbox
             const inner = view.frame_view ? view.frame_view.bbox : null

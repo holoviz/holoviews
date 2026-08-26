@@ -729,7 +729,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     def _make_axes(self, plot, plots):
         width, height = self.renderer.get_size(plot)
         x_axis, y_axis = None, None
-        x_ticker = y_ticker = None
+        x_ticker, y_ticker = None, None
         keys = self.layout.keys(full_grid=True)
         if self.xaxis:
             flip = self.shared_xaxis
