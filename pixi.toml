@@ -1,6 +1,6 @@
 [workspace]
 name = "holoviews"
-channels = ["pyviz/label/dev", "bokeh/label/rc", "conda-forge"]
+channels = ["pyviz/label/dev", "bokeh/label/rc", { channel = "conda-forge", exclude-newer = "2d" }]
 platforms = ["linux-64", "osx-arm64", "win-64"]
 preview = ["pixi-build"]
 requires-pixi = ">=0.68.1"

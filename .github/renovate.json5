@@ -1,11 +1,14 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":enablePreCommit"], // ":maintainLockFilesMonthly"
+  "extends": ["config:recommended", ":enablePreCommit"],
   "schedule": ["after 12am and before 5am on the 1st day of the month"],
-  "enabledManagers": ["github-actions", "pre-commit"],  // pixi
+  "enabledManagers": ["github-actions", "pre-commit", "pixi"],
   "commitMessagePrefix": "chore(bot):",
   "automerge": true,
   "minimumReleaseAge": "7 days",
+  "lockFileMaintenance": {
+    "enabled": true
+  },
   "packageRules": [
     {
       "groupName": "GitHub Actions",
@@ -24,15 +27,23 @@
       "groupName": "pre-commit dependencies",
       "matchManagers": ["pre-commit"],
       "description": "Monthly update of pre-commit"
+    },
+    {
+      "groupName": "Pixi",
+      "matchManagers": ["pixi", "lockFileMaintenance"],
+      "description": "Weekly update of Pixi",
+      "schedule": ["before 5am on monday"],
+      "minimumReleaseAge": "0 days"  // Handled in pixi itself
+    },
+    {
+      "groupName": "HoloViz Core",
+      "matchManagers": ["pixi"],
+      "matchPackageNames": ["panel", "param"],
+      "description": "Update of Panel and Param",
+      "minimumReleaseAge": "0 days",
+      "schedule": ["at any time"],
+      "rangeStrategy": "bump",
+      "ignoreUnstable": false,
     }
-    // {
-    //   "groupName": "Pixi",
-    //   "matchManagers": ["pixi"]
-    // },
-    // {
-    //   "groupName": "Pixi-Lock",
-    //   "matchManagers": ["pixi"],
-    //   "matchUpdateTypes": ["lockFileMaintenance"]
-    // },
   ]
 }

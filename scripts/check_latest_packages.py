@@ -4,7 +4,7 @@ import json
 import os
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from importlib.metadata import version
 from subprocess import DEVNULL, check_output
 
@@ -47,12 +47,12 @@ def get_data(package):
     return [*raw.get("noarch", ()), *raw.get(PLATFORM, ())]
 
 
-def released_today(item) -> bool:
+def in_cooldown(item) -> bool:
     ts = item.get("timestamp")
     if ts is None:
         return False
     released = datetime.fromtimestamp(ts / 1000, tz=timezone.utc).date()
-    return released == TODAY
+    return TODAY - released < timedelta(days=7)
 
 
 def full_release(item) -> bool:
@@ -67,7 +67,7 @@ def main(*packages):
         versions = {
             item["version"]
             for item in data
-            if python_check(item) and not released_today(item) and full_release(item)
+            if python_check(item) and not in_cooldown(item) and full_release(item)
         }
         latest = max(versions, key=convert_int)
         current = version(package)
