@@ -416,7 +416,7 @@ class Unpickler(Importer):
         with zipfile.ZipFile(filename, "r") as f:
             for entry in entries:
                 if entry not in f.namelist():
-                    raise Exception(f"Entry {entry} not available")
+                    raise KeyError(f"Entry {entry} not available")
                 components.append(Store.loads(f.read(entry)))
                 single_layout = entry.endswith("(L)")
 
@@ -429,7 +429,7 @@ class Unpickler(Importer):
     def _load_metadata(self_or_cls, filename, name):
         with zipfile.ZipFile(filename, "r") as f:
             if "metadata" not in f.namelist():
-                raise Exception("No metadata available")
+                raise KeyError("No metadata available")
             metadata = pickle.loads(f.read("metadata"))
             if name not in metadata:
                 raise KeyError(f"Entry {name} is missing from the metadata")
@@ -705,13 +705,13 @@ class FileArchive(Archive):
 
     def _validate_formatters(self):
         if not self.parse_fields(self.filename_formatter).issubset(self.ffields):
-            raise Exception(f"Valid filename fields are: {','.join(sorted(self.ffields))}")
+            raise ValueError(f"Valid filename fields are: {','.join(sorted(self.ffields))}")
         elif not self.parse_fields(self.export_name).issubset(self.efields):
-            raise Exception(f"Valid export fields are: {','.join(sorted(self.efields))}")
+            raise ValueError(f"Valid export fields are: {','.join(sorted(self.efields))}")
         try:
             time.strftime(self.timestamp_format, tuple(time.localtime()))
         except Exception as e:
-            raise Exception("Timestamp format invalid") from e
+            raise ValueError("Timestamp format invalid") from e
 
     def add(self, obj=None, filename=None, data=None, info=None, **kwargs):
         """If a filename is supplied, it will be used. Otherwise, a
@@ -726,21 +726,21 @@ class FileArchive(Archive):
         if info is None:
             info = {}
         if [filename, obj] == [None, None]:
-            raise Exception(
+            raise ValueError(
                 "Either filename or a HoloViews object is "
                 "needed to create an entry in the archive."
             )
         elif obj is None and not self.parse_fields(filename).issubset({"timestamp"}):
-            raise Exception(
+            raise ValueError(
                 "Only the {timestamp} formatter may be used unless an object is supplied."
             )
         elif [obj, data] == [None, None]:
-            raise Exception(
+            raise ValueError(
                 "Either an object or explicit data must be "
                 "supplied to create an entry in the archive."
             )
         elif data and "mime_type" not in info:
-            raise Exception(
+            raise ValueError(
                 "The mime-type must be supplied in the info dictionary "
                 "when supplying data directly"
             )

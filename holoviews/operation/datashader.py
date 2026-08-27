@@ -15,7 +15,6 @@ import pandas as pd
 import param
 import xarray as xr
 from datashader.colors import color_lookup
-from packaging.version import Version
 from param.parameterized import bothmethod
 
 from ..core import (
@@ -25,7 +24,6 @@ from ..core import (
     NdOverlay,
     Operation,
     Overlay,
-    Store,
 )
 from ..core.data import (
     DaskInterface,
@@ -43,7 +41,7 @@ from ..core.util import (
     dtype_kind,
     get_param_values,
 )
-from ..core.util.dependencies import PANDAS_GE_3_0_0, dd
+from ..core.util.dependencies import PANDAS_GE_3_0_0, _no_import_version, dd
 from ..element import (
     RGB,
     Area,
@@ -67,8 +65,7 @@ from ..element.util import connect_tri_edges_pd
 from ..streams import PointerXY
 from .resample import LinkableOperation, ResampleOperation2D
 
-ds_version = Version(ds.__version__)  # DEPRECATED: Used by hvplot<=0.11.1
-DATASHADER_VERSION = ds_version.release
+DATASHADER_VERSION = _no_import_version("datashader")
 DATASHADER_GE_0_14_0 = DATASHADER_VERSION >= (0, 14, 0)
 DATASHADER_GE_0_15_1 = DATASHADER_VERSION >= (0, 15, 1)
 DATASHADER_GE_0_16_0 = DATASHADER_VERSION >= (0, 16, 0)
@@ -157,6 +154,73 @@ class AggregationOperation(ResampleOperation2D):
         "count_cat": rd.count_cat,
     }
 
+    @staticmethod
+    def _overlay_wide_mapping(element, elements):
+        if not isinstance(element, NdOverlay):
+            return False, []
+        ydims = [el.dimensions()[1] for el in elements]
+        is_wide = len({yd.label for yd in ydims}) == 1 and len({yd.name for yd in ydims}) == len(
+            element
+        )
+        return is_wide, ydims
+
+    @staticmethod
+    def _resolve_agg_column_name(element, inner_element, column, is_wide, ydims):
+        if not isinstance(column, str):
+            return column
+        dimension = inner_element.get_dimension(column)
+        if dimension is None and isinstance(element, NdOverlay):
+            dimension = element.get_dimension(column)
+        if dimension is None:
+            return column
+        return dimension.label if is_wide and dimension in ydims else dimension.name
+
+    @classmethod
+    def _default_agg_field(cls, element, inner_element):
+        if isinstance(inner_element, TriMesh) and inner_element.nodes.vdims:
+            return inner_element.nodes.vdims[0].name
+        if inner_element.vdims:
+            return inner_element.vdims[0].name
+        if isinstance(element, NdOverlay):
+            return element.kdims[0].name
+        raise ValueError(
+            "Could not determine dimension to apply "
+            f"'{cls.__name__}' operation to. Declare the dimension "
+            "to aggregate as part of the datashader "
+            "aggregator."
+        )
+
+    @classmethod
+    def _remap_aggregator(cls, element, agg, inner_element, is_wide, ydims):
+        agg_col = cls._resolve_agg_column_name(element, inner_element, agg.column, is_wide, ydims)
+        selector = getattr(agg, "selector", None)
+        reduction = getattr(agg, "reduction", None)
+        agg_kwargs = {}
+
+        selector_col = getattr(selector, "column", None)
+        if isinstance(selector_col, str):
+            selector_name = cls._resolve_agg_column_name(
+                element, inner_element, selector_col, is_wide, ydims
+            )
+            agg_kwargs["selector"] = type(selector)(selector_name)
+        elif selector:
+            agg_kwargs["selector"] = selector
+
+        reduction_col = getattr(reduction, "column", None)
+        if isinstance(reduction_col, str):
+            reduction_name = cls._resolve_agg_column_name(
+                element, inner_element, reduction_col, is_wide, ydims
+            )
+            agg_kwargs["reduction"] = type(reduction)(reduction_name)
+        elif reduction and not isinstance(agg, ds.count_cat):
+            agg_kwargs["reduction"] = reduction
+
+        if hasattr(agg, "self_intersect"):
+            agg_kwargs["self_intersect"] = agg.self_intersect
+        if isinstance(agg, ds.where):
+            return ds.where(agg_kwargs["selector"], agg_col)
+        return type(agg)(agg_col, **agg_kwargs)
+
     @classmethod
     def _get_aggregator(cls, element, agg, add_field=True):
         if DATASHADER_GE_0_15_1:
@@ -177,30 +241,23 @@ class AggregationOperation(ResampleOperation2D):
                 agg = cls._agg_methods[agg]()
 
         elements = element.traverse(lambda x: x, [Element])
-        if (
-            add_field
-            and getattr(agg, "column", False) in ("__temp__", None)
-            and not isinstance(agg, agg_types)
+        if not elements:
+            raise ValueError(f"Could not find any elements to apply {cls.__name__} operation to.")
+        is_wide, ydims = cls._overlay_wide_mapping(element, elements)
+        agg_col = getattr(agg, "column", False)
+        if agg_col is False:
+            return agg
+
+        inner_element = elements[0]
+        if add_field and agg_col in ("__temp__", None) and not isinstance(agg, agg_types):
+            agg = type(agg)(cls._default_agg_field(element, inner_element))
+        elif (
+            agg_col
+            or getattr(getattr(agg, "selector", None), "column", None)
+            or getattr(getattr(agg, "reduction", None), "column", None)
         ):
-            if not elements:
-                raise ValueError(
-                    f"Could not find any elements to apply {cls.__name__} operation to."
-                )
-            inner_element = elements[0]
-            if isinstance(inner_element, TriMesh) and inner_element.nodes.vdims:
-                field = inner_element.nodes.vdims[0].name
-            elif inner_element.vdims:
-                field = inner_element.vdims[0].name
-            elif isinstance(element, NdOverlay):
-                field = element.kdims[0].name
-            else:
-                raise ValueError(
-                    "Could not determine dimension to apply "
-                    f"'{cls.__name__}' operation to. Declare the dimension "
-                    "to aggregate as part of the datashader "
-                    "aggregator."
-                )
-            agg = type(agg)(field)
+            agg = cls._remap_aggregator(element, agg, inner_element, is_wide, ydims)
+
         return agg
 
     def _empty_agg(self, element, x, y, width, height, xs, ys, agg_fn, **params):
@@ -243,7 +300,7 @@ class AggregationOperation(ResampleOperation2D):
         elif agg_name == "Summary":
             vdims = list(agg_fn.keys)
         elif column:
-            dims = [d for d in element.dimensions("ranges") if d == column]
+            dims = [d for d in element.dimensions("ranges") if column in (d.name, d.label)]
             if not dims:
                 raise ValueError(
                     f"Aggregation column '{column}' not found on '{element}' element. "
@@ -339,7 +396,7 @@ class AggregationOperation(ResampleOperation2D):
                 elif kind == "O":
                     val[neg1] = "-"
                 elif kind == "M":
-                    val[neg1] = np.datetime64("NaT")
+                    val[neg1] = np.datetime64("NaT", "ns")
                 else:
                     val = val.astype(np.float64)
                     val[neg1] = np.nan
@@ -425,13 +482,24 @@ class aggregate(LineAggregationOperation):
                 paths.append(p)
         elif isinstance(obj, CompositeOverlay):
             element = None
+            is_ndoverlay = isinstance(obj, NdOverlay)
             for key, el in obj.data.items():
                 x, y, element, glyph = cls.get_agg_data(el)
                 dims = (x, y)
                 df = PandasInterface.as_dframe(element)
-                if isinstance(obj, NdOverlay):
+                if is_ndoverlay:
                     df = df.assign(**dict(zip(obj.dimensions("key", True), key, strict=None)))
                 paths.append(df)
+
+            is_wide, ydims = cls._overlay_wide_mapping(obj, obj.values())
+            if is_wide:
+                ydim = ydims[0]
+                paths = [
+                    df.rename(columns={yd.name: yd.label})
+                    for yd, df in zip(ydims, paths, strict=True)
+                ]
+                dims = (dims[0], ydim.clone(ydim.label, label=ydim.label))
+
             if element is None:
                 dims = None
             else:
@@ -476,7 +544,11 @@ class aggregate(LineAggregationOperation):
             df = df.to_pandas()
 
         is_custom = (bool_dd and isinstance(df, dd.DataFrame)) or cuDFInterface.applies(df)
-        category_check = category and df[category].dtype.name != "category"
+        if category:
+            cat_col = obj.get_dimension(category).name
+            category_check = df[cat_col].dtype.name != "category"
+        else:
+            category_check = False
         if category_check or any(
             (not is_custom and len(df[d.name]) and isinstance(df[d.name].values[0], cftime_types))
             or dtype_kind(df[d.name]) in ["M", "u"]
@@ -484,7 +556,7 @@ class aggregate(LineAggregationOperation):
         ):
             df = df.copy()
         if category_check:
-            df[category] = df[category].astype("category")
+            df[cat_col] = df[cat_col].astype("category")
 
         for d in (x, y):
             vals = df[d.name]
@@ -615,6 +687,7 @@ class overlay_aggregate(aggregate):
                 isinstance(agg_fn, (ds.count, ds.sum, ds.mean, ds.any))
                 and (agg_fn.column is None or agg_fn.column not in element.kdims)
             )
+            and len({id(el.data) for el in element}) > 1
         )
 
     def _process(self, element, key=None):
@@ -751,7 +824,7 @@ class spread_aggregate(area_aggregate):
         if df is element.data:
             df = df.copy()
 
-        pos, neg = element.vdims[1:3] if len(element.vdims) > 2 else element.vdims[1:2] * 2
+        neg, pos = element.vdims[1:3] if len(element.vdims) > 2 else element.vdims[1:2] * 2
         yvals = df[y.name]
         df[y.name] = yvals + df[pos.name]
         df["_lower"] = yvals - df[neg.name]
@@ -1472,7 +1545,8 @@ class shade(LinkableOperation):
 
         # Compute shading options depending on whether
         # it is a categorical or regular aggregate
-        if element.ndims > 2 or isinstance(element, ImageStack):
+        is_categorical = element.ndims > 2 or isinstance(element, ImageStack)
+        if is_categorical:
             kdims = element.kdims if isinstance(element, ImageStack) else element.kdims[1:]
             categories = array.shape[-1]
             if not self.p.color_key:
@@ -1516,7 +1590,16 @@ class shade(LinkableOperation):
         )
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", r"invalid value encountered in true_divide")
-            if np.isnan(array.data).all():
+            invalid = array.isnull().data
+            if isinstance(element, ImageStack):
+                for i, vdim in enumerate(element.vdims):
+                    if vdim.nodata is not None:
+                        invalid[..., i] |= array.data[..., i] == vdim.nodata
+            else:
+                nodata = element.vdims[0].nodata if element.vdims else None
+                if nodata is not None:
+                    invalid |= array.data == nodata
+            if invalid.all():
                 xd, yd = kdims[:2]
                 arr = np.zeros((*array.data.shape[:2], 4), dtype=np.uint8)
                 coords = {
@@ -2269,11 +2352,7 @@ class inspect_polygons(inspect_base):
 
     @classmethod
     def _element(cls, raster, df):
-        polygons = Polygons(df, kdims=raster.kdims, vdims=cls._vdims(raster, df))
-        if Store.loaded_backends() != []:
-            return polygons.opts(color_index=None)
-        else:
-            return polygons
+        return Polygons(df, kdims=raster.kdims, vdims=cls._vdims(raster, df))
 
     @classmethod
     def _sort_by_distance(cls, raster, df, x, y):

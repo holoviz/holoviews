@@ -4,7 +4,9 @@ Unit test of the streams system
 
 from __future__ import annotations
 
-from collections import defaultdict
+import gc
+import weakref
+from functools import partial
 
 import numpy as np
 import pandas as pd
@@ -14,6 +16,7 @@ from panel.widgets import IntSlider
 
 import holoviews as hv
 from holoviews.core.util import NUMPY_GE_2_0_0, PARAM_VERSION
+from holoviews.plotting.renderer import PANEL_VERSION
 from holoviews.streams import (
     Buffer,
     Derived,
@@ -38,7 +41,8 @@ from holoviews.streams import (
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 from holoviews.util import Dynamic
 
-from .utils import LoggingComparison, shapely_skip
+from ._deps import shapely_skip
+from .utils import LoggingComparison
 
 PARAM_GE_2_0_0 = PARAM_VERSION >= (2, 0, 0)
 
@@ -64,11 +68,11 @@ def test_all_linked_stream_parameters_owners():
         for name, p in stream_class.param.objects().items():
             if name != "name" and (p.owner != stream_class):
                 msg = (
-                    "Linked stream %r has parameter %r which is "
-                    "inherited from %s. Parameter needs to be redeclared "
+                    f"Linked stream {stream_class!r} has parameter {name!r} which is "
+                    f"inherited from {p.owner}. Parameter needs to be redeclared "
                     "in the class definition of this linked stream."
                 )
-                raise Exception(msg % (stream_class, name, p.owner))
+                pytest.fail(msg)
 
 
 class TestStreamsDefine:
@@ -156,6 +160,26 @@ class TestStreamsDefine:
         assert isinstance(self.ExplicitTest.param["test"], param.Integer) is True
         assert self.ExplicitTest.param["test"].default == 42
         assert self.ExplicitTest.param["test"].doc == "Test docstring"
+
+    def test_subscriber_error_logging_isolation(self):
+        xy = self.XY()
+        calls = []
+
+        def bad_subscriber(**kw):
+            calls.append("bad")
+            raise RuntimeError("bad subscriber")
+
+        def good_subscriber(**kw):
+            calls.append("good")
+
+        xy.add_subscriber(bad_subscriber)
+        xy.add_subscriber(good_subscriber)
+
+        with pytest.raises(RuntimeError, match="bad subscriber"):
+            Stream.trigger([xy])
+
+        assert len(calls) == 2
+        assert calls == ["bad", "good"]
 
 
 class _Subscriber:
@@ -354,8 +378,9 @@ class TestParamsStream(LoggingComparison):
         assert len(p.hashkey) == 3  # the two widgets + _memoize_key
 
     def test_params_identical_names(self):
-        a = IntSlider(name="Name")
-        b = IntSlider(name="Name")
+        nl = "label" if PANEL_VERSION >= (1, 9, 0) else "name"
+        a = IntSlider(**{nl: nl})
+        b = IntSlider(**{nl: nl})
         p = Params(parameters=[a.param.value, b.param.value])
         assert len(p.hashkey) == 3  # the two widgets + _memoize_key
 
@@ -695,7 +720,7 @@ def test_dynamicmap_partial_bind_and_streams():
     def make_plot(z, x_range, y_range):
         return hv.Curve([1, 2, 3, 4, z])
 
-    slider = IntSlider(name="Slider", start=0, end=10)
+    slider = IntSlider(start=0, end=10)
     range_xy = RangeXY()
 
     dmap = hv.DynamicMap(param.bind(make_plot, z=slider), streams=[range_xy])
@@ -783,10 +808,86 @@ class TestSubscribers:
         assert subscriber.call_count == 3
 
 
+class _App(param.Parameterized):
+    def __init__(self, make_subscriber, **params):
+        super().__init__(**params)
+        self.calls = []
+        self.element = hv.Points([(0, 0)])
+        self.stream = RangeXY(source=self.element)
+        self.stream.add_subscriber(make_subscriber(self))
+
+    def on_update(self, **kwargs):
+        self.calls.append(kwargs)
+
+
+subscriber_kinds = pytest.mark.parametrize(
+    "make_subscriber",
+    [
+        lambda app: app.on_update,
+        lambda app: partial(app.on_update, extra=1),
+        lambda app: lambda **kwargs: app.calls.append(kwargs),
+    ],
+    ids=["bound_method", "partial", "lambda"],
+)
+
+
+class TestSubscriberLifetime:
+    @subscriber_kinds
+    def test_app_is_collected(self, make_subscriber):
+        def build():
+            app = _App(make_subscriber)
+            return {"app": app, "element": app.element, "stream": app.stream}
+
+        refs = {name: weakref.ref(obj) for name, obj in build().items()}
+        gc.collect()
+        assert not [name for name, ref in refs.items() if ref() is not None]
+
+    @subscriber_kinds
+    def test_subscriber_is_invoked(self, make_subscriber):
+        app = _App(make_subscriber)
+        app.stream.event(x_range=(0, 1), y_range=(2, 3))
+        assert [call["x_range"] for call in app.calls] == [(0, 1)]
+
+    def test_stream_survives_dropped_local_reference(self):
+        element = hv.Points([(0, 0)])
+        calls = []
+
+        def register():
+            stream = RangeXY(source=element)
+            stream.add_subscriber(lambda **kwargs: calls.append(kwargs))
+
+        register()
+        gc.collect()
+        (stream,) = Stream.registry[element]
+        stream.event(x_range=(0, 1), y_range=(2, 3))
+        assert calls == [{"x_range": (0, 1), "y_range": (2, 3)}]
+
+    def test_subscription_is_only_reference(self):
+        def build():
+            app = _App(lambda app: app.on_update)
+            return app.element, weakref.ref(app)
+
+        element, ref = build()
+        gc.collect()
+        assert ref() is not None
+
+        (stream,) = Stream.registry[element]
+        stream.event(x_range=(0, 1), y_range=(2, 3))
+        assert ref().calls == [{"x_range": (0, 1), "y_range": (2, 3)}]
+
+    def test_distinct_partials_not_deduplicated(self):
+        app = _App(lambda app: partial(app.on_update, tag="a"))
+        app.stream.add_subscriber(partial(app.on_update, tag="b"))
+
+        assert len(app.stream.subscribers) == 2
+        app.stream.event(x_range=(0, 1), y_range=(2, 3))
+        assert sorted(call["tag"] for call in app.calls) == ["a", "b"]
+
+
 class TestStreamSource:
     def teardown_method(self):
         with param.logging_level("ERROR"):
-            Stream.registry = defaultdict(list)
+            Stream.registry.clear()
 
     def test_source_empty_element(self):
         points = hv.Points([])
@@ -816,6 +917,27 @@ class TestStreamSource:
         points = hv.Points([])
         PointerX(source=points)
         assert points in Stream.registry
+
+    def test_source_registry_releases_source(self):
+        def build():
+            points = hv.Points([(0, 0)])
+            stream = PointerX(source=points)
+            stream.add_subscriber(lambda **kwargs: points)
+            assert points in Stream.registry
+            return {"source": points, "stream": stream}
+
+        refs = {name: weakref.ref(obj) for name, obj in build().items()}
+        gc.collect()
+        assert not [name for name, ref in refs.items() if ref() is not None]
+
+    def test_source_remap_releases_previous_source(self):
+        points = hv.Points([])
+        curve = hv.Curve([])
+        stream = PointerX(source=points)
+        stream.source = curve
+
+        assert points._streams == []
+        assert curve._streams == [stream]
 
 
 class TestParameterRenaming:

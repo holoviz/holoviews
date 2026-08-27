@@ -5,13 +5,13 @@ import copy
 import re
 
 import numpy as np
-from packaging.version import Version
-from plotly import __version__, colors
+from plotly import colors
 
 from ...core.util import isfinite, max_range
+from ...core.util.dependencies import _no_import_version
 from ..util import color_intervals, process_cmap
 
-PLOTLY_VERSION = Version(__version__).release
+PLOTLY_VERSION = _no_import_version("plotly")
 PLOTLY_GE_6_0_0 = PLOTLY_VERSION >= (6, 0, 0)
 PLOTLY_SCATTERMAP = "scattermap" if PLOTLY_GE_6_0_0 else "scattermapbox"
 PLOTLY_MAP = "map" if PLOTLY_GE_6_0_0 else "mapbox"
@@ -124,7 +124,7 @@ STYLE_ALIASES = {
 
 # Regular expression to extract any trailing digits from a subplot-style
 # string.
-_subplot_re = re.compile(r"\D*(\d+)")
+_subplot_re = re.compile(r"(\d+)")
 
 
 def _get_subplot_number(subplot_val):
@@ -149,7 +149,7 @@ def _get_subplot_number(subplot_val):
     -------
     int
     """
-    match = _subplot_re.match(subplot_val)
+    match = _subplot_re.search(subplot_val)
     if match:
         subplot_number = int(match.group(1))
     else:
@@ -266,7 +266,7 @@ def _get_max_subplot_ids(fig):
         A dict from subplot type strings to integers indicating the largest
         subplot number in the figure of that subplot type
     """
-    max_subplot_ids = {subplot_type: 0 for subplot_type in _subplot_types}
+    max_subplot_ids = dict.fromkeys(_subplot_types, 0)
     max_subplot_ids["xaxis"] = 0
     max_subplot_ids["yaxis"] = 0
 

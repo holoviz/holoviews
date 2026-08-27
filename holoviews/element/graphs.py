@@ -463,10 +463,7 @@ class Graph(Dataset, Element2D):
             info_cols, values = zip(
                 *((k, v) for k, v in node_columns.items() if k != idx_dim), strict=None
             )
-            node_info = {
-                i: vals
-                for i, vals in zip(node_columns[idx_dim], zip(*values, strict=None), strict=None)
-            }
+            node_info = dict(zip(node_columns[idx_dim], zip(*values, strict=None), strict=None))
         else:
             info_cols = []
             node_info = None

@@ -10,6 +10,23 @@ If you like HoloViews and have built something you want to share, tweet a link o
 
 HoloViews is supported and maintained by [Anaconda](https://www.anaconda.com).
 
+## Project Documentation
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+governance/project-docs/CONTRIBUTING
+governance/project-docs/GOVERNANCE
+governance/project-docs/LICENSE
+governance/project-docs/MEMBERS
+```
+
+- [Contributing](governance/project-docs/CONTRIBUTING.md)
+- [Governance Policy](governance/project-docs/GOVERNANCE.md)
+- [License](governance/project-docs/LICENSE.md)
+- [Maintainers](governance/project-docs/MEMBERS.md)
+
 ## Prior Funding
 
 ```{image} https://www.anc.ed.ac.uk/anc.png

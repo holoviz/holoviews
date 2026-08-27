@@ -701,8 +701,8 @@ class dim:
     @classmethod
     def pipe(cls, func, *args, **kwargs):
         """Wrapper to give multidimensional transforms a more intuitive syntax.
-        For a custom function `func` with signature (*args, **kwargs), call as
-        dim.pipe(func, *args, **kwargs).
+        For a custom function ``func`` with signature ``(*args, **kwargs)``, call as
+        ``dim.pipe(func, *args, **kwargs)``.
 
         """
         args = list(args)  # make mutable
@@ -1114,14 +1114,9 @@ class df_dim(dim):
     def _coerce(self, data):
         if self.interface_applies(data, coerce=False):
             return data
-        pandas_interfaces = t.cast(
-            "dict[str, type[PandasInterface]]",
-            param.concrete_descendents(parentclass=PandasInterface),
-        )
+        pandas_interfaces = param.descendents(class_=PandasInterface)
         datatypes = [
-            intfc.datatype
-            for intfc in pandas_interfaces.values()
-            if data.interface.multi == intfc.multi
+            intfc.datatype for intfc in pandas_interfaces if data.interface.multi == intfc.multi
         ]
         return data.clone(datatype=datatypes)
 

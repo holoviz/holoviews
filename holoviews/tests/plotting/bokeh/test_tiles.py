@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-import pytest
-
 import holoviews as hv
 
+from ..._deps import xyzservices, xyzservices_skip
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
+@xyzservices_skip
 class TestTilePlot(TestBokehPlot):
     def test_xyzservices_tileprovider(self):
-        xyzservices = pytest.importorskip("xyzservices")
         osm = xyzservices.providers.OpenStreetMap.Mapnik
 
         tiles = hv.Tiles(osm)

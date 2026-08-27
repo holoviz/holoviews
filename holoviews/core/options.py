@@ -37,6 +37,7 @@ from __future__ import annotations
 import difflib
 import inspect
 import pickle
+import threading
 import traceback
 import typing as t
 from collections import defaultdict
@@ -46,14 +47,26 @@ import numpy as np
 import param
 
 from ..util.warnings import HoloviewsUserWarning, warn
-from .accessors import Opts  # noqa (clean up in 2.0)
 from .pprint import InfoPrinter
 from .tree import AttrTree
 from .util import group_sanitizer, label_sanitizer, sanitize_identifier
 
 if t.TYPE_CHECKING:
+    from holoviews.plotting import Renderer
+
     from ..util import _BackendT
     from ..util.settings import OutputSettings
+
+
+def __getattr__(name):
+    if name == "Opts":
+        from ..util.warnings import deprecated
+        from .accessors import Opts
+
+        deprecated("1.24.0", "holoviews.core.options.Opts", "holoviews.core.accessors.Opts")
+        return Opts
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def cleanup_custom_options(id, weakref=None):
@@ -82,7 +95,7 @@ def cleanup_custom_options(id, weakref=None):
         if not weakrefs:
             Store._weakrefs.pop(id, None)
     except Exception as e:
-        raise Exception(
+        raise RuntimeError(
             f"Cleanup of custom options tree with id '{id}' failed "
             f"with the following exception: {e}, an unreferenced "
             "orphan tree may persist in memory."
@@ -261,7 +274,7 @@ class Keywords:
 
     def __add__(self, other):
         if (self.target and other.target) and (self.target != other.target):
-            raise Exception("Targets must match to combine Keywords")
+            raise ValueError("Targets must match to combine Keywords")
         target = self.target or other.target
         return Keywords(sorted(set(self.values + other.values)), target=target)
 
@@ -482,7 +495,7 @@ class Options:
                     raise OptionError(kwarg, allowed_keywords)
 
         if key and key[0].islower() and key not in self._option_groups:
-            raise Exception(
+            raise ValueError(
                 "Key {} does not start with a capitalized element class name and is not a group in {}".format(
                     repr(key), ", ".join(repr(el) for el in self._option_groups)
                 )
@@ -497,7 +510,7 @@ class Options:
                 category=HoloviewsUserWarning,
             )
 
-        self.kwargs = dict([(k, kwargs[k]) for k in sorted(kwargs.keys()) if k not in invalid_kws])
+        self.kwargs = {k: kwargs[k] for k in sorted(kwargs.keys()) if k not in invalid_kws}
         self._options = []
         self._max_cycles = max_cycles
 
@@ -541,7 +554,7 @@ class Options:
 
     def keys(self):
         """The keyword names across the supplied options."""
-        return sorted(list(self.kwargs.keys()))
+        return sorted(self.kwargs.keys())
 
     def max_cycles(self, num):
         """Truncates all contained Palette objects to a maximum number
@@ -581,7 +594,7 @@ class Options:
         if not self.cyclic:
             return self[0]
         else:
-            raise Exception("The options property may only be used with non-cyclic Options.")
+            raise TypeError("The options property may only be used with non-cyclic Options.")
 
     def __repr__(self):
         kws = ", ".join(f"{k}={self.kwargs[k]!r}" for k in sorted(self.kwargs.keys()))
@@ -613,7 +626,7 @@ class OptionTree(AttrTree):
     as a list (i.e. empty initial option groups at the root) or as a
     dictionary (e.g. groups={'style':Option()}). You can also
     initialize the OptionTree with the options argument together with
-    the **kwargs - see StoreOptions.merge_options for more information
+    the `**kwargs` - see StoreOptions.merge_options for more information
     on the options specification syntax.
 
     You can use the string specifier '.' to refer to the root node in
@@ -651,7 +664,7 @@ class OptionTree(AttrTree):
                 g: Options(**root_groups.get(g, {})) for g in _groups.keys()
             }
         elif root_groups:
-            raise Exception(
+            raise ValueError(
                 "Group specification as a dictionary only supported if "
                 "the root node '.' syntax not used in the options."
             )
@@ -1182,7 +1195,7 @@ class Store:
 
     """
 
-    renderers = {}  # The set of available Renderers across all backends.
+    renderers: dict[str, Renderer] = {}  # The set of available Renderers across all backends.
 
     # A mapping from ViewableElement types to their corresponding plot
     # types grouped by the backend. Set using the register method.
@@ -1202,6 +1215,10 @@ class Store:
     # Weakrefs to record objects per id
     _weakrefs = {}
     _options_context = False
+
+    # Allocator for custom-option ids; see StoreOptions.reserve_ids.
+    _id_counter = 0
+    _id_lock = threading.Lock()
 
     # Backend option caches
     _lookup_cache = {}
@@ -1359,10 +1376,10 @@ class Store:
         """
         ids = {el for el in obj.traverse(lambda x: x.id) if el is not None}
         if len(ids) == 0:
-            raise Exception("Object does not own a custom options tree")
+            raise LookupError("Object does not own a custom options tree")
         elif len(ids) != 1:
             idlist = ",".join([str(el) for el in sorted(ids)])
-            raise Exception(
+            raise LookupError(
                 f"Object contains elements combined across multiple custom trees (ids {idlist})"
             )
         return cls._custom_options[backend][next(iter(ids))]
@@ -1547,7 +1564,7 @@ class StoreOptions:
 
         """
         if cls._errors_recorded is None:
-            raise Exception("Cannot stop recording before it is started")
+            raise RuntimeError("Cannot stop recording before it is started")
         recorded = cls._errors_recorded[:]
         cls._errors_recorded = None
         return recorded
@@ -1567,7 +1584,7 @@ class StoreOptions:
 
     @classmethod
     def get_object_ids(cls, obj):
-        return {el for el in obj.traverse(lambda x: getattr(x, "id", None))}
+        return set(obj.traverse(lambda x: getattr(x, "id", None)))
 
     @classmethod
     def tree_to_dict(cls, tree):
@@ -1725,8 +1742,8 @@ class StoreOptions:
         """
         clones, id_mapping = {}, []
         obj_ids = cls.get_object_ids(obj)
-        offset = cls.id_offset()
         obj_ids = [None] if len(obj_ids) == 0 else obj_ids
+        offset = cls.reserve_ids(len(obj_ids))
 
         used_obj_types = [(opt.split(".")[0],) for opt in options]
         backend = backend or Store.current_backend
@@ -1744,18 +1761,16 @@ class StoreOptions:
                 }
 
         custom_options = Store.custom_options(backend=backend)
-        for tree_id in obj_ids:
+        for new_id, tree_id in enumerate(obj_ids, start=offset):
             if tree_id is not None and tree_id in custom_options:
                 original = custom_options[tree_id]
                 clone = OptionTree(
                     items=original.items(), groups=original.groups, backend=original.backend
                 )
-                clones[tree_id + offset + 1] = clone
-                id_mapping.append((tree_id, tree_id + offset + 1))
             else:
                 clone = OptionTree(groups=available_options.groups, backend=backend)
-                clones[offset] = clone
-                id_mapping.append((tree_id, offset))
+            clones[new_id] = clone
+            id_mapping.append((tree_id, new_id))
 
             # Nodes needed to ensure allowed_keywords is respected
             for obj_type, opts in used_options.items():
@@ -1780,7 +1795,7 @@ class StoreOptions:
         if options is not None and set(options.keys()) <= groups:
             kwargs, options = options, None
         elif options is not None and any(k in groups for k in options):
-            raise Exception(f"All keys must be a subset of {', '.join(groups)}.")
+            raise ValueError(f"All keys must be a subset of {', '.join(groups)}.")
 
         options = {} if (options is None) else dict(**options)
         all_keys = {k for d in kwargs.values() for k in d}
@@ -1862,6 +1877,24 @@ class StoreOptions:
         return max(max_ids) if max_ids else 0
 
     @classmethod
+    def reserve_ids(cls, n):
+        """Atomically reserve a contiguous block of ``n`` fresh custom-option
+        ids and return its first id.
+
+        Ids are drawn from a monotonic counter that never decreases, so a
+        block is never reused even as store entries are reclaimed, and
+        concurrent customizations receive disjoint blocks rather than
+        colliding on a recomputed offset. The counter is floored by
+        ``id_offset`` so it also clears any ids already present in the store
+        (e.g. restored by unpickling).
+
+        """
+        with Store._id_lock:
+            base = max(Store._id_counter, cls.id_offset())
+            Store._id_counter = base + n
+            return base
+
+    @classmethod
     def update_backends(cls, id_mapping, custom_trees, backend=None):
         """Given the id_mapping from previous ids to new ids and the new
         custom tree dictionary, update the current backend with the
@@ -1897,11 +1930,11 @@ class StoreOptions:
 
         The corresponding value is then a list of Option objects specified
         with an appropriate category ('plot', 'style' or 'norm'). For
-        instance, using the keys described above, the specs could be:
+        instance, using the keys described above, the specs could be::
 
-            {'Image: [Options('style', cmap='jet')]}
+            {'Image': [Options('style', cmap='jet')]}
 
-        Or setting two types of option at once:
+        Or setting two types of option at once::
 
             {"Image.Channel": [
                 Options("plot", size=50),

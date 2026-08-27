@@ -7,6 +7,7 @@ import time
 from collections import defaultdict
 from contextlib import contextmanager, suppress
 from itertools import permutations
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 from bokeh.core.property.datetime import Datetime
@@ -14,7 +15,7 @@ from bokeh.core.validation import silence
 from bokeh.core.validation.check import is_silenced
 from bokeh.layouts import group_tools
 from bokeh.model import Model
-from bokeh.models import CustomJS, tools
+from bokeh.models import CustomJS, Range, Scale, tools
 from bokeh.models.axes import (
     CategoricalAxis,
     DatetimeAxis,
@@ -64,6 +65,13 @@ BOKEH_GE_3_9_0 = BOKEH_VERSION >= (3, 9, 0)
 
 if BOKEH_GE_3_8_0:
     from bokeh.models.axes import TimedeltaAxis
+
+if TYPE_CHECKING:
+    from collections.abc import Collection, Iterable
+
+    from bokeh.models.axes import Axis
+
+    AxisType = Literal["linear", "log", "datetime", "auto", "mercator", "timedelta"]
 
 
 TOOL_TYPES = {
@@ -1160,7 +1168,7 @@ def multi_polygons_data(element):
     return xsh, ysh
 
 
-def match_dim_specs(specs1, specs2):
+def match_dim_specs(specs1: Collection[object] | None, specs2: Collection[object] | None):
     """Matches dimension specs used to link axes.
 
     Axis dimension specs consists of a list of tuples corresponding
@@ -1171,8 +1179,8 @@ def match_dim_specs(specs1, specs2):
     """
     if (specs1 is None or specs2 is None) or (len(specs1) != len(specs2)):
         return False
-    for spec1, spec2 in zip(specs1, specs2, strict=None):
-        for s1, s2 in zip(spec1, spec2, strict=None):
+    for spec1, spec2 in zip(specs1, specs2, strict=False):
+        for s1, s2 in zip(spec1, spec2, strict=False):
             if s1 is None or s2 is None:
                 continue
             if s1 != s2:
@@ -1180,7 +1188,7 @@ def match_dim_specs(specs1, specs2):
     return True
 
 
-def get_scale(range_input, axis_type):
+def get_scale(range_input: Range, axis_type: AxisType) -> Scale:
     if isinstance(range_input, (DataRange1d, Range1d)) and axis_type in [
         "linear",
         "datetime",
@@ -1230,23 +1238,32 @@ def get_axis_class(axis_type, range_input, dim):  # Copied from bokeh
         raise ValueError(f"Unrecognized axis_type: '{axis_type!r}'")
 
 
-def match_ax_type(ax, range_type):
+def match_ax_type(ax: Axis, range_type: AxisType, *, is_categorical: bool | None = None) -> bool:
     """Ensure the range_type matches the axis model being matched."""
+    is_categorical = range_type == "categorical" if is_categorical is None else is_categorical
     if isinstance(ax, CategoricalAxis):
-        return range_type == "categorical"
+        return is_categorical
+    elif is_categorical:
+        return False
     elif isinstance(ax, DatetimeAxis):
         return range_type == "datetime"
     elif BOKEH_GE_3_8_0 and isinstance(ax, TimedeltaAxis):
         return range_type == "timedelta"
     else:
-        return range_type in ("auto", "log")
+        return range_type in {"auto", "log"}
 
 
-def match_yaxis_type_to_range(yax, range_type, range_name):
+def match_yaxis_type_to_range(
+    yax: Iterable[Axis],
+    range_type: AxisType,
+    range_name: str | None,
+    *,
+    is_categorical: bool | None = None,
+) -> bool:
     """Apply match_ax_type to the y-axis found by the given range name"""
     for axis in yax:
         if axis.y_range_name == range_name:
-            return match_ax_type(axis, range_type)
+            return match_ax_type(axis, range_type, is_categorical=is_categorical)
     raise ValueError("No axis with given range found")
 
 

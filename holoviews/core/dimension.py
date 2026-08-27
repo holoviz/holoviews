@@ -33,7 +33,15 @@ ALIASES = {"key_dimensions": "kdims", "value_dimensions": "vdims", "constant_dim
 
 title_format = "{name}: {val}{unit}"
 
-redim = Redim  # pickle compatibility - remove in 2.0
+
+class redim(Redim):
+    def __init__(self, *args, **kwargs):
+        from ..util.warnings import deprecated
+
+        # exists because of pickle compatibility
+        deprecated("1.24.0", "redim", "Redim")
+        super().__init__(*args, **kwargs)
+
 
 if t.TYPE_CHECKING:
     from typing_extensions import Self
@@ -558,6 +566,7 @@ class LabelledData(param.Parameterized):
     )
 
     _deep_indexable = False
+    _streams = None
 
     def __init__(self, data, id=None, plot_id=None, **params):
         """All LabelledData subclasses must supply data to the
@@ -714,7 +723,7 @@ class LabelledData(param.Parameterized):
         ----------
         spec : A function, spec or type to check for a match
             * A 'type[[.group].label]' string which is compared
-            against the type, group and label of this object.
+              against the type, group and label of this object.
 
             * A function which is given the object and returns a boolean.
 
@@ -839,6 +848,7 @@ class LabelledData(param.Parameterized):
     def __getstate__(self):
         """Ensures pickles save options applied to this objects."""
         obj_dict = self.__dict__.copy()
+        obj_dict.pop("_streams", None)
         try:
             if Store.save_option_state and (obj_dict.get("_id", None) is not None):
                 custom_key = "_custom_option_{}".format(obj_dict["_id"])
@@ -1025,7 +1035,7 @@ class Dimensioned(LabelledData):
             if isinstance(dim, Dimension):
                 dim = dim.name
             if dim not in self.kdims:
-                raise Exception(f"Supplied dimensions {dim} not found.")
+                raise KeyError(f"Supplied dimensions {dim} not found.")
             valid_dimensions.append(dim)
         return valid_dimensions
 
@@ -1165,12 +1175,15 @@ class Dimensioned(LabelledData):
                 return dimension
             else:
                 return IndexError("Dimension index out of bounds")
-        dim = dimension_name(dimension)
+
+        dimensions = self.kdims + self.vdims
         try:
-            dimensions = self.kdims + self.vdims
-            return next(i for i, d in enumerate(dimensions) if d == dim)
+            if isinstance(dimension, Dimension):
+                return dimensions.index(dimension)
+            dim = dimension_name(dimension)
+            return next(i for i, d in enumerate(dimensions) if dim in (d.name, d))
         except StopIteration:
-            raise Exception(f"Dimension {dim} not found in {self.__class__.__name__}.") from None
+            raise KeyError(f"Dimension {dim} not found in {self.__class__.__name__}.") from None
 
     def get_dimension_type(self, dim):
         """Get the type of the requested dimension.
@@ -1332,7 +1345,7 @@ class Dimensioned(LabelledData):
         if val:
             return np.array([val])
         else:
-            raise Exception(f"Dimension {dimension} not found in {self.__class__.__name__}.")
+            raise KeyError(f"Dimension {dimension} not found in {self.__class__.__name__}.")
 
     def range(self, dimension, data_range=True, dimension_range=True):
         """Return the lower and upper bounds of values along dimension.

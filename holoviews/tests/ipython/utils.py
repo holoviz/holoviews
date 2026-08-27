@@ -19,33 +19,15 @@ class IPythonCase:
 
         from traitlets.config import Config
 
-        self.exits = []
-        with patch("atexit.register", self.exits.append):
+        with patch("atexit.register", lambda *args, **kwargs: None):
             config = Config()
-            config.HistoryManager.hist_file = ":memory:"
-            self.ip = IPython.InteractiveShell(
-                config=config, history_length=0, history_load_length=0
-            )
+            config.HistoryManager.enabled = False
+            self.ip = IPython.InteractiveShell(config=config)
 
     def teardown_method(self) -> None:
-        # Save references to database connections before exit callbacks
-        # because exit callbacks set history_manager to None
-        db_connections = []
-        if hasattr(self.ip, "history_manager") and self.ip.history_manager is not None:
-            hm = self.ip.history_manager
-            if hasattr(hm, "db"):
-                db_connections.append(hm.db)
-            if hasattr(hm, "save_thread") and hasattr(hm.save_thread, "db"):
-                db_connections.append(hm.save_thread.db)
-
         # self.ip.displayhook.flush calls gc.collect
         with patch("gc.collect", lambda: None):
-            for ex in self.exits:
-                ex()
-
-            for db in db_connections:
-                db.close()
-
+            self.ip.reset(new_session=False)
         del self.ip
 
     def get_object(self, name):

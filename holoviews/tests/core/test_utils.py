@@ -44,27 +44,31 @@ from holoviews.core.util import (
     unique_array,
     wrap_tuple_streams,
 )
+from holoviews.core.util.dependencies import _no_import_version
 from holoviews.core.util.types import masked_types
 from holoviews.streams import PointerXY
 from holoviews.testing import assert_data_equal
+
+from .._deps import pa_skip, pl, pl_skip
+
+NW_VERSION = _no_import_version("narwhals")
 
 sanitize_identifier = sanitize_identifier_fn.instance()
 
 
 @pytest.fixture
-def with_pandas(request, monkeypatch):
+def with_pandas(request, monkeypatch, unimport):
     """Fixture to control pandas availability"""
     if request.param:
         pytest.importorskip("pandas")
     else:
         monkeypatch.setattr(util, "pd", None)
+        unimport("pandas")
 
 
-def with_and_without_pandas(func):
-    """Decorator to test both with and without pandas"""
-    return pytest.mark.parametrize(
-        "with_pandas", [True, False], indirect=True, ids=["with_pandas", "without_pandas"]
-    )(func)
+with_and_without_pandas = pytest.mark.parametrize(
+    "with_pandas", [True, False], indirect=True, ids=["with_pandas", "without_pandas"]
+)
 
 
 class TestDeepHash:
@@ -93,13 +97,13 @@ class TestDeepHash:
         assert deephash({1: "a", 2: "b"}) != deephash({2: "b", 1: "c"})
 
     def test_deephash_odict_equality_v1(self):
-        odict1 = dict([(1, "a"), (2, "b")])
-        odict2 = dict([(1, "a"), (2, "b")])
+        odict1 = {1: "a", 2: "b"}
+        odict2 = {1: "a", 2: "b"}
         assert deephash(odict1) == deephash(odict2)
 
     def test_deephash_odict_equality_v2(self):
-        odict1 = dict([(1, "a"), (2, "b")])
-        odict2 = dict([(1, "a"), (2, "c")])
+        odict1 = {1: "a", 2: "b"}
+        odict2 = {1: "a", 2: "c"}
         assert deephash(odict1) != deephash(odict2)
 
     def test_deephash_numpy_equality(self):
@@ -182,7 +186,7 @@ class TestDeepHash:
             pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
             np.array([1, 2, 3]),
             {"a": "b", "1": True},
-            dict([(1, "a"), (2, "b")]),
+            {1: "a", 2: "b"},
             np.int64(34),
         ]
         obj2 = [
@@ -191,7 +195,7 @@ class TestDeepHash:
             pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
             np.array([1, 2, 3]),
             {"a": "b", "1": True},
-            dict([(1, "a"), (2, "b")]),
+            {1: "a", 2: "b"},
             np.int64(34),
         ]
         assert deephash(obj1) == deephash(obj2)
@@ -203,7 +207,7 @@ class TestDeepHash:
             pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
             np.array([1, 2, 3]),
             {"a": "b", "2": True},
-            dict([(1, "a"), (2, "b")]),
+            {1: "a", 2: "b"},
             np.int64(34),
         ]
         obj2 = [
@@ -212,7 +216,7 @@ class TestDeepHash:
             pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
             np.array([1, 2, 3]),
             {"a": "b", "1": True},
-            dict([(1, "a"), (2, "b")]),
+            {1: "a", 2: "b"},
             np.int64(34),
         ]
         assert deephash(obj1) != deephash(obj2)
@@ -848,11 +852,11 @@ class TestNumericUtilities:
         assert isfinite(dt64)
 
     def test_isfinite_datetime64_nat(self):
-        dt64 = np.datetime64("NaT")
+        dt64 = np.datetime64("NaT", "ns")
         assert not isfinite(dt64)
 
     def test_isfinite_timedelta64_nat(self):
-        dt64 = np.timedelta64("NaT")
+        dt64 = np.timedelta64("NaT", "ns")
         assert not isfinite(dt64)
 
     def test_isfinite_pandas_timestamp_nat(self):
@@ -905,7 +909,7 @@ class TestNumericUtilities:
 
     def test_isfinite_datetime64_array_with_nat(self):
         dts = [np.datetime64(datetime.datetime(2017, 1, i)) for i in range(1, 4)]
-        dt64 = np.array([*dts, np.datetime64("NaT")])
+        dt64 = np.array([*dts, np.datetime64("NaT", "ns")])
         assert_data_equal(isfinite(dt64), np.array([True, True, True, False]))
 
     def test_isfinite_masked_numpy(self):
@@ -1075,7 +1079,7 @@ def test_is_null_or_na_scalar():
     assert is_null_or_na_scalar(pd.NA)
     assert is_null_or_na_scalar(pd.NaT)
     assert is_null_or_na_scalar(None)
-    assert is_null_or_na_scalar(np.datetime64("NAT"))
+    assert is_null_or_na_scalar(np.datetime64("NAT", "ns"))
 
     assert not is_null_or_na_scalar(datetime.datetime.today())
     assert not is_null_or_na_scalar(pd.Timestamp.now())
@@ -1088,13 +1092,18 @@ def test_is_null_or_na_scalar():
     assert not is_null_or_na_scalar(slice(None))
     assert not is_null_or_na_scalar(np.array([1, 2]))
     assert not is_null_or_na_scalar(pd.DataFrame([1, 2]))
+    assert not is_null_or_na_scalar(nw.from_native(pd.Series([1, 2]), allow_series=True))
+    assert not is_null_or_na_scalar(nw.from_native(pd.DataFrame([1, 2])))
 
 
+@pl_skip
 def test_is_null_or_na_scalar_polars():
-    pl = pytest.importorskip("polars")
-    assert is_null_or_na_scalar(pl.Null)
+    assert not is_null_or_na_scalar(pl.Series([1, 2]))
     assert not is_null_or_na_scalar(pl.DataFrame([1, 2]))
     assert not is_null_or_na_scalar(pl.LazyFrame([1, 2]))
+    assert not is_null_or_na_scalar(nw.from_native(pl.Series([1, 2]), allow_series=True))
+    assert not is_null_or_na_scalar(nw.from_native(pl.DataFrame([1, 2])))
+    assert not is_null_or_na_scalar(nw.from_native(pl.LazyFrame([1, 2])))
 
 
 @pytest.mark.parametrize(
@@ -1116,7 +1125,9 @@ def test_is_null_or_na_scalar_polars():
             [1.1, 2.2, 3.3],
             "float16",
             "f",
-            marks=pytest.mark.xfail(reason="narwhals don't support float16"),
+            marks=pytest.mark.xfail(
+                condition=NW_VERSION < (2, 23, 0), reason="narwhals don't support float16"
+            ),
         ),
         ([1.1, 2.2, 3.3], "float32", "f"),
         ([1.1, 2.2, 3.3], "float64", "f"),
@@ -1245,8 +1256,8 @@ def test_parse_datetime(test_input, expected_output, with_pandas, monkeypatch):
     assert result == expected_output
 
 
+@pa_skip
 def test_isdatetime_pyarrow():
-    pytest.importorskip("pyarrow")
     ser = pd.to_datetime(["2024-01-01", "2024-01-02"]).astype("date32[pyarrow]")
     assert isinstance(ser.dtype, pd.core.dtypes.dtypes.ArrowDtype)
     assert isdatetime(ser)

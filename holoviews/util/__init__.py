@@ -80,18 +80,18 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
     way (in appropriate environments such as Jupyter notebooks) using
     completers such as `opts.Curve`, `opts.Image`, `opts.Overlay`, etc.
 
-    To set opts globally you can pass these option objects into `opts.defaults`:
+    To set opts globally you can pass these option objects into `opts.defaults`::
 
         opts.defaults(*options)
 
-    For instance:
+    For instance::
 
         opts.defaults(opts.Curve(color='red'))
 
     To set opts on a specific object, you can supply these option
     objects to the `.options` method.
 
-    For instance:
+    For instance::
 
         curve = hv.Curve([1,2,3])
         curve.options(opts.Curve(color='red'))
@@ -104,16 +104,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
     # Keywords not to be tab-completed (helps with deprecation)
     _no_completion = [
         "title_format",
-        "color_index",
-        "size_index",
-        "scaling_factor",
-        "scaling_method",
-        "size_fn",
         "normalize_lengths",
-        "group_index",
-        "category_index",
-        "stack_index",
-        "color_by",
     ]
 
     strict = param.Boolean(
@@ -138,7 +129,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         """Format option group kwargs into canonical options format"""
         groups = Options._option_groups
         if set(kwargs.keys()) - set(groups):
-            raise Exception(
+            raise ValueError(
                 "Keyword options {} must be one of  {}".format(
                     groups, ",".join(repr(g) for g in groups)
                 )
@@ -146,12 +137,12 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         elif not all(isinstance(v, dict) for v in kwargs.values()):
             options_str = ",".join([repr(k) for k in kwargs.keys()])
             msg = f"The {options_str} options must be specified using dictionary groups"
-            raise Exception(msg)
+            raise ValueError(msg)
 
         # Check whether the user is specifying targets (such as 'Image.Foo')
         targets = [grp and all(k[0].isupper() for k in grp) for grp in kwargs.values()]
         if any(targets) and not all(targets):
-            raise Exception(
+            raise ValueError(
                 "Cannot mix target specification keys such as 'Image' with non-target keywords."
             )
         elif not any(targets):
@@ -166,7 +157,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             else:
                 identifier = obj.__class__.__name__
 
-            options = {identifier: {grp: kws for (grp, kws) in kwargs.items()}}
+            options = {identifier: dict(kwargs.items())}
         else:
             dfltdict = defaultdict(dict)
             for grp, entries in kwargs.items():
@@ -204,7 +195,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
                 filtered = {k: v for k, v in groups.items() if k != "output"}
                 dfltdict[groups["output"]["backend"]][spec.strip()] = filtered
             else:
-                raise Exception("The output options group must have the backend keyword")
+                raise ValueError("The output options group must have the backend keyword")
 
         return [(bk, bk_opts) for (bk, bk_opts) in dfltdict.items()]
 
@@ -218,7 +209,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         'style', and 'norm').
 
         If the options are to be set directly on the object a
-        simple format may be used, e.g.:
+        simple format may be used, e.g.::
 
             opts.apply_groups(
                 obj,
@@ -227,7 +218,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             )
 
         If the object is nested the options must be qualified using
-        a type[.group][.label] specification, e.g.:
+        a type[.group][.label] specification, e.g.::
 
             opts.apply_groups(
                 obj,
@@ -309,7 +300,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             The plotting extension the options apply to
         """
         if kwargs and len(kwargs) != 1 and next(iter(kwargs.keys())) != "backend":
-            raise Exception('opts.defaults only accepts "backend" keyword argument')
+            raise TypeError('opts.defaults only accepts "backend" keyword argument')
 
         backend = kwargs.get("backend")
         expanded = cls._expand_options(util.merge_options_to_dict(options), backend=backend)
@@ -998,7 +989,7 @@ class Dynamic(param.ParameterizedFunction):
                 kwargs["plot_id"] = map_obj._plot_id
             dmap = map_obj.clone(**kwargs)
             if self.p.shared_data:
-                dmap.data = dict([(k, callback.callable(*k)) for k, v in dmap.data])
+                dmap.data = {k: callback.callable(*k) for k, v in dmap.data}
         else:
             dmap = self._make_dynamic(map_obj, callback, streams)
         return dmap

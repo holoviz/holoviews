@@ -146,7 +146,7 @@ class Raster(Element2D):
             # Indices inverted for indexing
             sample_ind = self.get_dimension_index(dimension)
             if sample_ind is None:
-                raise Exception(f"Dimension {dimension} not found during sampling")
+                raise KeyError(f"Dimension {dimension} not found during sampling")
             other_dimension = [d for i, d in enumerate(self.kdims) if i != sample_ind]
 
             # Generate sample slice
@@ -390,7 +390,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         )
         dims = None
         if not xvalid:
-            dims = f" {xdim} is " if yvalid else f"(s) {xdim} and {ydim} are"
+            dims = f" {xdim} is" if yvalid else f"(s) {xdim} and {ydim} are"
         elif not yvalid:
             dims = f" {ydim} is"
         if dims:
@@ -475,7 +475,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         )
 
         shape = self.interface.shape(self, gridded=True)
-        if any([isinstance(el, slice) for el in coords]):
+        if any(isinstance(el, slice) for el in coords):
             bounds = compute_slice_bounds(coords, self, shape[:2])
 
             # Situate resampled region into overall slice

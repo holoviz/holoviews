@@ -2,13 +2,11 @@ from __future__ import annotations
 
 import numpy as np
 import param
-from matplotlib import cm
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
 from ...core import Dimension
 from ...core.options import abbreviated_exception
 from ...util.transform import dim as dim_expr
-from ..util import map_colors
 from .chart import PointPlot
 from .element import ColorbarPlot
 from .path import PathPlot
@@ -128,10 +126,7 @@ class Plot3D(ColorbarPlot):
         if isinstance(dim, dim_expr):
             dim = dim.dimension
         if dim is None:
-            if hasattr(self, "color_index"):
-                dim = element.get_dimension(self.color_index)
-            else:
-                dim = element.get_dimension(2)
+            dim = element.get_dimension(2)
         elif not isinstance(dim, Dimension):
             dim = element.get_dimension(dim)
         label = dim.pprint_label
@@ -148,25 +143,11 @@ class Scatter3DPlot(Plot3D, PointPlot):
 
     """
 
-    color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Index of the dimension from which the color will the drawn",
-    )
-
-    size_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Index of the dimension from which the sizes will the drawn.",
-    )
-
     _plot_methods = dict(single="scatter")
 
     def get_data(self, element, ranges, style):
         xs, ys, zs = (element.dimension_values(i) for i in range(3))
-        self._compute_styles(element, ranges, style)
+        style["edgecolors"] = style.pop("edgecolors", style.pop("edgecolor", "none"))
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
         if style.get("edgecolors") == "none":
@@ -176,13 +157,6 @@ class Scatter3DPlot(Plot3D, PointPlot):
     def update_handles(self, key, axis, element, ranges, style):
         artist = self.handles["artist"]
         artist._offsets3d, style, _ = self.get_data(element, ranges, style)
-        cdim = element.get_dimension(self.color_index)
-        if cdim and "cmap" in style:
-            clim = style["vmin"], style["vmax"]
-            cmap = cm.get_cmap(style["cmap"])
-            artist._facecolor3d = map_colors(style["c"], clim, cmap, hex=False)
-        if element.get_dimension(self.size_index):
-            artist.set_sizes(style["s"])
 
 
 class Path3DPlot(Plot3D, PathPlot):

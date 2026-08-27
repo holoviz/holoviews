@@ -5,7 +5,7 @@ import matplotlib as mpl
 from colorcet import kbc, register_cmap
 from matplotlib import pyplot as plt, rc_params_from_file
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap, to_hex
-from param import concrete_descendents
+from param import descendents
 
 from ...core import (
     AdjointLayout,
@@ -34,6 +34,7 @@ from ...element import (
     Curve,
     Dendrogram,
     Distribution,
+    Donut,
     EdgePaths,
     Ellipse,
     ErrorBars,
@@ -100,6 +101,7 @@ from .chart import (
     AreaPlot,
     BarPlot,
     CurvePlot,
+    DonutPlot,
     ErrorPlot,
     HistogramPlot,
     PointPlot,
@@ -143,7 +145,7 @@ def set_style(key):
         if "backup" in styles:
             plt.rcParams.update(styles["backup"])
         else:
-            raise Exception("No style backed up to restore")
+            raise RuntimeError("No style backed up to restore")
     elif key not in styles:
         raise KeyError("%r not in available styles.")
     else:
@@ -218,6 +220,7 @@ Store.register(
         Scatter: PointPlot,
         Bars: BarPlot,
         Waterfall: WaterfallPlot,
+        Donut: DonutPlot,
         Histogram: HistogramPlot,
         Points: PointPlot,
         VectorField: VectorFieldPlot,
@@ -308,7 +311,7 @@ MPLPlot.sideplots.update(
 )
 
 if config.no_padding:
-    for plot in concrete_descendents(ElementPlot).values():
+    for plot in descendents(ElementPlot):
         plot.padding = 0
 
 # Raster types, Path types and VectorField should have frames
@@ -348,6 +351,15 @@ options.ErrorBars = Options("style", edgecolor="k")
 options.Spread = Options("style", facecolor=Cycle(), alpha=0.6, edgecolor="k", linewidth=0.5)
 options.Bars = Options("style", edgecolor="k", color=Cycle())
 options.Waterfall = Options("style", edgecolor="k")
+options.Donut = Options(
+    "plot",
+    xaxis=None,
+    yaxis=None,
+    show_frame=False,
+    show_legend=True,
+    legend_position="center",
+    inner_radius=0.8,
+)
 options.Histogram = Options("style", edgecolor="k", facecolor=Cycle())
 options.Points = Options("style", color=Cycle(), marker="o", cmap=dflt_cmap)
 options.Scatter3D = Options("style", c=Cycle(), marker="o")

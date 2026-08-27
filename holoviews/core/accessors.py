@@ -254,8 +254,8 @@ class Apply(metaclass=AccessorPipelineMeta):
 
         See Also
         --------
-        :py:meth:`Dimensioned.aggregate` and :py:meth:`Apply.__call__`
-        for more information.
+        :meth:`Dimensioned.aggregate`
+        :meth:`Apply.__call__`
         """
         kwargs["_method_args"] = (dimensions, function, spreadfn)
         kwargs["per_element"] = True
@@ -266,8 +266,8 @@ class Apply(metaclass=AccessorPipelineMeta):
 
         See Also
         --------
-        :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
-        for more information.
+        :meth:`Dimensioned.opts`
+        :meth:`Apply.__call__`
         """
         from ..streams import Params
         from ..util.transform import dim
@@ -286,8 +286,8 @@ class Apply(metaclass=AccessorPipelineMeta):
 
         See Also
         --------
-        :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
-        for more information.
+        :meth:`Dimensioned.reduce`
+        :meth:`Apply.__call__`
         """
         if dimensions is None:
             dimensions = []
@@ -300,8 +300,8 @@ class Apply(metaclass=AccessorPipelineMeta):
 
         See Also
         --------
-        :py:meth:`Dataset.sample` and :py:meth:`Apply.__call__`
-        for more information.
+        :meth:`Dataset.sample`
+        :meth:`Apply.__call__`
         """
         if samples is None:
             samples = []
@@ -314,8 +314,8 @@ class Apply(metaclass=AccessorPipelineMeta):
 
         See Also
         --------
-        :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
-        for more information.
+        :meth:`Dataset.select`
+        :meth:`Apply.__call__`
         """
         return self.__call__("select", **kwargs)
 
@@ -324,8 +324,8 @@ class Apply(metaclass=AccessorPipelineMeta):
 
         See Also
         --------
-        :py:meth:`Dataset.transform` and :py:meth:`Apply.__call__`
-        for more information.
+        :meth:`Dataset.transform`
+        :meth:`Apply.__call__`
         """
         from ..streams import Params
         from ..util.transform import dim
@@ -685,7 +685,7 @@ class Opts(metaclass=AccessorPipelineMeta):
 
     def _holomap_opts(self, *args, clone=None, **kwargs):
         apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
-        data = dict([(k, v.opts(*args, **kwargs)) for k, v in self._obj.data.items()])
+        data = {k: v.opts(*args, **kwargs) for k, v in self._obj.data.items()}
 
         # By default do not clone in .opts method
         if apply_groups if clone is None else clone:
@@ -714,7 +714,7 @@ class Opts(metaclass=AccessorPipelineMeta):
                 obj.callback = self._obj.callback
                 self._obj.callback = dmap.callback
             dmap = self._obj
-            dmap.data = dict([(k, v.opts(*args, **kwargs)) for k, v in self._obj.data.items()])
+            dmap.data = {k: v.opts(*args, **kwargs) for k, v in self._obj.data.items()}
         return dmap
 
     def _base_opts(self, *args, **kwargs):

@@ -38,56 +38,6 @@ class TestMplGraphPlot(TestMPLPlot):
             [p.array() for p in self.graph.edgepaths.split()],
         )
 
-    def test_plot_graph_categorical_colored_nodes(self):
-        g = self.graph2.opts(color_index="Label", cmap="Set1")
-        plot = mpl_renderer.get_plot(g)
-        nodes = plot.handles["nodes"]
-        facecolors = np.array(
-            [
-                [0.89411765, 0.10196078, 0.10980392, 1.0],
-                [0.6, 0.6, 0.6, 1.0],
-                [0.6, 0.6, 0.6, 1.0],
-                [0.6, 0.6, 0.6, 1.0],
-                [0.6, 0.6, 0.6, 1.0],
-                [0.6, 0.6, 0.6, 1.0],
-                [0.6, 0.6, 0.6, 1.0],
-                [0.6, 0.6, 0.6, 1.0],
-            ]
-        )
-        assert_data_equal(nodes.get_facecolors(), facecolors)
-
-    def test_plot_graph_numerically_colored_nodes(self):
-        g = self.graph3.opts(color_index="Weight", cmap="viridis")
-        plot = mpl_renderer.get_plot(g)
-        nodes = plot.handles["nodes"]
-        assert_data_equal(np.asarray(nodes.get_array()), self.weights)
-        assert nodes.get_clim() == (self.weights.min(), self.weights.max())
-
-    def test_plot_graph_categorical_colored_edges(self):
-        g = self.graph3.opts(edge_color_index="start", edge_cmap=["#FFFFFF", "#000000"])
-        plot = mpl_renderer.get_plot(g)
-        edges = plot.handles["edges"]
-        colors = np.array(
-            [
-                [1.0, 1.0, 1.0, 1.0],
-                [0.0, 0.0, 0.0, 1.0],
-                [1.0, 1.0, 1.0, 1.0],
-                [0.0, 0.0, 0.0, 1.0],
-                [1.0, 1.0, 1.0, 1.0],
-                [0.0, 0.0, 0.0, 1.0],
-                [1.0, 1.0, 1.0, 1.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ]
-        )
-        assert_data_equal(edges.get_colors(), colors)
-
-    def test_plot_graph_numerically_colored_edges(self):
-        g = self.graph4.opts(edge_color_index="Weight", edge_cmap=["#FFFFFF", "#000000"])
-        plot = mpl_renderer.get_plot(g)
-        edges = plot.handles["edges"]
-        assert_data_equal(np.asarray(edges.get_array()), self.weights)
-        assert edges.get_clim() == (self.weights.min(), self.weights.max())
-
     ###########################
     #    Styling mapping      #
     ###########################
@@ -340,31 +290,6 @@ class TestMplTriMeshPlot(TestMPLPlot):
         paths = np.asarray(self.trimesh._split_edgepaths.split(datatype="array"))
         assert_data_equal([p.vertices[:4] for p in edges.get_paths()], paths)
 
-    def test_plot_trimesh_colored_edges(self):
-        opts = dict(edge_color_index="weight", edge_cmap="Greys")
-        plot = mpl_renderer.get_plot(self.trimesh_weighted.opts(**opts))
-        edges = plot.handles["edges"]
-        colors = np.array([[1.0, 1.0, 1.0, 1.0], [0.0, 0.0, 0.0, 1.0]])
-        assert_data_equal(edges.get_edgecolors(), colors)
-
-    def test_plot_trimesh_categorically_colored_edges(self):
-        opts = dict(edge_color_index="node1", edge_color=hv.Cycle("Set1"))
-        plot = mpl_renderer.get_plot(self.trimesh_weighted.opts(**opts))
-        edges = plot.handles["edges"]
-        colors = np.array(
-            [[0.894118, 0.101961, 0.109804, 1.0], [0.215686, 0.494118, 0.721569, 1.0]]
-        )
-        assert_data_equal(edges.get_edgecolors(), colors)
-
-    def test_plot_trimesh_categorically_colored_edges_filled(self):
-        opts = dict(edge_color_index="node1", filled=True, edge_color=hv.Cycle("Set1"))
-        plot = mpl_renderer.get_plot(self.trimesh_weighted.opts(**opts))
-        edges = plot.handles["edges"]
-        colors = np.array(
-            [[0.894118, 0.101961, 0.109804, 1.0], [0.215686, 0.494118, 0.721569, 1.0]]
-        )
-        assert_data_equal(edges.get_facecolors(), colors)
-
     ###########################
     #    Styling mapping      #
     ###########################
@@ -507,15 +432,6 @@ class TestMplChordPlot(TestMPLPlot):
         labels = plot.handles["labels"]
         assert [l.get_text() for l in labels] == ["A", "B", "C"]
 
-    def test_chord_nodes_categorically_colormapped(self):
-        g = self.chord.opts(color_index="Label", cmap=["#FFFFFF", "#CCCCCC", "#000000"])
-        plot = mpl_renderer.get_plot(g)
-        arcs = plot.handles["arcs"]
-        nodes = plot.handles["nodes"]
-        colors = np.array([[1.0, 1.0, 1.0, 1.0], [0.8, 0.8, 0.8, 1.0], [0.0, 0.0, 0.0, 1.0]])
-        assert_data_equal(arcs.get_colors(), colors)
-        assert_data_equal(nodes.get_facecolors(), colors)
-
     def test_chord_node_color_style_mapping(self):
         g = self.chord.opts(node_color="Label", cmap=["#FFFFFF", "#CCCCCC", "#000000"])
         plot = mpl_renderer.get_plot(g)
@@ -525,13 +441,6 @@ class TestMplChordPlot(TestMPLPlot):
         assert_data_equal(np.asarray(arcs.get_array()), np.array([0, 1, 2]))
         assert nodes.get_clim() == (0, 2)
         assert arcs.get_clim() == (0, 2)
-
-    def test_chord_edges_categorically_colormapped(self):
-        g = self.chord.opts(edge_color_index="start", edge_cmap=["#FFFFFF", "#000000"])
-        plot = mpl_renderer.get_plot(g)
-        edges = plot.handles["edges"]
-        colors = np.array([[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0], [0.0, 0.0, 0.0, 1.0]])
-        assert_data_equal(edges.get_edgecolors(), colors)
 
     def test_chord_edge_color_style_mapping(self):
         g = self.chord.opts(

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import matplotlib as mpl
 import numpy as np
 import param
 from matplotlib.collections import LineCollection
 from matplotlib.dates import DateFormatter, date2num
-from matplotlib.patches import Patch
+from matplotlib.patches import Patch, Wedge
 
 from ...core.dimension import Dimension
 from ...core.options import Store, abbreviated_exception
@@ -17,19 +19,20 @@ from ...core.util import (
     isfinite,
     isscalar,
     match_spec,
-    search_indices,
-    unique_array,
 )
 from ...element import HeatMap, Raster
 from ...operation import interpolate_curve
 from ...util.transform import dim
-from ..mixins import AreaMixin, BarsMixin, SpikesMixin, WaterfallMixin
+from ..mixins import AreaMixin, BarsMixin, DonutMixin, SpikesMixin, WaterfallMixin
 from ..plot import PlotSelector
-from ..util import compute_sizes, dim_range_key, get_min_distance, get_sideplot_ranges
+from ..util import dim_range_key, get_min_distance, get_sideplot_ranges, process_cmap
 from .element import ColorbarPlot, ElementPlot, LegendPlot
 from .path import PathPlot
 from .plot import AdjoinedPlot, mpl_rc_context
 from .util import MPL_GE_3_7_0, MPL_GE_3_9_0, MPL_VERSION
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
 
 
 class ChartPlot(ElementPlot):
@@ -551,15 +554,10 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         plot_type = Store.registry["matplotlib"].get(type(range_item))
         if isinstance(plot_type, PlotSelector):
             plot_type = plot_type.get_plot_class(range_item)
-        opts = self.lookup_options(range_item, "plot")
         if plot_type and issubclass(plot_type, ColorbarPlot):
-            cidx = opts.options.get("color_index", None)
-            if cidx is None:
-                opts = self.lookup_options(range_item, "style")
-                cidx = opts.kwargs.get("color", None)
-                if cidx not in range_item:
-                    cidx = None
-            cdim = None if cidx is None else range_item.get_dimension(cidx)
+            opts = self.lookup_options(range_item, "style")
+            cidx = opts.kwargs.get("color", None)
+            cdim = range_item.get_dimension(cidx) if cidx in range_item else None
         else:
             cdim = None
 
@@ -626,45 +624,6 @@ class PointPlot(ChartPlot, ColorbarPlot, LegendPlot):
         doc="Whether to draw grid lines at the tick positions.",
     )
 
-    # Deprecated parameters
-
-    color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of color style mapping, e.g. `color=dim('color')`",
-    )
-
-    size_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of size style mapping, e.g. `size=dim('size')`",
-    )
-
-    scaling_method = param.Selector(
-        default="area",
-        objects=["width", "area"],
-        doc="""
-        Deprecated in favor of size style mapping, e.g.
-        size=dim('size')**2.""",
-    )
-
-    scaling_factor = param.Number(
-        default=1,
-        bounds=(0, None),
-        doc="""
-        Scaling factor which is applied to either the width or area
-        of each point, depending on the value of `scaling_method`.""",
-    )
-
-    size_fn = param.Callable(
-        default=np.abs,
-        doc="""
-        Function applied to size values before applying scaling,
-        to remove values lower than zero.""",
-    )
-
     style_opts = [
         "alpha",
         "color",
@@ -687,56 +646,10 @@ class PointPlot(ChartPlot, ColorbarPlot, LegendPlot):
 
     def get_data(self, element, ranges, style):
         xs, ys = (element.dimension_values(i) for i in range(2))
-        self._compute_styles(element, ranges, style)
+        style["edgecolors"] = style.pop("edgecolors", style.pop("edgecolor", "none"))
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
         return (ys, xs) if self.invert_axes else (xs, ys), style, {}
-
-    def _compute_styles(self, element, ranges, style):
-        cdim = element.get_dimension(self.color_index)
-        color = style.pop("color", None)
-        cmap = style.get("cmap", None)
-
-        if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
-            self.param.warning(
-                "Cannot declare style mapping for 'color' option and "
-                "declare a color_index; ignoring the color_index."
-            )
-            cdim = None
-        if cdim and cmap:
-            cs = element.dimension_values(self.color_index)
-            # Check if numeric otherwise treat as categorical
-            if dtype_kind(cs) in "uif":
-                style["c"] = cs
-            else:
-                style["c"] = search_indices(cs, unique_array(cs))
-            self._norm_kwargs(element, ranges, style, cdim)
-        elif color is not None:
-            style["color"] = color
-        style["edgecolors"] = style.pop("edgecolors", style.pop("edgecolor", "none"))
-
-        ms = style.get("s", mpl.rcParams["lines.markersize"])
-        sdim = element.get_dimension(self.size_index)
-        if sdim and ((isinstance(ms, str) and ms in element) or isinstance(ms, dim)):
-            self.param.warning(
-                "Cannot declare style mapping for 's' option and "
-                "declare a size_index; ignoring the size_index."
-            )
-            sdim = None
-        if sdim:
-            sizes = element.dimension_values(self.size_index)
-            sizes = compute_sizes(
-                sizes, self.size_fn, self.scaling_factor, self.scaling_method, ms
-            )
-            if sizes is None:
-                eltype = type(element).__name__
-                self.param.warning(
-                    f"{sdim.pprint_label} dimension is not numeric, cannot use to "
-                    f"scale {eltype} size."
-                )
-            else:
-                style["s"] = sizes
-        style["edgecolors"] = style.pop("edgecolors", "none")
 
     def update_handles(self, key, axis, element, ranges, style):
         paths = self.handles["artist"]
@@ -774,9 +687,6 @@ class VectorFieldPlot(ColorbarPlot):
     angle alone (with some common, arbitrary arrow length) or may be
     true polar vectors.
 
-    The color or magnitude can be mapped onto any dimension using the
-    color_index and size_index.
-
     The length of the arrows is controlled by the 'scale' style
     option. The scaling of the arrows may also be controlled via the
     normalize_lengths and rescale_lengths plot option, which will
@@ -810,28 +720,6 @@ class VectorFieldPlot(ColorbarPlot):
         doc="""
         Whether the lengths will be rescaled to take into account the
         smallest non-zero distance between two vectors.""",
-    )
-
-    # Deprecated parameters
-
-    color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="""
-        Deprecated in favor of dimension value transform on color option,
-        e.g. `color=dim('Magnitude')`.
-        """,
-    )
-
-    size_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="""
-        Deprecated in favor of the magnitude option, e.g.
-        `magnitude=dim('Magnitude')`.
-        """,
     )
 
     normalize_lengths = param.Boolean(
@@ -875,16 +763,8 @@ class VectorFieldPlot(ColorbarPlot):
     _plot_methods = dict(single="quiver")
 
     def _get_magnitudes(self, element, style, ranges):
-        size_dim = element.get_dimension(self.size_index)
         mag_dim = self.magnitude
-        if size_dim and mag_dim:
-            self.param.warning(
-                "Cannot declare style mapping for 'magnitude' option "
-                "and declare a size_index; ignoring the size_index."
-            )
-        elif size_dim:
-            mag_dim = size_dim
-        elif isinstance(mag_dim, str):
+        if isinstance(mag_dim, str):
             mag_dim = element.get_dimension(mag_dim)
         if mag_dim is not None:
             if isinstance(mag_dim, dim):
@@ -916,22 +796,6 @@ class VectorFieldPlot(ColorbarPlot):
             input_scale = input_scale / min_dist
 
         args = (xs, ys, magnitudes, [0.0] * len(element))
-
-        # Compute color
-        cdim = element.get_dimension(self.color_index)
-        color = style.get("color", None)
-        if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
-            self.param.warning(
-                "Cannot declare style mapping for 'color' option and "
-                "declare a color_index; ignoring the color_index."
-            )
-            cdim = None
-        if cdim:
-            colors = element.dimension_values(self.color_index)
-            style["c"] = colors
-            cdim = element.get_dimension(self.color_index)
-            self._norm_kwargs(element, ranges, style, cdim)
-            style.pop("color", None)
 
         # Process style
         with abbreviated_exception():
@@ -972,6 +836,19 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
     bar_padding = param.Number(
         default=0.2,
         doc="Defines the padding between groups.",
+    )
+
+    baseline = param.ClassSelector(
+        default=None,
+        class_=(str, int),
+        allow_None=True,
+        doc="""
+        Value dimension naming the lower end of each bar, making bars
+        float between two value dimensions instead of growing from zero.
+        The first remaining value dimension is the upper end, so
+        vdims=['Low', 'High'] with baseline='Low' spans Low to High.
+        Supported for ungrouped and grouped Bars; combining it with
+        stacked raises an error.""",
     )
 
     multi_level = param.Boolean(
@@ -1054,7 +931,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             key, ranges=ranges, element=element, dimensions=[xdims, vdim], **kwargs
         )
 
-    def _finalize_ticks(self, axis, element, xticks, yticks, zticks):
+    def _finalize_ticks(self, axis: Axes, element, xticks, yticks, zticks):
         """Apply ticks with appropriate offsets."""
         alignments = None
         ticks = xticks or yticks
@@ -1077,6 +954,13 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
     def _create_bars(self, axis, element, ranges, style):
         # Get values dimensions, and style information
         (gdim, cdim, sdim), values = self._get_values(element, ranges)
+
+        top_dim, baseline_dim = self._baseline_dimensions(element)
+        self._warn_unused_baseline(element, baseline_dim)
+        if baseline_dim is not None:
+            self._validate_baseline(element, top_dim, baseline_dim)
+        # For floating bars the upper end is top_dim; otherwise it is vdims[0].
+        value_dim = top_dim if baseline_dim is not None else element.vdims[0]
 
         cats = None
         style_dim = None
@@ -1103,7 +987,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             xvals = xvals[xslice]
             xdiff = np.abs(np.diff(xvals))
             diff_size = len(np.unique(xdiff))
-            if diff_size == 0 or (diff_size == 1 and xdiff[0] == 0):
+            if diff_size == 0 or (diff_size == 1 and xdiff[0].view(np.int64) == 0):
                 xdiff = np.timedelta64(1, "D") if is_dt else 1
             else:
                 xdiff = np.min(xdiff)
@@ -1156,24 +1040,34 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                         label = sdim.pprint_value(stk)
                         sel_key[sdim.name] = [stk]
                     el = element.select(**sel_key)
-                    vals = el.dimension_values(element.vdims[0].name)
+                    vals = el.dimension_values(value_dim)
                     val = float(vals[0]) if len(vals) else np.nan
                     xval = xpos
+
+                    # Floating bars span from a per-bar baseline up to the
+                    # upper dimension rather than growing from the base.
+                    if baseline_dim is not None:
+                        bvals = el.dimension_values(baseline_dim)
+                        bottom_val = float(bvals[0]) if len(bvals) else 0.0
+                        height_val = val - bottom_val
+                    else:
+                        bottom_val = prev
+                        height_val = val
 
                     if label in bar_data:
                         group = bar_data[label]
                         group[x].append(xval)
-                        group[y].append(val)
-                        group[bottom].append(prev)
+                        group[y].append(height_val)
+                        group[bottom].append(bottom_val)
                     else:
                         bar_style = dict(style, **style_map.get(label, {}))
                         with abbreviated_exception():
                             bar_style = self._apply_transforms(el, ranges, bar_style)
                         bar_data[label] = {
                             x: [xval],
-                            y: [val],
+                            y: [height_val],
                             w: width,
-                            bottom: [prev],
+                            bottom: [bottom_val],
                             "label": label,
                         }
                         bar_data[label].update(bar_style)
@@ -1231,13 +1125,6 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
         The aspect ratio mode of the plot. Allows setting an
         explicit aspect ratio as width/height as well as
         'square' and 'equal' options.""",
-    )
-
-    color_index = param.ClassSelector(
-        default=None,
-        allow_None=True,
-        class_=(str, int),
-        doc="Index of the dimension from which the color will the drawn",
     )
 
     spike_length = param.Number(
@@ -1298,18 +1185,6 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
                     dims[i] = dims[i].clone(value_format=DateFormatter(dt_format))
                 cols.append(vs)
             clean_spikes.append(np.column_stack(cols))
-
-        cdim = element.get_dimension(self.color_index)
-        color = style.get("color", None)
-        if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
-            self.param.warning(
-                "Cannot declare style mapping for 'color' option and "
-                "declare a color_index; ignoring the color_index."
-            )
-            cdim = None
-        if cdim:
-            style["array"] = element.dimension_values(cdim)
-            self._norm_kwargs(element, ranges, style, cdim)
 
         if "spike_length" in opts:
             axis_dims = (element.dimensions()[0], None)
@@ -1597,3 +1472,247 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
         self.handles["artist"] = bars
 
         return {"yticks": xticks} if self.invert_axes else {"xticks": xticks}
+
+
+class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
+    """Matplotlib Donut chart renderer."""
+
+    center_font_size = param.Number(
+        default=12,
+        doc="Font size for the center label in points.",
+    )
+
+    center_label = param.String(
+        default=None,
+        allow_None=True,
+        doc="""Text to display in the center of the donut. If set to
+        'total', the sum of all values is shown. Any other string
+        is used as a format template with access to 'total' and
+        the vdim name as keys. None disables the center label.""",
+    )
+
+    center_text_align = param.Selector(
+        default="center",
+        objects=["left", "right", "center"],
+        doc="Horizontal alignment of the center label.",
+    )
+
+    center_text_baseline = param.Selector(
+        default="center",
+        objects=["top", "bottom", "center", "baseline", "center_baseline"],
+        doc="Vertical alignment of the center label.",
+    )
+
+    center_text_color = param.Color(
+        default="black",
+        doc="Color for the center label.",
+    )
+
+    inner_radius = param.Number(
+        default=0.4,
+        bounds=(0, 1),
+        doc="Inner radius of the annulus. Set to 0 for a pie chart.",
+    )
+
+    label_font_size = param.Number(
+        default=9,
+        doc="Font size for wedge labels in points.",
+    )
+
+    label_radius = param.Number(
+        default=0.7,
+        bounds=(0, None),
+        doc="""Radial distance of wedge labels as a multiple of outer_radius.
+        1.0 places labels exactly at the outer edge; values above 1
+        push them outside the ring.""",
+    )
+
+    label_text_align = param.Selector(
+        default="center",
+        objects=["auto", "left", "right", "center"],
+        doc="""Horizontal alignment of wedge labels. 'auto' chooses
+        left/right based on angular position and whether labels are
+        inside or outside the ring.""",
+    )
+
+    label_text_baseline = param.Selector(
+        default="bottom",
+        objects=["top", "bottom", "center", "baseline", "center_baseline"],
+        doc="Vertical alignment of wedge labels.",
+    )
+
+    label_text_color = param.Color(
+        default="black",
+        doc="Color for wedge labels.",
+    )
+
+    outer_radius = param.Number(
+        default=1.0,
+        bounds=(0, None),
+        doc="Outer radius of the annulus.",
+    )
+
+    show_labels = param.ClassSelector(
+        default=False,
+        class_=(bool, str),
+        doc="""Whether and how to draw text labels next to each wedge.
+        Can be a boolean or a template string using dimension names
+        (e.g. '{Category}: {Amount}').""",
+    )
+
+    show_legend = param.Boolean(
+        default=True,
+        doc="Whether to show legend for the plot.",
+    )
+
+    start_angle = param.Number(
+        default=0,
+        doc="Rotation offset in radians for the first wedge.",
+    )
+
+    style_opts = [
+        "alpha",
+        "cmap",
+        "edgecolor",
+        "linewidth",
+        "hatch",
+        "visible",
+    ]
+
+    _nonvectorized_styles = ["alpha", "visible", "hatch", "cmap"]
+
+    @mpl_rc_context
+    def initialize_plot(self, ranges=None):
+        element = self.hmap.last
+        axis = self.handles["axis"]
+        key = self.keys[-1]
+
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = match_spec(element, ranges)
+
+        style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
+        with abbreviated_exception():
+            style = self._apply_transforms(element, ranges, style)
+
+        wedges = self._create_wedges(axis, element, ranges, style)
+        self.handles["artist"] = wedges
+
+        kdim = element.kdims[0]
+        vdim = element.vdims[0]
+        return self._finalize_axis(
+            key,
+            ranges=ranges,
+            element=element,
+            dimensions=[kdim, vdim],
+        )
+
+    def _get_colors(self, labels, style, n):
+        """Resolve colors for n wedges from cmap or Cycle."""
+        cmap = style.pop("cmap", None)
+        if cmap and n > 0:
+            if isinstance(cmap, dict):
+                return [
+                    cmap.get(label, cmap.get("NaN", f"C{i}")) for i, label in enumerate(labels)
+                ]
+            return process_cmap(cmap, n, provider="matplotlib", categorical=True)
+
+        if n > 0:
+            cycle = self.style.max_cycles(n)
+            return [cycle[i].get("facecolor", cycle[i].get("color", f"C{i}")) for i in range(n)]
+        return []
+
+    def _create_wedges(self, axis, element, ranges, style):
+        """Build Wedge patch artists."""
+        dd = self._prepare_donut_data(element)
+        labels = dd["labels"]
+        values = dd["values"]
+        starts = dd["starts"]
+        ends = dd["ends"]
+        fracs = dd["fracs"]
+        display_labels = dd["display_labels"]
+
+        n = len(values)
+        colors = self._get_colors(labels, style, n)
+        width = self.outer_radius - self.inner_radius
+
+        wedge_style = {
+            k: v
+            for k, v in style.items()
+            if k in ("alpha", "edgecolor", "linewidth", "hatch", "visible", "zorder")
+        }
+
+        wedges = []
+        theta1s = np.rad2deg(starts)
+        theta2s = np.rad2deg(ends)
+        for i in range(n):
+            wedge = Wedge(
+                center=(0, 0),
+                r=self.outer_radius,
+                theta1=theta1s[i],
+                theta2=theta2s[i],
+                width=width,
+                facecolor=colors[i] if i < len(colors) else f"C{i}",
+                **wedge_style,
+            )
+            axis.add_patch(wedge)
+            wedges.append(wedge)
+
+        axis.set_aspect("equal")
+
+        # Wedge text labels
+        if self.show_labels and n > 0:
+            xs, ys, aligns = self._compute_label_geometry(starts, ends)
+            texts = self._generate_labels(element, labels, values, fracs)
+
+            va = self.label_text_baseline
+            for i in range(n):
+                axis.text(
+                    xs[i],
+                    ys[i],
+                    texts[i],
+                    ha=aligns[i],
+                    va=va,
+                    fontsize=self.label_font_size,
+                    color=self.label_text_color,
+                )
+
+        # Center label
+        text = self._resolve_center_text(values, element)
+        if text is not None:
+            axis.text(
+                0,
+                0,
+                text,
+                ha=self.center_text_align,
+                va=self.center_text_baseline,
+                fontsize=self.center_font_size,
+                fontweight="bold",
+                color=self.center_text_color,
+            )
+
+        # Legend
+        if self.show_legend and n > 0:
+            handles = [
+                Patch(facecolor=colors[i], edgecolor="none", label=display_labels[i])
+                for i in range(n)
+                if i < len(colors)
+            ]
+            if handles:
+                axis.legend(handles=handles, **self._legend_opts)
+
+        return wedges
+
+    def update_handles(self, key, axis, element, ranges, style):
+        """Update wedges on data change."""
+        for artist in list(axis.patches):
+            artist.remove()
+        for txt in list(axis.texts):
+            txt.remove()
+
+        style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
+        with abbreviated_exception():
+            style = self._apply_transforms(element, ranges, style)
+        wedges = self._create_wedges(axis, element, ranges, style)
+        self.handles["artist"] = wedges
+
+        return {}

@@ -24,6 +24,8 @@ from holoviews.plotting.mpl import CurvePlot, MPLRenderer
 from holoviews.plotting.renderer import Renderer
 from holoviews.streams import Stream
 
+from ..._deps import jupyter_skip
+
 
 class MPLRendererTest:
     """
@@ -62,15 +64,17 @@ class MPLRendererTest:
         with style.context("default"):
             plot = self.renderer.get_plot(self.image1 + self.image2)
         w, h = self.renderer.get_size(plot)
+        assert w == 576
         # Depending on the backend the height may be slightly different
-        assert (w, h) == (576, 257) or (w, h) == (576, 259)
+        assert h in (257, 258, 259)
 
     def test_get_size_column_plot(self):
         with style.context("default"):
             plot = self.renderer.get_plot((self.image1 + self.image2).cols(1))
         w, h = self.renderer.get_size(plot)
+        assert w == 288
         # Depending on the backend the height may be slightly different
-        assert (w, h) == (288, 509) or (w, h) == (288, 511)
+        assert h in (509, 510, 511)
 
     def test_get_size_grid_plot(self):
         grid = hv.GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
@@ -111,7 +115,7 @@ class MPLRendererTest:
         widgets = obj.layout.select(DiscreteSlider)
         assert len(widgets) == 1
         slider = widgets[0]
-        assert slider.options == dict([(str(i), i) for i in range(5)])
+        assert slider.options == {str(i): i for i in range(5)}
 
     def test_render_holomap_embedded(self):
         hmap = hv.HoloMap({i: hv.Curve([1, 2, i]) for i in range(5)})
@@ -269,3 +273,35 @@ class TestAnimationBbox:
         h_px = int(fig.get_size_inches()[1] * dpi)
         assert w_px % 2 == 0
         assert h_px % 2 == 0
+
+
+@jupyter_skip
+@pytest.mark.skipif(sys.platform == "win32", reason="zmq does not work with Proactor event loop")
+@pytest.mark.parametrize(
+    "cell_code",
+    [
+        """
+        import matplotlib as mpl
+        print(mpl.get_backend())
+        """,
+        """
+        import matplotlib as mpl
+        import holoviews as hv
+        hv.extension("matplotlib")
+        print(mpl.get_backend())
+        """,
+    ],
+    ids=["plain", "with_holoviews"],
+)
+def test_backend_jupyter_default(cell_code):
+    import nbformat
+    from nbclient import NotebookClient
+
+    nb = nbformat.v4.new_notebook()
+    nb.cells = [nbformat.v4.new_code_cell(cell_code)]
+
+    client = NotebookClient(nb)
+    client.execute()
+
+    output = nb.cells[0].outputs[-1]["text"].strip()
+    assert output == "module://matplotlib_inline.backend_inline"

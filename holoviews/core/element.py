@@ -203,11 +203,11 @@ class Element(ViewableElement, Composable, Overlayable):
 
     def _reduce_map(self, dimensions, function, reduce_map):
         if dimensions and reduce_map:
-            raise Exception(
+            raise ValueError(
                 "Pass reduced dimensions either as an argument or as part of the kwargs not both."
             )
         if len(set(reduce_map.values())) > 1:
-            raise Exception(
+            raise ValueError(
                 "Cannot define reduce operations with more than one function at a time."
             )
         if reduce_map:
@@ -244,7 +244,7 @@ class Element(ViewableElement, Composable, Overlayable):
         else:
             dimensions = [self.get_dimension(d, strict=True).name for d in dimensions]
         column_names = dimensions
-        dim_vals = dict([(dim, self.dimension_values(dim)) for dim in column_names])
+        dim_vals = {dim: self.dimension_values(dim) for dim in column_names}
         df = pd.DataFrame(dim_vals)
         if multi_index:
             df = df.set_index([d for d in dimensions if d in self.kdims])
@@ -263,7 +263,7 @@ class Element(ViewableElement, Composable, Overlayable):
         Array of columns corresponding to each dimension
         """
         if dimensions is None:
-            dims = [d for d in self.kdims + self.vdims]
+            dims = list(self.kdims + self.vdims)
         else:
             dims = [self.get_dimension(d, strict=True) for d in dimensions]
 
@@ -318,9 +318,9 @@ class Tabular(Element):
         """
         ndims = self.ndims
         if col >= self.cols:
-            raise Exception(f"Maximum column index is {self.cols - 1}")
+            raise IndexError(f"Maximum column index is {self.cols - 1}")
         elif row >= self.rows:
-            raise Exception(f"Maximum row index is {self.cols - 1}")
+            raise IndexError(f"Maximum row index is {self.cols - 1}")
         elif row == 0:
             if col >= ndims:
                 if self.vdims:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 import holoviews as hv
 from holoviews.core.ndmapping import MultiDimensionalMapping, UniformNdMapping
@@ -35,7 +36,7 @@ class NdIndexableMappingTest:
     def setup_method(self):
         self.init_items_1D_list = [(1, "a"), (5, "b")]
         self.init_item_list = [((1, 2.0), "a"), ((5, 3.0), "b")]
-        self.init_item_odict = dict([((1, 2.0), "a"), ((5, 3.0), "b")])
+        self.init_item_odict = {(1, 2.0): "a", (5, 3.0): "b"}
         self.dimension_labels = ["intdim", "floatdim"]
         self.dim1 = hv.Dimension("intdim", type=int)
         self.dim2 = hv.Dimension("floatdim", type=float)
@@ -89,7 +90,7 @@ class NdIndexableMappingTest:
 
         ndmap_list = [(0.5, ndmap1), (1.5, ndmap2)]
         nested_ndmap = MultiDimensionalMapping(ndmap_list, kdims=[self.dim2])
-        nested_ndmap[(0.5,)].update(dict([(0, "c"), (1, "d")]))
+        nested_ndmap[(0.5,)].update({0: "c", 1: "d"})
         assert list(nested_ndmap[0.5].values()) == ["c", "d"]
 
         nested_ndmap[1.5] = ndmap3
@@ -126,6 +127,35 @@ class NdIndexableMappingTest:
     def test_ndmapping_slice_upper_bound_exclusive2_float(self):
         ndmap = hv.NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
         assert ndmap[:, 0.0:3.0].keys() == [(1, 2.0)]
+
+    @pytest.mark.parametrize(
+        ("kdims", "data", "keys"),
+        [
+            ([hv.Dimension("x", values=[1, 2]), "y"], {(1, 0.5): "a", (2, 0.5): "b"}, {(1, 0.5)}),
+            (
+                [hv.Dimension("x", values=["1", "2"]), "y"],
+                {("1", 0.5): "a", ("2", 0.5): "b"},
+                {("1", 0.5)},
+            ),
+            (
+                ["x", hv.Dimension("y", values=[0.5, 1.5])],
+                {(1, 0.5): "a", (1, 1.5): "b"},
+                {(1, 0.5)},
+            ),
+            (
+                [hv.Dimension("x", values=[1, 2]), "y"],
+                {(1, 0.5): "a", (2, 0.5): "b"},
+                {(1, 0.5), (2, 0.5)},
+            ),
+        ],
+        ids=["int_values_first", "str_values_first", "int_values_on_second", "multi_key"],
+    )
+    def test_explicit_tuple_set_slicing(self, kdims, data, keys):
+        ndmap = hv.NdMapping(data, kdims=kdims)
+        result = ndmap[keys]
+        assert len(result) == len(keys)
+        for key in keys:
+            assert key in result.data
 
     def test_idxmapping_unsorted(self):
         data = [("B", 1), ("C", 2), ("A", 3)]
@@ -195,7 +225,7 @@ class NdIndexableMappingTest:
         assert ndmap2d.kdims == [self.dim2, self.dim1]
 
     def test_idxmapping_apply_key_type(self):
-        data = dict([(0.5, "a"), (1.5, "b")])
+        data = {0.5: "a", 1.5: "b"}
         ndmap = MultiDimensionalMapping(data, kdims=[self.dim1])
 
         assert list(ndmap.keys()) == [0, 1]

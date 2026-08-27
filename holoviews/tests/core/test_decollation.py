@@ -6,7 +6,8 @@ import holoviews as hv
 from holoviews.streams import PlotSize, RangeXY, Stream
 from holoviews.testing import assert_element_equal
 from holoviews.tests.test_streams import Sum, Val
-from holoviews.tests.utils import ds, ds_skip
+
+from .._deps import ds, ds_skip
 
 if ds:
     from holoviews.operation.datashader import datashade, spread

@@ -8,7 +8,6 @@ from collections import defaultdict, namedtuple
 
 import numpy as np
 import param
-from packaging.version import Version
 
 from ..core import (
     AdjointLayout,
@@ -37,6 +36,7 @@ from ..core.util import (
     unique_iterator,
     wrap_tuple,
 )
+from ..core.util.dependencies import _no_import_version
 from ..element import Points
 from ..streams import LinkedStream, Params
 from ..util.transform import dim
@@ -85,7 +85,7 @@ def collate(obj):
     if isinstance(obj, DynamicMap):
         if obj.type in [DynamicMap, HoloMap]:
             obj_name = obj.type.__name__
-            raise Exception(
+            raise ValueError(
                 f"Nesting a {obj_name} inside a DynamicMap is not "
                 "supported. Ensure that the DynamicMap callback "
                 "returns an Element or (Nd)Overlay. If you have "
@@ -118,9 +118,9 @@ def collate(obj):
                     expanded.extend(collated_layout.values())
             return Layout(expanded)
         except Exception as e:
-            raise Exception(undisplayable_info(obj)) from e
+            raise TypeError(undisplayable_info(obj)) from e
     else:
-        raise Exception(undisplayable_info(obj))
+        raise TypeError(undisplayable_info(obj))
 
 
 def isoverlay_fn(obj):
@@ -383,27 +383,6 @@ def undisplayable_info(obj, html=False):
         )
 
 
-def compute_sizes(sizes, size_fn, scaling_factor, scaling_method, base_size):
-    """Scales point sizes according to a scaling factor,
-    base size and size_fn, which will be applied before
-    scaling.
-
-    """
-    if dtype_kind(sizes) not in ("i", "f"):
-        return None
-    if scaling_method == "area":
-        pass
-    elif scaling_method == "width":
-        scaling_factor = scaling_factor**2
-    else:
-        raise ValueError(
-            f'Invalid value for argument "scaling_method": "{scaling_method}". '
-            'Valid values are: "width", "area".'
-        )
-    sizes = size_fn(sizes)
-    return base_size * scaling_factor * sizes
-
-
 def get_axis_padding(padding):
     """Process a padding value supplied as a tuple or number and returns
     padding values for x-, y- and z-axis.
@@ -508,7 +487,7 @@ def validate_unbounded_mode(holomaps, dynmaps):
     holomap_kdims = set(unique_iterator([kd.name for dm in holomaps for kd in dm.kdims]))
     hmranges = {d: composite.range(d) for d in holomap_kdims}
     if any(not {d.name for d in dm.kdims} <= holomap_kdims for dm in dynmaps):
-        raise Exception(
+        raise ValueError(
             "DynamicMap that are unbounded must have key dimensions that are a "
             "subset of dimensions of the HoloMap(s) defining the keys."
         )
@@ -518,7 +497,7 @@ def validate_unbounded_mode(holomaps, dynmaps):
         for d, hmrange in hmranges.items()
         if d in dm.kdims
     ):
-        raise Exception("HoloMap(s) have keys outside the ranges specified on the DynamicMap(s).")
+        raise ValueError("HoloMap(s) have keys outside the ranges specified on the DynamicMap(s).")
 
 
 def get_dynamic_mode(composite):
@@ -529,7 +508,7 @@ def get_dynamic_mode(composite):
     if holomaps:
         validate_unbounded_mode(holomaps, dynmaps)
     elif dynamic_unbounded and not holomaps:
-        raise Exception(
+        raise ValueError(
             "DynamicMaps in unbounded mode must be displayed alongside "
             "a HoloMap to define the sampling."
         )
@@ -596,7 +575,6 @@ def resample_palette(palette, ncolors, categorical, cmap_categorical):
 
 def mplcmap_to_palette(cmap, ncolors=None, categorical=False):
     """Converts a matplotlib colormap to palette of RGB hex strings."""
-    import matplotlib as mpl
     from matplotlib.colors import Colormap, ListedColormap
 
     ncolors = ncolors or 256
@@ -605,7 +583,7 @@ def mplcmap_to_palette(cmap, ncolors=None, categorical=False):
         if cmap.startswith("Category"):
             cmap = cmap.replace("Category", "tab")
 
-        if Version(mpl.__version__).release < (3, 5, 0):
+        if _no_import_version("matplotlib") < (3, 5, 0):
             from matplotlib import cm
 
             try:
@@ -806,12 +784,17 @@ def _list_cmaps(provider=None, records=False):
 def register_cmaps(category, provider, source, bg, names):
     """Maintain descriptions of colormaps that include the following information:
 
-    name     - string name for the colormap
-    category - intended use or purpose, mostly following matplotlib
-    provider - package providing the colormap directly
-    source   - original source or creator of the colormaps
-    bg       - base/background color expected for the map
-               ('light','dark','medium','any' (unknown or N/A))
+    name
+        string name for the colormap
+    category
+        intended use or purpose, mostly following matplotlib
+    provider
+        package providing the colormap directly
+    source
+        original source or creator of the colormaps
+    bg
+        base/background color expected for the map
+        ('light', 'dark', 'medium', 'any' (unknown or N/A))
 
     """
     for name in names:
@@ -1073,9 +1056,9 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
     elif isinstance(cmap, list):
         palette = cmap
     elif isinstance(cmap, str):
+        cet_cmaps = _list_cmaps("colorcet")  # first to register colorcet colormaps with matplotlib
         mpl_cmaps = _list_cmaps("matplotlib")
         bk_cmaps = _list_cmaps("bokeh")
-        cet_cmaps = _list_cmaps("colorcet")
         if provider == "matplotlib" or (
             provider is None and (cmap in mpl_cmaps or cmap.lower() in mpl_cmaps)
         ):
@@ -1164,7 +1147,7 @@ def scale_fontsize(size, scaling):
     """Scales a numeric or string font size."""
     ext = None
     if isinstance(size, str):
-        match = re.match(r"[-+]?\d*\.\d+|\d+", size)
+        match = re.search(r"^[-+]?\d*\.\d+|\d+", size)
         if match:
             value = match.group()
             ext = size.replace(value, "")
@@ -1185,7 +1168,7 @@ def attach_streams(plot, obj, precedence=1.1):
 
     def append_refresh(dmap):
         for stream in get_nested_streams(dmap):
-            if plot.refresh not in stream._subscribers:
+            if plot.refresh not in stream.subscribers:
                 stream.add_subscriber(plot.refresh, precedence)
 
     return obj.traverse(append_refresh, [DynamicMap])

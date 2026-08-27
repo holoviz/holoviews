@@ -100,7 +100,7 @@ class _layout_sankey(Operation):
                 *(element.nodes.dimension_values(d) for d in element.nodes.vdims), strict=None
             )
         else:
-            values = cycle([tuple()])
+            values = cycle([()])
         for idx, vals in zip(element.nodes.dimension_values(index), values, strict=None):
             node = {"index": idx, "sourceLinks": [], "targetLinks": [], "values": vals}
             graph["nodes"].append(node)

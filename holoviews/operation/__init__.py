@@ -1,6 +1,7 @@
-from ..core import Overlay  # noqa (API import)
+from ..core import Overlay  # noqa: F401
 from ..core.operation import Operation
 from ..core.options import Compositor
+from ..element.util import categorical_aggregate2d
 from .element import (
     apply_when,
     chain,
@@ -21,7 +22,6 @@ from .element import (
     threshold,
     transform,
 )
-from ..element.util import categorical_aggregate2d
 
 for _obj in list(locals().values()):
     if isinstance(_obj, type) and issubclass(_obj, Operation) and _obj is not Operation:

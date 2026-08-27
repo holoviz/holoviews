@@ -54,7 +54,7 @@ class ItemTable(Element):
             data = dict(list(data))
         if "vdims" not in params:
             params["vdims"] = list(data.keys())
-        str_keys = dict((dimension_name(k), v) for (k, v) in data.items())
+        str_keys = {dimension_name(k): v for (k, v) in data.items()}
         super().__init__(str_keys, **params)
 
     def __getitem__(self, heading):
@@ -78,7 +78,7 @@ class ItemTable(Element):
         if callable(samples):
             sampled_data = dict(item for item in self.data.items() if samples(item))
         else:
-            sampled_data = dict((s, self.data.get(s, np.nan)) for s in samples)
+            sampled_data = {s: self.data.get(s, np.nan) for s in samples}
         return self.clone(sampled_data)
 
     def reduce(self, dimensions=None, function=None, **reduce_map):
@@ -87,9 +87,9 @@ class ItemTable(Element):
     def pprint_cell(self, row, col):
         """Get the formatted cell value for the given row and column indices."""
         if col > 2:
-            raise Exception("Only two columns available in a ItemTable.")
+            raise IndexError("Only two columns available in a ItemTable.")
         elif row >= self.rows:
-            raise Exception(f"Maximum row index is {self.rows - 1}")
+            raise IndexError(f"Maximum row index is {self.rows - 1}")
         elif col == 0:
             return self.dimensions("value")[row].pprint_label
         else:

@@ -217,7 +217,7 @@ class ImageInterface(GridInterface):
         coords = tuple(
             selection[kd.name] if kd.name in selection else slice(None) for kd in dataset.kdims
         )
-        if not any([isinstance(el, slice) for el in coords]):
+        if not any(isinstance(el, slice) for el in coords):
             return dataset.data[dataset.sheet2matrixidx(*coords)]
 
         # Apply slices

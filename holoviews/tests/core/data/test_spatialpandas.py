@@ -14,7 +14,7 @@ from holoviews.core.data.interface import DataError
 from holoviews.core.data.spatialpandas import get_value_array
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from ...utils import dd_skip, spd, spd_skip
+from ..._deps import dd_skip, spd, spd_skip
 from .test_multiinterface import GeomTests
 
 if spd:

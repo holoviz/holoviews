@@ -10,7 +10,7 @@ from .geom import (  # noqa: F401 backward compatible import
     Rectangles,
     VectorField,
 )
-from .selection import Selection1DExpr
+from .selection import Selection1DExpr, SelectionBarsExpr
 
 
 class Chart(Dataset, Element2D):
@@ -68,11 +68,52 @@ class Chart(Dataset, Element2D):
 
 
 class Scatter(Selection1DExpr, Chart):
-    """Scatter is a Chart element representing a set of points in a 1D
-    coordinate system where the key dimension maps to the points
-    location along the x-axis while the first value dimension
-    represents the location of the point along the y-axis.
+    """Scatter plots show the relationship between two variables as points.
 
+    Each point's x-position comes from the key dimension (kdim, typically
+    the independent variable), while its y-position comes from the first
+    value dimension (vdim, typically the dependent variable).
+
+    Additional value dimensions can control point color, size, and other properties.
+
+    Examples
+    --------
+    Create a basic scatter plot from array data::
+
+        import numpy as np
+        import holoviews as hv
+        hv.extension('bokeh')
+
+        data = np.random.randn(20).cumsum()
+        scatter = hv.Scatter(data)
+        scatter
+
+    Customize appearance with options::
+
+        scatter.opts(color='red', size=10, marker='circle')
+
+    Create a scatter plot from tabular data with multiple value dimensions for color and size::
+
+        import numpy as np
+        import pandas as pd
+        import holoviews as hv
+        hv.extension('bokeh')
+
+        data = pd.DataFrame(
+            np.random.rand(100, 4),
+            columns=['x', 'y', 'z', 'size']
+        )
+        scatter = hv.Scatter(data, kdims='x', vdims=['y', 'z', 'size'])
+        scatter.opts(color='z', size=hv.dim('size')*10)
+
+    See Also
+    --------
+    Curve : Line plot element
+    Points : 2D point cloud element
+
+    References
+    ----------
+    https://holoviews.org/reference/elements/bokeh/Scatter.html
     """
 
     group = param.String(default="Scatter", constant=True)
@@ -87,6 +128,21 @@ class Curve(Selection1DExpr, Chart):
     """
 
     group = param.String(default="Curve", constant=True)
+
+
+class Donut(Selection1DExpr, Chart):
+    """Donut is a Chart element representing proportional data as
+    wedges of an annular (ring) shape. The key dimension represents
+    the categorical label for each slice and the value dimension
+    represents the size of each slice.
+
+    """
+
+    group = param.String(default="Donut", constant=True)
+
+    kdims = param.List(default=[Dimension("x")], bounds=(1, 1))
+
+    vdims = param.List(default=[Dimension("y")], bounds=(1, None))
 
 
 class ErrorBars(Selection1DExpr, Chart):
@@ -173,7 +229,7 @@ class Spread(ErrorBars):
     group = param.String(default="Spread", constant=True)
 
 
-class Bars(Selection1DExpr, Chart):
+class Bars(SelectionBarsExpr, Chart):
     """Bars is a Chart element representing categorical observations
     using the height of rectangular bars. The key dimensions represent
     the categorical groupings of the data, but may also be used to
@@ -291,7 +347,7 @@ class Area(Curve):
             return areas
         is_overlay = isinstance(areas, Overlay)
         if is_overlay:
-            areas = NdOverlay({i: el for i, el in enumerate(areas)})
+            areas = NdOverlay(dict(enumerate(areas)))
         df = areas.dframe(multi_index=True)
         levels = list(range(areas.ndims))
         vdims = [[el.vdims[0], baseline_name] for el in areas]

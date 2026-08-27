@@ -4,7 +4,6 @@ import numpy as np
 
 import holoviews as hv
 from holoviews.streams import Buffer
-from holoviews.testing import assert_data_equal
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -16,8 +15,12 @@ class TestSpreadPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(dmap)
         buffer.send({"y": [1, 2, 1, 4], "yerror": [0.5, 0.2, 0.1, 0.5], "x": [0, 1, 2, 3]})
         cds = plot.handles["cds"]
-        assert_data_equal(cds.data["x"], np.array([0.0, 1.0, 2.0, 3.0, 3.0, 2.0, 1.0, 0.0]))
-        assert_data_equal(cds.data["y"], np.array([0.5, 1.8, 0.9, 3.5, 4.5, 1.1, 2.2, 1.5]))
+        np.testing.assert_array_equal(
+            cds.data["x"], np.array([0.0, 1.0, 2.0, 3.0, 3.0, 2.0, 1.0, 0.0])
+        )
+        np.testing.assert_array_equal(
+            cds.data["y"], np.array([0.5, 1.8, 0.9, 3.5, 4.5, 1.1, 2.2, 1.5])
+        )
 
     def test_spread_with_nans(self):
         spread = hv.Spread(
@@ -34,11 +37,11 @@ class TestSpreadPlot(TestBokehPlot):
         )
         plot = bokeh_renderer.get_plot(spread)
         cds = plot.handles["cds"]
-        assert_data_equal(
+        np.testing.assert_array_equal(
             cds.data["x"],
             np.array([0.0, 1.0, 2.0, 2.0, 1.0, 0.0, np.nan, 4.0, 5.0, 6.0, 6.0, 5.0, 4.0]),
         )
-        assert_data_equal(
+        np.testing.assert_array_equal(
             cds.data["y"],
             np.array([0.0, 0.0, 0.0, 3.0, 2.0, 1.0, np.nan, 0.0, 0.0, 0.0, 7.0, 6.0, 5.0]),
         )
@@ -111,3 +114,61 @@ class TestSpreadPlot(TestBokehPlot):
         assert x_range.end == 3.2
         assert y_range.start == 0.41158562699652224
         assert y_range.end == 4.2518491541367327
+
+    def test_spread_datetime_x(self):
+        dates = np.array(["2020-01-01", "2020-01-02", "2020-01-03"], dtype="datetime64[ns]")
+        spread = hv.Spread((dates, [1.0, 2.0, 3.0], [0.5, 0.5, 0.5]))
+        plot = bokeh_renderer.get_plot(spread)
+        cds = plot.handles["cds"]
+        expected_x = np.array(
+            ["2020-01-01", "2020-01-02", "2020-01-03", "2020-01-03", "2020-01-02", "2020-01-01"],
+            dtype="datetime64[ns]",
+        )
+        expected_y = np.array([0.5, 1.5, 2.5, 3.5, 2.5, 1.5])
+        np.testing.assert_array_equal(cds.data["x"], expected_x)
+        np.testing.assert_array_equal(cds.data["y"], expected_y)
+
+    def test_spread_datetime_x_with_nat(self):
+        dates = np.array(
+            ["2020-01-01", "2020-01-02", "NaT", "2020-01-04", "2020-01-05"], dtype="datetime64[ns]"
+        )
+        spread = hv.Spread((dates, [1.0, 2.0, np.nan, 4.0, 5.0], [0.5, 0.5, np.nan, 0.5, 0.5]))
+        plot = bokeh_renderer.get_plot(spread)
+        cds = plot.handles["cds"]
+        expected_x = np.array(
+            [
+                "2020-01-01",
+                "2020-01-02",
+                "2020-01-02",
+                "2020-01-01",
+                "NaT",
+                "2020-01-04",
+                "2020-01-05",
+                "2020-01-05",
+                "2020-01-04",
+            ],
+            dtype="datetime64[ns]",
+        )
+        expected_y = np.array([0.5, 1.5, 2.5, 1.5, np.nan, 3.5, 4.5, 5.5, 4.5])
+        np.testing.assert_array_equal(cds.data["x"], expected_x)
+        np.testing.assert_array_equal(cds.data["y"], expected_y)
+
+    def test_spread_timedelta_x(self):
+        tds = np.array([0, 1, 2], dtype="timedelta64[D]")
+        spread = hv.Spread((tds, [1.0, 2.0, 3.0], [0.5, 0.5, 0.5]))
+        plot = bokeh_renderer.get_plot(spread)
+        cds = plot.handles["cds"]
+        expected_x = np.array([0, 1, 2, 2, 1, 0], dtype="timedelta64[D]")
+        expected_y = np.array([0.5, 1.5, 2.5, 3.5, 2.5, 1.5])
+        np.testing.assert_array_equal(cds.data["x"], expected_x)
+        np.testing.assert_array_equal(cds.data["y"], expected_y)
+
+    def test_spread_timedelta_x_with_nat(self):
+        tds = np.array([0, 1, "NaT", 3, 4], dtype="timedelta64[D]")
+        spread = hv.Spread((tds, [1.0, 2.0, np.nan, 4.0, 5.0], [0.5, 0.5, np.nan, 0.5, 0.5]))
+        plot = bokeh_renderer.get_plot(spread)
+        cds = plot.handles["cds"]
+        expected_x = np.array([0, 1, 1, 0, "NaT", 3, 4, 4, 3], dtype="timedelta64[D]")
+        expected_y = np.array([0.5, 1.5, 2.5, 1.5, np.nan, 3.5, 4.5, 5.5, 4.5])
+        np.testing.assert_array_equal(cds.data["x"], expected_x)
+        np.testing.assert_array_equal(cds.data["y"], expected_y)

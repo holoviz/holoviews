@@ -9,7 +9,7 @@ from holoviews.plotting.util import linear_gradient
 from holoviews.streams import SelectionXY
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 
-from .utils import ds, ds_skip, plotly_skip
+from ._deps import ds, ds_skip, plotly_skip
 
 if ds:
     from holoviews.operation.datashader import datashade, dynspread
@@ -862,7 +862,7 @@ class TestLinkSelectionsBokeh(TestLinkSelections):
     __test__ = True
 
     def setup_method(self):
-        import holoviews.plotting.bokeh  # noqa
+        import holoviews.plotting.bokeh  # noqa: F401
 
         super().setup_method()
         self._backend = hv.Store.current_backend

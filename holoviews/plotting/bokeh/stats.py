@@ -94,15 +94,6 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
         doc="The radius of the circle marker for the outliers.",
     )
 
-    # Deprecated options
-
-    color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of color style mapping, e.g. `box_color=dim('color')`",
-    )
-
     # X-axis is categorical
     _x_range_type = FactorRange
 
@@ -138,14 +129,19 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
                 element = agg
             else:
                 element = element.clone([(agg,)])
-        return super()._apply_transforms(element, data, ranges, style, group)
+        result = super()._apply_transforms(element, data, ranges, style, group)
+        # Remove legend_field to prevent duplicate legend entries for the two
+        # boxes (#6486). Legend is controlled via the mapping dict in
+        # get_data().
+        result.pop("legend_field", None)
+        return result
 
     def _get_factors(self, element, ranges):
         """Get factors for categorical axes."""
         if not element.kdims:
             xfactors, yfactors = [element.label], []
         else:
-            factors = [key for key in element.groupby(element.kdims).data.keys()]
+            factors = list(element.groupby(element.kdims).data.keys())
             if element.ndims > 1:
                 factors = sorted(factors)
             factors = [
@@ -204,7 +200,7 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
             with sorted_context(False):
                 groups = element.groupby(element.kdims).data
         else:
-            groups = dict([(element.label, element)])
+            groups = {element.label: element}
         vdim = dimension_sanitizer(element.vdims[0].name)
 
         # Define CDS data
@@ -228,13 +224,6 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
             out_map = {"x": "index", "y": vdim, "radius": self.outlier_radius}
         vbar2_map = dict(vbar_map)
 
-        # Get color values
-        if self.color_index is not None:
-            cdim = element.get_dimension(self.color_index)
-            cidx = element.get_dimension_index(self.color_index)
-        else:
-            cdim, cidx = None, None
-
         factors = []
         vdim = dimension_sanitizer(element.vdims[0].name)
         for key, g in groups.items():
@@ -248,10 +237,7 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
             hover = "hover" in self.handles
 
             # Add color factor
-            if cidx is not None and cidx < element.ndims:
-                factors.append(cdim.pprint_value(wrap_tuple(key)[cidx]))
-            else:
-                factors.append(label)
+            factors.append(label)
 
             # Compute statistics
             vals = g.interface.values(g, vdim, compute=False)
@@ -335,12 +321,7 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
             return data, mapping, style
 
         # Define color dimension and data
-        if cidx is None or cidx >= element.ndims:
-            cdim = Dimension("index")
-        else:
-            r1_data[dimension_sanitizer(cdim.name)] = factors
-            r2_data[dimension_sanitizer(cdim.name)] = factors
-            factors = list(unique_iterator(factors))
+        cdim = Dimension("index")
 
         if self.show_legend:
             vbar_map["legend_field"] = cdim.name
@@ -387,15 +368,6 @@ class ViolinPlot(BoxWhiskerPlot):
     violin_width = param.Number(
         default=0.8,
         doc="Relative width of the violin",
-    )
-
-    # Deprecated options
-
-    color_index = param.ClassSelector(
-        default=None,
-        class_=(str, int),
-        allow_None=True,
-        doc="Deprecated in favor of color style mapping, e.g. `violin_color=dim('color')`",
     )
 
     # Map each glyph to a style group
@@ -445,7 +417,7 @@ class ViolinPlot(BoxWhiskerPlot):
         if not kdims:
             xfactors, yfactors = [element.label], []
         else:
-            factors = [key for key in element.groupby(kdims).data.keys()]
+            factors = list(element.groupby(kdims).data.keys())
             if element.ndims > 1:
                 factors = sorted(factors)
             factors = [
@@ -578,7 +550,7 @@ class ViolinPlot(BoxWhiskerPlot):
             with sorted_context(False):
                 groups = element.groupby(kdims).data
         else:
-            groups = dict([((element.label,), element)])
+            groups = {(element.label,): element}
 
         if split_dim:
             split_name = split_dim.dimension.label

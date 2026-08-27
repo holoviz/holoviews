@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 import holoviews as hv
+from holoviews.core.data.cudf import CUDF_VERSION
 from holoviews.testing import assert_data_equal
 
 from .base import HeterogeneousColumnTests, InterfaceTests
@@ -69,3 +70,15 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
 
         np.testing.assert_almost_equal(cp.asnumpy(select), [False, True, False])
         np.testing.assert_almost_equal(cp.asnumpy(select_neighbor), [True, True, True])
+
+    def test_dataset_dataset_ht_dtypes(self):
+        import pandas as pd
+
+        ds = self.table
+        string_dtype = (
+            pd.StringDtype(na_value=np.nan) if CUDF_VERSION >= (26, 8, 0) else np.dtype("object")
+        )
+        assert ds.interface.dtype(ds, "Gender") == string_dtype
+        assert ds.interface.dtype(ds, "Age") == np.dtype(int)
+        assert ds.interface.dtype(ds, "Weight") == np.dtype(int)
+        assert ds.interface.dtype(ds, "Height") == np.dtype("float64")

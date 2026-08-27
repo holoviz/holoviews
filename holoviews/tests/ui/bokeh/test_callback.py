@@ -8,6 +8,7 @@ from bokeh.models import PolyDrawTool
 
 import holoviews as hv
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0, BOKEH_GE_3_7_0
+from holoviews.plotting.renderer import PANEL_VERSION
 from holoviews.streams import (
     BoundsX,
     BoundsXY,
@@ -26,6 +27,8 @@ from .. import expect, wait_until
 pytestmark = pytest.mark.ui
 
 skip_popup = pytest.mark.skipif(not BOKEH_GE_3_4_0, reason="Pop ups needs Bokeh 3.4")
+
+LABEL = "label" if PANEL_VERSION >= (1, 9, 0) else "name"
 
 
 @pytest.fixture
@@ -421,7 +424,7 @@ class TestPopup:
 
     def test_callbacks(self, serve_hv, points):
         def popup_form(x, y):
-            return pn.widgets.Button(name=f"{x},{y}")
+            return pn.widgets.Button(**{LABEL: f"{x},{y}"})
 
         points.opts(tools=["tap"])
         hv.streams.Tap(source=points, popup=popup_form)
@@ -433,7 +436,7 @@ class TestPopup:
 
     def test_async_callbacks(self, serve_hv, points):
         async def popup_form(x, y):
-            return pn.widgets.Button(name=f"{x},{y}")
+            return pn.widgets.Button(**{LABEL: f"{x},{y}"})
 
         points.opts(tools=["tap"])
         hv.streams.Tap(source=points, popup=popup_form)
@@ -450,7 +453,7 @@ class TestPopup:
                 col.visible = False
 
             button = pn.widgets.Button(
-                name=f"{x},{y}", on_click=hide, css_classes=["custom-button"]
+                **{LABEL: f"{x},{y}"}, on_click=hide, css_classes=["custom-button"]
             )
             col = pn.Column(button)
             return col

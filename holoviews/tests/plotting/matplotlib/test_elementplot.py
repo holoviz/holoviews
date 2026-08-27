@@ -10,6 +10,7 @@ from matplotlib.projections import PolarAxes
 from matplotlib.ticker import FormatStrFormatter, FuncFormatter, PercentFormatter
 
 import holoviews as hv
+from holoviews.plotting.mpl.util import MPL_GE_3_11_0
 from holoviews.streams import Stream
 from holoviews.testing import assert_data_equal
 
@@ -195,6 +196,17 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
         ax = plot.handles["axis"]
         assert isinstance(ax, PolarAxes)
         assert ax.get_xlim() == (0, 2 * np.pi)
+
+    def test_element_tick_label_rotation(self):
+        heat_map = hv.HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(xrotation=30, yrotation=60)
+        plot = mpl_renderer.get_plot(heat_map)
+        ax = plot.handles["axis"]
+        assert {ticklabel.get_rotation() for ticklabel in ax.get_xticklabels()} == {30}
+        assert {ticklabel.get_rotation() for ticklabel in ax.get_yticklabels()} == {60}
+        if not MPL_GE_3_11_0:
+            return
+        assert {ticklabel.get_rotation_mode() for ticklabel in ax.get_xticklabels()} == {"xtick"}
+        assert {ticklabel.get_rotation_mode() for ticklabel in ax.get_yticklabels()} == {"ytick"}
 
     #################################################################
     # Custom opts tests
@@ -548,14 +560,6 @@ class TestColorbarPlot(TestMPLPlot):
         cmap = plot.handles["artist"].cmap
         assert cmap._rgba_under == (1.0, 0, 0, 1)
         assert cmap._rgba_over == (0, 0, 1.0, 1)
-
-    def test_colorbar_label(self):
-        scatter = hv.Scatter(np.random.rand(100, 3), vdims=["y", "color"]).opts(
-            color_index=2, colorbar=True
-        )
-        plot = mpl_renderer.get_plot(scatter)
-        cbar_ax = plot.handles["cax"]
-        assert cbar_ax.get_ylabel() == "color"
 
     def test_colorbar_empty_clabel(self):
         img = hv.Image(np.array([[1, 1, 1, 2], [2, 2, 3, 4]])).opts(clabel="", colorbar=True)

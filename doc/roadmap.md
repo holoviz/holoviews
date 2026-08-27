@@ -1,38 +1,37 @@
-# HoloViews Roadmap, as of 3/2019
+# HoloViews Roadmap, as of December 2025
 
-HoloViews is maintained by a core development team who coordinate contributions from many other different users/developers. The core-developer priorities depend on funding, usage in ongoing projects, and other factors. For 2019, the scheduled tasks are:
+HoloViews is maintained by a core development team who coordinate contributions from many other different users/developers. The core-developer priorities depend on funding, usage in ongoing projects, and other factors. For 2026, the scheduled tasks are:
 
 1. **Ongoing maintenance, improved documentation and examples**:
-   As always, there are various bugs and usability issues reported on the issue tracker, and we will address these as time permits.
-2. **More flexible and maintainable widgets and layouts using Panel** ([#805](https://github.com/pyviz/holoviews/issues/805)):
-   \- Re-implement HoloViews widgets using Panel, to allow them to be modified and rearranged flexibly
-   \- Re-implement HoloViews layouts using Panel where feasible, to allow more powerful and flexible arrangements
-3. **Separate packages into holoviews-core and extensions**:
-   HoloViews has always been designed with a backend-independent core that helps you describe and work with your data, along with plotting-library-specific backends that generate visualizations. To make this separation explicit and to make it simpler to generate objects in contexts where no backend is available, the holoviews package needs to be split into a core (probably to be called `holoviews-core`) along with packages per extension and possibly a `holoviews` metapackage that installs all of them as the single current package does.
-4. **Improved developer docs**:
-   Because HoloViews includes both JavaScript and Python code and both core data-description features and optional backend-specific plotting support, it can be difficult to understand how to contribute to HoloViews development. We need much better developer docs to make it simpler to join the HoloViews team!
-5. **Generalize Annotator objects**:
-   The examples at [EarthSim.pyviz.org](https://earthsim.pyviz.org) show that the drawing-tool support we added to Bokeh and HoloViews makes it possible to create sophisticated applications for collecting user inputs such as annotations on plots and ML training examples. However, it is currently difficult to specify and create such objects for new tasks, and we hope to be able to provide more general mechanisms for collecting user inputs.
-6. **Finalize HoloViews 2.0 API**:
-   The HoloViews API includes various older and discouraged programming styles that we would like to deprecate and remove, but first we need to discuss those and get consensus before committing to any breaking changes as we move to 2.0.
-7. **Deeper Datashader support**:
-   HoloViews offers an interface to [Datashader](https://datashader.org) to allow working with large datasets in web browsers while avoiding overplotting and other issues. Improving this interface will help make using Datashader with HoloViews more seamless, including porting Datashader's colormapping support into Bokeh (and thus supporting colorbars and hover), adding datashader operations for the various Datashader geo functions to GeoViews, adding support for datashading additional HoloViews element types more efficiently, and making it simpler to switch between datashaded and regular Bokeh plots.
+   As always, there are various bugs and usability issues reported on the issue tracker, and we will address these as time permits. This includes reviewing and closing old issues and pull requests as part of regular project maintenance to keep the project organized and ensure relevant issues get attention.
 
-Other things we'd like to see in HoloViews but have not currently scheduled for 2019 include:
+2. **Donut plot** ([#6848](https://github.com/holoviz/holoviews/pull/6848))
+   Introduce a donut plot as a first-class visualization type in HoloViews.
 
-1. **More fully support Plotly backend**:
-   The Plotly backend is not quite as well supported as the Bokeh or Matplotlib backends, and we'd love to get contributions from Plotly users who can expand that support, especially for using linked streams to provide dynamic behavior in plots.
-2. **Use Matplotlib's OO interface instead of pyplot**:
-   HoloViews currently uses Matplotlib's pyplot interface, which causes some headaches for selecting appropriate backends. Rewriting to use the OO interface would take a good bit of work, but would make things run more smoothly.
-3. **SVG export for Bokeh**:
-   HoloViews supports SVG export of Matplotlib plots, but does not currentlky use Bokeh's SVG generation support because it produces separate SVG files per plot instead of a coherent layout. If Bokeh could be extended to generate a laid out SVG, then Bokeh plots would be far more usable for publications.
-4. **Additional element types**:
-   There are always more plotting types that can be added (see e.g. the [HoloViz Roadmap](https://holoviz.org/roadmap.html)), but none of these are
-   needed by the core developers for current projects and so are unlikely
-   to be added unless contributed by users.
-5. **Better 3D support**:
-   There is some improvement planned to 3D support in 2019, but there would still be a long way to go after that, and so anyone who routinely goes from 2D to 3D plotting and back could consider improving the 3D functionality available in HoloViews to make that simpler.
+3. **Backend consistency**:
+   Verify that new features added to the Bokeh backend, such as sizebars and scalebars, are also supported in the Matplotlib backend. This work ensures feature parity across the backends and provides users with consistent functionality regardless of their plotting backend choice.
 
-If any of the functionality above is interesting to you (or you have ideas of your own!) and can offer help with implementation, please open an issue on this repository or on the specific subproject repository involved. And if you are lucky enough to be in a position to fund our developers to work on it, please contact `jbednar@anaconda.com`.
+4. **Deprecate and remove old features** ([#6445](https://github.com/holoviz/holoviews/issues/6445)):
+   Remove outdated and redundant features to streamline the codebase and reduce maintenance burden.
+
+5. **Test suite modernization** ([#6735](https://github.com/holoviz/holoviews/pull/6735)):
+   Migrate the existing test suite from unittest to pytest. This modernization will make it easier for new contributors to write and understand tests, improve test discoverability, and provide better test output and debugging capabilities.
+
+6. **Code formatting** ([#6810](https://github.com/holoviz/holoviews/pull/6810)):
+   Adopt ruff for formatting to provide a consistent contributor experience. Automated formatting reduces friction in code reviews and ensures the codebase maintains a uniform style, making it easier for contributors to focus on functionality rather than style issues.
+
+7. **Typing improvements**:
+   Improve type coverage for Non-Parameterized classes to support better editor integration and autocomplete. Better type hints will enhance the developer experience by providing more accurate IDE suggestions and catching potential type-related bugs earlier in development.
+
+8. **Import cleanup** ([#6802](https://github.com/holoviz/holoviews/pull/6802)):
+   Remove star imports across the codebase to improve clarity and maintainability. Explicit imports make it easier to understand dependencies, improve code navigation in editors, and help avoid naming conflicts.
+
+9. **Versioned documentation**:
+   Add version-specific documentation so users can access docs for current and past releases. This is particularly important for users working with older versions of HoloViews who need access to documentation matching their installed version.
+
+10. **Governance** ([#6752](https://github.com/holoviz/holoviews/pull/6752)):
+    Work toward establishing or updating the HoloViews governance model. Clear governance structures help ensure the long-term sustainability of the project and provide transparency about how decisions are made.
+
+If any of the functionality above is interesting to you (or you have ideas of your own!) and can offer help with implementation, please open an issue on this repository. And if you are lucky enough to be in a position to fund our developers to work on it, please contact the HoloViz team.
 
 And please note that many of the features that you might think should be part of HoloViews may already be available or planned for one of the other [HoloViz tools](https://holoviz.org) that are designed to work well with HoloViews, so please also check out the [HoloViz Roadmap](https://holoviz.org/about/roadmap.html).

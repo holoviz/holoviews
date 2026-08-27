@@ -109,21 +109,19 @@ class Path(SelectionPolyExpr, Geometry):
 
         Selections may select a specific value, slice or set of values:
 
-        * value: Scalar values will select rows along with an exact match,
-        e.g.:
+        * value: Scalar values will select rows along with an exact match, e.g.::
 
             ds.select(x=3)
 
-        * slice: Slices may be declared as tuples of the upper and lower bound,
-        e.g.:
+        * slice: Slices may be declared as tuples of the upper and lower bound, e.g.::
 
             ds.select(x=(0, 3))
 
-        * values: A list of values may be selected using a list or set, e.g.:
+        * values: A list of values may be selected using a list or set, e.g.::
 
             ds.select(x=[0, 1, 2])
 
-        * predicate expression: A holoviews.dim expression, e.g.:
+        * predicate expression: A holoviews.dim expression, e.g.::
 
             from holoviews import dim
             ds.select(selection_expr=dim('x') % 2 == 0)
@@ -525,6 +523,4 @@ class Bounds(BaseShape):
         super().__init__(lbrt=lbrt, **params)
         (l, b, r, t) = self.lbrt
         xdim, ydim = self.kdims
-        self.data = [
-            dict([(xdim.name, np.array([l, l, r, r, l])), (ydim.name, np.array([b, t, t, b, b]))])
-        ]
+        self.data = [{xdim.name: np.array([l, l, r, r, l]), ydim.name: np.array([b, t, t, b, b])}]

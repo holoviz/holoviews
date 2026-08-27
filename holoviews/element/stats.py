@@ -161,7 +161,7 @@ class StatisticsElement(Dataset, Element2D):
                 "dimensions. Could not return data for {} "
                 "dimension(s).".format(type(self).__name__, ", ".join([d.name for d in vdims]))
             )
-        return dict([(d.name, self.dimension_values(d)) for d in dimensions])
+        return {d.name: self.dimension_values(d) for d in dimensions}
 
 
 class Bivariate(Selection2DExpr, StatisticsElement):
