@@ -17,7 +17,7 @@ on:
           - full
           - downstream
       cache:
-        description: "Use cache"
+        description: "Use cache, currently noop"
         type: boolean
         default: true
 

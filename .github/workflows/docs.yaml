@@ -17,8 +17,11 @@ on:
           - dryrun
         required: true
         default: dryrun
-  schedule:
-    - cron: "0 14 * * SUN"
+  pull_request:
+    branches:
+      - "renovate/pixi-lock"
+  # schedule:
+  #   - cron: "0 14 * * SUN"
 
 permissions: {}
 

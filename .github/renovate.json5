@@ -33,7 +33,11 @@
       "matchManagers": ["lockFileMaintenance"],
       "description": "Weekly update of Pixi",
       "schedule": ["before 5am on monday"],
-      "minimumReleaseAge": "0 days"  // Handled in pixi itself
+      "minimumReleaseAge": "0 days", // Handled in pixi itself
+      "commitMessageAction": "Update",
+      "commitMessageTopic": "pixi.lock",
+      "branchTopic": "pixi-lock",
+      "automerge": false  // To ensure docs and build workflow is successful
     },
     {
       "groupName": "HoloViz Core",
@@ -43,7 +47,7 @@
       "minimumReleaseAge": "0 days",
       "schedule": ["at any time"],
       "rangeStrategy": "bump",
-      "ignoreUnstable": false,
+      "ignoreUnstable": false
     }
   ]
 }
