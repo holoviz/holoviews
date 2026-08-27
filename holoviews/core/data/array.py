@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import typing as t
+
 import numpy as np
 
 from .. import util
@@ -8,6 +10,10 @@ from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..util import dtype_kind
 from .interface import DataError, Interface
+
+if t.TYPE_CHECKING:
+    from .. import Dataset
+    from ..dimension import Dimension
 
 
 class ArrayInterface(Interface):
@@ -18,7 +24,7 @@ class ArrayInterface(Interface):
     named = False
 
     @classmethod
-    def dimension_type(cls, dataset, dim):
+    def dimension_type(cls, dataset: Dataset, dim: Dimension):
         return dataset.data.dtype.type
 
     @classmethod
@@ -39,7 +45,7 @@ class ArrayInterface(Interface):
         elif isinstance(data, dict) and not all(d in data for d in dimensions):
             dict_data = sorted(data.items())
             dataset = zip(
-                *((util.wrap_tuple(k) + util.wrap_tuple(v)) for k, v in dict_data), strict=None
+                *((util.wrap_tuple(k) + util.wrap_tuple(v)) for k, v in dict_data), strict=True
             )
             data = np.column_stack(list(dataset))
         elif isinstance(data, tuple):
@@ -86,12 +92,12 @@ class ArrayInterface(Interface):
             )
 
     @classmethod
-    def isscalar(cls, dataset, dim):
+    def isscalar(cls, dataset: Dataset, dim, *, per_geom=False):
         idx = dataset.get_dimension_index(dim)
         return len(np.unique(dataset.data[:, idx])) == 1
 
     @classmethod
-    def array(cls, dataset, dimensions):
+    def array(cls, dataset: Dataset, dimensions):
         if dimensions:
             indices = [dataset.get_dimension_index(d) for d in dimensions]
             return dataset.data[:, indices]
@@ -99,16 +105,16 @@ class ArrayInterface(Interface):
             return dataset.data
 
     @classmethod
-    def dtype(cls, dataset, dimension):
+    def dtype(cls, dataset: Dataset, dimension):
         return dataset.data.dtype
 
     @classmethod
-    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+    def add_dimension(cls, dataset: Dataset, dimension, dim_pos, values, vdim):
         data = dataset.data.copy()
         return np.insert(data, dim_pos, values, axis=1)
 
     @classmethod
-    def sort(cls, dataset, by=None, reverse=False):
+    def sort(cls, dataset: Dataset, by=None, reverse=False):
         if by is None:
             by = []
         data = dataset.data
@@ -116,16 +122,24 @@ class ArrayInterface(Interface):
             sorting = cls.values(dataset, by[0]).argsort()
         else:
             dtypes = [(d.name, dataset.data.dtype) for d in dataset.dimensions()]
-            sort_fields = tuple(dataset.get_dimension(d).name for d in by)
+            sort_fields = tuple(dataset.get_dimension(d, strict=True).name for d in by)
             sorting = dataset.data.view(dtypes, np.recarray).T
             sorting = sorting.argsort(order=sort_fields)[0]
         sorted_data = data[sorting]
         return sorted_data[::-1] if reverse else sorted_data
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
+    def values(
+        cls,
+        dataset: Dataset,
+        dimension: Dimension,
+        expanded: bool = True,
+        flat: bool = True,
+        compute: bool = True,
+        keep_index: bool = False,
+    ):
         data = dataset.data
-        dim_idx = dataset.get_dimension_index(dim)
+        dim_idx = dataset.get_dimension_index(dimension)
         if data.ndim == 1:
             data = np.atleast_2d(data).T
         values = data[:, dim_idx]
@@ -134,21 +148,29 @@ class ArrayInterface(Interface):
         return values
 
     @classmethod
-    def mask(cls, dataset, mask, mask_value=np.nan):
+    def mask(cls, dataset: Dataset, mask, mask_value: float = np.nan):
         masked = np.copy(dataset.data)
         masked[mask] = mask_value
         return masked
 
     @classmethod
-    def reindex(cls, dataset, kdims=None, vdims=None):
+    def reindex(
+        cls,
+        dataset: Dataset,
+        kdims: list[Dimension | str] | None = None,
+        vdims: list[Dimension | str] | None = None,
+    ):
         # DataFrame based tables don't need to be reindexed
+        if kdims is None or vdims is None:
+            msg = f"{cls.__name__}.reindex requires both kdims and vdims to be specified."
+            raise TypeError(msg)
         dims = kdims + vdims
         data = [dataset.dimension_values(d) for d in dims]
         return np.column_stack(data)
 
     @classmethod
-    def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
-        data = dataset.data
+    def groupby(cls, dataset: Dataset, dimensions, container_type, group_type, **kwargs):
+        data: np.ndarray = dataset.data
 
         # Get dimension objects, labels, indexes and data
         dimensions = [dataset.get_dimension(d, strict=True) for d in dimensions]
@@ -198,7 +220,7 @@ class ArrayInterface(Interface):
             return container_type(grouped_data)
 
     @classmethod
-    def select(cls, dataset, selection_mask=None, **selection):
+    def select(cls, dataset: Dataset, selection_mask=None, **selection):
         if selection_mask is None:
             selection_mask = cls.select_mask(dataset, selection)
         indexed = cls.indexed(dataset, selection)
@@ -208,7 +230,7 @@ class ArrayInterface(Interface):
         return data
 
     @classmethod
-    def sample(cls, dataset, samples=None):
+    def sample(cls, dataset: Dataset, samples=None):
         if samples is None:
             samples = []
         data = dataset.data
@@ -224,7 +246,7 @@ class ArrayInterface(Interface):
         return data[mask]
 
     @classmethod
-    def unpack_scalar(cls, dataset, data):
+    def unpack_scalar(cls, dataset: Dataset, data):
         """Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
 
@@ -234,7 +256,7 @@ class ArrayInterface(Interface):
         return data
 
     @classmethod
-    def assign(cls, dataset, new_data):
+    def assign(cls, dataset: Dataset, new_data):
         data = dataset.data.copy()
         for d, arr in new_data.items():
             if dataset.get_dimension(d) is None:
@@ -263,7 +285,7 @@ class ArrayInterface(Interface):
         return np.atleast_2d(rows), []
 
     @classmethod
-    def iloc(cls, dataset, index):
+    def iloc(cls, dataset: Dataset, index):
         rows, cols = index
         if np.isscalar(cols):
             if isinstance(cols, str):

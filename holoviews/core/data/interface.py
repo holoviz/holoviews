@@ -740,7 +740,7 @@ class Interface(param.Parameterized):
         raise NotImplementedError
 
     @classmethod
-    def aggregate(cls, dataset, kdims, function, **kwargs):
+    def aggregate(cls, dataset, dimensions, function, **kwargs):
         raise NotImplementedError
 
     @classmethod
