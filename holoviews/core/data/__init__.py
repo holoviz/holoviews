@@ -534,7 +534,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         sorted_columns = self.interface.sort(self, by, reverse)
         return self.clone(sorted_columns)
 
-    def range(self, dimension, data_range=True, dimension_range=True):
+    def range(self, dim, data_range=True, dimension_range=True):
         """Return the lower and upper bounds of values along dimension.
 
         Parameters
@@ -552,19 +552,19 @@ class Dataset(Element, metaclass=PipelineMeta):
         -------
         Tuple containing the lower and upper bound
         """
-        dimension = self.get_dimension(dimension)
+        dim = self.get_dimension(dim)
 
-        if dimension is None or (not data_range and not dimension_range):
+        if dim is None or (not data_range and not dimension_range):
             return (None, None)
-        elif all(core_util.isfinite(v) for v in dimension.range) and dimension_range:
-            return dimension.range
-        elif dimension in self.dimensions() and data_range and bool(self):
-            lower, upper = self.interface.range(self, dimension)
+        elif all(core_util.isfinite(v) for v in dim.range) and dimension_range:
+            return dim.range
+        elif dim in self.dimensions() and data_range and bool(self):
+            lower, upper = self.interface.range(self, dim)
         else:
             lower, upper = (np.nan, np.nan)
         if not dimension_range:
             return lower, upper
-        return core_util.dimension_range(lower, upper, dimension.range, dimension.soft_range)
+        return core_util.dimension_range(lower, upper, dim.range, dim.soft_range)
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
         """Adds a dimension and its values to the Dataset
