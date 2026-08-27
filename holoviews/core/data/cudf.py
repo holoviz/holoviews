@@ -187,7 +187,7 @@ class cuDFInterface(PandasInterface):
         # Iterate over the unique entries applying selection masks
         grouped_data = []
         for unique_key in util.unique_iterator(keys):
-            group_data = dataset.select(**dict(zip(dimensions, unique_key, strict=None)))
+            group_data = dataset.select(**dict(zip(dimensions, unique_key, strict=False)))
             if not len(group_data):
                 continue
             group_data = group_type(group_data, **group_kwargs)

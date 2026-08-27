@@ -234,7 +234,7 @@ class DaskInterface(PandasInterface):
         dtypes = data.dtypes
         numeric = [
             c
-            for c, dtype in zip(dtypes.index, dtypes.values, strict=None)
+            for c, dtype in zip(dtypes.index, dtypes.values, strict=True)
             if dtype_kind(dtype) in "iufc" and c in vdims
         ]
         reindexed = data[cols + numeric]
@@ -291,7 +291,7 @@ class DaskInterface(PandasInterface):
         for sample in samples:
             if np.isscalar(sample):
                 sample = [sample]
-            for c, v in zip(dims, sample, strict=None):
+            for c, v in zip(dims, sample, strict=False):
                 dim_mask = data[c] == v
                 if mask is None:
                     mask = dim_mask
