@@ -22,7 +22,7 @@ from ..dimension import (
 from ..element import Element
 from ..ndmapping import MultiDimensionalMapping
 from ..spaces import DynamicMap, HoloMap
-from .array import ArrayInterface  # noqa: F401
+from .array import ArrayInterface
 from .cudf import cuDFInterface  # noqa: F401
 from .dask import DaskInterface  # noqa: F401
 from .dictionary import DictInterface  # noqa: F401
@@ -303,7 +303,7 @@ class Dataset(Element, metaclass=PipelineMeta):
     _vdim_reductions = {}
     _kdim_reductions = {}
 
-    interface: Interface
+    interface: type[Interface]
 
     def __new__(cls, data=None, kdims=None, vdims=None, **kwargs):
         """Allows casting a DynamicMap to an Element class like hv.Curve, by applying the
@@ -606,7 +606,14 @@ class Dataset(Element, metaclass=PipelineMeta):
             dims.insert(dim_pos, dimension)
             dimensions = dict(kdims=dims)
 
-        data = self.interface.add_dimension(self, dimension, dim_pos, dim_val, vdim)
+        if (
+            issubclass(self.interface, ArrayInterface)
+            and np.asarray(dim_val).dtype != self.data.dtype
+        ):
+            element = self.clone(datatype=[default_datatype])
+            data = element.interface.add_dimension(element, dimension, dim_pos, dim_val, vdim)
+        else:
+            data = self.interface.add_dimension(self, dimension, dim_pos, dim_val, vdim)
         return self.clone(data, **dimensions)
 
     def select(self, selection_expr=None, selection_specs=None, **selection):  # ty:ignore[invalid-method-override]
@@ -737,7 +744,7 @@ class Dataset(Element, metaclass=PipelineMeta):
         gridded = self.interface.gridded
         scalars = []
         if gridded:
-            self.interface = t.cast("GridInterface", self.interface)
+            self.interface = t.cast("type[GridInterface]", self.interface)
             coords = [(d, self.interface.coords(self, d.name)) for d in self.kdims]
             scalars = [d for d, vs in coords if len(vs) == 1]
 
