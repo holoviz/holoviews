@@ -145,7 +145,7 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
             if element.ndims > 1:
                 factors = sorted(factors)
             factors = [
-                tuple(d.pprint_value(k) for d, k in zip(element.kdims, key, strict=None))
+                tuple(d.pprint_value(k) for d, k in zip(element.kdims, key, strict=True))
                 for key in factors
             ]
             factors = [f[0] if len(f) == 1 else f for f in factors]
@@ -229,7 +229,7 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
         for key, g in groups.items():
             # Compute group label
             if element.kdims:
-                label = tuple(d.pprint_value(v) for d, v in zip(element.kdims, key, strict=None))
+                label = tuple(d.pprint_value(v) for d, v in zip(element.kdims, key, strict=True))
                 if len(label) == 1:
                     label = label[0]
             else:
@@ -268,10 +268,10 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
                 out_data["index"] += [label] * len(outliers)
                 out_data[vdim] += list(outliers)
                 if hover:
-                    for kd, k in zip(element.kdims, wrap_tuple(key), strict=None):
+                    for kd, k in zip(element.kdims, wrap_tuple(key), strict=True):
                         out_data[dimension_sanitizer(kd.name)] += [k] * len(outliers)
             if hover:
-                for kd, k in zip(element.kdims, wrap_tuple(key), strict=None):
+                for kd, k in zip(element.kdims, wrap_tuple(key), strict=True):
                     kd_name = dimension_sanitizer(kd.name)
                     if kd_name in r1_data:
                         r1_data[kd_name].append(k)
@@ -421,7 +421,7 @@ class ViolinPlot(BoxWhiskerPlot):
             if element.ndims > 1:
                 factors = sorted(factors)
             factors = [
-                tuple(d.pprint_value(k) for d, k in zip(kdims, key, strict=None))
+                tuple(d.pprint_value(k) for d, k in zip(kdims, key, strict=True))
                 for key in factors
             ]
             factors = [f[0] if len(f) == 1 else f for f in factors]
@@ -589,7 +589,7 @@ class ViolinPlot(BoxWhiskerPlot):
         for key, g in groups.items():
             key = decode_bytes(key)
             if element.kdims:
-                key = tuple(d.pprint_value(k) for d, k in zip(element.kdims, key, strict=None))
+                key = tuple(d.pprint_value(k) for d, k in zip(element.kdims, key, strict=False))
             kde, line, segs, bars, scatter = self._kde_data(
                 element, g, key, split_dim, split_cats, **kwargs
             )

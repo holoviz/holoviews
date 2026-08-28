@@ -471,7 +471,7 @@ class HistogramPlot(ColorbarPlot):
 
         """
         axis_settings = dict(
-            zip(self.axis_settings, [None, None, (None if self.overlaid else ticks)], strict=None)
+            zip(self.axis_settings, [None, None, (None if self.overlaid else ticks)], strict=True)
         )
         return axis_settings
 
@@ -487,7 +487,7 @@ class HistogramPlot(ColorbarPlot):
         allow updating of further artists.
 
         """
-        plot_vals = zip(self.handles["artist"], edges, hvals, widths, strict=None)
+        plot_vals = zip(self.handles["artist"], edges, hvals, widths, strict=True)
         for bar, edge, height, width in plot_vals:
             if self.invert_axes:
                 bar.set_y(edge)
@@ -593,7 +593,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         lower_bound = main_range[0]
         colors = np.array(element.dimension_values(dim))
         colors = (colors - lower_bound) / (cmap_range)
-        for c, bar in zip(colors, bars, strict=None):
+        for c, bar in zip(colors, bars, strict=True):
             bar.set_facecolor(cmap(c))
             bar.set_clip_on(False)
 
@@ -936,7 +936,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         alignments = None
         ticks = xticks or yticks
         if ticks is not None:
-            ticks, labels, alignments = zip(*sorted(ticks, key=lambda x: x[0]), strict=None)
+            ticks, labels, alignments = zip(*sorted(ticks, key=lambda x: x[0]), strict=True)
             ticks = (list(ticks), list(labels))
         if xticks:
             xticks = ticks
@@ -945,10 +945,10 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         super()._finalize_ticks(axis, element, xticks, yticks, zticks)
         if alignments:
             if xticks:
-                for t, y in zip(axis.get_xticklabels(), alignments, strict=None):
+                for t, y in zip(axis.get_xticklabels(), alignments, strict=False):
                     t.set_y(y)
             elif yticks:
-                for t, x in zip(axis.get_yticklabels(), alignments, strict=None):
+                for t, x in zip(axis.get_yticklabels(), alignments, strict=False):
                     t.set_x(x)
 
     def _create_bars(self, axis, element, ranges, style):
@@ -1161,7 +1161,7 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
         if ndims > 1 and "spike_length" not in opts:
             data = element.columns([0, 1])
             xs, ys = data[dimensions[0]], data[dimensions[1]]
-            data = [[(x, pos), (x, pos + y)] for x, y in zip(xs, ys, strict=None)]
+            data = [[(x, pos), (x, pos + y)] for x, y in zip(xs, ys, strict=True)]
         else:
             xs = element.array([0])
             height = self.spike_length
@@ -1173,7 +1173,7 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
         dims = element.dimensions()
         clean_spikes = []
         for spike in data:
-            xs, ys = zip(*spike, strict=None)
+            xs, ys = zip(*spike, strict=True)
             cols = []
             for i, vs in enumerate((xs, ys)):
                 vs = np.array(vs)
@@ -1409,7 +1409,7 @@ class WaterfallPlot(WaterfallMixin, ColorbarPlot, LegendPlot):
         str_labels = [
             lbl if isinstance(lbl, str) else element.kdims[0].pprint_value(lbl) for lbl in labels
         ]
-        xticks = list(zip(x_positions, str_labels, strict=None))
+        xticks = list(zip(x_positions, str_labels, strict=True))
         return bars, xticks
 
     def _draw_connectors(self, axis, x_positions, cumulative, width, bar_style):

@@ -302,7 +302,7 @@ class ChordPlot(ChordMixin, GraphPlot):
         if "text" in plot_args:
             fontsize = plot_kwargs.get("text_font_size", 8)
             labels = []
-            for x, y, l, a in zip(*plot_args["text"], strict=None):
+            for x, y, l, a in zip(*plot_args["text"], strict=False):
                 label = ax.annotate(
                     l,
                     xy=(x, y),
@@ -345,7 +345,7 @@ class ChordPlot(ChordMixin, GraphPlot):
             return
         labels = []
         fontsize = style.get("text_font_size", 8)
-        for x, y, l, a in zip(*data["text"], strict=None):
+        for x, y, l, a in zip(*data["text"], strict=False):
             label = ax.annotate(
                 l,
                 xy=(x, y),

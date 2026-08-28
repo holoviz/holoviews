@@ -229,7 +229,7 @@ class LabelsPlot(ColorbarPlot):
         vectorized = {k: v for k, v in plot_kwargs.items() if isinstance(v, np.ndarray)}
 
         texts = []
-        for i, item in enumerate(zip(*plot_args, strict=None)):
+        for i, item in enumerate(zip(*plot_args, strict=False)):
             x, y, text = item[:3]
             if len(item) == 4 and cmap is not None:
                 color = item[3]
@@ -318,7 +318,7 @@ class _SyntheticAnnotationPlot(AnnotationPlot):
         else:
             size = len(self.hmap.last.kdims)
             first_keys = list(positions)[:size]
-            values = zip(*[positions[n] for n in first_keys], strict=None)
+            values = zip(*[positions[n] for n in first_keys], strict=True)
         fn = getattr(axis, self._methods[self.invert_axes])
         return [fn(*val, **opts) for val in values]
 
