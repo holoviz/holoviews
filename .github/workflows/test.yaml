@@ -125,7 +125,6 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
         with:
           environments: ${{ matrix.environment }}
-          install: false
       - name: Check packages latest version
         run: |
           pixi run -e "${ENV}" check-latest-packages bokeh panel param datashader
@@ -157,7 +156,6 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
         with:
           environments: ${{ matrix.environment }}
-          install: false
       - name: Test UI
         run: |
           # Create a .uicoveragerc file to set the concurrency library to greenlet
@@ -192,7 +190,6 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
         with:
           environments: ${{ matrix.environment }}
-          install: false
       - name: Check packages latest version
         run: |
           pixi run -e "${ENV}" check-latest-packages pandas bokeh panel param numpy
@@ -217,7 +214,6 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
         with:
           environments: ${{ matrix.environment }}
-          install: false
       - name: Type TY
         run: |
           pixi run -e "${ENV}" type-ty
