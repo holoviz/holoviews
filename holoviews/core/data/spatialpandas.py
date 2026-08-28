@@ -710,7 +710,7 @@ def get_value_array(
         return np.array([a[0] for a in arrays])
     else:
         array = np.empty(len(arrays), dtype=object)
-        array[:] = [a[0] if s else a for s, a in zip(scalars, arrays, strict=None)]
+        array[:] = [a[0] if s else a for s, a in zip(scalars, arrays, strict=True)]
         return array
 
 
@@ -850,7 +850,7 @@ def to_spatialpandas(data, xdim, ydim, columns=None, geom="point"):
             array_type = single_array
 
     converted = defaultdict(list)
-    for geom_data, arrays, holes in zip(data, geom_arrays, hole_arrays, strict=None):
+    for geom_data, arrays, holes in zip(data, geom_arrays, hole_arrays, strict=True):
         parts = []
         for i, g in enumerate(arrays):
             if i != (len(arrays) - 1):

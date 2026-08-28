@@ -209,7 +209,7 @@ class NarwhalsInterface(Interface):
         for key, ds in datasets:
             data = cls._narwhals_clone(ds.data)
             new_columns = [
-                nw.lit(val).alias(dim.name) for dim, val in zip(dimensions, key, strict=None)
+                nw.lit(val).alias(dim.name) for dim, val in zip(dimensions, key, strict=True)
             ]
             data = data.with_columns(new_columns)
             dataframes.append(data)

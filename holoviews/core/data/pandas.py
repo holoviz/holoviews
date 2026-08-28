@@ -136,9 +136,9 @@ class PandasInterface(Interface, PandasAPI):
                     )
                 column_data = zip(
                     *((util.wrap_tuple(k) + util.wrap_tuple(v)) for k, v in column_data),
-                    strict=None,
+                    strict=True,
                 )
-                data = dict(zip(columns, column_data, strict=None))
+                data = dict(zip(columns, column_data, strict=True))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:
                     if eltype._auto_indexable_1d and len(kdims) + len(vdims) > 1:
@@ -160,7 +160,7 @@ class PandasInterface(Interface, PandasAPI):
                     )
                 elif not cls.expanded(data):
                     raise ValueError("PandasInterface expects data to be of uniform shape.")
-                data = pd.DataFrame(dict(zip(columns, data, strict=None)), columns=columns)
+                data = pd.DataFrame(dict(zip(columns, data, strict=False)), columns=columns)
             elif (isinstance(data, dict) and any(c not in data for c in columns)) or (
                 isinstance(data, list)
                 and any(isinstance(d, dict) and c not in d for d in data for c in columns)
@@ -268,7 +268,7 @@ class PandasInterface(Interface, PandasAPI):
         dataframes = []
         for key, ds in datasets:
             data = ds.data.copy()
-            for d, k in zip(dimensions, key, strict=None):
+            for d, k in zip(dimensions, key, strict=True):
                 data[d.name] = k
             dataframes.append(data)
         return cls.concat_fn(dataframes)
@@ -330,7 +330,7 @@ class PandasInterface(Interface, PandasAPI):
 
                 numeric_cols = [
                     c
-                    for c, d in zip(reindexed.columns, reindexed.dtypes, strict=None)
+                    for c, d in zip(reindexed.columns, reindexed.dtypes, strict=True)
                     if is_numeric_dtype(d) and c not in cols
                 ]
             groupby_kwargs = {"sort": False}
@@ -340,7 +340,7 @@ class PandasInterface(Interface, PandasAPI):
             df = grouped[numeric_cols].aggregate(fn, **kwargs).reset_index()
         else:
             agg = reindexed.apply(fn, **kwargs)
-            data = {col: [v] for col, v in zip(agg.index, agg.values, strict=None)}
+            data = {col: [v] for col, v in zip(agg.index, agg.values, strict=True)}
             df = pd.DataFrame(data, columns=list(agg.index))
 
         dropped = []

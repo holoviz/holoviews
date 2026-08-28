@@ -35,7 +35,7 @@ class ImageInterface(GridInterface):
         kwargs = {}
         dimensions = [dimension_name(d) for d in kdims + vdims]
         if isinstance(data, tuple):
-            data = dict(zip(dimensions, data, strict=None))
+            data = dict(zip(dimensions, data, strict=False))
         if isinstance(data, dict):
             xs, ys = np.asarray(data[kdims[0].name]), np.asarray(data[kdims[1].name])
             xvalid = util.validate_regular_sampling(xs, eltype.rtol or util.config.image_rtol)
@@ -275,12 +275,12 @@ class ImageInterface(GridInterface):
             data = np.flipud(dataset.data)
             groups = [
                 (c, group_type((xvals, data[s]), **group_kwargs))
-                for s, c in zip(samples, coords, strict=None)
+                for s, c in zip(samples, coords, strict=True)
             ]
         else:
             data = zip(
                 *[dataset.dimension_values(i) for i in range(len(dataset.dimensions()))],
-                strict=None,
+                strict=True,
             )
             groups = [
                 (g[: dataset.ndims], group_type([g[dataset.ndims :]], **group_kwargs))
@@ -321,7 +321,7 @@ class ImageInterface(GridInterface):
                 return (data if np.isscalar(data) else data[0], [])
             else:
                 return (
-                    {vd.name: np.array([v]) for vd, v in zip(dataset.vdims, data, strict=None)},
+                    {vd.name: np.array([v]) for vd, v in zip(dataset.vdims, data, strict=True)},
                     [],
                 )
         elif len(axes) == 1:

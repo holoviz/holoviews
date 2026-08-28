@@ -67,7 +67,7 @@ class XArrayInterface(GridInterface):
             array = dataset.data[dataset.vdims[0].name]
         if not gridded:
             return (np.prod(array.shape, dtype=np.intp), len(dataset.dimensions()))
-        shape_map = dict(zip(array.dims, array.shape, strict=None))
+        shape_map = dict(zip(array.dims, array.shape, strict=True))
         return tuple(shape_map.get(kd.name, np.nan) for kd in dataset.kdims[::-1])
 
     @classmethod
@@ -186,10 +186,10 @@ class XArrayInterface(GridInterface):
                     and len(data[-1].shape) == (ndims + 1)
                 ):
                     value_array = data[-1]
-                    data = dict(zip(dimensions, data[:-1], strict=None))
+                    data = dict(zip(dimensions, data[:-1], strict=False))
                     packed = True
                 else:
-                    data = dict(zip(dimensions, data, strict=None))
+                    data = dict(zip(dimensions, data, strict=False))
             elif isinstance(data, (list, np.ndarray)) and len(data) == 0:
                 dimensions = [d.name for d in kdims + vdims]
                 data = {d: np.array([]) for d in dimensions[:ndims]}
@@ -378,9 +378,9 @@ class XArrayInterface(GridInterface):
                 data.append((k, group_type(v, **group_kwargs)))
         else:
             unique_iters = [cls.values(dataset, d, False) for d in group_by]
-            indexes = zip(*util.cartesian_product(unique_iters), strict=None)
+            indexes = zip(*util.cartesian_product(unique_iters), strict=True)
             for k in indexes:
-                sel = dataset.data.sel(**dict(zip(group_by, k, strict=None)))
+                sel = dataset.data.sel(**dict(zip(group_by, k, strict=True)))
                 if drop_dim:
                     sel = sel.to_dataframe().reset_index()
                 data.append((k, group_type(sel, **group_kwargs)))
@@ -495,7 +495,7 @@ class XArrayInterface(GridInterface):
         kdims = list(dataset.kdims[::-1])
         adjusted_indices = []
         slice_dims = []
-        for kd, ind in zip(kdims, indices, strict=None):
+        for kd, ind in zip(kdims, indices, strict=False):
             if cls.irregular(dataset, kd):
                 coords = [c for c in dataset.data.coords if c not in dataset.data.dims]
                 dim = dataset.data[kd.name].dims[coords.index(kd.name)]
@@ -523,7 +523,7 @@ class XArrayInterface(GridInterface):
                 ind = np.where(ind)[0]
             adjusted_indices.append(ind)
 
-        isel = dict(zip(slice_dims, adjusted_indices, strict=None))
+        isel = dict(zip(slice_dims, adjusted_indices, strict=True))
         all_scalar = all(map(np.isscalar, indices))
         if all_scalar and len(indices) == len(kdims) and len(dataset.vdims) == 1:
             return dataset.data[dataset.vdims[0].name].isel(**isel).values.item()
@@ -716,7 +716,7 @@ class XArrayInterface(GridInterface):
             samples = []
         names = [kd.name for kd in dataset.kdims]
         samples = [
-            dataset.data.sel(**{k: [v] for k, v in zip(names, s, strict=None)})
+            dataset.data.sel(**{k: [v] for k, v in zip(names, s, strict=False)})
             .to_dataframe()
             .reset_index()
             for s in samples
