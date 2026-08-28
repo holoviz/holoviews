@@ -133,7 +133,7 @@ datashader = ">=0.11.1"
 ffmpeg = "*"
 ibis-sqlite = "*"
 ipython = ">=5.4.0"
-matplotlib-base = ">=3"
+matplotlib-base = ">=3,!=3.11.0,!=3.11.1" # https://github.com/matplotlib/matplotlib/pull/32172 + colorcet
 nbconvert-core = "*"
 netcdf4 = "*"
 networkx = "*"
