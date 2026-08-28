@@ -211,8 +211,8 @@ class DictInterface(Interface):
         )
 
     @classmethod
-    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
-        dim = dimension_name(dimension)
+    def add_dimension(cls, dataset, dim, dim_pos, values, vdim):
+        dim = dimension_name(dim)
         data = list(dataset.data.items())
         data.insert(dim_pos, (dim, values))
         return dict(data)
@@ -267,12 +267,12 @@ class DictInterface(Interface):
         }
 
     @classmethod
-    def range(cls, dataset, dimension):
-        dim = dataset.get_dimension(dimension, strict=True)
+    def range(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
         column = dataset.data[dim.name]
         if isscalar(column):
             return column, column
-        return Interface.range(dataset, dimension)
+        return Interface.range(dataset, dim)
 
     @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):

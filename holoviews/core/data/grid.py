@@ -220,8 +220,8 @@ class GridInterface(DictInterface):
         return vdim_tuple if vdim_tuple in dataset.data else False
 
     @classmethod
-    def dtype(cls, dataset, dimension):
-        name = dataset.get_dimension(dimension, strict=True).name
+    def dtype(cls, dataset, dim):
+        name = dataset.get_dimension(dim, strict=True).name
         vdim_tuple = cls.packed(dataset)
         if vdim_tuple and name in vdim_tuple:
             data = dataset.data[vdim_tuple][..., vdim_tuple.index(name)]
@@ -764,10 +764,10 @@ class GridInterface(DictInterface):
         return data
 
     @classmethod
-    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+    def add_dimension(cls, dataset, dim, dim_pos, values, vdim):
         if not vdim:
             raise TypeError("Cannot add key dimension to a dense representation.")
-        dim = dimension_name(dimension)
+        dim = dimension_name(dim)
         return dict(dataset.data, **{dim: values})
 
     @classmethod
@@ -809,16 +809,16 @@ class GridInterface(DictInterface):
         return tuple(new_data)
 
     @classmethod
-    def range(cls, dataset, dimension):
-        dimension = dataset.get_dimension(dimension, strict=True)
-        if dataset._binned and dimension in dataset.kdims:
-            expanded = cls.irregular(dataset, dimension)
-            array = cls.coords(dataset, dimension, expanded=expanded, edges=True)
+    def range(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
+        if dataset._binned and dim in dataset.kdims:
+            expanded = cls.irregular(dataset, dim)
+            array = cls.coords(dataset, dim, expanded=expanded, edges=True)
         else:
-            array = cls.values(dataset, dimension, expanded=False, flat=False)
+            array = cls.values(dataset, dim, expanded=False, flat=False)
 
-        if dimension.nodata is not None:
-            array = cls.replace_value(array, dimension.nodata)
+        if dim.nodata is not None:
+            array = cls.replace_value(array, dim.nodata)
 
         da = dask_array_module()
         if len(array) == 0:

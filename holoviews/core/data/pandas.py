@@ -178,8 +178,8 @@ class PandasInterface(Interface, PandasAPI):
         return len(dataset.data[name].unique()) == 1
 
     @classmethod
-    def dtype(cls, dataset, dimension):
-        dim = dataset.get_dimension(dimension, strict=True)
+    def dtype(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
         name = dim.name
         df = dataset.data
         if cls.isindex(dataset, dim):
@@ -199,18 +199,18 @@ class PandasInterface(Interface, PandasAPI):
         return index_names
 
     @classmethod
-    def isindex(cls, dataset, dimension):
-        dimension = dataset.get_dimension(dimension, strict=True)
-        if dimension.name in dataset.data.columns:
+    def isindex(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
+        if dim.name in dataset.data.columns:
             return False
-        return dimension.name in cls.indexes(dataset.data)
+        return dim.name in cls.indexes(dataset.data)
 
     @classmethod
-    def index_values(cls, dataset, dimension):
-        dimension = dataset.get_dimension(dimension, strict=True)
+    def index_values(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
         index = dataset.data.index
         if isinstance(index, pd.MultiIndex):
-            return index.get_level_values(dimension.name)
+            return index.get_level_values(dim.name)
         return index
 
     @classmethod
@@ -228,12 +228,12 @@ class PandasInterface(Interface, PandasAPI):
             )
 
     @classmethod
-    def range(cls, dataset, dimension):
-        dimension = dataset.get_dimension(dimension, strict=True)
-        if cls.isindex(dataset, dimension):
-            column = cls.index_values(dataset, dimension)
+    def range(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
+        if cls.isindex(dataset, dim):
+            column = cls.index_values(dataset, dim)
         else:
-            column = dataset.data[dimension.name]
+            column = dataset.data[dim.name]
         if dtype_kind(column) == "O":
             if not isinstance(dataset.data, pd.DataFrame):
                 column = column.sort(inplace=False)
@@ -249,8 +249,8 @@ class PandasInterface(Interface, PandasAPI):
                 return column[0], column[-1]
             return column.iloc[0], column.iloc[-1]
         else:
-            if dimension.nodata is not None:
-                column = cls.replace_value(column, dimension.nodata)
+            if dim.nodata is not None:
+                column = cls.replace_value(column, dim.nodata)
             cmin, cmax = finite_range(column, column.min(), column.max())
             if dtype_kind(column) == "M" and getattr(column.dtype, "tz", None):
                 return (
@@ -510,10 +510,10 @@ class PandasInterface(Interface, PandasAPI):
         return data[mask]
 
     @classmethod
-    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+    def add_dimension(cls, dataset, dim, dim_pos, values, vdim):
         data = dataset.data.copy()
-        if dimension.name not in data:
-            data.insert(dim_pos, dimension.name, values)
+        if dim.name not in data:
+            data.insert(dim_pos, dim.name, values)
         return data
 
     @classmethod

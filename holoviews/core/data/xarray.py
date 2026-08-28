@@ -314,19 +314,19 @@ class XArrayInterface(GridInterface):
         return dataset.clone(dataset.data.persist())
 
     @classmethod
-    def range(cls, dataset, dimension):
-        dimension = dataset.get_dimension(dimension, strict=True)
-        dim = dimension.name
-        edges = dataset._binned and dimension in dataset.kdims
+    def range(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
+        name = dim.name
+        edges = dataset._binned and dim in dataset.kdims
         if edges:
-            data = cls.coords(dataset, dim, edges=True)
+            data = cls.coords(dataset, name, edges=True)
         else:
-            if cls.packed(dataset) and dim in dataset.vdims:
-                data = dataset.data.values[..., dataset.vdims.index(dim)]
+            if cls.packed(dataset) and name in dataset.vdims:
+                data = dataset.data.values[..., dataset.vdims.index(name)]
             else:
-                data = dataset.data[dim]
-            if dimension.nodata is not None:
-                data = cls.replace_value(data, dimension.nodata)
+                data = dataset.data[name]
+            if dim.nodata is not None:
+                data = cls.replace_value(data, dim.nodata)
 
         if not len(data):
             dmin, dmax = np.nan, np.nan
@@ -392,11 +392,11 @@ class XArrayInterface(GridInterface):
             return container_type(data)
 
     @classmethod
-    def coords(cls, dataset, dimension, ordered=False, expanded=False, edges=False):
+    def coords(cls, dataset, dim, ordered=False, expanded=False, edges=False):
         import xarray as xr
 
-        dim = dataset.get_dimension(dimension)
-        dim_name = dimension if dim is None else dim.name
+        resolved = dataset.get_dimension(dim)
+        dim_name = dim if resolved is None else resolved.name
         irregular = cls.irregular(dataset, dim_name)
         if irregular or expanded:
             if irregular:
@@ -417,8 +417,8 @@ class XArrayInterface(GridInterface):
             data = data[::-1]
         shape = cls.shape(dataset, True)
 
-        if dim in dataset.kdims:
-            idx = dataset.get_dimension_index(dim)
+        if resolved in dataset.kdims:
+            idx = dataset.get_dimension_index(resolved)
             isedges = len(shape) == dataset.ndims and len(data) == (
                 shape[dataset.ndims - idx - 1] + 1
             )
@@ -724,12 +724,12 @@ class XArrayInterface(GridInterface):
         return pd.concat(samples)
 
     @classmethod
-    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+    def add_dimension(cls, dataset, dim, dim_pos, values, vdim):
         import xarray as xr
 
         if not vdim:
             raise TypeError("Cannot add key dimension to a dense representation.")
-        dim = dimension_name(dimension)
+        dim = dimension_name(dim)
         coords = {d.name: cls.coords(dataset, d.name) for d in dataset.kdims}
         arr = xr.DataArray(
             values, coords=coords, name=dim, dims=tuple(d.name for d in dataset.kdims[::-1])

@@ -148,8 +148,8 @@ class SpatialPandasInterface(MultiInterface):
             )
 
     @classmethod
-    def dtype(cls, dataset, dimension):
-        dim = dataset.get_dimension(dimension, strict=True)
+    def dtype(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
         if dim in cls.geom_dims(dataset):
             col = cls.geo_column(dataset.data)
             return dataset.data[col].dtype.subtype
@@ -309,13 +309,13 @@ class SpatialPandasInterface(MultiInterface):
         return cls.base_interface.redim(dataset, dimensions)
 
     @classmethod
-    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+    def add_dimension(cls, dataset, dim, dim_pos, values, vdim):
         data = dataset.data.copy()
         geom_col = cls.geo_column(dataset.data)
         if dim_pos >= list(data.columns).index(geom_col):
             dim_pos -= 1
-        if dimension.name not in data:
-            data.insert(dim_pos, dimension.name, values)
+        if dim.name not in data:
+            data.insert(dim_pos, dim.name, values)
         return data
 
     @classmethod
@@ -400,24 +400,24 @@ class SpatialPandasInterface(MultiInterface):
         return new
 
     @classmethod
-    def values(cls, dataset, dimension, expanded=True, flat=True, compute=True, keep_index=False):
-        dimension = dataset.get_dimension(dimension)
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
+        dim = dataset.get_dimension(dim)
         geom_dims = dataset.interface.geom_dims(dataset)
         data = dataset.data
-        isgeom = dimension in geom_dims
+        isgeom = dim in geom_dims
         geom_col = cls.geo_column(dataset.data)
         is_points = cls.geom_type(dataset) == "Point"
         if isgeom and keep_index:
             return data[geom_col]
         elif not isgeom:
             if is_points:
-                return data[dimension.name].values
-            return get_value_array(data, dimension, expanded, keep_index, geom_col, is_points)
+                return data[dim.name].values
+            return get_value_array(data, dim, expanded, keep_index, geom_col, is_points)
         elif not len(data):
             return np.array([])
 
         geom_type = cls.geom_type(dataset)
-        index = geom_dims.index(dimension)
+        index = geom_dims.index(dim)
         geom_series = data[geom_col]
         if compute and hasattr(geom_series, "compute"):
             geom_series = geom_series.compute()

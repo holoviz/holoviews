@@ -138,11 +138,11 @@ class cuDFInterface(PandasInterface):
         return data, {"kdims": kdims, "vdims": vdims}, {}
 
     @classmethod
-    def range(cls, dataset, dimension):
-        dimension = dataset.get_dimension(dimension, strict=True)
-        column = dataset.data[dimension.name]
-        if dimension.nodata is not None:
-            column = cls.replace_value(column, dimension.nodata)
+    def range(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
+        column = dataset.data[dim.name]
+        if dim.nodata is not None:
+            column = cls.replace_value(column, dim.nodata)
         if dtype_kind(column) == "O":
             return np.nan, np.nan
         else:
@@ -288,10 +288,10 @@ class cuDFInterface(PandasInterface):
         return cudf.concat(dataframes, **kwargs)
 
     @classmethod
-    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+    def add_dimension(cls, dataset, dim, dim_pos, values, vdim):
         data = dataset.data.copy()
-        if dimension.name not in data:
-            data[dimension.name] = values
+        if dim.name not in data:
+            data[dim.name] = values
         return data
 
     @classmethod

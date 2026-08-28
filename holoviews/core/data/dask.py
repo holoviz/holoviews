@@ -77,9 +77,9 @@ class DaskInterface(PandasInterface):
         return (len(dataset.data), len(dataset.data.columns))
 
     @classmethod
-    def range(cls, dataset, dimension):
-        dimension = dataset.get_dimension(dimension, strict=True)
-        column = dataset.data[dimension.name]
+    def range(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
+        column = dataset.data[dim.name]
         if dtype_kind(column) == "O":
             try:
                 column = np.sort(column[column.notnull()].compute())
@@ -87,8 +87,8 @@ class DaskInterface(PandasInterface):
             except TypeError:
                 return (None, None)
         else:
-            if dimension.nodata is not None:
-                column = cls.replace_value(column, dimension.nodata)
+            if dim.nodata is not None:
+                column = cls.replace_value(column, dim.nodata)
             return dd.compute(column.min(), column.max())
 
     @classmethod
@@ -300,15 +300,15 @@ class DaskInterface(PandasInterface):
         return data[mask]
 
     @classmethod
-    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+    def add_dimension(cls, dataset, dim, dim_pos, values, vdim):
         data = dataset.data
-        if dimension.name not in data.columns:
+        if dim.name not in data.columns:
             if not np.isscalar(values):
                 if len(values):
                     err = "Dask dataframe does not support assigning non-scalar value."
                     raise NotImplementedError(err)
                 values = None
-            data = data.assign(**{dimension.name: values})
+            data = data.assign(**{dim.name: values})
         return data
 
     @classmethod

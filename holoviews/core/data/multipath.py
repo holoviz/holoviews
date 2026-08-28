@@ -370,11 +370,11 @@ class MultiInterface(Interface):
         return length
 
     @classmethod
-    def dtype(cls, dataset, dimension):
+    def dtype(cls, dataset, dim):
         if not dataset.data:
             return np.dtype("float")
         ds = cls._inner_dataset_template(dataset)
-        return ds.interface.dtype(ds, dimension)
+        return ds.interface.dtype(ds, dim)
 
     @classmethod
     def sort(cls, dataset, by=None, reverse=False):
@@ -413,7 +413,7 @@ class MultiInterface(Interface):
         return new_data
 
     @classmethod
-    def values(cls, dataset, dimension, expanded=True, flat=True, compute=True, keep_index=False):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
         """Returns a single concatenated array of all subpaths separated
         by NaN values. If expanded keyword is False an array of arrays
         is returned.
@@ -426,10 +426,10 @@ class MultiInterface(Interface):
         ds = cls._inner_dataset_template(dataset)
         geom_type = cls.geom_type(dataset)
         is_points = geom_type == "Point"
-        is_geom = dimension in dataset.kdims[:2]
+        is_geom = dim in dataset.kdims[:2]
         for d in dataset.data:
             ds.data = d
-            dvals = ds.interface.values(ds, dimension, True, flat, compute, keep_index)
+            dvals = ds.interface.values(ds, dim, True, flat, compute, keep_index)
             scalar = len(util.unique_array(dvals)) == 1 and not is_geom
             gt = ds.interface.geom_type(ds) if hasattr(ds.interface, "geom_type") else None
 
@@ -509,7 +509,7 @@ class MultiInterface(Interface):
         return objs
 
     @classmethod
-    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+    def add_dimension(cls, dataset, dim, dim_pos, values, vdim):
         if not len(dataset.data):
             return dataset.data
         elif values is None or util.isscalar(values):
@@ -528,7 +528,7 @@ class MultiInterface(Interface):
                 ds = template.clone(template.columns())
             else:
                 ds = template
-            new_data.append(ds.interface.add_dimension(ds, dimension, dim_pos, v, vdim))
+            new_data.append(ds.interface.add_dimension(ds, dim, dim_pos, v, vdim))
         return new_data
 
     @classmethod

@@ -408,7 +408,7 @@ class Interface(param.Parameterized):
             return cls.isscalar(dataset, dim)
 
     @classmethod
-    def dtype(cls, dataset, dimension):
+    def dtype(cls, dataset, dim):
         """
         Returns the dtype for the selected dimension.
 
@@ -416,7 +416,7 @@ class Interface(param.Parameterized):
         ----------
         dataset : Dataset
             The dataset to query
-        dimension : str or Dimension
+        dim : str or Dimension
             Dimension to return the dtype for
 
         Returns
@@ -424,7 +424,7 @@ class Interface(param.Parameterized):
         numpy.dtype
             The dtype of the selected dimension
         """
-        name = dataset.get_dimension(dimension, strict=True).name
+        name = dataset.get_dimension(dim, strict=True).name
         data = dataset.data[name]
         if util.isscalar(data):
             return np.array([data]).dtype
@@ -541,7 +541,7 @@ class Interface(param.Parameterized):
         return all_scalar and all_kdims
 
     @classmethod
-    def values(cls, dataset, dimension, expanded=True, flat=True, compute=True, keep_index=False):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
         """
         Returns the values along a dimension of the dataset.
 
@@ -555,7 +555,7 @@ class Interface(param.Parameterized):
         ----------
         dataset : Dataset
             The dataset to query
-        dimension : str or Dimension
+        dim : str or Dimension
             Dimension to return the values for
         expanded : bool, default True
             When false returns unique values along the dimension
@@ -574,7 +574,7 @@ class Interface(param.Parameterized):
         raise NotImplementedError
 
     @classmethod
-    def range(cls, dataset, dimension):
+    def range(cls, dataset, dim):
         """
         Computes the minimum and maximum value along a dimension.
 
@@ -589,7 +589,7 @@ class Interface(param.Parameterized):
         ----------
         dataset : Dataset
             The dataset to query
-        dimension : str or Dimension
+        dim : str or Dimension
             Dimension to compute the range on
 
         Returns
@@ -597,7 +597,7 @@ class Interface(param.Parameterized):
         tuple[Any, Any]
             Tuple of (min, max) values
         """
-        column = dataset.dimension_values(dimension)
+        column = dataset.dimension_values(dim)
         if dtype_kind(column) == "M":
             return column.min(), column.max()
         elif len(column) == 0:
@@ -658,7 +658,7 @@ class Interface(param.Parameterized):
         return template.clone(concat_data, kdims=dimensions + template.kdims, new_type=new_type)
 
     @classmethod
-    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+    def add_dimension(cls, dataset, dim, dim_pos, values, vdim):
         """
         Returns a copy of the data with the dimension values added.
 
@@ -666,7 +666,7 @@ class Interface(param.Parameterized):
         ----------
         dataset : Dataset
             The Dataset to add the dimension to
-        dimension : Dimension
+        dim : Dimension
             The dimension to add
         dim_pos : int
             The position in the data to add it to
