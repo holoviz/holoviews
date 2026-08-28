@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections import OrderedDict
+
 import numpy as np
 
 import holoviews as hv
@@ -49,6 +51,12 @@ class DictDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
     def test_dataset_allow_none_values(self):
         ds = hv.Dataset({"x": None, "y": [0, 1]}, kdims=["x", "y"])
         assert_data_equal(ds.dimension_values(0), np.array([None, None]))
+
+    def test_dataset_tuple_key_does_not_mutate_input(self):
+        geom = OrderedDict({"z": 5.0, ("x", "y"): np.array([[0.0, 0.0], [1.0, 1.0]])})
+        ds = hv.Dataset(geom, kdims=["x", "y"], vdims=["z"])
+        expected = {"x": np.array([0.0, 1.0]), "y": np.array([0.0, 1.0]), "z": 5.0}
+        np.testing.assert_equal(ds.data, expected)
 
     def test_dataset_ignore_non_dimensions(self):
         ds = hv.Dataset(
