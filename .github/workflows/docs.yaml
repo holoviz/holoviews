@@ -17,8 +17,9 @@ on:
           - dryrun
         required: true
         default: dryrun
-  schedule:
-    - cron: "0 14 * * SUN"
+  pull_request:
+    branches:
+      - "renovate/pixi-lock"
 
 permissions: {}
 
@@ -27,21 +28,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  pixi_lock:
-    name: Pixi lock
-    runs-on: ubuntu-latest
-    steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-lock@46bff867baf939c1e00ba669092883b511ddbd4e # v1.0.5
-
   docs_build:
     name: Build Documentation
-    needs: [pixi_lock]
     runs-on: "macos-latest"
     timeout-minutes: 180
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@46bff867baf939c1e00ba669092883b511ddbd4e # v1.0.5
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
         with:
           environments: docs
       - name: Build documentation

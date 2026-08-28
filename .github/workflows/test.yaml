@@ -17,7 +17,7 @@ on:
           - full
           - downstream
       cache:
-        description: "Use cache"
+        description: "Use cache, currently noop"
         type: boolean
         default: true
 
@@ -44,7 +44,7 @@ jobs:
     name: pre-commit
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pre-commit@46bff867baf939c1e00ba669092883b511ddbd4e # v1.0.5
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
 
   setup:
     name: Setup workflow
@@ -110,17 +110,9 @@ jobs:
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
 
-  pixi_lock:
-    name: Pixi lock
-    runs-on: ubuntu-latest
-    steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-lock@46bff867baf939c1e00ba669092883b511ddbd4e # v1.0.5
-        with:
-          cache: ${{ github.event.inputs.cache == 'true' || github.event.inputs.cache == '' }}
-
   unit_test_suite:
     name: unit:${{ matrix.environment }}:${{ matrix.os }}
-    needs: [pre_commit, setup, pixi_lock]
+    needs: [pre_commit, setup]
     runs-on: ${{ matrix.os }}
     if: needs.setup.outputs.code_change == 'true'
     strategy:
@@ -130,7 +122,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@46bff867baf939c1e00ba669092883b511ddbd4e # v1.0.5
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
         with:
           environments: ${{ matrix.environment }}
       - name: Check packages latest version
@@ -148,7 +140,7 @@ jobs:
 
   ui_test_suite:
     name: ui:${{ matrix.environment }}:${{ matrix.os }}
-    needs: [pre_commit, setup, pixi_lock]
+    needs: [pre_commit, setup]
     runs-on: ${{ matrix.os }}
     if: needs.setup.outputs.code_change == 'true'
     strategy:
@@ -161,7 +153,7 @@ jobs:
       PANEL_LOG_LEVEL: info
       ENV: ${{ matrix.environment }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@46bff867baf939c1e00ba669092883b511ddbd4e # v1.0.5
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
         with:
           environments: ${{ matrix.environment }}
       - name: Test UI
@@ -183,7 +175,7 @@ jobs:
 
   core_test_suite:
     name: core:${{ matrix.environment }}:${{ matrix.os }}
-    needs: [pre_commit, setup, pixi_lock]
+    needs: [pre_commit, setup]
     runs-on: ${{ matrix.os }}
     if: needs.setup.outputs.code_change == 'true'
     strategy:
@@ -195,7 +187,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@46bff867baf939c1e00ba669092883b511ddbd4e # v1.0.5
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
         with:
           environments: ${{ matrix.environment }}
       - name: Check packages latest version
@@ -207,7 +199,7 @@ jobs:
 
   type_suite:
     name: type:${{ matrix.environment }}:${{ matrix.os }}
-    needs: [pre_commit, setup, pixi_lock]
+    needs: [pre_commit, setup]
     runs-on: ${{ matrix.os }}
     if: needs.setup.outputs.code_change == 'true'
     strategy:
@@ -219,7 +211,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 5
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@46bff867baf939c1e00ba669092883b511ddbd4e # v1.0.5
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
         with:
           environments: ${{ matrix.environment }}
       - name: Type TY

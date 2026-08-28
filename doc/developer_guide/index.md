@@ -63,35 +63,24 @@ This `holoviews` directory is the _source checkout_ for the remainder of this do
 
 ## Start developing
 
-To start developing, run the following command, this will create an environment called `default` and install HoloViews in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
+Running `pixi run <task>` or `pixi shell` will automatically create the `default` environment and install HoloViews in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs).
 
-```bash
-pixi run install
-```
-
-:::{admonition} Note
-:class: info
-
-The first time you run it, it will create a `pixi.lock` file with information for all available environments.
-This command will take a minute or so to run.
-
-:::
-:::{admonition} Advanced usage
-:class: tip
-
-Currently, an editable install needs to be run in each environment. So, if you want to install in the `test-core` environment, you can add `--environment` / `-e` to the command:
-
-```bash
-pixi run -e test-core install
-```
-
-:::
-
-When this is finished, it is possible to run the following command to download the data HoloViews tests and examples depend upon.
+For example, to download the data HoloViews tests and examples depend upon, run:
 
 ```bash
 pixi run download-data
 ```
+
+:::{admonition} Advanced usage
+:class: tip
+
+To use a different environment, e.g. `test-core`, add `--environment` / `-e` to the command:
+
+```bash
+pixi run -e test-core test-unit
+```
+
+:::
 
 All available tasks can be found by running `pixi task list`, the following sections will give a brief introduction to the most common tasks.
 
@@ -101,7 +90,7 @@ For setting up a complete development you can run:
 pixi run setup-dev
 ```
 
-This will run the `install` and `download-data` tasks, among other tasks deemed necessary for a development environment.
+This will run the `download-data` task, among other tasks deemed necessary for a development environment.
 
 :::{admonition} Note
 :class: info
@@ -128,7 +117,7 @@ pixi run sync-git-tags
 
 The `default` environment is meant to provide all the tools needed to develop HoloViews.
 
-This environment can be created by running `pixi run install`, which will set up the environment and make an editable install of HoloViews.
+This environment is created automatically the first time you run a Pixi command (e.g. `pixi shell` or `pixi run <task>`), which sets up the environment and makes an editable install of HoloViews.
 
 To activate this environment you can run `pixi shell`, this is equivalent to `source venv/bin/activate` in a virtual environment or `conda activate` in a conda environment.
 
