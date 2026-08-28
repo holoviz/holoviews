@@ -37,7 +37,7 @@ class ShapePlot(ElementPlot):
 
     @staticmethod
     def build_path(xs, ys, closed=True):
-        line_tos = "".join([f"L{x} {y}" for x, y in zip(xs[1:], ys[1:], strict=None)])
+        line_tos = "".join([f"L{x} {y}" for x, y in zip(xs[1:], ys[1:], strict=True)])
         path = f"M{xs[0]} {ys[0]}{line_tos}"
 
         if closed:
@@ -68,10 +68,10 @@ class BoxShapePlot(GeomMixin, ShapePlot):
                             [lat0, lat1, lat1, lat0, lat0, np.nan],
                         )
                         for (lon0, lat0, lon1, lat1) in zip(
-                            lon0s, lat0s, lon1s, lat1s, strict=None
+                            lon0s, lat0s, lon1s, lat1s, strict=True
                         )
                     ],
-                    strict=None,
+                    strict=True,
                 )
 
                 lon = np.concatenate(lon_chunks)
@@ -80,7 +80,7 @@ class BoxShapePlot(GeomMixin, ShapePlot):
         else:
             return [
                 dict(x0=x0, x1=x1, y0=y0, y1=y1, xref="x", yref="y")
-                for (x0, y0, x1, y1) in zip(x0s, y0s, x1s, y1s, strict=None)
+                for (x0, y0, x1, y1) in zip(x0s, y0s, x1s, y1s, strict=True)
             ]
 
 
@@ -102,10 +102,10 @@ class SegmentShapePlot(GeomMixin, ShapePlot):
                     *[
                         ([lon0, lon1, np.nan], [lat0, lat1, np.nan])
                         for (lon0, lat0, lon1, lat1) in zip(
-                            lon0s, lat0s, lon1s, lat1s, strict=None
+                            lon0s, lat0s, lon1s, lat1s, strict=True
                         )
                     ],
-                    strict=None,
+                    strict=True,
                 )
 
                 lon = np.concatenate(lon_chunks)
@@ -114,7 +114,7 @@ class SegmentShapePlot(GeomMixin, ShapePlot):
         else:
             return [
                 dict(x0=x0, x1=x1, y0=y0, y1=y1, xref="x", yref="y")
-                for (x0, y0, x1, y1) in zip(x0s, y0s, x1s, y1s, strict=None)
+                for (x0, y0, x1, y1) in zip(x0s, y0s, x1s, y1s, strict=True)
             ]
 
 

@@ -213,7 +213,7 @@ def compute_plot_size(plot):
             w_agg, h_agg = (np.max, np.max)
         else:
             w_agg, h_agg = (np.max, np.sum)
-        widths, heights = zip(*[compute_plot_size(child) for child in plot.children], strict=None)
+        widths, heights = zip(*[compute_plot_size(child) for child in plot.children], strict=True)
         return w_agg(widths), h_agg(heights)
     elif isinstance(plot, figure):
         if plot.width:
@@ -774,9 +774,9 @@ def pad_plots(plots):
     plots = [
         [
             Column(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
-            for p, w in zip(row, ws, strict=None)
+            for p, w in zip(row, ws, strict=True)
         ]
-        for row, ws in zip(plots, widths, strict=None)
+        for row, ws in zip(plots, widths, strict=True)
     ]
     return plots
 
@@ -818,7 +818,7 @@ def get_tab_title(key, frame, overlay):
         title = " ".join(title)
     else:
         title = " | ".join(
-            [d.pprint_value_string(k) for d, k in zip(overlay.kdims, key, strict=None)]
+            [d.pprint_value_string(k) for d, k in zip(overlay.kdims, key, strict=True)]
         )
     return title
 
@@ -1151,14 +1151,14 @@ def multi_polygons_data(element):
     xs, ys = (element.dimension_values(kd, expanded=False) for kd in element.kdims)
     holes = element.holes()
     xsh, ysh = [], []
-    for x, y, multi_hole in zip(xs, ys, holes, strict=None):
+    for x, y, multi_hole in zip(xs, ys, holes, strict=True):
         xhs = [[h[:, 0] for h in hole] for hole in multi_hole]
         yhs = [[h[:, 1] for h in hole] for hole in multi_hole]
         array = np.column_stack([x, y])
         splits = np.where(np.isnan(array[:, :2].astype("float")).sum(axis=1))[0]
         arrays = np.split(array, splits + 1) if len(splits) else [array]
         multi_xs, multi_ys = [], []
-        for i, (path, hx, hy) in enumerate(zip(arrays, xhs, yhs, strict=None)):
+        for i, (path, hx, hy) in enumerate(zip(arrays, xhs, yhs, strict=False)):
             if i != (len(arrays) - 1):
                 path = path[:-1]
             multi_xs.append([path[:, 0], *hx])
@@ -1320,7 +1320,7 @@ def get_ticker_axis_props(ticker):
         axis_props["ticker"] = BasicTicker(desired_num_ticks=ticker)
     elif isinstance(ticker, (tuple, list)):
         if all(isinstance(t, tuple) for t in ticker):
-            ticks, labels = zip(*ticker, strict=None)
+            ticks, labels = zip(*ticker, strict=False)
             # Ensure floats which are integers are serialized as ints
             # because in JS the lookup fails otherwise
             ticks = [int(t) if isinstance(t, float) and t.is_integer() else t for t in ticks]
@@ -1331,5 +1331,5 @@ def get_ticker_axis_props(ticker):
             ticks = [util.dt_to_int(tick, "ms") for tick in ticks]
         axis_props["ticker"] = FixedTicker(ticks=ticks)
         if labels is not None:
-            axis_props["major_label_overrides"] = dict(zip(ticks, labels, strict=None))
+            axis_props["major_label_overrides"] = dict(zip(ticks, labels, strict=True))
     return axis_props

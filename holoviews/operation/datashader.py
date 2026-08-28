@@ -488,7 +488,7 @@ class aggregate(LineAggregationOperation):
                 dims = (x, y)
                 df = PandasInterface.as_dframe(element)
                 if is_ndoverlay:
-                    df = df.assign(**dict(zip(obj.dimensions("key", True), key, strict=None)))
+                    df = df.assign(**dict(zip(obj.dimensions("key", True), key, strict=False)))
                 paths.append(df)
 
             is_wide, ydims = cls._overlay_wide_mapping(obj, obj.values())
@@ -1206,7 +1206,7 @@ class trimesh_rasterize(aggregate):
                 )
             simplices = element.dframe(simplex_dims)
             verts = element.nodes.dframe(vert_dims)
-        for c, dtype in zip(simplices.columns[:3], simplices.dtypes, strict=None):
+        for c, dtype in zip(simplices.columns[:3], simplices.dtypes, strict=False):
             if dtype_kind(dtype) != "i":
                 simplices[c] = simplices[c].astype("int")
         mesh = mesh(verts, simplices)
@@ -1280,7 +1280,7 @@ class trimesh_rasterize(aggregate):
 
         cvs = ds.Canvas(plot_width=width, plot_height=height, x_range=x_range, y_range=y_range)
         if wireframe:
-            rename_dict = {k: v for k, v in zip("xy", (x.name, y.name), strict=None) if k != v}
+            rename_dict = {k: v for k, v in zip("xy", (x.name, y.name), strict=True) if k != v}
             agg = cvs.line(
                 segments, x=["x0", "x1", "x2", "x0"], y=["y0", "y1", "y2", "y0"], axis=1, agg=agg
             ).rename(rename_dict)
@@ -1555,7 +1555,7 @@ class shade(LinkableOperation):
                 shade_opts["color_key"] = self.p.color_key
             elif isinstance(self.p.color_key, Iterable):
                 shade_opts["color_key"] = [
-                    c for _, c in zip(range(categories), self.p.color_key, strict=None)
+                    c for _, c in zip(range(categories), self.p.color_key, strict=False)
                 ]
             else:
                 colors = [self.p.color_key(s) for s in np.linspace(0, 1, categories)]
@@ -1686,7 +1686,7 @@ class geometry_rasterize(LineAggregationOperation):
             agg = cvs.line(data, **agg_kwargs)
         elif isinstance(element, Points):
             agg = cvs.points(data, **agg_kwargs)
-        rename_dict = {k: v for k, v in zip("xy", (xdim.name, ydim.name), strict=None) if k != v}
+        rename_dict = {k: v for k, v in zip("xy", (xdim.name, ydim.name), strict=True) if k != v}
         agg = agg.rename(rename_dict)
 
         if agg.ndim == 2:
