@@ -266,7 +266,6 @@ src.exclude = [
     "holoviews/core/data/image.py", # 5
     "holoviews/core/data/multipath.py", # 6
     "holoviews/core/data/narwhals.py", # 4
-    "holoviews/core/data/pandas.py", # 2
     "holoviews/core/data/spatialpandas.py", # 16
     "holoviews/core/data/xarray.py", # 26
 ]

@@ -173,7 +173,7 @@ class PandasInterface(Interface, PandasAPI):
         return data, {"kdims": kdims, "vdims": vdims}, {}
 
     @classmethod
-    def isscalar(cls, dataset, dim):
+    def isscalar(cls, dataset, dim, *, per_geom=False):
         name = dataset.get_dimension(dim, strict=True).name
         return len(dataset.data[name].unique()) == 1
 
@@ -363,6 +363,9 @@ class PandasInterface(Interface, PandasAPI):
     def reindex(cls, dataset, kdims=None, vdims=None):
         data = dataset.data
         if isinstance(data.index, pd.MultiIndex):
+            if kdims is None:
+                msg = f"{cls.__name__}.reindex requires kdims to be specified."
+                raise TypeError(msg)
             kdims = [kdims] if isinstance(kdims, (str, Dimension)) else kdims
             data = data.reset_index().set_index(list(map(str, kdims)), drop=True)
         return data
