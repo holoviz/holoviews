@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import typing as t
+
 import numpy as np
 
 from .. import util
@@ -50,7 +52,7 @@ class MultiInterface(Interface):
             data = [data]
         elif not isinstance(data, list):
             interface = [
-                Interface.interfaces.get(st).applies(data)
+                Interface.interfaces[st].applies(data)
                 for st in cls.subtypes
                 if st in Interface.interfaces
             ]
@@ -79,7 +81,7 @@ class MultiInterface(Interface):
             d, interface, dims, _ = Interface.initialize(
                 eltype, d, kdims, vdims, datatype=datatype
             )
-            if prev_interface:
+            if prev_interface is not None and prev_dims is not None:
                 if prev_interface != interface:
                     raise DataError(
                         "MultiInterface subpaths must all have matching datatype.", cls
@@ -551,6 +553,7 @@ class MultiInterface(Interface):
             template.data = d
             length = len(template)
             if np.isscalar(rows):
+                rows = t.cast("int", rows)
                 if (count + length) > rows >= count:
                     data = template.iloc[rows - count, cols]
                     return data if scalar else [data.data]
@@ -569,6 +572,7 @@ class MultiInterface(Interface):
                 slc = slice(start, stop)
                 new_data.append(template.iloc[slc, cols].data)
             else:
+                rows = t.cast("list[int]", rows)
                 sub_rows = [r - count for r in rows if 0 <= (r - count) < (count + length)]
                 new = template.iloc[sub_rows, cols]
                 if len(new):
