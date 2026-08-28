@@ -52,7 +52,7 @@ def in_cooldown(item) -> bool:
     if ts is None:
         return False
     released = datetime.fromtimestamp(ts / 1000, tz=timezone.utc).date()
-    return TODAY - released < timedelta(days=7)
+    return TODAY - released < timedelta(days=7 + 2)
 
 
 def full_release(item) -> bool:
