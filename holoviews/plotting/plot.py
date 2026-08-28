@@ -251,7 +251,7 @@ class Plot(param.Parameterized):
             stream_params = stream_parameters(dim_streams)
             key = tuple(
                 None if d in stream_params else k
-                for d, k in zip(self.dimensions, key, strict=None)
+                for d, k in zip(self.dimensions, key, strict=False)
             )
             stream_key = util.wrap_tuple_streams(key, self.dimensions, self.streams)
 
@@ -554,14 +554,14 @@ class DimensionedPlot(Plot):
 
         """
         if self.layout_dimensions is not None:
-            dimensions, key = zip(*self.layout_dimensions.items(), strict=None)
+            dimensions, key = zip(*self.layout_dimensions.items(), strict=True)
         elif not self.dynamic and (not self.uniform or len(self) == 1) or self.subplot:
             return ""
         else:
             key = key if isinstance(key, tuple) else (key,)
             dimensions = self.dimensions
         dimension_labels = [
-            dim.pprint_value_string(k) for dim, k in zip(dimensions, key, strict=None)
+            dim.pprint_value_string(k) for dim, k in zip(dimensions, key, strict=False)
         ]
         groups = [
             ", ".join(dimension_labels[i * group_size : (i + 1) * group_size])
@@ -989,7 +989,9 @@ class DimensionedPlot(Plot):
                 merged = {}
                 for g, drange in dranges["values"].items():
                     filtered = [
-                        r for i, r in zip(ids, values.get(g, []), strict=None) if i not in prev_ids
+                        r
+                        for i, r in zip(ids, values.get(g, []), strict=False)
+                        if i not in prev_ids
                     ]
                     filtered += drange
                     merged[g] = filtered
@@ -1498,7 +1500,7 @@ class GenericElementPlot(DimensionedPlot):
             return self.current_frame
 
         cached = self.current_key is None and not any(s._triggering for s in self.streams)
-        key_map = dict(zip([d.name for d in self.dimensions], key, strict=None))
+        key_map = dict(zip([d.name for d in self.dimensions], key, strict=False))
         # Re-enable pipeline tracking for the DynamicMap callback evaluation.
         # Plot.refresh() disables pipeline for the entire update path (see
         # the disable_pipeline() call there), but user callbacks may call
@@ -1699,7 +1701,7 @@ class GenericElementPlot(DimensionedPlot):
             )
         else:
             max_extent = []
-            for l1, l2 in zip(range_extents, extents, strict=None):
+            for l1, l2 in zip(range_extents, extents, strict=True):
                 if isfinite(l2):
                     max_extent.append(l2)
                 else:
@@ -2020,7 +2022,7 @@ class GenericOverlayPlot(GenericElementPlot):
             sliced_keys = [tuple(k[i] for i in dim_inds) for k in keys]
             frame_ranges = {
                 slckey: self.compute_ranges(holomap, key, ranges[key])
-                for key, slckey in zip(keys, sliced_keys, strict=None)
+                for key, slckey in zip(keys, sliced_keys, strict=True)
                 if slckey in holomap.data.keys()
             }
         else:
@@ -2061,7 +2063,7 @@ class GenericOverlayPlot(GenericElementPlot):
         if isinstance(self.hmap, DynamicMap):
             dmap_streams = [
                 streams + get_nested_streams(layer)
-                for layer, streams in zip(*split_dmap_overlay(self.hmap), strict=None)
+                for layer, streams in zip(*split_dmap_overlay(self.hmap), strict=True)
             ]
         else:
             dmap_streams = [None] * len(keys)
@@ -2073,7 +2075,7 @@ class GenericOverlayPlot(GenericElementPlot):
             self.map_lengths[group_fn(m)[:length]] += 1
 
         subplots = {}
-        for key, vmap, streams in zip(keys, vmaps, dmap_streams, strict=None):
+        for key, vmap, streams in zip(keys, vmaps, dmap_streams, strict=False):
             if streams:
                 streams = list(unique_iterator(streams))
             subplot = self._create_subplot(key, vmap, streams, ranges)
@@ -2106,7 +2108,7 @@ class GenericOverlayPlot(GenericElementPlot):
             if not isinstance(key, tuple):
                 key = (key,)
             style_key = group_fn(obj) + key
-            opts["overlay_dims"] = dict(zip(self.hmap.last.kdims, key, strict=None))
+            opts["overlay_dims"] = dict(zip(self.hmap.last.kdims, key, strict=False))
 
         if self.batched:
             vtype = type(obj.last.last)
@@ -2237,7 +2239,7 @@ class GenericOverlayPlot(GenericElementPlot):
         subplot.cyclic_index = cyclic_index
         if subplot.overlay_dims:
             odim_key = util.wrap_tuple(spec[-1])
-            new_dims = zip(subplot.overlay_dims, odim_key, strict=None)
+            new_dims = zip(subplot.overlay_dims, odim_key, strict=False)
             subplot.overlay_dims = dict(new_dims)
 
     def _get_subplot_extents(self, overlay, ranges, range_type, dimension=None):
@@ -2387,7 +2389,7 @@ class GenericCompositePlot(DimensionedPlot):
         else:
             self.current_key = key
 
-        key_map = dict(zip([d.name for d in self.dimensions], key, strict=None))
+        key_map = dict(zip([d.name for d in self.dimensions], key, strict=False))
         # Re-enable pipeline tracking for the DynamicMap callback evaluation.
         # See GenericElementPlot._get_frame for rationale.
         with enable_pipeline():

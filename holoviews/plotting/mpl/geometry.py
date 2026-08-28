@@ -38,7 +38,7 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
         dims = element.dimensions()
         data = [
             [(x0, y0), (x1, y1)]
-            for x0, y0, x1, y1 in zip(*(element.dimension_values(d) for d in inds), strict=None)
+            for x0, y0, x1, y1 in zip(*(element.dimension_values(d) for d in inds), strict=True)
         ]
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
@@ -77,7 +77,7 @@ class RectanglesPlot(GeomMixin, ColorbarPlot):
         dims = element.dimensions()
         data = [
             Rectangle((x0, y0), x1, y1)
-            for (x0, y0, x1, y1) in zip(x0s, y0s, x1s - x0s, y1s - y0s, strict=None)
+            for (x0, y0, x1, y1) in zip(x0s, y0s, x1s - x0s, y1s - y0s, strict=True)
         ]
 
         with abbreviated_exception():

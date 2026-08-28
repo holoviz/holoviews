@@ -494,7 +494,7 @@ class ImageStackPlot(RasterPlot, SyntheticLegendMixin):
                     "The supplied cmap dictionary must have the same "
                     f"value dimensions as the element. Missing: '{missing_str}'"
                 )
-            keys, values = zip(*dict_cmap.items(), strict=None)
+            keys, values = zip(*dict_cmap.items(), strict=True)
             style["cmap"] = list(values)
             indices = [keys.index(vd.name) for vd in vdims]
 
@@ -629,7 +629,7 @@ class QuadMeshPlot(ColorbarPlot):
             XS, YS = [], []
             mask = []
             xc, yc = [], []
-            for xs, ys, zval in zip(X, Y, zvals, strict=None):
+            for xs, ys, zval in zip(X, Y, zvals, strict=True):
                 xs, ys = xs[:-1], ys[:-1]
                 if isfinite(zval) and all(isfinite(xs)) and all(isfinite(ys)):
                     XS.append(list(xs))
@@ -689,7 +689,7 @@ class QuadMeshPlot(ColorbarPlot):
         hover_dims = element.dimensions()[3:]
         hover_vals = [element.dimension_values(hover_dim, flat=False) for hover_dim in hover_dims]
         hover_data = {}
-        for hdim, hvals in zip(hover_dims, hover_vals, strict=None):
+        for hdim, hvals in zip(hover_dims, hover_vals, strict=True):
             hdat = hvals.T.flatten() if transpose else hvals.flatten()
             hover_data[dimension_sanitizer(hdim.name)] = hdat[mask]
         return hover_data

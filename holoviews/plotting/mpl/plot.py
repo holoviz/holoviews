@@ -362,7 +362,7 @@ class CompositePlot(GenericCompositePlot, MPLPlot):
         contents = [k for s in self.streams for k in s.contents]
         key = tuple(
             None if d in contents else k
-            for d, k in zip(self.dimensions, self.current_key, strict=None)
+            for d, k in zip(self.dimensions, self.current_key, strict=True)
         )
         key = wrap_tuple_streams(key, self.dimensions, self.streams)
         self._update_title(key)
@@ -633,7 +633,7 @@ class GridPlot(CompositePlot):
             layout_axis.set_position(self.position)
         layout_axis.patch.set_visible(False)
 
-        for ax, ax_obj in zip(["x", "y"], [layout_axis.xaxis, layout_axis.yaxis], strict=None):
+        for ax, ax_obj in zip(["x", "y"], [layout_axis.xaxis, layout_axis.yaxis], strict=True):
             tick_fontsize = self._fontsize(f"{ax}ticks", "labelsize", common=False)
             if tick_fontsize:
                 ax_obj.set_tick_params(**tick_fontsize)
@@ -651,7 +651,7 @@ class GridPlot(CompositePlot):
             dim2_keys = [0]
             layout_axis.get_yaxis().set_visible(False)
         else:
-            dim1_keys, dim2_keys = zip(*keys, strict=None)
+            dim1_keys, dim2_keys = zip(*keys, strict=True)
             layout_axis.set_ylabel(dims[1].pprint_label)
             layout_axis.set_aspect(float(self.rows) / self.cols)
 
@@ -758,7 +758,7 @@ class AdjointLayoutPlot(MPLPlot, GenericAdjointLayoutPlot):
         self.view_positions = self.layout_dict[self.layout_type]
 
         # The supplied (axes, view) objects as indexed by position
-        self.subaxes = {pos: ax for ax, pos in zip(subaxes, self.view_positions, strict=None)}
+        self.subaxes = {pos: ax for ax, pos in zip(subaxes, self.view_positions, strict=True)}
         super().__init__(subplots=subplots, **params)
 
     @mpl_rc_context
@@ -1089,7 +1089,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
 
             layout_key, _ = layout_items.get((r, c), (None, None))
             if isinstance(layout, NdLayout) and layout_key:
-                layout_dimensions = dict(zip(layout_dimensions, layout_key, strict=None))
+                layout_dimensions = dict(zip(layout_dimensions, layout_key, strict=True))
 
             # Generate the axes and create the subplots with the appropriate
             # axis objects, handling any Empty objects.
@@ -1108,14 +1108,14 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 layout_count += 1
             subaxes = [
                 plt.subplot(self.gs[ind], projection=proj)
-                for ind, proj in zip(gsinds, projs, strict=None)
+                for ind, proj in zip(gsinds, projs, strict=True)
             ]
             subplot_data = self._create_subplots(
                 obj,
                 positions,
                 layout_dimensions,
                 frame_ranges,
-                dict(zip(positions, subaxes, strict=None)),
+                dict(zip(positions, subaxes, strict=True)),
                 num=0 if empty else layout_count,
             )
             subplots, adjoint_layout, _ = subplot_data

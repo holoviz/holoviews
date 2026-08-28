@@ -717,8 +717,8 @@ def figure_grid(
 
     output_figure = {"data": [], "layout": {}}
 
-    for r, (fig_row, row_domain) in enumerate(zip(figures_grid, row_domains, strict=None)):
-        for c, (fig, column_domain) in enumerate(zip(fig_row, column_domains, strict=None)):
+    for r, (fig_row, row_domain) in enumerate(zip(figures_grid, row_domains, strict=True)):
+        for c, (fig, column_domain) in enumerate(zip(fig_row, column_domains, strict=True)):
             if fig:
                 fig = copy.deepcopy(fig)
 

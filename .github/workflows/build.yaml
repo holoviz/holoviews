@@ -7,8 +7,9 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+b[0-9]+"
       - "v[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
   workflow_dispatch:
-  schedule:
-    - cron: "0 14 * * SUN"
+  pull_request:
+    branches:
+      - "renovate/pixi-lock"
 
 permissions: {}
 
@@ -31,22 +32,14 @@ jobs:
     steps:
       - run: echo "All builds have finished, have been approved, and ready to publish"
 
-  pixi_lock:
-    name: Pixi lock
-    runs-on: ubuntu-latest
-    steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-lock@feab0228afeb2e7dd99782598a16c8bca4911c5a # v1.0.3
-
   conda_build:
     name: Build Conda
-    needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@feab0228afeb2e7dd99782598a16c8bca4911c5a # v1.0.3
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
         with:
           environments: "build"
           download-data: false
-          install: false
       - name: conda build
         run: pixi run -e build build-conda
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -75,14 +68,12 @@ jobs:
 
   pip_build:
     name: Build PyPI
-    needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@feab0228afeb2e7dd99782598a16c8bca4911c5a # v1.0.3
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
         with:
           environments: "build"
           download-data: false
-          install: false
       - name: Build package
         run: pixi run -e build build-pip
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

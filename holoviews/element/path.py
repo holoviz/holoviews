@@ -73,7 +73,7 @@ class Path(SelectionPolyExpr, Geometry):
             paths = []
             for path in data:
                 if path.kdims != kdims:
-                    redim = {okd.name: nkd for okd, nkd in zip(path.kdims, kdims, strict=None)}
+                    redim = {okd.name: nkd for okd, nkd in zip(path.kdims, kdims, strict=True)}
                     path = path.redim(**redim)
                 if path.interface.multi and isinstance(path.data, list):
                     paths += path.data
@@ -485,7 +485,7 @@ class Ellipse(BaseShape):
         half_height = self.height / 2.0
         # create points
         ellipse = np.array(
-            list(zip(half_width * np.sin(angles), half_height * np.cos(angles), strict=None))
+            list(zip(half_width * np.sin(angles), half_height * np.cos(angles), strict=True))
         )
         # rotate ellipse and add offset
         rot = np.array(
