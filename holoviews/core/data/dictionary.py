@@ -44,7 +44,7 @@ class DictInterface(Interface):
         ):
             raise ValueError("DictInterface could not find specified dimensions in the data.")
         elif isinstance(data, tuple):
-            data = dict(zip(dimensions, data, strict=None))
+            data = dict(zip(dimensions, data, strict=False))
         elif util.is_dataframe(data) and all(d in data for d in dimensions):
             data = {d: data[d] for d in dimensions}
         elif isinstance(data, np.ndarray):
@@ -68,16 +68,16 @@ class DictInterface(Interface):
             and any(isinstance(v, tuple) for v in data[0])
         ):
             dict_data = zip(
-                *((util.wrap_tuple(k) + util.wrap_tuple(v)) for k, v in data), strict=None
+                *((util.wrap_tuple(k) + util.wrap_tuple(v)) for k, v in data), strict=True
             )
-            data = {k: np.array(v) for k, v in zip(dimensions, dict_data, strict=None)}
+            data = {k: np.array(v) for k, v in zip(dimensions, dict_data, strict=True)}
         # Ensure that interface does not consume data of other types
         # with an iterator interface
         elif not any(
             isinstance(data, tuple(t for t in interface.types if t is not None))
             for interface in cls.interfaces.values()
         ):
-            data = dict(zip(dimensions, zip(*data, strict=None), strict=None))
+            data = dict(zip(dimensions, zip(*data, strict=True), strict=False))
         elif (
             isinstance(data, dict)
             and not any(isinstance(v, np.ndarray) for v in data.values())
@@ -96,9 +96,9 @@ class DictInterface(Interface):
                     "values."
                 )
             dict_data = zip(
-                *((util.wrap_tuple(k) + util.wrap_tuple(v)) for k, v in dict_data), strict=None
+                *((util.wrap_tuple(k) + util.wrap_tuple(v)) for k, v in dict_data), strict=True
             )
-            data = {k: np.array(v) for k, v in zip(dimensions, dict_data, strict=None)}
+            data = {k: np.array(v) for k, v in zip(dimensions, dict_data, strict=False)}
 
         if not isinstance(data, cls.types):
             raise ValueError("DictInterface interface couldn't convert data.")
@@ -170,7 +170,7 @@ class DictInterface(Interface):
         return data
 
     @classmethod
-    def isscalar(cls, dataset, dim):
+    def isscalar(cls, dataset, dim, *, per_geom=False):
         name = dataset.get_dimension(dim, strict=True).name
         values = dataset.data[name]
         if isscalar(values):
@@ -235,7 +235,7 @@ class DictInterface(Interface):
         for key, ds in datasets:
             for k, vals in ds.data.items():
                 columns[k].append(np.atleast_1d(vals))
-            for d, k in zip(dimensions, key, strict=None):
+            for d, k in zip(dimensions, key, strict=False):
                 columns[d.name].append(np.full(len(ds), k))
 
         template = datasets[0][1]
@@ -326,7 +326,7 @@ class DictInterface(Interface):
         # Iterate over the unique entries applying selection masks
         grouped_data = []
         for unique_key in util.unique_iterator(keys):
-            mask = cls.select_mask(dataset, dict(zip(dimensions, unique_key, strict=None)))
+            mask = cls.select_mask(dataset, dict(zip(dimensions, unique_key, strict=False)))
             group_data = {
                 d.name: dataset.data[d.name]
                 if isscalar(dataset.data[d.name])
@@ -389,7 +389,7 @@ class DictInterface(Interface):
         dropped = []
         for key, group in groups:
             key = key if isinstance(key, tuple) else (key,)
-            for kdim, val in zip(kdims, key, strict=None):
+            for kdim, val in zip(kdims, key, strict=False):
                 aggregated[kdim].append(val)
             for vdim, arr in group.items():
                 if vdim in dataset.vdims:
