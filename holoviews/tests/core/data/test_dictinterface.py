@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import OrderedDict
 
 import numpy as np
+import pytest
 
 import holoviews as hv
 from holoviews.testing import assert_data_equal, assert_element_equal
@@ -52,11 +53,18 @@ class DictDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         ds = hv.Dataset({"x": None, "y": [0, 1]}, kdims=["x", "y"])
         assert_data_equal(ds.dimension_values(0), np.array([None, None]))
 
-    def test_dataset_tuple_key_does_not_mutate_input(self):
-        geom = OrderedDict({"z": 5.0, ("x", "y"): np.array([[0.0, 0.0], [1.0, 1.0]])})
-        ds = hv.Dataset(geom, kdims=["x", "y"], vdims=["z"])
+    @pytest.mark.parametrize("dict_type", [dict, OrderedDict])
+    def test_dataset_tuple_key_does_not_mutate_input(self, dict_type):
+        data = dict_type({"z": 5.0, ("x", "y"): np.array([[0.0, 0.0], [1.0, 1.0]])})
+        ds = hv.Dataset(data, kdims=["x", "y"], vdims=["z"])
         expected = {"x": np.array([0.0, 1.0]), "y": np.array([0.0, 1.0]), "z": 5.0}
         np.testing.assert_equal(ds.data, expected)
+
+    @pytest.mark.parametrize("dict_type", [dict, OrderedDict])
+    def test_dataset_reuses_unchanged_input(self, dict_type):
+        data = dict_type({"x": np.array([0.0, 1.0]), "y": np.array([1.0, 2.0])})
+        ds = hv.Dataset(data, kdims=["x", "y"])
+        assert ds.data is data
 
     def test_dataset_ignore_non_dimensions(self):
         ds = hv.Dataset(

@@ -103,9 +103,10 @@ class DictInterface(Interface):
         if not isinstance(data, cls.types):
             raise ValueError("DictInterface interface couldn't convert data.")
 
-        unpacked = {}
+        unpacked, unchanged = {}, True
         for d, vals in data.items():
             if isinstance(d, tuple):
+                unchanged = False
                 vals = np.asarray(vals)
                 if vals.shape == (0,):
                     for sd in d:
@@ -122,6 +123,7 @@ class DictInterface(Interface):
                     vals = np.asarray(vals)
                     if not vals.ndim == 1 and d in dimensions:
                         raise ValueError("DictInterface expects data for each column to be flat.")
+                    unchanged = unchanged and vals is data[d]
                 unpacked[d] = vals
 
         if not cls.expanded(
@@ -129,7 +131,10 @@ class DictInterface(Interface):
         ):
             raise ValueError("DictInterface expects data to be of uniform shape.")
 
-        return unpacked, {"kdims": kdims, "vdims": vdims}, {}
+        # Reusing the input dict keeps `hv.Table(points.data).data is points.data`
+        # which shared_datasource=True relies on
+        data = data if unchanged else unpacked
+        return data, {"kdims": kdims, "vdims": vdims}, {}
 
     @classmethod
     def validate(cls, dataset, vdims=True):
