@@ -566,13 +566,12 @@ class TestBarPlot(TestBokehPlot):
             ],
         )
 
-    def test_bars_group(self):
+    def test_bars_group(self, rng):
         samples = 100
 
         pets = ["Cat", "Dog", "Hamster", "Rabbit"]
         genders = ["Female", "Male", "N/A"]
 
-        rng = np.random.default_rng(100)
         pets_sample = rng.choice(pets, samples)
         gender_sample = rng.choice(genders, samples)
 
@@ -582,13 +581,12 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(bars)
         assert plot.handles["glyph"].width == 0.8
 
-    def test_bar_group_stacked(self):
+    def test_bar_group_stacked(self, rng):
         samples = 100
 
         pets = ["Cat", "Dog", "Hamster", "Rabbit"]
         genders = ["Female", "Male", "N/A"]
 
-        rng = np.random.default_rng(100)
         pets_sample = rng.choice(pets, samples)
         gender_sample = rng.choice(genders, samples)
 
