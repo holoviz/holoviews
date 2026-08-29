@@ -260,12 +260,10 @@ convention = "numpy"
 [tool.ty]
 src.exclude = [
     "holoviews/*version.py",
-    "holoviews/core/data/grid.py", # 13
     "holoviews/core/data/ibis.py", # deprecated
-    "holoviews/core/data/image.py", # 5
     "holoviews/core/data/narwhals.py", # 4
     "holoviews/core/data/spatialpandas.py", # 16
-    "holoviews/core/data/xarray.py", # 26
+    "holoviews/core/data/xarray.py", # 25
 ]
 rules.unresolved-import = "ignore"
 
