@@ -10,10 +10,10 @@ from ..dimension import Dimension, asdim, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..util import dtype_kind
-from ..util.dependencies import _no_import_version, cp
+from ..util.dependencies import _no_import_version, cp, da
 from .grid import GridInterface
 from .interface import DataError, Interface
-from .util import dask_array_module, finite_range
+from .util import finite_range
 
 XARRAY_VERSION = _no_import_version("xarray")
 
@@ -337,7 +337,6 @@ class XArrayInterface(GridInterface):
         else:
             dmin, dmax = np.nanmin(data), np.nanmax(data)
 
-        da = dask_array_module()
         if da and isinstance(dmin, da.Array):
             dmin, dmax = da.compute(dmin, dmax)
         if isinstance(dmin, np.ndarray) and dmin.shape == ():
@@ -452,7 +451,6 @@ class XArrayInterface(GridInterface):
                 data_coords = list(dataset.data.dims)[:-1]
             else:
                 data_coords = list(dataset.data[dim.name].dims)
-            da = dask_array_module()
             if compute and da and isinstance(data, da.Array):
                 data = data.compute()
             if is_cupy(data):
@@ -663,7 +661,6 @@ class XArrayInterface(GridInterface):
                 if hasattr(d.data, "flags"):
                     d.data.flags.writeable = True
 
-        da = dask_array_module()
         if indexed and len(data.data_vars) == 1 and len(data[dataset.vdims[0].name].shape) == 0:
             value = data[dataset.vdims[0].name]
             if da and isinstance(value.data, da.Array):
