@@ -107,6 +107,9 @@ class ImageInterface(GridInterface):
 
     @classmethod
     def reindex(cls, dataset, kdims=None, vdims=None):
+        if kdims is None or vdims is None:
+            msg = f"{cls.__name__}.reindex requires both kdims and vdims to be specified."
+            raise TypeError(msg)
         data = dataset.data
         dropped_kdims = [kd for kd in dataset.kdims if kd not in kdims]
         constant = {}
@@ -138,24 +141,24 @@ class ImageInterface(GridInterface):
             return values
 
     @classmethod
-    def range(cls, obj, dim):
-        dim = obj.get_dimension(dim, strict=True)
-        dim_idx = obj.get_dimension_index(dim)
-        if dim_idx in [0, 1] and obj.bounds:
-            l, b, r, t = obj.bounds.lbrt()
+    def range(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
+        dim_idx = dataset.get_dimension_index(dim)
+        if dim_idx in [0, 1] and dataset.bounds:
+            l, b, r, t = dataset.bounds.lbrt()
             if dim_idx:
                 (low, high) = (b, t)
-                density = obj.ydensity
+                density = dataset.ydensity
             else:
                 low, high = (l, r)
-                density = obj.xdensity
+                density = dataset.xdensity
             halfd = (1.0 / density) / 2.0
             if isinstance(low, util.datetime_types):
-                halfd = np.timedelta64(round(halfd), obj._time_unit)
+                halfd = np.timedelta64(round(halfd), dataset._time_unit)
             drange = (low + halfd, high - halfd)
-        elif 1 < dim_idx < len(obj.vdims) + 2:
+        elif 1 < dim_idx < len(dataset.vdims) + 2:
             dim_idx -= 2
-            data = np.atleast_3d(obj.data)[:, :, dim_idx]
+            data = np.atleast_3d(dataset.data)[:, :, dim_idx]
             if dim.nodata is not None:
                 data = cls.replace_value(data, dim.nodata)
             drange = finite_range(data, np.nanmin(data), np.nanmax(data))
@@ -164,7 +167,16 @@ class ImageInterface(GridInterface):
         return drange
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
+    def values(
+        cls,
+        dataset,
+        dim,
+        expanded=True,
+        flat=True,
+        compute=True,
+        keep_index=False,
+        canonicalize=True,
+    ):
         """The set of samples available along a particular dimension."""
         dim_idx = dataset.get_dimension_index(dim)
         if dim_idx in [0, 1]:
@@ -203,9 +215,9 @@ class ImageInterface(GridInterface):
             return None
 
     @classmethod
-    def mask(cls, dataset, mask, mask_val=np.nan):
+    def mask(cls, dataset, mask, mask_value=np.nan):
         masked = dataset.data.copy().astype("float")
-        masked[np.flipud(mask)] = mask_val
+        masked[np.flipud(mask)] = mask_value
         return masked
 
     @classmethod
@@ -251,9 +263,9 @@ class ImageInterface(GridInterface):
         return [(*c, dataset.data[dataset._coord2matrix(c)]) for c in samples]
 
     @classmethod
-    def groupby(cls, dataset, dim_names, container_type, group_type, **kwargs):
+    def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
         # Get dimensions information
-        dimensions = [dataset.get_dimension(d) for d in dim_names]
+        dimensions = [dataset.get_dimension(d) for d in dimensions]
         kdims = [kdim for kdim in dataset.kdims if kdim not in dimensions]
 
         # Update the kwargs appropriately for Element group types
@@ -307,16 +319,16 @@ class ImageInterface(GridInterface):
             return data[key][0]
 
     @classmethod
-    def aggregate(cls, dataset, kdims, function, **kwargs):
-        kdims = [dimension_name(kd) for kd in kdims]
+    def aggregate(cls, dataset, dimensions, function, **kwargs):
+        dimensions = [dimension_name(kd) for kd in dimensions]
         axes = tuple(
             dataset.ndims - dataset.get_dimension_index(kdim) - 1
             for kdim in dataset.kdims
-            if kdim not in kdims
+            if kdim not in dimensions
         )
 
         data = np.atleast_1d(function(dataset.data, axis=axes, **kwargs))
-        if not kdims:
+        if not dimensions:
             if len(dataset.vdims) == 1:
                 return (data if np.isscalar(data) else data[0], [])
             else:
@@ -327,7 +339,7 @@ class ImageInterface(GridInterface):
         elif len(axes) == 1:
             return (
                 {
-                    kdims[0]: cls.values(dataset, axes[0], expanded=False),
+                    dimensions[0]: cls.values(dataset, axes[0], expanded=False),
                     dataset.vdims[0].name: data[::-1] if axes[0] else data,
                 },
                 [],

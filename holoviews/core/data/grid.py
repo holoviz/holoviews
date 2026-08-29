@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing as t
 from collections import defaultdict
 
 import numpy as np
@@ -190,7 +191,7 @@ class GridInterface(DictInterface):
         return dataset.data[dimension_name(dim)].ndim > 1
 
     @classmethod
-    def isscalar(cls, dataset, dim):
+    def isscalar(cls, dataset, dim, *, per_geom=False):
         values = cls.values(dataset, dim, expanded=False)
         return values.shape in ((), (1,)) or len(np.unique(values)) == 1
 
@@ -365,11 +366,11 @@ class GridInterface(DictInterface):
         return data
 
     @classmethod
-    def invert_index(cls, index, length):
+    def invert_index(cls, index, length: int):
         if np.isscalar(index):
-            return length - index
+            return length - t.cast("float", index)
         elif isinstance(index, slice):
-            start, stop = index.start, index.stop
+            start, stop = t.cast("float", index.start), t.cast("float", index.stop)
             new_start, new_stop = None, None
             if start is not None:
                 new_stop = length - start
@@ -456,9 +457,9 @@ class GridInterface(DictInterface):
             return cls.coords(dataset, dim.name, ordered=canonicalize)
 
     @classmethod
-    def groupby(cls, dataset, dim_names, container_type, group_type, **kwargs):
+    def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
         # Get dimensions information
-        dimensions = [dataset.get_dimension(d, strict=True) for d in dim_names]
+        dimensions = [dataset.get_dimension(d, strict=True) for d in dimensions]
         if "kdims" in kwargs:
             kdims = kwargs["kdims"]
         else:
@@ -490,7 +491,7 @@ class GridInterface(DictInterface):
         # Iterate over the unique entries applying selection masks
         grouped_data = []
         for unique_key in zip(*util.cartesian_product(keys), strict=True):
-            select = dict(zip(dim_names, unique_key, strict=True))
+            select = dict(zip(dimensions, unique_key, strict=True))
             if drop_dim:
                 group_data = dataset.select(**select)
                 group_data = group_data if np.isscalar(group_data) else group_data.columns()
@@ -501,7 +502,7 @@ class GridInterface(DictInterface):
                 isinstance(group_data, get_array_types()) and group_data.shape == ()
             ):
                 group_data = {dataset.vdims[0].name: np.atleast_1d(group_data)}
-                for dim, v in zip(dim_names, unique_key, strict=True):
+                for dim, v in zip(dimensions, unique_key, strict=True):
                     group_data[dim] = np.atleast_1d(v)
             elif not drop_dim:
                 if isinstance(group_data, get_array_types()):
@@ -649,25 +650,25 @@ class GridInterface(DictInterface):
         return data
 
     @classmethod
-    def mask(cls, dataset, mask, mask_val=np.nan):
+    def mask(cls, dataset, mask, mask_value=np.nan):
         mask = cls.canonicalize(dataset, mask)
         packed = cls.packed(dataset)
         masked = dict(dataset.data)
         if packed:
             masked = dataset.data[packed].copy()
             try:
-                masked[mask] = mask_val
+                masked[mask] = mask_value
             except ValueError:
                 masked = masked.astype("float")
-                masked[mask] = mask_val
+                masked[mask] = mask_value
         else:
             for vd in dataset.vdims:
                 masked[vd.name] = marr = masked[vd.name].copy()
                 try:
-                    marr[mask] = mask_val
+                    marr[mask] = mask_value
                 except ValueError:
                     masked[vd.name] = marr = marr.astype("float")
-                    marr[mask] = mask_val
+                    marr[mask] = mask_value
         return masked
 
     @classmethod
@@ -705,13 +706,13 @@ class GridInterface(DictInterface):
         return concatenated
 
     @classmethod
-    def aggregate(cls, dataset, kdims, function, **kwargs):
-        kdims = [dimension_name(kd) for kd in kdims]
-        data = {kdim: dataset.data[kdim] for kdim in kdims}
+    def aggregate(cls, dataset, dimensions, function, **kwargs):
+        dimensions = [dimension_name(kd) for kd in dimensions]
+        data = {kdim: dataset.data[kdim] for kdim in dimensions}
         axes = tuple(
             dataset.ndims - dataset.get_dimension_index(kdim) - 1
             for kdim in dataset.kdims
-            if kdim not in kdims
+            if kdim not in dimensions
         )
         da = dask_array_module()
         dropped = []
