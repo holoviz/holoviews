@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import builtins
+import typing as t
 
 import narwhals.stable.v2 as nw
 import numpy as np
@@ -10,6 +11,9 @@ from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .interface import DataError, Interface
+
+if t.TYPE_CHECKING:
+    from narwhals.typing import NonNestedLiteral
 
 _AGG_FUNC_LOOKUP = {
     builtins.sum: "sum",
@@ -145,7 +149,7 @@ class NarwhalsInterface(Interface):
         return data, {"kdims": kdims, "vdims": vdims}, {}
 
     @classmethod
-    def isscalar(cls, dataset, dim):
+    def isscalar(cls, dataset, dim, *, per_geom=False):
         name = dataset.get_dimension(dim, strict=True).name
         return len(dataset.data[name].unique()) == 1
 
@@ -380,6 +384,8 @@ class NarwhalsInterface(Interface):
                 if k.stop is not None:
                     masks.append(nw.col(name) < k.stop)
             elif isinstance(k, (set, list)):
+                if len(k) == 0:
+                    continue
                 iter_slc = None
                 for ik in k:
                     mask = nw.col(name) == ik
@@ -389,7 +395,7 @@ class NarwhalsInterface(Interface):
                         iter_slc |= mask
                 masks.append(iter_slc)
             elif callable(k):
-                masks.append(nw.col(name).pipe(k))
+                masks.append(t.cast("nw.Expr", nw.col(name).pipe(k)))
             else:
                 masks.append(nw.col(name) == k)
 
@@ -471,7 +477,7 @@ class NarwhalsInterface(Interface):
             cols = [*cols[:dim_pos], dim.name, *cols[dim_pos:]]
             if not isinstance(values, nw.Series):
                 if np.isscalar(values):
-                    values = nw.lit(values)
+                    values = nw.lit(t.cast("NonNestedLiteral", values))
                 else:
                     values = nw.new_series(
                         dim.name,
@@ -588,16 +594,16 @@ class NarwhalsInterface(Interface):
         return nrows
 
     @classmethod
-    def histogram(cls, data, bins, density=True, weights=None):
-        if isinstance(data, (nw.DataFrame, nw.LazyFrame)):
-            columns = list(data.collect_schema())
+    def histogram(cls, array, bins, density=True, weights=None):
+        if isinstance(array, (nw.DataFrame, nw.LazyFrame)):
+            columns = list(array.collect_schema())
             if len(columns) > 1:
                 msg = "Histogram can only be computed for a single column"
                 raise ValueError(msg)
-            if isinstance(data, nw.LazyFrame):
-                data = data.collect()
-            data = data[columns[0]]
-        return super().histogram(data.to_numpy(), bins, density, weights)
+            if isinstance(array, nw.LazyFrame):
+                array = array.collect()
+            array = array[columns[0]]
+        return super().histogram(array.to_numpy(), bins, density, weights)
 
 
 Interface.register(NarwhalsInterface)
