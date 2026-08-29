@@ -382,16 +382,16 @@ class DictInterface(Interface):
         }
 
     @classmethod
-    def aggregate(cls, dataset, kdims, function, **kwargs):
-        kdims = [dataset.get_dimension(d, strict=True).name for d in kdims]
+    def aggregate(cls, dataset, dimensions, function, **kwargs):
+        dimensions = [dataset.get_dimension(d, strict=True).name for d in dimensions]
         vdims = dataset.dimensions("value", label="name")
-        groups = cls.groupby(dataset, kdims, list, dict)
-        aggregated = {k: [] for k in kdims + vdims}
+        groups = cls.groupby(dataset, dimensions, list, dict)
+        aggregated = {k: [] for k in dimensions + vdims}
 
         dropped = []
         for key, group in groups:
             key = key if isinstance(key, tuple) else (key,)
-            for kdim, val in zip(kdims, key, strict=False):
+            for kdim, val in zip(dimensions, key, strict=False):
                 aggregated[kdim].append(val)
             for vdim, arr in group.items():
                 if vdim in dataset.vdims:

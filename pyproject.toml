@@ -260,7 +260,6 @@ convention = "numpy"
 [tool.ty]
 src.exclude = [
     "holoviews/*version.py",
-    "holoviews/core/data/dictionary.py", # 7
     "holoviews/core/data/grid.py", # 13
     "holoviews/core/data/ibis.py", # deprecated
     "holoviews/core/data/image.py", # 5
