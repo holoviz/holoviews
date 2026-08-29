@@ -788,7 +788,7 @@ class DynamicTestOverlay:
         overlaid = hv.Image(sine_array(0, 5)) * hv.Image(sine_array(0, 10))
         assert_element_equal(dynamic_overlay[5], overlaid)
 
-    def test_dynamic_overlay_memoization(self):
+    def test_dynamic_overlay_memoization(self, rng):
         """Tests that Callable memoizes unchanged callbacks"""
 
         def fn(x, y):
@@ -800,7 +800,7 @@ class DynamicTestOverlay:
 
         def fn2(x, y):
             counter[0] += 1
-            return hv.Image(np.random.rand(10, 10))
+            return hv.Image(rng.random((10, 10)))
 
         dmap2 = hv.DynamicMap(fn2, kdims=[], streams=[PointerXY()])
 

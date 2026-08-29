@@ -1486,9 +1486,9 @@ class GriddedInterfaceTests:
         grouped = dataset.groupby("z", kdims=["y", "x"], dynamic=True)
         assert_data_equal(grouped[2].dimension_values(2, flat=False), dat[:, :, -1].T)
 
-    def test_dataset_slice_inverted_dimension(self):
+    def test_dataset_slice_inverted_dimension(self, rng):
         xs = np.arange(30)[::-1]
-        ys = np.random.rand(30)
+        ys = rng.random(30)
         ds = hv.Dataset((xs, ys), "x", "y")
         sliced = ds[5:15]
         assert_element_equal(sliced, hv.Dataset((xs[15:25], ys[15:25]), "x", "y"))
@@ -1500,8 +1500,8 @@ class GriddedInterfaceTests:
         sampled = hv.Dataset((xs, ys, values), ["x", "y"], "z").sample(y=0)
         assert_element_equal(sampled, hv.Curve((xs, values[0]), vdims="z"))
 
-    def test_aggregate_2d_with_spreadfn(self):
-        array = np.random.rand(10, 5)
+    def test_aggregate_2d_with_spreadfn(self, rng):
+        array = rng.random((10, 5))
         ds = hv.Dataset((range(5), range(10), array), ["x", "y"], "z")
         agg = ds.aggregate("x", np.mean, np.std)
         example = hv.Dataset(
@@ -1509,8 +1509,8 @@ class GriddedInterfaceTests:
         )
         assert_element_equal(agg, example)
 
-    def test_concat_grid_3d(self):
-        array = np.random.rand(4, 5, 3, 2)
+    def test_concat_grid_3d(self, rng):
+        array = rng.random((4, 5, 3, 2))
         orig = hv.Dataset(
             (range(2), range(3), range(5), range(4), array), ["A", "B", "x", "y"], "z"
         )
@@ -1525,15 +1525,15 @@ class GriddedInterfaceTests:
         ds = concat(hmap)
         assert_element_equal(ds, orig)
 
-    def test_concat_grid_3d_shape_mismatch(self):
-        ds1 = hv.Dataset(([0, 1], [1, 2, 3], np.random.rand(3, 2)), ["x", "y"], "z")
-        ds2 = hv.Dataset(([0, 1, 2], [1, 2], np.random.rand(2, 3)), ["x", "y"], "z")
+    def test_concat_grid_3d_shape_mismatch(self, rng):
+        ds1 = hv.Dataset(([0, 1], [1, 2, 3], rng.random((3, 2))), ["x", "y"], "z")
+        ds2 = hv.Dataset(([0, 1, 2], [1, 2], rng.random((2, 3))), ["x", "y"], "z")
         hmap = hv.HoloMap({1: ds1, 2: ds2})
         with pytest.raises(DataError):
             concat(hmap)
 
-    def test_grid_3d_groupby_concat_roundtrip(self):
-        array = np.random.rand(4, 5, 3, 2)
+    def test_grid_3d_groupby_concat_roundtrip(self, rng):
+        array = rng.random((4, 5, 3, 2))
         orig = hv.Dataset(
             (range(2), range(3), range(5), range(4), array), ["A", "B", "x", "y"], "z"
         )

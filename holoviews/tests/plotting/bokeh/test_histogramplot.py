@@ -15,8 +15,8 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestSideHistogramPlot(LoggingComparison, TestBokehPlot):
-    def test_side_histogram_no_cmapper(self):
-        points = hv.Points(np.random.rand(100, 2))
+    def test_side_histogram_no_cmapper(self, rng):
+        points = hv.Points(rng.random((100, 2)))
         plot = bokeh_renderer.get_plot(points.hist())
         plot.initialize_plot()
         adjoint_plot = next(iter(plot.subplots.values()))

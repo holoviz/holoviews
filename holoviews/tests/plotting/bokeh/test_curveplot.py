@@ -55,13 +55,11 @@ class TestCurvePlot(TestBokehPlot):
         key = next(iter(Callback._callbacks.keys()))
         assert key == (id(plot.handles["plot"]), id(PointerXCallback))
 
-    def test_cyclic_palette_curves(self):
+    def test_cyclic_palette_curves(self, rng):
         palette = hv.Palette("Set1")
         hmap = hv.HoloMap(
             {
-                i: hv.NdOverlay(
-                    {j: hv.Curve(np.random.rand(3)).opts(color=palette) for j in range(3)}
-                )
+                i: hv.NdOverlay({j: hv.Curve(rng.random(3)).opts(color=palette) for j in range(3)})
                 for i in range(3)
             }
         )
@@ -121,14 +119,14 @@ class TestCurvePlot(TestBokehPlot):
             formatters={"@{x}": "datetime"},
         )
 
-    def test_curve_overlay_hover_batched(self):
-        obj = hv.NdOverlay({i: hv.Curve(np.random.rand(10, 2)) for i in range(5)}, kdims=["Test"])
+    def test_curve_overlay_hover_batched(self, rng):
+        obj = hv.NdOverlay({i: hv.Curve(rng.random((10, 2))) for i in range(5)}, kdims=["Test"])
         opts = {"Curve": {"tools": ["hover"]}, "NdOverlay": {"legend_limit": 0}}
         obj = obj.opts(opts)
         self._test_hover_info(obj, [("Test", "@{Test}")], "prev")
 
-    def test_curve_overlay_hover(self):
-        obj = hv.NdOverlay({i: hv.Curve(np.random.rand(10, 2)) for i in range(5)}, kdims=["Test"])
+    def test_curve_overlay_hover(self, rng):
+        obj = hv.NdOverlay({i: hv.Curve(rng.random((10, 2))) for i in range(5)}, kdims=["Test"])
         opts = {"Curve": {"tools": ["hover"]}}
         obj = obj.opts(opts)
         self._test_hover_info(obj, [("Test", "@{Test}"), ("x", "@{x}"), ("y", "@{y}")], "nearest")
@@ -159,43 +157,43 @@ class TestCurvePlot(TestBokehPlot):
         assert isinstance(y_range, FactorRange)
         assert y_range.factors == ["A", "B", "C"]
 
-    def test_curve_datetime64(self):
+    def test_curve_datetime64(self, rng):
         dates = [np.datetime64(dt.datetime(2016, 1, i)) for i in range(1, 11)]
-        curve = hv.Curve((dates, np.random.rand(10)))
+        curve = hv.Curve((dates, rng.random(10)))
         plot = bokeh_renderer.get_plot(curve)
         assert plot.handles["x_range"].start == np.datetime64(dt.datetime(2016, 1, 1))
         assert plot.handles["x_range"].end == np.datetime64(dt.datetime(2016, 1, 10))
 
-    def test_curve_pandas_timestamps(self):
+    def test_curve_pandas_timestamps(self, rng):
         dates = pd.date_range("2016-01-01", "2016-01-10", freq="D")
-        curve = hv.Curve((dates, np.random.rand(10)))
+        curve = hv.Curve((dates, rng.random(10)))
         plot = bokeh_renderer.get_plot(curve)
         assert plot.handles["x_range"].start == np.datetime64(dt.datetime(2016, 1, 1))
         assert plot.handles["x_range"].end == np.datetime64(dt.datetime(2016, 1, 10))
 
-    def test_curve_dt_datetime(self):
+    def test_curve_dt_datetime(self, rng):
         dates = [dt.datetime(2016, 1, i) for i in range(1, 11)]
-        curve = hv.Curve((dates, np.random.rand(10)))
+        curve = hv.Curve((dates, rng.random(10)))
         plot = bokeh_renderer.get_plot(curve)
         assert plot.handles["x_range"].start == np.datetime64(dt.datetime(2016, 1, 1))
         assert plot.handles["x_range"].end == np.datetime64(dt.datetime(2016, 1, 10))
 
-    def test_curve_heterogeneous_datetime_types_overlay(self):
+    def test_curve_heterogeneous_datetime_types_overlay(self, rng):
         dates64 = [np.datetime64(dt.datetime(2016, 1, i)) for i in range(1, 11)]
         dates = [dt.datetime(2016, 1, i) for i in range(2, 12)]
-        curve_dt64 = hv.Curve((dates64, np.random.rand(10)))
-        curve_dt = hv.Curve((dates, np.random.rand(10)))
+        curve_dt64 = hv.Curve((dates64, rng.random(10)))
+        curve_dt = hv.Curve((dates, rng.random(10)))
         plot = bokeh_renderer.get_plot(curve_dt * curve_dt64)
         assert plot.handles["x_range"].start == np.datetime64(dt.datetime(2016, 1, 1))
         assert plot.handles["x_range"].end == np.datetime64(dt.datetime(2016, 1, 11))
 
-    def test_curve_heterogeneous_datetime_types_with_pd_overlay(self):
+    def test_curve_heterogeneous_datetime_types_with_pd_overlay(self, rng):
         dates_pd = pd.date_range("2016-01-04", "2016-01-13", freq="D")
         dates64 = [np.datetime64(dt.datetime(2016, 1, i)) for i in range(1, 11)]
         dates = [dt.datetime(2016, 1, i) for i in range(2, 12)]
-        curve_dt64 = hv.Curve((dates64, np.random.rand(10)))
-        curve_dt = hv.Curve((dates, np.random.rand(10)))
-        curve_pd = hv.Curve((dates_pd, np.random.rand(10)))
+        curve_dt64 = hv.Curve((dates64, rng.random(10)))
+        curve_dt = hv.Curve((dates, rng.random(10)))
+        curve_pd = hv.Curve((dates_pd, rng.random(10)))
         plot = bokeh_renderer.get_plot(curve_dt * curve_dt64 * curve_pd)
         assert plot.handles["x_range"].start == np.datetime64(dt.datetime(2016, 1, 1))
         assert plot.handles["x_range"].end == np.datetime64(dt.datetime(2016, 1, 13))

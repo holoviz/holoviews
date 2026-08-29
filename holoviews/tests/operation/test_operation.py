@@ -50,37 +50,37 @@ class OperationTests:
     the basic Element types.
     """
 
-    def test_operation_element(self):
-        img = hv.Image(np.random.rand(10, 10))
+    def test_operation_element(self, rng):
+        img = hv.Image(rng.random((10, 10)))
         op_img = operation(img, op=lambda x, k: x.clone(x.data * 2))
         assert_element_equal(op_img, img.clone(img.data * 2, group="Operation"))
 
-    def test_operation_ndlayout(self):
-        ndlayout = hv.NdLayout({i: hv.Image(np.random.rand(10, 10)) for i in range(10)})
+    def test_operation_ndlayout(self, rng):
+        ndlayout = hv.NdLayout({i: hv.Image(rng.random((10, 10))) for i in range(10)})
         op_ndlayout = operation(ndlayout, op=lambda x, k: x.clone(x.data * 2))
         doubled = ndlayout.clone(
             {k: v.clone(v.data * 2, group="Operation") for k, v in ndlayout.items()}
         )
         assert_element_equal(op_ndlayout, doubled)
 
-    def test_operation_grid(self):
-        grid = hv.GridSpace({i: hv.Image(np.random.rand(10, 10)) for i in range(10)}, kdims=["X"])
+    def test_operation_grid(self, rng):
+        grid = hv.GridSpace({i: hv.Image(rng.random((10, 10))) for i in range(10)}, kdims=["X"])
         op_grid = operation(grid, op=lambda x, k: x.clone(x.data * 2))
         doubled = grid.clone({k: v.clone(v.data * 2, group="Operation") for k, v in grid.items()})
         assert_element_equal(op_grid, doubled)
 
-    def test_operation_holomap(self):
-        hmap = hv.HoloMap({1: hv.Image(np.random.rand(10, 10))})
+    def test_operation_holomap(self, rng):
+        hmap = hv.HoloMap({1: hv.Image(rng.random((10, 10)))})
         op_hmap = operation(hmap, op=lambda x, k: x.clone(x.data * 2))
         assert_element_equal(op_hmap.last, hmap.last.clone(hmap.last.data * 2, group="Operation"))
 
-    def test_image_transform(self):
-        img = hv.Image(np.random.rand(10, 10))
+    def test_image_transform(self, rng):
+        img = hv.Image(rng.random((10, 10)))
         op_img = transform(img, operator=lambda x: x * 2)
         assert_element_equal(op_img, img.clone(img.data * 2, group="Transform"))
 
-    def test_operation_chain(self):
-        img = hv.Image(np.random.rand(10, 10))
+    def test_operation_chain(self, rng):
+        img = hv.Image(rng.random((10, 10)))
         op_img = chain(
             img,
             operations=[
@@ -105,20 +105,20 @@ class OperationTests:
         assert ch_op.find(CustomOp2, skip_nonlinked=False) is op2
         assert ch_op.find(CustomOp2, skip_nonlinked=True) is op2
 
-    def test_operation_chain_find_apply(self):
-        img = hv.Image(np.random.rand(10, 10))
+    def test_operation_chain_find_apply(self, rng):
+        img = hv.Image(rng.random((10, 10)))
         tr_op = transform.instance(operator=lambda x: x * 2)
         img_apply = img.apply(tr_op, dynamic=False)
         assert img_apply.pipeline.find(transform, skip_nonlinked=False) is tr_op
 
-    def test_operation_chain_find_apply_chain(self):
+    def test_operation_chain_find_apply_chain(self, rng):
         class CustomOp1(hv.Operation):
             pass
 
         class CustomOp2(hv.Operation):
             pass
 
-        img = hv.Image(np.random.rand(10, 10))
+        img = hv.Image(rng.random((10, 10)))
         op1 = CustomOp1.instance()
         op2 = CustomOp2.instance()
         ch_op = chain.instance(operations=[op1, op2])

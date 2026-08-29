@@ -196,10 +196,10 @@ class TestElementPlot(TestPlotlyPlot):
         assert state["layout"]["scene"]["zaxis"]["ticktext"] == ["A", "B", "C"]
 
     ### Aspect ratio ###
-    def test_aspect_non_matching_types(self):
+    def test_aspect_non_matching_types(self, rng):
         X = pd.date_range(start="1/1/2018", end="1/08/2018", periods=100)
         Y = np.linspace(1, 100, 100)
-        Z = np.random.randn(100, 100)
+        Z = rng.standard_normal((100, 100))
         qm = hv.QuadMesh((X, Y, Z)).opts(aspect="equal")
         msg = (
             "The aspect is set to 'equal', but the axes does not have the same type: "
@@ -259,21 +259,21 @@ class TestOverlayPlot(TestPlotlyPlot):
 
 
 class TestColorbarPlot(TestPlotlyPlot):
-    def test_base(self):
-        df = pd.DataFrame(np.random.random((10, 4)), columns=list("XYZT"))
+    def test_base(self, rng):
+        df = pd.DataFrame(rng.random((10, 4)), columns=list("XYZT"))
         scatter = hv.Scatter3D(data=df)
         state = self._get_plot_state(scatter)
         assert "colorbar" not in state["data"][0]["marker"]
 
-    def test_colorbar(self):
-        df = pd.DataFrame(np.random.random((10, 4)), columns=list("XYZT"))
+    def test_colorbar(self, rng):
+        df = pd.DataFrame(rng.random((10, 4)), columns=list("XYZT"))
         scatter = hv.Scatter3D(data=df).opts(color="T", colorbar=True)
         state = self._get_plot_state(scatter)
         assert "colorbar" in state["data"][0]["marker"]
         assert state["data"][0]["marker"]["colorbar"]["title"]["text"] == "T"
 
-    def test_colorbar_opts_title(self):
-        df = pd.DataFrame(np.random.random((10, 4)), columns=list("XYZT"))
+    def test_colorbar_opts_title(self, rng):
+        df = pd.DataFrame(rng.random((10, 4)), columns=list("XYZT"))
         scatter = hv.Scatter3D(data=df).opts(
             color="T", colorbar=True, colorbar_opts={"title": "some-title"}
         )

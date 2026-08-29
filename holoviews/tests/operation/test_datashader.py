@@ -46,15 +46,14 @@ AggregationOperation.vdim_prefix = ""
 
 
 @pytest.fixture
-def point_data():
+def point_data(rng):
     num = 100
-    np.random.seed(1)
 
     dists = {
         cat: pd.DataFrame(
             {
-                "x": np.random.normal(x, s, num),
-                "y": np.random.normal(y, s, num),
+                "x": rng.normal(x, s, num),
+                "y": rng.normal(y, s, num),
                 "s": s,
                 "val": val,
                 "cat": cat,
@@ -1457,8 +1456,8 @@ class DatashaderRasterizeTests:
         output = img.data["z"].to_numpy()
         assert np.isnan(output).any()
 
-    def test_rasterize_apply_when_instance_with_line_width(self):
-        df = pd.DataFrame(np.random.multivariate_normal((0, 0), [[0.1, 0.1], [0.1, 1.0]], (100,)))
+    def test_rasterize_apply_when_instance_with_line_width(self, rng):
+        df = pd.DataFrame(rng.multivariate_normal((0, 0), [[0.1, 0.1], [0.1, 1.0]], (100,)))
         df.columns = ["a", "b"]
 
         curve = hv.Curve(df, kdims=["a"], vdims=["b"])
@@ -1515,10 +1514,10 @@ class DatashaderRasterizeTests:
 @pytest.mark.parametrize(
     ("agg_input_fn", "index_col"),
     [
-        (ds.first, [311, 433, 309, 482]),
-        (ds.last, [491, 483, 417, 482]),
-        (ds.min, [311, 433, 309, 482]),
-        (ds.max, [404, 433, 417, 482]),
+        (ds.first, [414, 406, 343, 310]),
+        (ds.last, [426, 468, 483, 456]),
+        (ds.min, [414, 406, 343, 310]),
+        (ds.max, [414, 406, 420, 428]),
     ],
 )
 def test_rasterize_where_agg_no_column(point_plot, agg_input_fn, index_col):
@@ -1654,18 +1653,18 @@ def test_selector_spread(point_plot, op_fn, agg_fn):
 
     data_nan = np.all([spread_img.data[v.name] == 0 for v in spread_img.vdims], axis=0)
     index_nan = spread_img.data["__index__"] == -1
-    assert index_nan.sum() == 36  # Hard-coded
+    assert index_nan.sum() == 27  # Hard-coded
     np.testing.assert_array_equal(data_nan, index_nan)
 
 
-def test_selector_rasterize_with_datetime_column():
+def test_selector_rasterize_with_datetime_column(rng):
     n = 4
     df = pd.DataFrame(
         {
-            "x": np.random.uniform(-180, 180, n),
-            "y": np.random.uniform(-90, 90, n),
+            "x": rng.uniform(-180, 180, n),
+            "y": rng.uniform(-90, 90, n),
             "Timestamp": pd.date_range(start="2023-01-01", periods=n, freq="D", unit="ns"),
-            "Value": np.random.rand(n) * 100,
+            "Value": rng.random(n) * 100,
         }
     )
     point_plot = hv.Points(df)

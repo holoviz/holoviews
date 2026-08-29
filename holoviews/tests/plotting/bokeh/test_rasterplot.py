@@ -14,8 +14,8 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestRasterPlot(TestBokehPlot):
-    def test_image_colormapping(self):
-        img = hv.Image(np.random.rand(10, 10)).opts(logz=True)
+    def test_image_colormapping(self, rng):
+        img = hv.Image(rng.random((10, 10))).opts(logz=True)
         self._test_colormapping(img, 2, True)
 
     def test_image_boolean_array(self):
@@ -76,8 +76,8 @@ class TestRasterPlot(TestBokehPlot):
         assert source.data["dw"][0] == 1
         assert source.data["dh"][0] == 1
 
-    def test_image_invert_xaxis(self):
-        arr = np.random.rand(10, 10)
+    def test_image_invert_xaxis(self, rng):
+        arr = rng.random((10, 10))
         img = hv.Image(arr).opts(invert_xaxis=True)
         plot = bokeh_renderer.get_plot(img)
         x_range = plot.handles["x_range"]
@@ -91,8 +91,8 @@ class TestRasterPlot(TestBokehPlot):
         assert cdata["x"] == [-0.5]
         np.testing.assert_equal(cdata["image"][0], arr[::-1])
 
-    def test_image_invert_yaxis(self):
-        arr = np.random.rand(10, 10)
+    def test_image_invert_yaxis(self, rng):
+        arr = rng.random((10, 10))
         img = hv.Image(arr).opts(invert_yaxis=True)
         plot = bokeh_renderer.get_plot(img)
         y_range = plot.handles["y_range"]
@@ -106,8 +106,8 @@ class TestRasterPlot(TestBokehPlot):
         assert cdata["y"] == [-0.5]
         np.testing.assert_equal(cdata["image"][0], arr[::-1])
 
-    def test_rgb_invert_xaxis(self):
-        rgb = hv.RGB(np.random.rand(10, 10, 3)).opts(invert_xaxis=True)
+    def test_rgb_invert_xaxis(self, rng):
+        rgb = hv.RGB(rng.random((10, 10, 3))).opts(invert_xaxis=True)
         plot = bokeh_renderer.get_plot(rgb)
         x_range = plot.handles["x_range"]
         assert x_range.start == 0.5
@@ -118,8 +118,8 @@ class TestRasterPlot(TestBokehPlot):
         assert cdata["dw"] == [1.0]
         assert cdata["x"] == [-0.5]
 
-    def test_rgb_invert_yaxis(self):
-        rgb = hv.RGB(np.random.rand(10, 10, 3)).opts(invert_yaxis=True)
+    def test_rgb_invert_yaxis(self, rng):
+        rgb = hv.RGB(rng.random((10, 10, 3))).opts(invert_yaxis=True)
         plot = bokeh_renderer.get_plot(rgb)
         y_range = plot.handles["y_range"]
         assert y_range.start == 0.5
