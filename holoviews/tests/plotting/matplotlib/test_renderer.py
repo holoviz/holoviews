@@ -40,7 +40,9 @@ class MPLRendererTest:
         self.map1 = hv.HoloMap({1: self.image1, 2: self.image2}, label="TestMap")
 
         self.unicode_table = hv.ItemTable(
-            [("β", "Δ1"), ("°C", "3×4")], label="Poincaré", group="α Festkörperphysik"
+            [("β", "Δ1"), ("°C", "3×4")],  # noqa: RUF001
+            label="Poincaré",
+            group="α Festkörperphysik",  # noqa: RUF001
         )
 
         self.renderer = MPLRenderer.instance()

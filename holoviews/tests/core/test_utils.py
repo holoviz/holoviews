@@ -251,7 +251,7 @@ class TestAllowablePrefix:
         assert not prefixed
 
     def test_prefix_test3(self):
-        prefixed = sanitize_identifier.prefixed("۵some_string")
+        prefixed = sanitize_identifier.prefixed("۵some_string")  # noqa: RUF001
         assert prefixed
 
 
@@ -284,8 +284,8 @@ class TestSanitization:
         assert sanitized == "A__test"
 
     def test_simple_alpha_sanitized(self):
-        sanitized = sanitize_identifier("α")
-        assert sanitized == "α"
+        sanitized = sanitize_identifier("α")  # noqa: RUF001
+        assert sanitized == "α"  # noqa: RUF001
 
     def test_simple_a_pound_sanitized(self):
         sanitized = sanitize_identifier("a £")
@@ -300,32 +300,32 @@ class TestSanitization:
         assert sanitized == "δ"
 
     def test_simple_alpha_beta_sanitized(self):
-        sanitized = sanitize_identifier("α β")
-        assert sanitized == "α_β"
+        sanitized = sanitize_identifier("α β")  # noqa: RUF001
+        assert sanitized == "α_β"  # noqa: RUF001
 
     def test_simple_alpha_beta_underscore_sanitized(self):
-        sanitized = sanitize_identifier("α_β")
-        assert sanitized == "α_β"
+        sanitized = sanitize_identifier("α_β")  # noqa: RUF001
+        assert sanitized == "α_β"  # noqa: RUF001
 
     def test_simple_alpha_beta_double_underscore_sanitized(self):
-        sanitized = sanitize_identifier("α__β")
-        assert sanitized == "α__β"
+        sanitized = sanitize_identifier("α__β")  # noqa: RUF001
+        assert sanitized == "α__β"  # noqa: RUF001
 
     def test_simple_alpha_beta_mixed_underscore_space_sanitized(self):
-        sanitized = sanitize_identifier("α__  β")
-        assert sanitized == "α__β"
+        sanitized = sanitize_identifier("α__  β")  # noqa: RUF001
+        assert sanitized == "α__β"  # noqa: RUF001
 
     def test_alpha_times_two(self):
-        sanitized = sanitize_identifier("α*2")
-        assert sanitized == "α_times_2"
+        sanitized = sanitize_identifier("α*2")  # noqa: RUF001
+        assert sanitized == "α_times_2"  # noqa: RUF001
 
     def test_urdu_a_five_sanitized(self):
         """
         Note: There would be a clash if you mixed the languages of
         your digits! E.g. arabic ٥ five and urdu ۵ five
-        """
-        sanitized = sanitize_identifier("a ۵")
-        assert sanitized == "A_۵"
+        """  # noqa: RUF002
+        sanitized = sanitize_identifier("a ۵")  # noqa: RUF001
+        assert sanitized == "A_۵"  # noqa: RUF001
 
     def test_umlaut_sanitized(self):
         sanitized = sanitize_identifier("Festkörperphysik")
