@@ -126,7 +126,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         assert layer["maxzoom"] == osm.max_zoom
         assert layer["sourceattribution"] == osm.html_attribution
 
-    def test_overlay(self):
+    def test_overlay(self, rng):
         # Base layer is mapbox vector layer
         opts = (
             dict(mapstyle="dark")
@@ -139,7 +139,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         stamen_raster = StamenTerrain().opts(alpha=0.7)
 
         # RGB layer
-        rgb_data = np.random.rand(10, 10, 3)
+        rgb_data = rng.random((10, 10, 3))
         rgb = hv.RGB(
             rgb_data, bounds=(self.x_range[0], self.y_range[0], self.x_range[1], self.y_range[1])
         ).opts(opacity=0.5)

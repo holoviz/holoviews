@@ -17,7 +17,7 @@ class TestCollation:
         alphas, betas, deltas = 2, 2, 2
         Bs = list(range(100))
         coords = itertools.product(*(range(n) for n in [alphas, betas, deltas]))
-        mus = np.random.rand(alphas, betas, 100, 10)
+        mus = np.random.default_rng(1).random((alphas, betas, 100, 10))
         self.phase_boundaries = {
             (a, b, d): hv.Curve(zip(Bs, mus[a, b, :, i] * a + b, strict=True))
             for i in range(10)

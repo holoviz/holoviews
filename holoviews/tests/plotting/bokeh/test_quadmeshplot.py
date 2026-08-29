@@ -10,11 +10,11 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestQuadMeshPlot(TestBokehPlot):
-    def test_quadmesh_colormapping(self):
+    def test_quadmesh_colormapping(self, rng):
         n = 21
         xs = np.logspace(1, 3, n)
         ys = np.linspace(1, 10, n)
-        qmesh = hv.QuadMesh((xs, ys, np.random.rand(n - 1, n - 1)))
+        qmesh = hv.QuadMesh((xs, ys, rng.random((n - 1, n - 1))))
         self._test_colormapping(qmesh, 2)
 
     def test_quadmesh_invert_axes(self):
@@ -26,19 +26,19 @@ class TestQuadMeshPlot(TestBokehPlot):
         assert_data_equal(source.data["x"], qmesh.dimension_values(0))
         assert_data_equal(source.data["y"], qmesh.dimension_values(1))
 
-    def test_quadmesh_colorbar(self):
+    def test_quadmesh_colorbar(self, rng):
         n = 21
         xs = np.logspace(1, 3, n)
         ys = np.linspace(1, 10, n)
-        qmesh = hv.QuadMesh((xs, ys, np.random.rand(n - 1, n - 1))).opts(colorbar=True)
+        qmesh = hv.QuadMesh((xs, ys, rng.random((n - 1, n - 1)))).opts(colorbar=True)
         plot = bokeh_renderer.get_plot(qmesh)
         assert isinstance(plot.handles["colorbar"], ColorBar)
         assert plot.handles["colorbar"].color_mapper is plot.handles["color_mapper"]
 
-    def test_quadmesh_inverted_coords(self):
+    def test_quadmesh_inverted_coords(self, rng):
         xs = [0, 1, 2]
         ys = [2, 1, 0]
-        qmesh = hv.QuadMesh((xs, ys, np.random.rand(3, 3)))
+        qmesh = hv.QuadMesh((xs, ys, rng.random((3, 3))))
         plot = bokeh_renderer.get_plot(qmesh)
         source = plot.handles["source"]
         assert_data_equal(source.data["z"], qmesh.dimension_values(2, flat=False).T.flatten())

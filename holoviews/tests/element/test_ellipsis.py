@@ -75,52 +75,52 @@ class TestEllipsisTable:
 
 
 class TestEllipsisRaster:
-    def test_raster_ellipsis_slice_value(self):
-        data = np.random.rand(10, 10)
+    def test_raster_ellipsis_slice_value(self, rng):
+        data = rng.random((10, 10))
         sliced = hv.Raster(data)[..., "z"]
         assert_data_equal(sliced.data, data)
 
-    def test_raster_ellipsis_slice_value_missing(self):
-        data = np.random.rand(10, 10)
+    def test_raster_ellipsis_slice_value_missing(self, rng):
+        data = rng.random((10, 10))
         msg = r"'z' is the only selectable value dimension"
         with pytest.raises(KeyError, match=msg):
             hv.Raster(data)[..., "Non-existent"]
 
-    def test_image_ellipsis_slice_value(self):
-        data = np.random.rand(10, 10)
+    def test_image_ellipsis_slice_value(self, rng):
+        data = rng.random((10, 10))
         sliced = hv.Image(data)[..., "z"]
         assert_data_equal(sliced.data, data)
 
-    def test_image_ellipsis_slice_value_missing(self):
-        data = np.random.rand(10, 10)
+    def test_image_ellipsis_slice_value_missing(self, rng):
+        data = rng.random((10, 10))
         msg = "'Non-existent' is not an available value dimension"
         with pytest.raises(IndexError, match=msg):
             hv.Image(data)[..., "Non-existent"]
 
-    def test_rgb_ellipsis_slice_value(self):
-        data = np.random.rand(10, 10, 3)
+    def test_rgb_ellipsis_slice_value(self, rng):
+        data = rng.random((10, 10, 3))
         sliced = hv.RGB(data)[:, :, "R"]
         assert_data_equal(sliced.data, data[:, :, 0])
 
-    def test_rgb_ellipsis_slice_value_missing(self):
-        rgb = hv.RGB(np.random.rand(10, 10, 3))
+    def test_rgb_ellipsis_slice_value_missing(self, rng):
+        rgb = hv.RGB(rng.random((10, 10, 3)))
         msg = "'Non-existent' is not an available value dimension"
         with pytest.raises(IndexError, match=msg):
             rgb[..., "Non-existent"]
 
-    def test_rgb_ellipsis_slice_multiple_ellipsis(self):
-        rgb = hv.RGB(np.random.rand(10, 10, 3))
+    def test_rgb_ellipsis_slice_multiple_ellipsis(self, rng):
+        rgb = hv.RGB(rng.random((10, 10, 3)))
         msg = "Only a single ellipsis is allowed"
         with pytest.raises(ValueError, match=msg):
             rgb[..., ..., "R"]
 
-    def test_rgb_ellipsis_slice_alpha_channel(self):
-        rgba = np.random.rand(10, 10, 4)
+    def test_rgb_ellipsis_slice_alpha_channel(self, rng):
+        rgba = rng.random((10, 10, 4))
         sliced = hv.RGB(rgba)[..., "A"]
         assert_data_equal(sliced.data, rgba[:, :, 3])
 
-    def test_rgb_ellipsis_slice_alpha_channel_missing(self):
-        rgba = hv.RGB(np.random.rand(10, 10, 4))
+    def test_rgb_ellipsis_slice_alpha_channel_missing(self, rng):
+        rgba = hv.RGB(rng.random((10, 10, 4)))
         msg = "'Non-existent' is not an available value dimension"
         with pytest.raises(IndexError, match=msg):
             rgba[..., "Non-existent"]

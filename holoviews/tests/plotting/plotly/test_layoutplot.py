@@ -9,11 +9,11 @@ from .test_plot import TestPlotlyPlot, plotly_renderer
 
 
 class TestLayoutPlot(TestPlotlyPlot):
-    def test_layout_instantiate_subplots(self):
+    def test_layout_instantiate_subplots(self, rng):
         layout = (
             hv.Curve(range(10))
             + hv.Curve(range(10))
-            + hv.Image(np.random.rand(10, 10))
+            + hv.Image(rng.random((10, 10)))
             + hv.Curve(range(10))
             + hv.Curve(range(10))
         )
@@ -21,11 +21,11 @@ class TestLayoutPlot(TestPlotlyPlot):
         positions = [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3)]
         assert sorted(plot.subplots.keys()) == positions
 
-    def test_layout_instantiate_subplots_transposed(self):
+    def test_layout_instantiate_subplots_transposed(self, rng):
         layout = (
             hv.Curve(range(10))
             + hv.Curve(range(10))
-            + hv.Image(np.random.rand(10, 10))
+            + hv.Image(rng.random((10, 10)))
             + hv.Curve(range(10))
             + hv.Curve(range(10))
         )

@@ -22,13 +22,13 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestBarPlot(TestBokehPlot):
-    def test_bars_hover_ensure_kdims_sanitized(self):
-        obj = hv.Bars(np.random.rand(10, 2), kdims=["Dim with spaces"])
+    def test_bars_hover_ensure_kdims_sanitized(self, rng):
+        obj = hv.Bars(rng.random((10, 2)), kdims=["Dim with spaces"])
         obj = obj.opts(tools=["hover"])
         self._test_hover_info(obj, [("Dim with spaces", "@{Dim_with_spaces}"), ("y", "@{y}")])
 
-    def test_bars_hover_ensure_vdims_sanitized(self):
-        obj = hv.Bars(np.random.rand(10, 2), vdims=["Dim with spaces"])
+    def test_bars_hover_ensure_vdims_sanitized(self, rng):
+        obj = hv.Bars(rng.random((10, 2)), vdims=["Dim with spaces"])
         obj = obj.opts(tools=["hover"])
         self._test_hover_info(obj, [("x", "@{x}"), ("Dim with spaces", "@{Dim_with_spaces}")])
 
@@ -67,9 +67,11 @@ class TestBarPlot(TestBokehPlot):
         x_range = plot.handles["x_range"]
         assert x_range.factors == [("A", "0"), ("A", "1"), ("B", "0"), ("B", "1")]
 
-    def test_bars_multi_level_sorted(self):
+    def test_bars_multi_level_sorted(self, rng):
         box = hv.Bars(
-            (["A", "B"] * 15, [3, 10, 1] * 10, np.random.randn(30)), ["Group", "Category"], "Value"
+            (["A", "B"] * 15, [3, 10, 1] * 10, rng.standard_normal(30)),
+            ["Group", "Category"],
+            "Value",
         ).aggregate(function=np.mean)
         plot = bokeh_renderer.get_plot(box)
         x_range = plot.handles["x_range"]
@@ -82,9 +84,11 @@ class TestBarPlot(TestBokehPlot):
             ("B", "10"),
         ]
 
-    def test_box_whisker_multi_level_sorted_alphanumerically(self):
+    def test_box_whisker_multi_level_sorted_alphanumerically(self, rng):
         box = hv.Bars(
-            ([3, 10, 1] * 10, ["A", "B"] * 15, np.random.randn(30)), ["Group", "Category"], "Value"
+            ([3, 10, 1] * 10, ["A", "B"] * 15, rng.standard_normal(30)),
+            ["Group", "Category"],
+            "Value",
         ).aggregate(function=np.mean)
         plot = bokeh_renderer.get_plot(box)
         x_range = plot.handles["x_range"]
@@ -97,10 +101,10 @@ class TestBarPlot(TestBokehPlot):
             ("10", "B"),
         ]
 
-    def test_bars_multi_level_two_factors_in_overlay(self):
+    def test_bars_multi_level_two_factors_in_overlay(self, rng):
         # See: https://github.com/holoviz/holoviews/pull/5850
         box = hv.Bars(
-            (["1", "2", "3"] * 10, ["A", "B"] * 15, np.random.randn(30)),
+            (["1", "2", "3"] * 10, ["A", "B"] * 15, rng.standard_normal(30)),
             ["Group", "Category"],
             "Value",
         ).aggregate(function=np.mean)
@@ -471,8 +475,8 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(bars)
         np.testing.assert_almost_equal(plot.handles["glyph"].width, 0.11428571)
 
-    def test_bars_continuous_datetime(self):
-        bars = hv.Bars((pd.date_range("1/1/2000", periods=10), np.random.rand(10)))
+    def test_bars_continuous_datetime(self, rng):
+        bars = hv.Bars((pd.date_range("1/1/2000", periods=10), rng.random(10)))
         plot = bokeh_renderer.get_plot(bars)
         np.testing.assert_almost_equal(plot.handles["glyph"].width, 69120000.0)
 
@@ -486,9 +490,9 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(bars)
         np.testing.assert_almost_equal(plot.handles["glyph"].width, 69120000.0)
 
-    def test_bars_continuous_datetime_timezone_in_overlay(self):
+    def test_bars_continuous_datetime_timezone_in_overlay(self, rng):
         # See: https://github.com/holoviz/holoviews/issues/6364
-        bars = hv.Bars((pd.date_range("1/1/2000", periods=10, tz="UTC"), np.random.rand(10)))
+        bars = hv.Bars((pd.date_range("1/1/2000", periods=10, tz="UTC"), rng.random(10)))
         overlay = hv.Overlay([bars])
         plot = bokeh_renderer.get_plot(overlay)
         assert isinstance(plot.handles["xaxis"], DatetimeAxis)
@@ -562,15 +566,14 @@ class TestBarPlot(TestBokehPlot):
             ],
         )
 
-    def test_bars_group(self):
+    def test_bars_group(self, rng):
         samples = 100
 
         pets = ["Cat", "Dog", "Hamster", "Rabbit"]
         genders = ["Female", "Male", "N/A"]
 
-        np.random.seed(100)
-        pets_sample = np.random.choice(pets, samples)
-        gender_sample = np.random.choice(genders, samples)
+        pets_sample = rng.choice(pets, samples)
+        gender_sample = rng.choice(genders, samples)
 
         bars = hv.Bars(
             (pets_sample, gender_sample, np.ones(samples)), ["Pets", "Gender"]
@@ -578,15 +581,14 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(bars)
         assert plot.handles["glyph"].width == 0.8
 
-    def test_bar_group_stacked(self):
+    def test_bar_group_stacked(self, rng):
         samples = 100
 
         pets = ["Cat", "Dog", "Hamster", "Rabbit"]
         genders = ["Female", "Male", "N/A"]
 
-        np.random.seed(100)
-        pets_sample = np.random.choice(pets, samples)
-        gender_sample = np.random.choice(genders, samples)
+        pets_sample = rng.choice(pets, samples)
+        gender_sample = rng.choice(genders, samples)
 
         bars = (
             hv.Bars((pets_sample, gender_sample, np.ones(samples)), ["Pets", "Gender"])

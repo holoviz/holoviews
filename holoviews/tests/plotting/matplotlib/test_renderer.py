@@ -244,27 +244,27 @@ class TestAnimationBbox:
         png_w, png_h = self._png_size(obj)
         return gif_w >= png_w and gif_h >= png_h
 
-    def test_gif_single_plot_not_clipped(self):
-        hmap = hv.HoloMap({i: hv.Curve(np.random.rand(10)) for i in range(3)})
+    def test_gif_single_plot_not_clipped(self, rng):
+        hmap = hv.HoloMap({i: hv.Curve(rng.random(10)) for i in range(3)})
         assert self._all_labels_visible(hmap)
 
-    def test_gif_layout_not_clipped(self):
-        hmap = hv.HoloMap({i: hv.Curve(np.random.rand(10)) for i in range(3)})
+    def test_gif_layout_not_clipped(self, rng):
+        hmap = hv.HoloMap({i: hv.Curve(rng.random(10)) for i in range(3)})
         layout = hmap + hmap
         assert self._all_labels_visible(layout)
 
-    def test_gif_with_long_labels_not_clipped(self):
+    def test_gif_with_long_labels_not_clipped(self, rng):
         hmap = hv.HoloMap(
             {
-                i: hv.Curve(np.random.rand(10), "long x-axis label", "long y-axis label")
+                i: hv.Curve(rng.random(10), "long x-axis label", "long y-axis label")
                 for i in range(3)
             },
             kdims=["parameter with a very long name"],
         )
         assert self._all_labels_visible(hmap)
 
-    def test_video_has_even_dimensions(self):
-        hmap = hv.HoloMap({i: hv.Curve(np.random.rand(10)) for i in range(3)})
+    def test_video_has_even_dimensions(self, rng):
+        hmap = hv.HoloMap({i: hv.Curve(rng.random(10)) for i in range(3)})
         plot = self.renderer.get_plot(hmap)
         self.renderer._adjust_figure_for_anim(plot, "mp4")
         fig = plot.state

@@ -92,9 +92,9 @@ class TestLayoutPlot(LoggingComparison, TestBokehPlot):
         assert img1_cmapper.high == 4
         assert img2_cmapper.high == 8
 
-    def test_layout_title(self):
-        hmap1 = hv.HoloMap({a: hv.Image(np.random.rand(10, 10)) for a in range(3)})
-        hmap2 = hv.HoloMap({a: hv.Image(np.random.rand(10, 10)) for a in range(3)})
+    def test_layout_title(self, rng):
+        hmap1 = hv.HoloMap({a: hv.Image(rng.random((10, 10))) for a in range(3)})
+        hmap2 = hv.HoloMap({a: hv.Image(rng.random((10, 10))) for a in range(3)})
         plot = bokeh_renderer.get_plot(hmap1 + hmap2)
         title = plot.handles["title"]
         assert isinstance(title, Div)
@@ -137,9 +137,9 @@ class TestLayoutPlot(LoggingComparison, TestBokehPlot):
         }
         assert titles_correct == titles
 
-    def test_layout_title_fontsize(self):
-        hmap1 = hv.HoloMap({a: hv.Image(np.random.rand(10, 10)) for a in range(3)})
-        hmap2 = hv.HoloMap({a: hv.Image(np.random.rand(10, 10)) for a in range(3)})
+    def test_layout_title_fontsize(self, rng):
+        hmap1 = hv.HoloMap({a: hv.Image(rng.random((10, 10))) for a in range(3)})
+        hmap2 = hv.HoloMap({a: hv.Image(rng.random((10, 10))) for a in range(3)})
         layout = hv.Layout([hmap1, hmap2]).opts(fontsize={"title": "12pt"})
         plot = bokeh_renderer.get_plot(layout)
         title = plot.handles["title"]
@@ -150,16 +150,16 @@ class TestLayoutPlot(LoggingComparison, TestBokehPlot):
         )
         assert title.text == text
 
-    def test_layout_title_show_title_false(self):
-        hmap1 = hv.HoloMap({a: hv.Image(np.random.rand(10, 10)) for a in range(3)})
-        hmap2 = hv.HoloMap({a: hv.Image(np.random.rand(10, 10)) for a in range(3)})
+    def test_layout_title_show_title_false(self, rng):
+        hmap1 = hv.HoloMap({a: hv.Image(rng.random((10, 10))) for a in range(3)})
+        hmap2 = hv.HoloMap({a: hv.Image(rng.random((10, 10))) for a in range(3)})
         layout = hv.Layout([hmap1, hmap2]).opts(show_title=False)
         plot = bokeh_renderer.get_plot(layout)
         assert "title" not in plot.handles
 
-    def test_layout_title_update(self):
-        hmap1 = hv.HoloMap({a: hv.Image(np.random.rand(10, 10)) for a in range(3)})
-        hmap2 = hv.HoloMap({a: hv.Image(np.random.rand(10, 10)) for a in range(3)})
+    def test_layout_title_update(self, rng):
+        hmap1 = hv.HoloMap({a: hv.Image(rng.random((10, 10))) for a in range(3)})
+        hmap2 = hv.HoloMap({a: hv.Image(rng.random((10, 10))) for a in range(3)})
         plot = bokeh_renderer.get_plot(hmap1 + hmap2)
         plot.update(1)
         title = plot.handles["title"]
@@ -205,11 +205,11 @@ class TestLayoutPlot(LoggingComparison, TestBokehPlot):
             for gfig, *_ in grid.children:
                 assert isinstance(gfig, figure)
 
-    def test_layout_instantiate_subplots(self):
+    def test_layout_instantiate_subplots(self, rng):
         layout = (
             hv.Curve(range(10))
             + hv.Curve(range(10))
-            + hv.Image(np.random.rand(10, 10))
+            + hv.Image(rng.random((10, 10)))
             + hv.Curve(range(10))
             + hv.Curve(range(10))
         )
@@ -217,11 +217,11 @@ class TestLayoutPlot(LoggingComparison, TestBokehPlot):
         positions = [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0)]
         assert sorted(plot.subplots.keys()) == positions
 
-    def test_layout_instantiate_subplots_transposed(self):
+    def test_layout_instantiate_subplots_transposed(self, rng):
         layout = (
             hv.Curve(range(10))
             + hv.Curve(range(10))
-            + hv.Image(np.random.rand(10, 10))
+            + hv.Image(rng.random((10, 10)))
             + hv.Curve(range(10))
             + hv.Curve(range(10))
         )
@@ -276,11 +276,11 @@ class TestLayoutPlot(LoggingComparison, TestBokehPlot):
         assert panel1.title == "Curve I"
         assert panel2.title == "AdjointLayout I"
 
-    def test_layout_shared_source_synced_update(self):
+    def test_layout_shared_source_synced_update(self, rng):
         hmap = hv.HoloMap(
             {
                 i: hv.Dataset(
-                    {chr(65 + j): np.random.rand(i + 2) for j in range(4)},
+                    {chr(65 + j): rng.random(i + 2) for j in range(4)},
                     kdims=["A", "B", "C", "D"],
                 )
                 for i in range(3)
@@ -319,11 +319,11 @@ class TestLayoutPlot(LoggingComparison, TestBokehPlot):
         assert_data_equal(data["C"], np.full_like(hmap1[1].dimension_values(0), np.nan))
         assert_data_equal(data["D"], np.full_like(hmap1[1].dimension_values(0), np.nan))
 
-    def test_shared_axes(self):
+    def test_shared_axes(self, rng):
         curve = hv.Curve(
             range(10),
         )
-        img = hv.Image(np.random.rand(10, 10))
+        img = hv.Image(rng.random((10, 10)))
         plot = bokeh_renderer.get_plot(curve + img)
         plot1 = plot.subplots[(0, 0)].subplots["main"]
         plot2 = plot.subplots[(0, 1)].subplots["main"]
@@ -332,9 +332,9 @@ class TestLayoutPlot(LoggingComparison, TestBokehPlot):
         assert x_range1 is x_range2
         assert y_range1 is y_range2
 
-    def test_shared_axes_different_dimension_names(self):
+    def test_shared_axes_different_dimension_names(self, rng):
         curve = hv.Curve(range(10), ("x1", "foo"), ("y1", "bar"))
-        img = hv.Image(np.random.rand(10, 10), [("x2", "foo"), ("y2", "bar")])
+        img = hv.Image(rng.random((10, 10)), [("x2", "foo"), ("y2", "bar")])
         plot = bokeh_renderer.get_plot(curve + img)
         plot1 = plot.subplots[(0, 0)].subplots["main"]
         plot2 = plot.subplots[(0, 1)].subplots["main"]
@@ -354,9 +354,9 @@ class TestLayoutPlot(LoggingComparison, TestBokehPlot):
         figs = list(model.select(dict(type=Plot)))
         assert len({id(f.x_range) for f in figs}) == 1
 
-    def test_shared_axes_disable(self):
+    def test_shared_axes_disable(self, rng):
         curve = hv.Curve(range(10))
-        img = hv.Image(np.random.rand(10, 10)).opts(shared_axes=False)
+        img = hv.Image(rng.random((10, 10))).opts(shared_axes=False)
         plot = bokeh_renderer.get_plot(curve + img)
         plot = plot.subplots[(0, 1)].subplots["main"]
         x_range, y_range = plot.handles["x_range"], plot.handles["y_range"]
@@ -376,12 +376,12 @@ class TestLayoutPlot(LoggingComparison, TestBokehPlot):
         assert x_range1 is x_range2
         assert y_range1 is not y_range2
 
-    def test_layout_empty_subplots(self):
+    def test_layout_empty_subplots(self, rng):
         layout = (
             hv.Curve(range(10))
             + hv.NdOverlay()
             + hv.HoloMap()
-            + hv.HoloMap({1: hv.Image(np.random.rand(10, 10))})
+            + hv.HoloMap({1: hv.Image(rng.random((10, 10)))})
         )
         plot = bokeh_renderer.get_plot(layout)
         assert len(plot.subplots.values()) == 2
@@ -446,12 +446,12 @@ class TestLayoutPlot(LoggingComparison, TestBokehPlot):
         p1, p2 = (sp.subplots["main"] for sp in plot.subplots.values())
         assert p1.handles["y_range"] is not p2.handles["y_range"]
 
-    def test_dimensioned_streams_with_dynamic_callback_returns_layout(self):
+    def test_dimensioned_streams_with_dynamic_callback_returns_layout(self, rng):
         stream = Stream.define("aname", aname="a")()
 
         def cb(aname):
             x = np.linspace(0, 1, 10)
-            y = np.random.randn(10)
+            y = rng.standard_normal(10)
             curve = hv.Curve((x, y), group=aname)
             hist = hv.Histogram(y)
             return (curve + hist).opts(shared_axes=False)

@@ -323,10 +323,10 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
         self.log_handler.assert_contains("WARNING", "valid method on the specified model")
 
     ### Aspect ratio ###
-    def test_aspect_non_matching_types(self):
+    def test_aspect_non_matching_types(self, rng):
         X = pd.date_range(start="1/1/2018", end="1/08/2018", periods=100)
         Y = np.linspace(1, 100, 100)
-        Z = np.random.randn(100, 100)
+        Z = rng.standard_normal((100, 100))
         qm = hv.QuadMesh((X, Y, Z)).opts(aspect="equal")
         msg = (
             "The aspect is set to 'equal', but the axes does not have the same type: "
@@ -567,8 +567,8 @@ class TestColorbarPlot(TestMPLPlot):
         colorbar = plot.handles["cax"]
         assert colorbar.get_label() == ""
 
-    def test_colorbar_label_style_mapping(self):
-        scatter = hv.Scatter(np.random.rand(100, 3), vdims=["y", "color"]).opts(
+    def test_colorbar_label_style_mapping(self, rng):
+        scatter = hv.Scatter(rng.random((100, 3)), vdims=["y", "color"]).opts(
             color="color", colorbar=True
         )
         plot = mpl_renderer.get_plot(scatter)
@@ -585,10 +585,10 @@ class TestColorbarPlot(TestMPLPlot):
 
 
 class TestOverlayPlot(TestMPLPlot):
-    def test_overlay_legend_opts(self):
+    def test_overlay_legend_opts(self, rng):
         overlay = (
-            hv.Curve(np.random.randn(10).cumsum(), label="A")
-            * hv.Curve(np.random.randn(10).cumsum(), label="B")
+            hv.Curve(rng.standard_normal(10).cumsum(), label="A")
+            * hv.Curve(rng.standard_normal(10).cumsum(), label="B")
         ).opts(legend_opts={"framealpha": 0.5, "facecolor": "red"})
         plot = mpl_renderer.get_plot(overlay)
         legend_frame = plot.handles["legend"].get_frame()

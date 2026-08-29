@@ -60,11 +60,11 @@ class TestOverlayPlot(LoggingComparison, TestBokehPlot):
         assert not subplot1.handles["glyph_renderer"].visible
         assert subplot2.handles["glyph_renderer"].visible
 
-    def test_hover_tool_instance_renderer_association(self):
+    def test_hover_tool_instance_renderer_association(self, rng):
         tooltips = [("index", "$index")]
         hover = HoverTool(tooltips=tooltips)
-        overlay = hv.Curve(np.random.rand(10, 2)).opts(tools=[hover]) * hv.Points(
-            np.random.rand(10, 2)
+        overlay = hv.Curve(rng.random((10, 2))).opts(tools=[hover]) * hv.Points(
+            rng.random((10, 2))
         )
         plot = bokeh_renderer.get_plot(overlay)
         curve_plot = plot.subplots[("Curve", "I")]
@@ -177,9 +177,9 @@ class TestOverlayPlot(LoggingComparison, TestBokehPlot):
         plot.update((1,))
         assert plot.state.title.text == "B"
 
-    def test_points_errorbars_text_ndoverlay_categorical_xaxis(self):
+    def test_points_errorbars_text_ndoverlay_categorical_xaxis(self, rng):
         overlay = hv.NdOverlay(
-            {i: hv.Points(([chr(65 + i)] * 10, np.random.randn(10))) for i in range(5)}
+            {i: hv.Points(([chr(65 + i)] * 10, rng.standard_normal(10))) for i in range(5)}
         )
         error = hv.ErrorBars([(el["x"][0], np.mean(el["y"]), np.std(el["y"])) for el in overlay])
         text = hv.Text("C", 0, "Test")
@@ -205,9 +205,9 @@ class TestOverlayPlot(LoggingComparison, TestBokehPlot):
         assert x_range.factors == [("A", "a"), ("A", "b"), ("B", "a"), ("B", "b")]
         assert isinstance(plot.state.renderers[-1], Span)
 
-    def test_points_errorbars_text_ndoverlay_categorical_xaxis_invert_axes(self):
+    def test_points_errorbars_text_ndoverlay_categorical_xaxis_invert_axes(self, rng):
         overlay = hv.NdOverlay(
-            {i: hv.Points(([chr(65 + i)] * 10, np.random.randn(10))) for i in range(5)}
+            {i: hv.Points(([chr(65 + i)] * 10, rng.standard_normal(10))) for i in range(5)}
         )
         error = hv.ErrorBars(
             [(el["x"][0], np.mean(el["y"]), np.std(el["y"])) for el in overlay]

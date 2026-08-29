@@ -67,8 +67,8 @@ class TestPathPlot(TestBokehPlot):
         assert plot.handles["source"].data["line_width"] == line_width
         assert plot.handles["source"].data["color"] == color
 
-    def test_path_overlay_hover(self):
-        obj = hv.NdOverlay({i: hv.Path([np.random.rand(10, 2)]) for i in range(5)}, kdims=["Test"])
+    def test_path_overlay_hover(self, rng):
+        obj = hv.NdOverlay({i: hv.Path([rng.random((10, 2))]) for i in range(5)}, kdims=["Test"])
         opts = {"Path": {"tools": ["hover"]}, "NdOverlay": {"legend_limit": 0}}
         obj = obj.opts(opts)
         self._test_hover_info(obj, [("Test", "@{Test}")])
@@ -290,10 +290,10 @@ class TestPathPlot(TestBokehPlot):
 
 
 class TestPolygonPlot(TestBokehPlot):
-    def test_polygons_overlay_hover(self):
+    def test_polygons_overlay_hover(self, rng):
         obj = hv.NdOverlay(
             {
-                i: hv.Polygons([{("x", "y"): np.random.rand(10, 2), "z": 0}], vdims=["z"])
+                i: hv.Polygons([{("x", "y"): rng.random((10, 2)), "z": 0}], vdims=["z"])
                 for i in range(5)
             },
             kdims=["Test"],
@@ -569,14 +569,14 @@ class TestContoursPlot(TestBokehPlot):
         assert cmapper.low == 3
         assert cmapper.high == 7
 
-    def test_contours_empty_path(self):
+    def test_contours_empty_path(self, rng):
         contours = hv.Contours(
             [
                 pd.DataFrame([], columns=["x", "y", "color", "line_width"]),
                 pd.DataFrame(
                     {
-                        "x": np.random.rand(10),
-                        "y": np.random.rand(10),
+                        "x": rng.random(10),
+                        "y": rng.random(10),
                         "color": ["red"] * 10,
                         "line_width": [3] * 10,
                     },
