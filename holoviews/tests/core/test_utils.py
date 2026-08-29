@@ -1058,8 +1058,8 @@ def test_search_indices_dtype_object():
     search_indices(values, source)
 
 
-def test_unique_array_categorial():
-    ser = pd.Series(np.random.choice(["a", "b", "c"], 100)).astype("category")
+def test_unique_array_categorial(rng):
+    ser = pd.Series(rng.choice(["a", "b", "c"], 100)).astype("category")
     res = unique_array([ser])
     assert sorted(res) == ["a", "b", "c"]
 

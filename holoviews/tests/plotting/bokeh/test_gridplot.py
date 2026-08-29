@@ -13,11 +13,11 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestGridPlot(TestBokehPlot):
-    def test_grid_title(self):
+    def test_grid_title(self, rng):
         grid = hv.GridSpace(
             {
                 (i, j): hv.HoloMap(
-                    {a: hv.Image(np.random.rand(10, 10)) for a in range(3)}, kdims=["X"]
+                    {a: hv.Image(rng.random((10, 10))) for a in range(3)}, kdims=["X"]
                 )
                 for i in range(2)
                 for j in range(3)
@@ -32,11 +32,11 @@ class TestGridPlot(TestBokehPlot):
         )
         assert title.text == text
 
-    def test_grid_title_update(self):
+    def test_grid_title_update(self, rng):
         grid = hv.GridSpace(
             {
                 (i, j): hv.HoloMap(
-                    {a: hv.Image(np.random.rand(10, 10)) for a in range(3)}, kdims=["X"]
+                    {a: hv.Image(rng.random((10, 10))) for a in range(3)}, kdims=["X"]
                 )
                 for i in range(2)
                 for j in range(3)
@@ -52,9 +52,9 @@ class TestGridPlot(TestBokehPlot):
         )
         assert title.text == text
 
-    def test_gridmatrix_overlaid_batched(self):
+    def test_gridmatrix_overlaid_batched(self, rng):
         ds = hv.Dataset(
-            (["A"] * 5 + ["B"] * 5, np.random.rand(10), np.random.rand(10)), kdims=["a", "b", "c"]
+            (["A"] * 5 + ["B"] * 5, rng.random(10), rng.random(10)), kdims=["a", "b", "c"]
         )
         gmatrix = gridmatrix(ds.groupby("a", container_type=hv.NdOverlay))
         plot = bokeh_renderer.get_plot(gmatrix)
@@ -85,11 +85,11 @@ class TestGridPlot(TestBokehPlot):
         size = bokeh_renderer.get_size(plot.state)
         assert size == (320, 311)
 
-    def test_grid_shared_source_synced_update(self):
+    def test_grid_shared_source_synced_update(self, rng):
         hmap = hv.HoloMap(
             {
                 i: hv.Dataset(
-                    {chr(65 + j): np.random.rand(i + 2) for j in range(4)},
+                    {chr(65 + j): rng.random(i + 2) for j in range(4)},
                     kdims=["A", "B", "C", "D"],
                 )
                 for i in range(3)

@@ -13,19 +13,20 @@ from holoviews.testing import assert_element_equal
 
 class DimensionedSelectionTest:
     def setup_method(self):
-        self.img_fn = lambda: hv.Image(np.random.rand(10, 10))
-        self.contour_fn = lambda: hv.Contours([np.random.rand(10, 2) for i in range(2)])
+        rng = np.random.default_rng(1)
+        self.img_fn = lambda: hv.Image(rng.random((10, 10)))
+        self.contour_fn = lambda: hv.Contours([rng.random((10, 2)) for i in range(2)])
         self.datetime_fn = lambda: hv.Curve(
             (
                 [dt.datetime(2000, 1, 1), dt.datetime(2000, 1, 2), dt.datetime(2000, 1, 3)],
-                np.random.rand(3),
+                rng.random(3),
             ),
             "time",
             "x",
         )
         params = [list(range(3)) for i in range(2)]
         self.sanitized_map = hv.HoloMap(
-            {i: hv.Image(i * np.random.rand(10, 10)) for i in range(1, 10)}, kdims=["A B"]
+            {i: hv.Image(i * rng.random((10, 10))) for i in range(1, 10)}, kdims=["A B"]
         )
         self.img_map = hv.HoloMap(
             {(i, j): self.img_fn() for i, j in product(*params)}, kdims=["a", "b"]

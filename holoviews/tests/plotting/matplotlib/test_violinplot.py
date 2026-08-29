@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import numpy as np
-
 import holoviews as hv
 from holoviews.plotting.mpl.util import MPL_GE_3_9_0
 from holoviews.testing import assert_data_equal
@@ -10,8 +8,8 @@ from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestMPLViolinPlot(TestMPLPlot):
-    def test_violin_simple(self):
-        values = np.random.rand(100)
+    def test_violin_simple(self, rng):
+        values = rng.random(100)
         violin = hv.Violin(values)
         plot = mpl_renderer.get_plot(violin)
         data, style, _axis_opts = plot.get_data(violin, {}, {})
@@ -22,8 +20,8 @@ class TestMPLViolinPlot(TestMPLPlot):
         else:
             assert style["labels"] == [""]
 
-    def test_violin_simple_overlay(self):
-        values = np.random.rand(100)
+    def test_violin_simple_overlay(self, rng):
+        values = rng.random(100)
         violin = hv.Violin(values) * hv.Violin(values)
         plot = mpl_renderer.get_plot(violin)
         p1, p2 = plot.subplots.values()
@@ -35,8 +33,8 @@ class TestMPLViolinPlot(TestMPLPlot):
         ):
             assert_data_equal(b1.vertices, b2.vertices)
 
-    def test_violin_multi(self):
-        violin = hv.Violin((np.random.randint(0, 2, 100), np.random.rand(100)), kdims=["A"]).sort()
+    def test_violin_multi(self, rng):
+        violin = hv.Violin((rng.integers(0, 2, 100), rng.random(100)), kdims=["A"]).sort()
         plot = mpl_renderer.get_plot(violin)
         data, style, _axis_opts = plot.get_data(violin, {}, {})
         assert_data_equal(data[0][0], violin.select(A=0).dimension_values(1))

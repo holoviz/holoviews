@@ -124,11 +124,11 @@ class TestHeatMapPlot(TestBokehPlot):
         assert data["dh"] == [1]
 
     @pytest.mark.parametrize("kdims", [["datetime", "number"], ["number", "datetime"]])
-    def test_heatmap_datetime(self, kdims):
+    def test_heatmap_datetime(self, kdims, rng):
         data = {
             "datetime": pd.date_range(start="2023-01-01", periods=5, freq="h"),
             "number": np.arange(5),
-            "z": np.random.randn(5, 5),
+            "z": rng.standard_normal((5, 5)),
         }
         hm = hv.HeatMap(data, kdims=kdims, vdims="z")
         plot = bokeh_renderer.get_plot(hm)

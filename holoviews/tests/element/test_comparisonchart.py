@@ -73,11 +73,11 @@ class HistogramComparisonTest(ComparisonTestCase):
     def setUp(self):
         "Variations on the constructors in the Elements notebook"
 
-        np.random.seed(1)
-        frequencies1, edges1 = np.histogram([np.random.normal() for i in range(1000)], 20)
+        rng1 = np.random.default_rng(1)
+        frequencies1, edges1 = np.histogram(rng1.normal(size=1000), 20)
         self.hist1 = hv.Histogram((edges1, frequencies1))
-        np.random.seed(2)
-        frequencies2, edges2 = np.histogram([np.random.normal() for i in range(1000)], 20)
+        rng2 = np.random.default_rng(2)
+        frequencies2, edges2 = np.histogram(rng2.normal(size=1000), 20)
         self.hist2 = hv.Histogram((edges2, frequencies2))
         self.hist3 = hv.Histogram((edges2, frequencies1))
         self.hist4 = hv.Histogram((edges1, frequencies2))
