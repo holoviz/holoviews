@@ -486,7 +486,7 @@ class GridInterface(DictInterface):
         # Iterate over the unique entries applying selection masks
         grouped_data = []
         for unique_key in zip(*util.cartesian_product(keys), strict=True):
-            select = dict(zip(dimensions, unique_key, strict=True))
+            select = dict(zip((d.name for d in dimensions), unique_key, strict=True))
             if drop_dim:
                 group_data = dataset.select(**select)
                 group_data = group_data if np.isscalar(group_data) else group_data.columns()
@@ -496,7 +496,7 @@ class GridInterface(DictInterface):
             if np.isscalar(group_data) or (is_array_type(group_data) and group_data.shape == ()):
                 group_data = {dataset.vdims[0].name: np.atleast_1d(group_data)}
                 for dim, v in zip(dimensions, unique_key, strict=True):
-                    group_data[dim] = np.atleast_1d(v)
+                    group_data[dim.name] = np.atleast_1d(v)
             elif not drop_dim:
                 if is_array_type(group_data):
                     group_data = {dataset.vdims[0].name: group_data}
