@@ -29,9 +29,10 @@
       "description": "Monthly update of pre-commit"
     },
     {
-      "groupName": "Pixi",
+      "groupName": "Pixi Lock",
       "matchManagers": ["pixi"],
-      "description": "Weekly update of Pixi",
+      "matchUpdateTypes": ["lockFileMaintenance"]
+      "description": "Weekly update of Pixi Lock",
       "schedule": ["before 5am on monday"],
       "minimumReleaseAge": "0 days", // Handled in pixi itself
       "commitMessageAction": "Update",
