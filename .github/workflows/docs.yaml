@@ -19,7 +19,7 @@ on:
         default: dryrun
   pull_request:
     branches:
-      - "renovate/pixi-lock"
+      - "renovate/lock-file-maintenance-pixi-lock"
 
 permissions: {}
 
