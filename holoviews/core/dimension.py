@@ -44,8 +44,6 @@ class redim(Redim):
 
 
 if t.TYPE_CHECKING:
-    from typing_extensions import Self
-
     _LabelledDataT = t.TypeVar("_LabelledDataT", bound="LabelledData")
 
 
@@ -621,7 +619,7 @@ class LabelledData(param.Parameterized):
         link: bool = ...,
         *args,
         **overrides,
-    ) -> Self: ...
+    ) -> t.Self: ...
     @t.overload
     def clone(
         self,
@@ -640,7 +638,7 @@ class LabelledData(param.Parameterized):
         link=True,
         *args,
         **overrides,
-    ) -> LabelledData | Self:
+    ) -> LabelledData | t.Self:
         """Clones the object, overriding data and parameters.
 
         Parameters

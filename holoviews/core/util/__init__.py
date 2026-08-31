@@ -2320,7 +2320,7 @@ def parse_datetime(date):
 
     # pd.to_datetime removes timezone which we mimic here
     if getattr(date, "tzinfo", None):
-        date = date.astimezone(dt.timezone.utc).replace(tzinfo=None)
+        date = date.astimezone(dt.UTC).replace(tzinfo=None)
 
     return np.datetime64(date, "ns")
 
@@ -2372,7 +2372,7 @@ def dt_to_int(value, time_unit="us"):
     if value.tzinfo is None:
         _epoch = dt.datetime(1970, 1, 1)
     else:
-        _epoch = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
+        _epoch = dt.datetime(1970, 1, 1, tzinfo=dt.UTC)
     return int((value - _epoch).total_seconds() * tscale)
 
 
