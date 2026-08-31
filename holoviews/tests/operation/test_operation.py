@@ -801,14 +801,13 @@ class TestContours:
         img = hv.Image((x, y, z))
         op_contours = contours(img, levels=[0.5])
         # Note multiple lines which are nan-separated.
-        tz = dt.timezone.utc
         expected_x = np.array(
             [
-                dt.datetime(2023, 9, 2, tzinfo=tz),
-                dt.datetime(2023, 9, 2, tzinfo=tz),
+                dt.datetime(2023, 9, 2, tzinfo=dt.UTC),
+                dt.datetime(2023, 9, 2, tzinfo=dt.UTC),
                 np.nan,
-                dt.datetime(2023, 9, 4, tzinfo=tz),
-                dt.datetime(2023, 9, 4, tzinfo=tz),
+                dt.datetime(2023, 9, 4, tzinfo=dt.UTC),
+                dt.datetime(2023, 9, 4, tzinfo=dt.UTC),
             ],
             dtype=object,
         )
@@ -836,14 +835,13 @@ class TestContours:
             op_contours.dimension_values("x").astype(float), [14.5, 14.5, np.nan, 15.5, 15.5]
         )
 
-        tz = dt.timezone.utc
         expected_y = np.array(
             [
-                dt.datetime(2023, 9, 3, tzinfo=tz),
-                dt.datetime(2023, 9, 1, tzinfo=tz),
+                dt.datetime(2023, 9, 3, tzinfo=dt.UTC),
+                dt.datetime(2023, 9, 1, tzinfo=dt.UTC),
                 np.nan,
-                dt.datetime(2023, 9, 1, tzinfo=tz),
-                dt.datetime(2023, 9, 3, tzinfo=tz),
+                dt.datetime(2023, 9, 1, tzinfo=dt.UTC),
+                dt.datetime(2023, 9, 3, tzinfo=dt.UTC),
             ],
             dtype=object,
         )
@@ -865,24 +863,23 @@ class TestContours:
         op_contours = contours(img, levels=[0.5])
         # Note multiple lines which are nan-separated.
 
-        tz = dt.timezone.utc
         expected_x = np.array(
             [
-                dt.datetime(2023, 9, 2, tzinfo=tz),
-                dt.datetime(2023, 9, 2, tzinfo=tz),
+                dt.datetime(2023, 9, 2, tzinfo=dt.UTC),
+                dt.datetime(2023, 9, 2, tzinfo=dt.UTC),
                 np.nan,
-                dt.datetime(2023, 9, 4, tzinfo=tz),
-                dt.datetime(2023, 9, 4, tzinfo=tz),
+                dt.datetime(2023, 9, 4, tzinfo=dt.UTC),
+                dt.datetime(2023, 9, 4, tzinfo=dt.UTC),
             ],
             dtype=object,
         )
         expected_y = np.array(
             [
-                dt.datetime(2023, 10, 8, tzinfo=tz),
-                dt.datetime(2023, 10, 7, tzinfo=tz),
+                dt.datetime(2023, 10, 8, tzinfo=dt.UTC),
+                dt.datetime(2023, 10, 7, tzinfo=dt.UTC),
                 np.nan,
-                dt.datetime(2023, 10, 7, tzinfo=tz),
-                dt.datetime(2023, 10, 8, tzinfo=tz),
+                dt.datetime(2023, 10, 7, tzinfo=dt.UTC),
+                dt.datetime(2023, 10, 8, tzinfo=dt.UTC),
             ],
             dtype=object,
         )
@@ -910,8 +907,8 @@ class TestContours:
         np.testing.assert_array_almost_equal(op_contours.dimension_values("y"), [0.0, -0.25])
         expected_z = np.array(
             [
-                dt.datetime(2023, 9, 11, 0, 0, tzinfo=dt.timezone.utc),
-                dt.datetime(2023, 9, 11, 0, 0, tzinfo=dt.timezone.utc),
+                dt.datetime(2023, 9, 11, 0, 0, tzinfo=dt.UTC),
+                dt.datetime(2023, 9, 11, 0, 0, tzinfo=dt.UTC),
             ],
             dtype=object,
         )
