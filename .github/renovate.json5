@@ -29,6 +29,11 @@
       "description": "Monthly update of pre-commit"
     },
     {
+      "matchManagers": ["pixi"],
+      "description": "Only allow Pixi lock file maintenance, not direct dependency bumps",
+      "enabled": false,
+    },
+    {
       "groupName": "Pixi Lock",
       "matchManagers": ["pixi"],
       "matchUpdateTypes": ["lockFileMaintenance"],
@@ -38,16 +43,7 @@
       "commitMessageAction": "Update",
       "commitMessageTopic": "pixi.lock",
       "branchTopic": "pixi-lock",
+      "enabled": true,
     },
-    // {
-    //   "groupName": "HoloViz Core",
-    //   "matchManagers": ["pixi"],
-    //   "matchPackageNames": ["panel", "param"],
-    //   "description": "Update of Panel and Param",
-    //   "minimumReleaseAge": "0 days",
-    //   "schedule": ["at any time"],
-    //   "rangeStrategy": "bump",
-    //   "ignoreUnstable": false
-    // }
   ]
 }

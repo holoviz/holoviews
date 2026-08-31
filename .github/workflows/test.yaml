@@ -17,7 +17,7 @@ on:
           - full
           - downstream
       cache:
-        description: "Use cache, currently noop"
+        description: "Use cache. If false, upstream packages are updated"
         type: boolean
         default: true
 
@@ -35,6 +35,7 @@ env:
   DISPLAY: ":99.0"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   COV: "--cov=./holoviews --cov-report=xml"
+  UPSTREAM_PACKAGES: "panel param"
 
 jobs:
   pre_commit:
@@ -123,6 +124,10 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
         with:
           environments: ${{ matrix.environment }}
+      - name: Update upstream packages
+        if: github.event.inputs.cache == 'false'
+        run: |
+          pixi update ${UPSTREAM_PACKAGES} -e "${ENV}"
       - name: Check packages latest version
         run: |
           pixi run -e "${ENV}" check-latest-packages bokeh panel param datashader
@@ -154,6 +159,10 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
         with:
           environments: ${{ matrix.environment }}
+      - name: Update upstream packages
+        if: github.event.inputs.cache == 'false'
+        run: |
+          pixi update ${UPSTREAM_PACKAGES} -e "${ENV}"
       - name: Test UI
         run: |
           # Create a .uicoveragerc file to set the concurrency library to greenlet
@@ -188,6 +197,10 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
         with:
           environments: ${{ matrix.environment }}
+      - name: Update upstream packages
+        if: github.event.inputs.cache == 'false'
+        run: |
+          pixi update ${UPSTREAM_PACKAGES} -e "${ENV}"
       - name: Check packages latest version
         run: |
           pixi run -e "${ENV}" check-latest-packages pandas bokeh panel param numpy
@@ -212,6 +225,10 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
         with:
           environments: ${{ matrix.environment }}
+      - name: Update upstream packages
+        if: github.event.inputs.cache == 'false'
+        run: |
+          pixi update ${UPSTREAM_PACKAGES} -e "${ENV}"
       - name: Type TY
         run: |
           pixi run -e "${ENV}" type-ty
