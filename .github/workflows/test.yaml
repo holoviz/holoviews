@@ -21,9 +21,6 @@ on:
         type: boolean
         default: true
 
-  schedule:
-    - cron: "0 14 * * SUN"
-
 permissions: {}
 
 concurrency:
@@ -69,6 +66,7 @@ jobs:
               - 'holoviews/**'
               - 'examples/**'
               - 'pixi.toml'
+              - 'pixi.lock'
               - 'pyproject.toml'
               - '.github/workflows/test.yaml'
       - name: Set matrix option
@@ -77,7 +75,7 @@ jobs:
         run: |
           if [[ "${GITHUB_EVENT_NAME}" == 'workflow_dispatch' ]]; then
             OPTION=${GITHUB_EVENT_INPUTS_TARGET}
-          elif [[ "${GITHUB_EVENT_NAME}" == 'schedule' ]]; then
+          elif [[ "${GITHUB_EVENT_NAME}" == 'pull_request' && "${GITHUB_HEAD_REF}" == 'renovate/lock-file-maintenance-pixi-lock' ]]; then
             OPTION="full"
           elif [[ "${GITHUB_EVENT_NAME}" == 'push' && "${GITHUB_REF_TYPE}" == 'tag' ]]; then
             OPTION="full"

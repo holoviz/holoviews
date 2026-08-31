@@ -19,7 +19,7 @@ on:
         default: dryrun
   pull_request:
     branches:
-      - "renovate/pixi-lock"
+      - "main"
 
 permissions: {}
 
@@ -30,6 +30,7 @@ concurrency:
 jobs:
   docs_build:
     name: Build Documentation
+    if: github.event_name != 'pull_request' || github.head_ref == 'renovate/lock-file-maintenance-pixi-lock'
     runs-on: "macos-latest"
     timeout-minutes: 180
     env:
@@ -75,3 +76,13 @@ jobs:
         run: |
           aws s3 sync --delete ./builtdocs s3://holoviews.org/
           aws cloudfront create-invalidation --distribution-id E1UJPEXJIGBZWN --paths "/*"
+
+  result_docs_build:
+    name: result:docs
+    needs: [docs_build, docs_publish]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: check for failures
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: echo job failed && exit 1
