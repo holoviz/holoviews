@@ -31,7 +31,7 @@
     {
       "groupName": "Pixi Lock",
       "matchManagers": ["pixi"],
-      "matchUpdateTypes": ["lockFileMaintenance"]
+      "matchUpdateTypes": ["lockFileMaintenance"],
       "description": "Weekly update of Pixi Lock",
       "schedule": ["before 5am on monday"],
       "minimumReleaseAge": "0 days", // Handled in pixi itself
