@@ -40,15 +40,15 @@
       "branchTopic": "pixi-lock",
       "automerge": false  // To ensure docs and build workflow is successful
     },
-    {
-      "groupName": "HoloViz Core",
-      "matchManagers": ["pixi"],
-      "matchPackageNames": ["panel", "param"],
-      "description": "Update of Panel and Param",
-      "minimumReleaseAge": "0 days",
-      "schedule": ["at any time"],
-      "rangeStrategy": "bump",
-      "ignoreUnstable": false
-    }
+    // {
+    //   "groupName": "HoloViz Core",
+    //   "matchManagers": ["pixi"],
+    //   "matchPackageNames": ["panel", "param"],
+    //   "description": "Update of Panel and Param",
+    //   "minimumReleaseAge": "0 days",
+    //   "schedule": ["at any time"],
+    //   "rangeStrategy": "bump",
+    //   "ignoreUnstable": false
+    // }
   ]
 }
