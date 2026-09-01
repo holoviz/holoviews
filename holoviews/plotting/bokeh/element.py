@@ -972,7 +972,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if dim:
                 axis_label = str(dim)
             else:
-                axis_label = dim_axis_label(dims[0]) if dims and dims[0] else ""
+                axis_label = dim_axis_label(dims) if dims else ""
                 if pos == 0 and self.xlabel is not None:
                     axis_label = self.xlabel
                 elif pos == 1 and self.ylabel is not None:
