@@ -110,6 +110,14 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
         axes = mpl_renderer.get_plot(element).handles["axis"]
         assert axes.get_ylabel() == "custom y-label"
 
+    def test_element_invert_axes_custom_labels_visual_axes(self):
+        element = hv.Curve(range(10)).opts(
+            invert_axes=True, xlabel="custom x-label", ylabel="custom y-label"
+        )
+        axes = mpl_renderer.get_plot(element).handles["axis"]
+        assert axes.get_xlabel() == "custom x-label"
+        assert axes.get_ylabel() == "custom y-label"
+
     def test_element_xformatter_string(self):
         curve = hv.Curve(range(10)).opts(xformatter="%d")
         plot = mpl_renderer.get_plot(curve)

@@ -612,6 +612,36 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(bars)
         assert np.isclose(plot.handles["glyph"].width, 0.232)
 
+    def test_bars_invert_axes_custom_labels_visual_axes(self):
+        bars = hv.Bars([("A", 1), ("B", 2)], "species", "body_mass_g").opts(
+            invert_axes=True, xlabel="Species", ylabel="Body Mass (g)"
+        )
+        plot = bokeh_renderer.get_plot(bars).state
+        assert plot.xaxis[0].axis_label == "Species"
+        assert plot.yaxis[0].axis_label == "Body Mass (g)"
+
+    def test_bars_invert_axes_auto_labels_follow_dimensions(self):
+        bars = hv.Bars([("A", 1), ("B", 2)], "species", "body_mass_g").opts(invert_axes=True)
+        plot = bokeh_renderer.get_plot(bars).state
+        assert plot.xaxis[0].axis_label == "body_mass_g"
+        assert plot.yaxis[0].axis_label == "species"
+
+    def test_bars_invert_axes_xlabel_only(self):
+        bars = hv.Bars([("A", 1), ("B", 2)], "species", "body_mass_g").opts(
+            invert_axes=True, xlabel="Species"
+        )
+        plot = bokeh_renderer.get_plot(bars).state
+        assert plot.xaxis[0].axis_label == "Species"
+        assert plot.yaxis[0].axis_label == "species"
+
+    def test_bars_invert_axes_ylabel_only(self):
+        bars = hv.Bars([("A", 1), ("B", 2)], "species", "body_mass_g").opts(
+            invert_axes=True, ylabel="Body Mass (g)"
+        )
+        plot = bokeh_renderer.get_plot(bars).state
+        assert plot.xaxis[0].axis_label == "body_mass_g"
+        assert plot.yaxis[0].axis_label == "Body Mass (g)"
+
 
 @pytest.mark.parametrize("stacked", [True, False])
 def test_grouped_bars_color(stacked):
