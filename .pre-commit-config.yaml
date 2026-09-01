@@ -17,7 +17,7 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 39d9ac5938dadb73df0564a45f163e25ff9fa6e2 # frozen: v0.16.1
+    rev: aab412d509121cb5f7533134b7e67f9fab59c682 # frozen: v0.16.4
     hooks:
       - id: ruff-check
       - id: ruff-format
@@ -27,7 +27,7 @@ repos:
       - id: clean-notebook
         args: [--strip-trailing-newlines, --ignore, tags]
   - repo: https://github.com/crate-ci/typos
-    rev: bee27e3a4fd1ea2111cf90ab89cd076c870fce14 # frozen: v1.48.0
+    rev: 8a48f81b6c64dcfea44b3633223084c4be58ac5f # frozen: v1.49.0
     hooks:
       - id: typos
   - repo: https://github.com/shellcheck-py/shellcheck-py
