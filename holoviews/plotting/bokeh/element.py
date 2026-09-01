@@ -972,10 +972,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if dim:
                 axis_label = str(dim)
             else:
-                xlabel, ylabel, _zlabel = self._get_axis_labels(dims if dims else (None, None))
-                if self.invert_axes:
-                    xlabel, ylabel = ylabel, xlabel
-                axis_label = ylabel if pos else xlabel
+                axis_label = dim_axis_label(dims[0]) if dims and dims[0] else ""
+                if pos == 0 and self.xlabel is not None:
+                    axis_label = self.xlabel
+                elif pos == 1 and self.ylabel is not None:
+                    axis_label = self.ylabel
             if dims:
                 dims = dims[:2][::-1]
 
@@ -1514,8 +1515,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             for axis, dim in zip(["x", "y"], dimensions, strict=False)
         }
         xlabel, ylabel, _zlabel = self._get_axis_labels(dimensions)
-        if self.invert_axes:
-            xlabel, ylabel = ylabel, xlabel
         props["x"]["axis_label"] = xlabel if "x" in self.labelled or self.xlabel else ""
         props["y"]["axis_label"] = ylabel if "y" in self.labelled or self.ylabel else ""
         if not self._has_changed("label", props):
