@@ -4,7 +4,7 @@ Unit tests of the helper functions in core.utils
 
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 import math
 import os
 from itertools import product
@@ -160,13 +160,13 @@ class TestDeepHash:
         assert deephash(pd.Series([1, 2, 3])) != deephash(pd.Series([1, 2, 7]))
 
     def test_deephash_datetime_equality(self):
-        dt1 = datetime.datetime(1, 2, 3)
-        dt2 = datetime.datetime(1, 2, 3)
+        dt1 = dt.datetime(1, 2, 3)
+        dt2 = dt.datetime(1, 2, 3)
         assert deephash(dt1) == deephash(dt2)
 
     def test_deephash_datetime_inequality(self):
-        dt1 = datetime.datetime(1, 2, 3)
-        dt2 = datetime.datetime(1, 2, 5)
+        dt1 = dt.datetime(1, 2, 3)
+        dt2 = dt.datetime(1, 2, 5)
         assert deephash(dt1) != deephash(dt2)
 
     def test_deephash_nested_native_equality(self):
@@ -181,7 +181,7 @@ class TestDeepHash:
 
     def test_deephash_nested_mixed_equality(self):
         obj1 = [
-            datetime.datetime(1, 2, 3),
+            dt.datetime(1, 2, 3),
             {1, 2, 3},
             pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
             np.array([1, 2, 3]),
@@ -190,7 +190,7 @@ class TestDeepHash:
             np.int64(34),
         ]
         obj2 = [
-            datetime.datetime(1, 2, 3),
+            dt.datetime(1, 2, 3),
             {1, 2, 3},
             pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
             np.array([1, 2, 3]),
@@ -202,7 +202,7 @@ class TestDeepHash:
 
     def test_deephash_nested_mixed_inequality(self):
         obj1 = [
-            datetime.datetime(1, 2, 3),
+            dt.datetime(1, 2, 3),
             {1, 2, 3},
             pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
             np.array([1, 2, 3]),
@@ -211,7 +211,7 @@ class TestDeepHash:
             np.int64(34),
         ]
         obj2 = [
-            datetime.datetime(1, 2, 3),
+            dt.datetime(1, 2, 3),
             {1, 2, 3},
             pd.DataFrame({"a": [1, 2], "b": [3, 4]}),
             np.array([1, 2, 3]),
@@ -376,12 +376,12 @@ class TestDimensionRange:
 
     def setup_method(self):
         self.date_range = (
-            np.datetime64(datetime.datetime(2017, 1, 1)),
-            np.datetime64(datetime.datetime(2017, 1, 2)),
+            np.datetime64(dt.datetime(2017, 1, 1)),
+            np.datetime64(dt.datetime(2017, 1, 2)),
         )
         self.date_range2 = (
-            np.datetime64(datetime.datetime(2016, 12, 31)),
-            np.datetime64(datetime.datetime(2017, 1, 3)),
+            np.datetime64(dt.datetime(2016, 12, 31)),
+            np.datetime64(dt.datetime(2017, 1, 3)),
         )
 
     def test_dimension_range_date_hard_range(self):
@@ -724,82 +724,82 @@ class TestDatetimeUtils:
         assert compute_density(0, 1, 10) == 10
 
     def test_compute_us_density_1s_datetime(self):
-        start = np.datetime64(datetime.datetime.today())
+        start = np.datetime64(dt.datetime.today())
         end = start + np.timedelta64(1, "s")
         assert compute_density(start, end, 10) == 1e-5
 
     def test_compute_us_density_10s_datetime(self):
-        start = np.datetime64(datetime.datetime.today())
+        start = np.datetime64(dt.datetime.today())
         end = start + np.timedelta64(10, "s")
         assert compute_density(start, end, 10) == 1e-6
 
     def test_compute_s_density_1s_datetime(self):
-        start = np.datetime64(datetime.datetime.today())
+        start = np.datetime64(dt.datetime.today())
         end = start + np.timedelta64(1, "s")
         assert compute_density(start, end, 10, "s") == 10
 
     def test_compute_s_density_10s_datetime(self):
-        start = np.datetime64(datetime.datetime.today())
+        start = np.datetime64(dt.datetime.today())
         end = start + np.timedelta64(10, "s")
         assert compute_density(start, end, 10, "s") == 1
 
     def test_datetime_to_us_int(self):
-        dt = datetime.datetime(2017, 1, 1)
-        assert dt_to_int(dt) == 1483228800000000.0
+        value = dt.datetime(2017, 1, 1)
+        assert dt_to_int(value) == 1483228800000000.0
 
     def test_datetime64_s_to_ns_int(self):
-        dt = np.datetime64(datetime.datetime(2017, 1, 1), "s")
-        assert dt_to_int(dt, "ns") == 1483228800000000000.0
+        value = np.datetime64(dt.datetime(2017, 1, 1), "s")
+        assert dt_to_int(value, "ns") == 1483228800000000000.0
 
     def test_datetime64_us_to_ns_int(self):
-        dt = np.datetime64(datetime.datetime(2017, 1, 1), "us")
-        assert dt_to_int(dt, "ns") == 1483228800000000000.0
+        value = np.datetime64(dt.datetime(2017, 1, 1), "us")
+        assert dt_to_int(value, "ns") == 1483228800000000000.0
 
     def test_datetime64_to_ns_int(self):
-        dt = np.datetime64(datetime.datetime(2017, 1, 1))
-        assert dt_to_int(dt, "ns") == 1483228800000000000.0
+        value = np.datetime64(dt.datetime(2017, 1, 1))
+        assert dt_to_int(value, "ns") == 1483228800000000000.0
 
     def test_datetime64_us_to_us_int(self):
-        dt = np.datetime64(datetime.datetime(2017, 1, 1), "us")
-        assert dt_to_int(dt) == 1483228800000000.0
+        value = np.datetime64(dt.datetime(2017, 1, 1), "us")
+        assert dt_to_int(value) == 1483228800000000.0
 
     def test_datetime64_s_to_us_int(self):
-        dt = np.datetime64(datetime.datetime(2017, 1, 1), "s")
-        assert dt_to_int(dt) == 1483228800000000.0
+        value = np.datetime64(dt.datetime(2017, 1, 1), "s")
+        assert dt_to_int(value) == 1483228800000000.0
 
     def test_timestamp_to_us_int(self):
-        dt = pd.Timestamp(datetime.datetime(2017, 1, 1))
-        assert dt_to_int(dt) == 1483228800000000.0
+        value = pd.Timestamp(dt.datetime(2017, 1, 1))
+        assert dt_to_int(value) == 1483228800000000.0
 
     def test_datetime_to_s_int(self):
-        dt = datetime.datetime(2017, 1, 1)
-        assert dt_to_int(dt, "s") == 1483228800.0
+        value = dt.datetime(2017, 1, 1)
+        assert dt_to_int(value, "s") == 1483228800.0
 
     def test_datetime64_to_s_int(self):
-        dt = np.datetime64(datetime.datetime(2017, 1, 1))
-        assert dt_to_int(dt, "s") == 1483228800.0
+        value = np.datetime64(dt.datetime(2017, 1, 1))
+        assert dt_to_int(value, "s") == 1483228800.0
 
     def test_datetime64_us_to_s_int(self):
-        dt = np.datetime64(datetime.datetime(2017, 1, 1), "us")
-        assert dt_to_int(dt, "s") == 1483228800.0
+        value = np.datetime64(dt.datetime(2017, 1, 1), "us")
+        assert dt_to_int(value, "s") == 1483228800.0
 
     def test_datetime64_s_to_s_int(self):
-        dt = np.datetime64(datetime.datetime(2017, 1, 1), "s")
-        assert dt_to_int(dt, "s") == 1483228800.0
+        value = np.datetime64(dt.datetime(2017, 1, 1), "s")
+        assert dt_to_int(value, "s") == 1483228800.0
 
     def test_timestamp_to_s_int(self):
-        dt = pd.Timestamp(datetime.datetime(2017, 1, 1))
-        assert dt_to_int(dt, "s") == 1483228800.0
+        value = pd.Timestamp(dt.datetime(2017, 1, 1))
+        assert dt_to_int(value, "s") == 1483228800.0
 
     def test_date_range_1_hour(self):
-        start = np.datetime64(datetime.datetime(2017, 1, 1))
+        start = np.datetime64(dt.datetime(2017, 1, 1))
         end = start + np.timedelta64(1, "h")
         drange = date_range(start, end, 6)
         assert drange[0] == start + np.timedelta64(5, "m")
         assert drange[-1] == end - np.timedelta64(5, "m")
 
     def test_date_range_1_sec(self):
-        start = np.datetime64(datetime.datetime(2017, 1, 1))
+        start = np.datetime64(dt.datetime(2017, 1, 1))
         end = start + np.timedelta64(1, "s")
         drange = date_range(start, end, 10)
         assert drange[0] == start + np.timedelta64(50, "ms")
@@ -809,11 +809,11 @@ class TestDatetimeUtils:
         timezone = ZoneInfo("Europe/Copenhagen")
 
         values = [
-            datetime.datetime(2021, 4, 8, 12, 0, 0, 0),
-            datetime.datetime(2021, 4, 8, 12, 0, 0, 0, datetime.UTC),
-            datetime.datetime(2021, 4, 8, 12, 0, 0, 0, timezone),
-            datetime.date(2021, 4, 8),
-            np.datetime64(datetime.datetime(2021, 4, 8, 12, 0, 0, 0)),
+            dt.datetime(2021, 4, 8, 12, 0, 0, 0),
+            dt.datetime(2021, 4, 8, 12, 0, 0, 0, dt.UTC),
+            dt.datetime(2021, 4, 8, 12, 0, 0, 0, timezone),
+            dt.date(2021, 4, 8),
+            np.datetime64(dt.datetime(2021, 4, 8, 12, 0, 0, 0)),
         ]
 
         for value in values:
@@ -844,11 +844,11 @@ class TestNumericUtilities:
         assert_data_equal(isfinite(array), np.array([True, True, False]))
 
     def test_isfinite_datetime(self):
-        dt = datetime.datetime(2017, 1, 1)
-        assert isfinite(dt)
+        value = dt.datetime(2017, 1, 1)
+        assert isfinite(value)
 
     def test_isfinite_datetime64(self):
-        dt64 = np.datetime64(datetime.datetime(2017, 1, 1))
+        dt64 = np.datetime64(dt.datetime(2017, 1, 1))
         assert isfinite(dt64)
 
     def test_isfinite_datetime64_nat(self):
@@ -904,11 +904,11 @@ class TestNumericUtilities:
         assert_data_equal(isfinite(daily), np.array([True, True, True, False]))
 
     def test_isfinite_datetime64_array(self):
-        dt64 = np.array([np.datetime64(datetime.datetime(2017, 1, i)) for i in range(1, 4)])
+        dt64 = np.array([np.datetime64(dt.datetime(2017, 1, i)) for i in range(1, 4)])
         assert_data_equal(isfinite(dt64), np.array([True, True, True]))
 
     def test_isfinite_datetime64_array_with_nat(self):
-        dts = [np.datetime64(datetime.datetime(2017, 1, i)) for i in range(1, 4)]
+        dts = [np.datetime64(dt.datetime(2017, 1, i)) for i in range(1, 4)]
         dt64 = np.array([*dts, np.datetime64("NaT", "ns")])
         assert_data_equal(isfinite(dt64), np.array([True, True, True, False]))
 
@@ -1081,7 +1081,7 @@ def test_is_null_or_na_scalar():
     assert is_null_or_na_scalar(None)
     assert is_null_or_na_scalar(np.datetime64("NAT", "ns"))
 
-    assert not is_null_or_na_scalar(datetime.datetime.today())
+    assert not is_null_or_na_scalar(dt.datetime.today())
     assert not is_null_or_na_scalar(pd.Timestamp.now())
     assert not is_null_or_na_scalar("AAAA")
     assert not is_null_or_na_scalar(...)
@@ -1223,19 +1223,17 @@ def test_unique(test_input, expected_output, with_pandas, monkeypatch):
     ("test_input", "expected_output"),
     [
         (np.datetime64("2023-01-15T12:30:45"), np.datetime64("2023-01-15T12:30:45")),
-        (datetime.datetime(2023, 1, 15, 12, 30, 45), np.datetime64("2023-01-15T12:30:45", "ns")),
-        (datetime.date(2023, 1, 15), np.datetime64("2023-01-15T00:00:00", "ns")),
+        (dt.datetime(2023, 1, 15, 12, 30, 45), np.datetime64("2023-01-15T12:30:45", "ns")),
+        (dt.date(2023, 1, 15), np.datetime64("2023-01-15T00:00:00", "ns")),
         ("2023-01-15T12:30:45", np.datetime64("2023-01-15T12:30:45", "ns")),
         ("2023-01-15", np.datetime64("2023-01-15T00:00:00", "ns")),
         ("2023/01/15", np.datetime64("2023-01-15T00:00:00", "ns")),
         (
-            datetime.datetime(2023, 1, 15, 12, 30, 45, tzinfo=datetime.UTC),
+            dt.datetime(2023, 1, 15, 12, 30, 45, tzinfo=dt.UTC),
             np.datetime64("2023-01-15T12:30:45", "ns"),
         ),
         (
-            datetime.datetime(
-                2023, 1, 15, 17, 30, 45, tzinfo=datetime.timezone(datetime.timedelta(hours=5))
-            ),
+            dt.datetime(2023, 1, 15, 17, 30, 45, tzinfo=dt.timezone(dt.timedelta(hours=5))),
             np.datetime64("2023-01-15T12:30:45", "ns"),
         ),
     ],
