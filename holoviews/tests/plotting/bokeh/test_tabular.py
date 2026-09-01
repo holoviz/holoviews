@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime as dt
+import datetime as dt
 
 from bokeh.models.widgets import (
     DateEditor,
@@ -50,7 +50,7 @@ class TestBokehTablePlot:
         assert next(iter(source.data.keys())) == renderer.columns[0].field
 
     def test_table_plot_datetimes(self):
-        table = hv.Table([dt.now(), dt.now()], "Date")
+        table = hv.Table([dt.datetime.now(), dt.datetime.now()], "Date")
         plot = bokeh_renderer.get_plot(table)
         column = plot.state.columns[0]
         assert column.title == "Date"
