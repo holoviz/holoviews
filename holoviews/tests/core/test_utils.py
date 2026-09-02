@@ -805,21 +805,19 @@ class TestDatetimeUtils:
         assert drange[0] == start + np.timedelta64(50, "ms")
         assert drange[-1] == end - np.timedelta64(50, "ms")
 
-    def test_timezone_to_int(self):
-        timezone = ZoneInfo("Europe/Copenhagen")
-
-        values = [
+    @pytest.mark.parametrize(
+        "value",
+        [
             dt.datetime(2021, 4, 8, 12, 0, 0, 0),
             dt.datetime(2021, 4, 8, 12, 0, 0, 0, dt.UTC),
-            dt.datetime(2021, 4, 8, 12, 0, 0, 0, timezone),
+            dt.datetime(2021, 4, 8, 12, 0, 0, 0, ZoneInfo("Europe/Copenhagen")),
             dt.date(2021, 4, 8),
             np.datetime64(dt.datetime(2021, 4, 8, 12, 0, 0, 0)),
-        ]
-
-        for value in values:
-            x1 = dt_to_int(value)
-            x2 = dt_to_int(pd.to_datetime(value))
-            assert x1 == x2
+        ],
+        ids=["datetime", "datetime_utc", "datetime_tz", "date", "datetime64"],
+    )
+    def test_dt_to_int_matches_pandas(self, value):
+        assert dt_to_int(value) == dt_to_int(pd.to_datetime(value))
 
 
 class TestNumericUtilities:
