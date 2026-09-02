@@ -109,6 +109,51 @@ jobs:
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
 
+  pixi_lock_diff:
+    name: pixi.lock diff
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Generate pixi.lock diff
+        id: diff
+        run: |
+          {
+            echo 'body<<PIXI_LOCK_DIFF_EOF'
+            pipx run scripts/pixi-diff.py
+            echo 'PIXI_LOCK_DIFF_EOF'
+          } >> "$GITHUB_OUTPUT"
+      - name: Create or update comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BODY: ${{ steps.diff.outputs.body }}
+        run: |
+          # See if comment already exists
+          COMMENT_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" --paginate \
+            --jq '.[] | select(.body | startswith("<!-- pixi-lock-diff -->")) | .id' | head -n1)
+
+          if [[ -z "${BODY}" ]]; then
+            # No changes, but a stale comment exists
+            if [[ -n "${COMMENT_ID}" ]]; then
+              gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH \
+                -f body=$'<!-- pixi-lock-diff -->\n## Pixi.lock changes\n\nNo changes to pixi.lock compared with main.'
+            fi
+            exit 0
+          fi
+
+          if [[ -n "${COMMENT_ID}" ]]; then
+            gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="${BODY}"
+          else
+            gh pr comment "${PR_NUMBER}" --repo "${REPO}" --body "${BODY}"
+          fi
+
   unit_test_suite:
     name: unit:${{ matrix.environment }}:${{ matrix.os }}
     needs: [pre_commit, setup]
