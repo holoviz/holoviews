@@ -15,7 +15,7 @@ import yaml
 
 LOCKFILE = "pixi.lock"
 MANIFEST = "pixi.toml"
-MAIN_BRANCH = "main"
+MAIN_BRANCH = "origin/main"
 
 COMMENT_MARKER = "<!-- pixi-lock-diff -->"
 
@@ -151,8 +151,9 @@ def print_table(rows: list):
         print(f"| {package} | {platform} | {old} | {new} | {change} |")
 
 
-def print_markdown(env_name: str, rows: list, direct_dependencies: set):
-    print(f"### {env_name}\n")
+def print_markdown(env_name: str, rows: list, direct_dependencies: set, status: str | None = None):
+    heading = f"### {env_name}" + (f" ({status})" if status else "")
+    print(f"{heading}\n")
 
     direct_rows = [row for row in rows if row[0] in direct_dependencies]
     indirect_rows = [row for row in rows if row[0] not in direct_dependencies]
@@ -218,6 +219,9 @@ def main():
     any_changes = False
 
     for env_name in env_names:
+        in_main = env_name in main_environments
+        in_current = env_name in current_environments
+
         rows = compare(
             main_environments.get(env_name, {}),
             current_environments.get(env_name, {}),
@@ -227,7 +231,15 @@ def main():
             continue
 
         any_changes = True
-        print_markdown(env_name, rows, direct_dependencies)
+
+        if not in_main:
+            status = "added"
+        elif not in_current:
+            status = "removed"
+        else:
+            status = None
+
+        print_markdown(env_name, rows, direct_dependencies, status)
 
     if not any_changes:
         print("No changes to pixi.lock compared with main.")
