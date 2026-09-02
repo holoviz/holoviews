@@ -320,7 +320,7 @@ class Histogram(Selection1DExpr, Chart):
             return histograms
         is_overlay = isinstance(histograms, Overlay)
         if is_overlay:
-            histograms = NdOverlay({i: el for i, el in enumerate(histograms)})
+            histograms = NdOverlay(dict(enumerate(histograms)))
 
         # Validate that all histograms share the same bin edges
         ref_edges = None
