@@ -44,7 +44,7 @@
       "matchManagers": ["pixi"],
       "matchPackageNames": ["cudf"],
       "minimumReleaseAge": null,
-      "schedule": ["before 5am"]  // Happens every second month
+      "schedule": ["before 5am"],  // Happens every second month
       "enabled": true,
       "automerge": false,  // Need to run outside CI
     },
@@ -60,7 +60,7 @@
       "branchTopic": "pixi-lock",
       "enabled": true,
     },
-  ]
+  ],
   "vulnerabilityAlerts": {
     "enabled": true,
     "minimumReleaseAge": null,
