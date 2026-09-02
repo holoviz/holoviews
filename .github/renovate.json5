@@ -28,7 +28,7 @@
       "matchManagers": ["github-actions"],
       "matchPackageNames": ["holoviz-dev/holoviz_tasks"],
       "minimumReleaseAge": null,
-      "schedule": ["before 5am"]
+      "schedule": ["before 5am"],
       "pinDigests": true
     },
     {
