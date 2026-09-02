@@ -122,6 +122,8 @@ jobs:
           fetch-depth: 0
       - name: Generate pixi.lock diff
         id: diff
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           {
             echo 'body<<PIXI_LOCK_DIFF_EOF'

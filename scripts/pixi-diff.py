@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -194,19 +195,19 @@ def git_rev_parse(revision: str) -> str:
     return result.stdout.strip()
 
 
-def print_header():
+def print_header(base: str):
     current_sha = git_rev_parse("HEAD")
-    main_sha = git_rev_parse(MAIN_BRANCH)
+    base_sha = git_rev_parse(base)
 
     print(COMMENT_MARKER)
     print("## Pixi.lock changes\n")
-    print(f"Comparing `{MAIN_BRANCH}` ({main_sha}) against this branch ({current_sha}).\n")
+    print(f"Comparing `{MAIN_BRANCH}` ({base_sha}) against this branch ({current_sha}).\n")
 
 
-def lockfile_unchanged() -> bool:
-    """Cheap check to skip parsing when pixi.lock is identical to main."""
+def lockfile_unchanged(base: str) -> bool:
+    """Cheap check to skip parsing when pixi.lock is identical to the base revision."""
     result = subprocess.run(
-        ["git", "diff", "--quiet", MAIN_BRANCH, "--", LOCKFILE],
+        ["git", "diff", "--quiet", base, "--", LOCKFILE],
         capture_output=True,
         text=True,
         check=False,
@@ -215,11 +216,13 @@ def lockfile_unchanged() -> bool:
 
 
 def main():
-    if lockfile_unchanged():
+    base = os.environ.get("BASE_SHA") or MAIN_BRANCH
+
+    if lockfile_unchanged(base):
         return
 
-    print_header()
-    main_content = git_show(MAIN_BRANCH)
+    print_header(base)
+    main_content = git_show(base)
 
     with open(LOCKFILE) as f:
         current_content = f.read()
