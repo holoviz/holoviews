@@ -143,7 +143,7 @@ jobs:
             # No changes, but a stale comment exists
             if [[ -n "${COMMENT_ID}" ]]; then
               gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH \
-                -f body=$'<!-- pixi-lock-diff -->\n## Pixi lockfile changes\n\nNo changes to pixi.lock compared with main.'
+                -f body=$'<!-- pixi-lock-diff -->\n## Pixi.lock changes\n\nNo changes to pixi.lock compared with main.'
             fi
             exit 0
           fi

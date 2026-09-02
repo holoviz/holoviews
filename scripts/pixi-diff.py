@@ -185,7 +185,7 @@ def print_header():
     main_sha = git_rev_parse(MAIN_BRANCH)
 
     print(COMMENT_MARKER)
-    print("## Pixi lockfile changes\n")
+    print("## Pixi.lock changes\n")
     print(f"Comparing `{MAIN_BRANCH}` ({main_sha}) against this branch ({current_sha}).\n")
 
 
