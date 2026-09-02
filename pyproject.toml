@@ -7,21 +7,21 @@ name = "holoviews"
 dynamic = ["version"]
 description = "A high-level plotting API for the PyData ecosystem built on HoloViews."
 readme = "README.md"
-license = { text = "BSD" }
-requires-python = ">=3.9"
+license = "BSD-3-Clause"
+license-files = ["LICENSE.txt"]
+requires-python = ">=3.10"
 authors = [
     { name = "Jean-Luc Stevens", email = "developers@holoviz.org" },
     { name = "Philipp Rudiger", email = "developers@holoviz.org" },
 ]
 maintainers = [{ name = "HoloViz developers", email = "developers@holoviz.org" }]
 classifiers = [
-    "License :: OSI Approved :: BSD License",
     "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Operating System :: OS Independent",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
@@ -33,21 +33,32 @@ classifiers = [
 dependencies = [
     "bokeh >=3.1",
     "colorcet",
+    "narwhals >=2",
     "numpy >=1.21",
-    "packaging",
     "pandas >=1.3",
     "panel >=1.0",
     "param >=2.0,<3.0",
+    "python-dateutil >=2.8.2",
     "pyviz_comms >=2.1",
 ]
 
 [project.urls]
-Homepage = "https://holoviews.org"
-Source = "https://github.com/holoviz/holoviews"
+"Issue Tracker" = "https://github.com/holoviz/holoviews/issues?q=sort%3Aupdated-desc+is%3Aissue+is%3Aopen"
+Blog = "https://blog.holoviz.org/"
+Changelog = "https://github.com/holoviz/holoviews/blob/main/doc/releases.md"
+Discord = "https://discord.gg/AXRHnJU6sP"
+Discourse = "https://discourse.holoviz.org"
+Discussions = "https://github.com/holoviz/holoviews/discussions"
+Documentation = "https://holoviews.org/"
+Funding = "https://opencollective.com/holoviz"
 HoloViz = "https://holoviz.org/"
+Homepage = "https://holoviews.org"
+Repository = "https://github.com/holoviz/holoviews"
 
 [project.optional-dependencies]
 recommended = ["matplotlib >=3", "plotly >=4.0"]
+
+[dependency-groups]
 tests = ["pytest", "pytest-rerunfailures", "pytest-asyncio"]
 
 [project.scripts]
@@ -74,8 +85,9 @@ addopts = ["--strict-config", "--strict-markers", "--color=yes"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 minversion = "7"
-xfail_strict = true
+xfail_strict = "true"
 log_cli_level = "INFO"
+python_classes = "*Test*"
 filterwarnings = [
     "error",
     # Numpy warning triggered in Bokeh, when timedelta or datetime numpy scalar are compared to a numerical scalar
@@ -106,7 +118,6 @@ filterwarnings = [
     # 2023-09: `pkg_resources` is deprecated
     "ignore:Deprecated call to `pkg_resources.+?'mpl_toolkits:DeprecationWarning", # https://github.com/matplotlib/matplotlib/issues/25244
     "ignore:Deprecated call to `pkg_resources.+?'sphinxcontrib:DeprecationWarning", # https://github.com/mgaitan/sphinxcontrib-mermaid/issues/119
-    "ignore: pkg_resources is deprecated as an API:DeprecationWarning:streamz.plugins", # https://github.com/python-streamz/streamz/issues/460
     # 2023-10: Datetime's utctimestamp() and utcnow() is deprecated in Python 3.12
     "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:dateutil.tz.tz", # https://github.com/dateutil/dateutil/pull/1285
     "ignore:datetime.datetime.utcfromtimestamp():DeprecationWarning:bokeh", # https://github.com/bokeh/bokeh/issues/13125
@@ -128,49 +139,77 @@ filterwarnings = [
     "ignore::ResourceWarning",
     # 2024-11
     "ignore:The legacy Dask DataFrame implementation is deprecated:FutureWarning", # https://github.com/holoviz/spatialpandas/issues/146
+    # 2025-05
+    "ignore:The 'shapely.geos' module is deprecated, and will be removed in a future version:DeprecationWarning", # https://github.com/geopandas/geopandas/pull/3453
+    # 2025-10
+    "ignore:`duckdb.typing` is deprecated and will be removed in a future version. Please use `duckdb.sqltypes` instead.", # https://github.com/narwhals-dev/narwhals/issues/3137
+    "ignore:'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16", # https://github.com/holoviz/panel/issues/8239
+    "ignore:'asyncio.WindowsSelectorEventLoopPolicy' is deprecated and slated for removal in Python 3.16", # https://github.com/holoviz/panel/issues/8239
+    "ignore:'_UnionGenericAlias' is deprecated and slated for removal in Python 3.17", # OK
+    # 2025-11
+    "ignore:Inheriting from 'holoviews.element.comparison.ComparisonInterface::holoviews.tests.element", # https://github.com/holoviz/holoviews/pull/6735
 ]
 
 [tool.coverage]
 omit = ["holoviews/__version.py"]
-exclude_also = ["if __name__ == .__main__.:", "if TYPE_CHECKING:", "if ._pyodide. in sys.modules:"]
+exclude_also = [
+    "@overload",
+    "if ._pyodide. in sys.modules:",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]
 
 [tool.ruff]
 fix = true
+line-length = 99
+
+[tool.ruff.format]
+exclude = ["*.ipynb", "*.md"]
 
 [tool.ruff.lint]
 select = [
     "B",
+    "C4",
+    "D",
     "E",
     "F",
     "FLY",
     "I",
     "ICN",
     "NPY",
+    "PGH",
     "PIE",
     "PLC",
     "PLE",
     "PLR",
     "PLW",
+    "PT",
     "RUF",
+    "TC",
+    "TID251",
+    "TRY002",
     "UP",
     "W",
 ]
 
 ignore = [
+    "D1", # Undocumented code
+    "D200", # Unnecessary-multiline-docstring
+    "D205", # Missing-blank-line-after-summary
+    "D400", # Missing-trailing-period
+    "D401", # Non-imperative-mood
+    "D404", # Docstring-starts-with-this
     "E402", # Module level import not at top of file
     "E501", # Line too long
-    "E701", # Multiple statements on one line
     "E712", # Comparison to true should be is
     "E731", # Do not assign a lambda expression, use a def
     "E741", # Ambiguous variable name
-    "F405", # From star imports
-    "PLE0604", # Invalid object in `__all__`, must contain only strings
-    "PLE0605", # Invalid format for `__all__`
+    "PLC0415", # `import` should be at the top-level of a file
     "PLR091", # Too many arguments/branches/statements
     "PLR2004", # Magic value used in comparison
     "PLW2901", # `for` loop variable is overwritten
-    "RUF005", # Consider {expr} instead of concatenation
     "RUF012", # Mutable class attributes should use `typing.ClassVar`
+    "RUF021", # parenthesize-chained-operators
 ]
 extend-unsafe-fixes = [
     "F401", # Unused imports
@@ -178,20 +217,76 @@ extend-unsafe-fixes = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F403"]
-"holoviews/tests/*" = [
+"holoviews/**/__init__.py" = [
+    "I002", # Ignore required-imports
+]
+"holoviews/tests/*" = ["D"]
+"examples/*" = [
+    "B905", # zip-without-explicit-strict
+    "I002", # Ignore required-imports
+    "NPY002", # Replace legacy `np.random.rand` call with Generator
+    "PLW0603", # Using global statement
     "RUF001", # Ambiguous unicode character
     "RUF002", # Ambiguous unicode character
     "RUF003", # Ambiguous unicode character
-    "NPY002", # Replace legacy `np.random.rand` call with Generator
-    "B904", # Within an `except` clause, raise exceptions with from err or None
 ]
+"holoviews/element/comparison.py" = ["PT009"]
+"holoviews/tests/element/test_comparison*.py" = ["B904", "PT009", "PT027"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["holoviews"]
 combine-as-imports = true
+required-imports = ["from __future__ import annotations"]
 
-[tool.codespell]
-ignore-words-list = "lod,nd,ndoes,reenabled,spreaded,whn,ser,assertIn"
-skip = "doc/generate_modules.py"
-write-changes = true
+[tool.ruff.lint.flake8-import-conventions.aliases]
+typing = "t"
+
+[tool.ruff.lint.flake8-comprehensions]
+allow-dict-calls-with-keyword-arguments = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"packaging.version.Version".msg = "Use holoviews.core.util.dependencies._no_import_version instead."
+"re.match".msg = "Use re.search with '^' instead of re.match"
+
+[tool.ty.src]
+exclude = ["holoviews/*version.py"]
+
+[tool.ty.rules]
+unresolved-import = "ignore"
+
+# Add whole project for LSP features and diagnostics only for the type-checked files
+[[tool.ty.overrides]]
+exclude = [
+    "holoviews/*.py",
+    "holoviews/core/*.py",
+    "holoviews/core/util/*.py",
+    "holoviews/tests/_deps.py",
+    "holoviews/util/*.py",
+    "scripts/*.py",
+]
+rules.all = "ignore"
+
+[tool.typos.default]
+extend-ignore-re = [
+    ".*(?:#|--|//|/*).*(?:typos):\\s?ignore[^\\n]*\\n",
+    ".*(?:typos):\\s?ignore-next-line[^\\n]*\\n[^\\n]*",
+]
+
+[tool.typos.default.extend-words]
+anc = "anc"
+arange = "arange"
+ba = "ba"
+iy = "iy"
+lod = "lod"
+nd = "nd"
+pn = "pn"
+ser = "ser"
+spreaded = "spreaded"
+writeable = "writeable"
+
+[tool.typos.default.extend-identifiers]
+les_mis = "les_mis"
+LesMis = "LesMis"

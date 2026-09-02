@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import weakref
 from collections import defaultdict
 
@@ -7,8 +9,7 @@ from ..core.util import dimension_sanitizer
 
 
 class Link(param.Parameterized):
-    """
-    A Link defines some connection between a source and target object
+    """A Link defines some connection between a source and target object
     in their visualization. It is quite similar to a Stream as it
     allows defining callbacks in response to some change or event on
     the source object, however, unlike a Stream, it does not transfer
@@ -21,6 +22,7 @@ class Link(param.Parameterized):
     A Link must define a source object which is what triggers events,
     but must not define a target. It is also possible to define bi-
     directional links between the source and target object.
+
     """
 
     # Mapping from a source id to a Link instance
@@ -35,9 +37,9 @@ class Link(param.Parameterized):
 
     def __init__(self, source, target=None, **params):
         if source is None:
-            raise ValueError(f'{type(self).__name__} must define a source')
+            raise ValueError(f"{type(self).__name__} must define a source")
         if self._requires_target and target is None:
-            raise ValueError(f'{type(self).__name__} must define a target.')
+            raise ValueError(f"{type(self).__name__} must define a target.")
 
         # Source is stored as a weakref to allow it to be garbage collected
         self._source = None if source is None else weakref.ref(source)
@@ -47,9 +49,9 @@ class Link(param.Parameterized):
 
     @classmethod
     def register_callback(cls, backend, callback):
-        """
-        Register a LinkCallback providing the implementation for
+        """Register a LinkCallback providing the implementation for
         the Link for a particular backend.
+
         """
         cls._callbacks[backend][cls] = callback
 
@@ -62,93 +64,116 @@ class Link(param.Parameterized):
         return self._target() if self._target else None
 
     def link(self):
-        """
-        Registers the Link
-        """
+        """Registers the Link"""
         if self.source in self.registry:
             links = self.registry[self.source]
-            params = {
-                k: v for k, v in self.param.values().items() if k != 'name'}
+            params = {k: v for k, v in self.param.values().items() if k != "name"}
             for link in links:
-                link_params = {
-                    k: v for k, v in link.param.values().items() if k != 'name'}
-                if (type(link) is type(self) and link.source is self.source
-                    and link.target is self.target and params == link_params):
+                link_params = {k: v for k, v in link.param.values().items() if k != "name"}
+                if (
+                    type(link) is type(self)
+                    and link.source is self.source
+                    and link.target is self.target
+                    and params == link_params
+                ):
                     return
             self.registry[self.source].append(self)
         else:
             self.registry[self.source] = [self]
 
     def unlink(self):
-        """
-        Unregisters the Link
-        """
-        links = self.registry.get(self.source)
-        if self in links:
+        """Unregisters the Link"""
+        source = self.source
+        if source is None:
+            return
+        links = self.registry.get(source)
+        if links and self in links:
             links.pop(links.index(self))
 
 
 class RangeToolLink(Link):
-    """
-    The RangeToolLink sets up a link between a RangeTool on the source
+    """The RangeToolLink sets up a link between a RangeTool on the source
     plot and the axes on the target plot. It is useful for exploring
     a subset of a larger dataset in more detail. By default it will
     link along the x-axis but using the axes parameter both axes may
     be linked to the tool.
 
     Example of how to use RangeToolLink can be found here:
-    https://www.holoviews.org/gallery/demos/bokeh/timeseries_range_tool.html
+    https ://www.holoviews.org/gallery/demos/bokeh/timeseries_range_tool.html
+
     """
 
-    axes = param.ListSelector(default=['x'], objects=['x', 'y'], doc="""
-        Which axes to link the tool to.""")
+    axes = param.ListSelector(
+        default=["x"],
+        objects=["x", "y"],
+        doc="Which axes to link the tool to.",
+    )
 
-    boundsx = param.Tuple(default=None, length=2, doc="""
-        (start, end) bounds for the x-axis""")
+    boundsx = param.Tuple(
+        default=None,
+        length=2,
+        doc="(start, end) bounds for the x-axis",
+    )
 
-    boundsy = param.Tuple(default=None, length=2, doc="""
-        (start, end) bounds for the y-axis""")
+    boundsy = param.Tuple(
+        default=None,
+        length=2,
+        doc="(start, end) bounds for the y-axis",
+    )
 
-    intervalsx = param.Tuple(default=None, length=2, doc="""
-        (min, max) intervals for the x-axis""")
+    intervalsx = param.Tuple(
+        default=None,
+        length=2,
+        doc="(min, max) intervals for the x-axis",
+    )
 
-    intervalsy = param.Tuple(default=None, length=2, doc="""
-        (min, max) intervals for the y-axis""")
+    intervalsy = param.Tuple(
+        default=None,
+        length=2,
+        doc="(min, max) intervals for the y-axis",
+    )
 
-    use_handles = param.Boolean(default=True, doc="""
-        Whether to display handles. Only available from Bokeh 3.5 onwards.""")
+    use_handles = param.Boolean(
+        default=True,
+        doc="Whether to display handles. Only available from Bokeh 3.5 onwards.",
+    )
 
-    start_gesture = param.Selector(default='tap', objects=['pan', 'tap', 'none'],
-         doc="Gesture to start a range selection. Only available from Bokeh 3.5 onwards.")
+    start_gesture = param.Selector(
+        default="tap",
+        objects=["pan", "tap", "none"],
+        doc="Gesture to start a range selection. Only available from Bokeh 3.5 onwards.",
+    )
 
-    inverted = param.Boolean(default=True, doc="""
-         Whether to invert the highlighting of the range selection.
-         Only available from Bokeh 3.5 onwards.""")
+    inverted = param.Boolean(
+        default=True,
+        doc="""
+        Whether to invert the highlighting of the range selection.
+        Only available from Bokeh 3.5 onwards.""",
+    )
 
     _requires_target = True
 
+
 class DataLink(Link):
-    """
-    DataLink defines a link in the data between two objects allowing
+    """DataLink defines a link in the data between two objects allowing
     them to be selected together. In order for a DataLink to be
     established the source and target data must be of the same length.
+
     """
 
     _requires_target = True
 
 
 class SelectionLink(Link):
-    """
-    Links the selection between two glyph renderers.
-    """
+    """Links the selection between two glyph renderers."""
 
     _requires_target = True
 
 
 class VertexTableLink(Link):
-    """
-    Defines a Link between a Path type and a Table that will
+    """Defines a Link between a Path type and a Table that will
     display the vertices of selected path.
+
     """
 
     vertex_columns = param.List(default=[])
@@ -156,15 +181,13 @@ class VertexTableLink(Link):
     _requires_target = True
 
     def __init__(self, source, target, **params):
-        if 'vertex_columns' not in params:
+        if "vertex_columns" not in params:
             dimensions = [dimension_sanitizer(d.name) for d in target.dimensions()[:2]]
-            params['vertex_columns'] = dimensions
+            params["vertex_columns"] = dimensions
         super().__init__(source, target, **params)
 
 
 class RectanglesTableLink(Link):
-    """
-    Links a Rectangles element to a Table.
-    """
+    """Links a Rectangles element to a Table."""
 
     _requires_target = True

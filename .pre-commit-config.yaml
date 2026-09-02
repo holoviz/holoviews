@@ -2,7 +2,7 @@ exclude: (\.min\.js$|\.svg$|\.html$)
 default_stages: [pre-commit]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # frozen: v6.0.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -17,42 +17,34 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.7.1
+    rev: 1f1e8bf348ff38fc88619a38d3ca4d9c56abea49 # frozen: v0.16.5
     hooks:
-      - id: ruff
-        files: holoviews/|scripts/
+      - id: ruff-check
+      - id: ruff-format
   - repo: https://github.com/hoxbro/clean_notebook
-    rev: v0.1.15
+    rev: 2e6f506fab3cdfbe16bc18fd0d24e828db773b74 # frozen: v0.2.1
     hooks:
       - id: clean-notebook
-        args: [--strip-trailing-newlines]
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.3.0
+        args: [--strip-trailing-newlines, --ignore, tags]
+  - repo: https://github.com/crate-ci/typos
+    rev: 4d9c206a77c041268485162b8e2579ad7a5cb9a3 # frozen: v1.50.0
     hooks:
-      - id: codespell
-        additional_dependencies:
-          - tomli
-  - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: v1.10.0
-    hooks:
-      - id: rst-backticks
-      - id: rst-directive-colons
-      - id: rst-inline-touching-normal
+      - id: typos
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.10.0.1
+    rev: 745eface02aef23e168a8afb6b5737818efbea95 # frozen: v0.11.0.1
     hooks:
       - id: shellcheck
   - repo: https://github.com/hoxbro/prettier-pre-commit
-    rev: v3.3.3
+    rev: 542048186c045692b23a08adfbc3191ef44ca017 # frozen: v3.9.6
     hooks:
       - id: prettier
-        exclude: conda.recipe/meta.yaml
+        exclude: conda.recipe/meta.yaml|pull_request_template.md
         types_or:
           - markdown
           - yaml
           - css
   - repo: https://github.com/hoxbro/taplo-pre-commit
-    rev: v0.9.3
+    rev: 605f960c3c571f814f535622a688bcde63ee87f6 # frozen: v0.9.3
     hooks:
       - id: taplo
         args:

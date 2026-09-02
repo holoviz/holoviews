@@ -17,12 +17,11 @@ on:
           - full
           - downstream
       cache:
-        description: "Use cache"
+        description: "Use cache. If false, upstream packages are updated"
         type: boolean
         default: true
 
-  schedule:
-    - cron: "0 14 * * SUN"
+permissions: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -36,13 +35,14 @@ env:
   DISPLAY: ":99.0"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   COV: "--cov=./holoviews --cov-report=xml"
+  UPSTREAM_PACKAGES: "panel param"
 
 jobs:
   pre_commit:
-    name: Run pre-commit
+    name: pre-commit
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pre-commit@v0
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
 
   setup:
     name: Setup workflow
@@ -52,11 +52,14 @@ jobs:
     outputs:
       code_change: ${{ steps.filter.outputs.code }}
       matrix: ${{ env.MATRIX }}
+      matrix_option: ${{ env.MATRIX_OPTION }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: github.event_name != 'pull_request'
+        with:
+          persist-credentials: false
       - name: Check for code changes
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
           filters: |
@@ -64,15 +67,18 @@ jobs:
               - 'holoviews/**'
               - 'examples/**'
               - 'pixi.toml'
+              - 'pixi.lock'
               - 'pyproject.toml'
               - '.github/workflows/test.yaml'
       - name: Set matrix option
+        env:
+          GITHUB_EVENT_INPUTS_TARGET: ${{ github.event.inputs.target }}
         run: |
-          if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
-            OPTION=${{ github.event.inputs.target }}
-          elif [[ '${{ github.event_name }}' == 'schedule' ]]; then
+          if [[ "${GITHUB_EVENT_NAME}" == 'workflow_dispatch' ]]; then
+            OPTION=${GITHUB_EVENT_INPUTS_TARGET}
+          elif [[ "${GITHUB_EVENT_NAME}" == 'pull_request' && "${GITHUB_HEAD_REF}" == 'renovate/lock-file-maintenance-pixi-lock' ]]; then
             OPTION="full"
-          elif [[ '${{ github.event_name }}' == 'push' && '${{ github.ref_type }}' == 'tag' ]]; then
+          elif [[ "${GITHUB_EVENT_NAME}" == 'push' && "${GITHUB_REF_TYPE}" == 'tag' ]]; then
             OPTION="full"
           else
             OPTION="default"
@@ -83,7 +89,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "environment": ["test-39", "test-312"]
+              "environment": ["test-310", "test-314"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'full' option
@@ -91,7 +97,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "environment": ["test-39", "test-310", "test-311", "test-312"]
+              "environment": ["test-310", "test-311", "test-312", "test-313", "test-314"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'downstream' option
@@ -99,47 +105,90 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest"],
-              "environment": ["test-311"]
+              "environment": ["test-310"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
 
-  pixi_lock:
-    name: Pixi lock
+  pixi_lock_diff:
+    name: pixi.lock diff
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_lock@v0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          cache: ${{ github.event.inputs.cache == 'true' || github.event.inputs.cache == '' }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Generate pixi.lock diff
+        id: diff
+        run: |
+          {
+            echo 'body<<PIXI_LOCK_DIFF_EOF'
+            pipx run scripts/pixi-diff.py
+            echo 'PIXI_LOCK_DIFF_EOF'
+          } >> "$GITHUB_OUTPUT"
+      - name: Create or update comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BODY: ${{ steps.diff.outputs.body }}
+        run: |
+          # See if comment already exists
+          COMMENT_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" --paginate \
+            --jq '.[] | select(.body | startswith("<!-- pixi-lock-diff -->")) | .id' | head -n1)
+
+          if [[ -z "${BODY}" ]]; then
+            # No changes, but a stale comment exists
+            if [[ -n "${COMMENT_ID}" ]]; then
+              gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH \
+                -f body=$'<!-- pixi-lock-diff -->\n## Pixi.lock changes\n\nNo changes to pixi.lock compared with main.'
+            fi
+            exit 0
+          fi
+
+          if [[ -n "${COMMENT_ID}" ]]; then
+            gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="${BODY}"
+          else
+            gh pr comment "${PR_NUMBER}" --repo "${REPO}" --body "${BODY}"
+          fi
 
   unit_test_suite:
     name: unit:${{ matrix.environment }}:${{ matrix.os }}
-    needs: [pre_commit, setup, pixi_lock]
+    needs: [pre_commit, setup]
     runs-on: ${{ matrix.os }}
     if: needs.setup.outputs.code_change == 'true'
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
+    env:
+      ENV: ${{ matrix.environment }}
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
         with:
           environments: ${{ matrix.environment }}
+      - name: Update upstream packages
+        if: github.event.inputs.cache == 'false'
+        run: |
+          pixi update ${UPSTREAM_PACKAGES} -e "${ENV}"
       - name: Check packages latest version
         run: |
-          pixi run -e ${{ matrix.environment }} check-latest-packages bokeh panel param datashader
+          pixi run -e "${ENV}" check-latest-packages bokeh panel param datashader
       - name: Test Unit
         run: |
-          pixi run -e ${{ matrix.environment }} test-unit $COV
+          pixi run -e "${ENV}" test-unit $COV
       - name: Test Examples
         run: |
-          pixi run -e ${{ matrix.environment }} test-example
-      - uses: codecov/codecov-action@v4
+          pixi run -e "${ENV}" test-example
+      - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   ui_test_suite:
     name: ui:${{ matrix.environment }}:${{ matrix.os }}
-    needs: [pre_commit, setup, pixi_lock]
+    needs: [pre_commit, setup]
     runs-on: ${{ matrix.os }}
     if: needs.setup.outputs.code_change == 'true'
     strategy:
@@ -150,30 +199,35 @@ jobs:
     timeout-minutes: 60
     env:
       PANEL_LOG_LEVEL: info
+      ENV: ${{ matrix.environment }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
         with:
           environments: ${{ matrix.environment }}
+      - name: Update upstream packages
+        if: github.event.inputs.cache == 'false'
+        run: |
+          pixi update ${UPSTREAM_PACKAGES} -e "${ENV}"
       - name: Test UI
         run: |
           # Create a .uicoveragerc file to set the concurrency library to greenlet
           # https://github.com/microsoft/playwright-python/issues/313
           echo "[run]\nconcurrency = greenlet" > .uicoveragerc
           FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
-          pixi run -e ${{ matrix.environment }} test-ui $COV --cov-config=.uicoveragerc $FAIL
-      - uses: actions/upload-artifact@v4
+          pixi run -e "${ENV}" test-ui $COV --cov-config=.uicoveragerc $FAIL
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: ui_screenshots_${{ runner.os }}
           path: ./ui_screenshots
           if-no-files-found: ignore
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   core_test_suite:
     name: core:${{ matrix.environment }}:${{ matrix.os }}
-    needs: [pre_commit, setup, pixi_lock]
+    needs: [pre_commit, setup]
     runs-on: ${{ matrix.os }}
     if: needs.setup.outputs.code_change == 'true'
     strategy:
@@ -181,21 +235,52 @@ jobs:
       matrix:
         os: ["ubuntu-latest"]
         environment: ["test-core"]
+    env:
+      ENV: ${{ matrix.environment }}
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
         with:
           environments: ${{ matrix.environment }}
+      - name: Update upstream packages
+        if: github.event.inputs.cache == 'false'
+        run: |
+          pixi update ${UPSTREAM_PACKAGES} -e "${ENV}"
       - name: Check packages latest version
         run: |
-          pixi run -e ${{ matrix.environment }} check-latest-packages numpy pandas bokeh panel param
+          pixi run -e "${ENV}" check-latest-packages pandas bokeh panel param numpy
       - name: Test Unit
         run: |
-          pixi run -e ${{ matrix.environment }} test-unit
+          pixi run -e "${ENV}" test-unit
+
+  type_suite:
+    name: type:${{ matrix.environment }}:${{ matrix.os }}
+    needs: [pre_commit, setup]
+    runs-on: ${{ matrix.os }}
+    if: needs.setup.outputs.code_change == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        environment: ["type"]
+    env:
+      ENV: ${{ matrix.environment }}
+    timeout-minutes: 5
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
+        with:
+          environments: ${{ matrix.environment }}
+      - name: Update upstream packages
+        if: github.event.inputs.cache == 'false'
+        run: |
+          pixi update ${UPSTREAM_PACKAGES} -e "${ENV}"
+      - name: Type TY
+        run: |
+          pixi run -e "${ENV}" type-ty
 
   result_test_suite:
     name: result:test
-    needs: [unit_test_suite, ui_test_suite, core_test_suite]
+    needs: [unit_test_suite, ui_test_suite, core_test_suite, type_suite]
     if: always()
     runs-on: ubuntu-latest
     steps:

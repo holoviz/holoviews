@@ -1,9 +1,11 @@
-"""
-The path module provides a set of elements to draw paths and polygon
+"""The path module provides a set of elements to draw paths and polygon
 geometries in 2D space. In addition to three general elements are
 Path, Contours and Polygons, it defines a number of elements to
 quickly draw common shapes.
+
 """
+
+from __future__ import annotations
 
 import numpy as np
 import param
@@ -16,8 +18,7 @@ from .selection import SelectionPolyExpr
 
 
 class Path(SelectionPolyExpr, Geometry):
-    """
-    The Path element represents one or more of path geometries with
+    """The Path element represents one or more of path geometries with
     associated values. Each path geometry may be split into
     sub-geometries on NaN-values and may be associated with scalar
     values or array values varying along its length. In analogy to
@@ -51,13 +52,12 @@ class Path(SelectionPolyExpr, Geometry):
     the `Path.split` method, which returns each path geometry as a
     separate entity, while the other methods assume a flattened
     representation where all paths are separated by NaN values.
+
     """
 
     group = param.String(default="Path", constant=True)
 
-    datatype = param.List(default=[
-        'multitabular', 'spatialpandas', 'dask_spatialpandas']
-    )
+    datatype = param.List(default=["multitabular", "spatialpandas", "dask_spatialpandas"])
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple) and len(data) == 2:
@@ -73,7 +73,7 @@ class Path(SelectionPolyExpr, Geometry):
             paths = []
             for path in data:
                 if path.kdims != kdims:
-                    redim = {okd.name: nkd for okd, nkd in zip(path.kdims, kdims)}
+                    redim = {okd.name: nkd for okd, nkd in zip(path.kdims, kdims, strict=True)}
                     path = path.redim(**redim)
                 if path.interface.multi and isinstance(path.data, list):
                     paths += path.data
@@ -86,10 +86,12 @@ class Path(SelectionPolyExpr, Geometry):
     def __getitem__(self, key):
         if isinstance(key, np.ndarray):
             return self.select(selection_mask=np.squeeze(key))
-        if key in self.dimensions(): return self.dimension_values(key)
+        if key in self.dimensions():
+            return self.dimension_values(key)
         if not isinstance(key, tuple) or len(key) == 1:
             key = (key, slice(None))
-        elif len(key) == 0: return self.clone()
+        elif len(key) == 0:
+            return self.clone()
         if not all(isinstance(k, slice) for k in key):
             raise KeyError(f"{self.__class__.__name__} only support slice indexing")
         xkey, ykey = key
@@ -107,46 +109,44 @@ class Path(SelectionPolyExpr, Geometry):
 
         Selections may select a specific value, slice or set of values:
 
-        * value: Scalar values will select rows along with an exact
-                 match, e.g.:
+        * value: Scalar values will select rows along with an exact match, e.g.::
 
             ds.select(x=3)
 
-        * slice: Slices may be declared as tuples of the upper and
-                 lower bound, e.g.:
+        * slice: Slices may be declared as tuples of the upper and lower bound, e.g.::
 
             ds.select(x=(0, 3))
 
-        * values: A list of values may be selected using a list or
-                  set, e.g.:
+        * values: A list of values may be selected using a list or set, e.g.::
 
             ds.select(x=[0, 1, 2])
 
-        * predicate expression: A holoviews.dim expression, e.g.:
+        * predicate expression: A holoviews.dim expression, e.g.::
 
             from holoviews import dim
             ds.select(selection_expr=dim('x') % 2 == 0)
 
-        Args:
-            selection_expr: holoviews.dim predicate expression
-                specifying selection.
-            selection_specs: List of specs to match on
-                A list of types, functions, or type[.group][.label]
-                strings specifying which objects to apply the
-                selection on.
-            **selection: Dictionary declaring selections by dimension
-                Selections can be scalar values, tuple ranges, lists
-                of discrete values and boolean arrays
+        Parameters
+        ----------
+        selection_expr : holoviews.dim predicate expression
+            specifying selection.
+        selection_specs : List of specs to match on
+            A list of types, functions, or type[.group][.label]
+            strings specifying which objects to apply the
+            selection on.
+        **selection: Dictionary declaring selections by dimension
+            Selections can be scalar values, tuple ranges, lists
+            of discrete values and boolean arrays
 
-        Returns:
-            Returns an Dimensioned object containing the selected data
-            or a scalar if a single value was selected
+        Returns
+        -------
+        Returns an Dimensioned object containing the selected data
+        or a scalar if a single value was selected
         """
         xdim, ydim = self.kdims[:2]
         x_range = selection.pop(xdim.name, None)
         y_range = selection.pop(ydim.name, None)
-        sel = super().select(selection_expr, selection_specs,
-                             **selection)
+        sel = super().select(selection_expr, selection_specs, **selection)
         if x_range is None and y_range is None:
             return sel
         x_range = x_range if isinstance(x_range, slice) else slice(None)
@@ -154,19 +154,19 @@ class Path(SelectionPolyExpr, Geometry):
         return sel[x_range, y_range]
 
     def split(self, start=None, end=None, datatype=None, **kwargs):
-        """
-        The split method allows splitting a Path type into a list of
+        """The split method allows splitting a Path type into a list of
         subpaths of the same type. A start and/or end may be supplied
         to select a subset of paths.
+
         """
         if not self.interface.multi:
             if not len(self):
                 return []
-            elif datatype == 'array':
+            elif datatype == "array":
                 obj = self.array(**kwargs)
-            elif datatype == 'dataframe':
+            elif datatype == "dataframe":
                 obj = self.dframe(**kwargs)
-            elif datatype in ('columns', 'dictionary'):
+            elif datatype in ("columns", "dictionary"):
                 obj = self.columns(**kwargs)
             elif datatype is None:
                 obj = self.clone([self.data])
@@ -176,9 +176,21 @@ class Path(SelectionPolyExpr, Geometry):
         return self.interface.split(self, start, end, datatype, **kwargs)
 
 
+class Dendrogram(Path):
+    group = param.String(default="Dendrogram", constant=True)
+
+    datatype = param.List(default=["multitabular"])
+
+    def __new__(cls, *args, **kwargs):
+        return super().__new__(cls)
+
+    def __init__(self, x, y=None, kdims=None, vdims=None, **params):
+        data = x if y is None else zip(x, y, strict=True)
+        super().__init__(data, kdims=kdims, vdims=vdims, **params)
+
+
 class Contours(Path):
-    """
-    The Contours element is a subtype of a Path which is characterized
+    """The Contours element is a subtype of a Path which is characterized
     by the fact that each path geometry may only be associated with
     scalar values. It supports all the same data formats as a `Path`
     but does not allow continuously varying values along the path
@@ -206,15 +218,20 @@ class Contours(Path):
     the `Contours.split` method, which returns each path geometry as a
     separate entity, while the other methods assume a flattened
     representation where all paths are separated by NaN values.
+
     """
 
-    vdims = param.List(default=[], constant=True, doc="""
+    vdims = param.List(
+        default=[],
+        constant=True,
+        doc="""
         Contours optionally accept a value dimension, corresponding
-        to the supplied values.""")
+        to the supplied values.""",
+    )
 
-    group = param.String(default='Contours', constant=True)
+    group = param.String(default="Contours", constant=True)
 
-    _level_vdim = Dimension('Level') # For backward compatibility
+    _level_vdim = Dimension("Level")  # For backward compatibility
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         data = [] if data is None else data
@@ -222,8 +239,7 @@ class Contours(Path):
 
 
 class Polygons(Contours):
-    """
-    The Polygons element represents one or more polygon geometries
+    """The Polygons element represents one or more polygon geometries
     with associated scalar values. Each polygon geometry may be split
     into sub-geometries on NaN-values and may be associated with
     scalar values. In analogy to GEOS geometry types a Polygons
@@ -265,45 +281,49 @@ class Polygons(Contours):
     the `Polygons.split` method, which returns each path geometry as a
     separate entity, while the other methods assume a flattened
     representation where all paths are separated by NaN values.
+
     """
 
     group = param.String(default="Polygons", constant=True)
 
-    vdims = param.List(default=[], doc="""
+    vdims = param.List(
+        default=[],
+        doc="""
         Polygons optionally accept a value dimension, corresponding
-        to the supplied value.""")
+        to the supplied value.""",
+    )
 
-    _level_vdim = Dimension('Value')
+    _level_vdim = Dimension("Value")
 
     # Defines which key the DictInterface uses to look for holes
-    _hole_key = 'holes'
+    _hole_key = "holes"
 
     @property
     def has_holes(self):
-        """
-        Detects whether any polygon in the Polygons element defines
+        """Detects whether any polygon in the Polygons element defines
         holes. Useful to avoid expanding Polygons unless necessary.
+
         """
         return self.interface.has_holes(self)
 
     def holes(self):
-        """
-        Returns a list-of-lists-of-lists of hole arrays. The three levels
+        """Returns a list-of-lists-of-lists of hole arrays. The three levels
         of nesting reflects the structure of the polygons:
 
-          1. The first level of nesting corresponds to the list of geometries
-          2. The second level corresponds to each Polygon in a MultiPolygon
-          3. The third level of nesting allows for multiple holes per Polygon
+        1) The first level of nesting corresponds to the list of geometries
+        2) The second level corresponds to each Polygon in a MultiPolygon
+        3) The third level of nesting allows for multiple holes per Polygon
+
         """
         return self.interface.holes(self)
 
 
 class BaseShape(Path):
-    """
-    A BaseShape is a Path that can be succinctly expressed by a small
+    """A BaseShape is a Path that can be succinctly expressed by a small
     number of parameters instead of a full path specification. For
     instance, a circle may be expressed by the center position and
     radius instead of an explicit list of path coordinates.
+
     """
 
     __abstract = True
@@ -316,28 +336,28 @@ class BaseShape(Path):
         self.interface = MultiInterface
 
     def clone(self, *args, **overrides):
-        """
-        Returns a clone of the object with matching parameter values
+        """Returns a clone of the object with matching parameter values
         containing the specified args and kwargs.
+
         """
-        link = overrides.pop('link', True)
+        link = overrides.pop("link", True)
         settings = dict(self.param.values(), **overrides)
-        if 'id' not in settings:
-            settings['id'] = self.id
+        if "id" not in settings:
+            settings["id"] = self.id
         if not args and link:
-            settings['plot_id'] = self._plot_id
+            settings["plot_id"] = self._plot_id
 
-        pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
-        return self.__class__(*(settings[n] for n in pos_args),
-                              **{k:v for k,v in settings.items()
-                                 if k not in pos_args})
-
+        pos_args = getattr(self, "_" + type(self).__name__ + "__pos_params", [])
+        return self.__class__(
+            *(settings[n] for n in pos_args),
+            **{k: v for k, v in settings.items() if k not in pos_args},
+        )
 
 
 class Box(BaseShape):
-    """
-    Draw a centered box of a given width at the given position with
+    """Draw a centered box of a given width at the given position with
     the specified aspect ratio (if any).
+
     """
 
     x = param.Number(default=0, doc="The x-position of the box center.")
@@ -348,45 +368,55 @@ class Box(BaseShape):
 
     height = param.Number(default=1, doc="The height of the box.")
 
-    orientation = param.Number(default=0, doc="""
-       Orientation in the Cartesian coordinate system, the
-       counterclockwise angle in radians between the first axis and the
-       horizontal.""")
+    orientation = param.Number(
+        default=0,
+        doc="""
+        Orientation in the Cartesian coordinate system, the
+        counterclockwise angle in radians between the first axis and the
+        horizontal.""",
+    )
 
-    aspect= param.Number(default=1.0, doc="""
-       Optional multiplier applied to the box size to compute the
-       width in cases where only the length value is set.""")
+    aspect = param.Number(
+        default=1.0,
+        doc="""
+        Optional multiplier applied to the box size to compute the
+        width in cases where only the length value is set.""",
+    )
 
-    group = param.String(default='Box', constant=True, doc="The assigned group name.")
+    group = param.String(default="Box", constant=True, doc="The assigned group name.")
 
-    __pos_params = ['x','y', 'height']
+    __pos_params = ["x", "y", "height"]
 
     def __init__(self, x, y, spec, **params):
         if isinstance(spec, tuple):
-            if 'aspect' in params:
-                raise ValueError('Aspect parameter not supported when supplying '
-                                 '(width, height) specification.')
-            (width, height ) = spec
+            if "aspect" in params:
+                raise ValueError(
+                    "Aspect parameter not supported when supplying (width, height) specification."
+                )
+            (width, height) = spec
         else:
-            width, height = params.get('width', spec), spec
+            width, height = params.get("width", spec), spec
 
-        params['width']=params.get('width',width)
+        params["width"] = params.get("width", width)
         super().__init__(x=x, y=y, height=height, **params)
 
-        half_width = (self.width * self.aspect)/ 2.0
+        half_width = (self.width * self.aspect) / 2.0
         half_height = self.height / 2.0
-        (l,b,r,t) = (-half_width, -half_height, half_width, half_height)
-        box = np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])
-        rot = np.array([[np.cos(self.orientation), -np.sin(self.orientation)],
-                        [np.sin(self.orientation), np.cos(self.orientation)]])
+        (l, b, r, t) = (-half_width, -half_height, half_width, half_height)
+        box = np.array([(l, b), (l, t), (r, t), (r, b), (l, b)])
+        rot = np.array(
+            [
+                [np.cos(self.orientation), -np.sin(self.orientation)],
+                [np.sin(self.orientation), np.cos(self.orientation)],
+            ]
+        )
 
-        xs, ys = np.tensordot(rot, box.T, axes=[1,0])
-        self.data = [np.column_stack([xs+x, ys+y])]
+        xs, ys = np.tensordot(rot, box.T, axes=[1, 0])
+        self.data = [np.column_stack([xs + x, ys + y])]
 
 
 class Ellipse(BaseShape):
-    """
-    Draw an axis-aligned ellipse at the specified x,y position with
+    """Draw an axis-aligned ellipse at the specified x,y position with
     the given orientation.
 
     The simplest (default) Ellipse is a circle, specified using:
@@ -405,7 +435,9 @@ class Ellipse(BaseShape):
     Note that as a subclass of Path, internally an Ellipse is a
     sequence of (x,y) sample positions. Ellipse could also be
     implemented as an annotation that uses a dedicated ellipse artist.
+
     """
+
     x = param.Number(default=0, doc="The x-position of the ellipse center.")
 
     y = param.Number(default=0, doc="The y-position of the ellipse center.")
@@ -414,69 +446,81 @@ class Ellipse(BaseShape):
 
     height = param.Number(default=1, doc="The height of the ellipse.")
 
-    orientation = param.Number(default=0, doc="""
-       Orientation in the Cartesian coordinate system, the
-       counterclockwise angle in radians between the first axis and the
-       horizontal.""")
+    orientation = param.Number(
+        default=0,
+        doc="""
+        Orientation in the Cartesian coordinate system, the
+        counterclockwise angle in radians between the first axis and the
+        horizontal.""",
+    )
 
-    aspect= param.Number(default=1.0, doc="""
-       Optional multiplier applied to the diameter to compute the width
-       in cases where only the diameter value is set.""")
+    aspect = param.Number(
+        default=1.0,
+        doc="""
+        Optional multiplier applied to the diameter to compute the width
+        in cases where only the diameter value is set.""",
+    )
 
     samples = param.Number(default=100, doc="The sample count used to draw the ellipse.")
 
-    group = param.String(default='Ellipse', constant=True, doc="The assigned group name.")
+    group = param.String(default="Ellipse", constant=True, doc="The assigned group name.")
 
-    __pos_params = ['x','y', 'height']
+    __pos_params = ["x", "y", "height"]
 
     def __init__(self, x, y, spec, **params):
 
         if isinstance(spec, tuple):
-            if 'aspect' in params:
-                raise ValueError('Aspect parameter not supported when supplying '
-                                 '(width, height) specification.')
+            if "aspect" in params:
+                raise ValueError(
+                    "Aspect parameter not supported when supplying (width, height) specification."
+                )
             (width, height) = spec
         else:
-            width, height = params.get('width', spec), spec
+            width, height = params.get("width", spec), spec
 
-        params['width']=params.get('width',width)
+        params["width"] = params.get("width", width)
         super().__init__(x=x, y=y, height=height, **params)
-        angles = np.linspace(0, 2*np.pi, self.samples)
-        half_width = (self.width * self.aspect)/ 2.0
+        angles = np.linspace(0, 2 * np.pi, self.samples)
+        half_width = (self.width * self.aspect) / 2.0
         half_height = self.height / 2.0
-        #create points
+        # create points
         ellipse = np.array(
-            list(zip(half_width*np.sin(angles),
-                     half_height*np.cos(angles))))
-        #rotate ellipse and add offset
-        rot = np.array([[np.cos(self.orientation), -np.sin(self.orientation)],
-               [np.sin(self.orientation), np.cos(self.orientation)]])
-        self.data = [np.tensordot(rot, ellipse.T, axes=[1,0]).T+np.array([x,y])]
+            list(zip(half_width * np.sin(angles), half_height * np.cos(angles), strict=True))
+        )
+        # rotate ellipse and add offset
+        rot = np.array(
+            [
+                [np.cos(self.orientation), -np.sin(self.orientation)],
+                [np.sin(self.orientation), np.cos(self.orientation)],
+            ]
+        )
+        self.data = [np.tensordot(rot, ellipse.T, axes=[1, 0]).T + np.array([x, y])]
 
 
 class Bounds(BaseShape):
-    """
-    An arbitrary axis-aligned bounding rectangle defined by the (left,
+    """An arbitrary axis-aligned bounding rectangle defined by the (left,
     bottom, right, top) coordinate positions.
 
     If supplied a single real number as input, this value will be
     treated as the radius of a square, zero-center box which will be
     used to compute the corresponding lbrt tuple.
+
     """
 
-    lbrt = param.Tuple(default=(-0.5, -0.5, 0.5, 0.5), doc="""
-          The (left, bottom, right, top) coordinates of the bounding box.""")
+    lbrt = param.Tuple(
+        default=(-0.5, -0.5, 0.5, 0.5),
+        doc="The (left, bottom, right, top) coordinates of the bounding box.",
+    )
 
-    group = param.String(default='Bounds', constant=True, doc="The assigned group name.")
+    group = param.String(default="Bounds", constant=True, doc="The assigned group name.")
 
-    __pos_params = ['lbrt']
+    __pos_params = ["lbrt"]
 
     def __init__(self, lbrt, **params):
         if not isinstance(lbrt, tuple):
             lbrt = (-lbrt, -lbrt, lbrt, lbrt)
 
         super().__init__(lbrt=lbrt, **params)
-        (l,b,r,t) = self.lbrt
+        (l, b, r, t) = self.lbrt
         xdim, ydim = self.kdims
-        self.data = [dict([(xdim.name, np.array([l, l, r, r, l])),
-                                  (ydim.name, np.array([b, t, t, b, b]))])]
+        self.data = [{xdim.name: np.array([l, l, r, r, l]), ydim.name: np.array([b, t, t, b, b])}]

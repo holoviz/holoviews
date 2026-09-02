@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import timedelta
 
 import numpy as np
@@ -14,7 +16,7 @@ pytestmark = pytest.mark.ui
 
 @pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize(
-    ["index", "intervalsx", "x_range_src", "x_range_tgt"],
+    ("index", "intervalsx", "x_range_src", "x_range_tgt"),
     [
         (
             range(3000),

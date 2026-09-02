@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import os
 import platform
 import sys
 from importlib.metadata import version
@@ -10,13 +13,15 @@ PACKAGES = [
     "cupy",
     "dask",
     "dask-expr",
+    "duckdb",
     "ibis-framework",
+    "narwhals",
     "networkx",
     "numpy",
     "pandas",
+    "polars",
     "pyarrow",
     "spatialpandas",
-    "streamz",
     "xarray",
     # Processing
     "numba",
@@ -49,6 +54,7 @@ def show_versions():
     print(f"Python              :  {sys.version}")
     print(f"Operating system    :  {platform.platform()}")
     _panel_comms()
+    _hv_rc_file()
     print()
     _package_version("holoviews")
     print()
@@ -67,6 +73,12 @@ def _panel_comms():
     import panel as pn
 
     print(f"{'Panel comms':20}:  {pn.config.comms}")
+
+
+def _hv_rc_file():
+    rc_file = os.getenv("HOLOVIEWSRC")
+    if rc_file:
+        print(f"{'HoloViews config':20}:  {rc_file}")
 
 
 if __name__ == "__main__":

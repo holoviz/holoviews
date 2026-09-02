@@ -1,9 +1,12 @@
-"""
-The streams module defines the streams API that allows visualizations to
+"""The streams module defines the streams API that allows visualizations to
 generate and respond to events, originating either in Python on the
 server-side or in Javascript in the Jupyter notebook (client-side).
+
 """
 
+from __future__ import annotations
+
+import typing as t
 import weakref
 from collections import defaultdict
 from contextlib import contextmanager
@@ -13,14 +16,26 @@ from numbers import Number
 from types import FunctionType
 
 import numpy as np
-import pandas as pd
 import param
 
 from .core import util
 from .core.ndmapping import UniformNdMapping
+from .core.util.dependencies import pd
+
+if t.TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from .core import Dataset
+    from .core.util.types import _DatetimeT
+    from .element import Path
+
 
 # Types supported by Pointer derived streams
-pointer_types = (Number, str, tuple)+util.datetime_types
+@util.types.gen_types
+def pointer_types() -> t.Iterator[type[Number | str | tuple | _DatetimeT]]:
+    yield from (Number, str, tuple)
+    yield from util.datetime_types
+
 
 POPUP_POSITIONS = [
     "top_right",
@@ -33,17 +48,65 @@ POPUP_POSITIONS = [
     "bottom",
 ]
 
-class _SkipTrigger: pass
+
+class _SkipTrigger:
+    pass
+
+
+class _StreamRegistry(weakref.WeakKeyDictionary):
+    """Weak index from a source object to the streams sourced from it.
+
+    Both the keys and the values are weak, so the registry never keeps a
+    source or a stream alive. Ownership lives on the source, in
+    ``LabelledData._streams``, and a source and its streams are collected
+    together once nothing else refers to them.
+
+    Reads resolve the references, i.e. this behaves like a mapping of source
+    to a list of live streams.
+    """
+
+    def register(self, source, stream):
+        # super().get to see the stored references rather than live streams
+        refs = super().get(source)
+        if refs is None:
+            self[source] = refs = []
+        if not any(ref() is stream for ref in refs):
+            refs.append(weakref.ref(stream))
+
+    def unregister(self, source, stream):
+        refs = super().get(source)
+        if refs is None:
+            return
+        refs[:] = [ref for ref in refs if ref() is not None and ref() is not stream]
+        if not refs:
+            self.pop(source, None)
+
+    @staticmethod
+    def _alive(refs):
+        return [stream for stream in (ref() for ref in refs) if stream is not None]
+
+    def __getitem__(self, key):
+        return self._alive(super().__getitem__(key))
+
+    def get(self, key, default=None):
+        refs = super().get(key)
+        return default if refs is None else self._alive(refs)
+
+    def items(self):
+        return [(src, self._alive(refs)) for src, refs in super().items()]
+
+    def values(self):
+        return [self._alive(refs) for refs in super().values()]
 
 
 @contextmanager
 def triggering_streams(streams):
-    """
-    Temporarily declares the streams as being in a triggered state.
+    """Temporarily declares the streams as being in a triggered state.
     Needed by DynamicMap to determine whether to memoize on a Callable,
     i.e. if a stream has memoization disabled and is in triggered state
     Callable should disable lookup in the memoization cache. This is
     done by the dynamicmap_memoization context manager.
+
     """
     for stream in streams:
         stream._triggering = True
@@ -55,20 +118,26 @@ def triggering_streams(streams):
 
 
 def streams_list_from_dict(streams):
-    "Converts a streams dictionary into a streams list"
-    params = {}
+    """Converts a streams dictionary into a streams list"""
+    params, refs = {}, {}
     for k, v in streams.items():
         v = param.parameterized.transform_reference(v)
         if isinstance(v, param.Parameter) and v.owner is not None:
             params[k] = v
+            continue
+        deps = param.parameterized.resolve_ref(v, recursive=True)
+        if deps:
+            refs[k] = v
         else:
-            raise TypeError(f'Cannot handle value {v!r} in streams dictionary')
-    return Params.from_params(params)
+            raise TypeError(f"Cannot handle {k!r} value {v!r} in streams dictionary")
+    streams = Params.from_params(params)
+    if not refs:
+        return streams
+    return [*streams, ParamRefs(refs=refs, recursive=True)]
 
 
 class Stream(param.Parameterized):
-    """
-    A Stream is simply a parameterized object with parameters that
+    """A Stream is simply a parameterized object with parameters that
     change over time in response to update events and may trigger
     downstream events on its subscribers. The Stream parameters can be
     updated using the update method, which will optionally trigger the
@@ -96,22 +165,21 @@ class Stream(param.Parameterized):
     transform and reset method to preprocess parameters before they
     are passed to subscribers and reset them using custom logic
     respectively.
+
     """
 
-    # Mapping from a source to a list of streams
-    # WeakKeyDictionary to allow garbage collection
-    # of unreferenced sources
-    registry = weakref.WeakKeyDictionary()
+    # Weak index from a source to the streams sourced from it, see
+    # _StreamRegistry. The sources own their streams, this only allows them
+    # to be looked up from a clone sharing the same _plot_id.
+    registry = _StreamRegistry()
 
     # Mapping to define callbacks by backend and Stream type.
     # e.g. Stream._callbacks['bokeh'][Stream] = Callback
     _callbacks = defaultdict(dict)
 
-
     @classmethod
     def define(cls, name, **kwargs):
-        """
-        Utility to quickly and easily declare Stream classes. Designed
+        """Utility to quickly and easily declare Stream classes. Designed
         for interactive use such as notebooks and shouldn't replace
         parameterized class definitions in source code that is imported.
 
@@ -121,44 +189,43 @@ class Stream(param.Parameterized):
         type is inferred and declared, using the value as the default.
 
         Supported types: bool, int, float, str, dict, tuple and list
+
         """
-        params = {'name': param.String(default=name)}
+        params: dict[str, param.Parameter] = {"name": param.String(default=name)}
         for k, v in kwargs.items():
-            kws = dict(default=v, constant=True)
             if isinstance(v, param.Parameter):
                 params[k] = v
             elif isinstance(v, bool):
-                params[k] = param.Boolean(**kws)
+                params[k] = param.Boolean(default=v, constant=True)
             elif isinstance(v, int):
-                params[k] = param.Integer(**kws)
+                params[k] = param.Integer(default=v, constant=True)
             elif isinstance(v, float):
-                params[k] = param.Number(**kws)
+                params[k] = param.Number(default=v, constant=True)
             elif isinstance(v, str):
-                params[k] = param.String(**kws)
+                params[k] = param.String(default=v, constant=True)
             elif isinstance(v, dict):
-                params[k] = param.Dict(**kws)
+                params[k] = param.Dict(default=v, constant=True)
             elif isinstance(v, tuple):
-                params[k] = param.Tuple(**kws)
+                params[k] = param.Tuple(default=v, constant=True)
             elif isinstance(v, list):
-                params[k] = param.List(**kws)
+                params[k] = param.List(default=v, constant=True)
             elif isinstance(v, np.ndarray):
-                params[k] = param.Array(**kws)
+                params[k] = param.Array(default=v, constant=True)
             else:
-                params[k] = param.Parameter(**kws)
+                params[k] = param.Parameter(default=v, constant=True)
 
         # Dynamic class creation using type
         return type(name, (Stream,), params)
 
-
     @classmethod
     def trigger(cls, streams):
-        """
-        Given a list of streams, collect all the stream parameters into
+        """Given a list of streams, collect all the stream parameters into
         a dictionary and pass it to the union set of subscribers.
 
         Passing multiple streams at once to trigger can be useful when a
         subscriber may be set multiple times across streams but only
         needs to be called once.
+
         """
         # Union of stream contents
         items = [stream.contents.items() for stream in set(streams)]
@@ -175,7 +242,7 @@ class Stream(param.Parameterized):
             if key_count > 1 and key_count > value_count and k not in key_clashes:
                 key_clashes.append(k)
         if key_clashes:
-            print(f'Parameter name clashes for keys {key_clashes!r}')
+            print(f"Parameter name clashes for keys {key_clashes!r}")
 
         # Group subscribers by precedence while keeping the ordering
         # within each group
@@ -185,28 +252,42 @@ class Stream(param.Parameterized):
             for precedence, subscriber in stream._subscribers:
                 subscriber_precedence[precedence].append(subscriber)
         sorted_subscribers = sorted(subscriber_precedence.items(), key=lambda x: x[0])
-        subscribers = util.unique_iterator([s for _, subscribers in sorted_subscribers
-                                            for s in subscribers])
+        subscribers = util.unique_iterator(
+            [s for _, subscribers in sorted_subscribers for s in subscribers]
+        )
 
         with triggering_streams(streams):
+            errors = []
             for subscriber in subscribers:
-                subscriber(**dict(union))
+                try:
+                    subscriber(**dict(union))
+                except Exception as e:
+                    errors.append(e)
+
+            # Re-raise a single error directly to preserve its original exception
+            # type e.g. AbbreviatedException.
+            # NOTE: With Python 3.11 we can use an ExceptionGroup.
+            if len(errors) == 1:
+                raise errors[0]
+            elif errors:
+                raise RuntimeError(
+                    f"{len(errors)} stream subscribers raised an exception. "
+                    "All subscribers were invoked regardless."
+                ) from Exception(*errors)
 
         for stream in streams:
             with util.disable_constant(stream):
                 if stream.transient:
                     stream.reset()
 
-
     def _on_trigger(self):
         """Called when a stream has been triggered"""
 
-
     @classmethod
-    def _process_streams(cls, streams):
-        """
-        Processes a list of streams promoting Parameterized objects and
+    def _process_streams(cls, streams: list[t.Any]) -> tuple[list[Params], list[Params]]:
+        """Processes a list of streams promoting Parameterized objects and
         methods to Param based streams.
+
         """
         parameterizeds = defaultdict(set)
         valid, invalid = [], []
@@ -225,8 +306,8 @@ class Stream(param.Parameterized):
                 s = ParamMethod(s)
             elif isinstance(s, FunctionType) and hasattr(s, "_dinfo"):
                 deps = s._dinfo
-                dep_params = list(deps['dependencies']) + list(deps.get('kw', {}).values())
-                rename = {(p.owner, p.name): k for k, p in deps.get('kw', {}).items()}
+                dep_params = list(deps["dependencies"]) + list(deps.get("kw", {}).values())
+                rename = {(p.owner, p.name): k for k, p in deps.get("kw", {}).items()}
                 s = Params(parameters=dep_params, rename=rename)
             else:
                 deps = param.parameterized.resolve_ref(s)
@@ -237,26 +318,25 @@ class Stream(param.Parameterized):
                     continue
             if isinstance(s, Params):
                 pid = id(s.parameterized)
-                overlap = (set(s.parameters) & parameterizeds[pid])
+                overlap = set(s.parameters) & parameterizeds[pid]
                 if overlap:
                     pname = type(s.parameterized).__name__
                     param.main.param.warning(
-                        f'The {sorted([p.name for p in overlap])} parameter(s) '
-                        f'on the {pname} object have '
-                        'already been supplied in another stream. '
-                        'Ensure that the supplied streams only specify '
-                        'each parameter once, otherwise multiple '
-                        'events will be triggered when the parameter changes.'
+                        f"The {sorted([p.name for p in overlap])} parameter(s) "
+                        f"on the {pname} object have "
+                        "already been supplied in another stream. "
+                        "Ensure that the supplied streams only specify "
+                        "each parameter once, otherwise multiple "
+                        "events will be triggered when the parameter changes."
                     )
                 parameterizeds[pid] |= set(s.parameters)
             valid.append(s)
         return valid, invalid
 
-
-    def __init__(self, rename=None, source=None, subscribers=None, linked=False,
-                 transient=False, **params):
-        """
-        The rename argument allows multiple streams with similar event
+    def __init__(
+        self, rename=None, source=None, subscribers=None, linked=False, transient=False, **params
+    ):
+        """The rename argument allows multiple streams with similar event
         state to be used by remapping parameter names.
 
         Source is an optional argument specifying the HoloViews
@@ -265,8 +345,8 @@ class Stream(param.Parameterized):
 
         Some streams are configured to automatically link to the source
         plot, to disable this set linked=False
-        """
 
+        """
         # Source is stored as a weakref to allow it to be garbage collected
         if subscribers is None:
             subscribers = []
@@ -292,10 +372,28 @@ class Stream(param.Parameterized):
         super().__init__(**params)
         self._rename = self._validate_rename(rename)
         if source is not None:
-            if source in self.registry:
-                self.registry[source].append(self)
-            else:
-                self.registry[source] = [self]
+            self._attach(source)
+
+    def _attach(self, source):
+        """Make ``source`` the owner of this stream.
+
+        The source holds the stream strongly, so a stream stays alive for as
+        long as the object it observes and no longer, while the registry only
+        indexes it weakly.
+        """
+        streams = source._streams
+        if streams is None:
+            source._streams = streams = []
+        if self not in streams:
+            streams.append(self)
+        self.registry.register(source, self)
+
+    def _detach(self, source):
+        """Undo ``_attach``, dropping the source's ownership of this stream."""
+        streams = source._streams
+        if streams is not None and self in streams:
+            streams.remove(self)
+        self.registry.unregister(source, self)
 
     def clone(self):
         """Return new stream with identical properties and no subscribers"""
@@ -304,44 +402,38 @@ class Stream(param.Parameterized):
     @property
     def subscribers(self):
         """Property returning the subscriber list"""
-        return [s for p, s in sorted(self._subscribers, key=lambda x: x[0])]
+        return [s for _, s in sorted(self._subscribers, key=lambda x: x[0])]
 
-
-    def clear(self, policy='all'):
-        """
-        Clear all subscribers registered to this stream.
+    def clear(self, policy="all"):
+        """Clear all subscribers registered to this stream.
 
         The default policy of 'all' clears all subscribers. If policy is
         set to 'user', only subscribers defined by the user are cleared
         (precedence between zero and one). A policy of 'internal' clears
         subscribers with precedence greater than unity used internally
         by HoloViews.
+
         """
-        policies = ['all', 'user', 'internal']
+        policies = ["all", "user", "internal"]
         if policy not in policies:
-            raise ValueError(f'Policy for clearing subscribers must be one of {policies}')
-        if policy == 'all':
+            raise ValueError(f"Policy for clearing subscribers must be one of {policies}")
+        if policy == "all":
             remaining = []
-        elif policy == 'user':
+        elif policy == "user":
             remaining = [(p, s) for (p, s) in self._subscribers if p > 1]
         else:
             remaining = [(p, s) for (p, s) in self._subscribers if p <= 1]
         self._subscribers = remaining
 
-
     def reset(self):
-        """
-        Resets stream parameters to their defaults.
-        """
+        """Resets stream parameters to their defaults."""
         with util.disable_constant(self):
-            for k, p in self.param.objects('existing').items():
-                if k != 'name':
+            for k, p in self.param.objects("existing").items():
+                if k != "name":
                     setattr(self, k, p.default)
 
-
     def add_subscriber(self, subscriber, precedence=0):
-        """
-        Register a callable subscriber to this stream which will be
+        """Register a callable subscriber to this stream which will be
         invoked either when event is called or when this stream is
         passed to the trigger classmethod.
 
@@ -350,109 +442,103 @@ class Stream(param.Parameterized):
         between zero and one while HoloViews itself reserves the use of
         higher precedence values. Subscribers with high precedence are
         invoked later than ones with low precedence.
+
         """
         if not callable(subscriber):
-            raise TypeError('Subscriber must be a callable.')
+            raise TypeError("Subscriber must be a callable.")
         self._subscribers.append((precedence, subscriber))
 
-
     def _validate_rename(self, mapping):
-        param_names = [k for k in self.param if k != 'name']
+        param_names = [k for k in self.param if k != "name"]
         for k, v in mapping.items():
             if k not in param_names:
-                raise KeyError(f'Cannot rename {k!r} as it is not a stream parameter')
+                raise KeyError(f"Cannot rename {k!r} as it is not a stream parameter")
             if k != v and v in param_names:
-                raise KeyError(f'Cannot rename to {v!r} as it clashes with a '
-                               'stream parameter of the same name')
+                raise KeyError(
+                    f"Cannot rename to {v!r} as it clashes with a "
+                    "stream parameter of the same name"
+                )
         return mapping
 
-
     def rename(self, **mapping):
-        """
-        The rename method allows stream parameters to be allocated to
+        """The rename method allows stream parameters to be allocated to
         new names to avoid clashes with other stream parameters of the
         same name. Returns a new clone of the stream instance with the
         specified name mapping.
+
         """
-        params = {k: v for k, v in self.param.values().items() if k != 'name'}
-        return self.__class__(rename=mapping,
-                              source=(self._source() if self._source else None),
-                              linked=self.linked, **params)
+        params = {k: v for k, v in self.param.values().items() if k != "name"}
+        return self.__class__(
+            rename=mapping,
+            source=(self._source() if self._source else None),
+            linked=self.linked,
+            **params,
+        )
 
     @property
     def source(self):
         return self._source() if self._source else None
 
-
     @source.setter
     def source(self, source):
         if self.source is not None:
-            source_list = self.registry[self.source]
-            if self in source_list:
-                source_list.remove(self)
-            if not source_list:
-                self.registry.pop(self.source)
+            self._detach(self.source)
 
         if source is None:
             self._source = None
             return
 
         self._source = weakref.ref(source)
-        if source in self.registry:
-            self.registry[source].append(self)
-        else:
-            self.registry[source] = [self]
-
+        self._attach(source)
 
     def transform(self):
-        """
-        Method that can be overwritten by subclasses to process the
+        """Method that can be overwritten by subclasses to process the
         parameter values before renaming is applied. Returns a
         dictionary of transformed parameters.
+
         """
         return {}
 
-
     @property
     def contents(self):
-        filtered = {k: v for k, v in self.param.values().items() if k != 'name'}
-        return {self._rename.get(k, k): v for (k, v) in filtered.items()
-                if self._rename.get(k, True) is not None}
+        filtered = {k: v for k, v in self.param.values().items() if k != "name"}
+        return {
+            self._rename.get(k, k): v
+            for (k, v) in filtered.items()
+            if self._rename.get(k, True) is not None
+        }
 
     @property
     def hashkey(self):
-        """
-        The object the memoization hash is computed from. By default
+        """The object the memoization hash is computed from. By default
         returns the stream contents but can be overridden to provide
         a custom hash key.
+
         """
         return self.contents
 
-
     def _set_stream_parameters(self, **kwargs):
-        """
-        Sets the stream parameters which are expected to be declared
+        """Sets the stream parameters which are expected to be declared
         constant.
+
         """
         with util.disable_constant(self):
             self.param.update(**kwargs)
 
     def event(self, **kwargs):
-        """
-        Update the stream parameters and trigger an event.
-        """
+        """Update the stream parameters and trigger an event."""
         skip = self.update(**kwargs)
         if skip is not _SkipTrigger:
             self.trigger([self])
 
     def update(self, **kwargs):
-        """
-        The update method updates the stream parameters (without any
+        """The update method updates the stream parameters (without any
         renaming applied) in response to some event. If the stream has a
         custom transform method, this is applied to transform the
         parameter values accordingly.
 
         To update and trigger, use the event method.
+
         """
         self._set_stream_parameters(**kwargs)
         transformed = self.transform()
@@ -462,48 +548,45 @@ class Stream(param.Parameterized):
 
     def __repr__(self):
         cls_name = self.__class__.__name__
-        kwargs = ','.join(f'{k}={v!r}'
-                          for (k, v) in self.param.values().items() if k != 'name')
+        kwargs = ",".join(f"{k}={v!r}" for (k, v) in self.param.values().items() if k != "name")
         if not self._rename:
-            return f'{cls_name}({kwargs})'
+            return f"{cls_name}({kwargs})"
         else:
-            return f'{cls_name}({self._rename!r}, {kwargs})'
-
+            return f"{cls_name}({self._rename!r}, {kwargs})"
 
     def __str__(self):
         return repr(self)
 
 
 class Counter(Stream):
-    """
-    Simple stream that automatically increments an integer counter
+    """Simple stream that automatically increments an integer counter
     parameter every time it is updated.
+
     """
 
     counter = param.Integer(default=0, constant=True, bounds=(0, None))
 
     def transform(self):
-        return {'counter': self.counter + 1}
+        return {"counter": self.counter + 1}
 
 
 class Pipe(Stream):
-    """
-    A Stream used to pipe arbitrary data to a callback.
-    Unlike other streams memoization can be disabled for a
-    Pipe stream (and is disabled by default).
-    """
+    """A Stream used to pipe arbitrary data to a callback."""
 
-    data = param.Parameter(default=None, constant=True, doc="""
-        Arbitrary data being streamed to a DynamicMap callback.""")
+    data = param.Parameter(
+        default=None,
+        constant=True,
+        doc="Arbitrary data being streamed to a DynamicMap callback.",
+    )
 
-    def __init__(self, data=None, memoize=False, **params):
+    def __init__(self, data=None, **params):
         super().__init__(data=data, **params)
         self._memoize_counter = 0
 
     def send(self, data):
-        """
-        A convenience method to send an event with data without
+        """A convenience method to send an event with data without
         supplying a keyword.
+
         """
         self.event(data=data)
 
@@ -512,21 +595,16 @@ class Pipe(Stream):
 
     @property
     def hashkey(self):
-        return {'_memoize_key': self._memoize_counter}
+        return {"_memoize_key": self._memoize_counter}
 
 
 class Buffer(Pipe):
-    """
-    Buffer allows streaming and accumulating incoming chunks of rows
+    """Buffer allows streaming and accumulating incoming chunks of rows
     from tabular datasets. The data may be in the form of a pandas
     DataFrame, 2D arrays of rows and columns or dictionaries of column
     arrays. Buffer will accumulate the last N rows, where N is defined
     by the specified ``length``. The accumulated data is then made
     available via the ``data`` parameter.
-
-    A Buffer may also be instantiated with a streamz.StreamingDataFrame
-    or a streamz.StreamingSeries, it will automatically subscribe to
-    events emitted by a streamz object.
 
     When streaming a DataFrame will reset the DataFrame index by
     default making it available to HoloViews elements as dimensions,
@@ -536,13 +614,17 @@ class Buffer(Pipe):
     subscribed to this stream will update the axis ranges when an
     update is pushed. This makes it possible to control whether zooming
     is allowed while streaming.
+
     """
 
-    data = param.Parameter(default=None, constant=True, doc="""
-        Arbitrary data being streamed to a DynamicMap callback.""")
+    data = param.Parameter(
+        default=None,
+        constant=True,
+        doc="Arbitrary data being streamed to a DynamicMap callback.",
+    )
 
     def __init__(self, data, length=1000, index=True, following=True, **params):
-        if isinstance(data, pd.DataFrame):
+        if pd and isinstance(data, pd.DataFrame):
             example = data
         elif isinstance(data, np.ndarray):
             if data.ndim != 2:
@@ -555,28 +637,10 @@ class Buffer(Pipe):
                 raise ValueError("Columns in dictionary must all be the same length.")
             example = data
         else:
-            try:
-                from streamz.dataframe import StreamingDataFrame, StreamingSeries
-                loaded = True
-            except ImportError:
-                try:
-                    from streamz.dataframe import (
-                        DataFrame as StreamingDataFrame,
-                        Series as StreamingSeries,
-                    )
-                    loaded = True
-                except ImportError:
-                    loaded = False
-            if not loaded or not isinstance(data, (StreamingDataFrame, StreamingSeries)):
-                raise ValueError("Buffer must be initialized with pandas DataFrame, "
-                                 "streamz.StreamingDataFrame or streamz.StreamingSeries.")
-            elif isinstance(data, StreamingSeries):
-                data = data.to_frame()
-            example = data.example
-            data.stream.sink(self.send)
-            self.sdf = data
+            msg = "Buffer must be initialized with pandas DataFrame, 2D numpy array, or dict"
+            raise ValueError(msg)
 
-        params['data'] = example
+        params["data"] = example
         super().__init__(**params)
         self.length = length
         self.following = following
@@ -584,32 +648,37 @@ class Buffer(Pipe):
         self._count = 0
         self._index = index
 
-
     def verify(self, x):
-        """ Verify consistency of dataframes that pass through this stream """
-        if type(x) != type(self.data):  # noqa: E721
-            raise TypeError(f"Input expected to be of type {type(self.data).__name__}, got {type(x).__name__}.")
+        """Verify consistency of dataframes that pass through this stream"""
+        if type(x) is not type(self.data):
+            raise TypeError(
+                f"Input expected to be of type {type(self.data).__name__}, got {type(x).__name__}."
+            )
         elif isinstance(x, np.ndarray):
             if x.ndim != 2:
-                raise ValueError('Streamed array data must be two-dimensional')
+                raise ValueError("Streamed array data must be two-dimensional")
             elif x.shape[1] != self.data.shape[1]:
-                raise ValueError("Streamed array data expected to have %d columns, "
-                                 "got %d." % (self.data.shape[1], x.shape[1]))
-        elif isinstance(x, pd.DataFrame) and list(x.columns) != list(self.data.columns):
-            raise IndexError(f"Input expected to have columns {list(self.data.columns)}, got {list(x.columns)}")
+                raise ValueError(
+                    f"Streamed array data expected to have {self.data.shape[1]} columns, "
+                    f"got {x.shape[1]}."
+                )
+        elif pd and isinstance(x, pd.DataFrame) and list(x.columns) != list(self.data.columns):
+            raise IndexError(
+                f"Input expected to have columns {list(self.data.columns)}, got {list(x.columns)}"
+            )
         elif isinstance(x, dict):
             if any(c not in x for c in self.data):
-                raise IndexError(f"Input expected to have columns {sorted(self.data.keys())}, got {sorted(x.keys())}")
+                raise IndexError(
+                    f"Input expected to have columns {sorted(self.data.keys())}, got {sorted(x.keys())}"
+                )
             elif len({len(v) for v in x.values()}) > 1:
-                raise ValueError("Input columns expected to have the "
-                                 "same number of rows.")
+                raise ValueError("Input columns expected to have the same number of rows.")
 
-
-    def clear(self):
-        "Clears the data in the stream"
+    def clear(self, policy="all"):
+        """Clears the data in the stream"""
         if isinstance(self.data, np.ndarray):
             data = self.data[:, :0]
-        elif isinstance(self.data, pd.DataFrame):
+        elif pd and isinstance(self.data, pd.DataFrame):
             data = self.data.iloc[:0]
         elif isinstance(self.data, dict):
             data = {k: v[:0] for k, v in self.data.items()}
@@ -617,101 +686,187 @@ class Buffer(Pipe):
             self.data = data
         self.send(data)
 
-
     def _concat(self, data):
-        """
-        Concatenate and slice the accepted data types to the defined
+        """Concatenate and slice the accepted data types to the defined
         length.
+
         """
         if isinstance(data, np.ndarray):
             data_length = len(data)
             if not self.length:
                 data = np.concatenate([self.data, data])
             elif data_length < self.length:
-                prev_chunk = self.data[-(self.length-data_length):]
+                prev_chunk = self.data[-(self.length - data_length) :]
                 data = np.concatenate([prev_chunk, data])
             elif data_length > self.length:
-                data = data[-self.length:]
-        elif isinstance(data, pd.DataFrame):
+                data = data[-self.length :]
+        elif pd and isinstance(data, pd.DataFrame):
             data_length = len(data)
             if not self.length:
                 data = pd.concat([self.data, data])
             elif data_length < self.length:
-                prev_chunk = self.data.iloc[-(self.length-data_length):]
+                prev_chunk = self.data.iloc[-(self.length - data_length) :]
                 data = pd.concat([prev_chunk, data])
             elif data_length > self.length:
-                data = data.iloc[-self.length:]
+                data = data.iloc[-self.length :]
         elif isinstance(data, dict) and data:
+            data = t.cast("dict[str, np.ndarray]", data)
             data_length = len(next(iter(data.values())))
             new_data = {}
             for k, v in data.items():
                 if not self.length:
                     new_data[k] = np.concatenate([self.data[k], v])
                 elif data_length < self.length:
-                    prev_chunk = self.data[k][-(self.length-data_length):]
+                    prev_chunk = self.data[k][-(self.length - data_length) :]
                     new_data[k] = np.concatenate([prev_chunk, v])
                 elif data_length > self.length:
-                    new_data[k] = v[-self.length:]
+                    new_data[k] = v[-self.length :]
                 else:
                     new_data[k] = v
             data = new_data
         self._chunk_length = data_length
         return data
 
-
     def update(self, **kwargs):
-        """
-        Overrides update to concatenate streamed data up to defined length.
-        """
-        data = kwargs.get('data')
+        """Overrides update to concatenate streamed data up to defined length."""
+        data = kwargs.get("data")
         if data is not None:
             self.verify(data)
-            kwargs['data'] = self._concat(data)
+            kwargs["data"] = self._concat(data)
             self._count += 1
         return super().update(**kwargs)
 
+    @property
+    def hashkey(self):
+        return {"hash": (self._count, self._memoize_counter)}
+
+
+class ParamRefs(Stream):
+    """
+    ParamRefs accepts a dictionary of parameter references, watching
+    their dependencies and returning their resolved values.
+    """
+
+    recursive = param.Boolean(
+        default=False, constant=True, doc="Whether references should be resolved recursively."
+    )
+
+    refs = param.Dict(doc="Dictionary of references", constant=True)
+
+    def __init__(self, refs=None, watch=True, **params):
+        super().__init__(refs=refs or {}, **params)
+        self._memoize_counter = 0
+        self._watchers = []
+        if not watch:
+            return
+
+        # Collect all dependencies of the provided references
+        parameters = []
+        for ref in self.refs.values():
+            prefs = param.parameterized.resolve_ref(ref, recursive=self.recursive)
+            parameters += [p for p in prefs if p not in parameters]
+
+        # Subscribe to parameters
+        keyfn = lambda x: id(x.owner)
+        for _, group in groupby(sorted(parameters, key=keyfn), key=keyfn):
+            group = list(group)
+            watcher = group[0].owner.param.watch(self._watcher, [p.name for p in group])
+            self._watchers.append(watcher)
+
+    def unwatch(self):
+        """Stop watching parameters."""
+        for watcher in self._watchers:
+            watcher.inst.param.unwatch(watcher)
+        self._watchers.clear()
+
+    def _watcher(self, *events):
+        try:
+            self._events = list(events)
+            self.trigger([self])
+        finally:
+            self._events = []
+
+    def _on_trigger(self):
+        if any(e.type == "triggered" for e in self._events):
+            self._memoize_counter += 1
+
+    @property
+    def contents(self):
+        return {
+            p: param.parameterized.resolve_value(ref, recursive=self.recursive)
+            for p, ref in self.refs.items()
+        }
 
     @property
     def hashkey(self):
-        return {'hash': (self._count, self._memoize_counter)}
+        hashkey = dict(self.contents)
+        hashkey["_memoize_key"] = self._memoize_counter
+        return hashkey
 
+    def reset(self):
+        pass
 
 
 class Params(Stream):
-    """
-    A Stream that watches the changes in the parameters of the supplied
+    """A Stream that watches the changes in the parameters of the supplied
     Parameterized objects and triggers when they change.
+
     """
 
-    parameterized = param.ClassSelector(class_=(param.Parameterized,
-                                                param.parameterized.ParameterizedMetaclass),
-                                        constant=True, allow_None=True, allow_refs=False, doc="""
-        Parameterized instance to watch for parameter changes.""")
+    parameterized = param.ClassSelector(
+        class_=(param.Parameterized, param.parameterized.ParameterizedMetaclass),
+        constant=True,
+        allow_None=True,
+        allow_refs=False,
+        doc="Parameterized instance to watch for parameter changes.",
+    )
 
-    parameters = param.List(default=[], constant=True, doc="""
-        Parameters on the parameterized to watch.""")
+    parameters = param.List(
+        default=[],
+        constant=True,
+        doc="Parameters on the parameterized to watch.",
+    )
 
-    def __init__(self, parameterized=None, parameters=None, watch=True, watch_only=False, **params):
+    def __init__(
+        self,
+        parameterized: param.Parameterized | type[param.Parameterized] | None = None,
+        parameters: Sequence[param.Parameter | str] | None = None,
+        watch: bool = True,
+        watch_only: bool = False,
+        **params,
+    ) -> None:
+
         if parameters is None:
-            parameters = [parameterized.param[p] for p in parameterized.param if p != 'name']
+            if parameterized is None:
+                msg = "Must supply a parameterized object if parameters are not set."
+                raise ValueError(msg)
+            parameters = [parameterized.param[p] for p in parameterized.param if p != "name"]
         else:
-            parameters = [p if isinstance(p, param.Parameter) else parameterized.param[p]
-                          for p in parameters]
+            resolved_parameters = []
+            for p in parameters:
+                if isinstance(p, param.Parameter):
+                    resolved_parameters.append(p)
+                elif parameterized is None:
+                    msg = "Must supply a parameterized object if parameters are given as strings."
+                    raise ValueError(msg)
+                else:
+                    resolved_parameters.append(parameterized.param[p])
+            parameters = resolved_parameters
 
-        if 'rename' in params:
+        if "rename" in params:
             rename = {}
             owners = [p.owner for p in parameters]
-            for k, v in params['rename'].items():
+            for k, v in params["rename"].items():
                 if isinstance(k, tuple):
                     rename[k] = v
                 else:
                     rename.update({(o, k): v for o in owners})
-            params['rename'] = rename
+            params["rename"] = rename
 
-        if 'linked' not in params:
+        if "linked" not in params:
             for p in parameters:
                 if isinstance(p.owner, (LinkedStream, Params)) and p.owner.linked:
-                    params['linked'] = True
+                    params["linked"] = True
 
         self._watch_only = watch_only
         super().__init__(parameterized=parameterized, parameters=parameters, **params)
@@ -736,11 +891,14 @@ class Params(Stream):
     def from_params(cls, params, **kwargs):
         """Returns Params streams given a dictionary of parameters
 
-        Args:
-            params (dict): Dictionary of parameters
+        Parameters
+        ----------
+        params : dict
+            Dictionary of parameters
 
-        Returns:
-            List of Params streams
+        Returns
+        -------
+        List of Params streams
         """
         key_fn = lambda x: id(x[1].owner)
         streams = []
@@ -759,10 +917,12 @@ class Params(Stream):
         for k, v in mapping.items():
             n = k[1] if isinstance(k, tuple) else k
             if n not in pnames:
-                raise KeyError(f'Cannot rename {n!r} as it is not a stream parameter')
+                raise KeyError(f"Cannot rename {n!r} as it is not a stream parameter")
             if n != v and v in pnames:
-                raise KeyError(f'Cannot rename to {v!r} as it clashes with a '
-                               'stream parameter of the same name')
+                raise KeyError(
+                    f"Cannot rename to {v!r} as it clashes with a "
+                    "stream parameter of the same name"
+                )
         return mapping
 
     def _watcher(self, *events):
@@ -773,7 +933,7 @@ class Params(Stream):
             self._events = []
 
     def _on_trigger(self):
-        if any(e.type == 'triggered' for e in self._events):
+        if any(e.type == "triggered" for e in self._events):
             self._memoize_counter += 1
 
     @property
@@ -782,10 +942,10 @@ class Params(Stream):
         for p in self.parameters:
             pkey = (p.owner, p.name)
             pname = self._rename.get(pkey, p.name)
-            key = ' '.join([str(id(p.owner)), pname])
+            key = " ".join([str(id(p.owner)), pname])
             if self._rename.get(pkey, True) is not None:
                 hashkey[key] = getattr(p.owner, p.name)
-        hashkey['_memoize_key'] = self._memoize_counter
+        hashkey["_memoize_key"] = self._memoize_counter
         return hashkey
 
     def reset(self):
@@ -804,7 +964,6 @@ class Params(Stream):
                     owner.param.update(**updates)
         elif isinstance(self.parameterized, Stream):
             self.parameterized.update(**kwargs)
-            return
         else:
             self.parameterized.param.update(**kwargs)
 
@@ -813,46 +972,56 @@ class Params(Stream):
         if self._watch_only:
             return {}
         filtered = {(p.owner, p.name): getattr(p.owner, p.name) for p in self.parameters}
-        return {self._rename.get((o, n), n): v for (o, n), v in filtered.items()
-                if self._rename.get((o, n), True) is not None}
-
+        return {
+            self._rename.get((o, n), n): v
+            for (o, n), v in filtered.items()
+            if self._rename.get((o, n), True) is not None
+        }
 
 
 class ParamMethod(Params):
-    """
-    A Stream that watches the parameter dependencies on a method of
+    """A Stream that watches the parameter dependencies on a method of
     a parameterized class and triggers when one of the parameters
     change.
+
     """
 
-    parameterized = param.ClassSelector(class_=(param.Parameterized,
-                                                param.parameterized.ParameterizedMetaclass),
-                                        constant=True, allow_None=True, doc="""
-        Parameterized instance to watch for parameter changes.""")
+    parameterized = param.ClassSelector(
+        class_=(param.Parameterized, param.parameterized.ParameterizedMetaclass),
+        constant=True,
+        allow_None=True,
+        doc="Parameterized instance to watch for parameter changes.",
+    )
 
-    parameters = param.List(default=[], constant=True, doc="""
-        Parameters on the parameterized to watch.""")
+    parameters = param.List(
+        default=[],
+        constant=True,
+        doc="Parameters on the parameterized to watch.",
+    )
 
     def __init__(self, parameterized, parameters=None, watch=True, **params):
         if not util.is_param_method(parameterized):
-            raise ValueError('ParamMethod stream expects a method on a '
-                             f'parameterized class, found {type(parameterized).__name__}.')
+            raise ValueError(
+                "ParamMethod stream expects a method on a "
+                f"parameterized class, found {type(parameterized).__name__}."
+            )
         method = parameterized
         parameterized = util.get_method_owner(parameterized)
         if not parameters:
             parameters = [p.pobj for p in parameterized.param.method_dependencies(method.__name__)]
 
-        params['watch_only'] = True
+        params["watch_only"] = True
         super().__init__(parameterized, parameters, watch, **params)
 
 
 class Derived(Stream):
-    """
-    A Stream that watches the parameters of one or more input streams and produces
+    """A Stream that watches the parameters of one or more input streams and produces
     a result that is a pure function of the input stream values.
 
     If exclusive=True, then all streams except the most recently updated are cleared.
+
     """
+
     def __init__(self, input_streams, exclusive=False, **params):
         super().__init__(**params)
         self.input_streams = []
@@ -862,9 +1031,7 @@ class Derived(Stream):
         self.update()
 
     def _register_streams(self, streams):
-        """
-        Register callbacks to watch for changes to input streams
-        """
+        """Register callbacks to watch for changes to input streams"""
         for stream in streams:
             self._register_stream(stream)
 
@@ -891,29 +1058,25 @@ class Derived(Stream):
         self.input_streams.append(stream)
 
     def _unregister_input_streams(self):
-        """
-        Unregister callbacks on input streams and clear input streams list
-        """
+        """Unregister callbacks on input streams and clear input streams list"""
         for stream in self.input_streams:
             stream.source = None
             stream.clear()
         self.input_streams.clear()
 
     def append_input_stream(self, stream):
-        """
-        Add a new input stream
-        """
+        """Add a new input stream"""
         self._register_stream(stream)
 
     @property
     def constants(self):
-        """
-        Dict of constants for this instance that should be passed to transform_function
+        """Dict of constants for this instance that should be passed to transform_function
 
         Constant values must not change in response to changes in the values of the
         input streams. They may, however, change in response to other stream property
         updates. For example, these values may change if the Stream's source element
         changes
+
         """
         return {}
 
@@ -923,32 +1086,38 @@ class Derived(Stream):
 
     @classmethod
     def transform_function(cls, stream_values, constants):
-        """
-        Pure function that transforms input stream param values into the param values
+        """Pure function that transforms input stream param values into the param values
         of this Derived stream.
 
-        Args:
-            stream_values: list of dict
-                Current values of the stream params for each input_stream
-            constants: dict
-                Constants as returned by the constants property of an instance of this
-                stream type.
+        Parameters
+        ----------
+        stream_values : list of dict
+            Current values of the stream params for each input_stream
+        constants : dict
+            Constants as returned by the constants property of an instance of this
+            stream type.
 
-        Returns: dict
+        Returns
+        -------
+        dict
             dict of new Stream values where the keys match this stream's params
         """
         raise NotImplementedError
 
-    def __del__(self):
+    def cleanup(self):
         self._unregister_input_streams()
+
+    def __del__(self):
+        self.cleanup()
 
 
 class History(Stream):
-    """
-    A Stream that maintains a history of the values of a single input stream
-    """
-    values = param.List(constant=True, doc="""
-        List containing the historical values of the input stream""")
+    """A Stream that maintains a history of the values of a single input stream"""
+
+    values = param.List(
+        constant=True,
+        doc="List containing the historical values of the input stream",
+    )
 
     def __init__(self, input_stream, **params):
         super().__init__(**params)
@@ -965,19 +1134,21 @@ class History(Stream):
         del self.values[:]
 
     def _register_input_stream(self):
-        """
-        Register callback on input_stream to watch for changes
-        """
+        """Register callback on input_stream to watch for changes"""
+
         def perform_update(**kwargs):
             self.values.append(kwargs)
             self.event()
 
         self.input_stream.add_subscriber(perform_update)
 
-    def __del__(self):
+    def cleanup(self):
         self.input_stream.source = None
         self.input_stream.clear()
         del self.values[:]
+
+    def __del__(self):
+        self.cleanup()
 
 
 class SelectionExpr(Derived):
@@ -988,18 +1159,20 @@ class SelectionExpr(Derived):
     region_element = param.Parameter(default=None, constant=True)
 
     def __init__(self, source, include_region=True, **params):
+        from .core.element import Element
         from .core.spaces import DynamicMap
-        from .element import Element
         from .plotting.util import initialize_dynamic
 
-        self._index_cols = params.pop('index_cols', None)
+        self._index_cols = params.pop("index_cols", None)
         self.include_region = include_region
 
         if isinstance(source, DynamicMap):
             initialize_dynamic(source)
 
-        if not ((isinstance(source, DynamicMap) and issubclass(source.type, Element))
-                or isinstance(source, Element)):
+        if not (
+            (isinstance(source, DynamicMap) and issubclass(source.type, Element))
+            or isinstance(source, Element)
+        ):
             raise ValueError(
                 "The source of SelectionExpr must be an instance of an "
                 "Element subclass or a DynamicMap that returns such an "
@@ -1007,15 +1180,14 @@ class SelectionExpr(Derived):
             )
 
         input_streams = self._build_selection_streams(source)
-        super().__init__(
-            source=source, input_streams=input_streams, exclusive=True, **params
-        )
+        super().__init__(source=source, input_streams=input_streams, exclusive=True, **params)
 
     def clone(self):
         return type(self)(self.source, **self.contents)
 
     def _build_selection_streams(self, source):
         from holoviews.core.spaces import DynamicMap
+
         if isinstance(source, DynamicMap):
             element_type = source.type
         else:
@@ -1025,7 +1197,7 @@ class SelectionExpr(Derived):
             for stream in element_type._selection_streams:
                 kwargs = dict(source=source)
                 if isinstance(stream, Selection1D):
-                    kwargs['index'] = None
+                    kwargs["index"] = None
                 input_streams.append(stream(**kwargs))
             return input_streams
         else:
@@ -1040,10 +1212,26 @@ class SelectionExpr(Derived):
         }
 
     def transform(self):
-        # Skip index streams if no index_cols are provided
+        # Skip Selection1D when no index_cols, unless element opts in.
+        from .core.spaces import DynamicMap
+
+        source = self.source
+        if isinstance(source, DynamicMap):
+            element_type = source.type
+        else:
+            element_type = type(source)
+
+        uses_selection1d_standalone = getattr(
+            element_type, "_selection_uses_selection1d_without_index_cols", False
+        )
+
         for stream in self.input_streams:
-            if (isinstance(stream, Selection1D) and stream._triggering
-                and not self._index_cols):
+            if (
+                isinstance(stream, Selection1D)
+                and stream._triggering
+                and not self._index_cols
+                and not uses_selection1d_standalone
+            ):
                 return
         return super().transform()
 
@@ -1053,9 +1241,14 @@ class SelectionExpr(Derived):
         include_region = constants["include_region"]
         if hvobj is None:
             # source is None
-            return dict(selection_expr=None, bbox=None, region_element=None,)
+            return dict(
+                selection_expr=None,
+                bbox=None,
+                region_element=None,
+            )
 
         from holoviews.core.spaces import DynamicMap
+
         # Import after checking for hvobj None to avoid "sys.meta_path is None"
         # error on shutdown
         if isinstance(hvobj, DynamicMap):
@@ -1120,22 +1313,14 @@ class SelectionExprSequence(Derived):
     selection_expr = param.Parameter(default=None, constant=True)
     region_element = param.Parameter(default=None, constant=True)
 
-    def __init__(
-            self, source, mode="overwrite",
-            include_region=True, **params
-    ):
+    def __init__(self, source, mode="overwrite", include_region=True, **params):
         self.mode = mode
         self.include_region = include_region
-        sel_expr = SelectionExpr(
-            source, index_cols=params.pop('index_cols'),
-            **params
-        )
+        sel_expr = SelectionExpr(source, index_cols=params.pop("index_cols"), **params)
         self.history_stream = History(sel_expr)
         input_streams = [self.history_stream]
 
-        super().__init__(
-            source=source, input_streams=input_streams, **params
-        )
+        super().__init__(source=source, input_streams=input_streams, **params)
 
     @property
     def constants(self):
@@ -1146,12 +1331,14 @@ class SelectionExprSequence(Derived):
         }
 
     def reset(self):
-        self.input_streams[0].clear_history()
+        if self.input_streams:
+            self.input_streams[0].clear_history()
         super().reset()
 
     @classmethod
     def transform_function(cls, stream_values, constants):
         from .core.spaces import DynamicMap
+
         mode = constants["mode"]
         source = constants["source"]
         include_region = constants["include_region"]
@@ -1162,10 +1349,10 @@ class SelectionExprSequence(Derived):
         for selection_contents in stream_values[0]["values"]:
             if selection_contents is None:
                 continue
-            selection_expr = selection_contents['selection_expr']
+            selection_expr = selection_contents["selection_expr"]
             if not selection_expr:
                 continue
-            region_element = selection_contents['region_element']
+            region_element = selection_contents["region_element"]
 
             # Update combined selection expression
             if combined_selection_expr is None or mode == "overwrite":
@@ -1192,8 +1379,12 @@ class SelectionExprSequence(Derived):
 
         return dict(
             selection_expr=combined_selection_expr,
-            region_element=combined_region_element if include_region else None
+            region_element=combined_region_element if include_region else None,
         )
+
+    def cleanup(self):
+        super().cleanup()
+        self.history_stream.cleanup()
 
 
 class CrossFilterSet(Derived):
@@ -1204,9 +1395,7 @@ class CrossFilterSet(Derived):
         self._index_cols = index_cols
         input_streams = list(selection_streams)
         exclusive = mode == "overwrite"
-        super().__init__(
-            input_streams, exclusive=exclusive, **params
-        )
+        super().__init__(input_streams, exclusive=exclusive, **params)
 
     @property
     def mode(self):
@@ -1221,10 +1410,7 @@ class CrossFilterSet(Derived):
 
     @property
     def constants(self):
-        return {
-            "mode": self.mode,
-            "index_cols": self._index_cols
-        }
+        return {"mode": self.mode, "index_cols": self._index_cols}
 
     def reset(self):
         super().reset()
@@ -1245,12 +1431,13 @@ class CrossFilterSet(Derived):
             if index_cols:
                 if len(selection_exprs) > 1:
                     vals = set.intersection(
-                        *(set(expr.ops[2]['args'][0]) for expr in selection_exprs))
-                    old = selection_exprs[0]
-                    selection_expr = dim('new')
+                        *(set(expr.ops[2]["args"][0]) for expr in selection_exprs)
+                    )
+                    old = t.cast("dim", selection_exprs[0])
+                    selection_expr = dim("new")
                     selection_expr.dimension = old.dimension
                     selection_expr.ops = list(old.ops)
-                    selection_expr.ops[2] = dict(selection_expr.ops[2], args=(list(vals),))
+                    selection_expr.ops[2] = {**selection_expr.ops[2], "args": (list(vals),)}
             else:
                 selection_expr = selection_exprs[0]
                 for expr in selection_exprs[1:]:
@@ -1260,17 +1447,18 @@ class CrossFilterSet(Derived):
 
 
 class LinkedStream(Stream):
-    """
-    A LinkedStream indicates is automatically linked to plot interactions
+    """A LinkedStream indicates is automatically linked to plot interactions
     on a backend via a Renderer. Not all backends may support dynamically
     supplying stream data.
+
     """
 
-    def __init__(self, linked=True, popup=None, popup_position="top_right", popup_anchor=None, **params):
+    def __init__(
+        self, linked=True, popup=None, popup_position="top_right", popup_anchor=None, **params
+    ):
         if popup_position not in POPUP_POSITIONS:
             raise ValueError(
-                f"Invalid popup_position: {popup_position!r}; "
-                f"expect one of {POPUP_POSITIONS}"
+                f"Invalid popup_position: {popup_position!r}; expect one of {POPUP_POSITIONS}"
             )
 
         super().__init__(linked=linked, **params)
@@ -1280,219 +1468,303 @@ class LinkedStream(Stream):
 
 
 class PointerX(LinkedStream):
-    """
-    A pointer position along the x-axis in data coordinates which may be
+    """A pointer position along the x-axis in data coordinates which may be
     a numeric or categorical dimension.
 
     With the appropriate plotting backend, this corresponds to the
     position of the mouse/trackpad cursor. If the pointer is outside the
     plot bounds, the position is set to None.
+
     """
 
-    x = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the x-axis in data coordinates""")
+    x = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the x-axis in data coordinates",
+    )
 
 
 class PointerY(LinkedStream):
-    """
-    A pointer position along the y-axis in data coordinates which may be
+    """A pointer position along the y-axis in data coordinates which may be
     a numeric or categorical dimension.
 
     With the appropriate plotting backend, this corresponds to the
     position of the mouse/trackpad pointer. If the pointer is outside
     the plot bounds, the position is set to None.
+
     """
 
-
-    y = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the y-axis in data coordinates""")
+    y = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the y-axis in data coordinates",
+    )
 
 
 class PointerXY(LinkedStream):
-    """
-    A pointer position along the x- and y-axes in data coordinates which
+    """A pointer position along the x- and y-axes in data coordinates which
     may numeric or categorical dimensions.
 
     With the appropriate plotting backend, this corresponds to the
     position of the mouse/trackpad pointer. If the pointer is outside
     the plot bounds, the position values are set to None.
+
     """
 
-    x = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the x-axis in data coordinates""")
+    x = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the x-axis in data coordinates",
+    )
 
-    y = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the y-axis in data coordinates""")
+    y = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the y-axis in data coordinates",
+    )
 
 
 class Draw(PointerXY):
-    """
-    A series of updating x/y-positions when drawing, together with the
+    """A series of updating x/y-positions when drawing, together with the
     current stroke count
+
     """
-    x = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the x-axis in data coordinates""")
 
-    y = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the y-axis in data coordinates""")
+    x = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the x-axis in data coordinates",
+    )
 
-    stroke_count = param.Integer(default=0, constant=True, doc="""
-       The current drawing stroke count. Increments every time a new
-       stroke is started.""")
+    y = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the y-axis in data coordinates",
+    )
+
+    stroke_count = param.Integer(
+        default=0,
+        constant=True,
+        doc="""
+        The current drawing stroke count. Increments every time a new
+        stroke is started.""",
+    )
+
 
 class SingleTap(PointerXY):
-    """
-    The x/y-position of a single tap or click in data coordinates.
-    """
+    """The x/y-position of a single tap or click in data coordinates."""
 
-    x = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the x-axis in data coordinates""")
+    x = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the x-axis in data coordinates",
+    )
 
-    y = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the y-axis in data coordinates""")
+    y = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the y-axis in data coordinates",
+    )
+
 
 class Tap(PointerXY):
-    """
-    The x/y-position of a tap or click in data coordinates.
-    """
-    x = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the x-axis in data coordinates""")
+    """The x/y-position of a tap or click in data coordinates."""
 
-    y = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the y-axis in data coordinates""")
+    x = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the x-axis in data coordinates",
+    )
+
+    y = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the y-axis in data coordinates",
+    )
 
 
 class MultiAxisTap(LinkedStream):
-    """
-    The x/y-positions of a tap or click in data coordinates.
-    """
+    """The x/y-positions of a tap or click in data coordinates."""
 
-    xs = param.Dict(default=None, constant=True, doc="""
-           Pointer positions along the x-axes in data coordinates""")
+    xs = param.Dict(
+        default=None,
+        constant=True,
+        doc="Pointer positions along the x-axes in data coordinates",
+    )
 
-    ys = param.Dict(default=None, constant=True, doc="""
-           Pointer positions along the y-axes in data coordinates""")
+    ys = param.Dict(
+        default=None,
+        constant=True,
+        doc="Pointer positions along the y-axes in data coordinates",
+    )
 
 
 class DoubleTap(PointerXY):
-    """
-    The x/y-position of a double-tap or -click in data coordinates.
-    """
-    x = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the x-axis in data coordinates""")
+    """The x/y-position of a double-tap or -click in data coordinates."""
 
-    y = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the y-axis in data coordinates""")
+    x = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the x-axis in data coordinates",
+    )
+
+    y = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the y-axis in data coordinates",
+    )
+
 
 class PressUp(PointerXY):
-    """
-    The x/y position of a mouse pressup event in data coordinates.
-    """
-    x = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the x-axis in data coordinates""")
+    """The x/y position of a mouse pressup event in data coordinates."""
 
-    y = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the y-axis in data coordinates""")
+    x = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the x-axis in data coordinates",
+    )
+
+    y = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the y-axis in data coordinates",
+    )
+
 
 class PanEnd(PointerXY):
-    """The x/y position of a the end of a pan event in data coordinates.
-    """
-    x = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the x-axis in data coordinates""")
+    """The x/y position of a the end of a pan event in data coordinates."""
 
-    y = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the y-axis in data coordinates""")
+    x = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the x-axis in data coordinates",
+    )
+
+    y = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the y-axis in data coordinates",
+    )
+
 
 class MouseEnter(PointerXY):
-    """
-    The x/y-position where the mouse/cursor entered the plot area
+    """The x/y-position where the mouse/cursor entered the plot area
     in data coordinates.
-    """
-    x = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the x-axis in data coordinates""")
 
-    y = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the y-axis in data coordinates""")
+    """
+
+    x = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the x-axis in data coordinates",
+    )
+
+    y = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the y-axis in data coordinates",
+    )
 
 
 class MouseLeave(PointerXY):
-    """
-    The x/y-position where the mouse/cursor entered the plot area
+    """The x/y-position where the mouse/cursor entered the plot area
     in data coordinates.
-    """
-    x = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the x-axis in data coordinates""")
 
-    y = param.ClassSelector(class_=pointer_types, default=None,
-                            constant=True, doc="""
-           Pointer position along the y-axis in data coordinates""")
+    """
+
+    x = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the x-axis in data coordinates",
+    )
+
+    y = param.ClassSelector(
+        class_=pointer_types,
+        default=None,
+        constant=True,
+        doc="Pointer position along the y-axis in data coordinates",
+    )
 
 
 class PlotSize(LinkedStream):
-    """
-    Returns the dimensions of a plot once it has been displayed.
-    """
+    """Returns the dimensions of a plot once it has been displayed."""
 
     width = param.Integer(default=None, constant=True, doc="The width of the plot in pixels")
 
     height = param.Integer(default=None, constant=True, doc="The height of the plot in pixels")
 
-    scale = param.Number(default=1.0, constant=True, doc="""
-       Scale factor to scale width and height values reported by the stream""")
+    scale = param.Number(
+        default=1.0,
+        constant=True,
+        doc="Scale factor to scale width and height values reported by the stream",
+    )
 
     def transform(self):
-        return {'width':  int(self.width * self.scale) if self.width else None,
-                'height': int(self.height * self.scale) if self.height else None}
+        return {
+            "width": int(self.width * self.scale) if self.width else None,
+            "height": int(self.height * self.scale) if self.height else None,
+        }
 
 
 class SelectMode(LinkedStream):
-
-    mode = param.ObjectSelector(default="replace", constant=True, objects=[
-        "replace", "append", "intersect", "subtract"], doc="""
+    mode = param.Selector(
+        default="replace",
+        constant=True,
+        objects=["replace", "append", "intersect", "subtract"],
+        doc="""
         Defines what should happen when a new selection is made. The
         default is to replace the existing selection. Other options
         are to append to theselection, intersect with it or subtract
-        from it.""")
+        from it.""",
+    )
 
 
 class RangeXY(LinkedStream):
-    """
-    Axis ranges along x- and y-axis in data coordinates.
-    """
+    """Axis ranges along x- and y-axis in data coordinates."""
 
-    x_range = param.Tuple(default=None, length=2, constant=True, doc="""
-      Range of the x-axis of a plot in data coordinates""")
+    x_range = param.Tuple(
+        default=None,
+        length=2,
+        constant=True,
+        doc="Range of the x-axis of a plot in data coordinates",
+    )
 
-    y_range = param.Tuple(default=None, length=2, constant=True, doc="""
-      Range of the y-axis of a plot in data coordinates""")
+    y_range = param.Tuple(
+        default=None,
+        length=2,
+        constant=True,
+        doc="Range of the y-axis of a plot in data coordinates",
+    )
 
 
 class RangeX(LinkedStream):
-    """
-    Axis range along x-axis in data coordinates.
-    """
+    """Axis range along x-axis in data coordinates."""
 
-    x_range = param.Tuple(default=None, length=2, constant=True, doc="""
-      Range of the x-axis of a plot in data coordinates""")
+    x_range = param.Tuple(
+        default=None,
+        length=2,
+        constant=True,
+        doc="Range of the x-axis of a plot in data coordinates",
+    )
 
     def _set_stream_parameters(self, **kwargs):
         kwargs.pop("y_range", None)
@@ -1500,12 +1772,14 @@ class RangeX(LinkedStream):
 
 
 class RangeY(LinkedStream):
-    """
-    Axis range along y-axis in data coordinates.
-    """
+    """Axis range along y-axis in data coordinates."""
 
-    y_range = param.Tuple(default=None, length=2, constant=True, doc="""
-      Range of the y-axis of a plot in data coordinates""")
+    y_range = param.Tuple(
+        default=None,
+        length=2,
+        constant=True,
+        doc="Range of the y-axis of a plot in data coordinates",
+    )
 
     def _set_stream_parameters(self, **kwargs):
         kwargs.pop("x_range", None)
@@ -1513,136 +1787,177 @@ class RangeY(LinkedStream):
 
 
 class BoundsXY(LinkedStream):
-    """
-    A stream representing the bounds of a box selection as an
+    """A stream representing the bounds of a box selection as an
     tuple of the left, bottom, right and top coordinates.
+
     """
 
-    bounds = param.Tuple(default=None, constant=True, length=4,
-                         allow_None=True, doc="""
-        Bounds defined as (left, bottom, right, top) tuple.""")
+    bounds = param.Tuple(
+        default=None,
+        constant=True,
+        length=4,
+        allow_None=True,
+        doc="Bounds defined as (left, bottom, right, top) tuple.",
+    )
 
 
 class Lasso(LinkedStream):
-    """
-    A stream representing a lasso selection in 2D space as a two-column
+    """A stream representing a lasso selection in 2D space as a two-column
     array of coordinates.
+
     """
 
-    geometry = param.Array(constant=True, doc="""
-        The coordinates of the lasso geometry as a two-column array.""")
+    geometry = param.Array(
+        constant=True,
+        doc="The coordinates of the lasso geometry as a two-column array.",
+    )
 
 
 class SelectionXY(BoundsXY):
-    """
-    A stream representing the selection along the x-axis and y-axis.
+    """A stream representing the selection along the x-axis and y-axis.
     Unlike a BoundsXY stream, this stream returns range or categorical
     selections.
+
     """
 
-    bounds = param.Tuple(default=None, constant=True, length=4,
-                         allow_None=True, doc="""
-        Bounds defined as (left, bottom, right, top) tuple.""")
+    bounds = param.Tuple(
+        default=None,
+        constant=True,
+        length=4,
+        allow_None=True,
+        doc="Bounds defined as (left, bottom, right, top) tuple.",
+    )
 
-    x_selection = param.ClassSelector(class_=(tuple, list), allow_None=True,
-                                      constant=True, doc="""
-      The current selection along the x-axis, either a numerical range
-      defined as a tuple or a list of categories.""")
+    x_selection = param.ClassSelector(
+        class_=(tuple, list),
+        allow_None=True,
+        constant=True,
+        doc="""
+        The current selection along the x-axis, either a numerical range
+        defined as a tuple or a list of categories.""",
+    )
 
-    y_selection = param.ClassSelector(class_=(tuple, list), allow_None=True,
-                                      constant=True, doc="""
-      The current selection along the y-axis, either a numerical range
-      defined as a tuple or a list of categories.""")
+    y_selection = param.ClassSelector(
+        class_=(tuple, list),
+        allow_None=True,
+        constant=True,
+        doc="""
+        The current selection along the y-axis, either a numerical range
+        defined as a tuple or a list of categories.""",
+    )
 
 
 class BoundsX(LinkedStream):
-    """
-    A stream representing the bounds of a box selection as an
+    """A stream representing the bounds of a box selection as an
     tuple of the left and right coordinates.
+
     """
 
-    boundsx = param.Tuple(default=None, constant=True, length=2,
-                          allow_None=True, doc="""
-        Bounds defined as (left, right) tuple.""")
+    boundsx = param.Tuple(
+        default=None,
+        constant=True,
+        length=2,
+        allow_None=True,
+        doc="Bounds defined as (left, right) tuple.",
+    )
 
 
 class BoundsY(LinkedStream):
-    """
-    A stream representing the bounds of a box selection as an
+    """A stream representing the bounds of a box selection as an
     tuple of the bottom and top coordinates.
+
     """
 
-    boundsy = param.Tuple(default=None, constant=True, length=2,
-                          allow_None=True, doc="""
-        Bounds defined as (bottom, top) tuple.""")
+    boundsy = param.Tuple(
+        default=None,
+        constant=True,
+        length=2,
+        allow_None=True,
+        doc="Bounds defined as (bottom, top) tuple.",
+    )
 
 
 class Selection1D(LinkedStream):
-    """
-    A stream representing a 1D selection of objects by their index.
-    """
+    """A stream representing a 1D selection of objects by their index."""
 
-    index = param.List(default=[], allow_None=True, constant=True, doc="""
-        Indices into a 1D datastructure.""")
+    index = param.List(
+        default=[],
+        constant=True,
+        doc="Indices into a 1D datastructure.",
+    )
 
 
 class PlotReset(LinkedStream):
-    """
-    A stream signalling when a plot reset event has been triggered.
-    """
+    """A stream signalling when a plot reset event has been triggered."""
 
-    resetting = param.Boolean(default=False, constant=True, doc="""
-        Whether a reset event is being signalled.""")
+    resetting = param.Boolean(
+        default=False,
+        constant=True,
+        doc="Whether a reset event is being signalled.",
+    )
 
     def __init__(self, *args, **params):
-        super().__init__(self, *args, **dict(params, transient=True))
+        super().__init__(*args, **dict(params, transient=True))
 
 
 class CDSStream(LinkedStream):
-    """
-    A Stream that syncs a bokeh ColumnDataSource with python.
-    """
+    """A Stream that syncs a bokeh ColumnDataSource with python."""
 
-    data = param.Dict(constant=True, doc="""
+    data = param.Dict(
+        constant=True,
+        doc="""
         Data synced from Bokeh ColumnDataSource supplied as a
         dictionary of columns, where each column is a list of values
         (for point-like data) or list of lists of values (for
-        path-like data).""")
+        path-like data).""",
+    )
+
+    element: Dataset
 
 
 class PointDraw(CDSStream):
-    """
-    Attaches a PointDrawTool and syncs the datasource.
+    """Attaches a PointDrawTool and syncs the datasource.
 
-    add: boolean
+    add : boolean
         Whether to allow adding new Points
 
-    drag: boolean
+    drag : boolean
         Whether to enable dragging of Points
 
-    empty_value: int/float/string/None
+    empty_value : int/float/string/None
         The value to insert on non-position columns when adding a new polygon
 
-    num_objects: int
+    num_objects : int
         The number of polygons that can be drawn before overwriting
         the oldest polygon.
 
-    styles: dict
+    styles : dict
         A dictionary specifying lists of styles to cycle over whenever
         a new Point glyph is drawn.
 
-    tooltip: str
+    tooltip : str
         An optional tooltip to override the default
     """
 
-    data = param.Dict(constant=True, doc="""
+    data = param.Dict(
+        constant=True,
+        doc="""
         Data synced from Bokeh ColumnDataSource supplied as a
         dictionary of columns, where each column is a list of values
         (for point-like data) or list of lists of values (for
-        path-like data).""")
+        path-like data).""",
+    )
 
-    def __init__(self, empty_value=None, add=True, drag=True, num_objects=0,
-                 styles=None, tooltip=None, **params):
+    def __init__(
+        self,
+        empty_value=None,
+        add=True,
+        drag=True,
+        num_objects=0,
+        styles=None,
+        tooltip=None,
+        **params,
+    ):
         if styles is None:
             styles = {}
         self.add = add
@@ -1666,75 +1981,86 @@ class PointDraw(CDSStream):
     @property
     def dynamic(self):
         from .core.spaces import DynamicMap
-        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
 
+        return DynamicMap(lambda: self.element, streams=[self])
 
 
 class CurveEdit(PointDraw):
-    """
-    Attaches a PointDraw to the plot which allows editing the Curve when selected.
+    """Attaches a PointDraw to the plot which allows editing the Curve when selected.
 
-    style: dict
+    style : dict
         A dictionary specifying the style of the vertices.
 
-    tooltip: str
+    tooltip : str
         An optional tooltip to override the default
     """
 
-    data = param.Dict(constant=True, doc="""
+    data = param.Dict(
+        constant=True,
+        doc="""
         Data synced from Bokeh ColumnDataSource supplied as a
         dictionary of columns, where each column is a list of values
         (for point-like data) or list of lists of values (for
-        path-like data).""")
+        path-like data).""",
+    )
 
     def __init__(self, style=None, tooltip=None, **params):
         if style is None:
             style = {}
-        self.style = style or {'size': 10}
+        self.style = style or {"size": 10}
         self.tooltip = tooltip
         super(PointDraw, self).__init__(**params)
 
 
-
 class PolyDraw(CDSStream):
-    """
-    Attaches a PolyDrawTool and syncs the datasource.
+    """Attaches a PolyDrawTool and syncs the datasource.
 
-    drag: boolean
+    drag : boolean
         Whether to enable dragging of polygons and paths
 
-    empty_value: int/float/string/None
+    empty_value : int/float/string/None
         The value to insert on non-position columns when adding a new polygon
 
-    num_objects: int
+    num_objects : int
         The number of polygons that can be drawn before overwriting
         the oldest polygon.
 
-    show_vertices: boolean
+    show_vertices : boolean
         Whether to show the vertices when a polygon is selected
 
-    styles: dict
+    styles : dict
         A dictionary specifying lists of styles to cycle over whenever
         a new Poly glyph is drawn.
 
-    tooltip: str
+    tooltip : str
         An optional tooltip to override the default
 
-    vertex_style: dict
+    vertex_style : dict
         A dictionary specifying the style options for the vertices.
         The usual bokeh style options apply, e.g. fill_color,
         line_alpha, size, etc.
     """
 
-    data = param.Dict(constant=True, doc="""
+    data = param.Dict(
+        constant=True,
+        doc="""
         Data synced from Bokeh ColumnDataSource supplied as a
         dictionary of columns, where each column is a list of values
         (for point-like data) or list of lists of values (for
-        path-like data).""")
+        path-like data).""",
+    )
 
-    def __init__(self, empty_value=None, drag=True, num_objects=0,
-                 show_vertices=False, vertex_style=None, styles=None,
-                 tooltip=None, **params):
+    def __init__(
+        self,
+        empty_value=None,
+        drag=True,
+        num_objects=0,
+        show_vertices=False,
+        vertex_style=None,
+        styles=None,
+        tooltip=None,
+        **params,
+    ):
         if styles is None:
             styles = {}
         if vertex_style is None:
@@ -1749,7 +2075,7 @@ class PolyDraw(CDSStream):
         super().__init__(**params)
 
     @property
-    def element(self):
+    def element(self) -> Path:
         source = self.source
         if isinstance(source, UniformNdMapping):
             source = source.last
@@ -1758,42 +2084,46 @@ class PolyDraw(CDSStream):
             return source.clone([], id=None)
         cols = list(self.data)
         x, y = source.kdims
-        lookup = {'xs': x.name, 'ys': y.name}
-        data = [{lookup.get(c, c): data[c][i] for c in self.data}
-                for i in range(len(data[cols[0]]))]
-        datatype = source.datatype if source.interface.multi else ['multitabular']
+        lookup = {"xs": x.name, "ys": y.name}
+        data = [
+            {lookup.get(c, c): data[c][i] for c in self.data} for i in range(len(data[cols[0]]))
+        ]
+        datatype = source.datatype if source.interface.multi else ["multitabular"]
         return source.clone(data, datatype=datatype, id=None)
 
     @property
     def dynamic(self):
         from .core.spaces import DynamicMap
-        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
+
+        return DynamicMap(lambda: self.element, streams=[self])
 
 
 class FreehandDraw(CDSStream):
-    """
-    Attaches a FreehandDrawTool and syncs the datasource.
+    """Attaches a FreehandDrawTool and syncs the datasource.
 
-    empty_value: int/float/string/None
+    empty_value : int/float/string/None
         The value to insert on non-position columns when adding a new polygon
 
-    num_objects: int
+    num_objects : int
         The number of polygons that can be drawn before overwriting
         the oldest polygon.
 
-    styles: dict
+    styles : dict
         A dictionary specifying lists of styles to cycle over whenever
         a new freehand glyph is drawn.
 
-    tooltip: str
+    tooltip : str
         An optional tooltip to override the default
     """
 
-    data = param.Dict(constant=True, doc="""
+    data = param.Dict(
+        constant=True,
+        doc="""
         Data synced from Bokeh ColumnDataSource supplied as a
         dictionary of columns, where each column is a list of values
         (for point-like data) or list of lists of values (for
-        path-like data).""")
+        path-like data).""",
+    )
 
     def __init__(self, empty_value=None, num_objects=0, styles=None, tooltip=None, **params):
         if styles is None:
@@ -1814,42 +2144,45 @@ class FreehandDraw(CDSStream):
             return source.clone([], id=None)
         cols = list(self.data)
         x, y = source.kdims
-        lookup = {'xs': x.name, 'ys': y.name}
-        data = [{lookup.get(c, c): data[c][i] for c in self.data}
-                for i in range(len(data[cols[0]]))]
+        lookup = {"xs": x.name, "ys": y.name}
+        data = [
+            {lookup.get(c, c): data[c][i] for c in self.data} for i in range(len(data[cols[0]]))
+        ]
         return source.clone(data, id=None)
 
     @property
     def dynamic(self):
         from .core.spaces import DynamicMap
-        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
 
+        return DynamicMap(lambda: self.element, streams=[self])
 
 
 class BoxEdit(CDSStream):
-    """
-    Attaches a BoxEditTool and syncs the datasource.
+    """Attaches a BoxEditTool and syncs the datasource.
 
-    empty_value: int/float/string/None
+    empty_value : int/float/string/None
         The value to insert on non-position columns when adding a new box
 
-    num_objects: int
+    num_objects : int
         The number of boxes that can be drawn before overwriting the
         oldest drawn box.
 
-    styles: dict
+    styles : dict
         A dictionary specifying lists of styles to cycle over whenever
         a new box glyph is drawn.
 
-    tooltip: str
+    tooltip : str
         An optional tooltip to override the default
     """
 
-    data = param.Dict(constant=True, doc="""
+    data = param.Dict(
+        constant=True,
+        doc="""
         Data synced from Bokeh ColumnDataSource supplied as a
         dictionary of columns, where each column is a list of values
         (for point-like data) or list of lists of values (for
-        path-like data).""")
+        path-like data).""",
+    )
 
     def __init__(self, empty_value=None, num_objects=0, styles=None, tooltip=None, **params):
         if styles is None:
@@ -1863,6 +2196,7 @@ class BoxEdit(CDSStream):
     @property
     def element(self):
         from .element import Polygons, Rectangles
+
         source = self.source
         if isinstance(source, UniformNdMapping):
             source = source.last
@@ -1870,50 +2204,54 @@ class BoxEdit(CDSStream):
         if not data:
             return source.clone([])
 
-        dims = ['x0', 'y0', 'x1', 'y1']+[vd.name for vd in source.vdims]
+        dims = ["x0", "y0", "x1", "y1"] + [vd.name for vd in source.vdims]
         if isinstance(source, Rectangles):
             data = tuple(data[d] for d in dims)
             return source.clone(data, id=None)
         paths = []
-        for i, (x0, x1, y0, y1) in enumerate(zip(data['x0'], data['x1'], data['y0'], data['y1'])):
+        for i, (x0, x1, y0, y1) in enumerate(
+            zip(data["x0"], data["x1"], data["y0"], data["y1"], strict=True)
+        ):
             xs = [x0, x0, x1, x1]
             ys = [y0, y1, y1, y0]
             if isinstance(source, Polygons):
                 xs.append(x0)
                 ys.append(y0)
             vals = [data[vd.name][i] for vd in source.vdims]
-            paths.append((xs, ys)+tuple(vals))
-        datatype = source.datatype if source.interface.multi else ['multitabular']
+            paths.append((xs, ys, *vals))
+        datatype = source.datatype if source.interface.multi else ["multitabular"]
         return source.clone(paths, datatype=datatype, id=None)
 
     @property
     def dynamic(self):
         from .core.spaces import DynamicMap
-        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
 
+        return DynamicMap(lambda: self.element, streams=[self])
 
 
 class PolyEdit(PolyDraw):
-    """
-    Attaches a PolyEditTool and syncs the datasource.
+    """Attaches a PolyEditTool and syncs the datasource.
 
-    shared: boolean
+    shared : boolean
         Whether PolyEditTools should be shared between multiple elements
 
-    tooltip: str
+    tooltip : str
         An optional tooltip to override the default
 
-    vertex_style: dict
+    vertex_style : dict
         A dictionary specifying the style options for the vertices.
         The usual bokeh style options apply, e.g. fill_color,
         line_alpha, size, etc.
     """
 
-    data = param.Dict(constant=True, doc="""
+    data = param.Dict(
+        constant=True,
+        doc="""
         Data synced from Bokeh ColumnDataSource supplied as a
         dictionary of columns, where each column is a list of values
         (for point-like data) or list of lists of values (for
-        path-like data).""")
+        path-like data).""",
+    )
 
     def __init__(self, vertex_style=None, shared=True, **params):
         if vertex_style is None:

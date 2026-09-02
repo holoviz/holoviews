@@ -109,14 +109,17 @@ see [Getting Started](getting_started/index).
 :hidden:
 :maxdepth: 2
 
-Home
+Home <self>
 Getting Started <getting_started/index>
+Features <features>
 User Guide <user_guide/index>
 Gallery <gallery/index>
 Reference Gallery <reference/index>
 Developer Guide <developer_guide/index>
 Releases <releases>
 API <reference_manual/index>
-FAQ Roadmap <roadmap>
+FAQ <FAQ>
+Roadmap <roadmap>
 About <about>
+Installation <install>
 ```

@@ -1,0 +1,3 @@
+# The "shellcheck" pre-commit hook requires shell scripts to end lines with LF
+# regardless of git's "core.autocrlf" setting.
+*.sh text eol=lf

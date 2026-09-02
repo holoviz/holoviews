@@ -1,13 +1,19 @@
+from __future__ import annotations
+
 import contextlib
 import sys
-from collections.abc import Callable
+import typing as t
 
+import numpy as np
 import panel as pn
 import pytest
 from panel.tests.conftest import port, server_cleanup  # noqa: F401
 from panel.tests.util import serve_and_wait
 
 import holoviews as hv
+
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
 
 CUSTOM_MARKS = ("ui", "gpu")
 
@@ -42,21 +48,15 @@ def pytest_collection_modifyitems(config, items):
             skipped.append(item)
 
     config.hook.pytest_deselected(items=skipped)
-    items[:] = selected
+    # Sorted because pytest 8.4.0 and pytest-playwright
+    # https://github.com/microsoft/playwright-pytest/pull/284
+    items[:] = sorted(selected, key=lambda x: x.path)
 
 
 with contextlib.suppress(ImportError):
     import matplotlib as mpl
 
     mpl.use("agg")
-
-
-with contextlib.suppress(Exception):
-    # From Dask 2023.7.1 they now automatically convert strings
-    # https://docs.dask.org/en/stable/changelog.html#v2023-7-1
-    import dask
-
-    dask.config.set({"dataframe.convert-string": False})
 
 
 @pytest.fixture
@@ -76,10 +76,10 @@ def _plotting_backend(backend):
     if not hv.extension._loaded:
         hv.extension(backend)
     hv.renderer(backend)
-    curent_backend = hv.Store.current_backend
+    current_backend = hv.Store.current_backend
     hv.Store.set_current_backend(backend)
     yield
-    hv.Store.set_current_backend(curent_backend)
+    hv.Store.set_current_backend(current_backend)
 
 
 @pytest.fixture
@@ -108,6 +108,9 @@ def unimport(monkeypatch: pytest.MonkeyPatch) -> Callable[[str], None]:
     def unimport_module(modname: str) -> None:
         # Remove if already imported
         monkeypatch.delitem(sys.modules, modname, raising=False)
+        items = [m for m in sys.modules if m.startswith(f"{modname}.")]
+        for item in items:
+            monkeypatch.delitem(sys.modules, item, raising=False)
         # Prevent import:
         monkeypatch.setattr(sys, "path", [])
 
@@ -124,7 +127,17 @@ def serve_hv(page, port):  # noqa: F811
     return serve_and_return_page
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
+def serve_panel(page, port):  # noqa: F811
+    def serve_and_return_page(pn_obj):
+        serve_and_wait(pn.panel(pn_obj), port=port)
+        page.goto(f"http://localhost:{port}")
+        return page
+
+    return serve_and_return_page
+
+
+@pytest.fixture(autouse=True, scope="module")
 def reset_store():
     _custom_options = {k: {} for k in hv.Store._custom_options}
     _options = hv.Store._options.copy()
@@ -136,3 +149,8 @@ def reset_store():
     hv.Store._weakrefs = {}
     hv.Store.renderers = renderers
     hv.Store.set_current_backend(current_backend)
+
+
+@pytest.fixture
+def rng():
+    return np.random.default_rng(1)

@@ -3,24 +3,15 @@ import platform
 import sys
 from importlib.util import find_spec
 
-import bokeh
-import pandas as pd
-from packaging.version import Version
+from holoviews.core.util.dependencies import _no_import_version
 
 system = platform.system()
 py_version = sys.version_info[:2]
-PANDAS_GE_2_0_0 = Version(pd.__version__).release >= (2, 0, 0)
-
-# Having "OMP_NUM_THREADS"=1, set as an environment variable, can be needed
-# to avoid crashing when running tests with pytest-xdist on Windows.
-# This is set in the .github/workflows/test.yaml file.
-# https://github.com/holoviz/holoviews/pull/5720
+PANDAS_GE_2_0_0 = _no_import_version("pandas") >= (2, 0, 0)
 
 collect_ignore_glob = [
     # Needs selenium, phantomjs, firefox, and geckodriver to save a png picture
     "user_guide/Plotting_with_Bokeh.ipynb",
-    # Streaming data use streamz which is no longer maintained
-    "user_guide/16-Streaming_Data.ipynb",
     # Possible timeout error
     "user_guide/17-Dashboards.ipynb",
     # Give file not found
@@ -45,7 +36,7 @@ if system == "Windows":
     ]
 
 # First available in Bokeh 3.2.0
-if Version(bokeh.__version__).release < (3, 2, 0):
+if _no_import_version("bokeh") < (3, 2, 0):
     collect_ignore_glob += [
         "reference/elements/bokeh/HLines.ipynb",
         "reference/elements/bokeh/HSpans.ipynb",
@@ -66,6 +57,7 @@ if find_spec("datashader") is None:
         "reference/elements/plotly/ImageStack.ipynb",
         "user_guide/15-Large_Data.ipynb",
         "user_guide/16-Streaming_Data.ipynb",
+        "user_guide/Interactive_Hover_for_Big_Data.ipynb",
         "user_guide/Linked_Brushing.ipynb",
         "user_guide/Network_Graphs.ipynb",
     ]
@@ -73,6 +65,11 @@ if find_spec("datashader") is None:
 if find_spec("scikit-image") is None:
     collect_ignore_glob += [
         "user_guide/Network_Graphs.ipynb",
+    ]
+
+if find_spec("tsdownsample") is None:
+    collect_ignore_glob += [
+        "gallery/demos/bokeh/multichannel_timeseries_viewer.ipynb",
     ]
 
 
@@ -94,7 +91,7 @@ def pytest_runtest_makereport(item, call):
             "Kernel didn't respond in 60 seconds",
         ]
         for msg in msgs:
-            if call.excinfo.type == RuntimeError and call.excinfo.value.args[0] in msg:
+            if call.excinfo.type is RuntimeError and call.excinfo.value.args[0] in msg:
                 tr.outcome = "skipped"
                 tr.wasxfail = f"reason: {msg}"
 

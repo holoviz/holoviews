@@ -2,17 +2,15 @@
 Script to sync tags from upstream repository to forked repository
 """
 
+from __future__ import annotations
+
 import sys
 from subprocess import run
 
 
 def main(package: str) -> None:
-    origin = run(
-        ["git", "remote", "get-url", "origin"], check=True, capture_output=True
-    )
-    upstream = run(
-        ["git", "remote", "get-url", "upstream"], check=False, capture_output=True
-    )
+    origin = run(["git", "remote", "get-url", "origin"], check=True, capture_output=True)
+    upstream = run(["git", "remote", "get-url", "upstream"], check=False, capture_output=True)
     url = (
         f"https://github.com/holoviz/{package}.git"
         if origin.stdout.startswith(b"http")
