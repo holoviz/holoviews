@@ -62,11 +62,11 @@ def load_direct_dependencies() -> set:
     return names
 
 
-def parse_name_version(url: str) -> tuple[str, str] | None:
+def parse_name_version(url: str) -> tuple[str, str, str] | None:
     match = FILENAME_RE.match(url.rsplit("/", 1)[-1])
     if not match:
         return None
-    return match.group("name"), match.group("version")
+    return match.group("name"), match.group("version"), match.group("build")
 
 
 def load_environments(content: str) -> dict:
@@ -90,8 +90,8 @@ def load_environments(content: str) -> dict:
                 if not parsed:
                     continue
 
-                name, version = parsed
-                packages[name] = version
+                name, version, build = parsed
+                packages[name] = (version, build)
 
             platforms[platform] = packages
 
@@ -105,7 +105,9 @@ def version_key(version: str) -> list:
     return [int(part) if part.isdigit() else part for part in VERSION_PART_RE.findall(version)]
 
 
-def version_change(old_version: str, new_version: str) -> str:
+def version_change(old_version: str | None, new_version: str | None) -> str:
+    if old_version is None or new_version is None:
+        return "Changed"
     try:
         return "Upgraded" if version_key(new_version) > version_key(old_version) else "Downgraded"
     except TypeError:
@@ -120,19 +122,31 @@ def compare(main_platforms: dict, current_platforms: dict) -> list:
         current_packages = current_platforms.get(platform, {})
 
         for package in sorted(set(main_packages) | set(current_packages)):
-            old_version = main_packages.get(package)
-            new_version = current_packages.get(package)
+            old = main_packages.get(package)
+            new = current_packages.get(package)
 
-            if old_version is None:
+            old_version, old_build = old if old else (None, None)
+            new_version, new_build = new if new else (None, None)
+
+            if old is None:
                 change = "Added"
-            elif new_version is None:
+            elif new is None:
                 change = "Removed"
             elif old_version != new_version:
                 change = version_change(old_version, new_version)
+            elif old_build != new_build:
+                change = "Build changed"
             else:
                 continue
 
-            key = (package, old_version or "-", new_version or "-", change)
+            if change == "Build changed":
+                old_display = f"{old_version} ({old_build})"
+                new_display = f"{new_version} ({new_build})"
+            else:
+                old_display = old_version or "-"
+                new_display = new_version or "-"
+
+            key = (package, old_display, new_display, change)
             changes.setdefault(key, []).append(platform)
 
     rows = [
