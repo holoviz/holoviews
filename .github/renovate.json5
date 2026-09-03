@@ -1,37 +1,52 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended", ":enablePreCommit"],
-  "schedule": ["after 12am and before 5am on the 1st day of the month"],
   "enabledManagers": ["github-actions", "pre-commit", "pixi"],
-  "commitMessagePrefix": "chore(bot):",
-  "automerge": true,
-  "minimumReleaseAge": "7 days",
   "lockFileMaintenance": {
     "enabled": true
   },
+  "schedule": ["before 5am on the 1st day of the month"],
+
+  "automerge": true,
+  "commitMessagePrefix": "chore(bot):",
+  "prConcurrentLimit": 0,
+  "prCreation": "immediate",
+  "prHourlyLimit": 0,
+
+  "internalChecksFilter": "strict",
+  "minimumReleaseAge": "7 days",
+  "separateMajorMinor": false,
+
   "packageRules": [
     {
       "groupName": "GitHub Actions",
       "matchManagers": ["github-actions"],
-      "description": "Monthly update of GitHub Actions",
       "pinDigests": true
     },
     {
-      "groupName": "HoloViz Tasks",
+      "groupName": "HoloViz Github Actions",
       "matchManagers": ["github-actions"],
       "matchPackageNames": ["holoviz-dev/holoviz_tasks"],
-      "minimumReleaseAge": "0 days",
-      "schedule": ["after 12am and before 5am"]
+      "minimumReleaseAge": null,
+      "schedule": ["before 5am"],
+      "pinDigests": true
     },
     {
-      "groupName": "pre-commit dependencies",
+      "groupName": "pre-commit",
       "matchManagers": ["pre-commit"],
-      "description": "Monthly update of pre-commit"
     },
     {
       "matchManagers": ["pixi"],
-      "description": "Only allow Pixi lock file maintenance, not direct dependency bumps",
-      "enabled": false,
+      "enabled": false,  // We don't want updates pixi.toml
+    },
+    {
+      "groupName": "cudf",
+      "matchManagers": ["pixi"],
+      "matchPackageNames": ["cudf"],
+      "minimumReleaseAge": null,
+      "schedule": ["before 5am"],  // Happens every second month
+      "enabled": true,
+      "automerge": false,  // Need to run outside CI
     },
     {
       "groupName": "Pixi Lock",
@@ -39,11 +54,16 @@
       "matchUpdateTypes": ["lockFileMaintenance"],
       "description": "Weekly update of Pixi Lock",
       "schedule": ["before 5am on monday"],
-      "minimumReleaseAge": "0 days", // Handled in pixi itself
+      "minimumReleaseAge": null, // Handled in pixi itself
       "commitMessageAction": "Update",
       "commitMessageTopic": "pixi.lock",
       "branchTopic": "pixi-lock",
       "enabled": true,
     },
-  ]
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "minimumReleaseAge": null,
+    "vulnerabilityFixStrategy": "lowest",
+  },
 }
