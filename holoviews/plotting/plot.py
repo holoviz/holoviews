@@ -1750,8 +1750,6 @@ class GenericElementPlot(DimensionedPlot):
         Derived labels follow their data dimension and are swapped when
         invert_axes is set. The xlabel/ylabel/zlabel plot options refer
         to the visual axes and override the derived labels after that swap.
-        Explicit xlabel/ylabel/zlabel arguments still override the derived
-        labels before the invert_axes swap.
 
         """
         if dimensions and xlabel is None:
