@@ -10,6 +10,7 @@ import os
 import re
 import subprocess
 import sys
+from functools import cache
 
 import tomllib
 import yaml
@@ -201,9 +202,10 @@ def print_header(base: str):
 
     print(COMMENT_MARKER)
     print("## Pixi.lock changes\n")
-    print(f"Comparing `{MAIN_BRANCH}` ({base_sha}) against this branch ({current_sha}).\n")
+    print(f"Comparing this branch ({current_sha}) against base branch ({base_sha})\n")
 
 
+@cache
 def lockfile_unchanged(base: str) -> bool:
     """Cheap check to skip parsing when pixi.lock is identical to the base revision."""
     result = subprocess.run(
@@ -218,7 +220,7 @@ def lockfile_unchanged(base: str) -> bool:
 def main():
     base = os.environ.get("BASE_SHA") or MAIN_BRANCH
 
-    if lockfile_unchanged(base):
+    if lockfile_unchanged(base) or lockfile_unchanged(MAIN_BRANCH):
         return
 
     print_header(base)
