@@ -57,6 +57,14 @@ class TestElementPlot(TestPlotlyPlot):
         state = self._get_plot_state(curve)
         assert state["layout"]["yaxis"]["title"]["text"] == "Y-Axis"
 
+    def test_element_invert_axes_custom_labels_visual_axes(self):
+        curve = hv.Curve(range(10)).opts(
+            invert_axes=True, xlabel="custom x-label", ylabel="custom y-label"
+        )
+        state = self._get_plot_state(curve)
+        assert state["layout"]["xaxis"]["title"]["text"] == "custom x-label"
+        assert state["layout"]["yaxis"]["title"]["text"] == "custom y-label"
+
     def test_element_plot_zlabel(self):
         scatter = hv.Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).opts(zlabel="Z-Axis")
         state = self._get_plot_state(scatter)
