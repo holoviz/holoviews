@@ -9,7 +9,7 @@ description = "A high-level plotting API for the PyData ecosystem built on HoloV
 readme = "README.md"
 license = "BSD-3-Clause"
 license-files = ["LICENSE.txt"]
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 authors = [
     { name = "Jean-Luc Stevens", email = "developers@holoviz.org" },
     { name = "Philipp Rudiger", email = "developers@holoviz.org" },
@@ -17,8 +17,6 @@ authors = [
 maintainers = [{ name = "HoloViz developers", email = "developers@holoviz.org" }]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",

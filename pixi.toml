@@ -34,14 +34,6 @@ default = [
     "type",
 ]
 
-[environments.test-310]
-features = ["required", "py310", "optional", "test-core", "test-example", "test-unit-task"]
-no-default-feature = true
-
-[environments.test-311]
-features = ["required", "py311", "optional", "test-core", "test-example", "test-unit-task"]
-no-default-feature = true
-
 [environments.test-312]
 features = ["required", "py312", "optional", "test-core", "test-example", "test-unit-task"]
 no-default-feature = true
@@ -55,7 +47,7 @@ features = ["required", "py314", "optional", "test-core", "test-example", "test-
 no-default-feature = true
 
 [environments.test-ui]
-features = ["required", "py313", "optional", "test-core", "test-ui"]
+features = ["required", "py314", "optional", "test-core", "test-ui"]
 no-default-feature = true
 
 [environments.test-core]
@@ -63,15 +55,15 @@ features = ["required", "py314", "test-core", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-gpu]
-features = ["required", "py313", "test-core", "optional", "test-gpu"]
+features = ["required", "py314", "test-core", "optional", "test-gpu"]
 no-default-feature = true
 
 [environments.docs]
-features = ["required", "py311", "optional", "doc"]
+features = ["required", "py314", "optional", "doc"]
 no-default-feature = true
 
 [environments.build]
-features = ["required", "py311", "build"]
+features = ["required", "py314", "build"]
 no-default-feature = true
 
 [environments.lint]
@@ -79,7 +71,7 @@ features = ["lint"]
 no-default-feature = true
 
 [environments.type]
-features = ["required", "py310", "optional", "test-core", "type", "type-task"]
+features = ["required", "py312", "optional", "test-core", "type", "type-task"]
 no-default-feature = true
 
 [feature.required.dependencies]
@@ -103,30 +95,16 @@ sync-git-tags = 'python scripts/sync_git_tags.py holoviews'
 
 [feature.required.activation.env]
 PYTHONIOENCODING = "utf-8"
-
-[feature.py310.dependencies]
-python = "3.10.*"
-
-[feature.py311.dependencies]
-python = "3.11.*"
+COVERAGE_CORE = "sysmon"
 
 [feature.py312.dependencies]
 python = "3.12.*"
 
-[feature.py312.activation.env]
-COVERAGE_CORE = "sysmon"
-
 [feature.py313.dependencies]
 python = "3.13.*"
 
-[feature.py313.activation.env]
-COVERAGE_CORE = "sysmon"
-
 [feature.py314.dependencies]
 python = "3.14.*"
-
-[feature.py314.activation.env]
-COVERAGE_CORE = "sysmon"
 
 [feature.optional.dependencies]
 bokeh_sampledata = "*"

@@ -16,22 +16,18 @@ if t.TYPE_CHECKING:
     from pandas.core.dtypes.dtypes import DatetimeTZDtype
     from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries
 
-    _PdDatetimeT: t.TypeAlias = pd.Timestamp | pd.Period | DatetimeTZDtype
-    _PdTimedeltaT: t.TypeAlias = pd.Timedelta
-    _CftimeT: t.TypeAlias = cftime.datetime
-    _DatetimeT: t.TypeAlias = (
-        dt.datetime | dt.date | dt.time | np.datetime64 | _PdDatetimeT | _CftimeT
-    )
-    _TimedeltaT: t.TypeAlias = dt.timedelta | np.timedelta64 | _PdTimedeltaT
-    _ArraylikeT: t.TypeAlias = np.ndarray | nw.Series | ABCIndex | ABCSeries | ABCExtensionArray
-    _MaskedT: t.TypeAlias = np.ma.core.MaskedArray | BaseMaskedArray
+    type _PdDatetimeT = pd.Timestamp | pd.Period | DatetimeTZDtype
+    type _PdTimedeltaT = pd.Timedelta
+    type _CftimeT = cftime.datetime
+    type _DatetimeT = dt.datetime | dt.date | dt.time | np.datetime64 | _PdDatetimeT | _CftimeT
+    type _TimedeltaT = dt.timedelta | np.timedelta64 | _PdTimedeltaT
+    type _ArraylikeT = np.ndarray | nw.Series | ABCIndex | ABCSeries | ABCExtensionArray
+    type _MaskedT = np.ma.core.MaskedArray | BaseMaskedArray
 
-    _YieldT = t.TypeVar("_YieldT")
-
-    class _GenFunc(t.Protocol[_YieldT]):
+    class _GenFunc[YieldT](t.Protocol):
         __name__: str
 
-        def __call__(self) -> t.Iterator[_YieldT]: ...
+        def __call__(self) -> t.Iterator[YieldT]: ...
 
 
 _module_count = 0
@@ -70,7 +66,7 @@ class _GeneratorIs(metaclass=_GeneratorIsMeta):
         yield from cls._get_types()
 
 
-def gen_types(gen_func: _GenFunc[_YieldT]) -> tuple[_YieldT, ...]:
+def gen_types[YieldT](gen_func: _GenFunc[YieldT]) -> tuple[YieldT, ...]:
     """
     Decorator which takes a generator function which yields difference types
     make it so it can be called with isinstance and issubclass.

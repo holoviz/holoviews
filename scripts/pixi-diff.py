@@ -10,9 +10,9 @@ import os
 import re
 import subprocess
 import sys
+import tomllib
 from functools import cache
 
-import tomllib
 import yaml
 
 LOCKFILE = "pixi.lock"
