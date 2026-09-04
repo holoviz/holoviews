@@ -4,7 +4,7 @@ Tests for the Dataset Element types.
 
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 
 import numpy as np
 import pytest
@@ -595,7 +595,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         assert isinstance(dataset.data, self.data_type)
 
     def test_dataset_range_with_dimension_range(self):
-        dt64 = np.array([np.datetime64(datetime.datetime(2017, 1, i)) for i in range(1, 4)])
+        dt64 = np.array([np.datetime64(dt.datetime(2017, 1, i)) for i in range(1, 4)])
         ds = hv.Dataset(dt64, [hv.Dimension("Date", range=(dt64[0], dt64[-1]))])
         assert ds.range("Date") == (dt64[0], dt64[-1])
 

@@ -237,6 +237,7 @@ combine-as-imports = true
 required-imports = ["from __future__ import annotations"]
 
 [tool.ruff.lint.flake8-import-conventions.aliases]
+datetime = "dt"
 typing = "t"
 
 [tool.ruff.lint.flake8-comprehensions]
