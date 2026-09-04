@@ -626,6 +626,47 @@ class ImageStack(Image):
                 vdims = [Dimension(key) for key in data.keys() if key not in _kdims]
         super().__init__(data, kdims=kdims, vdims=vdims, **params)
 
+    def select(self, selection_specs=None, **selection):
+        """Allows selecting data by the slices, sets and scalar values
+        along the key dimensions, as well as narrowing down the value
+        dimensions (layers) held by the ImageStack via the ``vdims``
+        keyword, e.g. ``img_stack.select(vdims=['a', 'b'])``. This
+        works irrespective of which of the supported data formats
+        (list, dict, tuple, array or xarray) backs the ImageStack.
+
+        """
+        if selection_specs and not any(self.matches(sp) for sp in selection_specs):
+            return self
+
+        vdims = selection.pop("vdims", None)
+        select_el = super().select(selection_specs, **selection)
+        if vdims is None:
+            return select_el
+
+        if isinstance(vdims, (str, Dimension)):
+            vdims = [vdims]
+        vdim_names = [Dimension(vd).name for vd in vdims]
+
+        current_vdims = {vd.name: vd for vd in select_el.vdims}
+        missing = [name for name in vdim_names if name not in current_vdims]
+        if missing:
+            raise KeyError(f"{missing} not in the available vdims: {list(current_vdims)}")
+        new_vdims = [current_vdims[name] for name in vdim_names]
+
+        data = select_el.data
+        if isinstance(data, dict):
+            # GridInterface: one 2D array per vdim, alongside the kdim coordinates
+            new_data = {k: v for k, v in data.items() if k not in current_vdims or k in vdim_names}
+        elif hasattr(data, "data_vars"):
+            # xarray Dataset: one 2D array (data_var) per vdim
+            new_data = data[vdim_names]
+        else:
+            # xarray DataArray "packed" with vdims as coordinates on the last dim
+            band_dim = data.dims[-1]
+            new_data = data.sel(**{band_dim: vdim_names})
+
+        return select_el.clone(data=new_data, vdims=new_vdims)
+
 
 class RGB(Image):
     """RGB represents a regularly spaced 2D grid of an underlying
