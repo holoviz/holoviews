@@ -258,16 +258,16 @@ class TestBarPlot(LoggingComparison, TestMPLPlot):
 
     def test_bars_invert_axes_xlabel_only(self):
         bars = hv.Bars([("A", 1), ("B", 2)], "species", "body_mass_g").opts(
-            invert_axes=True, xlabel="Species"
+            invert_axes=True, xlabel="Body Mass (g)"
         )
         ax = mpl_renderer.get_plot(bars).handles["axis"]
-        assert ax.get_xlabel() == "Species"
+        assert ax.get_xlabel() == "Body Mass (g)"
         assert ax.get_ylabel() == "species"
 
     def test_bars_invert_axes_ylabel_only(self):
         bars = hv.Bars([("A", 1), ("B", 2)], "species", "body_mass_g").opts(
-            invert_axes=True, ylabel="Body Mass (g)"
+            invert_axes=True, ylabel="Species"
         )
         ax = mpl_renderer.get_plot(bars).handles["axis"]
         assert ax.get_xlabel() == "body_mass_g"
-        assert ax.get_ylabel() == "Body Mass (g)"
+        assert ax.get_ylabel() == "Species"

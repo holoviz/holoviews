@@ -628,19 +628,19 @@ class TestBarPlot(TestBokehPlot):
 
     def test_bars_invert_axes_xlabel_only(self):
         bars = hv.Bars([("A", 1), ("B", 2)], "species", "body_mass_g").opts(
-            invert_axes=True, xlabel="Species"
+            invert_axes=True, xlabel="Body Mass (g)"
         )
         plot = bokeh_renderer.get_plot(bars).state
-        assert plot.xaxis[0].axis_label == "Species"
+        assert plot.xaxis[0].axis_label == "Body Mass (g)"
         assert plot.yaxis[0].axis_label == "species"
 
     def test_bars_invert_axes_ylabel_only(self):
         bars = hv.Bars([("A", 1), ("B", 2)], "species", "body_mass_g").opts(
-            invert_axes=True, ylabel="Body Mass (g)"
+            invert_axes=True, ylabel="Species"
         )
         plot = bokeh_renderer.get_plot(bars).state
         assert plot.xaxis[0].axis_label == "body_mass_g"
-        assert plot.yaxis[0].axis_label == "Body Mass (g)"
+        assert plot.yaxis[0].axis_label == "Species"
 
 
 @pytest.mark.parametrize("stacked", [True, False])

@@ -261,16 +261,16 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
 
     def test_bars_invert_axes_xlabel_only(self):
         bars = hv.Bars([("A", 1), ("B", 2)], "species", "body_mass_g").opts(
-            invert_axes=True, xlabel="Species"
+            invert_axes=True, xlabel="Body Mass (g)"
         )
         state = self._get_plot_state(bars)
-        assert state["layout"]["xaxis"]["title"]["text"] == "Species"
+        assert state["layout"]["xaxis"]["title"]["text"] == "Body Mass (g)"
         assert state["layout"]["yaxis"]["title"]["text"] == "species"
 
     def test_bars_invert_axes_ylabel_only(self):
         bars = hv.Bars([("A", 1), ("B", 2)], "species", "body_mass_g").opts(
-            invert_axes=True, ylabel="Body Mass (g)"
+            invert_axes=True, ylabel="Species"
         )
         state = self._get_plot_state(bars)
         assert state["layout"]["xaxis"]["title"]["text"] == "body_mass_g"
-        assert state["layout"]["yaxis"]["title"]["text"] == "Body Mass (g)"
+        assert state["layout"]["yaxis"]["title"]["text"] == "Species"
