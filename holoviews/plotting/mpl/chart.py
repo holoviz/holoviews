@@ -23,7 +23,7 @@ from ...core.util import (
 from ...element import HeatMap, Raster
 from ...operation import interpolate_curve
 from ...util.transform import dim
-from ..mixins import AreaMixin, BarsMixin, DonutMixin, SpikesMixin, WaterfallMixin
+from ..mixins import AreaMixin, BarsMixin, DonutMixin, HistogramMixin, SpikesMixin, WaterfallMixin
 from ..plot import PlotSelector
 from ..util import dim_range_key, get_min_distance, get_sideplot_ranges, process_cmap
 from .element import ColorbarPlot, ElementPlot, LegendPlot
@@ -334,7 +334,7 @@ class SpreadPlot(AreaPlot):
         return ChartPlot.get_extents(self, element, ranges, range_type)
 
 
-class HistogramPlot(ColorbarPlot):
+class HistogramPlot(HistogramMixin, ColorbarPlot):
     """HistogramPlot can plot DataHistograms and ViewMaps of
     DataHistograms, which can be displayed as a single frame or
     animation.
@@ -406,12 +406,26 @@ class HistogramPlot(ColorbarPlot):
 
         # Plot bars and make any adjustments
         legend = hist.label if self.show_legend else ""
+        baseline_kwarg = {}
+        if hist._stacked:
+            baseline = np.array(hist.dimension_values(2))
+            hvals = hvals - baseline
+            if self.invert_axes:
+                baseline_kwarg["left"] = baseline
+            else:
+                baseline_kwarg["bottom"] = baseline
         bars = self.plotfn(
-            edges, hvals, widths, zorder=self.zorder, label=legend, align="edge", **style
+            edges,
+            hvals,
+            widths,
+            zorder=self.zorder,
+            label=legend,
+            align="edge",
+            **baseline_kwarg,
+            **style,
         )
-        self.handles["artist"] = self._update_plot(
-            self.keys[-1], hist, bars, lims, ranges
-        )  # Indexing top
+        # Indexing top
+        self.handles["artist"] = self._update_plot(self.keys[-1], hist, bars, lims, ranges)
 
         ticks = self._compute_ticks(hist, edges, widths, lims)
         ax_settings = self._process_axsettings(hist, lims, ticks)
@@ -487,16 +501,24 @@ class HistogramPlot(ColorbarPlot):
         allow updating of further artists.
 
         """
-        plot_vals = zip(self.handles["artist"], edges, hvals, widths, strict=True)
-        for bar, edge, height, width in plot_vals:
+        is_stacked = hist._stacked
+        if is_stacked:
+            baseline = np.array(hist.dimension_values(2))
+            hvals = hvals - baseline
+        plot_vals = zip(self.handles["artist"], edges, hvals, widths, strict=None)
+        for i, (bar, edge, height, width) in enumerate(plot_vals):
             if self.invert_axes:
                 bar.set_y(edge)
                 bar.set_width(height)
                 bar.set_height(width)
+                if is_stacked:
+                    bar.set_x(baseline[i])
             else:
                 bar.set_x(edge)
                 bar.set_height(height)
                 bar.set_width(width)
+                if is_stacked:
+                    bar.set_y(baseline[i])
 
     def update_handles(self, key, axis, element, ranges, style):
         # Process values, axes and style
