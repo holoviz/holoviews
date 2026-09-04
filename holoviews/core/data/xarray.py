@@ -10,10 +10,10 @@ from ..dimension import Dimension, asdim, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..util import dtype_kind
-from ..util.dependencies import _no_import_version, cp
+from ..util.dependencies import _no_import_version, cp, da
 from .grid import GridInterface
 from .interface import DataError, Interface
-from .util import dask_array_module, finite_range
+from .util import finite_range
 
 XARRAY_VERSION = _no_import_version("xarray")
 
@@ -67,7 +67,7 @@ class XArrayInterface(GridInterface):
             array = dataset.data[dataset.vdims[0].name]
         if not gridded:
             return (np.prod(array.shape, dtype=np.intp), len(dataset.dimensions()))
-        shape_map = dict(zip(array.dims, array.shape, strict=None))
+        shape_map = dict(zip(array.dims, array.shape, strict=True))
         return tuple(shape_map.get(kd.name, np.nan) for kd in dataset.kdims[::-1])
 
     @classmethod
@@ -186,10 +186,10 @@ class XArrayInterface(GridInterface):
                     and len(data[-1].shape) == (ndims + 1)
                 ):
                     value_array = data[-1]
-                    data = dict(zip(dimensions, data[:-1], strict=None))
+                    data = dict(zip(dimensions, data[:-1], strict=False))
                     packed = True
                 else:
-                    data = dict(zip(dimensions, data, strict=None))
+                    data = dict(zip(dimensions, data, strict=False))
             elif isinstance(data, (list, np.ndarray)) and len(data) == 0:
                 dimensions = [d.name for d in kdims + vdims]
                 data = {d: np.array([]) for d in dimensions[:ndims]}
@@ -314,19 +314,19 @@ class XArrayInterface(GridInterface):
         return dataset.clone(dataset.data.persist())
 
     @classmethod
-    def range(cls, dataset, dimension):
-        dimension = dataset.get_dimension(dimension, strict=True)
-        dim = dimension.name
-        edges = dataset._binned and dimension in dataset.kdims
+    def range(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
+        name = dim.name
+        edges = dataset._binned and dim in dataset.kdims
         if edges:
-            data = cls.coords(dataset, dim, edges=True)
+            data = cls.coords(dataset, name, edges=True)
         else:
-            if cls.packed(dataset) and dim in dataset.vdims:
-                data = dataset.data.values[..., dataset.vdims.index(dim)]
+            if cls.packed(dataset) and name in dataset.vdims:
+                data = dataset.data.values[..., dataset.vdims.index(name)]
             else:
-                data = dataset.data[dim]
-            if dimension.nodata is not None:
-                data = cls.replace_value(data, dimension.nodata)
+                data = dataset.data[name]
+            if dim.nodata is not None:
+                data = cls.replace_value(data, dim.nodata)
 
         if not len(data):
             dmin, dmax = np.nan, np.nan
@@ -337,7 +337,6 @@ class XArrayInterface(GridInterface):
         else:
             dmin, dmax = np.nanmin(data), np.nanmax(data)
 
-        da = dask_array_module()
         if da and isinstance(dmin, da.Array):
             dmin, dmax = da.compute(dmin, dmax)
         if isinstance(dmin, np.ndarray) and dmin.shape == ():
@@ -378,9 +377,9 @@ class XArrayInterface(GridInterface):
                 data.append((k, group_type(v, **group_kwargs)))
         else:
             unique_iters = [cls.values(dataset, d, False) for d in group_by]
-            indexes = zip(*util.cartesian_product(unique_iters), strict=None)
+            indexes = zip(*util.cartesian_product(unique_iters), strict=True)
             for k in indexes:
-                sel = dataset.data.sel(**dict(zip(group_by, k, strict=None)))
+                sel = dataset.data.sel(**dict(zip(group_by, k, strict=True)))
                 if drop_dim:
                     sel = sel.to_dataframe().reset_index()
                 data.append((k, group_type(sel, **group_kwargs)))
@@ -392,11 +391,11 @@ class XArrayInterface(GridInterface):
             return container_type(data)
 
     @classmethod
-    def coords(cls, dataset, dimension, ordered=False, expanded=False, edges=False):
+    def coords(cls, dataset, dim, ordered=False, expanded=False, edges=False):
         import xarray as xr
 
-        dim = dataset.get_dimension(dimension)
-        dim_name = dimension if dim is None else dim.name
+        resolved = dataset.get_dimension(dim)
+        dim_name = dim if resolved is None else resolved.name
         irregular = cls.irregular(dataset, dim_name)
         if irregular or expanded:
             if irregular:
@@ -417,8 +416,8 @@ class XArrayInterface(GridInterface):
             data = data[::-1]
         shape = cls.shape(dataset, True)
 
-        if dim in dataset.kdims:
-            idx = dataset.get_dimension_index(dim)
+        if resolved in dataset.kdims:
+            idx = dataset.get_dimension_index(resolved)
             isedges = len(shape) == dataset.ndims and len(data) == (
                 shape[dataset.ndims - idx - 1] + 1
             )
@@ -452,7 +451,6 @@ class XArrayInterface(GridInterface):
                 data_coords = list(dataset.data.dims)[:-1]
             else:
                 data_coords = list(dataset.data[dim.name].dims)
-            da = dask_array_module()
             if compute and da and isinstance(data, da.Array):
                 data = data.compute()
             if is_cupy(data):
@@ -495,7 +493,7 @@ class XArrayInterface(GridInterface):
         kdims = list(dataset.kdims[::-1])
         adjusted_indices = []
         slice_dims = []
-        for kd, ind in zip(kdims, indices, strict=None):
+        for kd, ind in zip(kdims, indices, strict=False):
             if cls.irregular(dataset, kd):
                 coords = [c for c in dataset.data.coords if c not in dataset.data.dims]
                 dim = dataset.data[kd.name].dims[coords.index(kd.name)]
@@ -523,7 +521,7 @@ class XArrayInterface(GridInterface):
                 ind = np.where(ind)[0]
             adjusted_indices.append(ind)
 
-        isel = dict(zip(slice_dims, adjusted_indices, strict=None))
+        isel = dict(zip(slice_dims, adjusted_indices, strict=True))
         all_scalar = all(map(np.isscalar, indices))
         if all_scalar and len(indices) == len(kdims) and len(dataset.vdims) == 1:
             return dataset.data[dataset.vdims[0].name].isel(**isel).values.item()
@@ -663,7 +661,6 @@ class XArrayInterface(GridInterface):
                 if hasattr(d.data, "flags"):
                     d.data.flags.writeable = True
 
-        da = dask_array_module()
         if indexed and len(data.data_vars) == 1 and len(data[dataset.vdims[0].name].shape) == 0:
             value = data[dataset.vdims[0].name]
             if da and isinstance(value.data, da.Array):
@@ -716,7 +713,7 @@ class XArrayInterface(GridInterface):
             samples = []
         names = [kd.name for kd in dataset.kdims]
         samples = [
-            dataset.data.sel(**{k: [v] for k, v in zip(names, s, strict=None)})
+            dataset.data.sel(**{k: [v] for k, v in zip(names, s, strict=False)})
             .to_dataframe()
             .reset_index()
             for s in samples
@@ -724,12 +721,12 @@ class XArrayInterface(GridInterface):
         return pd.concat(samples)
 
     @classmethod
-    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+    def add_dimension(cls, dataset, dim, dim_pos, values, vdim):
         import xarray as xr
 
         if not vdim:
             raise TypeError("Cannot add key dimension to a dense representation.")
-        dim = dimension_name(dimension)
+        dim = dimension_name(dim)
         coords = {d.name: cls.coords(dataset, d.name) for d in dataset.kdims}
         arr = xr.DataArray(
             values, coords=coords, name=dim, dims=tuple(d.name for d in dataset.kdims[::-1])

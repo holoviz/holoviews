@@ -1347,7 +1347,7 @@ class Dimensioned(LabelledData):
         else:
             raise KeyError(f"Dimension {dimension} not found in {self.__class__.__name__}.")
 
-    def range(self, dimension, data_range=True, dimension_range=True):
+    def range(self, dim, data_range=True, dimension_range=True):
         """Return the lower and upper bounds of values along dimension.
 
         Parameters
@@ -1365,17 +1365,17 @@ class Dimensioned(LabelledData):
         -------
         Tuple containing the lower and upper bound
         """
-        dimension = self.get_dimension(dimension)
-        if dimension is None or (not data_range and not dimension_range):
+        dim = self.get_dimension(dim)
+        if dim is None or (not data_range and not dimension_range):
             return (None, None)
-        elif all(util.isfinite(v) for v in dimension.range) and dimension_range:
-            return dimension.range
+        elif all(util.isfinite(v) for v in dim.range) and dimension_range:
+            return dim.range
         elif data_range:
-            if dimension in self.kdims + self.vdims:
-                dim_vals = self.dimension_values(dimension.name)
+            if dim in self.kdims + self.vdims:
+                dim_vals = self.dimension_values(dim.name)
                 lower, upper = util.find_range(dim_vals)
             else:
-                dname = dimension.name
+                dname = dim.name
                 match_fn = lambda x: dname in x.kdims + x.vdims
                 range_fn = lambda x: x.range(dname)
                 ranges = self.traverse(range_fn, [match_fn])
@@ -1384,7 +1384,7 @@ class Dimensioned(LabelledData):
             lower, upper = (np.nan, np.nan)
         if not dimension_range:
             return lower, upper
-        return util.dimension_range(lower, upper, dimension.range, dimension.soft_range)
+        return util.dimension_range(lower, upper, dim.range, dim.soft_range)
 
     def __repr__(self):
         return PrettyPrinter.pprint(self)

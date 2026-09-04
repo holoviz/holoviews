@@ -1680,7 +1680,7 @@ def get_spec(obj):
     return (obj.__class__.__name__, obj.group, obj.label)
 
 
-def is_dataframe(data):
+def is_dataframe(data) -> TypeIs[pd.DataFrame | dd.DataFrame]:
     """Checks whether the supplied data is of DataFrame type."""
     types = []
     if pd:
@@ -1690,7 +1690,7 @@ def is_dataframe(data):
     return isinstance(data, tuple(types))
 
 
-def is_series(data):
+def is_series(data) -> TypeIs[pd.Series | dd.Series]:
     """Checks whether the supplied data is of Series type."""
     types = []
     if pd:
@@ -1700,11 +1700,11 @@ def is_series(data):
     return isinstance(data, tuple(types))
 
 
-def is_dask_array(data) -> bool:
+def is_dask_array(data) -> TypeIs[da.Array]:
     return da and isinstance(data, da.Array)
 
 
-def is_cupy_array(data) -> bool:
+def is_cupy_array(data) -> TypeIs[cp.ndarray]:
     return cp and isinstance(data, cp.ndarray)
 
 

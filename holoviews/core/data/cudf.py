@@ -138,11 +138,11 @@ class cuDFInterface(PandasInterface):
         return data, {"kdims": kdims, "vdims": vdims}, {}
 
     @classmethod
-    def range(cls, dataset, dimension):
-        dimension = dataset.get_dimension(dimension, strict=True)
-        column = dataset.data[dimension.name]
-        if dimension.nodata is not None:
-            column = cls.replace_value(column, dimension.nodata)
+    def range(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
+        column = dataset.data[dim.name]
+        if dim.nodata is not None:
+            column = cls.replace_value(column, dim.nodata)
         if dtype_kind(column) == "O":
             return np.nan, np.nan
         else:
@@ -172,7 +172,6 @@ class cuDFInterface(PandasInterface):
 
         # Update the kwargs appropriately for Element group types
         group_kwargs = {}
-        group_type = dict if group_type == "raw" else group_type
         if issubclass(group_type, Element):
             group_kwargs.update(util.get_param_values(dataset))
             group_kwargs["kdims"] = kdims
@@ -187,7 +186,7 @@ class cuDFInterface(PandasInterface):
         # Iterate over the unique entries applying selection masks
         grouped_data = []
         for unique_key in util.unique_iterator(keys):
-            group_data = dataset.select(**dict(zip(dimensions, unique_key, strict=None)))
+            group_data = dataset.select(**dict(zip(dimensions, unique_key, strict=False)))
             if not len(group_data):
                 continue
             group_data = group_type(group_data, **group_kwargs)
@@ -288,10 +287,10 @@ class cuDFInterface(PandasInterface):
         return cudf.concat(dataframes, **kwargs)
 
     @classmethod
-    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+    def add_dimension(cls, dataset, dim, dim_pos, values, vdim):
         data = dataset.data.copy()
-        if dimension.name not in data:
-            data[dimension.name] = values
+        if dim.name not in data:
+            data[dim.name] = values
         return data
 
     @classmethod

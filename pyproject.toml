@@ -251,17 +251,22 @@ convention = "numpy"
 "packaging.version.Version".msg = "Use holoviews.core.util.dependencies._no_import_version instead."
 "re.match".msg = "Use re.search with '^' instead of re.match"
 
-[tool.ty.src]
-exclude = ["holoviews/*version.py"]
-
-[tool.ty.rules]
-unresolved-import = "ignore"
+[tool.ty]
+src.exclude = [
+    "holoviews/*version.py",
+    "holoviews/core/data/ibis.py", # deprecated
+    "holoviews/core/data/narwhals.py", # 4
+    "holoviews/core/data/spatialpandas.py", # 16
+    "holoviews/core/data/xarray.py", # 25
+]
+rules.unresolved-import = "ignore"
 
 # Add whole project for LSP features and diagnostics only for the type-checked files
 [[tool.ty.overrides]]
 exclude = [
     "holoviews/*.py",
     "holoviews/core/*.py",
+    "holoviews/core/data/*.py",
     "holoviews/core/util/*.py",
     "holoviews/tests/_deps.py",
     "holoviews/util/*.py",

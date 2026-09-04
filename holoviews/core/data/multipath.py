@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import typing as t
+
 import numpy as np
 
 from .. import util
@@ -50,7 +52,7 @@ class MultiInterface(Interface):
             data = [data]
         elif not isinstance(data, list):
             interface = [
-                Interface.interfaces.get(st).applies(data)
+                Interface.interfaces[st].applies(data)
                 for st in cls.subtypes
                 if st in Interface.interfaces
             ]
@@ -79,7 +81,7 @@ class MultiInterface(Interface):
             d, interface, dims, _ = Interface.initialize(
                 eltype, d, kdims, vdims, datatype=datatype
             )
-            if prev_interface:
+            if prev_interface is not None and prev_dims is not None:
                 if prev_interface != interface:
                     raise DataError(
                         "MultiInterface subpaths must all have matching datatype.", cls
@@ -246,7 +248,7 @@ class MultiInterface(Interface):
         if not dataset.data:
             return dataset.data
         elif selection_mask is not None:
-            return [d for b, d in zip(selection_mask, dataset.data, strict=None) if b]
+            return [d for b, d in zip(selection_mask, dataset.data, strict=True) if b]
         ds = cls._inner_dataset_template(dataset)
         skipped = (Polygons._hole_key,)
         if hasattr(ds.interface, "geo_column"):
@@ -315,8 +317,8 @@ class MultiInterface(Interface):
         keys = (tuple(vals[i] for vals in values) for i in range(len(vals)))
         grouped_data = []
         for unique_key in util.unique_iterator(keys):
-            mask = ds.interface.select_mask(ds, dict(zip(dimensions, unique_key, strict=None)))
-            selection = [data for data, m in zip(dataset.data, mask, strict=None) if m]
+            mask = ds.interface.select_mask(ds, dict(zip(dimensions, unique_key, strict=True)))
+            selection = [data for data, m in zip(dataset.data, mask, strict=True) if m]
             group_data = group_type(selection, **group_kwargs)
             grouped_data.append((unique_key, group_data))
 
@@ -370,11 +372,11 @@ class MultiInterface(Interface):
         return length
 
     @classmethod
-    def dtype(cls, dataset, dimension):
+    def dtype(cls, dataset, dim):
         if not dataset.data:
             return np.dtype("float")
         ds = cls._inner_dataset_template(dataset)
-        return ds.interface.dtype(ds, dimension)
+        return ds.interface.dtype(ds, dim)
 
     @classmethod
     def sort(cls, dataset, by=None, reverse=False):
@@ -413,7 +415,7 @@ class MultiInterface(Interface):
         return new_data
 
     @classmethod
-    def values(cls, dataset, dimension, expanded=True, flat=True, compute=True, keep_index=False):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
         """Returns a single concatenated array of all subpaths separated
         by NaN values. If expanded keyword is False an array of arrays
         is returned.
@@ -426,10 +428,10 @@ class MultiInterface(Interface):
         ds = cls._inner_dataset_template(dataset)
         geom_type = cls.geom_type(dataset)
         is_points = geom_type == "Point"
-        is_geom = dimension in dataset.kdims[:2]
+        is_geom = dim in dataset.kdims[:2]
         for d in dataset.data:
             ds.data = d
-            dvals = ds.interface.values(ds, dimension, True, flat, compute, keep_index)
+            dvals = ds.interface.values(ds, dim, True, flat, compute, keep_index)
             scalar = len(util.unique_array(dvals)) == 1 and not is_geom
             gt = ds.interface.geom_type(ds) if hasattr(ds.interface, "geom_type") else None
 
@@ -463,7 +465,7 @@ class MultiInterface(Interface):
             return np.concatenate(values) if values else np.array([])
         else:
             array = np.empty(len(values), dtype=object)
-            array[:] = [a[0] if s else a for s, a in zip(scalars, values, strict=None)]
+            array[:] = [a[0] if s else a for s, a in zip(scalars, values, strict=False)]
             return array
 
     @classmethod
@@ -509,7 +511,7 @@ class MultiInterface(Interface):
         return objs
 
     @classmethod
-    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+    def add_dimension(cls, dataset, dim, dim_pos, values, vdim):
         if not len(dataset.data):
             return dataset.data
         elif values is None or util.isscalar(values):
@@ -522,13 +524,13 @@ class MultiInterface(Interface):
         new_data = []
         template = cls._inner_dataset_template(dataset)
         array_type = template.interface.datatype == "array"
-        for d, v in zip(dataset.data, values, strict=None):
+        for d, v in zip(dataset.data, values, strict=True):
             template.data = d
             if array_type:
                 ds = template.clone(template.columns())
             else:
                 ds = template
-            new_data.append(ds.interface.add_dimension(ds, dimension, dim_pos, v, vdim))
+            new_data.append(ds.interface.add_dimension(ds, dim, dim_pos, v, vdim))
         return new_data
 
     @classmethod
@@ -551,6 +553,7 @@ class MultiInterface(Interface):
             template.data = d
             length = len(template)
             if np.isscalar(rows):
+                rows = t.cast("int", rows)
                 if (count + length) > rows >= count:
                     data = template.iloc[rows - count, cols]
                     return data if scalar else [data.data]
@@ -569,6 +572,7 @@ class MultiInterface(Interface):
                 slc = slice(start, stop)
                 new_data.append(template.iloc[slc, cols].data)
             else:
+                rows = t.cast("list[int]", rows)
                 sub_rows = [r - count for r in rows if 0 <= (r - count) < (count + length)]
                 new = template.iloc[sub_rows, cols]
                 if len(new):
@@ -604,8 +608,8 @@ def ensure_ring(geom, values=None):
     breaks = np.where(np.isnan(geom.astype("float")).sum(axis=1))[0]
     starts = [0, *(breaks + 1)]
     ends = [*(breaks - 1), len(geom) - 1]
-    zipped = zip(geom[starts], geom[ends], ends, values[starts], strict=None)
-    unpacked = tuple(zip(*[(v, i + 1) for s, e, i, v in zipped if (s != e).any()], strict=None))
+    zipped = zip(geom[starts], geom[ends], ends, values[starts], strict=True)
+    unpacked = tuple(zip(*[(v, i + 1) for s, e, i, v in zipped if (s != e).any()], strict=True))
     if not unpacked:
         return values
     inserts, inds = unpacked
