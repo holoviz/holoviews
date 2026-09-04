@@ -405,8 +405,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
         """
         xlabel, ylabel, zlabel = self._get_axis_labels(dimensions, xlabel, ylabel, zlabel)
-        if self.invert_axes:
-            xlabel, ylabel = ylabel, xlabel
         if xlabel and self.xaxis and "x" in self.labelled:
             axes.set_xlabel(xlabel, **self._fontsize("xlabel"))
         if ylabel and self.yaxis and "y" in self.labelled:
