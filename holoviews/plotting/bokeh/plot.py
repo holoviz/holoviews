@@ -20,6 +20,7 @@ from bokeh.models import (
     Title,
 )
 from bokeh.models.layouts import TabPanel, Tabs
+from bokeh.models.plots import GridPlot as BkGridPlot
 from bokeh.models.ranges import Range1d
 from bokeh.models.tickers import FixedTicker
 from bokeh.plotting import figure
@@ -710,8 +711,13 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         if self.sync_legends:
             sync_legends(plot)
         plot = self._make_axes(plot, plots)
-        if hasattr(plot, "toolbar") and self.merge_tools:
-            plot.toolbar = merge_tools(plots, hide_toolbar=True)
+        if self.merge_tools:
+            grid = (
+                plot
+                if hasattr(plot, "toolbar")
+                else next(c for c in plot.children if isinstance(c, BkGridPlot))
+            )
+            grid.toolbar = merge_tools(plots, hide_toolbar=True)
         title = self._get_title_div(self.keys[-1])
         if title:
             children = plot.children if isinstance(plot, (Row, Column)) else [plot]

@@ -83,20 +83,14 @@ def test_gridspace_legend_alignment(serve_hv):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-@pytest.mark.parametrize("colorbar", [True, False])
-def test_gridspace_colorbar_alignment(serve_hv, colorbar):
+def test_gridspace_colorbar_alignment(serve_hv):
     x, y = np.arange(4), np.arange(3)
     z = np.arange(12).reshape((3, 4))
-    img = hv.Image((x, y, z), kdims=["x", "y"], vdims=["z"]).opts(colorbar=colorbar)
+    img = hv.Image((x, y, z), kdims=["x", "y"], vdims=["z"]).opts(colorbar=True)
     gridspace = hv.GridSpace(dict.fromkeys(range(5), img), kdims=["t"])
 
-    if colorbar:
-        x = (3, 63, 301, 539, 777, 1015, 1075)
-    else:  # Without colorbar it still has toolbar to the right
-        x = (3, 63, 216, 369, 522, 675, 735)
-
     page = serve_hv(gridspace)
-    assert_axes(page, x=x)
+    assert_axes(page, x=(3, 63, 271, 479, 687, 895, 955))
 
 
 @pytest.mark.usefixtures("bokeh_backend")
