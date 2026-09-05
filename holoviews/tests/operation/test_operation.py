@@ -1429,6 +1429,21 @@ class TestTickBarOperation:
         bar = tickbar(self.hm, adjoint_dims=["Gene", "Sample"], group_dim="Group")
         self.bokeh_renderer.get_plot(bar)
 
+    def test_combined_with_dendrogram(self):
+        # tickbar and dendrogram each build their own AdjointLayout, so
+        # combining a dendrogram on one axis with a tickbar on the other
+        # means picking out each side and reassembling them manually.
+        dendro = dendrogram(
+            self.hm, adjoint_dims=["Gene"], main_dim="Expression", linkage_metric="euclidean"
+        )
+        bar = tickbar(self.hm, adjoint_dims=["Sample"], group_dim="Group")
+
+        combined = dendro.main << dendro["right"] << bar["top"]
+        assert isinstance(combined, hv.AdjointLayout)
+        assert isinstance(combined["right"], hv.Dendrogram)
+        assert isinstance(combined["top"], hv.HeatMap)
+        self.bokeh_renderer.get_plot(combined)
+
 
 @pytest.mark.usefixtures("bokeh_backend")
 def test_compositor_operations_size():
