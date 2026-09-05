@@ -20,6 +20,7 @@ from .element import (
     method,
     operation,
     threshold,
+    tickbar,
     transform,
 )
 
@@ -49,5 +50,6 @@ __all__ = [
     "method",
     "operation",
     "threshold",
+    "tickbar",
     "transform",
 ]

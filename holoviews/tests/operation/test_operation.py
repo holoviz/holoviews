@@ -23,6 +23,7 @@ from holoviews.operation.element import (
     interpolate_curve,
     operation,
     threshold,
+    tickbar,
     transform,
 )
 from holoviews.testing import assert_element_equal
@@ -1334,6 +1335,101 @@ class TestDendrogramOperation:
         assert list(data["zvalues"]) == list(map(int, data["data"]))
 
 
+class TestTickBarOperation:
+    def setup_class(self):
+        self.categories = {
+            "Gene_A": "Group1",
+            "Gene_B": "Group1",
+            "Gene_C": "Group1",
+            "Gene_D": "Group2",
+            "Gene_E": "Group2",
+            "Gene_F": "Group3",
+            "Gene_G": "Group3",
+            "Gene_H": "Group3",
+            "Gene_I": "Group4",
+            "Gene_J": "Group4",
+        }
+        genes = list(self.categories.keys())
+        samples = [f"Sample_{i}" for i in range(1, 4)]
+        rows = [
+            {"Gene": g, "Sample": s, "Expression": 0.0, "Group": self.categories[g]}
+            for g in genes
+            for s in samples
+        ]
+        self.df = pd.DataFrame(rows)
+        self.hm = hv.HeatMap(self.df, kdims=["Sample", "Gene"], vdims=["Expression", "Group"])
+        self.bokeh_renderer = hv.renderer("bokeh")
+
+    def test_right_only(self):
+        bar = tickbar(self.hm, adjoint_dims=["Gene"], group_dim="Group")
+        assert isinstance(bar, hv.AdjointLayout)
+        assert isinstance(bar["main"], hv.HeatMap)
+        assert isinstance(bar["right"], hv.HeatMap)
+        assert isinstance(bar["top"], hv.Empty)
+        assert list(map(str, bar["right"].kdims)) == ["__tickbar__", "Gene"]
+
+    def test_top_only(self):
+        bar = tickbar(self.hm, adjoint_dims=["Sample"], group_dim="Group")
+        assert isinstance(bar, hv.AdjointLayout)
+        assert isinstance(bar["main"], hv.HeatMap)
+        assert isinstance(bar["right"], hv.Empty)
+        assert isinstance(bar["top"], hv.HeatMap)
+        assert list(map(str, bar["top"].kdims)) == ["Sample", "__tickbar__"]
+
+    @pytest.mark.parametrize(
+        "adjoint_dims", [["Sample", "Gene"], ["Gene", "Sample"]], ids=["sg", "gs"]
+    )
+    def test_both(self, adjoint_dims):
+        bar = tickbar(self.hm, adjoint_dims=adjoint_dims, group_dim="Group")
+        assert isinstance(bar, hv.AdjointLayout)
+        assert isinstance(bar["main"], hv.HeatMap)
+        assert isinstance(bar["right"], hv.HeatMap)
+        assert isinstance(bar["top"], hv.HeatMap)
+        assert list(map(str, bar["right"].kdims)) == ["__tickbar__", "Gene"]
+        assert list(map(str, bar["top"].kdims)) == ["Sample", "__tickbar__"]
+
+    def test_adjoined_False_1dim(self):
+        bar = tickbar(self.hm, adjoint_dims=["Gene"], group_dim="Group", adjoined=False)
+        assert isinstance(bar, hv.HeatMap)
+
+    def test_adjoined_False_2dim(self):
+        bar = tickbar(self.hm, adjoint_dims=["Gene", "Sample"], group_dim="Group", adjoined=False)
+        assert isinstance(bar, hv.Layout)
+        assert len(bar) == 2
+
+    def test_group_values_correspond(self):
+        bar = tickbar(self.hm, adjoint_dims=["Gene"], group_dim="Group")
+        right = bar["right"]
+        values = dict(
+            zip(right.dimension_values("Gene"), right.dimension_values("Group"), strict=True)
+        )
+        for gene, group in self.categories.items():
+            assert values[gene] == group
+
+    def test_main_unchanged(self):
+        plain_hm = self.hm.clone(vdims=["Expression"])
+        main1 = self.bokeh_renderer.get_plot(plain_hm).handles["plot"]
+        bar = tickbar(self.hm, adjoint_dims=["Gene"], group_dim="Group")
+        main2 = self.bokeh_renderer.get_plot(bar["main"]).handles["plot"]
+        assert main1.y_range.factors == main2.y_range.factors
+        assert main1.x_range.factors == main2.x_range.factors
+
+    def test_not_kdim_warns(self):
+        msg = "Currently, 'adjoint_dims' can only be one of the first two kdims"
+        with pytest.warns(UserWarning, match=msg):
+            tickbar(self.hm, adjoint_dims=["Expression"], group_dim="Group")
+
+    def test_bare_dataset(self):
+        ds = hv.Dataset(self.df, kdims=["Sample", "Gene"], vdims=["Expression", "Group"])
+        bar = tickbar(ds, adjoint_dims=["Gene"], group_dim="Group")
+        assert isinstance(bar, hv.AdjointLayout)
+        assert isinstance(bar["main"], hv.HeatMap)
+
+    def test_renders_both(self):
+        bar = tickbar(self.hm, adjoint_dims=["Gene", "Sample"], group_dim="Group")
+        self.bokeh_renderer.get_plot(bar)
+
+
 @pytest.mark.usefixtures("bokeh_backend")
 def test_compositor_operations_size():
     # Operations are registered here:
@@ -1342,7 +1438,7 @@ def test_compositor_operations_size():
     #    we test the Bokeh backend here.
 
     # Update the count if more operations are added
-    assert len(Compositor.operations) == 23
+    assert len(Compositor.operations) == 24
 
     # To verify we don't add a string instead of class
     for op in Compositor.operations:

@@ -237,7 +237,9 @@ class categorical_aggregate2d(Operation):
         data = tuple(levels)
         shape = tuple(d.shape[0] for d in data)
         for vdim in obj.vdims:
-            data += (reindexed[vdim.name].values.reshape(shape).T,)
+            # Use to_numpy rather than .values: pandas ExtensionArrays (e.g.
+            # the pyarrow-backed string dtype) don't support reshape.
+            data += (reindexed[vdim.name].to_numpy().reshape(shape).T,)
         return obj.clone(data, datatype=self.p.datatype, label=label)
 
     def _process(self, obj, key=None):

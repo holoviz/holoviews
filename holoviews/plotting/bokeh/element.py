@@ -3214,8 +3214,9 @@ class ColorbarPlot(ElementPlot):
                         return None
                 self.handles["color_mapper"] = cmapper
                 return cmapper
-            else:
-                return None
+            # No adjoined plot colors the same dimension (e.g. an
+            # independently-colored annotation bar): build its own mapper
+            # below instead of leaving it uncolored.
 
         ncolors = None if factors is None else len(factors)
         if eldim:

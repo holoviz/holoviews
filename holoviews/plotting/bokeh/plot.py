@@ -56,6 +56,7 @@ from ..plot import (
     GenericElementPlot,
     GenericLayoutPlot,
     GenericOverlayPlot,
+    PlotSelector,
 )
 from ..util import attach_streams, collate, dim_axis_label, displayable
 from .links import LinkCallback
@@ -1186,6 +1187,10 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             side_opts = {}
             if pos != "main":
                 plot_type = AdjointLayoutPlot.registry.get(vtype, plot_type)
+                if isinstance(plot_type, PlotSelector):
+                    # Resolve to a concrete plot class so its width/height/
+                    # xaxis/yaxis class parameters can be read below.
+                    plot_type = plot_type.get_plot_class(element)
                 if pos == "right":
                     yaxis = "right-bare" if plot_type and "bare" in plot_type.yaxis else "right"
                     width = plot_type.width if plot_type else 0

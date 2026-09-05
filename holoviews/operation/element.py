@@ -1667,3 +1667,102 @@ class dendrogram(Operation):
                 main = main << dendros[dim]
 
         return main
+
+
+class tickbar(Operation):
+    """The tickbar operation computes one or two adjoined single row/column
+    HeatMaps that encode a groupby feature for the ticks of the main plot
+    along the specified dimension(s). This is useful to visually group the
+    ticks of a HeatMap when there are too many categories along an axis to
+    label individually, similar to the row/column annotations of
+    scanpy.pl.heatmap.
+    """
+
+    adjoined = param.Boolean(default=True, doc="Whether to adjoin the tickbar(s) to the main plot")
+
+    adjoint_dims = param.List(item_type=str, doc="The adjoint dimension(s) to add a tickbar to")
+
+    group_dim = param.String(
+        default=None,
+        allow_None=False,
+        doc="The dimension of the input data encoding the group for each adjoint dimension value",
+    )
+
+    main_element = param.ClassSelector(
+        default=HeatMap,
+        class_=Dataset,
+        instantiate=False,
+        is_instance=False,
+        doc="The Element type to use for the main plot if the input is a Dataset.",
+    )
+
+    cmap = param.Parameter(
+        default="Category10", doc="The categorical colormap to use for the tickbar(s)"
+    )
+
+    def _process(self, element, key=None):
+        if self.p.group_dim is None:
+            raise TypeError("'group_dim' cannot be None")
+        element_kdims, element_vdims = element.kdims, element.vdims
+        if element.interface.gridded:
+            dims = {
+                element.get_dimension(k, strict=True)
+                for k in (*element_kdims, *element_vdims, self.p.group_dim)
+            }
+            dataset = Dataset(element.dframe(dimensions=list(dims)))
+        else:
+            dataset = Dataset(element)
+
+        if adjoint_not_kdims := (
+            set(map(str, self.p.adjoint_dims)) - set(map(str, element_kdims[:2]))
+        ):
+            adjoint_not_kdims_str = ", ".join(sorted(map(str, adjoint_not_kdims)))
+            msg = "Currently, 'adjoint_dims' can only be one of the first two kdims"
+            msg += f", {adjoint_not_kdims_str} is not."
+            warn(msg, UserWarning)
+
+        bars = {}
+        for i, dim in enumerate(map(str, element_kdims[:2][::-1])):
+            if dim not in self.p.adjoint_dims:
+                continue
+            bar_df = dataset.dframe([dim, self.p.group_dim]).drop_duplicates(subset=[dim])
+            # Bokeh's HeatMap glyph colors from a numeric vdim; encode the
+            # group as an integer code and keep the label for hover/inspection.
+            codes, _ = bar_df[self.p.group_dim].factorize(sort=True)
+            bar_df = bar_df.assign(__tickbar__=" ", __tickbar_code__=codes)
+            # i == 0 is the second kdim (shared y-axis, adjoins on the right)
+            # i == 1 is the first kdim (shared x-axis, adjoins on top)
+            bar_kdims = ["__tickbar__", dim] if i == 0 else [dim, "__tickbar__"]
+            bars[dim] = HeatMap(
+                bar_df, kdims=bar_kdims, vdims=["__tickbar_code__", self.p.group_dim]
+            ).opts(cmap=self.p.cmap, colorbar=False, xaxis=None, yaxis=None)
+
+        if not self.p.adjoined:
+            if len(bars) == 1:
+                return next(iter(bars.values()))
+            else:
+                return Layout(bars.values())
+
+        # The group dimension is only needed to build the tickbar(s); excluding
+        # it from the main plot's vdims avoids rendering it as an (unused)
+        # value dimension there.
+        main_vdims = [v for v in element_vdims if str(v) != self.p.group_dim]
+        if not main_vdims:
+            main_vdims = element_vdims
+
+        if type(element) is not Dataset:
+            main = (
+                element
+                if list(map(str, main_vdims)) == list(map(str, element_vdims))
+                else element.clone(vdims=main_vdims)
+            )
+        else:
+            main = self.p.main_element(dataset.reindex(element_kdims[:2]), vdims=main_vdims)
+
+        for dim in map(str, main.kdims[::-1]):
+            if dim not in self.p.adjoint_dims:
+                main = main << Empty()
+            else:
+                main = main << bars[dim]
+
+        return main
