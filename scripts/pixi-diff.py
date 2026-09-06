@@ -15,10 +15,6 @@ from functools import cache
 import tomllib
 import yaml
 
-LOCKFILE = "pixi.lock"
-MANIFEST = "pixi.toml"
-MAIN_BRANCH = "origin/main"
-
 COMMENT_MARKER = "<!-- pixi-lock-diff -->"
 
 FILENAME_RE = re.compile(r"^(?P<name>.+)-(?P<version>[^-]+)-(?P<build>[^-]+)\.(?:conda|tar\.bz2)$")
@@ -28,7 +24,7 @@ VERSION_PART_RE = re.compile(r"\d+|\D+")
 def git_show(revision: str) -> str:
     """Get pixi.lock contents from a Git revision."""
     result = subprocess.run(
-        ["git", "show", f"{revision}:{LOCKFILE}"],
+        ["git", "show", f"{revision}:pixi.lock"],
         capture_output=True,
         text=True,
         check=False,
@@ -36,7 +32,7 @@ def git_show(revision: str) -> str:
 
     if result.returncode != 0:
         print(
-            f"Could not read {LOCKFILE} from {revision}",
+            f"Could not read pixi.lock from {revision}",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -44,9 +40,19 @@ def git_show(revision: str) -> str:
     return result.stdout
 
 
+def git_rev_parse(revision: str) -> str:
+    result = subprocess.run(
+        ["git", "rev-parse", revision],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout.strip()
+
+
 def load_direct_dependencies() -> set:
     """Collect package names declared under any *dependencies table in pixi.toml."""
-    with open(MANIFEST, "rb") as f:
+    with open("pixi.toml", "rb") as f:
         manifest = tomllib.load(f)
 
     names = set()
@@ -186,16 +192,6 @@ def print_markdown(env_name: str, rows: list, direct_dependencies: set, status: 
     print()
 
 
-def git_rev_parse(revision: str) -> str:
-    result = subprocess.run(
-        ["git", "rev-parse", "--short", revision],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    return result.stdout.strip()
-
-
 def print_header(base: str):
     current_sha = git_rev_parse("HEAD")
     base_sha = git_rev_parse(base)
@@ -209,7 +205,7 @@ def print_header(base: str):
 def lockfile_unchanged(base: str) -> bool:
     """Cheap check to skip parsing when pixi.lock is identical to the base revision."""
     result = subprocess.run(
-        ["git", "diff", "--quiet", base, "--", LOCKFILE],
+        ["git", "diff", "--quiet", base, "--", "pixi.lock"],
         capture_output=True,
         text=True,
         check=False,
@@ -218,15 +214,16 @@ def lockfile_unchanged(base: str) -> bool:
 
 
 def main():
-    base = os.environ.get("BASE_SHA") or MAIN_BRANCH
+    main = git_rev_parse("origin/main")
+    base = os.environ.get("BASE_SHA") or main
 
-    if lockfile_unchanged(base) or lockfile_unchanged(MAIN_BRANCH):
+    if lockfile_unchanged(base) or lockfile_unchanged(main):
         return
 
     print_header(base)
     main_content = git_show(base)
 
-    with open(LOCKFILE) as f:
+    with open("pixi.lock") as f:
         current_content = f.read()
 
     main_environments = load_environments(main_content)
