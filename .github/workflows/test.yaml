@@ -115,11 +115,17 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
+    env:
+      PIPX_HOME: ${{ github.workspace }}/.pipx
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ github.workspace }}/.pipx/.cache
+          key: pipx-${{ hashFiles('scripts/pixi-diff.py') }}
       - name: Generate pixi.lock diff
         id: diff
         env:
