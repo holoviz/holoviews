@@ -24,10 +24,10 @@ if t.TYPE_CHECKING:
     type _ArraylikeT = np.ndarray | nw.Series | ABCIndex | ABCSeries | ABCExtensionArray
     type _MaskedT = np.ma.core.MaskedArray | BaseMaskedArray
 
-    class _GenFunc[YieldT](t.Protocol):
+    class _GenFunc[T](t.Protocol):
         __name__: str
 
-        def __call__(self) -> t.Iterator[YieldT]: ...
+        def __call__(self) -> t.Iterator[T]: ...
 
 
 _module_count = 0
@@ -66,7 +66,7 @@ class _GeneratorIs(metaclass=_GeneratorIsMeta):
         yield from cls._get_types()
 
 
-def gen_types[YieldT](gen_func: _GenFunc[YieldT]) -> tuple[YieldT, ...]:
+def gen_types[T](gen_func: _GenFunc[T]) -> tuple[T, ...]:
     """
     Decorator which takes a generator function which yields difference types
     make it so it can be called with isinstance and issubclass.
