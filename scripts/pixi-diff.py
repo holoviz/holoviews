@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["pyyaml"]
+# dependencies = ["packaging", "pyyaml"]
 # ///
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ from functools import cache
 
 import tomllib
 import yaml
+from packaging.version import InvalidVersion, Version  # noqa: TID251
 
 COMMENT_MARKER = "<!-- pixi-lock-diff -->"
 
@@ -117,9 +118,15 @@ def version_change(old_version: str | None, new_version: str | None) -> str:
     if old_version is None or new_version is None:
         return "Changed"
     try:
-        return "Upgraded" if version_key(new_version) > version_key(old_version) else "Downgraded"
-    except TypeError:
-        return "Changed"
+        # PEP440-aware so e.g. "2.4.2rc1" -> "2.4.2" is an upgrade, not a downgrade.
+        return "Upgraded" if Version(new_version) > Version(old_version) else "Downgraded"
+    except InvalidVersion:
+        try:
+            return (
+                "Upgraded" if version_key(new_version) > version_key(old_version) else "Downgraded"
+            )
+        except TypeError:
+            return "Changed"
 
 
 def compare(main_platforms: dict, current_platforms: dict) -> list:
