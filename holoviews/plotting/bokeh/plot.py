@@ -714,7 +714,8 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             plot.toolbar = merge_tools(plots, hide_toolbar=True)
         title = self._get_title_div(self.keys[-1])
         if title:
-            plot = Column(title, plot)
+            children = plot.children if isinstance(plot, (Row, Column)) else [plot]
+            plot = Column(title, *children)
             self.handles["title"] = title
 
         self.handles["plot"] = plot
