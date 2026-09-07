@@ -1,5 +1,8 @@
 name: tests
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - "*"
@@ -108,7 +111,6 @@ jobs:
 
   pixi_lock_diff:
     name: pixi.lock diff
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -134,6 +136,7 @@ jobs:
             echo 'PIXI_LOCK_DIFF_EOF'
           } >> "$GITHUB_OUTPUT"
       - name: Create or update comment
+        if: github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
@@ -163,7 +166,7 @@ jobs:
     name: unit:${{ matrix.environment }}:${{ matrix.os }}
     needs: [pre_commit, setup]
     runs-on: ${{ matrix.os }}
-    if: needs.setup.outputs.code_change == 'true'
+    if: github.event_name != 'push' && needs.setup.outputs.code_change == 'true'
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
@@ -195,7 +198,7 @@ jobs:
     name: ui:${{ matrix.environment }}:${{ matrix.os }}
     needs: [pre_commit, setup]
     runs-on: ${{ matrix.os }}
-    if: needs.setup.outputs.code_change == 'true'
+    if: github.event_name != 'push' && needs.setup.outputs.code_change == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -234,7 +237,7 @@ jobs:
     name: core:${{ matrix.environment }}:${{ matrix.os }}
     needs: [pre_commit, setup]
     runs-on: ${{ matrix.os }}
-    if: needs.setup.outputs.code_change == 'true'
+    if: github.event_name != 'push' && needs.setup.outputs.code_change == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -262,7 +265,7 @@ jobs:
     name: type:${{ matrix.environment }}:${{ matrix.os }}
     needs: [pre_commit, setup]
     runs-on: ${{ matrix.os }}
-    if: needs.setup.outputs.code_change == 'true'
+    if: github.event_name != 'push' && needs.setup.outputs.code_change == 'true'
     strategy:
       fail-fast: false
       matrix:
