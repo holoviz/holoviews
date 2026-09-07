@@ -810,7 +810,7 @@ class TestDatetimeUtils:
 
         values = [
             datetime.datetime(2021, 4, 8, 12, 0, 0, 0),
-            datetime.datetime(2021, 4, 8, 12, 0, 0, 0, datetime.timezone.utc),
+            datetime.datetime(2021, 4, 8, 12, 0, 0, 0, datetime.UTC),
             datetime.datetime(2021, 4, 8, 12, 0, 0, 0, timezone),
             datetime.date(2021, 4, 8),
             np.datetime64(datetime.datetime(2021, 4, 8, 12, 0, 0, 0)),
@@ -1229,7 +1229,7 @@ def test_unique(test_input, expected_output, with_pandas, monkeypatch):
         ("2023-01-15", np.datetime64("2023-01-15T00:00:00", "ns")),
         ("2023/01/15", np.datetime64("2023-01-15T00:00:00", "ns")),
         (
-            datetime.datetime(2023, 1, 15, 12, 30, 45, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2023, 1, 15, 12, 30, 45, tzinfo=datetime.UTC),
             np.datetime64("2023-01-15T12:30:45", "ns"),
         ),
         (

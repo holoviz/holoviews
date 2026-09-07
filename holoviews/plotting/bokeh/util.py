@@ -138,7 +138,7 @@ if BOKEH_GE_3_6_0:
 
 def convert_timestamp(timestamp):
     """Converts bokehJS timestamp to datetime64."""
-    datetime = dt.datetime.fromtimestamp(timestamp / 1000, tz=dt.timezone.utc)
+    datetime = dt.datetime.fromtimestamp(timestamp / 1000, tz=dt.UTC)
     return np.datetime64(datetime.replace(tzinfo=None))
 
 
