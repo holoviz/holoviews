@@ -1,6 +1,10 @@
 [workspace]
 name = "holoviews"
-channels = ["pyviz/label/dev", "bokeh/label/rc", { channel = "conda-forge", exclude-newer = "2d" }]
+channels = [
+    "pyviz/label/dev",
+    "bokeh/label/rc",
+    { channel = "conda-forge", priority = 0, exclude-newer = "2d" },
+]
 platforms = ["linux-64", "osx-arm64", "win-64"]
 preview = ["pixi-build"]
 requires-pixi = ">=0.68.1"
@@ -30,14 +34,6 @@ default = [
     "type",
 ]
 
-[environments.test-310]
-features = ["required", "py310", "optional", "test-core", "test-example", "test-unit-task"]
-no-default-feature = true
-
-[environments.test-311]
-features = ["required", "py311", "optional", "test-core", "test-example", "test-unit-task"]
-no-default-feature = true
-
 [environments.test-312]
 features = ["required", "py312", "optional", "test-core", "test-example", "test-unit-task"]
 no-default-feature = true
@@ -51,7 +47,7 @@ features = ["required", "py314", "optional", "test-core", "test-example", "test-
 no-default-feature = true
 
 [environments.test-ui]
-features = ["required", "py313", "optional", "test-core", "test-ui"]
+features = ["required", "py314", "optional", "test-core", "test-ui"]
 no-default-feature = true
 
 [environments.test-core]
@@ -59,15 +55,15 @@ features = ["required", "py314", "test-core", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-gpu]
-features = ["required", "py313", "test-core", "optional", "test-gpu"]
+features = ["required", "py314", "test-core", "optional", "test-gpu"]
 no-default-feature = true
 
 [environments.docs]
-features = ["required", "py311", "optional", "doc"]
+features = ["required", "py314", "optional", "doc"]
 no-default-feature = true
 
 [environments.build]
-features = ["required", "py311", "build"]
+features = ["required", "py314", "build"]
 no-default-feature = true
 
 [environments.lint]
@@ -75,7 +71,7 @@ features = ["lint"]
 no-default-feature = true
 
 [environments.type]
-features = ["required", "py310", "optional", "test-core", "type", "type-task"]
+features = ["required", "py312", "optional", "test-core", "type", "type-task"]
 no-default-feature = true
 
 [feature.required.dependencies]
@@ -99,30 +95,16 @@ sync-git-tags = 'python scripts/sync_git_tags.py holoviews'
 
 [feature.required.activation.env]
 PYTHONIOENCODING = "utf-8"
-
-[feature.py310.dependencies]
-python = "3.10.*"
-
-[feature.py311.dependencies]
-python = "3.11.*"
+COVERAGE_CORE = "sysmon"
 
 [feature.py312.dependencies]
 python = "3.12.*"
 
-[feature.py312.activation.env]
-COVERAGE_CORE = "sysmon"
-
 [feature.py313.dependencies]
 python = "3.13.*"
 
-[feature.py313.activation.env]
-COVERAGE_CORE = "sysmon"
-
 [feature.py314.dependencies]
 python = "3.14.*"
-
-[feature.py314.activation.env]
-COVERAGE_CORE = "sysmon"
 
 [feature.optional.dependencies]
 bokeh_sampledata = "*"
@@ -204,7 +186,7 @@ platforms = ["linux-64"]
 NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = "0"
 
 [feature.test-gpu.dependencies]
-cuda-version = "13.1.*"
+cuda-version = "13.3.*"
 cudf = "26.08.*"
 cupy = "*"
 # cuspatial = "*"  # Paused development: https://docs.rapids.ai/notices/rsn0045/
@@ -268,7 +250,7 @@ lint-install = 'pre-commit install'
 # =================== TYPE ====================
 # =============================================
 [feature.type.dependencies]
-ty = "==0.0.73"
+ty = ">=0.0.78"
 pandas-stubs = "*"
 typing-extensions = "*"
 param = ">=2.4.0"

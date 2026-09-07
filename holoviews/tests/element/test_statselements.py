@@ -145,32 +145,32 @@ class TestStatisticalCompositor:
         assert isinstance(curve, hv.Curve)
         assert curve.vdims == [hv.Dimension(("Value_density", "Density"))]
 
-    def test_bivariate_composite(self):
-        dist = hv.Bivariate(np.random.rand(10, 2))
+    def test_bivariate_composite(self, rng):
+        dist = hv.Bivariate(rng.random((10, 2)))
         contours = Compositor.collapse_element(dist, backend="matplotlib")
         assert isinstance(contours, hv.Contours)
         assert contours.vdims == [hv.Dimension("Density")]
 
-    def test_bivariate_composite_transfer_opts(self):
-        dist = hv.Bivariate(np.random.rand(10, 2)).opts(cmap="Blues")
+    def test_bivariate_composite_transfer_opts(self, rng):
+        dist = hv.Bivariate(rng.random((10, 2))).opts(cmap="Blues")
         contours = Compositor.collapse_element(dist, backend="matplotlib")
         opts = hv.Store.lookup_options("matplotlib", contours, "style").kwargs
         assert opts.get("cmap", None) == "Blues"
 
-    def test_bivariate_composite_transfer_opts_with_group(self):
-        dist = hv.Bivariate(np.random.rand(10, 2), group="Test").opts(cmap="Blues")
+    def test_bivariate_composite_transfer_opts_with_group(self, rng):
+        dist = hv.Bivariate(rng.random((10, 2)), group="Test").opts(cmap="Blues")
         contours = Compositor.collapse_element(dist, backend="matplotlib")
         opts = hv.Store.lookup_options("matplotlib", contours, "style").kwargs
         assert opts.get("cmap", None) == "Blues"
 
-    def test_bivariate_composite_custom_vdim(self):
-        dist = hv.Bivariate(np.random.rand(10, 2), vdims=["Test"])
+    def test_bivariate_composite_custom_vdim(self, rng):
+        dist = hv.Bivariate(rng.random((10, 2)), vdims=["Test"])
         contours = Compositor.collapse_element(dist, backend="matplotlib")
         assert isinstance(contours, hv.Contours)
         assert contours.vdims == [hv.Dimension("Test")]
 
-    def test_bivariate_composite_filled(self):
-        dist = hv.Bivariate(np.random.rand(10, 2)).opts(filled=True)
+    def test_bivariate_composite_filled(self, rng):
+        dist = hv.Bivariate(rng.random((10, 2))).opts(filled=True)
         contours = Compositor.collapse_element(dist, backend="matplotlib")
         assert isinstance(contours, hv.Polygons)
         assert contours.vdims[0].name == "Density"

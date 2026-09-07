@@ -56,18 +56,16 @@ class KDEOperationTests:
         )
         assert_element_equal(kde, img)
 
-    def test_bivariate_kde_contours(self):
-        np.random.seed(1)
-        bivariate = hv.Bivariate(np.random.rand(100, 2))
+    def test_bivariate_kde_contours(self, rng):
+        bivariate = hv.Bivariate(rng.random((100, 2)))
         kde = bivariate_kde(
             bivariate, n_samples=100, x_range=(0, 1), y_range=(0, 1), contours=True, levels=10
         )
         assert isinstance(kde, hv.Contours)
-        assert len(kde.data) == 9
+        assert len(kde.data) == 7
 
-    def test_bivariate_kde_contours_filled(self):
-        np.random.seed(1)
-        bivariate = hv.Bivariate(np.random.rand(100, 2))
+    def test_bivariate_kde_contours_filled(self, rng):
+        bivariate = hv.Bivariate(rng.random((100, 2)))
         kde = bivariate_kde(
             bivariate,
             n_samples=100,
@@ -78,7 +76,7 @@ class KDEOperationTests:
             levels=10,
         )
         assert isinstance(kde, hv.Polygons)
-        assert len(kde.data) == 10
+        assert len(kde.data) == 8
 
     def test_bivariate_kde_nans(self):
         kde = bivariate_kde(

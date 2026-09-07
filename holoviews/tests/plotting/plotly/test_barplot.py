@@ -112,8 +112,8 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
         np.testing.assert_equal(plot["data"][0]["x"], [0, 3, 10])
         np.testing.assert_equal(plot["data"][0]["y"], [10, 20, 30])
 
-    def test_bars_continuous_datetime(self):
-        y = np.random.rand(10)
+    def test_bars_continuous_datetime(self, rng):
+        y = rng.random(10)
         bars = hv.Bars((pd.date_range("1/1/2000", periods=10), y))
         plot = self._get_plot_state(bars)
         dtype = "datetime64[us]" if PLOTLY_VERSION >= (6, 5, 0) else float
@@ -128,15 +128,14 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
         np.testing.assert_equal(plot["data"][0]["x"], ["A", "B", "C"])
         np.testing.assert_equal(plot["data"][0]["y"], [1, 2, 3])
 
-    def test_bars_group(self):
+    def test_bars_group(self, rng):
         samples = 100
 
         pets = ["Cat", "Dog", "Hamster", "Rabbit"]
         genders = ["Female", "Male", "N/A"]
 
-        np.random.seed(100)
-        pets_sample = np.random.choice(pets, samples)
-        gender_sample = np.random.choice(genders, samples)
+        pets_sample = rng.choice(pets, samples)
+        gender_sample = rng.choice(genders, samples)
 
         bars = hv.Bars(
             (pets_sample, gender_sample, np.ones(samples)), ["Pets", "Gender"]
@@ -145,18 +144,17 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
         np.testing.assert_equal(set(plot["data"][0]["x"][0]), set(pets))
         np.testing.assert_equal(
             plot["data"][0]["y"],
-            np.array([6.0, 10.0, 10.0, 10.0, 7.0, 10.0, 6.0, 10.0, 9.0, 7.0, 8.0, 7.0]),
+            np.array([10.0, 9.0, 11.0, 9.0, 6.0, 10.0, 5.0, 12.0, 8.0, 5.0, 8.0, 7.0]),
         )
 
-    def test_bar_group_stacked(self):
+    def test_bar_group_stacked(self, rng):
         samples = 100
 
         pets = ["Cat", "Dog", "Hamster", "Rabbit"]
         genders = ["Female", "Male", "N/A"]
 
-        np.random.seed(100)
-        pets_sample = np.random.choice(pets, samples)
-        gender_sample = np.random.choice(genders, samples)
+        pets_sample = rng.choice(pets, samples)
+        gender_sample = rng.choice(genders, samples)
 
         bars = (
             hv.Bars((pets_sample, gender_sample, np.ones(samples)), ["Pets", "Gender"])
@@ -165,7 +163,7 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
         )
         plot = self._get_plot_state(bars)
         np.testing.assert_equal(set(plot["data"][0]["x"]), set(pets))
-        np.testing.assert_equal(plot["data"][0]["y"], np.array([8, 7, 6, 7]))
+        np.testing.assert_equal(plot["data"][0]["y"], np.array([8, 7, 10, 5]))
 
     @pytest.mark.parametrize(
         ("data", "baseline"),
@@ -246,3 +244,33 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
         fig = self._get_plot_state(bars)
         data = fig["data"][0]
         assert data["marker"]["color"] == "gold"
+
+    def test_bars_invert_axes_custom_labels_visual_axes(self):
+        bars = hv.Bars([("A", 1), ("B", 2)], "species", "body_mass_g").opts(
+            invert_axes=True, xlabel="Species", ylabel="Body Mass (g)"
+        )
+        state = self._get_plot_state(bars)
+        assert state["layout"]["xaxis"]["title"]["text"] == "Species"
+        assert state["layout"]["yaxis"]["title"]["text"] == "Body Mass (g)"
+
+    def test_bars_invert_axes_auto_labels_follow_dimensions(self):
+        bars = hv.Bars([("A", 1), ("B", 2)], "species", "body_mass_g").opts(invert_axes=True)
+        state = self._get_plot_state(bars)
+        assert state["layout"]["xaxis"]["title"]["text"] == "body_mass_g"
+        assert state["layout"]["yaxis"]["title"]["text"] == "species"
+
+    def test_bars_invert_axes_xlabel_only(self):
+        bars = hv.Bars([("A", 1), ("B", 2)], "species", "body_mass_g").opts(
+            invert_axes=True, xlabel="Body Mass (g)"
+        )
+        state = self._get_plot_state(bars)
+        assert state["layout"]["xaxis"]["title"]["text"] == "Body Mass (g)"
+        assert state["layout"]["yaxis"]["title"]["text"] == "species"
+
+    def test_bars_invert_axes_ylabel_only(self):
+        bars = hv.Bars([("A", 1), ("B", 2)], "species", "body_mass_g").opts(
+            invert_axes=True, ylabel="Species"
+        )
+        state = self._get_plot_state(bars)
+        assert state["layout"]["xaxis"]["title"]["text"] == "body_mass_g"
+        assert state["layout"]["yaxis"]["title"]["text"] == "Species"

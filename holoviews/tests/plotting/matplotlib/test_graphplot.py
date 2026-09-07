@@ -20,7 +20,7 @@ class TestMplGraphPlot(TestMPLPlot):
         self.nodes = circular_layout(np.arange(N, dtype=np.int32))
         self.source = np.arange(N, dtype=np.int32)
         self.target = np.zeros(N, dtype=np.int32)
-        self.weights = np.random.rand(N)
+        self.weights = np.random.default_rng(1).random(N)
         self.graph = hv.Graph(((self.source, self.target),))
         self.node_info = hv.Dataset(["Output"] + ["Input"] * (N - 1), vdims=["Label"])
         self.node_info2 = hv.Dataset(self.weights, vdims="Weight")

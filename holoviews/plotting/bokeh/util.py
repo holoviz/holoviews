@@ -49,7 +49,7 @@ from ...core.util import (
     unique_array,
 )
 from ...core.util.dependencies import _no_import_version
-from ...util.warnings import warn
+from ...util.warnings import deprecated, warn
 from ..util import dim_axis_label
 
 BOKEH_VERSION = _no_import_version("bokeh")
@@ -138,7 +138,7 @@ if BOKEH_GE_3_6_0:
 
 def convert_timestamp(timestamp):
     """Converts bokehJS timestamp to datetime64."""
-    datetime = dt.datetime.fromtimestamp(timestamp / 1000, tz=dt.timezone.utc)
+    datetime = dt.datetime.fromtimestamp(timestamp / 1000, tz=dt.UTC)
     return np.datetime64(datetime.replace(tzinfo=None))
 
 
@@ -621,6 +621,7 @@ def make_axis(
     tick_size=None,
     axis_height=35,
 ):
+    deprecated("1.26.0", "make_axis")
     factors = list(map(dim.pprint_value, factors))
     nchars = np.max([len(f) for f in factors])
     ranges = FactorRange(factors=factors)

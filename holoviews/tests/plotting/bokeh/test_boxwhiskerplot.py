@@ -13,9 +13,9 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestBoxWhiskerPlot(TestBokehPlot):
-    def test_box_whisker_datetime(self):
+    def test_box_whisker_datetime(self, rng):
         times = np.arange(dt.datetime(2017, 1, 1), dt.datetime(2017, 2, 1), dt.timedelta(days=1))
-        box = hv.BoxWhisker((times, np.random.rand(len(times))), kdims=["Date"])
+        box = hv.BoxWhisker((times, rng.random(len(times))), kdims=["Date"])
         plot = bokeh_renderer.get_plot(box)
         formatted = [box.kdims[0].pprint_value(t) for t in times]
         assert all(
@@ -24,8 +24,8 @@ class TestBoxWhiskerPlot(TestBokehPlot):
             if len(cds.data.get("index", []))
         )
 
-    def test_box_whisker_hover(self):
-        xs, ys = np.random.randint(0, 5, 100), np.random.randn(100)
+    def test_box_whisker_hover(self, rng):
+        xs, ys = rng.integers(0, 5, 100), rng.standard_normal(100)
         box = hv.BoxWhisker((xs, ys), "A").sort().opts(tools=["hover"])
         plot = bokeh_renderer.get_plot(box)
         src = plot.handles["vbar_1_source"]
@@ -36,9 +36,11 @@ class TestBoxWhiskerPlot(TestBokehPlot):
         assert plot.handles["vbar_2_glyph_renderer"] in hover_tool.renderers
         assert plot.handles["circle_1_glyph_renderer"] in hover_tool.renderers
 
-    def test_box_whisker_multi_level(self):
+    def test_box_whisker_multi_level(self, rng):
         box = hv.BoxWhisker(
-            (["A", "B"] * 15, [3, 10, 1] * 10, np.random.randn(30)), ["Group", "Category"], "Value"
+            (["A", "B"] * 15, [3, 10, 1] * 10, rng.standard_normal(30)),
+            ["Group", "Category"],
+            "Value",
         )
         plot = bokeh_renderer.get_plot(box)
         x_range = plot.handles["x_range"]

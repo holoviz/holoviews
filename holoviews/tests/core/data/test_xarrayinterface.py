@@ -49,9 +49,9 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
             yc=xr.DataArray(ys, dims=("y", "x")),
         )
 
-    def get_multi_dim_irregular_dataset(self):
-        temp = 15 + 8 * np.random.randn(2, 2, 4, 3)
-        precip = 10 * np.random.rand(2, 2, 4, 3)
+    def get_multi_dim_irregular_dataset(self, rng):
+        temp = 15 + 8 * rng.standard_normal((2, 2, 4, 3))
+        precip = 10 * rng.random((2, 2, 4, 3))
         lon = [[-99.83, -99.32], [-99.79, -99.23]]
         lat = [[42.25, 42.21], [42.63, 42.59]]
         return xr.Dataset(
@@ -84,13 +84,13 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
             "lon",
         ]
 
-    def test_xarray_dataset_irregular_shape(self):
-        ds = hv.Dataset(self.get_multi_dim_irregular_dataset())
+    def test_xarray_dataset_irregular_shape(self, rng):
+        ds = hv.Dataset(self.get_multi_dim_irregular_dataset(rng))
         shape = ds.interface.shape(ds, gridded=True)
         assert shape == (np.nan, np.nan, 3, 4)
 
-    def test_xarray_irregular_dataset_values(self):
-        ds = hv.Dataset(self.get_multi_dim_irregular_dataset())
+    def test_xarray_irregular_dataset_values(self, rng):
+        ds = hv.Dataset(self.get_multi_dim_irregular_dataset(rng))
         values = ds.dimension_values("z", expanded=False)
         assert_data_equal(values, np.array([0, 1, 2, 3]))
 
@@ -225,9 +225,9 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         assert ds.kdims == [hv.Dimension("xc"), hv.Dimension("yc")]
         assert_data_equal(ds.dimension_values(2, flat=False), data.values[0])
 
-    def test_concat_grid_3d_shape_mismatch(self):
-        arr1 = np.random.rand(3, 2)
-        arr2 = np.random.rand(2, 3)
+    def test_concat_grid_3d_shape_mismatch(self, rng):
+        arr1 = rng.random((3, 2))
+        arr2 = rng.random((2, 3))
         ds1 = hv.Dataset(([0, 1], [1, 2, 3], arr1), ["x", "y"], "z")
         ds2 = hv.Dataset(([0, 1, 2], [1, 2], arr2), ["x", "y"], "z")
         hmap = hv.HoloMap({1: ds1, 2: ds2})
@@ -249,10 +249,10 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         assert np.isnan(z0)
         assert np.isnan(z1)
 
-    def test_datetime_bins_range(self):
+    def test_datetime_bins_range(self, rng):
         xs = [dt.datetime(2018, 1, i) for i in range(1, 11)]
         ys = np.arange(10)
-        array = np.random.rand(10, 10)
+        array = rng.random((10, 10))
         ds = hv.QuadMesh((xs, ys, array))
         assert ds.interface.datatype == "xarray"
         expected = (
@@ -261,14 +261,14 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         )
         assert ds.range("x") == expected
 
-    def test_datetime64_bins_range(self):
+    def test_datetime64_bins_range(self, rng):
         xs = list(
             np.arange(
                 dt.datetime(2018, 1, 1), dt.datetime(2018, 1, 11), dt.timedelta(days=1)
             ).astype("datetime64[ns]")
         )
         ys = np.arange(10)
-        array = np.random.rand(10, 10)
+        array = rng.random((10, 10))
         ds = hv.QuadMesh((xs, ys, array))
         assert ds.interface.datatype == "xarray"
         expected = (
@@ -277,8 +277,8 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         )
         assert ds.range("x") == expected
 
-    def test_select_dropped_dimensions_restoration(self):
-        d = np.random.randn(3, 8)
+    def test_select_dropped_dimensions_restoration(self, rng):
+        d = rng.standard_normal((3, 8))
         da = xr.DataArray(
             d,
             name="stuff",
@@ -298,8 +298,8 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
             assert t.data.dims == dict(chain=1, value=8)
         assert t.data.stuff.shape == (1, 8)
 
-    def test_mask_2d_array_transposed(self):
-        array = np.random.rand(4, 3)
+    def test_mask_2d_array_transposed(self, rng):
+        array = rng.random((4, 3))
         da = xr.DataArray(array.T, coords={"x": [0, 1, 2], "y": [0, 1, 2, 3]}, dims=["x", "y"])
         ds = hv.Dataset(da, ["x", "y"], "z")
         mask = np.array([[1, 1, 0], [1, 0, 1], [0, 1, 1], [1, 0, 1]], dtype="bool")

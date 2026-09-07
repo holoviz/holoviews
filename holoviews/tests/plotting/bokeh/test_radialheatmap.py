@@ -247,11 +247,11 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         assert list(source_ann["y"]) == list(self.y)
         assert list(source_ann["z"]) == self.z
 
-    def test_heatmap_holomap(self):
+    def test_heatmap_holomap(self, rng):
         hm = hv.HoloMap(
             {
-                "A": hv.HeatMap(np.random.randint(0, 10, (100, 3))),
-                "B": hv.HeatMap(np.random.randint(0, 10, (100, 3))),
+                "A": hv.HeatMap(rng.integers(0, 10, (100, 3))),
+                "B": hv.HeatMap(rng.integers(0, 10, (100, 3))),
             }
         )
         plot = bokeh_renderer.get_plot(hm.opts(radial=True))

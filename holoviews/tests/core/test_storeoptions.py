@@ -11,8 +11,6 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 
-import numpy as np
-
 import holoviews as hv
 from holoviews.plotting import bokeh  # noqa: F401
 
@@ -111,34 +109,34 @@ class TestStoreOptsMethod:
         assert hv.Store.lookup_options("matplotlib", o.Curve.I, "style").kwargs["color"] == "b"
         assert hv.Store.lookup_options("matplotlib", o.Curve.II, "style").kwargs["color"] == "b"
 
-    def test_layout_options_short_style(self):
+    def test_layout_options_short_style(self, rng):
         """
         Short __call__ syntax.
         """
-        im = hv.Image(np.random.rand(10, 10))
+        im = hv.Image(rng.random((10, 10)))
         layout = (im + im).opts({"Layout": {"hspace": 5}})
         assert hv.Store.lookup_options("matplotlib", layout, "plot").kwargs["hspace"] == 5
 
-    def test_layout_options_long_style(self):
+    def test_layout_options_long_style(self, rng):
         """
         The old (longer) syntax in __call__
         """
-        im = hv.Image(np.random.rand(10, 10))
+        im = hv.Image(rng.random((10, 10)))
         layout = (im + im).opts({"Layout": {"hspace": 10}})
         assert hv.Store.lookup_options("matplotlib", layout, "plot").kwargs["hspace"] == 10
 
-    def test_holomap_opts(self):
-        hmap = hv.HoloMap({0: hv.Image(np.random.rand(10, 10))}).opts(xaxis=None)
+    def test_holomap_opts(self, rng):
+        hmap = hv.HoloMap({0: hv.Image(rng.random((10, 10)))}).opts(xaxis=None)
         opts = hv.Store.lookup_options("matplotlib", hmap.last, "plot")
         assert opts.kwargs["xaxis"] is None
 
-    def test_holomap_options(self):
-        hmap = hv.HoloMap({0: hv.Image(np.random.rand(10, 10))}).options(xaxis=None)
+    def test_holomap_options(self, rng):
+        hmap = hv.HoloMap({0: hv.Image(rng.random((10, 10)))}).options(xaxis=None)
         opts = hv.Store.lookup_options("matplotlib", hmap.last, "plot")
         assert opts.kwargs["xaxis"] is None
 
-    def test_holomap_options_empty_no_exception(self):
-        hv.HoloMap({0: hv.Image(np.random.rand(10, 10))}).options()
+    def test_holomap_options_empty_no_exception(self, rng):
+        hv.HoloMap({0: hv.Image(rng.random((10, 10)))}).options()
 
 
 @mpl_skip

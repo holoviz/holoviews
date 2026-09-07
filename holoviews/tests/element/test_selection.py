@@ -26,9 +26,9 @@ class TestIndexExpr:
     def teardown_method(self):
         hv.Store.current_backend = self._backend
 
-    def test_index_selection_on_id_column(self):
+    def test_index_selection_on_id_column(self, rng):
         # tests issue in https://github.com/holoviz/holoviews/pull/6336
-        x, y = np.random.randn(2, 100)
+        x, y = rng.standard_normal((2, 100))
         idx = np.arange(100)
 
         points = hv.Points(
@@ -397,8 +397,8 @@ class TestSelection2DExpr:
         assert_data_equal(expr.apply(scatter), np.array([False, True, True, False, True]))
         assert region is None
 
-    def test_image_selection_numeric(self):
-        img = hv.Image(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3)))
+    def test_image_selection_numeric(self, rng):
+        img = hv.Image(([0, 1, 2], [0, 1, 2, 3], rng.random((4, 3))))
         expr, bbox, region = img._get_selection_expr_for_stream_value(bounds=(0.5, 1.5, 2.1, 3.1))
         assert bbox == {"x": (0.5, 2.1), "y": (1.5, 3.1)}
         assert_data_equal(
@@ -414,8 +414,8 @@ class TestSelection2DExpr:
         )
         assert_element_equal(region, hv.Rectangles([(0.5, 1.5, 2.1, 3.1)]) * hv.Path([]))
 
-    def test_image_selection_numeric_inverted(self):
-        img = hv.Image(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3))).opts(invert_axes=True)
+    def test_image_selection_numeric_inverted(self, rng):
+        img = hv.Image(([0, 1, 2], [0, 1, 2, 3], rng.random((4, 3)))).opts(invert_axes=True)
         expr, bbox, region = img._get_selection_expr_for_stream_value(bounds=(1.5, 0.5, 3.1, 2.1))
         assert bbox == {"x": (0.5, 2.1), "y": (1.5, 3.1)}
         assert_data_equal(
@@ -433,8 +433,8 @@ class TestSelection2DExpr:
 
     @ds_skip
     @spd_skip
-    def test_img_selection_geom(self):
-        img = hv.Image(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3)))
+    def test_img_selection_geom(self, rng):
+        img = hv.Image(([0, 1, 2], [0, 1, 2, 3], rng.random((4, 3))))
         geom = np.array([(-0.4, -0.1), (0.6, -0.1), (0.4, 1.7), (-0.1, 1.7)])
         expr, bbox, region = img._get_selection_expr_for_stream_value(geometry=geom)
         assert_dict_equal(
@@ -454,8 +454,8 @@ class TestSelection2DExpr:
         assert_element_equal(region, hv.Rectangles([]) * hv.Path([[*geom, (-0.4, -0.1)]]))
 
     @ds_skip
-    def test_img_selection_geom_inverted(self):
-        img = hv.Image(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3))).opts(invert_axes=True)
+    def test_img_selection_geom_inverted(self, rng):
+        img = hv.Image(([0, 1, 2], [0, 1, 2, 3], rng.random((4, 3)))).opts(invert_axes=True)
         geom = np.array([(-0.4, -0.1), (0.6, -0.1), (0.4, 1.7), (-0.1, 1.7)])
         expr, bbox, region = img._get_selection_expr_for_stream_value(geometry=geom)
         assert_dict_equal(
@@ -474,8 +474,8 @@ class TestSelection2DExpr:
         )
         assert_element_equal(region, hv.Rectangles([]) * hv.Path([[*geom, (-0.4, -0.1)]]))
 
-    def test_rgb_selection_numeric(self):
-        img = hv.RGB(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3, 3)))
+    def test_rgb_selection_numeric(self, rng):
+        img = hv.RGB(([0, 1, 2], [0, 1, 2, 3], rng.random((4, 3, 3))))
         expr, bbox, region = img._get_selection_expr_for_stream_value(bounds=(0.5, 1.5, 2.1, 3.1))
         assert bbox == {"x": (0.5, 2.1), "y": (1.5, 3.1)}
         assert_data_equal(
@@ -491,8 +491,8 @@ class TestSelection2DExpr:
         )
         assert_element_equal(region, hv.Rectangles([(0.5, 1.5, 2.1, 3.1)]) * hv.Path([]))
 
-    def test_rgb_selection_numeric_inverted(self):
-        img = hv.RGB(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3, 3))).opts(invert_axes=True)
+    def test_rgb_selection_numeric_inverted(self, rng):
+        img = hv.RGB(([0, 1, 2], [0, 1, 2, 3], rng.random((4, 3, 3)))).opts(invert_axes=True)
         expr, bbox, region = img._get_selection_expr_for_stream_value(bounds=(1.5, 0.5, 3.1, 2.1))
         assert bbox == {"x": (0.5, 2.1), "y": (1.5, 3.1)}
         assert_data_equal(

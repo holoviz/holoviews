@@ -325,3 +325,25 @@ class TestCurveTwinAxes(LoggingComparison, TestBokehPlot):
 
         # Should not error
         bokeh_renderer.get_plot(overlay)
+
+    def test_multi_y_grouped_bars_axis_labels(self):
+        bars = hv.Bars(
+            [("A", "X", 1), ("A", "Y", 2), ("B", "X", 3), ("B", "Y", 4)],
+            kdims=["Category", "Subcategory"],
+            vdims=["Value"],
+        ).opts(multi_y=True)
+        plot = bokeh_renderer.get_plot(bars).state
+
+        assert plot.xaxis[0].axis_label == "Category, Subcategory"
+        assert plot.yaxis[0].axis_label == "Value"
+
+    def test_multi_y_grouped_bars_inverted_axis_labels(self):
+        bars = hv.Bars(
+            [("A", "X", 1), ("A", "Y", 2), ("B", "X", 3), ("B", "Y", 4)],
+            kdims=["Category", "Subcategory"],
+            vdims=["Value"],
+        ).opts(multi_y=True, invert_axes=True)
+        plot = bokeh_renderer.get_plot(bars).state
+
+        assert plot.xaxis[0].axis_label == "Value"
+        assert plot.yaxis[0].axis_label == "Category, Subcategory"
