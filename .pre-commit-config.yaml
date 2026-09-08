@@ -43,6 +43,7 @@ repos:
           - markdown
           - yaml
           - css
+          - json5
   - repo: https://github.com/hoxbro/taplo-pre-commit
     rev: 605f960c3c571f814f535622a688bcde63ee87f6 # frozen: v0.9.3
     hooks:

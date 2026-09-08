@@ -240,11 +240,11 @@ build-pip = 'python -m build .'
 # =================== LINT ====================
 # =============================================
 [feature.lint.dependencies]
-pre-commit = "*"
+prek = "*"
 
 [feature.lint.tasks]
-lint = 'pre-commit run --all-files'
-lint-install = 'pre-commit install'
+lint = 'prek run --all-files'
+lint-install = 'prek install'
 
 # =============================================
 # =================== TYPE ====================

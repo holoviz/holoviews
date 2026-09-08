@@ -151,7 +151,7 @@ This can be advantageous when you need to edit the documentation or debug an exa
 
 ## Linting
 
-HoloViews uses [pre-commit](https://pre-commit.com/) to apply linting to HoloViews code. Linting can be run for all the files with:
+HoloViews uses [prek](https://prek.j178.dev/) to apply linting to HoloViews code. Linting can be run for all the files with:
 
 ```bash
 pixi run lint
@@ -166,11 +166,11 @@ pixi run lint-install
 :::{admonition} Note
 :class: info
 
-Alternatively, if you have `pre-commit` installed elsewhere you can run
+Alternatively, if you have `prek` or `pre-commit` installed elsewhere you can run
 
 ```bash
-pre-commit install  # To install
-pre-commit run --all-files  # To run on all files
+prek install  # To install
+prek run --all-files  # To run on all files
 ```
 
 :::
