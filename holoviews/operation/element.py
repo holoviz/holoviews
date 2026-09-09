@@ -30,7 +30,6 @@ from ..core import (
 )
 from ..core.accessors import Apply
 from ..core.data import ArrayInterface, DictInterface, PandasInterface, default_datatype
-from ..core.data.util import dask_array_module
 from ..core.util import (
     datetime_types,
     dt_to_int,
@@ -43,7 +42,7 @@ from ..core.util import (
     isfinite,
     label_sanitizer,
 )
-from ..core.util.dependencies import _no_import_version, cp
+from ..core.util.dependencies import _no_import_version, cp, da
 from ..element.chart import Bars, Histogram, Scatter
 from ..element.path import Contours, Dendrogram, Polygons
 from ..element.raster import RGB, HeatMap, Image
@@ -995,7 +994,6 @@ class histogram(Operation):
             if self.p.nonzero:
                 mask = mask & (data != 0)
             data = data[mask]
-            da = dask_array_module()
             no_data = False if da and isinstance(data, da.Array) else not len(data)
 
         # Compute weights

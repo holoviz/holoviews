@@ -150,8 +150,8 @@ class NarwhalsInterface(Interface):
         return len(dataset.data[name].unique()) == 1
 
     @classmethod
-    def dtype(cls, dataset, dimension):
-        dim = dataset.get_dimension(dimension, strict=True)
+    def dtype(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
         nw_type = dataset.data.collect_schema()[dim.name]
         return NarwhalsDtype(nw_type)
 
@@ -170,10 +170,10 @@ class NarwhalsInterface(Interface):
             )
 
     @classmethod
-    def range(cls, dataset, dimension):
-        dimension = dataset.get_dimension(dimension, strict=True)
-        dtype = cls.dtype(dataset, dimension)
-        name = dimension.name
+    def range(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
+        dtype = cls.dtype(dataset, dim)
+        name = dim.name
         is_lazy = isinstance(dataset.data, nw.LazyFrame)
         df_column = dataset.data.select(name)
         if util.dtype_kind(dtype) == "O":
@@ -186,8 +186,8 @@ class NarwhalsInterface(Interface):
             return cmin.item(), cmax.item()
         else:
             col = nw.col(name)
-            if dimension.nodata is not None:
-                df_column = df_column.select(nw.when(col != dimension.nodata).then(col))
+            if dim.nodata is not None:
+                df_column = df_column.select(nw.when(col != dim.nodata).then(col))
             if dataset.data.implementation not in _NO_DROP_NULL:
                 col = nw.col(name).drop_nulls()
             # NOTE: Some narwhals backends (duckdb) will return nan as
@@ -209,7 +209,7 @@ class NarwhalsInterface(Interface):
         for key, ds in datasets:
             data = cls._narwhals_clone(ds.data)
             new_columns = [
-                nw.lit(val).alias(dim.name) for dim, val in zip(dimensions, key, strict=None)
+                nw.lit(val).alias(dim.name) for dim, val in zip(dimensions, key, strict=True)
             ]
             data = data.with_columns(new_columns)
             dataframes.append(data)
@@ -464,24 +464,24 @@ class NarwhalsInterface(Interface):
         return data.filter(mask)
 
     @classmethod
-    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+    def add_dimension(cls, dataset, dim, dim_pos, values, vdim):
         data = cls._narwhals_clone(dataset.data)
         cols = list(data.collect_schema())
-        if dimension.name not in cols:
-            cols = [*cols[:dim_pos], dimension.name, *cols[dim_pos:]]
+        if dim.name not in cols:
+            cols = [*cols[:dim_pos], dim.name, *cols[dim_pos:]]
             if not isinstance(values, nw.Series):
                 if np.isscalar(values):
                     values = nw.lit(values)
                 else:
                     values = nw.new_series(
-                        dimension.name,
+                        dim.name,
                         values,
                         backend=_EAGER_TYPE.get(data.implementation, data.implementation),
                     )
             if isinstance(data, nw.LazyFrame) and isinstance(values, nw.Series):
                 # NOTE(LazyFrame): forced conversion
                 data = data.collect()
-            data = data.with_columns(**{dimension.name: values}).select(cols)
+            data = data.with_columns(**{dim.name: values}).select(cols)
         return data
 
     @classmethod
