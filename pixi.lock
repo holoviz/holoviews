@@ -23,14 +23,13 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     packages:
       linux-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.9.2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/brotli-python-1.2.0-py314hcd2bdb6_4.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/bzip2-1.0.8-hda65f42_10.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/c-ares-1.34.8-hebe6cf0_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/conda-26.7.2-py314h9e666f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/conda-pypi-0.11.0-py314h9e666f3_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/contourpy-1.3.3-py314h97ea11e_4.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/cpp-expected-1.3.1-h171cf75_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/fmt-12.1.0-h76c4fd7_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/icu-78.3-py310h44b86e0_2.conda
@@ -170,8 +169,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/nlohmann_json-abi-3.12.0-h0f90c79_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/nomkl-1.0-h5ca1d4c_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/packaging-26.3-pyhc364b38_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-core-1.9.4-pyha770c72_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.14.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.11.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pip-26.2.1-pyh145f28c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pkginfo-1.12.1.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/platformdirs-4.11.6-pyh5ded981_0.conda
@@ -206,12 +204,12 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/xyzservices-2026.9.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.9.4-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.4.2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda_source: holoviews[341358a6] @ .
       osx-arm64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.9.2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/annotated-types-0.8.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.15.0-pyh5ded981_0.conda
@@ -261,8 +259,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/nlohmann_json-abi-3.12.0-h0f90c79_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/nomkl-1.0-h5ca1d4c_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/packaging-26.3-pyhc364b38_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-core-1.9.4-pyha770c72_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.14.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.11.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pip-26.2.1-pyh145f28c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pkginfo-1.12.1.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/platformdirs-4.11.6-pyh5ded981_0.conda
@@ -304,7 +301,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/cctools_impl_osx-arm64-1030.6.3-llvm22_1_he9db816_6.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/conda-26.7.2-py314hcec6336_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/conda-pypi-0.11.0-py314hcec6336_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/contourpy-1.3.3-py314hf8a3a22_4.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/cpp-expected-1.3.1-h3feff0a_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/fmt-12.1.0-h99e4e11_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/icu-78.3-py310h579977c_2.conda
@@ -401,12 +397,12 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zlib-ng-2.3.3-h31dac16_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hf451053_7.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.9.4-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.4.2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda_source: holoviews[d2d0b03e] @ .
       win-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.9.2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/annotated-types-0.8.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.15.0-pyh5ded981_0.conda
@@ -458,8 +454,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/nlohmann_json-abi-3.12.0-h0f90c79_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/nomkl-1.0-h5ca1d4c_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/packaging-26.3-pyhc364b38_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-core-1.9.4-pyha770c72_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.14.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.11.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pip-26.2.1-pyh145f28c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pkginfo-1.12.1.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/platformdirs-4.11.6-pyh5ded981_0.conda
@@ -501,7 +496,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/bzip2-1.0.8-h0ad9c76_10.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/conda-26.7.2-py314hb821551_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/conda-pypi-0.11.0-py314hb821551_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/win-64/contourpy-1.3.3-py314hf309875_4.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/cpp-expected-1.3.1-h477610d_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/fmt-12.1.0-h1ced75a_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/icu-78.3-h5112557_2.conda
@@ -585,7 +579,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zlib-ng-2.3.3-h0261ad2_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_7.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.9.4-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.4.2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda_source: holoviews[8ccd3df0] @ .
@@ -596,7 +590,7 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     packages:
       linux-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/alsa-lib-1.2.16.1-h7cc23a3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/aom-3.14.1-pl5321h57e6904_2.conda
@@ -1077,7 +1071,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
       - conda_source: holoviews[341358a6] @ .
       osx-arm64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/adwaita-icon-theme-49.0-unix_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.15.0-pyh5ded981_0.conda
@@ -1507,7 +1501,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
       - conda_source: holoviews[d2d0b03e] @ .
       win-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.15.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/argon2-cffi-25.1.0-pyhd8ed1ab_0.conda
@@ -1918,7 +1912,7 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     packages:
       linux-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.9.2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/alsa-lib-1.2.16.1-h7cc23a3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/aom-3.14.1-pl5321h57e6904_2.conda
@@ -2311,8 +2305,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/overrides-7.7.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/packaging-26.3-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-core-1.9.4-pyha770c72_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.14.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.11.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/parso-0.8.7-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/parsy-2.1-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/partd-1.4.2-pyhd8ed1ab_0.conda
@@ -2395,14 +2388,14 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/nbsite-0.10.0a1-py_0.tar.bz2
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.9.4-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.4.2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
       - conda_source: holoviews[341358a6] @ .
       osx-arm64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.9.2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/accessible-pygments-0.0.5-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/adwaita-icon-theme-49.0-unix_0.conda
@@ -2515,8 +2508,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/overrides-7.7.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/packaging-26.3-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-core-1.9.4-pyha770c72_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.14.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.11.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/parso-0.8.7-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/parsy-2.1-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/partd-1.4.2-pyhd8ed1ab_0.conda
@@ -2828,14 +2820,14 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/nbsite-0.10.0a1-py_0.tar.bz2
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.9.4-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.4.2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
       - conda_source: holoviews[d2d0b03e] @ .
       win-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.9.2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/accessible-pygments-0.0.5-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/alabaster-1.0.0-pyhd8ed1ab_1.conda
@@ -2946,8 +2938,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/overrides-7.7.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/packaging-26.3-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-core-1.9.4-pyha770c72_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.14.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.11.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/parso-0.8.7-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/parsy-2.1-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/partd-1.4.2-pyhd8ed1ab_0.conda
@@ -3238,7 +3229,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/nbsite-0.10.0a1-py_0.tar.bz2
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.9.4-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.4.2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
@@ -3270,7 +3261,7 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     packages:
       linux-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/alsa-lib-1.2.16.1-h7cc23a3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/aom-3.14.1-pl5321h57e6904_2.conda
@@ -3732,7 +3723,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
       - conda_source: holoviews[341358a6] @ .
       osx-arm64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/adwaita-icon-theme-49.0-unix_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.15.0-pyh5ded981_0.conda
@@ -4142,7 +4133,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
       - conda_source: holoviews[d2d0b03e] @ .
       win-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.15.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/argon2-cffi-25.1.0-pyhd8ed1ab_0.conda
@@ -4533,7 +4524,7 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     packages:
       linux-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/alsa-lib-1.2.16.1-h7cc23a3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/aom-3.14.1-pl5321h57e6904_2.conda
@@ -4993,7 +4984,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
       - conda_source: holoviews[341358a6] @ .
       osx-arm64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/adwaita-icon-theme-49.0-unix_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.15.0-pyh5ded981_0.conda
@@ -5403,7 +5394,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
       - conda_source: holoviews[d2d0b03e] @ .
       win-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.15.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/argon2-cffi-25.1.0-pyhd8ed1ab_0.conda
@@ -5794,7 +5785,7 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     packages:
       linux-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/alsa-lib-1.2.16.1-h7cc23a3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/aom-3.14.1-pl5321h57e6904_2.conda
@@ -6255,7 +6246,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
       - conda_source: holoviews[341358a6] @ .
       osx-arm64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/adwaita-icon-theme-49.0-unix_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.15.0-pyh5ded981_0.conda
@@ -6666,7 +6657,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
       - conda_source: holoviews[d2d0b03e] @ .
       win-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.15.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/argon2-cffi-25.1.0-pyhd8ed1ab_0.conda
@@ -7058,7 +7049,7 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     packages:
       linux-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/brotli-python-1.2.0-py314hcd2bdb6_4.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/bzip2-1.0.8-hda65f42_10.conda
@@ -7166,7 +7157,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda_source: holoviews[341358a6] @ .
       osx-arm64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/backports.asyncio.runner-1.2.0-pyh5ded981_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/backports.zstd-1.7.0-py314h680f03e_1.conda
@@ -7272,7 +7263,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda_source: holoviews[d2d0b03e] @ .
       win-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/backports.asyncio.runner-1.2.0-pyh5ded981_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/backports.zstd-1.7.0-py314h680f03e_1.conda
@@ -7386,7 +7377,7 @@ environments:
     - url: https://conda.anaconda.org/rapidsai/
     packages:
       linux-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/alsa-lib-1.2.16.1-h7cc23a3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/aom-3.14.1-pl5321h57e6904_2.conda
@@ -7903,7 +7894,7 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     packages:
       linux-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/alsa-lib-1.2.16.1-h7cc23a3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/aom-3.14.1-pl5321h57e6904_2.conda
@@ -8373,7 +8364,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
       - conda_source: holoviews[341358a6] @ .
       osx-arm64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/adwaita-icon-theme-49.0-unix_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.15.0-pyh5ded981_0.conda
@@ -8793,7 +8784,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
       - conda_source: holoviews[d2d0b03e] @ .
       win-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.15.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/argon2-cffi-25.1.0-pyhd8ed1ab_0.conda
@@ -9193,7 +9184,7 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     packages:
       linux-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.9.2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/alsa-lib-1.2.16.1-h7cc23a3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/aom-3.9.1-hac33072_0.conda
@@ -9573,8 +9564,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/packaging-26.3-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pandas-stubs-2.3.3.260113-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-core-1.9.4-pyha770c72_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.14.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.11.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/parso-0.8.7-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/parsy-2.1-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/partd-1.4.2-pyhd8ed1ab_0.conda
@@ -9650,14 +9640,14 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.9.4-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.4.2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
       - conda_source: holoviews[341358a6] @ .
       osx-arm64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.9.2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/adwaita-icon-theme-49.0-unix_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.14.2-pyhcf101f3_0.conda
@@ -9760,8 +9750,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/packaging-26.3-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pandas-stubs-2.3.3.260113-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-core-1.9.4-pyha770c72_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.14.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.11.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/parso-0.8.7-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/parsy-2.1-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/partd-1.4.2-pyhd8ed1ab_0.conda
@@ -10061,14 +10050,14 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hf451053_7.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.9.4-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.4.2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
       - conda_source: holoviews[d2d0b03e] @ .
       win-64:
-      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.9.2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.14.2-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/argon2-cffi-25.1.0-pyhd8ed1ab_0.conda
@@ -10169,8 +10158,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/packaging-26.3-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pandas-stubs-2.3.3.260113-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-core-1.9.4-pyha770c72_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.14.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.11.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/parso-0.8.7-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/parsy-2.1-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/partd-1.4.2-pyhd8ed1ab_0.conda
@@ -10451,16 +10439,16 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_7.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.9.4-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.4.2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
       - conda_source: holoviews[8ccd3df0] @ .
 packages:
-- conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.0-py_0.tar.bz2
-  sha256: ea4795450041788498691fef7360fc0340ffc86f08a72e8c4976bec6dfd42d04
-  md5: 61ca59b185ade6d037e502886e643565
+- conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc1-py_0.tar.bz2
+  sha256: 090753422d0542353fccba8ce8093eaf67d98ceab381b50448d3cdd3c0b9864c
+  md5: dfa99bf6e6c709857daf59948884578f
   depends:
   - jinja2 >=2.9
   - narwhals >=1.13
@@ -10472,25 +10460,8 @@ packages:
   - tornado >=6.2
   - xyzservices >=2021.09.1
   license: BSD-3-Clause
-  size: 5128853
-  timestamp: 1787073779179
-- conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.9.2-py_0.tar.bz2
-  sha256: 40c01095a3aa76eeba1695288369fd8a642237dd3df96a270029db7d9d9b97f0
-  md5: a9a987ec0add2f0624b8d7fdfda4c5c3
-  depends:
-  - contourpy >=1.2
-  - jinja2 >=2.9
-  - narwhals >=1.13
-  - numpy >=1.16
-  - packaging >=16.8
-  - pillow >=7.1.0
-  - python >=3.10
-  - pyyaml >=3.10
-  - tornado >=6.2
-  - xyzservices >=2021.09.1
-  license: BSD-3-Clause
-  size: 4949780
-  timestamp: 1784939380491
+  size: 5123492
+  timestamp: 1788887330762
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
   build_number: 20
   sha256: 1dd3fffd892081df9726d7eb7e0dea6198962ba775bd88842135a4ddb4deb3c9
@@ -21230,32 +21201,6 @@ packages:
   run_exports: {}
   size: 11627
   timestamp: 1631603397334
-- conda: https://conda.anaconda.org/conda-forge/noarch/panel-core-1.9.4-pyha770c72_0.conda
-  sha256: ff2d72d3bbfb3ba3c940bb819fe0522c6367ba4771eeb11ce1416012945a2641
-  md5: 1eadc447fefbf45d24896f212efacf0d
-  depends:
-  - bokeh >=3.7.0,<3.10.0
-  - linkify-it-py
-  - markdown
-  - markdown-it-py
-  - mdit-py-plugins
-  - narwhals >=2
-  - nh3
-  - packaging
-  - pandas >=1.2
-  - param >=2.1.0,<3.0
-  - python >=3.10
-  - pyviz_comms >=2.0.0
-  - requests
-  - tqdm
-  - typing_extensions
-  constrains:
-  - holoviews >=1.18.0
-  license: BSD-3-Clause
-  license_family: BSD
-  run_exports: {}
-  size: 23423909
-  timestamp: 1787040078669
 - conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.11.0-pyhd8ed1ab_0.conda
   sha256: ccbe15b8d2b7c6e9bdbed6b9b0b8470c776ebd652786d7f785fe40c829b9d446
   md5: 7dcd0035f0967ee8249e7f6e92a42a38
@@ -21269,19 +21214,6 @@ packages:
   run_exports: {}
   size: 1530724
   timestamp: 1779210064073
-- conda: https://conda.anaconda.org/conda-forge/noarch/panel-material-ui-0.14.1-pyhd8ed1ab_0.conda
-  sha256: 0b5fb43ecc628a23160880338a6c0b0dbbdbb171dc86e1614701076e3424b8da
-  md5: 5d41cfdebc2f7273900313cee4f4c24f
-  depends:
-  - bokeh >=3.8.0
-  - packaging
-  - panel-core >=1.8.0
-  - python >=3.10
-  license: BSD-3-Clause
-  license_family: BSD
-  run_exports: {}
-  size: 1574079
-  timestamp: 1785348106356
 - conda: https://conda.anaconda.org/conda-forge/noarch/parso-0.8.7-pyhcf101f3_0.conda
   sha256: 611882f7944b467281c46644ffde6c5145d1a7730388bcde26e7e86819b0998e
   md5: 39894c952938276405a1bd30e4ce2caf
@@ -35410,29 +35342,6 @@ packages:
   license: BSD
   size: 23273957
   timestamp: 1787762534676
-- conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.9.4-py_0.conda
-  sha256: 8439529cbe1441ae207e2bd57bf8c6d0a2f25706abb5ad214582ff312e4df0f7
-  md5: d1b34202e87c1ef838156ee6a168c266
-  depends:
-  - bokeh >=3.7.0,<3.10.0
-  - linkify-it-py
-  - markdown
-  - markdown-it-py
-  - mdit-py-plugins
-  - narwhals >=2
-  - nh3
-  - packaging
-  - pandas >=1.2
-  - panel-material-ui >=0.10.0
-  - param >=2.1.0,<3.0
-  - python >=3.10
-  - pyviz_comms >=2.0.0
-  - requests
-  - tqdm
-  - typing_extensions
-  license: BSD
-  size: 23135124
-  timestamp: 1786969827601
 - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.4.2-py_0.conda
   sha256: 58ad6adb134d96125fb402c2a469071e42b339ebcbf8768e787aa06c2745bdba
   md5: 9028660eff8b89113699f07534e2deb1
