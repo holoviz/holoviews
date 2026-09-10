@@ -40,10 +40,11 @@ _EAGER_TYPE = {
     nw.Implementation.DASK: nw.Implementation.PANDAS,
     nw.Implementation.IBIS: nw.Implementation.PYARROW,
     nw.Implementation.DUCKDB: nw.Implementation.PYARROW,
+    nw.Implementation.PYSPARK: nw.Implementation.PYARROW,
 }
 
 # Does not support drop_nulls
-_NO_DROP_NULL = [nw.Implementation.DUCKDB, nw.Implementation.IBIS]
+_NO_DROP_NULL = [nw.Implementation.DUCKDB, nw.Implementation.IBIS, nw.Implementation.PYSPARK]
 
 
 class NarwhalsDtype:
