@@ -37,7 +37,7 @@ jobs:
     runs-on: "ubuntu-latest"
     if: github.event_name != 'pull_request' || github.head_ref == 'renovate/lock-file-maintenance-pixi-lock'
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@e9aaca7738db5d27bf34d0f69e25990b74a85eaf # v1.0.7
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
         with:
           environments: "build"
           download-data: false
@@ -72,7 +72,7 @@ jobs:
     runs-on: "ubuntu-latest"
     if: github.event_name != 'pull_request' || github.head_ref == 'renovate/lock-file-maintenance-pixi-lock'
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@e9aaca7738db5d27bf34d0f69e25990b74a85eaf # v1.0.7
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
         with:
           environments: "build"
           download-data: false
