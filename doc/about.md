@@ -29,7 +29,7 @@ governance/project-docs/MEMBERS
 
 ## Prior Funding
 
-```{image} https://www.anc.ed.ac.uk/anc.png
+```{image} https://assets.holoviews.org/anc.png
 :align: left
 :alt: ANC website
 :height: 60px
