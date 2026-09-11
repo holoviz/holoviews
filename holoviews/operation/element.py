@@ -45,6 +45,7 @@ from ..core.util import (
 )
 from ..core.util.dependencies import _no_import_version, cp
 from ..element.chart import Bars, Histogram, Scatter
+from ..element.geom import Rectangles
 from ..element.path import Contours, Dendrogram, Polygons
 from ..element.raster import RGB, HeatMap, Image
 from ..element.util import categorical_aggregate2d  # noqa: F401
@@ -1669,13 +1670,28 @@ class dendrogram(Operation):
         return main
 
 
+def _sync_tickbar_range(dim):
+    # Reuses main's actual Range object (like DendrogramPlot does), not
+    # just its start/end, so the two figures share one model and stay
+    # zoom/pan synced. Bokeh only; matplotlib is static.
+    def hook(plot, element):
+        if plot.renderer.backend != "bokeh" or not plot.adjoined:
+            return
+        main = plot.adjoined[0]
+        side = plot.state
+        setattr(side, f"{dim}_range", getattr(main, f"{dim}_range"))
+        setattr(side, f"{dim}_scale", getattr(main, f"{dim}_scale"))
+
+    return hook
+
+
 class tickbar(Operation):
-    """The tickbar operation computes one or two adjoined single row/column
-    HeatMaps that encode a groupby feature for the ticks of the main plot
-    along the specified dimension(s). This is useful to visually group the
-    ticks of a HeatMap when there are too many categories along an axis to
-    label individually, similar to the row/column annotations of
-    scanpy.pl.heatmap.
+    """The tickbar operation computes one or two adjoined bars, each made up
+    of one rectangle per contiguous run of a groupby feature, that annotate
+    the ticks of the main plot along the specified dimension(s). This is
+    useful to visually group the ticks of a HeatMap when there are too many
+    categories along an axis to label individually, similar to the
+    row/column annotations of scanpy.pl.heatmap.
     """
 
     adjoined = param.Boolean(default=True, doc="Whether to adjoin the tickbar(s) to the main plot")
@@ -1696,13 +1712,45 @@ class tickbar(Operation):
         doc="The Element type to use for the main plot if the input is a Dataset.",
     )
 
-    cmap = param.Parameter(
-        default="Category10", doc="The categorical colormap to use for the tickbar(s)"
+    cmap = param.String(
+        default="Category10",
+        doc="""
+        A named categorical colormap to use for the tickbar(s). Mutually
+        exclusive with 'colors'.""",
+    )
+
+    colors = param.ClassSelector(
+        class_=(dict, list),
+        default=None,
+        doc="""
+        Explicit colors to use for the tickbar(s), either a list of colors
+        (assigned to groups in sorted order) or a dict mapping each group
+        value directly to a color. Mutually exclusive with 'cmap'.""",
+    )
+
+    bar_size = param.Integer(
+        default=40,
+        bounds=(0, None),
+        doc="""
+        The thickness (in pixels) of the tickbar(s), i.e. the width when
+        adjoined on the right or the height when adjoined on top. Only
+        applies to the bokeh backend.""",
+    )
+
+    show_labels = param.Boolean(
+        default=True,
+        doc="""
+        Whether to show the group names as tick labels on the tickbar's
+        own axis, and the group dimension's name as that axis's title.""",
     )
 
     def _process(self, element, key=None):
+        from ..plotting.util import process_cmap
+
         if self.p.group_dim is None:
             raise TypeError("'group_dim' cannot be None")
+        if self.p.colors is not None and self.p.cmap != self.param.cmap.default:
+            raise ValueError("'cmap' and 'colors' are mutually exclusive; set only one.")
         element_kdims, element_vdims = element.kdims, element.vdims
         if element.interface.gridded:
             dims = {
@@ -1722,20 +1770,106 @@ class tickbar(Operation):
             warn(msg, UserWarning)
 
         bars = {}
-        for i, dim in enumerate(map(str, element_kdims[:2][::-1])):
+        for dim in map(str, element_kdims[:2]):
             if dim not in self.p.adjoint_dims:
                 continue
-            bar_df = dataset.dframe([dim, self.p.group_dim]).drop_duplicates(subset=[dim])
-            # Bokeh's HeatMap glyph colors from a numeric vdim; encode the
-            # group as an integer code and keep the label for hover/inspection.
-            codes, _ = bar_df[self.p.group_dim].factorize(sort=True)
-            bar_df = bar_df.assign(__tickbar__=" ", __tickbar_code__=codes)
-            # i == 0 is the second kdim (shared y-axis, adjoins on the right)
-            # i == 1 is the first kdim (shared x-axis, adjoins on top)
-            bar_kdims = ["__tickbar__", dim] if i == 0 else [dim, "__tickbar__"]
-            bars[dim] = HeatMap(
-                bar_df, kdims=bar_kdims, vdims=["__tickbar_code__", self.p.group_dim]
-            ).opts(cmap=self.p.cmap, colorbar=False, xaxis=None, yaxis=None)
+            # First-seen tick order matches main's own categorical axis.
+            tick_df = dataset.dframe([dim, self.p.group_dim]).drop_duplicates(subset=[dim])
+            codes, uniques = tick_df[self.p.group_dim].factorize(sort=True)
+            labels = tick_df[self.p.group_dim].to_numpy()
+            n = len(codes)
+
+            # Baked in as literal colors, not a shared colormapper, so an
+            # adjoined plot's own colormap can't hijack them.
+            if isinstance(self.p.colors, dict):
+                palette = [self.p.colors[label] for label in uniques]
+            elif isinstance(self.p.colors, list):
+                palette = self.p.colors
+            else:
+                palette = process_cmap(self.p.cmap, len(uniques), categorical=True)
+
+            run_starts = np.flatnonzero(np.r_[True, codes[1:] != codes[:-1]])
+            run_ends = np.r_[run_starts[1:], n]
+            run_codes = codes[run_starts]
+            bar_data = {
+                "__tickbar_span0__": run_starts.astype(float),
+                "__tickbar_span1__": run_ends.astype(float),
+                "__tickbar_thick0__": np.zeros(len(run_starts)),
+                "__tickbar_thick1__": np.ones(len(run_starts)),
+                "__tickbar_color__": [palette[c % len(palette)] for c in run_codes],
+                self.p.group_dim: labels[run_starts],
+            }
+            # Only the AdjointLayout's "right" slot applies invert_axes=True.
+            inverted = self.p.adjoined and dim == str(element_kdims[-1])
+            # xlim/ylim address the pre-invert x/y; invert_axes maps them
+            # onto the physical figure. Pin both, or the auto-ranged thick
+            # axis picks the wrong extent and the bar only fills a sliver.
+            span_lim = dict(xlim=(0, n), ylim=(0, 1))
+            # frame_width/height (unlike width/height) fix the data area
+            # itself, immune to sizing_mode and axis-label size.
+            size_opts = (
+                dict(frame_width=self.p.bar_size)
+                if inverted
+                else dict(frame_height=self.p.bar_size)
+            )
+            span_dim = "y" if inverted else "x"
+            thick_dim = "x" if inverted else "y"
+            axis_opts = {}
+            if self.p.show_labels:
+                span_centers = (run_starts + run_ends) / 2.0
+                span_ticks = list(
+                    zip(span_centers.tolist(), labels[run_starts].tolist(), strict=True)
+                )
+                axis_opts[f"{span_dim}axis"] = "right" if inverted else "top"
+                axis_opts[f"{span_dim}ticks"] = span_ticks
+                # Suppress the placeholder kdim name ("__tickbar_span0__").
+                axis_opts[f"{span_dim}label"] = ""
+                axis_opts[f"{thick_dim}axis"] = "bottom" if thick_dim == "x" else "left"
+                # Single empty-label tick: hides the meaningless 0/0.5/1
+                # ticks without hiding the title too, unlike "-bare".
+                axis_opts[f"{thick_dim}ticks"] = [(0.5, "")]
+                axis_opts[f"{thick_dim}label"] = self.p.group_dim
+            else:
+                axis_opts[f"{span_dim}axis"] = None
+                axis_opts[f"{thick_dim}axis"] = None
+            bars[dim] = (
+                Rectangles(
+                    bar_data,
+                    kdims=[
+                        "__tickbar_span0__",
+                        "__tickbar_thick0__",
+                        "__tickbar_span1__",
+                        "__tickbar_thick1__",
+                    ],
+                    vdims=["__tickbar_color__", self.p.group_dim],
+                )
+                .opts(
+                    color="__tickbar_color__",
+                    colorbar=False,
+                    padding=0,
+                    # Synthetic placeholder kdims defeat HoloViews' automatic
+                    # range sharing, so force it here to keep zoom/pan synced.
+                    hooks=[_sync_tickbar_range("y" if inverted else "x")],
+                    **span_lim,
+                    **axis_opts,
+                )
+                .opts(
+                    # No tools, like dendrogram: pan/zoom here would desync from
+                    # main.
+                    default_tools=[],
+                    tools=[],
+                    line_color=None,
+                    # The default 10px border would otherwise leave a visible gap
+                    # around the bar instead of it filling the whole plot area.
+                    border=0,
+                    backend="bokeh",
+                    **size_opts,
+                )
+                .opts(
+                    edgecolor="none",
+                    backend="matplotlib",
+                )
+            )
 
         if not self.p.adjoined:
             if len(bars) == 1:
@@ -1743,21 +1877,12 @@ class tickbar(Operation):
             else:
                 return Layout(bars.values())
 
-        # The group dimension is only needed to build the tickbar(s); excluding
-        # it from the main plot's vdims avoids rendering it as an (unused)
-        # value dimension there.
-        main_vdims = [v for v in element_vdims if str(v) != self.p.group_dim]
-        if not main_vdims:
-            main_vdims = element_vdims
-
+        # Keep group_dim on main too, so it's available to a user-added
+        # hover tool there (e.g. `heatmap.opts(tools=["hover"])`).
         if type(element) is not Dataset:
-            main = (
-                element
-                if list(map(str, main_vdims)) == list(map(str, element_vdims))
-                else element.clone(vdims=main_vdims)
-            )
+            main = element
         else:
-            main = self.p.main_element(dataset.reindex(element_kdims[:2]), vdims=main_vdims)
+            main = self.p.main_element(dataset.reindex(element_kdims[:2]), vdims=element_vdims)
 
         for dim in map(str, main.kdims[::-1]):
             if dim not in self.p.adjoint_dims:

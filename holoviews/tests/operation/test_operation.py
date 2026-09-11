@@ -1361,55 +1361,183 @@ class TestTickBarOperation:
         self.bokeh_renderer = hv.renderer("bokeh")
 
     def test_right_only(self):
-        bar = tickbar(self.hm, adjoint_dims=["Gene"], group_dim="Group")
+        bar = tickbar(self.hm, adjoint_dims=["Gene"], group_dim="Group", show_labels=False)
         assert isinstance(bar, hv.AdjointLayout)
         assert isinstance(bar["main"], hv.HeatMap)
-        assert isinstance(bar["right"], hv.HeatMap)
+        assert isinstance(bar["right"], hv.Rectangles)
         assert isinstance(bar["top"], hv.Empty)
-        assert list(map(str, bar["right"].kdims)) == ["__tickbar__", "Gene"]
+        assert len(bar["right"]) == 4  # one rect per contiguous group run
 
     def test_top_only(self):
-        bar = tickbar(self.hm, adjoint_dims=["Sample"], group_dim="Group")
+        bar = tickbar(self.hm, adjoint_dims=["Sample"], group_dim="Group", show_labels=False)
         assert isinstance(bar, hv.AdjointLayout)
         assert isinstance(bar["main"], hv.HeatMap)
         assert isinstance(bar["right"], hv.Empty)
-        assert isinstance(bar["top"], hv.HeatMap)
-        assert list(map(str, bar["top"].kdims)) == ["Sample", "__tickbar__"]
+        assert isinstance(bar["top"], hv.Rectangles)
+        assert len(bar["top"]) == 1  # all 3 samples first-see "Group1" via Gene_A
 
     @pytest.mark.parametrize(
         "adjoint_dims", [["Sample", "Gene"], ["Gene", "Sample"]], ids=["sg", "gs"]
     )
     def test_both(self, adjoint_dims):
-        bar = tickbar(self.hm, adjoint_dims=adjoint_dims, group_dim="Group")
+        bar = tickbar(self.hm, adjoint_dims=adjoint_dims, group_dim="Group", show_labels=False)
         assert isinstance(bar, hv.AdjointLayout)
         assert isinstance(bar["main"], hv.HeatMap)
-        assert isinstance(bar["right"], hv.HeatMap)
-        assert isinstance(bar["top"], hv.HeatMap)
-        assert list(map(str, bar["right"].kdims)) == ["__tickbar__", "Gene"]
-        assert list(map(str, bar["top"].kdims)) == ["Sample", "__tickbar__"]
+        assert isinstance(bar["right"], hv.Rectangles)
+        assert isinstance(bar["top"], hv.Rectangles)
+        assert len(bar["right"]) == 4
+        assert len(bar["top"]) == 1
 
     def test_adjoined_False_1dim(self):
-        bar = tickbar(self.hm, adjoint_dims=["Gene"], group_dim="Group", adjoined=False)
-        assert isinstance(bar, hv.HeatMap)
+        bar = tickbar(
+            self.hm, adjoint_dims=["Gene"], group_dim="Group", adjoined=False, show_labels=False
+        )
+        assert isinstance(bar, hv.Rectangles)
+
+    def test_adjoined_False_axis_ranges(self):
+        # Standalone bars never get invert_axes=True, so span stays on x.
+        n = len(self.categories)
+        right_bar = tickbar(
+            self.hm, adjoint_dims=["Gene"], group_dim="Group", adjoined=False, show_labels=False
+        )
+        right_plot = self.bokeh_renderer.get_plot(right_bar).state
+        assert (right_plot.x_range.start, right_plot.x_range.end) == (0, n)
+        assert (right_plot.y_range.start, right_plot.y_range.end) == (0, 1)
+
+        n_samples = len({r["Sample"] for r in self.df.to_dict("records")})
+        top_bar = tickbar(
+            self.hm, adjoint_dims=["Sample"], group_dim="Group", adjoined=False, show_labels=False
+        )
+        top_plot = self.bokeh_renderer.get_plot(top_bar).state
+        assert (top_plot.x_range.start, top_plot.x_range.end) == (0, n_samples)
+        assert (top_plot.y_range.start, top_plot.y_range.end) == (0, 1)
 
     def test_adjoined_False_2dim(self):
-        bar = tickbar(self.hm, adjoint_dims=["Gene", "Sample"], group_dim="Group", adjoined=False)
+        bar = tickbar(
+            self.hm,
+            adjoint_dims=["Gene", "Sample"],
+            group_dim="Group",
+            adjoined=False,
+            show_labels=False,
+        )
         assert isinstance(bar, hv.Layout)
         assert len(bar) == 2
 
-    def test_group_values_correspond(self):
+    def get_adjoint_children(self, adjoint):
+        bk_childrens = self.bokeh_renderer.get_plot(adjoint).handles["plot"].children
+        (atop, *_), (amain, *_), (aright, *_) = bk_childrens
+        return atop, amain, aright
+
+    def test_right_axis_orientation(self):
+        # "right" gets invert_axes=True, and shares main's actual Range
+        # object (like dendrogram) so zoom/pan stays in sync.
+        bar = tickbar(self.hm, adjoint_dims=["Gene"], group_dim="Group", show_labels=False)
+        _, amain, aright = self.get_adjoint_children(bar)
+        assert aright.y_range is amain.y_range
+
+    def test_top_axis_orientation(self):
+        bar = tickbar(self.hm, adjoint_dims=["Sample"], group_dim="Group", show_labels=False)
+        atop, amain, _ = self.get_adjoint_children(bar)
+        assert atop.x_range is amain.x_range
+
+    def test_no_tools_on_bar(self):
+        # No tools of its own, matching dendrogram's convention.
+        bar = tickbar(self.hm, adjoint_dims=["Gene"], group_dim="Group", show_labels=False)
+        right_plot = self.bokeh_renderer.get_plot(bar["right"]).state
+        assert right_plot.tools == []
+
+    def test_show_labels_default_axis_ticks(self):
         bar = tickbar(self.hm, adjoint_dims=["Gene"], group_dim="Group")
-        right = bar["right"]
-        values = dict(
-            zip(right.dimension_values("Gene"), right.dimension_values("Group"), strict=True)
+        assert isinstance(bar["right"], hv.Rectangles)
+        right_plot = self.bokeh_renderer.get_plot(bar["right"]).state
+        assert right_plot.yaxis[0].visible
+        ticker = right_plot.yaxis[0].ticker
+        overrides = right_plot.yaxis[0].major_label_overrides
+        assert [overrides[t] for t in ticker.ticks] == ["Group1", "Group2", "Group3", "Group4"]
+        assert right_plot.yaxis[0].axis_label == ""
+
+    def test_show_labels_false_hides_axis(self):
+        bar = tickbar(self.hm, adjoint_dims=["Gene"], group_dim="Group", show_labels=False)
+        assert isinstance(bar["right"], hv.Rectangles)
+        right_plot = self.bokeh_renderer.get_plot(bar["right"]).state
+        assert not right_plot.yaxis[0].visible
+
+    def get_glyph_colors(self, plot):
+        renderer = plot.renderers[0]
+        field = renderer.glyph.fill_color["field"]
+        return list(renderer.data_source.data[field])
+
+    def test_cmap_settable_without_opts(self):
+        bar = tickbar(
+            self.hm, adjoint_dims=["Gene"], group_dim="Group", cmap="Set1", show_labels=False
         )
-        for gene, group in self.categories.items():
-            assert values[gene] == group
+        right_plot = self.bokeh_renderer.get_plot(bar["right"]).state
+        colors = self.get_glyph_colors(right_plot)
+        assert "#e41a1c" in colors  # first color of the 'Set1' palette
+
+    def test_colors_dict(self):
+        colors = {"Group1": "red", "Group2": "green", "Group3": "blue", "Group4": "yellow"}
+        bar = tickbar(
+            self.hm, adjoint_dims=["Gene"], group_dim="Group", colors=colors, show_labels=False
+        )
+        right = bar["right"]
+        mapping = dict(
+            zip(
+                right.dimension_values("Group"),
+                right.dimension_values("__tickbar_color__"),
+                strict=True,
+            )
+        )
+        assert mapping == colors
+
+    def test_colors_list(self):
+        colors = ["red", "green", "blue", "yellow"]  # sorted group order: 1,2,3,4
+        bar = tickbar(
+            self.hm, adjoint_dims=["Gene"], group_dim="Group", colors=colors, show_labels=False
+        )
+        right = bar["right"]
+        assert list(right.dimension_values("__tickbar_color__")) == colors
+
+    def test_cmap_and_colors_mutually_exclusive(self):
+        msg = "'cmap' and 'colors' are mutually exclusive"
+        with pytest.raises(ValueError, match=msg):
+            tickbar(
+                self.hm,
+                adjoint_dims=["Gene"],
+                group_dim="Group",
+                cmap="Set1",
+                colors=["red", "green", "blue", "yellow"],
+            )
+
+    def test_cmap_not_shared_with_main(self):
+        bar = tickbar(
+            self.hm, adjoint_dims=["Gene"], group_dim="Group", cmap="Set1", show_labels=False
+        )
+        bar["main"].opts(cmap="RdBu_r")
+        right_plot = self.bokeh_renderer.get_plot(bar).handles["plot"].children[-1][0]
+        colors = set(self.get_glyph_colors(right_plot))
+        assert colors == {"#e41a1c", "#377eb8", "#4daf4a", "#984ea3"}
+
+    def test_group_values_correspond(self):
+        bar = tickbar(self.hm, adjoint_dims=["Gene"], group_dim="Group", show_labels=False)
+        right = bar["right"]
+        genes = list(self.categories.keys())  # first-seen tick order
+        spans = list(
+            zip(
+                right.dimension_values("__tickbar_span0__"),
+                right.dimension_values("__tickbar_span1__"),
+                right.dimension_values("Group"),
+                strict=True,
+            )
+        )
+        assert spans == [(0, 3, "Group1"), (3, 5, "Group2"), (5, 8, "Group3"), (8, 10, "Group4")]
+        for start, end, group in spans:
+            assert {self.categories[g] for g in genes[int(start) : int(end)]} == {group}
 
     def test_main_unchanged(self):
         plain_hm = self.hm.clone(vdims=["Expression"])
         main1 = self.bokeh_renderer.get_plot(plain_hm).handles["plot"]
-        bar = tickbar(self.hm, adjoint_dims=["Gene"], group_dim="Group")
+        bar = tickbar(self.hm, adjoint_dims=["Gene"], group_dim="Group", show_labels=False)
         main2 = self.bokeh_renderer.get_plot(bar["main"]).handles["plot"]
         assert main1.y_range.factors == main2.y_range.factors
         assert main1.x_range.factors == main2.x_range.factors
@@ -1421,7 +1549,7 @@ class TestTickBarOperation:
 
     def test_bare_dataset(self):
         ds = hv.Dataset(self.df, kdims=["Sample", "Gene"], vdims=["Expression", "Group"])
-        bar = tickbar(ds, adjoint_dims=["Gene"], group_dim="Group")
+        bar = tickbar(ds, adjoint_dims=["Gene"], group_dim="Group", show_labels=False)
         assert isinstance(bar, hv.AdjointLayout)
         assert isinstance(bar["main"], hv.HeatMap)
 
@@ -1430,18 +1558,17 @@ class TestTickBarOperation:
         self.bokeh_renderer.get_plot(bar)
 
     def test_combined_with_dendrogram(self):
-        # tickbar and dendrogram each build their own AdjointLayout, so
-        # combining a dendrogram on one axis with a tickbar on the other
-        # means picking out each side and reassembling them manually.
+        # Each builds its own AdjointLayout, so combining them means
+        # picking out each side and reassembling manually.
         dendro = dendrogram(
             self.hm, adjoint_dims=["Gene"], main_dim="Expression", linkage_metric="euclidean"
         )
-        bar = tickbar(self.hm, adjoint_dims=["Sample"], group_dim="Group")
+        bar = tickbar(self.hm, adjoint_dims=["Sample"], group_dim="Group", show_labels=False)
 
         combined = dendro.main << dendro["right"] << bar["top"]
         assert isinstance(combined, hv.AdjointLayout)
         assert isinstance(combined["right"], hv.Dendrogram)
-        assert isinstance(combined["top"], hv.HeatMap)
+        assert isinstance(combined["top"], hv.Rectangles)
         self.bokeh_renderer.get_plot(combined)
 
 
