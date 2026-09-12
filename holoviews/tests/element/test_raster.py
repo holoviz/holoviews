@@ -5,11 +5,13 @@ Unit tests of Raster elements
 from __future__ import annotations
 
 import numpy as np
+import pandas as pd
+import pytest
 
 import holoviews as hv
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from .._deps import xr, xr_skip
+from .._deps import ds, ds_skip, xr, xr_skip
 
 
 class TestRaster:
@@ -97,6 +99,97 @@ class TestHSV:
         for i, c in zip(init_vdims, cls_vdims, strict=False):
             assert i is not c
             assert i == c
+
+
+class TestImageStack:
+    def setup_method(self):
+        self.x = np.arange(3)
+        self.y = np.arange(2)
+        self.a = np.random.default_rng(1).random((2, 3))
+        self.b = np.random.default_rng(2).random((2, 3))
+        self.c = np.random.default_rng(3).random((2, 3))
+
+    def _constructors(self):
+        x, y, a, b, c = self.x, self.y, self.a, self.b, self.c
+        return {
+            "tuple": hv.ImageStack((x, y, a, b, c), kdims=["x", "y"], vdims=["a", "b", "c"]),
+            "list": hv.ImageStack([a, b, c], vdims=["a", "b", "c"]),
+            "dict": hv.ImageStack({"x": x, "y": y, "a": a, "b": b, "c": c}),
+            "ndarray": hv.ImageStack(np.dstack([a, b, c]), vdims=["a", "b", "c"]),
+        }
+
+    @pytest.mark.parametrize("name", ["tuple", "list", "dict", "ndarray"])
+    def test_select_vdims_grid_backed(self, name):
+        img = self._constructors()[name]
+        sel = img.select(vdims=["a", "c"])
+        assert [vd.name for vd in sel.vdims] == ["a", "c"]
+        assert_data_equal(
+            sel.dimension_values("a", flat=False), img.dimension_values("a", flat=False)
+        )
+        assert_data_equal(
+            sel.dimension_values("c", flat=False), img.dimension_values("c", flat=False)
+        )
+
+    @pytest.mark.parametrize("name", ["tuple", "list", "dict", "ndarray"])
+    def test_select_single_vdim_grid_backed(self, name):
+        img = self._constructors()[name]
+        sel = img.select(vdims="b")
+        assert [vd.name for vd in sel.vdims] == ["b"]
+
+    @xr_skip
+    def test_select_vdims_xarray_dataset(self):
+        ds_ = xr.Dataset(
+            {"a": (("y", "x"), self.a), "b": (("y", "x"), self.b), "c": (("y", "x"), self.c)},
+            coords={"x": self.x, "y": self.y},
+        )
+        img = hv.ImageStack(ds_, kdims=["x", "y"])
+        sel = img.select(vdims=["a", "c"])
+        assert [vd.name for vd in sel.vdims] == ["a", "c"]
+
+    @xr_skip
+    def test_select_vdims_xarray_dataarray_packed(self):
+        ds_ = xr.Dataset(
+            {"a": (("y", "x"), self.a), "b": (("y", "x"), self.b), "c": (("y", "x"), self.c)},
+            coords={"x": self.x, "y": self.y},
+        ).to_array("level")
+        img = hv.ImageStack(ds_, vdims=["level"])
+        sel = img.select(vdims=["a", "c"])
+        assert [vd.name for vd in sel.vdims] == ["a", "c"]
+
+    def test_select_vdims_missing_raises(self):
+        img = self._constructors()["tuple"]
+        with pytest.raises(KeyError):
+            img.select(vdims=["nope"])
+
+    def test_select_kdim_and_vdim_combined(self):
+        img = self._constructors()["tuple"]
+        sel = img.select(x=(0, 1), vdims=["a", "b"])
+        assert [vd.name for vd in sel.vdims] == ["a", "b"]
+
+    def test_select_without_vdims_unaffected(self):
+        img = self._constructors()["tuple"]
+        sel = img.select(x=(0, 1))
+        assert [vd.name for vd in sel.vdims] == ["a", "b", "c"]
+
+    @ds_skip
+    @xr_skip
+    def test_select_vdims_rasterized_categorical(self):
+        # Regression test: rasterize with a categorical aggregator produces
+        # an xarray-backed ImageStack whose select() used to raise
+        # TypeError("Constant parameter 'vdims' cannot be modified")
+        from holoviews.operation.datashader import rasterize
+
+        df = pd.DataFrame(
+            {
+                "x": np.random.default_rng(4).random(100),
+                "y": np.random.default_rng(5).random(100),
+                "cat": np.random.default_rng(6).choice(list("abc"), 100),
+            }
+        )
+        points = hv.Points(df, kdims=["x", "y"], vdims=["cat"])
+        agg = rasterize(points, aggregator=ds.count_cat("cat"), dynamic=False)
+        sel = agg.select(vdims=["a", "b"])
+        assert [vd.name for vd in sel.vdims] == ["a", "b"]
 
 
 class TestQuadMesh:
