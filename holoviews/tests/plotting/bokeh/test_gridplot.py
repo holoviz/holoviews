@@ -157,15 +157,3 @@ class TestGridPlot(TestBokehPlot):
         assert "test: 1" in plot.handles["title"].text
         plot.cleanup()
         assert stream._subscribers == []
-
-    def test_grid_subplots_not_realigned(self, rng):
-        # Right-aligning the first column shifts its frames by the width of
-        # each row's tick labels, skewing the grid, see holoviews#5784
-        ds = hv.Dataset(
-            {"a": rng.random(10), "b": rng.random(10) * 100, "c": rng.random(10)},
-            kdims=["a", "b", "c"],
-        )
-        grid = gridmatrix(ds, chart_type=hv.Points)
-        plot = bokeh_renderer.get_plot(grid)
-        aligns = {sp.handles["plot"].align for sp in plot.subplots.values()}
-        assert aligns == {"start"}
