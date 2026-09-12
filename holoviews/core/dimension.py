@@ -1547,12 +1547,14 @@ class ViewableTree(AttrTree, Dimensioned):
         return items
 
     def __setstate__(self, state):
-        """Ensure that object does not try to reference its parent during
+        """Ensure that object does not try to reference its parent or children during
         unpickling.
         """
         parent = state.pop("parent", None)
         state["parent"] = None
+        children = {c: state.pop(c) for c in state.get("children", []) if c in state}
         super(AttrTree, self).__setstate__(state)
+        self.__dict__.update(children)
         self.__dict__["parent"] = parent
 
     @classmethod
