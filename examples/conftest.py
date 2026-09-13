@@ -5,9 +5,6 @@ from importlib.util import find_spec
 
 from holoviews.core.util.dependencies import _no_import_version
 
-# Setting this to not error out if no install is done.
-os.environ["PYTHONPATH"] = os.path.dirname(os.path.dirname(__file__))
-
 system = platform.system()
 py_version = sys.version_info[:2]
 PANDAS_GE_2_0_0 = _no_import_version("pandas") >= (2, 0, 0)

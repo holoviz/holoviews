@@ -511,7 +511,6 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                     "The invert_axes parameter is not supported on Tiles elements "
                     "with the plotly backend"
                 )
-            xlabel, ylabel = ylabel, xlabel
             ydim, xdim = xdim, ydim
             l, b, r, t = b, l, t, r
 
@@ -652,7 +651,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         axis_props = {}
         if isinstance(ticker, (tuple, list)):
             if all(isinstance(t, tuple) for t in ticker):
-                ticks, labels = zip(*ticker, strict=None)
+                ticks, labels = zip(*ticker, strict=False)
                 labels = [l if isinstance(l, str) else str(l) for l in labels]
                 axis_props["tickvals"] = ticks
                 axis_props["ticktext"] = labels

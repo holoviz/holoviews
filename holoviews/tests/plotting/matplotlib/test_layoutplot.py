@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import numpy as np
-
 import holoviews as hv
 from holoviews.streams import Stream
 
@@ -10,11 +8,11 @@ from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestLayoutPlot(LoggingComparison, TestMPLPlot):
-    def test_layout_instantiate_subplots(self):
+    def test_layout_instantiate_subplots(self, rng):
         layout = (
             hv.Curve(range(10))
             + hv.Curve(range(10))
-            + hv.Image(np.random.rand(10, 10))
+            + hv.Image(rng.random((10, 10)))
             + hv.Curve(range(10))
             + hv.Curve(range(10))
         )
@@ -26,23 +24,23 @@ class TestLayoutPlot(LoggingComparison, TestMPLPlot):
             if "main" in adjoint.subplots:
                 assert adjoint.subplots["main"].layout_num == i + 1
 
-    def test_layout_empty_subplots(self):
+    def test_layout_empty_subplots(self, rng):
         layout = (
             hv.Curve(range(10))
             + hv.NdOverlay()
             + hv.HoloMap()
-            + hv.HoloMap({1: hv.Image(np.random.rand(10, 10))})
+            + hv.HoloMap({1: hv.Image(rng.random((10, 10)))})
         )
         plot = mpl_renderer.get_plot(layout)
         assert len(plot.subplots.values()) == 2
         self.log_handler.assert_contains("WARNING", "skipping subplot")
         self.log_handler.assert_contains("WARNING", "skipping subplot")
 
-    def test_layout_instantiate_subplots_transposed(self):
+    def test_layout_instantiate_subplots_transposed(self, rng):
         layout = (
             hv.Curve(range(10))
             + hv.Curve(range(10))
-            + hv.Image(np.random.rand(10, 10))
+            + hv.Image(rng.random((10, 10)))
             + hv.Curve(range(10))
             + hv.Curve(range(10))
         )

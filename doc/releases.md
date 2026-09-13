@@ -2,6 +2,34 @@
 
 ## Version 1.23
 
+### Version 1.23.2
+
+**August 24, 2026**
+
+Many thanks to [@Kkkakania](https://github.com/Kkkakania) (first contribution), [@Azaya89](https://github.com/Azaya89), [@flying-sheep](https://github.com/flying-sheep), and [@hoxbro](https://github.com/hoxbro) for their contributions.
+
+Bug Fixes:
+
+- Memory leak from streams rooted in the global registry ([#6990](https://github.com/holoviz/holoviews/pull/6990))
+- Register colorcet colormaps before matplotlib ([#6983](https://github.com/holoviz/holoviews/pull/6983))
+- Handle `nodata` option in `datashade` ([#6978](https://github.com/holoviz/holoviews/pull/6978))
+- Set axis tick rotation mode ([#6972](https://github.com/holoviz/holoviews/pull/6972))
+- Allow auto-sharing categorical axes in layouts ([#6971](https://github.com/holoviz/holoviews/pull/6971))
+- `connect_tri_edges_pd` failing with non-color name ([#6965](https://github.com/holoviz/holoviews/pull/6965))
+- Support `module://matplotlib_inline.backend_inline` ([#6958](https://github.com/holoviz/holoviews/pull/6958))
+
+Compatibility:
+
+- Bokeh 3.10.0 ([#6998](https://github.com/holoviz/holoviews/pull/6998))
+- matplotlib 3.11.1 ([#6960](https://github.com/holoviz/holoviews/pull/6960))
+
+Documentation:
+
+- Add config file for llms.txt ([#6989](https://github.com/holoviz/holoviews/pull/6989))
+- Hide notebook-specific resampling settings ([#6969](https://github.com/holoviz/holoviews/pull/6969))
+- Document downsample algorithms ([#6968](https://github.com/holoviz/holoviews/pull/6968))
+- Clarify the style angle convention ([#6957](https://github.com/holoviz/holoviews/pull/6957))
+
 ### Version 1.23.1
 
 **July 2, 2026**

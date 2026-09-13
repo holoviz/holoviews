@@ -28,6 +28,7 @@ def optional_dependencies(*names: str):
 
 if TYPE_CHECKING:
     import cftime
+    import contourpy
     import dask
     import dask.array as da
     import dask.dataframe as dd
@@ -50,6 +51,7 @@ if TYPE_CHECKING:
     import xyzservices
 else:
     cftime = optional_dependencies("cftime")
+    contourpy = optional_dependencies("contourpy")
     dask = optional_dependencies("dask")
     da = optional_dependencies("dask.array")
     dd = optional_dependencies("dask.dataframe", "pyarrow")
@@ -74,6 +76,7 @@ else:
 
 _skip = lambda module, name: pytest.mark.skipif(module is None, reason=f"{name} is not installed")
 cftime_skip = _skip(cftime, "cftime")
+contourpy_skip = _skip(contourpy, "contourpy")
 dask_skip = _skip(dask, "dask")
 da_skip = _skip(da, "dask.array")
 dd_skip = _skip(dd, "dask.dataframe")

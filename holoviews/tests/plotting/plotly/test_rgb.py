@@ -27,8 +27,8 @@ class TestRGBPlot(TestPlotlyPlot):
     def rgb_element_to_pil_img(rgb_data):
         return PIL.Image.fromarray(np.clip(rgb_data * 255, 0, 255).astype("uint8"))
 
-    def test_rgb(self):
-        rgb_data = np.random.rand(10, 10, 3)
+    def test_rgb(self, rng):
+        rgb_data = rng.random((10, 10, 3))
         rgb = hv.RGB(rgb_data)
         fig_dict = plotly_renderer.get_plot_state(rgb)
         x_range = fig_dict["layout"]["xaxis"]["range"]
@@ -64,8 +64,8 @@ class TestRGBPlot(TestPlotlyPlot):
         expected_source = go.layout.Image(source=pil_img).source
         assert image["source"] == expected_source
 
-    def test_rgb_invert_xaxis(self):
-        rgb_data = np.random.rand(10, 10, 3)
+    def test_rgb_invert_xaxis(self, rng):
+        rgb_data = rng.random((10, 10, 3))
         rgb = hv.RGB(rgb_data).opts(invert_xaxis=True)
 
         fig_dict = plotly_renderer.get_plot_state(rgb)
@@ -107,8 +107,8 @@ class TestRGBPlot(TestPlotlyPlot):
 
         assert image["source"] == expected_source
 
-    def test_rgb_invert_xaxis_and_yaxis(self):
-        rgb_data = np.random.rand(10, 10, 3)
+    def test_rgb_invert_xaxis_and_yaxis(self, rng):
+        rgb_data = rng.random((10, 10, 3))
         rgb = hv.RGB(rgb_data).opts(invert_xaxis=True, invert_yaxis=True)
 
         fig_dict = plotly_renderer.get_plot_state(rgb)
@@ -150,8 +150,8 @@ class TestRGBPlot(TestPlotlyPlot):
 
         assert image["source"] == expected_source
 
-    def test_rgb_invert_axes(self):
-        rgb_data = np.random.rand(10, 10, 3)
+    def test_rgb_invert_axes(self, rng):
+        rgb_data = rng.random((10, 10, 3))
         rgb = hv.RGB(rgb_data).opts(invert_axes=True)
 
         fig_dict = plotly_renderer.get_plot_state(rgb)
@@ -193,8 +193,8 @@ class TestRGBPlot(TestPlotlyPlot):
 
         assert image["source"] == expected_source
 
-    def test_rgb_invert_xaxis_and_yaxis_and_axes(self):
-        rgb_data = np.random.rand(10, 10, 3)
+    def test_rgb_invert_xaxis_and_yaxis_and_axes(self, rng):
+        rgb_data = rng.random((10, 10, 3))
         rgb = hv.RGB(rgb_data).opts(invert_xaxis=True, invert_yaxis=True, invert_axes=True)
 
         fig_dict = plotly_renderer.get_plot_state(rgb)
@@ -236,8 +236,8 @@ class TestRGBPlot(TestPlotlyPlot):
 
         assert image["source"] == expected_source
 
-    def test_rgb_opacity(self):
-        rgb_data = np.random.rand(10, 10, 3)
+    def test_rgb_opacity(self, rng):
+        rgb_data = rng.random((10, 10, 3))
         rgb = hv.RGB(rgb_data).opts(opacity=0.5)
         fig_dict = plotly_renderer.get_plot_state(rgb)
 
@@ -288,8 +288,8 @@ class TestMapboxRGBPlot(TestPlotlyPlot):
         self.lon_center, self.lat_center = self.lon_centers[0], self.lat_centers[0]
         self.lons, self.lats = hv.Tiles.easting_northing_to_lon_lat(self.xs, self.ys)
 
-    def test_rgb(self):
-        rgb_data = np.random.rand(10, 10, 3)
+    def test_rgb(self, rng):
+        rgb_data = rng.random((10, 10, 3))
         rgb = hv.Tiles("") * hv.RGB(
             rgb_data, bounds=(self.x_range[0], self.y_range[0], self.x_range[1], self.y_range[1])
         ).opts(opacity=0.5).redim.range(x=self.x_range, y=self.y_range)

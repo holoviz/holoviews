@@ -136,14 +136,14 @@ class TestPointPlot(TestBokehPlot):
             formatters={"@{x}": "datetime"},
         )
 
-    def test_points_overlay_hover_batched(self):
-        obj = hv.NdOverlay({i: hv.Points(np.random.rand(10, 2)) for i in range(5)}, kdims=["Test"])
+    def test_points_overlay_hover_batched(self, rng):
+        obj = hv.NdOverlay({i: hv.Points(rng.random((10, 2))) for i in range(5)}, kdims=["Test"])
         opts = {"Points": {"tools": ["hover"]}, "NdOverlay": {"legend_limit": 0}}
         obj = obj.opts(opts)
         self._test_hover_info(obj, [("Test", "@{Test}"), ("x", "@{x}"), ("y", "@{y}")])
 
-    def test_points_overlay_hover(self):
-        obj = hv.NdOverlay({i: hv.Points(np.random.rand(10, 2)) for i in range(5)}, kdims=["Test"])
+    def test_points_overlay_hover(self, rng):
+        obj = hv.NdOverlay({i: hv.Points(rng.random((10, 2))) for i in range(5)}, kdims=["Test"])
         opts = {"Points": {"tools": ["hover"]}, "NdOverlay": {"legend_limit": 0}}
         obj = obj.opts(opts)
         self._test_hover_info(obj, [("Test", "@{Test}"), ("x", "@{x}"), ("y", "@{y}")])
@@ -564,11 +564,11 @@ class TestPointPlot(TestBokehPlot):
 @pytest.mark.skipif(not BOKEH_GE_3_8_0, reason="Needs Bokeh 3.8")
 class TestSizeBar:
     def setup_method(self):
-        np.random.seed(1)
+        rng = np.random.default_rng(1)
         N = 100
-        x = np.random.random(size=N) * 100
-        y = np.random.random(size=N) * 100
-        radii = np.random.random(size=N) * 10
+        x = rng.random(size=N) * 100
+        y = rng.random(size=N) * 100
+        radii = rng.random(size=N) * 10
         self.plot = hv.Points((x, y, radii), vdims=["radii"]).opts(radius="radii")
 
     def get_handles(self):

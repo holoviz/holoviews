@@ -416,7 +416,7 @@ class image_overlay(Operation):
     @classmethod
     def _match(cls, el, spec):
         """Return the strength of the match (None if no match)"""
-        spec_dict = dict(zip(["type", "group", "label"], spec.split("."), strict=None))
+        spec_dict = dict(zip(["type", "group", "label"], spec.split("."), strict=False))
         if not isinstance(el, Image) or spec_dict["type"] != "Image":
             raise NotImplementedError("Only Image currently supported")
 
@@ -461,9 +461,9 @@ class image_overlay(Operation):
 
         completed = []
         strongest = ordering[np.argmax(strengths)]
-        for el, spec in zip(ordering, specs, strict=None):
+        for el, spec in zip(ordering, specs, strict=True):
             if el is None:
-                spec_dict = dict(zip(["type", "group", "label"], spec.split("."), strict=None))
+                spec_dict = dict(zip(["type", "group", "label"], spec.split("."), strict=False))
                 el = Image(
                     np.ones(strongest.data.shape) * self.p.fill,
                     group=spec_dict.get("group", "Image"),
@@ -702,7 +702,7 @@ class contours(Operation):
 
             data = tuple(
                 date2num(d) if is_datetime else d
-                for d, is_datetime in zip(data, data_is_datetime, strict=None)
+                for d, is_datetime in zip(data, data_is_datetime, strict=True)
             )
 
         xdim, ydim = element.dimensions("key", label=True)

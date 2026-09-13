@@ -207,7 +207,7 @@ class PointPlot(SizebarMixin, ColorbarPlot):
         # Angles need special handling since they are tied to the
         # marker in certain cases
         has_angles = False
-        for (key, el), zorder in zip(element.data.items(), zorders, strict=None):
+        for (key, el), zorder in zip(element.data.items(), zorders, strict=True):
             el_opts = self.lookup_options(el, "plot").options
             self.param.update(
                 **{k: v for k, v in el_opts.items() if k not in OverlayPlot._propagate_options}
@@ -241,7 +241,7 @@ class PointPlot(SizebarMixin, ColorbarPlot):
                 data["__angle"].append(np.zeros(len(v)))
 
             if "hover" in self.handles:
-                for d, k in zip(element.dimensions(), key, strict=None):
+                for d, k in zip(element.dimensions(), key, strict=False):
                     sanitized = dimension_sanitizer(d.name)
                     data[sanitized].append([k] * nvals)
 
@@ -433,7 +433,7 @@ class CurvePlot(ElementPlot):
         data = defaultdict(list)
 
         zorders = self._updated_zorders(overlay)
-        for (key, el), zorder in zip(overlay.data.items(), zorders, strict=None):
+        for (key, el), zorder in zip(overlay.data.items(), zorders, strict=True):
             el_opts = self.lookup_options(el, "plot").options
             self.param.update(
                 **{k: v for k, v in el_opts.items() if k not in OverlayPlot._propagate_options}
@@ -457,7 +457,7 @@ class CurvePlot(ElementPlot):
             for k, v in sdata.items():
                 data[k].append(v[0])
 
-            for d, k in zip(overlay.kdims, key, strict=None):
+            for d, k in zip(overlay.kdims, key, strict=True):
                 sanitized = dimension_sanitizer(d.name)
                 data[sanitized].append(k)
         data = {opt: vals for opt, vals in data.items() if not any(v is None for v in vals)}
@@ -710,7 +710,7 @@ class SpreadPlot(ElementPlot):
         lower = np.split(lower, split)
         upper = np.split(upper, split)
         band_x, band_y = [], []
-        for i, (x, l, u) in enumerate(zip(xvals, lower, upper, strict=None)):
+        for i, (x, l, u) in enumerate(zip(xvals, lower, upper, strict=True)):
             if i:
                 x, l, u = x[1:], l[1:], u[1:]
             if not len(x):
@@ -943,7 +943,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         """
         bottoms, tops = [], []
-        for x, y in zip(xvals, yvals, strict=None):
+        for x, y in zip(xvals, yvals, strict=True):
             baseline = baselines[x][sign]
             if sign == "positive":
                 bottom = baseline

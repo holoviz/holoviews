@@ -6,6 +6,7 @@ from collections import defaultdict
 from itertools import chain
 from textwrap import dedent
 from types import FunctionType
+from typing import TYPE_CHECKING, cast
 
 import bokeh
 import bokeh.plotting
@@ -14,6 +15,7 @@ import param
 from bokeh.document.events import ModelChangedEvent
 from bokeh.model import Model
 from bokeh.models import (
+    Axis,
     BinnedTicker,
     ColorBar,
     ColorMapper,
@@ -22,6 +24,8 @@ from bokeh.models import (
     EqHistColorMapper,
     GlyphRenderer,
     Legend,
+    Plot,
+    Range,
     Renderer,
     Span,
     Title,
@@ -106,6 +110,11 @@ from .util import (
 
 if BOKEH_GE_3_8_0:
     from bokeh.models.axes import TimedeltaAxis
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from .util import AxisType
 
 try:
     TOOLS_MAP = Tool._known_aliases
@@ -813,28 +822,34 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if dim not in data:
                 data[dim] = [v] * len(next(iter(data.values())))
 
-    def _shared_axis_range(self, plots, specs, range_type, axis_type, pos):
+    def _shared_axis_range(
+        self,
+        plots: Iterable[Plot] | None,
+        specs: Iterable[object] | None,
+        axis_type: AxisType,
+        pos: int,
+        *,
+        is_categorical: bool,
+    ) -> Range | None:
         """Given a list of other plots return the shared axis from another
         plot by matching the dimensions specs stored as tags on the
         dimensions. Returns None if there is no such axis.
 
         """
-        dim_range = None
-        categorical = range_type is FactorRange
+        dim_range: Range | None = None
         for plot in plots:
             if plot is None or specs is None:
                 continue
             ax = "x" if pos == 0 else "y"
-            plot_range = getattr(plot, f"{ax}_range", None)
-            axes = getattr(plot, f"{ax}axis", None)
-            extra_ranges = getattr(plot, f"extra_{ax}_ranges", {})
+            plot_range = cast("Range | None", getattr(plot, f"{ax}_range", None))
+            axes = cast("Axis | None", getattr(plot, f"{ax}axis", None))
+            extra_ranges = cast("dict[str, Range] | None", getattr(plot, f"extra_{ax}_ranges", {}))
 
             if (
                 plot_range
                 and plot_range.tags
                 and match_dim_specs(plot_range.tags[0], specs)
-                and match_ax_type(axes[0], axis_type)
-                and not (categorical and not isinstance(dim_range, FactorRange))
+                and match_ax_type(axes[0], axis_type, is_categorical=is_categorical)
             ):
                 dim_range = plot_range
 
@@ -845,8 +860,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if (
                     extra_range.tags
                     and match_dim_specs(extra_range.tags[0], specs)
-                    and match_yaxis_type_to_range(axes, axis_type, extra_range.name)
-                    and not (categorical and not isinstance(dim_range, FactorRange))
+                    and match_yaxis_type_to_range(
+                        axes, axis_type, extra_range.name, is_categorical=is_categorical
+                    )
                 ):
                     dim_range = extra_range
                     break
@@ -878,7 +894,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         dim=None,
         range_tags_extras=None,
         extra_range_name=None,
-    ):
+    ) -> tuple[AxisType, str, Range]:
 
         if range_tags_extras is None:
             range_tags_extras = []
@@ -956,46 +972,61 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if dim:
                 axis_label = str(dim)
             else:
-                xlabel, ylabel, _zlabel = self._get_axis_labels(dims if dims else (None, None))
-                if self.invert_axes:
-                    xlabel, ylabel = ylabel, xlabel
-                axis_label = ylabel if pos else xlabel
+                axis_label = dim_axis_label(dims) if dims else ""
+                if pos == 0 and self.xlabel is not None:
+                    axis_label = self.xlabel
+                elif pos == 1 and self.ylabel is not None:
+                    axis_label = self.ylabel
             if dims:
                 dims = dims[:2][::-1]
-
-        categorical = any(self.traverse(lambda plot: plot._categorical))
-        if self.subcoordinate_y:
-            categorical = False
-        elif dims is not None and any(
-            dim.label in ranges and "factors" in ranges[dim.label] for dim in dims
-        ):
-            categorical = True
-        else:
-            categorical = any(isinstance(v, (str, bytes)) for v in (v0, v1))
 
         range_types = (self._x_range_type, self._y_range_type)
         if self.invert_axes:
             range_types = range_types[::-1]
         range_type = range_types[pos]
+
+        axis_dim = dims[0] if dims else None
+        dim_type = (
+            el.get_dimension_type(axis_dim)
+            if axis_dim is not None and el.get_dimension(axis_dim)
+            else None
+        )
+        is_categorical = not self.subcoordinate_y and (
+            # the plot or range declares itself categorical
+            # NOTE: does not seem to be done anywhere in HoloViews.
+            any(self.traverse(lambda plot: plot._categorical))
+            or range_type is FactorRange
+            # more than one dimension on this axis
+            or bool(dims and len(dims) > 1)
+            # the axis dimension's own declared values/type are string-like
+            or (axis_dim is not None and any(isinstance(v, (str, bytes)) for v in axis_dim.values))
+            or (isinstance(dim_type, type) and issubclass(dim_type, (str, bytes)))
+            # `ranges` (populated by `Plot._compute_group_range`) recorded factors for the dimension.
+            # While `ranges` and `v0`/`v1` are merged by dimension *name* across a layout/overlay,
+            # ranges are excluded if their types don't match.
+            or bool(axis_dim and axis_dim.label in ranges and "factors" in ranges[axis_dim.label])
+            # extents are string-like (e.g. done in Waterfall)
+            or any(isinstance(v, (str, bytes)) for v in (v0, v1))
+        )
+
         # If multi_x/y then grab opts from element
-        axis_type = "log" if (self.logx, self.logy)[pos] else "auto"
-        if dims:
-            if len(dims) > 1 or range_type is FactorRange:
-                axis_type = "auto"
-                categorical = True
-            elif el.get_dimension(dims[0]):
-                dim_type = el.get_dimension_type(dims[0])
-                if isinstance(v0, util.datetime_types) or dim_type in util.datetime_types:
-                    axis_type = "datetime"
-                elif BOKEH_GE_3_8_0 and (
-                    isinstance(v0, util.timedelta_types) or dim_type in util.timedelta_types
-                ):
-                    axis_type = "timedelta"
+        axis_type: AxisType = "log" if (self.logx, self.logy)[pos] else "auto"
+        if is_categorical:
+            axis_type = "auto"
+        elif dim_type is not None:
+            if isinstance(v0, util.datetime_types) or dim_type in util.datetime_types:
+                axis_type = "datetime"
+            elif BOKEH_GE_3_8_0 and (
+                isinstance(v0, util.timedelta_types) or dim_type in util.timedelta_types
+            ):
+                axis_type = "timedelta"
 
         norm_opts = self.lookup_options(el, "norm").options
         shared_name = extra_range_name or ("x-main-range" if pos == 0 else "y-main-range")
         if plots and self.shared_axes and not norm_opts.get("axiswise", False) and not dim:
-            dim_range = self._shared_axis_range(plots, specs, range_type, axis_type, pos)
+            dim_range = self._shared_axis_range(
+                plots, specs, axis_type, pos, is_categorical=is_categorical
+            )
             if dim_range:
                 self._shared[shared_name] = True
 
@@ -1008,8 +1039,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if self._shared.get(shared_name) and not dim:
             pass
-        elif categorical:
-            axis_type = "auto"
+        elif is_categorical:
             dim_range = FactorRange(name=name)
         elif None in [v0, v1] or any(
             True if isinstance(el, (str, bytes, *util.cftime_types)) else not util.isfinite(el)
@@ -1037,7 +1067,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         ax_specs, yaxes, dimensions = {}, {}, {}
         subcoordinate_axes = 0
-        for el, (sp_key, sp) in zip(element, self.subplots.items(), strict=None):
+        for el, (sp_key, sp) in zip(element, self.subplots.items(), strict=False):
             ax_dims = sp._get_axis_dims(el)[:2]
             if sp.invert_axes:
                 ax_dims[::-1]
@@ -1050,7 +1080,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     continue
                 if sp.overlay_dims:
                     ax_name = ", ".join(
-                        d.pprint_value(k) for d, k in zip(element.kdims, sp_key, strict=None)
+                        d.pprint_value(k) for d, k in zip(element.kdims, sp_key, strict=True)
                     )
                 else:
                     ax_name = el.label
@@ -1355,7 +1385,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             opts["text_font_size"] = title_font
         return opts
 
-    def _populate_axis_handles(self, plot):
+    def _populate_axis_handles(self, plot: Plot) -> None:
         self.handles["xaxis"] = plot.xaxis[0]
         self.handles["x_range"] = plot.x_range
         self.handles["extra_x_ranges"] = plot.extra_x_ranges
@@ -1400,7 +1430,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 ticks, labels = [], []
                 idx = 0
                 for el, (sp_key, sp) in zip(
-                    self.current_frame, self.subplots.items(), strict=None
+                    self.current_frame, self.subplots.items(), strict=False
                 ):
                     if not sp.subcoordinate_y:
                         continue
@@ -1417,12 +1447,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                         labels.append(
                             ", ".join(
                                 d.pprint_value(k)
-                                for d, k in zip(self.current_frame.kdims, sp_key, strict=None)
+                                for d, k in zip(self.current_frame.kdims, sp_key, strict=True)
                             )
                         )
                 axis_props["ticker"] = FixedTicker(ticks=ticks)
                 if labels is not None:
-                    axis_props["major_label_overrides"] = dict(zip(ticks, labels, strict=None))
+                    axis_props["major_label_overrides"] = dict(zip(ticks, labels, strict=True))
         formatter = self.xformatter if axis == "x" else self.yformatter
         if formatter:
             formatter = wrap_formatter(formatter, axis)
@@ -1482,11 +1512,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         dimensions = self._get_axis_dims(el)
         props = {
             axis: self._axis_properties(axis, key, plot, dim)
-            for axis, dim in zip(["x", "y"], dimensions, strict=None)
+            for axis, dim in zip(["x", "y"], dimensions, strict=False)
         }
         xlabel, ylabel, _zlabel = self._get_axis_labels(dimensions)
-        if self.invert_axes:
-            xlabel, ylabel = ylabel, xlabel
         props["x"]["axis_label"] = xlabel if "x" in self.labelled or self.xlabel else ""
         props["y"]["axis_label"] = ylabel if "y" in self.labelled or self.ylabel else ""
         if not self._has_changed("label", props):
@@ -1944,9 +1972,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             let y_range_name = renderer.model.y_range_name
 
             if (!renderer.glyph.model.tags.includes('no_apply_ranges')) {{
-              const index = glyph_view.index.index
-              for (let pos = 0; pos < index._boxes.length - 4; pos += 4) {{
-                const [x0, y0, x1, y1] = index._boxes.slice(pos, pos+4)
+              // Bokeh 3.10 changed to glyph_view.index._bboxes
+              const boxes = glyph_view.index.index ? glyph_view.index.index._boxes : glyph_view.index._bboxes
+              for (let pos = 0; pos < boxes.length - 4; pos += 4) {{
+                const [x0, y0, x1, y1] = boxes.slice(pos, pos+4)
                 if ({odim}0 > plot.{odim}_range.start && {odim}1 < plot.{odim}_range.end) {{
                   vmin = Math.min(vmin, {dim}0)
                   vmax = Math.max(vmax, {dim}1)
@@ -3722,7 +3751,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             for subplot_zoom, overlay_zoom in zip(
                 subplot.handles["zooms_subcoordy"].values(),
                 self.handles["zooms_subcoordy"].values(),
-                strict=None,
+                strict=False,
             ):
                 renderers = list(
                     util.unique_iterator(overlay_zoom.renderers + subplot_zoom.renderers)

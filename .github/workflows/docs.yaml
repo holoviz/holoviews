@@ -17,8 +17,9 @@ on:
           - dryrun
         required: true
         default: dryrun
-  schedule:
-    - cron: "0 14 * * SUN"
+  pull_request:
+    branches:
+      - "main"
 
 permissions: {}
 
@@ -27,21 +28,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  pixi_lock:
-    name: Pixi lock
-    runs-on: ubuntu-latest
-    steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-lock@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
-
   docs_build:
     name: Build Documentation
-    needs: [pixi_lock]
+    if: github.event_name != 'pull_request' || github.head_ref == 'renovate/lock-file-maintenance-pixi-lock'
     runs-on: "macos-latest"
     timeout-minutes: 180
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
         with:
           environments: docs
       - name: Build documentation
@@ -81,3 +76,13 @@ jobs:
         run: |
           aws s3 sync --delete ./builtdocs s3://holoviews.org/
           aws cloudfront create-invalidation --distribution-id E1UJPEXJIGBZWN --paths "/*"
+
+  result_docs_build:
+    name: result:docs
+    needs: [docs_build, docs_publish]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: check for failures
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: echo job failed && exit 1

@@ -110,7 +110,7 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
         ypos = yvals[:-1] + np.diff(yvals) / 2.0
         plot_coords = product(xpos, ypos)
         annotations = {}
-        for plot_coord, v in zip(plot_coords, vals, strict=None):
+        for plot_coord, v in zip(plot_coords, vals, strict=True):
             text = "-" if is_nan(v) else val_dim.pprint_value(v)
             annotations[plot_coord] = text
         return annotations
@@ -128,7 +128,7 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
             if not xfactors:
                 xfactors = element.gridded.dimension_values(xdim, False)
             xlabels = [xdim.pprint_value(k) for k in xfactors]
-            xticks = list(zip(xpos, xlabels, strict=None))
+            xticks = list(zip(xpos, xlabels, strict=True))
 
         yticks = opts.get("yticks")
         if yticks is None:
@@ -136,7 +136,7 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
             if not yfactors:
                 yfactors = element.gridded.dimension_values(ydim, False)
             ylabels = [ydim.pprint_value(k) for k in yfactors]
-            yticks = list(zip(ypos, ylabels, strict=None))
+            yticks = list(zip(ypos, ylabels, strict=True))
         return xticks, yticks
 
     def _draw_markers(self, ax, element, marks, values, factors, axis="x"):
@@ -311,7 +311,7 @@ class RadialHeatMapPlot(ColorbarPlot):
         bounds = np.linspace(start, end, size + 1)
         if reverse:
             bounds = bounds[::-1]
-        mapping = list(zip(bounds[:-1] % (np.pi * 2), order, strict=None))
+        mapping = list(zip(bounds[:-1] % (np.pi * 2), order, strict=True))
         return mapping
 
     @staticmethod
@@ -341,7 +341,7 @@ class RadialHeatMapPlot(ColorbarPlot):
             ticks = ticks[::nth_mark]
         elif isinstance(ticker, (tuple, list)):
             nth_mark = max([np.ceil(len(ticks) / len(ticker)).astype(int), 1])
-            ticks = [(v, tl) for (v, l), tl in zip(ticks[::nth_mark], ticker, strict=None)]
+            ticks = [(v, tl) for (v, l), tl in zip(ticks[::nth_mark], ticker, strict=False)]
         elif ticker:
             ticks = list(ticker)
         else:

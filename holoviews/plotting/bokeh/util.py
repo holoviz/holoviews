@@ -7,6 +7,7 @@ import time
 from collections import defaultdict
 from contextlib import contextmanager, suppress
 from itertools import permutations
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 from bokeh.core.property.datetime import Datetime
@@ -14,7 +15,7 @@ from bokeh.core.validation import silence
 from bokeh.core.validation.check import is_silenced
 from bokeh.layouts import group_tools
 from bokeh.model import Model
-from bokeh.models import CustomJS, tools
+from bokeh.models import CustomJS, Range, Scale, tools
 from bokeh.models.axes import (
     CategoricalAxis,
     DatetimeAxis,
@@ -48,7 +49,7 @@ from ...core.util import (
     unique_array,
 )
 from ...core.util.dependencies import _no_import_version
-from ...util.warnings import warn
+from ...util.warnings import deprecated, warn
 from ..util import dim_axis_label
 
 BOKEH_VERSION = _no_import_version("bokeh")
@@ -64,6 +65,13 @@ BOKEH_GE_3_9_0 = BOKEH_VERSION >= (3, 9, 0)
 
 if BOKEH_GE_3_8_0:
     from bokeh.models.axes import TimedeltaAxis
+
+if TYPE_CHECKING:
+    from collections.abc import Collection, Iterable
+
+    from bokeh.models.axes import Axis
+
+    AxisType = Literal["linear", "log", "datetime", "auto", "mercator", "timedelta"]
 
 
 TOOL_TYPES = {
@@ -130,7 +138,7 @@ if BOKEH_GE_3_6_0:
 
 def convert_timestamp(timestamp):
     """Converts bokehJS timestamp to datetime64."""
-    datetime = dt.datetime.fromtimestamp(timestamp / 1000, tz=dt.timezone.utc)
+    datetime = dt.datetime.fromtimestamp(timestamp / 1000, tz=dt.UTC)
     return np.datetime64(datetime.replace(tzinfo=None))
 
 
@@ -205,7 +213,7 @@ def compute_plot_size(plot):
             w_agg, h_agg = (np.max, np.max)
         else:
             w_agg, h_agg = (np.max, np.sum)
-        widths, heights = zip(*[compute_plot_size(child) for child in plot.children], strict=None)
+        widths, heights = zip(*[compute_plot_size(child) for child in plot.children], strict=True)
         return w_agg(widths), h_agg(heights)
     elif isinstance(plot, figure):
         if plot.width:
@@ -613,6 +621,7 @@ def make_axis(
     tick_size=None,
     axis_height=35,
 ):
+    deprecated("1.26.0", "make_axis")
     factors = list(map(dim.pprint_value, factors))
     nchars = np.max([len(f) for f in factors])
     ranges = FactorRange(factors=factors)
@@ -766,9 +775,9 @@ def pad_plots(plots):
     plots = [
         [
             Column(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
-            for p, w in zip(row, ws, strict=None)
+            for p, w in zip(row, ws, strict=True)
         ]
-        for row, ws in zip(plots, widths, strict=None)
+        for row, ws in zip(plots, widths, strict=True)
     ]
     return plots
 
@@ -810,7 +819,7 @@ def get_tab_title(key, frame, overlay):
         title = " ".join(title)
     else:
         title = " | ".join(
-            [d.pprint_value_string(k) for d, k in zip(overlay.kdims, key, strict=None)]
+            [d.pprint_value_string(k) for d, k in zip(overlay.kdims, key, strict=True)]
         )
     return title
 
@@ -1143,14 +1152,14 @@ def multi_polygons_data(element):
     xs, ys = (element.dimension_values(kd, expanded=False) for kd in element.kdims)
     holes = element.holes()
     xsh, ysh = [], []
-    for x, y, multi_hole in zip(xs, ys, holes, strict=None):
+    for x, y, multi_hole in zip(xs, ys, holes, strict=True):
         xhs = [[h[:, 0] for h in hole] for hole in multi_hole]
         yhs = [[h[:, 1] for h in hole] for hole in multi_hole]
         array = np.column_stack([x, y])
         splits = np.where(np.isnan(array[:, :2].astype("float")).sum(axis=1))[0]
         arrays = np.split(array, splits + 1) if len(splits) else [array]
         multi_xs, multi_ys = [], []
-        for i, (path, hx, hy) in enumerate(zip(arrays, xhs, yhs, strict=None)):
+        for i, (path, hx, hy) in enumerate(zip(arrays, xhs, yhs, strict=False)):
             if i != (len(arrays) - 1):
                 path = path[:-1]
             multi_xs.append([path[:, 0], *hx])
@@ -1160,7 +1169,7 @@ def multi_polygons_data(element):
     return xsh, ysh
 
 
-def match_dim_specs(specs1, specs2):
+def match_dim_specs(specs1: Collection[object] | None, specs2: Collection[object] | None):
     """Matches dimension specs used to link axes.
 
     Axis dimension specs consists of a list of tuples corresponding
@@ -1171,8 +1180,8 @@ def match_dim_specs(specs1, specs2):
     """
     if (specs1 is None or specs2 is None) or (len(specs1) != len(specs2)):
         return False
-    for spec1, spec2 in zip(specs1, specs2, strict=None):
-        for s1, s2 in zip(spec1, spec2, strict=None):
+    for spec1, spec2 in zip(specs1, specs2, strict=False):
+        for s1, s2 in zip(spec1, spec2, strict=False):
             if s1 is None or s2 is None:
                 continue
             if s1 != s2:
@@ -1180,7 +1189,7 @@ def match_dim_specs(specs1, specs2):
     return True
 
 
-def get_scale(range_input, axis_type):
+def get_scale(range_input: Range, axis_type: AxisType) -> Scale:
     if isinstance(range_input, (DataRange1d, Range1d)) and axis_type in [
         "linear",
         "datetime",
@@ -1230,23 +1239,32 @@ def get_axis_class(axis_type, range_input, dim):  # Copied from bokeh
         raise ValueError(f"Unrecognized axis_type: '{axis_type!r}'")
 
 
-def match_ax_type(ax, range_type):
+def match_ax_type(ax: Axis, range_type: AxisType, *, is_categorical: bool | None = None) -> bool:
     """Ensure the range_type matches the axis model being matched."""
+    is_categorical = range_type == "categorical" if is_categorical is None else is_categorical
     if isinstance(ax, CategoricalAxis):
-        return range_type == "categorical"
+        return is_categorical
+    elif is_categorical:
+        return False
     elif isinstance(ax, DatetimeAxis):
         return range_type == "datetime"
     elif BOKEH_GE_3_8_0 and isinstance(ax, TimedeltaAxis):
         return range_type == "timedelta"
     else:
-        return range_type in ("auto", "log")
+        return range_type in {"auto", "log"}
 
 
-def match_yaxis_type_to_range(yax, range_type, range_name):
+def match_yaxis_type_to_range(
+    yax: Iterable[Axis],
+    range_type: AxisType,
+    range_name: str | None,
+    *,
+    is_categorical: bool | None = None,
+) -> bool:
     """Apply match_ax_type to the y-axis found by the given range name"""
     for axis in yax:
         if axis.y_range_name == range_name:
-            return match_ax_type(axis, range_type)
+            return match_ax_type(axis, range_type, is_categorical=is_categorical)
     raise ValueError("No axis with given range found")
 
 
@@ -1303,7 +1321,7 @@ def get_ticker_axis_props(ticker):
         axis_props["ticker"] = BasicTicker(desired_num_ticks=ticker)
     elif isinstance(ticker, (tuple, list)):
         if all(isinstance(t, tuple) for t in ticker):
-            ticks, labels = zip(*ticker, strict=None)
+            ticks, labels = zip(*ticker, strict=False)
             # Ensure floats which are integers are serialized as ints
             # because in JS the lookup fails otherwise
             ticks = [int(t) if isinstance(t, float) and t.is_integer() else t for t in ticks]
@@ -1314,5 +1332,5 @@ def get_ticker_axis_props(ticker):
             ticks = [util.dt_to_int(tick, "ms") for tick in ticks]
         axis_props["ticker"] = FixedTicker(ticks=ticks)
         if labels is not None:
-            axis_props["major_label_overrides"] = dict(zip(ticks, labels, strict=None))
+            axis_props["major_label_overrides"] = dict(zip(ticks, labels, strict=True))
     return axis_props

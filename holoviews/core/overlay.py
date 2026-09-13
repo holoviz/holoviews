@@ -26,7 +26,7 @@ class Overlayable:
 
     """
 
-    def __mul__(self, other):
+    def __mul__(self, other, reverse=False):
         """Overlay object with other object."""
         # Local import to break the import cyclic dependency
         from .spaces import DynamicMap

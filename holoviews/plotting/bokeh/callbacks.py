@@ -1623,7 +1623,7 @@ class BoxEditCallback(GlyphDrawCallback):
         element = self.plot.current_frame
 
         l, b, r, t = [], [], [], []
-        for x, y in zip(data["xs"], data["ys"], strict=None):
+        for x, y in zip(data["xs"], data["ys"], strict=True):
             x0, x1 = (np.nanmin(x), np.nanmax(x))
             y0, y1 = (np.nanmin(y), np.nanmax(y))
             l.append(x0)

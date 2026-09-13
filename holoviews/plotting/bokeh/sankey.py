@@ -245,7 +245,7 @@ class SankeyPlot(GraphPlot):
             src += "_values"
         if tgt == "end":
             tgt += "_values"
-        lookup = dict(zip(*(element.nodes.dimension_values(d) for d in (2, lidx)), strict=None))
+        lookup = dict(zip(*(element.nodes.dimension_values(d) for d in (2, lidx)), strict=True))
         src_vals = data["patches_1"][src]
         tgt_vals = data["patches_1"][tgt]
         data["patches_1"][src] = [lookup.get(v, v) for v in src_vals]

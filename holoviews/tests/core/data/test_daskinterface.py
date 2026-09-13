@@ -96,16 +96,16 @@ class DaskDatasetTest(BasePandasInterfaceTests):
     def test_dataset_aggregate_ht_alias(self):
         super().test_dataset_aggregate_ht_alias()
 
-    def test_dataset_from_multi_index(self):
+    def test_dataset_from_multi_index(self, rng):
         pytest.skip("Temporarily skipped")
-        df = pd.DataFrame({"x": np.arange(10), "y": np.arange(10), "z": np.random.rand(10)})
+        df = pd.DataFrame({"x": np.arange(10), "y": np.arange(10), "z": rng.random(10)})
         ddf = dd.from_pandas(df, 1)
         ds = hv.Dataset(ddf.groupby(["x", "y"]).mean(), ["x", "y"])
         assert_element_equal(ds, hv.Dataset(df, ["x", "y"]))
 
-    def test_dataset_from_multi_index_tuple_dims(self):
+    def test_dataset_from_multi_index_tuple_dims(self, rng):
         pytest.skip("Temporarily skipped")
-        df = pd.DataFrame({"x": np.arange(10), "y": np.arange(10), "z": np.random.rand(10)})
+        df = pd.DataFrame({"x": np.arange(10), "y": np.arange(10), "z": rng.random(10)})
         ddf = dd.from_pandas(df, 1)
         ds = hv.Dataset(ddf.groupby(["x", "y"]).mean(), [("x", "X"), ("y", "Y")])
         assert_element_equal(ds, hv.Dataset(df, [("x", "X"), ("y", "Y")]))

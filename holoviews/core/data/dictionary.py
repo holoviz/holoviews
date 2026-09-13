@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 
 import numpy as np
 
@@ -19,7 +19,7 @@ class DictInterface(Interface):
 
     """
 
-    types = (dict, OrderedDict)
+    types = (dict,)
 
     datatype = "dictionary"
 
@@ -103,35 +103,37 @@ class DictInterface(Interface):
         if not isinstance(data, cls.types):
             raise ValueError("DictInterface interface couldn't convert data.")
 
-        unpacked = []
+        unpacked, unchanged = {}, True
         for d, vals in data.items():
             if isinstance(d, tuple):
+                unchanged = False
                 vals = np.asarray(vals)
                 if vals.shape == (0,):
                     for sd in d:
-                        unpacked.append((sd, np.array([], dtype=vals.dtype)))
+                        unpacked[sd] = np.array([], dtype=vals.dtype)
                 elif not vals.ndim == 2 and vals.shape[1] == len(d):
                     raise ValueError("Values for %s dimensions did not have the expected shape.")
                 else:
                     for i, sd in enumerate(d):
-                        unpacked.append((sd, vals[:, i]))
+                        unpacked[sd] = vals[:, i]
             elif d not in dimensions:
-                unpacked.append((d, vals))
+                unpacked[d] = vals
             else:
                 if not isscalar(vals):
                     vals = np.asarray(vals)
                     if not vals.ndim == 1 and d in dimensions:
                         raise ValueError("DictInterface expects data for each column to be flat.")
-                unpacked.append((d, vals))
+                    unchanged = unchanged and vals is data[d]
+                unpacked[d] = vals
 
-        if not cls.expanded([vs for d, vs in unpacked if d in dimensions and not isscalar(vs)]):
+        if not cls.expanded(
+            [vs for d, vs in unpacked.items() if d in dimensions and not isscalar(vs)]
+        ):
             raise ValueError("DictInterface expects data to be of uniform shape.")
-        # OrderedDict can't be replaced with dict: https://github.com/holoviz/holoviews/pull/5925
-        if isinstance(data, OrderedDict):
-            data.update(unpacked)
-        else:
-            data = OrderedDict(unpacked)
 
+        # Reusing the input dict keeps `hv.Table(points.data).data is points.data`
+        # which shared_datasource=True relies on
+        data = data if unchanged else unpacked
         return data, {"kdims": kdims, "vdims": vdims}, {}
 
     @classmethod

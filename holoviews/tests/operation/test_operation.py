@@ -28,6 +28,7 @@ from holoviews.operation.element import (
 from holoviews.testing import assert_element_equal
 
 from .._deps import (
+    contourpy_skip,
     da,
     da_skip,
     dd,
@@ -49,37 +50,37 @@ class OperationTests:
     the basic Element types.
     """
 
-    def test_operation_element(self):
-        img = hv.Image(np.random.rand(10, 10))
+    def test_operation_element(self, rng):
+        img = hv.Image(rng.random((10, 10)))
         op_img = operation(img, op=lambda x, k: x.clone(x.data * 2))
         assert_element_equal(op_img, img.clone(img.data * 2, group="Operation"))
 
-    def test_operation_ndlayout(self):
-        ndlayout = hv.NdLayout({i: hv.Image(np.random.rand(10, 10)) for i in range(10)})
+    def test_operation_ndlayout(self, rng):
+        ndlayout = hv.NdLayout({i: hv.Image(rng.random((10, 10))) for i in range(10)})
         op_ndlayout = operation(ndlayout, op=lambda x, k: x.clone(x.data * 2))
         doubled = ndlayout.clone(
             {k: v.clone(v.data * 2, group="Operation") for k, v in ndlayout.items()}
         )
         assert_element_equal(op_ndlayout, doubled)
 
-    def test_operation_grid(self):
-        grid = hv.GridSpace({i: hv.Image(np.random.rand(10, 10)) for i in range(10)}, kdims=["X"])
+    def test_operation_grid(self, rng):
+        grid = hv.GridSpace({i: hv.Image(rng.random((10, 10))) for i in range(10)}, kdims=["X"])
         op_grid = operation(grid, op=lambda x, k: x.clone(x.data * 2))
         doubled = grid.clone({k: v.clone(v.data * 2, group="Operation") for k, v in grid.items()})
         assert_element_equal(op_grid, doubled)
 
-    def test_operation_holomap(self):
-        hmap = hv.HoloMap({1: hv.Image(np.random.rand(10, 10))})
+    def test_operation_holomap(self, rng):
+        hmap = hv.HoloMap({1: hv.Image(rng.random((10, 10)))})
         op_hmap = operation(hmap, op=lambda x, k: x.clone(x.data * 2))
         assert_element_equal(op_hmap.last, hmap.last.clone(hmap.last.data * 2, group="Operation"))
 
-    def test_image_transform(self):
-        img = hv.Image(np.random.rand(10, 10))
+    def test_image_transform(self, rng):
+        img = hv.Image(rng.random((10, 10)))
         op_img = transform(img, operator=lambda x: x * 2)
         assert_element_equal(op_img, img.clone(img.data * 2, group="Transform"))
 
-    def test_operation_chain(self):
-        img = hv.Image(np.random.rand(10, 10))
+    def test_operation_chain(self, rng):
+        img = hv.Image(rng.random((10, 10)))
         op_img = chain(
             img,
             operations=[
@@ -104,20 +105,20 @@ class OperationTests:
         assert ch_op.find(CustomOp2, skip_nonlinked=False) is op2
         assert ch_op.find(CustomOp2, skip_nonlinked=True) is op2
 
-    def test_operation_chain_find_apply(self):
-        img = hv.Image(np.random.rand(10, 10))
+    def test_operation_chain_find_apply(self, rng):
+        img = hv.Image(rng.random((10, 10)))
         tr_op = transform.instance(operator=lambda x: x * 2)
         img_apply = img.apply(tr_op, dynamic=False)
         assert img_apply.pipeline.find(transform, skip_nonlinked=False) is tr_op
 
-    def test_operation_chain_find_apply_chain(self):
+    def test_operation_chain_find_apply_chain(self, rng):
         class CustomOp1(hv.Operation):
             pass
 
         class CustomOp2(hv.Operation):
             pass
 
-        img = hv.Image(np.random.rand(10, 10))
+        img = hv.Image(rng.random((10, 10)))
         op1 = CustomOp1.instance()
         op2 = CustomOp2.instance()
         ch_op = chain.instance(operations=[op1, op2])
@@ -138,357 +139,6 @@ class OperationTests:
             op_img,
             img.clone(np.array([[3.162278, 3.162278], [3.162278, 3.162278]]), group="Gradient"),
         )
-
-    def test_image_contours(self):
-        img = hv.Image(np.array([[0, 1, 0], [0, 1, 0]]))
-        op_contours = contours(img, levels=[0.5])
-        # Note multiple lines which are nan-separated.
-        contour = hv.Contours(
-            [
-                [
-                    (-0.166667, 0.25, 0.5),
-                    (-0.1666667, -0.25, 0.5),
-                    (np.nan, np.nan, 0.5),
-                    (0.1666667, -0.25, 0.5),
-                    (0.1666667, 0.25, 0.5),
-                ]
-            ],
-            vdims=img.vdims,
-        )
-        assert_element_equal(op_contours, contour)
-
-    def test_image_contours_empty(self):
-        img = hv.Image(np.array([[0, 1, 0], [0, 1, 0]]))
-        # Contour level outside of data limits
-        op_contours = contours(img, levels=[23.0])
-        contour = hv.Contours([], vdims=img.vdims)
-        assert_element_equal(op_contours, contour)
-
-    def test_image_contours_auto_levels(self):
-        z = np.array([[0, 1, 0], [3, 4, 5.0], [6, 7, 8]])
-        img = hv.Image(z)
-        for nlevels in range(3, 20):
-            op_contours = contours(img, levels=nlevels)
-            levels = [item["z"] for item in op_contours.data]
-            assert len(levels) <= nlevels + 2
-            assert np.min(levels) <= z.min()
-            assert np.max(levels) < z.max()
-
-    def test_image_contours_no_range(self):
-        img = hv.Image(np.zeros((2, 2)))
-        op_contours = contours(img, levels=2)
-        contour = hv.Contours([], vdims=img.vdims)
-        assert_element_equal(op_contours, contour)
-
-    @mpl_skip
-    def test_image_contours_x_datetime(self):
-        x = np.array(["2023-09-01", "2023-09-03", "2023-09-05"], dtype="datetime64")
-        y = [14, 15]
-        z = np.array([[0, 1, 0], [0, 1, 0]])
-        img = hv.Image((x, y, z))
-        op_contours = contours(img, levels=[0.5])
-        # Note multiple lines which are nan-separated.
-        tz = dt.timezone.utc
-        expected_x = np.array(
-            [
-                dt.datetime(2023, 9, 2, tzinfo=tz),
-                dt.datetime(2023, 9, 2, tzinfo=tz),
-                np.nan,
-                dt.datetime(2023, 9, 4, tzinfo=tz),
-                dt.datetime(2023, 9, 4, tzinfo=tz),
-            ],
-            dtype=object,
-        )
-
-        # Separately compare nans and datetimes
-        x = op_contours.dimension_values("x")
-        mask = np.array([True, True, False, True, True])  # Mask ignoring nans
-        np.testing.assert_array_equal(x[mask], expected_x[mask])
-        np.testing.assert_array_equal(x[~mask].astype(float), expected_x[~mask].astype(float))
-
-        np.testing.assert_array_almost_equal(
-            op_contours.dimension_values("y").astype(float), [15, 14, np.nan, 14, 15]
-        )
-        np.testing.assert_array_almost_equal(op_contours.dimension_values("z"), [0.5] * 5)
-
-    @mpl_skip
-    def test_image_contours_y_datetime(self):
-        x = [14, 15, 16]
-        y = np.array(["2023-09-01", "2023-09-03"], dtype="datetime64")
-        z = np.array([[0, 1, 0], [0, 1, 0]])
-        img = hv.Image((x, y, z))
-        op_contours = contours(img, levels=[0.5])
-        # Note multiple lines which are nan-separated.
-        np.testing.assert_array_almost_equal(
-            op_contours.dimension_values("x").astype(float), [14.5, 14.5, np.nan, 15.5, 15.5]
-        )
-
-        tz = dt.timezone.utc
-        expected_y = np.array(
-            [
-                dt.datetime(2023, 9, 3, tzinfo=tz),
-                dt.datetime(2023, 9, 1, tzinfo=tz),
-                np.nan,
-                dt.datetime(2023, 9, 1, tzinfo=tz),
-                dt.datetime(2023, 9, 3, tzinfo=tz),
-            ],
-            dtype=object,
-        )
-
-        # Separately compare nans and datetimes
-        y = op_contours.dimension_values("y")
-        mask = np.array([True, True, False, True, True])  # Mask ignoring nans
-        np.testing.assert_array_equal(y[mask], expected_y[mask])
-        np.testing.assert_array_equal(y[~mask].astype(float), expected_y[~mask].astype(float))
-
-        np.testing.assert_array_almost_equal(op_contours.dimension_values("z"), [0.5] * 5)
-
-    @mpl_skip
-    def test_image_contours_xy_datetime(self):
-        x = np.array(["2023-09-01", "2023-09-03", "2023-09-05"], dtype="datetime64")
-        y = np.array(["2023-10-07", "2023-10-08"], dtype="datetime64")
-        z = np.array([[0, 1, 0], [0, 1, 0]])
-        img = hv.Image((x, y, z))
-        op_contours = contours(img, levels=[0.5])
-        # Note multiple lines which are nan-separated.
-
-        tz = dt.timezone.utc
-        expected_x = np.array(
-            [
-                dt.datetime(2023, 9, 2, tzinfo=tz),
-                dt.datetime(2023, 9, 2, tzinfo=tz),
-                np.nan,
-                dt.datetime(2023, 9, 4, tzinfo=tz),
-                dt.datetime(2023, 9, 4, tzinfo=tz),
-            ],
-            dtype=object,
-        )
-        expected_y = np.array(
-            [
-                dt.datetime(2023, 10, 8, tzinfo=tz),
-                dt.datetime(2023, 10, 7, tzinfo=tz),
-                np.nan,
-                dt.datetime(2023, 10, 7, tzinfo=tz),
-                dt.datetime(2023, 10, 8, tzinfo=tz),
-            ],
-            dtype=object,
-        )
-
-        # Separately compare nans and datetimes
-        x = op_contours.dimension_values("x")
-        mask = np.array([True, True, False, True, True])  # Mask ignoring nans
-        np.testing.assert_array_equal(x[mask], expected_x[mask])
-        np.testing.assert_array_equal(x[~mask].astype(float), expected_x[~mask].astype(float))
-
-        y = op_contours.dimension_values("y")
-        np.testing.assert_array_equal(y[mask], expected_y[mask])
-        np.testing.assert_array_equal(y[~mask].astype(float), expected_y[~mask].astype(float))
-
-        np.testing.assert_array_almost_equal(op_contours.dimension_values("z"), [0.5] * 5)
-
-    @mpl_skip
-    def test_image_contours_z_datetime(self):
-        z = np.array(
-            [["2023-09-10", "2023-09-10"], ["2023-09-10", "2023-09-12"]], dtype="datetime64"
-        )
-        img = hv.Image(z)
-        op_contours = contours(img, levels=[np.datetime64("2023-09-11")])
-        np.testing.assert_array_almost_equal(op_contours.dimension_values("x"), [0.25, 0.0])
-        np.testing.assert_array_almost_equal(op_contours.dimension_values("y"), [0.0, -0.25])
-        expected_z = np.array(
-            [
-                dt.datetime(2023, 9, 11, 0, 0, tzinfo=dt.timezone.utc),
-                dt.datetime(2023, 9, 11, 0, 0, tzinfo=dt.timezone.utc),
-            ],
-            dtype=object,
-        )
-        np.testing.assert_array_equal(op_contours.dimension_values("z"), expected_z)
-
-    def test_qmesh_contours(self):
-        qmesh = hv.QuadMesh(([0, 1, 2], [1, 2, 3], np.array([[0, 1, 0], [3, 4, 5.0], [6, 7, 8]])))
-        op_contours = contours(qmesh, levels=[0.5])
-        contour = hv.Contours(
-            [
-                [
-                    (0, 1.166667, 0.5),
-                    (0.5, 1.0, 0.5),
-                    (np.nan, np.nan, 0.5),
-                    (1.5, 1.0, 0.5),
-                    (2, 1.1, 0.5),
-                ]
-            ],
-            vdims=qmesh.vdims,
-        )
-        assert_element_equal(op_contours, contour)
-
-    def test_qmesh_curvilinear_contours(self):
-        x = y = np.arange(3)
-        xs, ys = np.meshgrid(x, y)
-        zs = np.array([[0, 1, 0], [3, 4, 5.0], [6, 7, 8]])
-        qmesh = hv.QuadMesh((xs, ys + 0.1, zs))
-        op_contours = contours(qmesh, levels=[0.5])
-        contour = hv.Contours(
-            [
-                [
-                    (0, 0.266667, 0.5),
-                    (0.5, 0.1, 0.5),
-                    (np.nan, np.nan, 0.5),
-                    (1.5, 0.1, 0.5),
-                    (2, 0.2, 0.5),
-                ]
-            ],
-            vdims=qmesh.vdims,
-        )
-        assert_element_equal(op_contours, contour)
-
-    def test_qmesh_curvilinear_edges_contours(self):
-        x = y = np.arange(3)
-        xs, ys = np.meshgrid(x, y)
-        xs = GridInterface._infer_interval_breaks(xs)
-        xs = GridInterface._infer_interval_breaks(xs, 1)
-        ys = GridInterface._infer_interval_breaks(ys)
-        ys = GridInterface._infer_interval_breaks(ys, 1)
-        zs = np.array([[0, 1, 0], [3, 4, 5.0], [6, 7, 8]])
-        qmesh = hv.QuadMesh((xs, ys + 0.1, zs))
-        op_contours = contours(qmesh, levels=[0.5])
-        contour = hv.Contours(
-            [
-                [
-                    (0, 0.266667, 0.5),
-                    (0.5, 0.1, 0.5),
-                    (np.nan, np.nan, 0.5),
-                    (1.5, 0.1, 0.5),
-                    (2, 0.2, 0.5),
-                ]
-            ],
-            vdims=qmesh.vdims,
-        )
-        assert_element_equal(op_contours, contour)
-
-    def test_image_contours_filled(self):
-        img = hv.Image(np.array([[0, 2, 0], [0, 2, 0]]))
-        # Two polygons (nan-separated) without holes
-        op_contours = contours(img, filled=True, levels=[0.5, 1.5])
-        data = [
-            [
-                (-0.25, -0.25, 1),
-                (-0.08333333, -0.25, 1),
-                (-0.08333333, 0.25, 1),
-                (-0.25, 0.25, 1),
-                (-0.25, -0.25, 1),
-                (np.nan, np.nan, 1),
-                (0.08333333, -0.25, 1),
-                (0.25, -0.25, 1),
-                (0.25, 0.25, 1),
-                (0.08333333, 0.25, 1),
-                (0.08333333, -0.25, 1),
-            ]
-        ]
-        polys = hv.Polygons(data, vdims=img.vdims[0].clone(range=(0.5, 1.5)))
-        assert_element_equal(op_contours, polys)
-
-    def test_image_contours_filled_with_hole(self):
-        img = hv.Image(np.array([[0, 0, 0], [0, 1, 0.0], [0, 0, 0]]))
-        # Single polygon with hole
-        op_contours = contours(img, filled=True, levels=[0.25, 0.75])
-        data = [
-            [
-                (-0.25, 0.0, 0.5),
-                (0.0, -0.25, 0.5),
-                (0.25, 0.0, 0.5),
-                (0.0, 0.25, 0.5),
-                (-0.25, 0.0, 0.5),
-            ]
-        ]
-        polys = hv.Polygons(data, vdims=img.vdims[0].clone(range=(0.25, 0.75)))
-        assert_element_equal(op_contours, polys)
-        expected_holes = [
-            [
-                [
-                    np.array(
-                        [
-                            [0.0, -0.08333333],
-                            [-0.08333333, 0.0],
-                            [0.0, 0.08333333],
-                            [0.08333333, 0.0],
-                            [0.0, -0.08333333],
-                        ]
-                    )
-                ]
-            ]
-        ]
-        np.testing.assert_array_almost_equal(op_contours.holes(), expected_holes)
-
-    def test_image_contours_filled_multi_holes(self):
-        img = hv.Image(np.array([[0, 0, 0, 0, 0], [0, 1, 0, 1, 0], [0, 0, 0, 0, 0]]))
-        # Single polygon with two holes
-        op_contours = contours(img, filled=True, levels=[-0.5, 0.5])
-        data = [
-            [
-                (-0.4, -0.3333333, 0),
-                (-0.2, -0.3333333, 0),
-                (0, -0.3333333, 0),
-                (0.2, -0.3333333, 0),
-                (0.4, -0.3333333, 0),
-                (0.4, 0, 0),
-                (0.4, 0.3333333, 0),
-                (0.2, 0.3333333, 0),
-                (0, 0.3333333, 0),
-                (-0.2, 0.3333333, 0),
-                (-0.4, 0.3333333, 0),
-                (-0.4, 0, 0),
-                (-0.4, -0.3333333, 0),
-            ]
-        ]
-        polys = hv.Polygons(data, vdims=img.vdims[0].clone(range=(-0.5, 0.5)))
-        assert_element_equal(op_contours, polys)
-        hole1 = np.array(
-            [
-                [-0.2, -0.16666667],
-                [-0.3, 0],
-                [-0.2, 0.16666667],
-                [-0.1, 0],
-                [-0.2, -0.16666667],
-            ]
-        )
-        hole2 = np.array(
-            [
-                [0.2, -0.16666667],
-                [0.1, 0],
-                [0.2, 0.16666667],
-                [0.3, 0],
-                [0.2, -0.16666667],
-            ]
-        )
-        expected_holes = [[[hole1, hole2]]]
-        np.testing.assert_array_almost_equal(op_contours.holes(), expected_holes)
-
-    def test_image_contours_filled_empty(self):
-        img = hv.Image(np.array([[0, 1, 0], [3, 4, 5.0], [6, 7, 8]]))
-        # Contour level outside of data limits
-        op_contours = contours(img, filled=True, levels=[20.0, 23.0])
-        polys = hv.Polygons([], vdims=img.vdims[0].clone(range=(20.0, 23.0)))
-        assert_element_equal(op_contours, polys)
-
-    def test_image_contours_filled_auto_levels(self):
-        z = np.array([[0, 1, 0], [3, 4, 5], [6, 7, 8]])
-        img = hv.Image(z)
-        for nlevels in range(3, 20):
-            op_contours = contours(img, filled=True, levels=nlevels)
-            levels = [item["z"] for item in op_contours.data]
-            assert len(levels) <= nlevels + 1
-            delta = 0.5 * (levels[1] - levels[0])
-            assert np.min(levels) <= z.min() + delta
-            assert np.max(levels) >= z.max() - delta
-
-    def test_image_contours_filled_x_datetime(self):
-        x = np.array(["2023-09-01", "2023-09-05", "2023-09-09"], dtype="datetime64")
-        y = np.array([6, 7])
-        z = np.array([[0, 2, 0], [0, 2, 0]])
-        img = hv.Image((x, y, z))
-        msg = r"Datetime spatial coordinates are not supported for filled contour calculations."
-        with pytest.raises(RuntimeError, match=msg):
-            _ = contours(img, filled=True, levels=[0.5, 1.5])
 
     def test_points_histogram(self):
         points = hv.Points([float(i) for i in range(10)])
@@ -1098,6 +748,357 @@ class TestCategoricalAgg:
 
         assert bars.pipeline is not None
         assert bars.dataset is not None
+
+
+@contourpy_skip
+class TestContours:
+    def test_image_contours(self):
+        img = hv.Image(np.array([[0, 1, 0], [0, 1, 0]]))
+        op_contours = contours(img, levels=[0.5])
+        # Note multiple lines which are nan-separated.
+        contour = hv.Contours(
+            [
+                [
+                    (-0.166667, 0.25, 0.5),
+                    (-0.1666667, -0.25, 0.5),
+                    (np.nan, np.nan, 0.5),
+                    (0.1666667, -0.25, 0.5),
+                    (0.1666667, 0.25, 0.5),
+                ]
+            ],
+            vdims=img.vdims,
+        )
+        assert_element_equal(op_contours, contour)
+
+    def test_image_contours_empty(self):
+        img = hv.Image(np.array([[0, 1, 0], [0, 1, 0]]))
+        # Contour level outside of data limits
+        op_contours = contours(img, levels=[23.0])
+        contour = hv.Contours([], vdims=img.vdims)
+        assert_element_equal(op_contours, contour)
+
+    def test_image_contours_auto_levels(self):
+        z = np.array([[0, 1, 0], [3, 4, 5.0], [6, 7, 8]])
+        img = hv.Image(z)
+        for nlevels in range(3, 20):
+            op_contours = contours(img, levels=nlevels)
+            levels = [item["z"] for item in op_contours.data]
+            assert len(levels) <= nlevels + 2
+            assert np.min(levels) <= z.min()
+            assert np.max(levels) < z.max()
+
+    def test_image_contours_no_range(self):
+        img = hv.Image(np.zeros((2, 2)))
+        op_contours = contours(img, levels=2)
+        contour = hv.Contours([], vdims=img.vdims)
+        assert_element_equal(op_contours, contour)
+
+    @mpl_skip
+    def test_image_contours_x_datetime(self):
+        x = np.array(["2023-09-01", "2023-09-03", "2023-09-05"], dtype="datetime64")
+        y = [14, 15]
+        z = np.array([[0, 1, 0], [0, 1, 0]])
+        img = hv.Image((x, y, z))
+        op_contours = contours(img, levels=[0.5])
+        # Note multiple lines which are nan-separated.
+        expected_x = np.array(
+            [
+                dt.datetime(2023, 9, 2, tzinfo=dt.UTC),
+                dt.datetime(2023, 9, 2, tzinfo=dt.UTC),
+                np.nan,
+                dt.datetime(2023, 9, 4, tzinfo=dt.UTC),
+                dt.datetime(2023, 9, 4, tzinfo=dt.UTC),
+            ],
+            dtype=object,
+        )
+
+        # Separately compare nans and datetimes
+        x = op_contours.dimension_values("x")
+        mask = np.array([True, True, False, True, True])  # Mask ignoring nans
+        np.testing.assert_array_equal(x[mask], expected_x[mask])
+        np.testing.assert_array_equal(x[~mask].astype(float), expected_x[~mask].astype(float))
+
+        np.testing.assert_array_almost_equal(
+            op_contours.dimension_values("y").astype(float), [15, 14, np.nan, 14, 15]
+        )
+        np.testing.assert_array_almost_equal(op_contours.dimension_values("z"), [0.5] * 5)
+
+    @mpl_skip
+    def test_image_contours_y_datetime(self):
+        x = [14, 15, 16]
+        y = np.array(["2023-09-01", "2023-09-03"], dtype="datetime64")
+        z = np.array([[0, 1, 0], [0, 1, 0]])
+        img = hv.Image((x, y, z))
+        op_contours = contours(img, levels=[0.5])
+        # Note multiple lines which are nan-separated.
+        np.testing.assert_array_almost_equal(
+            op_contours.dimension_values("x").astype(float), [14.5, 14.5, np.nan, 15.5, 15.5]
+        )
+
+        expected_y = np.array(
+            [
+                dt.datetime(2023, 9, 3, tzinfo=dt.UTC),
+                dt.datetime(2023, 9, 1, tzinfo=dt.UTC),
+                np.nan,
+                dt.datetime(2023, 9, 1, tzinfo=dt.UTC),
+                dt.datetime(2023, 9, 3, tzinfo=dt.UTC),
+            ],
+            dtype=object,
+        )
+
+        # Separately compare nans and datetimes
+        y = op_contours.dimension_values("y")
+        mask = np.array([True, True, False, True, True])  # Mask ignoring nans
+        np.testing.assert_array_equal(y[mask], expected_y[mask])
+        np.testing.assert_array_equal(y[~mask].astype(float), expected_y[~mask].astype(float))
+
+        np.testing.assert_array_almost_equal(op_contours.dimension_values("z"), [0.5] * 5)
+
+    @mpl_skip
+    def test_image_contours_xy_datetime(self):
+        x = np.array(["2023-09-01", "2023-09-03", "2023-09-05"], dtype="datetime64")
+        y = np.array(["2023-10-07", "2023-10-08"], dtype="datetime64")
+        z = np.array([[0, 1, 0], [0, 1, 0]])
+        img = hv.Image((x, y, z))
+        op_contours = contours(img, levels=[0.5])
+        # Note multiple lines which are nan-separated.
+
+        expected_x = np.array(
+            [
+                dt.datetime(2023, 9, 2, tzinfo=dt.UTC),
+                dt.datetime(2023, 9, 2, tzinfo=dt.UTC),
+                np.nan,
+                dt.datetime(2023, 9, 4, tzinfo=dt.UTC),
+                dt.datetime(2023, 9, 4, tzinfo=dt.UTC),
+            ],
+            dtype=object,
+        )
+        expected_y = np.array(
+            [
+                dt.datetime(2023, 10, 8, tzinfo=dt.UTC),
+                dt.datetime(2023, 10, 7, tzinfo=dt.UTC),
+                np.nan,
+                dt.datetime(2023, 10, 7, tzinfo=dt.UTC),
+                dt.datetime(2023, 10, 8, tzinfo=dt.UTC),
+            ],
+            dtype=object,
+        )
+
+        # Separately compare nans and datetimes
+        x = op_contours.dimension_values("x")
+        mask = np.array([True, True, False, True, True])  # Mask ignoring nans
+        np.testing.assert_array_equal(x[mask], expected_x[mask])
+        np.testing.assert_array_equal(x[~mask].astype(float), expected_x[~mask].astype(float))
+
+        y = op_contours.dimension_values("y")
+        np.testing.assert_array_equal(y[mask], expected_y[mask])
+        np.testing.assert_array_equal(y[~mask].astype(float), expected_y[~mask].astype(float))
+
+        np.testing.assert_array_almost_equal(op_contours.dimension_values("z"), [0.5] * 5)
+
+    @mpl_skip
+    def test_image_contours_z_datetime(self):
+        z = np.array(
+            [["2023-09-10", "2023-09-10"], ["2023-09-10", "2023-09-12"]], dtype="datetime64"
+        )
+        img = hv.Image(z)
+        op_contours = contours(img, levels=[np.datetime64("2023-09-11")])
+        np.testing.assert_array_almost_equal(op_contours.dimension_values("x"), [0.25, 0.0])
+        np.testing.assert_array_almost_equal(op_contours.dimension_values("y"), [0.0, -0.25])
+        expected_z = np.array(
+            [
+                dt.datetime(2023, 9, 11, 0, 0, tzinfo=dt.UTC),
+                dt.datetime(2023, 9, 11, 0, 0, tzinfo=dt.UTC),
+            ],
+            dtype=object,
+        )
+        np.testing.assert_array_equal(op_contours.dimension_values("z"), expected_z)
+
+    def test_qmesh_contours(self):
+        qmesh = hv.QuadMesh(([0, 1, 2], [1, 2, 3], np.array([[0, 1, 0], [3, 4, 5.0], [6, 7, 8]])))
+        op_contours = contours(qmesh, levels=[0.5])
+        contour = hv.Contours(
+            [
+                [
+                    (0, 1.166667, 0.5),
+                    (0.5, 1.0, 0.5),
+                    (np.nan, np.nan, 0.5),
+                    (1.5, 1.0, 0.5),
+                    (2, 1.1, 0.5),
+                ]
+            ],
+            vdims=qmesh.vdims,
+        )
+        assert_element_equal(op_contours, contour)
+
+    def test_qmesh_curvilinear_contours(self):
+        x = y = np.arange(3)
+        xs, ys = np.meshgrid(x, y)
+        zs = np.array([[0, 1, 0], [3, 4, 5.0], [6, 7, 8]])
+        qmesh = hv.QuadMesh((xs, ys + 0.1, zs))
+        op_contours = contours(qmesh, levels=[0.5])
+        contour = hv.Contours(
+            [
+                [
+                    (0, 0.266667, 0.5),
+                    (0.5, 0.1, 0.5),
+                    (np.nan, np.nan, 0.5),
+                    (1.5, 0.1, 0.5),
+                    (2, 0.2, 0.5),
+                ]
+            ],
+            vdims=qmesh.vdims,
+        )
+        assert_element_equal(op_contours, contour)
+
+    def test_qmesh_curvilinear_edges_contours(self):
+        x = y = np.arange(3)
+        xs, ys = np.meshgrid(x, y)
+        xs = GridInterface._infer_interval_breaks(xs)
+        xs = GridInterface._infer_interval_breaks(xs, 1)
+        ys = GridInterface._infer_interval_breaks(ys)
+        ys = GridInterface._infer_interval_breaks(ys, 1)
+        zs = np.array([[0, 1, 0], [3, 4, 5.0], [6, 7, 8]])
+        qmesh = hv.QuadMesh((xs, ys + 0.1, zs))
+        op_contours = contours(qmesh, levels=[0.5])
+        contour = hv.Contours(
+            [
+                [
+                    (0, 0.266667, 0.5),
+                    (0.5, 0.1, 0.5),
+                    (np.nan, np.nan, 0.5),
+                    (1.5, 0.1, 0.5),
+                    (2, 0.2, 0.5),
+                ]
+            ],
+            vdims=qmesh.vdims,
+        )
+        assert_element_equal(op_contours, contour)
+
+    def test_image_contours_filled(self):
+        img = hv.Image(np.array([[0, 2, 0], [0, 2, 0]]))
+        # Two polygons (nan-separated) without holes
+        op_contours = contours(img, filled=True, levels=[0.5, 1.5])
+        data = [
+            [
+                (-0.25, -0.25, 1),
+                (-0.08333333, -0.25, 1),
+                (-0.08333333, 0.25, 1),
+                (-0.25, 0.25, 1),
+                (-0.25, -0.25, 1),
+                (np.nan, np.nan, 1),
+                (0.08333333, -0.25, 1),
+                (0.25, -0.25, 1),
+                (0.25, 0.25, 1),
+                (0.08333333, 0.25, 1),
+                (0.08333333, -0.25, 1),
+            ]
+        ]
+        polys = hv.Polygons(data, vdims=img.vdims[0].clone(range=(0.5, 1.5)))
+        assert_element_equal(op_contours, polys)
+
+    def test_image_contours_filled_with_hole(self):
+        img = hv.Image(np.array([[0, 0, 0], [0, 1, 0.0], [0, 0, 0]]))
+        # Single polygon with hole
+        op_contours = contours(img, filled=True, levels=[0.25, 0.75])
+        data = [
+            [
+                (-0.25, 0.0, 0.5),
+                (0.0, -0.25, 0.5),
+                (0.25, 0.0, 0.5),
+                (0.0, 0.25, 0.5),
+                (-0.25, 0.0, 0.5),
+            ]
+        ]
+        polys = hv.Polygons(data, vdims=img.vdims[0].clone(range=(0.25, 0.75)))
+        assert_element_equal(op_contours, polys)
+        expected_holes = [
+            [
+                [
+                    np.array(
+                        [
+                            [0.0, -0.08333333],
+                            [-0.08333333, 0.0],
+                            [0.0, 0.08333333],
+                            [0.08333333, 0.0],
+                            [0.0, -0.08333333],
+                        ]
+                    )
+                ]
+            ]
+        ]
+        np.testing.assert_array_almost_equal(op_contours.holes(), expected_holes)
+
+    def test_image_contours_filled_multi_holes(self):
+        img = hv.Image(np.array([[0, 0, 0, 0, 0], [0, 1, 0, 1, 0], [0, 0, 0, 0, 0]]))
+        # Single polygon with two holes
+        op_contours = contours(img, filled=True, levels=[-0.5, 0.5])
+        data = [
+            [
+                (-0.4, -0.3333333, 0),
+                (-0.2, -0.3333333, 0),
+                (0, -0.3333333, 0),
+                (0.2, -0.3333333, 0),
+                (0.4, -0.3333333, 0),
+                (0.4, 0, 0),
+                (0.4, 0.3333333, 0),
+                (0.2, 0.3333333, 0),
+                (0, 0.3333333, 0),
+                (-0.2, 0.3333333, 0),
+                (-0.4, 0.3333333, 0),
+                (-0.4, 0, 0),
+                (-0.4, -0.3333333, 0),
+            ]
+        ]
+        polys = hv.Polygons(data, vdims=img.vdims[0].clone(range=(-0.5, 0.5)))
+        assert_element_equal(op_contours, polys)
+        hole1 = np.array(
+            [
+                [-0.2, -0.16666667],
+                [-0.3, 0],
+                [-0.2, 0.16666667],
+                [-0.1, 0],
+                [-0.2, -0.16666667],
+            ]
+        )
+        hole2 = np.array(
+            [
+                [0.2, -0.16666667],
+                [0.1, 0],
+                [0.2, 0.16666667],
+                [0.3, 0],
+                [0.2, -0.16666667],
+            ]
+        )
+        expected_holes = [[[hole1, hole2]]]
+        np.testing.assert_array_almost_equal(op_contours.holes(), expected_holes)
+
+    def test_image_contours_filled_empty(self):
+        img = hv.Image(np.array([[0, 1, 0], [3, 4, 5.0], [6, 7, 8]]))
+        # Contour level outside of data limits
+        op_contours = contours(img, filled=True, levels=[20.0, 23.0])
+        polys = hv.Polygons([], vdims=img.vdims[0].clone(range=(20.0, 23.0)))
+        assert_element_equal(op_contours, polys)
+
+    def test_image_contours_filled_auto_levels(self):
+        z = np.array([[0, 1, 0], [3, 4, 5], [6, 7, 8]])
+        img = hv.Image(z)
+        for nlevels in range(3, 20):
+            op_contours = contours(img, filled=True, levels=nlevels)
+            levels = [item["z"] for item in op_contours.data]
+            assert len(levels) <= nlevels + 1
+            delta = 0.5 * (levels[1] - levels[0])
+            assert np.min(levels) <= z.min() + delta
+            assert np.max(levels) >= z.max() - delta
+
+    def test_image_contours_filled_x_datetime(self):
+        x = np.array(["2023-09-01", "2023-09-05", "2023-09-09"], dtype="datetime64")
+        y = np.array([6, 7])
+        z = np.array([[0, 2, 0], [0, 2, 0]])
+        img = hv.Image((x, y, z))
+        msg = r"Datetime spatial coordinates are not supported for filled contour calculations."
+        with pytest.raises(RuntimeError, match=msg):
+            _ = contours(img, filled=True, levels=[0.5, 1.5])
 
 
 @scipy_skip

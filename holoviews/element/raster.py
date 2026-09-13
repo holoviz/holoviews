@@ -120,7 +120,7 @@ class Raster(Element2D):
             samples = []
         if isinstance(samples, tuple):
             X, Y = samples
-            samples = zip(X, Y, strict=None)
+            samples = zip(X, Y, strict=False)
 
         params = dict(self.param.values(onlychanged=True), vdims=self.vdims)
         if len(sample_values) == self.ndims or len(samples):
@@ -132,7 +132,7 @@ class Raster(Element2D):
                             [(self.get_dimension_index(k), v) for k, v in sample_values.items()]
                         )
                     ],
-                    strict=None,
+                    strict=False,
                 )
             table_data = [(*c, self._zdata[self._coord2matrix(c)]) for c in samples]
             params["kdims"] = self.kdims
@@ -159,7 +159,7 @@ class Raster(Element2D):
             ydata = self._zdata[tuple(sample[::-1])]
             if hasattr(self, "bounds") and sample_ind == 0:
                 ydata = ydata[::-1]
-            data = list(zip(x_vals, ydata, strict=None))
+            data = list(zip(x_vals, ydata, strict=True))
             params["kdims"] = other_dimension
             return Curve(data, **params)
 
@@ -184,7 +184,7 @@ class Raster(Element2D):
             reduced = function(self._zdata, axis=oidx)
             if oidx and hasattr(self, "bounds"):
                 reduced = reduced[::-1]
-            data = zip(x_vals, reduced, strict=None)
+            data = zip(x_vals, reduced, strict=True)
             params = dict(
                 dict(self.param.values(onlychanged=True)), kdims=other_dimension, vdims=self.vdims
             )
@@ -412,7 +412,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
             bounds = data_bounds
 
         not_close = False
-        for r, c in zip(bounds, self.bounds.lbrt(), strict=None):
+        for r, c in zip(bounds, self.bounds.lbrt(), strict=True):
             if isinstance(r, util.datetime_types):
                 r = util.dt_to_int(r)
             if isinstance(c, util.datetime_types):
@@ -534,7 +534,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
                     elif coords:
                         coords = [
                             (t[abs(idx - 1)], c) if idx else (c, t[abs(idx - 1)])
-                            for c, t in zip(v, coords, strict=None)
+                            for c, t in zip(v, coords, strict=True)
                         ]
                 getter.append(idx)
         else:
@@ -756,7 +756,7 @@ class RGB(Image):
                     "Ranges must be defined on all the value dimensions of all the Images"
                 )
             arrays = [
-                (im.data - r[0]) / (r[1] - r[0]) for r, im in zip(ranges, images, strict=None)
+                (im.data - r[0]) / (r[1] - r[0]) for r, im in zip(ranges, images, strict=True)
             ]
             data = np.dstack(arrays)
         if vdims is None:

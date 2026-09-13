@@ -349,7 +349,7 @@ def get_nested_plot_frame(obj, key_map, cached=False):
 
     # Ensure that DynamicMaps in the cloned frame have
     # identical callback inputs to allow memoization to work
-    for it1, it2 in zip(obj.traverse(lambda x: x), clone.traverse(lambda x: x), strict=None):
+    for it1, it2 in zip(obj.traverse(lambda x: x), clone.traverse(lambda x: x), strict=True):
         if isinstance(it1, DynamicMap):
             with disable_constant(it2.callback):
                 it2.callback.inputs = it1.callback.inputs
@@ -517,7 +517,7 @@ def get_dynamic_mode(composite):
 
 def initialize_unbounded(obj, dimensions, key):
     """Initializes any DynamicMaps in unbounded mode."""
-    select = dict(zip([d.name for d in dimensions], key, strict=None))
+    select = dict(zip([d.name for d in dimensions], key, strict=True))
     try:
         obj.select(selection_specs=[DynamicMap], **select)
     except KeyError:
@@ -1121,7 +1121,7 @@ def color_intervals(colors, levels, clip=None, N=255):
     cmin, cmax = min(levels), max(levels)
     interval = cmax - cmin
     cmap = []
-    for intv, c in zip(intervals, colors, strict=None):
+    for intv, c in zip(intervals, colors, strict=True):
         cmap += [c] * round(N * (intv / interval))
     if clip is not None:
         clmin, clmax = clip

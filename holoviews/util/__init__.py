@@ -30,7 +30,7 @@ from .settings import OutputSettings, list_backends, list_formats
 
 Store.output_settings = OutputSettings
 
-_BackendT: t.TypeAlias = t.Literal["bokeh", "matplotlib", "plotly"]
+type _BackendT = t.Literal["bokeh", "matplotlib", "plotly"]
 
 _STR_OPTIONS_ERR = (
     "String-based options specification is no longer supported. "
