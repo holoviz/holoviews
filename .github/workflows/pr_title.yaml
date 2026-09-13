@@ -12,7 +12,7 @@ permissions:
   pull-requests: read
 
 jobs:
-  validate:
+  check-title:
     runs-on: ubuntu-latest
     steps:
       - uses: holoviz-dev/holoviz_tasks/validate-pr-title@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8

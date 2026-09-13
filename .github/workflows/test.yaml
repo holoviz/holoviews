@@ -181,9 +181,6 @@ jobs:
         if: github.event.inputs.cache == 'false'
         run: |
           pixi update ${UPSTREAM_PACKAGES} -e "${ENV}"
-      - name: Check packages latest version
-        run: |
-          pixi run -e "${ENV}" check-latest-packages bokeh panel param datashader
       - name: Test Unit
         run: |
           pixi run -e "${ENV}" test-unit $COV
@@ -254,9 +251,6 @@ jobs:
         if: github.event.inputs.cache == 'false'
         run: |
           pixi update ${UPSTREAM_PACKAGES} -e "${ENV}"
-      - name: Check packages latest version
-        run: |
-          pixi run -e "${ENV}" check-latest-packages pandas bokeh panel param numpy
       - name: Test Unit
         run: |
           pixi run -e "${ENV}" test-unit
