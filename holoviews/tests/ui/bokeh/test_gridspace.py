@@ -139,27 +139,19 @@ def test_gridspace_axis_alignment(serve_hv, xaxis, yaxis, shared_xaxis, shared_y
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-def test_gridmatrix_first_column_not_realigned(serve_hv):
+@pytest.mark.parametrize(
+    "id",
+    [
+        ".bk-Canvas",
+        pytest.param(".bk-CartesianFrame", marks=pytest.mark.xfail(reason="bokeh#14492")),
+    ],
+)
+def test_gridmatrix_alignment(serve_hv, id):
     ds = hv.Dataset({"a": [0, 1, 2], "b": [0, 50000, 100000]}, kdims=["a", "b"])
     grid = gridmatrix(ds, chart_type=hv.Points)
 
     page = serve_hv(grid)
-    plots = page.locator(".bk-Canvas")
-    expect(plots).to_have_count(4)
-    xs = sorted(plots.nth(i).bounding_box()["x"] for i in range(4))
-
-    assert xs[0] == xs[1]
-    assert xs[2] == xs[3]
-
-
-@pytest.mark.usefixtures("bokeh_backend")
-@pytest.mark.xfail(reason="bokeh#14492: a fixed frame size opts out of bokeh's frame alignment")
-def test_gridmatrix_frame_alignment(serve_hv):
-    ds = hv.Dataset({"a": [0, 1, 2], "b": [0, 50000, 100000]}, kdims=["a", "b"])
-    grid = gridmatrix(ds, chart_type=hv.Points)
-
-    page = serve_hv(grid)
-    frames = page.locator(".bk-CartesianFrame")
+    frames = page.locator(id)
     expect(frames).to_have_count(4)
     xs = sorted(frames.nth(i).bounding_box()["x"] for i in range(4))
 
