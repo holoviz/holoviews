@@ -18,10 +18,7 @@
 /doc/_build
 /doc/Reference_Manual/*
 !/doc/Reference_Manual/index.rst
-examples/user_guide/contours.png
-examples/user_guide/curve.html
-examples/user_guide/curve.png
-examples/user_guide/penguin_plot.png
+examples/user_guide/*.{png,html}
 builtdocs/
 .ipynb_checkpoints
 .coverage
