@@ -10,7 +10,7 @@ import pytest
 import holoviews as hv
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_7_0, BOKEH_GE_3_8_0
 
-from .. import expect
+from .. import expect, wait_until
 
 pytestmark = pytest.mark.ui
 
@@ -494,7 +494,9 @@ def test_hover_tooltips_rasterize_server_hover_filter(serve_hv, rng, hover_toolt
 
     # Move to no data part of the plot
     page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] * 3 / 4)
-    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] * 3 / 4)
+    # The filter only re-runs on mouse move, so move again once the server has answered
+    wait_until(lambda: hover_models[0].data["__index__"] == -1, page)
+    page.mouse.move(bbox["x"] + bbox["width"] / 2 + 1, bbox["y"] + bbox["height"] * 3 / 4)
     page.mouse.up()
 
     # Should not show anything
