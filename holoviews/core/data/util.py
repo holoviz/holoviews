@@ -1,9 +1,16 @@
 from __future__ import annotations
 
+import typing as t
+
 import numpy as np
 
+from ...util.warnings import deprecated
+from ..util import is_dask_array
 from ..util.dependencies import da
 from ..util.types import datetime_types
+
+if t.TYPE_CHECKING:
+    from typing_extensions import TypeIs
 
 
 def finite_range(column, cmin, cmax):
@@ -20,7 +27,7 @@ def finite_range(column, cmin, cmax):
         if len(column):
             cmin = np.nanmin(column) if min_inf else cmin
             cmax = np.nanmax(column) if max_inf else cmax
-            if is_dask(column):
+            if is_dask_array(column):
                 if min_inf and max_inf:
                     cmin, cmax = da.compute(cmin, cmax)
                 elif min_inf:
@@ -39,18 +46,23 @@ def finite_range(column, cmin, cmax):
 
 
 def get_array_types():
+    deprecated("1.25.0", "get_array_types", "is_array_type")
     array_types = (np.ndarray,)
     if da:
         array_types += (da.Array,)
     return array_types
 
 
+def is_array_type(array) -> TypeIs[np.ndarray | da.Array]:
+    array_types = (np.ndarray,)
+    if da:
+        array_types += (da.Array,)
+    return isinstance(array, array_types)
+
+
 def dask_array_module():
+    deprecated("1.25.0", "dask_array_module")
     return da if da else None
-
-
-def is_dask(array):
-    return da and isinstance(array, da.Array)
 
 
 def cached(method):
