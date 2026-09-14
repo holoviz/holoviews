@@ -18,8 +18,6 @@ on:
         required: true
         default: dryrun
   pull_request:
-    branches:
-      - "main"
     types: [opened, synchronize, reopened, labeled]
 
 permissions: {}
