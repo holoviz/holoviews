@@ -7,10 +7,7 @@ from holoviews.core.util.dependencies import _no_import_version
 system = platform.system()
 py_version = sys.version_info[:2]
 
-collect_ignore_glob = [
-    # Needs selenium, phantomjs, firefox, and geckodriver to save a png picture
-    "user_guide/Plotting_with_Bokeh.ipynb",
-]
+collect_ignore_glob = []
 
 # First available in Bokeh 3.2.0
 if _no_import_version("bokeh") < (3, 2, 0):
