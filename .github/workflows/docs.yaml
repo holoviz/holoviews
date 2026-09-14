@@ -36,28 +36,16 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          EVENT: ${{ github.event_name }}
-          ACTION: ${{ github.event.action }}
-          LABEL: ${{ github.event.label.name }}
-          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'run-docs-ci') }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HAS_LABEL: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-docs-ci') }}
+          OTHER_LABEL: ${{ github.event.action == 'labeled' && github.event.label.name != 'run-docs-ci' }}
         run: |
-          if [ "$EVENT" != pull_request ]; then
-            run=true reason="not a pull request"
-          elif [ "$HAS_LABEL" != true ]; then
-            run=false reason="no run-docs-ci label"
-          elif [ "$ACTION" != labeled ] || [ "$LABEL" = run-docs-ci ]; then
-            run=true reason="run-docs-ci label"
-          else
+          run=$HAS_LABEL
+          if [ "$run" = true ] && [ "$OTHER_LABEL" = true ]; then
             # This run hides the earlier run's checks, so only skip if the docs already built for this commit
-            passed=$(gh api "repos/$GH_REPO/commits/$HEAD_SHA/check-runs?per_page=100" --jq '
-              [.check_runs[] | select(.name == "build:docs" and .conclusion != "skipped")]
-              | group_by(.name) | map(sort_by(.started_at) | last | .conclusion) == ["success"]')
-            if [ "$passed" = true ]; then
-              run=false reason="docs already built for $HEAD_SHA"
-            else
-              run=true reason="no successful docs build for $HEAD_SHA"
-            fi
+            built=$(gh api "repos/$GH_REPO/commits/$HEAD_SHA/check-runs?check_name=build:docs" \
+              --jq '[.check_runs[] | select(.conclusion != "skipped")] | max_by(.started_at).conclusion == "success"')
+            [ "$built" = true ] && run=false
           fi
           echo "run=$run" >> "$GITHUB_OUTPUT"
 
