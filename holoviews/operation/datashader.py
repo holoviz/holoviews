@@ -1498,12 +1498,9 @@ class shade(LinkableOperation):
             # DataArray, either by selecting the singular value
             # dimension or by adding a z-dimension
             if not element.interface.packed(element):
-                # Always keep the stack axis, even for a single level. Taking
-                # array[vdim] for a lone value dimension returns a 2D array,
-                # but _process still treats the element as categorical and
-                # passes a color_key, so datashader reads the x axis as the
-                # category axis and the image shades to nothing. Reachable
-                # whenever the data is unpacked, e.g. with a selector.
+                # Keep the stack axis even for a single level: selecting the
+                # lone value dimension returns 2D, and _process still passes a
+                # color_key, so datashader would read x as the category axis.
                 array = array.to_array("z")
                 # If data is 3D then we have one extra constant dimension
                 if array.ndim > 3:
@@ -1539,13 +1536,9 @@ class shade(LinkableOperation):
         # Dask is not supported by shade so materialize it
         array = array.compute()
 
-        # Whether the aggregate is categorical must be decided before the
-        # squeeze below, and the squeeze must not apply to categorical data:
-        # a single-category aggregate is (h, w, 1), and dropping its trailing
-        # axis leaves a 2D array that is still shaded with a color_key, so
-        # datashader reads the x axis as the category axis and every column
-        # but one is unkeyed -- color_data comes out all-NaN and the image is
-        # fully transparent. See the single-category regression test.
+        # Set before the squeeze below, which must not collapse a categorical
+        # aggregate: a single-category (h, w, 1) array would become 2D while
+        # still being shaded with a color_key.
         is_categorical = element.ndims > 2 or isinstance(element, ImageStack)
 
         if array.shape[-1] == 1 and not is_categorical:
