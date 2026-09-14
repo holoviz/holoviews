@@ -1498,14 +1498,17 @@ class shade(LinkableOperation):
             # DataArray, either by selecting the singular value
             # dimension or by adding a z-dimension
             if not element.interface.packed(element):
-                if vdim:
-                    array = array[vdim]
-                else:
-                    array = array.to_array("z")
-                    # If data is 3D then we have one extra constant dimension
-                    if array.ndim > 3:
-                        drop = set(array.dims) - {*main_dims, "z"}
-                        array = array.squeeze(dim=drop)
+                # Always keep the stack axis, even for a single level. Taking
+                # array[vdim] for a lone value dimension returns a 2D array,
+                # but _process still treats the element as categorical and
+                # passes a color_key, so datashader reads the x axis as the
+                # category axis and the image shades to nothing. Reachable
+                # whenever the data is unpacked, e.g. with a selector.
+                array = array.to_array("z")
+                # If data is 3D then we have one extra constant dimension
+                if array.ndim > 3:
+                    drop = set(array.dims) - {*main_dims, "z"}
+                    array = array.squeeze(dim=drop)
             array = array.transpose(*main_dims, ...)
         else:
             array = element.data[vdim]
@@ -1536,7 +1539,16 @@ class shade(LinkableOperation):
         # Dask is not supported by shade so materialize it
         array = array.compute()
 
-        if array.shape[-1] == 1:
+        # Whether the aggregate is categorical must be decided before the
+        # squeeze below, and the squeeze must not apply to categorical data:
+        # a single-category aggregate is (h, w, 1), and dropping its trailing
+        # axis leaves a 2D array that is still shaded with a color_key, so
+        # datashader reads the x axis as the category axis and every column
+        # but one is unkeyed -- color_data comes out all-NaN and the image is
+        # fully transparent. See the single-category regression test.
+        is_categorical = element.ndims > 2 or isinstance(element, ImageStack)
+
+        if array.shape[-1] == 1 and not is_categorical:
             array = array[..., 0]
 
         shade_opts = dict(how=self.p.cnorm, min_alpha=self.p.min_alpha, alpha=self.p.alpha)
@@ -1545,7 +1557,6 @@ class shade(LinkableOperation):
 
         # Compute shading options depending on whether
         # it is a categorical or regular aggregate
-        is_categorical = element.ndims > 2 or isinstance(element, ImageStack)
         if is_categorical:
             kdims = element.kdims if isinstance(element, ImageStack) else element.kdims[1:]
             categories = array.shape[-1]
