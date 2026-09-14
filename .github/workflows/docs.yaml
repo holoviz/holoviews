@@ -22,6 +22,10 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   setup:
     name: setup:docs
@@ -53,9 +57,6 @@ jobs:
     name: build:docs
     needs: [setup]
     if: needs.setup.outputs.run == 'true'
-    concurrency:
-      group: ${{ github.workflow }}-docs_build-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: true
     runs-on: "macos-latest"
     timeout-minutes: 180
     env:
