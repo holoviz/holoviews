@@ -20,7 +20,7 @@ on:
   pull_request:
     branches:
       - "main"
-    types: [synchronize, labeled]
+    types: [opened, synchronize, reopened, labeled]
 
 permissions: {}
 
@@ -84,7 +84,7 @@ jobs:
           aws cloudfront create-invalidation --distribution-id E1UJPEXJIGBZWN --paths "/*"
 
   result_docs_build:
-    name: result:docs
+    name: ${{ github.event.action == 'labeled' && github.event.label.name != 'run-docs-ci' && 'result:docs:other-label' || 'result:docs' }}
     needs: [docs_build, docs_publish]
     if: always()
     runs-on: ubuntu-latest

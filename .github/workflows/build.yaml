@@ -10,7 +10,7 @@ on:
   pull_request:
     branches:
       - "main"
-    types: [synchronize, labeled]
+    types: [opened, synchronize, reopened, labeled]
 
 permissions: {}
 
@@ -164,7 +164,7 @@ jobs:
             artifacts/*
 
   result_build:
-    name: result:build
+    name: ${{ github.event.action == 'labeled' && github.event.label.name != 'run-build-ci' && 'result:build:other-label' || 'result:build' }}
     needs:
       [
         conda_build,
