@@ -2,9 +2,7 @@
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   extends: ["config:recommended", ":enablePreCommit"],
   enabledManagers: ["github-actions", "pre-commit", "pixi"],
-  lockFileMaintenance: {
-    enabled: true,
-  },
+  lockFileMaintenance: { enabled: true },
   schedule: ["before 5am on the 1st day of the month"],
 
   automerge: true,
@@ -56,10 +54,12 @@
       description: "Weekly update of Pixi Lock",
       schedule: ["before 5am on monday"],
       automergeSchedule: ["after 5am on monday"], // avoid multiple PRs in the same day
+      platformAutomerge: false, // native automerge ignores automergeSchedule
       minimumReleaseAge: null, // Handled in pixi itself
       commitMessageAction: "Update",
       commitMessageTopic: "pixi.lock",
       branchTopic: "pixi-lock",
+      labels: ["run-build-ci", "run-docs-ci"],
       enabled: true,
     },
   ],
