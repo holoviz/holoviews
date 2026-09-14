@@ -18,7 +18,7 @@ env:
 
 jobs:
   setup:
-    name: setup
+    name: setup:build
     runs-on: ubuntu-latest
     permissions:
       checks: read
@@ -54,7 +54,6 @@ jobs:
             fi
           fi
           echo "run=$run" >> "$GITHUB_OUTPUT"
-          echo "Build packages: $run ($reason)" >> "$GITHUB_STEP_SUMMARY"
 
   waiting_room:
     name: Waiting Room
