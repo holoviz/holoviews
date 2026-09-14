@@ -24,10 +24,6 @@ on:
 
 permissions: {}
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'run-docs-ci' && '-other-label' || '' }}
-  cancel-in-progress: true
-
 env:
   RUN_DOCS_CI: &run_docs_ci |
     github.event_name != 'pull_request' ||
@@ -38,6 +34,9 @@ jobs:
   docs_build:
     name: build:docs
     if: *run_docs_ci
+    concurrency:
+      group: ${{ github.workflow }}-docs_build-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
     runs-on: "macos-latest"
     timeout-minutes: 180
     env:

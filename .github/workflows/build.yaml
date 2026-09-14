@@ -14,10 +14,6 @@ on:
 
 permissions: {}
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'run-build-ci' && '-other-label' || '' }}
-  cancel-in-progress: true
-
 env:
   PACKAGE: "holoviews"
   PYTHON_VERSION: "3.12"
@@ -41,6 +37,9 @@ jobs:
     name: build:conda
     runs-on: "ubuntu-latest"
     if: *run_build_ci
+    concurrency:
+      group: ${{ github.workflow }}-conda_build-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
         with:
@@ -76,6 +75,9 @@ jobs:
     name: build:pip
     runs-on: "ubuntu-latest"
     if: *run_build_ci
+    concurrency:
+      group: ${{ github.workflow }}-pip_build-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
         with:
