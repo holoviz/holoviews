@@ -1974,11 +1974,10 @@ class SpreadingOperation(LinkableOperation):
                 ) in enumerate("RGBA"):
                     new_data[k].data = img[:, :, idx]
             elif isinstance(element, ImageStack):
-                if len(element.vdims) == 1:
-                    new_data[element.vdims[0].name].data = array
-                else:
-                    for k in map(str, element.vdims):
-                        new_data[k].data = array.sel(z=k)
+                # _extract_data keeps the z axis even for one level, so a
+                # single-vdim stack selects the same way as a multi-vdim one.
+                for k in map(str, element.vdims):
+                    new_data[k].data = array.sel(z=k)
             elif isinstance(element, Image):
                 new_data[element.vdims[0].name].data = array
             else:
