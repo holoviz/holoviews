@@ -1710,6 +1710,45 @@ def test_selector_single_categorical():
     hv.renderer("bokeh").get_plot(plot)
 
 
+@pytest.mark.parametrize("use_selector", [False, True], ids=["no_selector", "selector"])
+@pytest.mark.parametrize("ncat", [1, 2], ids=["one_category", "two_categories"])
+def test_datashade_count_cat_single_category_not_transparent(ncat, use_selector):
+    """Shading a count_cat aggregate with one category must leave visible pixels.
+
+    A one-category aggregate is (h, w, 1) and lost its trailing axis two ways,
+    both while is_categorical stayed True, so a color_key reached tf.shade
+    alongside a 2D array and datashader read the x axis as the category axis:
+    the shape[-1] == 1 squeeze in _process when the data is packed, and
+    array[vdim] in _extract_data when it is not, which a selector triggers.
+    The image came out fully transparent. test_selector_single_categorical
+    covers the selector path for #6595, but asserts only that rendering raises
+    nothing, which a transparent image also does.
+    """
+    cats = ["A", "B"][:ncat]
+    df = pd.DataFrame(
+        {
+            "X": np.linspace(-0.5, 0.5, ncat),
+            "Y": np.linspace(-0.5, 0.5, ncat),
+            "C": pd.Categorical(cats, categories=cats),
+        }
+    )
+    kwargs = dict(
+        dynamic=False,
+        x_range=(-1, 1),
+        y_range=(-1, 1),
+        width=4,
+        height=4,
+        aggregator=ds.count_cat("C"),
+        color_key=dict(zip(cats, ["#ff0000", "#00ff00"], strict=False)),
+    )
+    if use_selector:
+        kwargs["selector"] = ds.first("X")
+
+    img = datashade(hv.Points(df, ["X", "Y"], ["C"]), **kwargs)
+
+    assert (img.dimension_values("A") > 0).any()
+
+
 def test_geom_aggregate_with_summary():
     rects = hv.Rectangles(
         [
