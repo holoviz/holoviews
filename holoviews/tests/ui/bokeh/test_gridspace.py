@@ -6,8 +6,9 @@ import numpy as np
 import pytest
 
 import holoviews as hv
+from holoviews.operation import gridmatrix
 
-from .. import wait_until
+from .. import expect, wait_until
 
 pytestmark = pytest.mark.ui
 
@@ -135,3 +136,24 @@ def test_gridspace_axis_alignment(serve_hv, xaxis, yaxis, shared_xaxis, shared_y
 
     page = serve_hv(gridspace)
     assert_axes(page, x=x, y=y)
+
+
+@pytest.mark.usefixtures("bokeh_backend")
+@pytest.mark.parametrize(
+    "id",
+    [
+        ".bk-Canvas",
+        pytest.param(".bk-CartesianFrame", marks=pytest.mark.xfail(reason="bokeh#14492")),
+    ],
+)
+def test_gridmatrix_alignment(serve_hv, id):
+    ds = hv.Dataset({"a": [0, 1, 2], "b": [0, 50000, 100000]}, kdims=["a", "b"])
+    grid = gridmatrix(ds, chart_type=hv.Points)
+
+    page = serve_hv(grid)
+    frames = page.locator(id)
+    expect(frames).to_have_count(4)
+    xs = sorted(frames.nth(i).bounding_box()["x"] for i in range(4))
+
+    assert xs[0] == xs[1]
+    assert xs[2] == xs[3]
