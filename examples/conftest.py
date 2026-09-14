@@ -1,4 +1,3 @@
-import os
 import platform
 import sys
 from importlib.util import find_spec
@@ -7,33 +6,11 @@ from holoviews.core.util.dependencies import _no_import_version
 
 system = platform.system()
 py_version = sys.version_info[:2]
-PANDAS_GE_2_0_0 = _no_import_version("pandas") >= (2, 0, 0)
 
 collect_ignore_glob = [
     # Needs selenium, phantomjs, firefox, and geckodriver to save a png picture
     "user_guide/Plotting_with_Bokeh.ipynb",
-    # Possible timeout error
-    "user_guide/17-Dashboards.ipynb",
-    # Give file not found
-    "user_guide/Plots_and_Renderers.ipynb",
 ]
-
-
-# 2023-07-14 with following error:
-# ValueError: Buffer dtype mismatch, expected 'const int64_t' but got 'int'
-if PANDAS_GE_2_0_0 and system == "Windows":
-    collect_ignore_glob += [
-        "gallery/demos/bokeh/point_draw_triangulate.ipynb",
-        "reference/elements/*/TriMesh.ipynb",
-        "user_guide/15-Large_Data.ipynb",
-    ]
-
-
-# 2024-01-15: See https://github.com/holoviz/holoviews/issues/6069
-if system == "Windows":
-    collect_ignore_glob += [
-        "user_guide/Deploying_Bokeh_Apps.ipynb",
-    ]
 
 # First available in Bokeh 3.2.0
 if _no_import_version("bokeh") < (3, 2, 0):
@@ -42,12 +19,6 @@ if _no_import_version("bokeh") < (3, 2, 0):
         "reference/elements/bokeh/HSpans.ipynb",
         "reference/elements/bokeh/VLines.ipynb",
         "reference/elements/bokeh/VSpans.ipynb",
-    ]
-
-# 2024-03-27: ffmpeg errors on Windows CI
-if system == "Windows" and os.environ.get("GITHUB_RUN_ID"):
-    collect_ignore_glob += [
-        "user_guide/Plotting_with_Matplotlib.ipynb",
     ]
 
 if find_spec("datashader") is None:
