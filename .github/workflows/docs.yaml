@@ -20,23 +20,29 @@ on:
   pull_request:
     branches:
       - "main"
+    types: [opened, synchronize, reopened, labeled]
 
 permissions: {}
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+env:
+  RUN_DOCS_CI: &run_docs_ci |
+    github.event_name != 'pull_request' ||
+    (contains(github.event.pull_request.labels.*.name, 'run-docs-ci') &&
+     (github.event.action != 'labeled' || github.event.label.name == 'run-docs-ci'))
 
 jobs:
   docs_build:
-    name: Build Documentation
-    if: github.event_name != 'pull_request' || github.head_ref == 'renovate/lock-file-maintenance-pixi-lock'
+    name: build:docs
+    if: *run_docs_ci
+    concurrency:
+      group: ${{ github.workflow }}-docs_build-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
     runs-on: "macos-latest"
     timeout-minutes: 180
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
         with:
           environments: docs
       - name: Build documentation
@@ -49,7 +55,7 @@ jobs:
           path: builtdocs
 
   docs_publish:
-    name: Publish Documentation
+    name: publish:docs
     runs-on: "ubuntu-latest"
     needs: [docs_build]
     env:
@@ -78,7 +84,7 @@ jobs:
           aws cloudfront create-invalidation --distribution-id E1UJPEXJIGBZWN --paths "/*"
 
   result_docs_build:
-    name: result:docs
+    name: ${{ github.event.action == 'labeled' && github.event.label.name != 'run-docs-ci' && 'result:docs:other-label' || 'result:docs' }}
     needs: [docs_build, docs_publish]
     if: always()
     runs-on: ubuntu-latest

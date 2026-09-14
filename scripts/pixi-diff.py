@@ -22,10 +22,10 @@ FILENAME_RE = re.compile(r"^(?P<name>.+)-(?P<version>[^-]+)-(?P<build>[^-]+)\.(?
 VERSION_PART_RE = re.compile(r"\d+|\D+")
 
 
-def git_show(revision: str) -> str:
-    """Get pixi.lock contents from a Git revision."""
+def git_show(revision: str, path: str) -> str:
+    """Get a file's contents from a Git revision."""
     result = subprocess.run(
-        ["git", "show", f"{revision}:pixi.lock"],
+        ["git", "show", f"{revision}:{path}"],
         capture_output=True,
         text=True,
         check=False,
@@ -33,7 +33,7 @@ def git_show(revision: str) -> str:
 
     if result.returncode != 0:
         print(
-            f"Could not read pixi.lock from {revision}",
+            f"Could not read {path} from {revision}",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -51,24 +51,32 @@ def git_rev_parse(revision: str) -> str:
     return result.stdout.strip()
 
 
-def load_direct_dependencies() -> set:
-    """Collect package names declared under any *dependencies table in pixi.toml."""
-    with open("pixi.toml", "rb") as f:
-        manifest = tomllib.load(f)
+def load_environment_dependencies(content: str) -> dict:
+    """Map each pixi environment name to the direct package names it pulls in."""
+    manifest = tomllib.loads(content)
 
-    names = set()
+    feature_dependencies = {}
+    for name, feature in manifest.get("feature", {}).items():
+        names = feature.get("dependencies", ())
+        feature_dependencies[name] = set(names)
 
-    def walk(table: dict):
-        for key, value in table.items():
-            if not isinstance(value, dict):
-                continue
-            if key.endswith("dependencies"):
-                names.update(value)
-            walk(value)
+    environments = {}
+    for name, value in manifest.get("environments", {}).items():
+        features = value if isinstance(value, list) else value.get("features", ())
+        environments[name] = set().union(*(feature_dependencies.get(f, set()) for f in features))
 
-    walk(manifest)
+    return environments
 
-    return names
+
+def load_direct_dependencies(base: str) -> dict:
+    """Collect direct dependency names per pixi environment, from both base and HEAD pixi.toml."""
+    with open("pixi.toml") as f:
+        current = load_environment_dependencies(f.read())
+    main = load_environment_dependencies(git_show(base, "pixi.toml"))
+
+    return {
+        env: current.get(env, set()) | main.get(env, set()) for env in set(current) | set(main)
+    }
 
 
 def parse_name_version(url: str) -> tuple[str, str, str] | None:
@@ -228,14 +236,14 @@ def main():
         return
 
     print_header(base)
-    main_content = git_show(base)
+    main_content = git_show(base, "pixi.lock")
 
     with open("pixi.lock") as f:
         current_content = f.read()
 
     main_environments = load_environments(main_content)
     current_environments = load_environments(current_content)
-    direct_dependencies = load_direct_dependencies()
+    direct_dependencies = load_direct_dependencies(base)
 
     env_names = sorted(set(main_environments) | set(current_environments))
 
@@ -262,7 +270,7 @@ def main():
         else:
             status = None
 
-        print_markdown(env_name, rows, direct_dependencies, status)
+        print_markdown(env_name, rows, direct_dependencies.get(env_name, set()), status)
 
     if not any_changes:
         print("No changes to pixi.lock compared with main.")

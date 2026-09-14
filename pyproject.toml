@@ -259,6 +259,7 @@ src.exclude = [
     "holoviews/core/data/xarray.py", # 25
 ]
 rules.unresolved-import = "ignore"
+rules.redundant-condition = "ignore" # problems with _LazyModule
 
 # Add whole project for LSP features and diagnostics only for the type-checked files
 [[tool.ty.overrides]]

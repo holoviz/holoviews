@@ -10,7 +10,7 @@ permissions: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   downstream_tests:
@@ -22,7 +22,7 @@ jobs:
         downstream_repo: [hvplot, geoviews]
       fail-fast: false
     steps:
-      - uses: holoviz-dev/holoviz_tasks/downstream-tests@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
+      - uses: holoviz-dev/holoviz_tasks/downstream-tests@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
         with:
           downstream_repo: ${{ matrix.downstream_repo }}
           github_token: ${{ secrets.ACCESS_TOKEN }}

@@ -17,7 +17,7 @@ on:
           - full
           - downstream
       cache:
-        description: "Use cache. If false, upstream packages are updated"
+        description: "If disabled, upstream packages are updated"
         type: boolean
         default: true
 
@@ -42,10 +42,10 @@ jobs:
     name: pre-commit
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pre-commit@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
 
   setup:
-    name: Setup workflow
+    name: setup
     runs-on: ubuntu-latest
     permissions:
       pull-requests: read
@@ -110,7 +110,7 @@ jobs:
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
 
   pixi_lock_diff:
-    name: pixi.lock diff
+    name: pixi:diff
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -174,16 +174,13 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
         with:
           environments: ${{ matrix.environment }}
       - name: Update upstream packages
         if: github.event.inputs.cache == 'false'
         run: |
           pixi update ${UPSTREAM_PACKAGES} -e "${ENV}"
-      - name: Check packages latest version
-        run: |
-          pixi run -e "${ENV}" check-latest-packages bokeh panel param datashader
       - name: Test Unit
         run: |
           pixi run -e "${ENV}" test-unit $COV
@@ -209,7 +206,7 @@ jobs:
       PANEL_LOG_LEVEL: info
       ENV: ${{ matrix.environment }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
         with:
           environments: ${{ matrix.environment }}
       - name: Update upstream packages
@@ -247,16 +244,13 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
         with:
           environments: ${{ matrix.environment }}
       - name: Update upstream packages
         if: github.event.inputs.cache == 'false'
         run: |
           pixi update ${UPSTREAM_PACKAGES} -e "${ENV}"
-      - name: Check packages latest version
-        run: |
-          pixi run -e "${ENV}" check-latest-packages pandas bokeh panel param numpy
       - name: Test Unit
         run: |
           pixi run -e "${ENV}" test-unit
@@ -275,7 +269,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 5
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@8fb2d0a3e4c70e218d487e0eed3b9c2488997212 # v1.0.6
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
         with:
           environments: ${{ matrix.environment }}
       - name: Update upstream packages
