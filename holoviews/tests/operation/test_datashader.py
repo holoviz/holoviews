@@ -1715,14 +1715,10 @@ def test_selector_single_categorical():
 def test_datashade_count_cat_single_category_not_transparent(ncat, use_selector):
     """Shading a count_cat aggregate with one category must leave visible pixels.
 
-    A one-category aggregate is (h, w, 1) and lost its trailing axis two ways,
-    both while is_categorical stayed True, so a color_key reached tf.shade
-    alongside a 2D array and datashader read the x axis as the category axis:
-    the shape[-1] == 1 squeeze in _process when the data is packed, and
-    array[vdim] in _extract_data when it is not, which a selector triggers.
-    The image came out fully transparent. test_selector_single_categorical
-    covers the selector path for #6595, but asserts only that rendering raises
-    nothing, which a transparent image also does.
+    A one-category aggregate lost its trailing axis while is_categorical stayed
+    True, so a color_key reached tf.shade with a 2D array and the image came out
+    fully transparent. test_selector_single_categorical covers the selector path
+    for #6595, but asserts only that rendering raises nothing.
     """
     cats = ["A", "B"][:ncat]
     df = pd.DataFrame(
