@@ -17,7 +17,7 @@ from param.parameterized import bothmethod
 from ...core import HoloMap, Store
 from ..plot import Plot
 from ..renderer import HTML_TAGS, MIME_TYPES, Renderer
-from .util import compute_plot_size
+from .util import BOKEH_GE_3_10_0, compute_plot_size
 
 default_theme = Theme(json={"attrs": {"Title": {"text_color": "black", "text_font_size": "12pt"}}})
 
@@ -105,22 +105,26 @@ class BokehRenderer(Renderer):
         logger.disabled = True
 
         data = None
+        # Selenium is deprecated in favor of Playwright from Bokeh 3.10
+        export_kwargs = {"backend": "playwright"} if BOKEH_GE_3_10_0 else {}
         if fmt == "gif":
             from bokeh.io.export import get_screenshot_as_png
-            from bokeh.io.webdriver import webdriver_control
 
-            if state.webdriver is None:
-                webdriver = webdriver_control.create()
-            else:
+            if BOKEH_GE_3_10_0 or state.webdriver is not None:
+                # The Playwright backend reuses its browser between screenshots
                 webdriver = state.webdriver
+            else:
+                from bokeh.io.webdriver import webdriver_control
+
+                webdriver = webdriver_control.create()
 
             nframes = len(plot)
             frames = []
             for i in range(nframes):
                 plot.update(i)
-                img = get_screenshot_as_png(plot.state, driver=webdriver)
+                img = get_screenshot_as_png(plot.state, driver=webdriver, **export_kwargs)
                 frames.append(img)
-            if state.webdriver is not None:
+            if not BOKEH_GE_3_10_0 and state.webdriver is not None:
                 webdriver.close()
 
             bio = BytesIO()
@@ -138,7 +142,7 @@ class BokehRenderer(Renderer):
         elif fmt == "png":
             from bokeh.io.export import get_screenshot_as_png
 
-            img = get_screenshot_as_png(plot.state, driver=state.webdriver)
+            img = get_screenshot_as_png(plot.state, driver=state.webdriver, **export_kwargs)
             imgByteArr = BytesIO()
             img.save(imgByteArr, format="PNG")
             data = imgByteArr.getvalue()

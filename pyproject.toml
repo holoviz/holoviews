@@ -109,8 +109,6 @@ filterwarnings = [
     # 2023-09: Dash needs to update their code to use the comm module and pkg_resources
     "ignore:The `.+?` class has been deprecated:DeprecationWarning:dash._jupyter",
     "ignore:pkg_resources is deprecated as an API:DeprecationWarning:dash.dash",
-    # 2023-09: See https://github.com/bokeh/bokeh/issues/13324
-    "ignore:log_path has been deprecated, please use log_output:DeprecationWarning:bokeh.io.webdriver",
     # 2023-09: Not a relevant warning for HoloViews
     "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning",
     # 2023-09: `pkg_resources` is deprecated

@@ -121,6 +121,8 @@ netcdf4 = "*"
 networkx = "*"
 notebook = "*"
 pillow = "*"
+playwright = ">=1.61.0"
+playwright-python = ">=1.61.0"
 plotly = ">=4.0"
 polars = "*"
 pooch = "*"
@@ -128,12 +130,14 @@ pyarrow = "*"
 python-duckdb = "*"
 scikit-image = "*"
 scipy = "*"
-selenium = "*"
 shapely = "*"
 spatialpandas = "*"
 tsdownsample = "*"
 xarray = ">=0.10.4"
 xyzservices = "*"
+
+[feature.optional.tasks]
+_install-playwright = 'playwright install chromium'
 
 [feature.dev.dependencies]
 jupyterlab = "*"
@@ -160,23 +164,19 @@ pytest-xdist = "*"
 [feature.test-unit-task.tasks] # So it is not showing up in the test-gpu + test-ui environment
 test-unit = 'pytest holoviews/tests -n logical --dist loadgroup'
 
-[feature.test-example.tasks]
-test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
+[feature.test-example.tasks.test-example]
+cmd = 'pytest -n logical --dist loadscope --nbval-lax examples'
+depends-on = ["_install-playwright"]
 
 [feature.test-example.dependencies]
 nbval = "*"
 
 [feature.test-ui.dependencies]
-playwright = ">=1.61.0"
-playwright-python = ">=1.61.0"
 pytest-playwright = "*"
-
-[feature.test-ui.tasks]
-_install-ui = 'playwright install chromium'
 
 [feature.test-ui.tasks.test-ui]
 cmd = 'pytest holoviews/tests/ui --ui --browser chromium'
-depends-on = ["_install-ui"]
+depends-on = ["_install-playwright"]
 
 [feature.test-gpu]
 channels = ["rapidsai"]
@@ -205,10 +205,8 @@ nbsite = ">=0.10.0a0"
 numpydoc = "*"
 pooch = "*"
 python-kaleido = "*"
-selenium = "*"
 
 [feature.doc.activation.env]
-MOZ_HEADLESS = "1"
 MPLBACKEND = "Agg"
 PANEL_EMBED = "true"
 PANEL_EMBED_JSON = "true"
@@ -222,7 +220,13 @@ _docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --pr
 _docs_markdown = 'python -m nbsite build-llms --config scripts/llms_config.py'
 
 [feature.doc.tasks.docs-build]
-depends-on = ['_docs-generate-rst', '_docs-refmanual', '_docs-generate', '_docs_markdown']
+depends-on = [
+    '_install-playwright',
+    '_docs-generate-rst',
+    '_docs-refmanual',
+    '_docs-generate',
+    '_docs_markdown',
+]
 
 # =============================================
 # ================== BUILD ====================
