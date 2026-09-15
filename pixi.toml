@@ -128,6 +128,8 @@ netcdf4 = "*"
 networkx = "*"
 notebook = "*"
 pillow = "*"
+playwright = ">=1.61.0"
+playwright-python = ">=1.61.0"
 plotly = ">=4.0"
 polars = "*"
 pooch = "*"
@@ -140,12 +142,9 @@ spatialpandas = "*"
 tsdownsample = "*"
 xarray = ">=0.10.4"
 xyzservices = "*"
-# Needed for Bokeh export of PNG and GIF
-playwright = ">=1.61.0"
-playwright-python = ">=1.61.0"
 
 [feature.optional.tasks]
-_install-chromium = 'playwright install chromium'
+_install-playwright = 'playwright install chromium'
 
 [feature.optional-315.dependencies]
 bokeh_sampledata = "*"
@@ -201,7 +200,7 @@ test-unit = 'pytest holoviews/tests -n logical --dist loadgroup'
 
 [feature.test-example.tasks.test-example]
 cmd = 'pytest -n logical --dist loadscope --nbval-lax examples'
-depends-on = ["_install-chromium"]
+depends-on = ["_install-playwright"]
 
 [feature.test-example.dependencies]
 nbval = "*"
@@ -211,7 +210,7 @@ pytest-playwright = "*"
 
 [feature.test-ui.tasks.test-ui]
 cmd = 'pytest holoviews/tests/ui --ui --browser chromium'
-depends-on = ["_install-chromium"]
+depends-on = ["_install-playwright"]
 
 [feature.test-gpu]
 channels = ["rapidsai"]
@@ -256,7 +255,7 @@ _docs_markdown = 'python -m nbsite build-llms --config scripts/llms_config.py'
 
 [feature.doc.tasks.docs-build]
 depends-on = [
-    '_install-chromium',
+    '_install-playwright',
     '_docs-generate-rst',
     '_docs-refmanual',
     '_docs-generate',
