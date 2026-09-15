@@ -35,6 +35,16 @@ class TimeseriesOperationTests:
         rolled_vals = [np.nan, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5]
         assert_element_equal(rolled, hv.Curve(rolled_vals))
 
+    def test_roll_with_nan_and_min_periods(self):
+        curve = hv.Curve([1, np.nan, 3, 4])
+        rolled = rolling(curve, rolling_window=2, min_periods=1, center=False)
+        assert_element_equal(rolled, hv.Curve([1, np.nan, np.nan, 3.5]))
+
+    def test_roll_with_std_function(self):
+        rolled = rolling(self.int_curve, rolling_window=3, function=np.std, center=False)
+        std = np.std([1, 2, 3])
+        assert_element_equal(rolled, hv.Curve([np.nan, np.nan, std, std, std, std, std]))
+
     @scipy_skip
     def test_roll_date_with_window_type(self):
         rolled = rolling(self.date_curve, rolling_window=3, window_type="triang")

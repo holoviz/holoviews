@@ -74,7 +74,15 @@ class rolling(Operation, RollingBase):
         xdim = element.kdims[0].name
         df = PandasInterface.as_dframe(element)
         df = df.set_index(xdim).rolling(win_type=self.p.window_type, **self._roll_kwargs())
-        if self.p.window_type is None:
+        if (
+            self.p.window_type is None
+            and self.p.min_periods is None
+            and self.p.function in (np.mean, np.sum)
+        ):
+            # Same result as applying the function, as every window with a NaN is NaN
+            # without min_periods, but without calling it per window
+            rolled = getattr(df, _PANDAS_FUNC_LOOKUP[self.p.function])()
+        elif self.p.window_type is None:
             rolled = df.apply(self.p.function, raw=True)
         elif self.p.function is np.mean:
             rolled = df.mean()
