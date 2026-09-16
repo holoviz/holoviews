@@ -8,13 +8,6 @@ from ..ndmapping import NdMapping, item_check, sorted_context
 from .dictionary import DictInterface
 from .interface import DataError, Interface
 
-# The subpath interface only depends on the type of the subpath data and the
-# subtypes, and finding it by creating a Dataset for every call is slow
-_subpath_interfaces = {}
-
-# Datatypes whose dtype method only uses the data and dimensions of the Dataset
-_DTYPE_FROM_DATA = {"dictionary", "dataframe", "array", "dask", "narwhals"}
-
 
 class _Subpath:
     """Stand-in for the Dataset of a single subpath."""
@@ -24,6 +17,14 @@ class _Subpath:
     def __init__(self, dataset, data):
         self._dataset = dataset
         self.data = data
+
+    @property
+    def kdims(self):
+        return self._dataset.kdims
+
+    @property
+    def vdims(self):
+        return self._dataset.vdims
 
     def get_dimension(self, *args, **kwargs):
         return self._dataset.get_dimension(*args, **kwargs)
@@ -390,20 +391,20 @@ class MultiInterface(Interface):
         return length
 
     @classmethod
-    def _subpath_interface(cls, dataset):
-        key = (type(dataset.data[0]), tuple(cls.subtypes))
-        interface = _subpath_interfaces.get(key)
-        if interface is None:
-            interface = _subpath_interfaces[key] = cls._inner_dataset_template(dataset).interface
-        return interface
+    def _subpath_interface(cls, data):
+        # Same interface Interface.initialize tries first, without creating a Dataset
+        for datatype in cls.subtypes:
+            interface = cls.interfaces.get(datatype)
+            if interface is not None and interface.applies(data):
+                return interface
 
     @classmethod
     def dtype(cls, dataset, dimension):
         if not dataset.data:
             return np.dtype("float")
         if getattr(dataset, "level", None) is None:
-            interface = cls._subpath_interface(dataset)
-            if interface.datatype in _DTYPE_FROM_DATA:
+            interface = cls._subpath_interface(dataset.data[0])
+            if interface is not None:
                 return interface.dtype(_Subpath(dataset, dataset.data[0]), dimension)
         ds = cls._inner_dataset_template(dataset)
         return ds.interface.dtype(ds, dimension)
