@@ -151,8 +151,10 @@ class TestCallbacks(CallbackTestCase):
         callback = object.__new__(TapCallback)
         callback._panel = object()
         callback._selection_event = None
+        callback._skipped_partial_event = False
+        callback._processed_event = True
         processed = []
-        event = namedtuple("Event", "final")
+        event = namedtuple("Event", "final geometry", defaults=({"type": "poly"},))
 
         async def on_msg(_self, _msg):
             pass
@@ -169,6 +171,33 @@ class TestCallbacks(CallbackTestCase):
         await callback.on_msg({})
 
         assert [event.final if event else None for event in processed] == [None, True]
+
+        # Selection1D + lasso: indices often do not change again on mouse-up, so
+        # the final selectiongeometry event must trigger processing exactly once.
+        processed.clear()
+        callback.geom_type = "any"
+        callback._skipped_partial_event = False
+        callback._processed_event = True
+        document = type("Doc", (), {"session_context": None})()
+        callback.plot = type("Plot", (), {"document": document})()
+        scheduled = []
+
+        def execute(cb, **_kwargs):
+            scheduled.append(cb)
+
+        monkeypatch.setattr("holoviews.plotting.bokeh.callbacks.state.execute", execute)
+
+        partial = event(False)
+        final = event(True)
+        callback._update_selection_event(partial)
+        callback._selection_event = partial
+        await callback.on_msg({})
+        assert processed == []
+
+        callback._update_selection_event(final)
+        assert scheduled == [callback._process_selection_partial_event]
+        await scheduled[0]()
+        assert [ev.final if ev else None for ev in processed] == [True]
 
 
 class TestResetCallback(CallbackTestCase):
