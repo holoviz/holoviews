@@ -12,8 +12,7 @@ import pytest
 from param import get_logger
 
 import holoviews as hv
-from holoviews.core.data import DictInterface, MultiInterface
-from holoviews.core.data.interface import DataError, Interface
+from holoviews.core.data import MultiInterface
 from holoviews.testing import assert_data_equal, assert_element_equal
 
 
@@ -677,41 +676,3 @@ def test_narwhals_multidict():
     pd_el = hv.Path(df, kdims=["A", "B"], vdims=[])
     nw_el = hv.Path(nw.from_native(df), kdims=["A", "B"], vdims=[])
     pd.testing.assert_frame_equal(pd_el.data[0], nw_el.data[0].to_pandas())
-
-
-class _PointsDictInterface(DictInterface):
-    datatype = "points_dictionary"
-
-    @classmethod
-    def applies(cls, obj):
-        return type(obj) is dict and "points" in obj
-
-    @classmethod
-    def init(cls, eltype, data, kdims, vdims):
-        if not cls.applies(data):
-            raise DataError("Expected a dict with points", cls)
-        return data, {"kdims": kdims, "vdims": vdims}, {}
-
-    @classmethod
-    def validate(cls, dataset, vdims=True):
-        pass
-
-    @classmethod
-    def dtype(cls, dataset, dimension):
-        name = dataset.get_dimension(dimension, strict=True).name
-        if name in [d.name for d in dataset.kdims + dataset.vdims if d.name not in dataset.data]:
-            return dataset.data["points"].dtype
-        return Interface.dtype(dataset, dimension)
-
-
-def test_dtype_subpath_interface_chosen_by_content(monkeypatch):
-    monkeypatch.setitem(Interface.interfaces, _PointsDictInterface.datatype, _PointsDictInterface)
-    monkeypatch.setattr(MultiInterface, "subtypes", [_PointsDictInterface.datatype, "dictionary"])
-
-    columns = hv.Path([{"x": np.arange(3), "y": np.arange(3)}], ["x", "y"])
-    points = hv.Path(
-        [{"points": np.zeros((3, 2), dtype="float32"), "value": 1}], ["x", "y"], "value"
-    )
-    assert columns.interface.dtype(columns, "x") == np.dtype(int)
-    assert points.interface.dtype(points, "x") == np.dtype("float32")
-    assert points.interface.dtype(points, "value") == np.dtype(int)

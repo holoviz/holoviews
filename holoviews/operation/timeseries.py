@@ -8,8 +8,6 @@ from ..core.data import PandasInterface
 from ..core.util import _PANDAS_FUNC_LOOKUP
 from ..element import Scatter
 
-_ROLLING_METHODS = {"sum", "mean", "median", "min", "max", "std", "var"}
-
 
 class RollingBase(param.Parameterized):
     """Parameters shared between `rolling` and `rolling_outlier_std`."""
@@ -84,9 +82,15 @@ class rolling(Operation, RollingBase):
                     "mean and sum when custom window_type is supplied"
                 )
             rolled = getattr(df, method)()
-        elif self.p.min_periods is None and method in _ROLLING_METHODS:
-            # Same result as applying the function, as windows with a NaN are
-            # never passed to the function without min_periods
+        elif self.p.min_periods is None and method in (
+            "sum",
+            "mean",
+            "median",
+            "min",
+            "max",
+            "std",
+            "var",
+        ):
             kwargs = {"ddof": 0} if method in ("std", "var") else {}
             rolled = getattr(df, method)(**kwargs)
         else:

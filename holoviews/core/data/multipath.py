@@ -392,7 +392,7 @@ class MultiInterface(Interface):
 
     @classmethod
     def _subpath_interface(cls, data):
-        # Same interface Interface.initialize tries first, without creating a Dataset
+        # Same interface as Interface.initialize without creating a Dataset
         for datatype in cls.subtypes:
             interface = cls.interfaces.get(datatype)
             if interface is not None and interface.applies(data):

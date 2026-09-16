@@ -223,7 +223,6 @@ class PipelineMeta(ParameterizedMetaclass):
                 return method_fn(*args, **kwargs)
 
             inst = args[0]
-            # Only the outermost call records its operation on the result
             if inst._in_method:
                 return method_fn(*args, **kwargs)
 
@@ -233,9 +232,10 @@ class PipelineMeta(ParameterizedMetaclass):
             inst._in_method = True
             try:
                 result = method_fn(*args, **kwargs)
+                is_dataset = isinstance(result, Dataset)
+                is_multidim = isinstance(result, MultiDimensionalMapping)
 
-                # Creating the operation is costly, so only do it when the result records it
-                if isinstance(result, (Dataset, MultiDimensionalMapping)):
+                if is_dataset or is_multidim:
                     op = method_op.instance(
                         input_type=type(inst),
                         method_name=method_name,
@@ -243,13 +243,13 @@ class PipelineMeta(ParameterizedMetaclass):
                         kwargs=kwargs,
                     )
 
-                if isinstance(result, Dataset):
+                if is_dataset:
                     result._pipeline = inst_pipeline.instance(
                         operations=[*inst_pipeline.operations, op],
                         output_type=type(result),
                     )
 
-                elif isinstance(result, MultiDimensionalMapping):
+                elif is_multidim:
                     for key, element in result.items():
                         if isinstance(element, Dataset):
                             getitem_op = method_op.instance(
