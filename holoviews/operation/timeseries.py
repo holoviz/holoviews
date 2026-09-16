@@ -8,6 +8,8 @@ from ..core.data import PandasInterface
 from ..core.util import _PANDAS_FUNC_LOOKUP
 from ..element import Scatter
 
+_ROLLING_METHODS = {"sum", "mean", "median", "min", "max", "std", "var"}
+
 
 class RollingBase(param.Parameterized):
     """Parameters shared between `rolling` and `rolling_outlier_std`."""
@@ -74,25 +76,21 @@ class rolling(Operation, RollingBase):
         xdim = element.kdims[0].name
         df = PandasInterface.as_dframe(element)
         df = df.set_index(xdim).rolling(win_type=self.p.window_type, **self._roll_kwargs())
-        if (
-            self.p.window_type is None
-            and self.p.min_periods is None
-            and self.p.function in (np.mean, np.sum)
-        ):
-            # Same result as applying the function, as every window with a NaN is NaN
-            # without min_periods, but without calling it per window
-            rolled = getattr(df, _PANDAS_FUNC_LOOKUP[self.p.function])()
-        elif self.p.window_type is None:
-            rolled = df.apply(self.p.function, raw=True)
-        elif self.p.function is np.mean:
-            rolled = df.mean()
-        elif self.p.function is np.sum:
-            rolled = df.sum()
+        method = _PANDAS_FUNC_LOOKUP.get(self.p.function)
+        if self.p.window_type is not None:
+            if self.p.function not in (np.mean, np.sum):
+                raise ValueError(
+                    "Rolling window function only supports "
+                    "mean and sum when custom window_type is supplied"
+                )
+            rolled = getattr(df, method)()
+        elif self.p.min_periods is None and method in _ROLLING_METHODS:
+            # Same result as applying the function, as windows with a NaN are
+            # never passed to the function without min_periods
+            kwargs = {"ddof": 0} if method in ("std", "var") else {}
+            rolled = getattr(df, method)(**kwargs)
         else:
-            raise ValueError(
-                "Rolling window function only supports "
-                "mean and sum when custom window_type is supplied"
-            )
+            rolled = df.apply(self.p.function, raw=True)
         return element.clone(rolled.reset_index())
 
     def _process(self, element, key=None):
