@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import datetime as dt
 import re
-from datetime import datetime
 
 import narwhals.stable.v2 as nw
 import numpy as np
@@ -132,7 +132,7 @@ class BaseNarwhalsInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         np.testing.assert_array_equal(df, expected)
 
     def test_dataset_range_with_dimension_range(self):
-        dt64 = [datetime(2017, 1, i) for i in range(1, 4)]
+        dt64 = [dt.datetime(2017, 1, i) for i in range(1, 4)]
         ds = hv.Dataset(
             self.frame({"Date": dt64}), [hv.Dimension("Date", range=(dt64[0], dt64[-1]))]
         )

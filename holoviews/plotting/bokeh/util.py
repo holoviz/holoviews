@@ -49,7 +49,7 @@ from ...core.util import (
     unique_array,
 )
 from ...core.util.dependencies import _no_import_version
-from ...util.warnings import warn
+from ...util.warnings import deprecated, warn
 from ..util import dim_axis_label
 
 BOKEH_VERSION = _no_import_version("bokeh")
@@ -138,7 +138,7 @@ if BOKEH_GE_3_6_0:
 
 def convert_timestamp(timestamp):
     """Converts bokehJS timestamp to datetime64."""
-    datetime = dt.datetime.fromtimestamp(timestamp / 1000, tz=dt.timezone.utc)
+    datetime = dt.datetime.fromtimestamp(timestamp / 1000, tz=dt.UTC)
     return np.datetime64(datetime.replace(tzinfo=None))
 
 
@@ -621,6 +621,7 @@ def make_axis(
     tick_size=None,
     axis_height=35,
 ):
+    deprecated("1.26.0", "make_axis")
     factors = list(map(dim.pprint_value, factors))
     nchars = np.max([len(f) for f in factors])
     ranges = FactorRange(factors=factors)
@@ -696,36 +697,6 @@ def make_axis(
     axis.major_label_text_baseline = "middle"
     axis.update(**axis_props)
     return p
-
-
-def hsv_to_rgb(hsv):
-    """Vectorized HSV to RGB conversion, adapted from:
-    https://stackoverflow.com/questions/24852345/hsv-to-rgb-color-conversion
-
-    """
-    h, s, v = (hsv[..., i] for i in range(3))
-    shape = h.shape
-    i = np.int_(h * 6.0)
-    f = h * 6.0 - i
-
-    q = f
-    t = 1.0 - f
-    i = np.ravel(i)
-    f = np.ravel(f)
-    i %= 6
-
-    t = np.ravel(t)
-    q = np.ravel(q)
-    s = np.ravel(s)
-    v = np.ravel(v)
-
-    clist = (1 - s * np.vstack([np.zeros_like(f), np.ones_like(f), q, t])) * v
-
-    # 0:v 1:p 2:q 3:t
-    order = np.array([[0, 3, 1], [2, 0, 1], [1, 0, 3], [1, 2, 0], [3, 1, 0], [0, 1, 2]])
-    rgb = clist[order[i], np.arange(np.prod(shape))[:, None]]
-
-    return rgb.reshape((*shape, 3))
 
 
 def pad_width(model, table_padding=0.85, tabs_padding=1.2):

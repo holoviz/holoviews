@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timedelta
+import datetime as dt
 
 import numpy as np
 import pandas as pd
@@ -26,7 +26,7 @@ pytestmark = pytest.mark.ui
         ),
         (
             pd.date_range("2000-03-01", periods=3000),
-            (timedelta(days=100), timedelta(days=365)),
+            (dt.timedelta(days=100), dt.timedelta(days=365)),
             (
                 np.array(["2000-03-01"], dtype="datetime64[ns]")[0],
                 pd.Timestamp("2001-03-01"),

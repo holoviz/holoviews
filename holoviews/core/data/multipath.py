@@ -11,6 +11,27 @@ from .dictionary import DictInterface
 from .interface import DataError, Interface
 
 
+class _Subpath:
+    """Stand-in for the Dataset of a single subpath."""
+
+    __slots__ = ("_dataset", "data")
+
+    def __init__(self, dataset, data):
+        self._dataset = dataset
+        self.data = data
+
+    @property
+    def kdims(self):
+        return self._dataset.kdims
+
+    @property
+    def vdims(self):
+        return self._dataset.vdims
+
+    def get_dimension(self, *args, **kwargs):
+        return self._dataset.get_dimension(*args, **kwargs)
+
+
 class MultiInterface(Interface):
     """MultiInterface allows wrapping around a list of tabular datasets
     including dataframes, the columnar dictionary format or 2D tabular
@@ -372,9 +393,21 @@ class MultiInterface(Interface):
         return length
 
     @classmethod
+    def _subpath_interface(cls, data):
+        # Same interface as Interface.initialize without creating a Dataset
+        for datatype in cls.subtypes:
+            interface = cls.interfaces.get(datatype)
+            if interface is not None and interface.applies(data):
+                return interface
+
+    @classmethod
     def dtype(cls, dataset, dim):
         if not dataset.data:
             return np.dtype("float")
+        if getattr(dataset, "level", None) is None:
+            interface = cls._subpath_interface(dataset.data[0])
+            if interface is not None:
+                return interface.dtype(_Subpath(dataset, dataset.data[0]), dim)
         ds = cls._inner_dataset_template(dataset)
         return ds.interface.dtype(ds, dim)
 

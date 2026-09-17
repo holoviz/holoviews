@@ -511,7 +511,6 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                     "The invert_axes parameter is not supported on Tiles elements "
                     "with the plotly backend"
                 )
-            xlabel, ylabel = ylabel, xlabel
             ydim, xdim = xdim, ydim
             l, b, r, t = b, l, t, r
 

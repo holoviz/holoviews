@@ -52,6 +52,13 @@ class TestGridPlot(TestBokehPlot):
         )
         assert title.text == text
 
+    def test_grid_title_flat_layout(self):
+        # Has Title + GridPlot + Axis
+        grid = hv.HoloMap({"a": hv.Curve([0, 1]).relabel("a")}, kdims=["a"]).grid("a")
+        plot = bokeh_renderer.get_plot(grid)
+        assert isinstance(plot.state, Column)
+        assert len(plot.state.children) == 3
+
     def test_gridmatrix_overlaid_batched(self, rng):
         ds = hv.Dataset(
             (["A"] * 5 + ["B"] * 5, rng.random(10), rng.random(10)), kdims=["a", "b", "c"]

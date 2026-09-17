@@ -44,8 +44,6 @@ class redim(Redim):
 
 
 if t.TYPE_CHECKING:
-    from typing_extensions import Self
-
     _LabelledDataT = t.TypeVar("_LabelledDataT", bound="LabelledData")
 
 
@@ -621,7 +619,7 @@ class LabelledData(param.Parameterized):
         link: bool = ...,
         *args,
         **overrides,
-    ) -> Self: ...
+    ) -> t.Self: ...
     @t.overload
     def clone(
         self,
@@ -640,7 +638,7 @@ class LabelledData(param.Parameterized):
         link=True,
         *args,
         **overrides,
-    ) -> LabelledData | Self:
+    ) -> LabelledData | t.Self:
         """Clones the object, overriding data and parameters.
 
         Parameters
@@ -1549,12 +1547,14 @@ class ViewableTree(AttrTree, Dimensioned):
         return items
 
     def __setstate__(self, state):
-        """Ensure that object does not try to reference its parent during
-        unpickling.
+        """Ensure that object does not try to reference its parent or children
+        during unpickling.
         """
         parent = state.pop("parent", None)
         state["parent"] = None
+        children = {c: state.pop(c) for c in state.get("children", []) if c in state}
         super(AttrTree, self).__setstate__(state)
+        self.__dict__.update(children)
         self.__dict__["parent"] = parent
 
     @classmethod

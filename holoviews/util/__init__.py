@@ -30,7 +30,7 @@ from .settings import OutputSettings, list_backends, list_formats
 
 Store.output_settings = OutputSettings
 
-_BackendT: t.TypeAlias = t.Literal["bokeh", "matplotlib", "plotly"]
+type _BackendT = t.Literal["bokeh", "matplotlib", "plotly"]
 
 _STR_OPTIONS_ERR = (
     "String-based options specification is no longer supported. "
@@ -850,9 +850,7 @@ def save(
                 )
             else:
                 obj = obj.opts(toolbar=None, backend="bokeh", clone=True)
-        elif not toolbar and (
-            fmt == "png" or (isinstance(filename, str) and filename.endswith("png"))
-        ):
+        elif fmt == "png" or (isinstance(filename, str) and filename.endswith("png")):
             obj = obj.opts(toolbar=None, backend="bokeh", clone=True)
     if kwargs:
         renderer_obj = renderer_obj.instance(**kwargs)

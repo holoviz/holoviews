@@ -265,6 +265,14 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         plot = bokeh_renderer.get_plot(curve).state
         assert plot.yaxis[0].axis_label == "custom y-label"
 
+    def test_element_invert_axes_custom_labels_visual_axes(self):
+        curve = hv.Curve(range(10)).opts(
+            invert_axes=True, xlabel="custom x-label", ylabel="custom y-label"
+        )
+        plot = bokeh_renderer.get_plot(curve).state
+        assert plot.xaxis[0].axis_label == "custom x-label"
+        assert plot.yaxis[0].axis_label == "custom y-label"
+
     def test_element_labelled_x_disabled(self):
         curve = hv.Curve(range(10)).opts(labelled=["y"])
         plot = bokeh_renderer.get_plot(curve).state

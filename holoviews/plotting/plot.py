@@ -1745,27 +1745,37 @@ class GenericElementPlot(DimensionedPlot):
         return (x0, y0, x1, y1)
 
     def _get_axis_labels(self, dimensions, xlabel=None, ylabel=None, zlabel=None):
-        if self.xlabel is not None:
-            xlabel = self.xlabel
-        elif dimensions and xlabel is None:
+        """Returns axis labels derived from the supplied dimensions.
+
+        Derived labels follow their data dimension and are swapped when
+        invert_axes is set. The xlabel/ylabel/zlabel plot options refer
+        to the visual axes and override the derived labels after that swap.
+
+        """
+        if dimensions and xlabel is None:
             xdims = dimensions[0]
             xlabel = dim_axis_label(xdims) if xdims else ""
 
-        if self.ylabel is not None:
-            ylabel = self.ylabel
-        elif len(dimensions) >= 2 and ylabel is None:
+        if len(dimensions) >= 2 and ylabel is None:
             ydims = dimensions[1]
             ylabel = dim_axis_label(ydims) if ydims else ""
 
-        if getattr(self, "zlabel", None) is not None:
-            zlabel = self.zlabel
-        elif (
+        if (
             isinstance(self.projection, str)
             and self.projection == "3d"
             and len(dimensions) >= 3
             and zlabel is None
         ):
             zlabel = dim_axis_label(dimensions[2]) if dimensions[2] else ""
+
+        if self.invert_axes:
+            xlabel, ylabel = ylabel, xlabel
+        if self.xlabel is not None:
+            xlabel = self.xlabel
+        if self.ylabel is not None:
+            ylabel = self.ylabel
+        if getattr(self, "zlabel", None) is not None:
+            zlabel = self.zlabel
         return xlabel, ylabel, zlabel
 
     def _format_title_components(self, key, dimensions=True, separator="\n"):

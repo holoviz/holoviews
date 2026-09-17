@@ -1,53 +1,71 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":enablePreCommit"],
-  "schedule": ["after 12am and before 5am on the 1st day of the month"],
-  "enabledManagers": ["github-actions", "pre-commit", "pixi"],
-  "commitMessagePrefix": "chore(bot):",
-  "automerge": true,
-  "minimumReleaseAge": "7 days",
-  "lockFileMaintenance": {
-    "enabled": true
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: ["config:recommended", ":enablePreCommit"],
+  enabledManagers: ["github-actions", "pre-commit", "pixi"],
+  lockFileMaintenance: { enabled: true },
+  schedule: ["before 5am on the 1st day of the month"],
+
+  automerge: true,
+  commitMessagePrefix: "chore(bot):",
+  prConcurrentLimit: 0,
+  prCreation: "immediate",
+  prHourlyLimit: 0,
+
+  internalChecksFilter: "strict",
+  minimumReleaseAge: "7 days",
+  separateMajorMinor: false,
+
+  packageRules: [
+    {
+      groupName: "GitHub Actions",
+      matchManagers: ["github-actions"],
+      pinDigests: true,
+    },
+    {
+      groupName: "HoloViz Github Actions",
+      matchManagers: ["github-actions"],
+      matchPackageNames: ["holoviz-dev/holoviz_tasks"],
+      minimumReleaseAge: null,
+      schedule: ["before 5am"],
+      pinDigests: true,
+    },
+    {
+      groupName: "pre-commit",
+      matchManagers: ["pre-commit"],
+    },
+    {
+      matchManagers: ["pixi"],
+      enabled: false, // We don't want updates pixi.toml
+    },
+    {
+      groupName: "cudf",
+      matchManagers: ["pixi"],
+      matchPackageNames: ["cudf"],
+      minimumReleaseAge: null,
+      schedule: ["before 5am"], // Happens every second month
+      enabled: true,
+      automerge: false, // Need to run outside CI
+      commitMessagePrefix: "compat:",
+    },
+    {
+      groupName: "Pixi Lock",
+      matchManagers: ["pixi"],
+      matchUpdateTypes: ["lockFileMaintenance"],
+      description: "Weekly update of Pixi Lock",
+      schedule: ["before 5am on monday"],
+      automergeSchedule: ["after 5am on monday"], // avoid multiple PRs in the same day
+      platformAutomerge: false, // native automerge ignores automergeSchedule
+      minimumReleaseAge: null, // Handled in pixi itself
+      commitMessageAction: "Update",
+      commitMessageTopic: "pixi.lock",
+      branchTopic: "pixi-lock",
+      labels: ["run-build-ci", "run-docs-ci"],
+      enabled: true,
+    },
+  ],
+  vulnerabilityAlerts: {
+    enabled: true,
+    minimumReleaseAge: null,
+    vulnerabilityFixStrategy: "lowest",
   },
-  "packageRules": [
-    {
-      "groupName": "GitHub Actions",
-      "matchManagers": ["github-actions"],
-      "description": "Monthly update of GitHub Actions",
-      "pinDigests": true
-    },
-    {
-      "groupName": "HoloViz Tasks",
-      "matchManagers": ["github-actions"],
-      "matchPackageNames": ["holoviz-dev/holoviz_tasks"],
-      "minimumReleaseAge": "0 days",
-      "schedule": ["after 12am and before 5am"]
-    },
-    {
-      "groupName": "pre-commit dependencies",
-      "matchManagers": ["pre-commit"],
-      "description": "Monthly update of pre-commit"
-    },
-    {
-      "groupName": "Pixi",
-      "matchManagers": ["lockFileMaintenance"],
-      "description": "Weekly update of Pixi",
-      "schedule": ["before 5am on monday"],
-      "minimumReleaseAge": "0 days", // Handled in pixi itself
-      "commitMessageAction": "Update",
-      "commitMessageTopic": "pixi.lock",
-      "branchTopic": "pixi-lock",
-      "automerge": false  // To ensure docs and build workflow is successful
-    },
-    {
-      "groupName": "HoloViz Core",
-      "matchManagers": ["pixi"],
-      "matchPackageNames": ["panel", "param"],
-      "description": "Update of Panel and Param",
-      "minimumReleaseAge": "0 days",
-      "schedule": ["at any time"],
-      "rangeStrategy": "bump",
-      "ignoreUnstable": false
-    }
-  ]
 }

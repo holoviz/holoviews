@@ -368,7 +368,7 @@ def connect_edges(graph):
     return paths
 
 
-def sort_arr(arr: Array) -> Array:
+def sort_arr[T: Array](arr: T) -> T:
     import pandas as pd
 
     if isinstance(arr, pd.api.extensions.ExtensionArray):
