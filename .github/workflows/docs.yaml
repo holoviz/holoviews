@@ -18,8 +18,7 @@ on:
         required: true
         default: dryrun
   pull_request:
-    branches:
-      - "main"
+    types: [opened, synchronize, reopened, labeled]
 
 permissions: {}
 
@@ -28,9 +27,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  setup:
+    name: setup:docs
+    runs-on: ubuntu-latest
+    permissions:
+      checks: read
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - name: check if docs should be built
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HAS_LABEL: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-docs-ci') }}
+          OTHER_LABEL: ${{ github.event.action == 'labeled' && github.event.label.name != 'run-docs-ci' }}
+        run: |
+          run=$HAS_LABEL
+          if [ "$run" = true ] && [ "$OTHER_LABEL" = true ]; then
+            # This run hides the earlier run's checks, so only skip if the docs already built for this commit
+            built=$(gh api "repos/$GH_REPO/commits/$HEAD_SHA/check-runs?check_name=build:docs" \
+              --jq '[.check_runs[] | select(.conclusion != "skipped")] | max_by(.started_at).conclusion == "success"')
+            [ "$built" = true ] && run=false
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+
   docs_build:
-    name: Build Documentation
-    if: github.event_name != 'pull_request' || github.head_ref == 'renovate/lock-file-maintenance-pixi-lock'
+    name: build:docs
+    needs: [setup]
+    if: needs.setup.outputs.run == 'true'
     runs-on: "macos-latest"
     timeout-minutes: 180
     env:
@@ -49,7 +75,7 @@ jobs:
           path: builtdocs
 
   docs_publish:
-    name: Publish Documentation
+    name: publish:docs
     runs-on: "ubuntu-latest"
     needs: [docs_build]
     env:
@@ -79,7 +105,7 @@ jobs:
 
   result_docs_build:
     name: result:docs
-    needs: [docs_build, docs_publish]
+    needs: [setup, docs_build, docs_publish]
     if: always()
     runs-on: ubuntu-latest
     steps:

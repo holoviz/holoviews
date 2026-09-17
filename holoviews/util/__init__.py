@@ -850,9 +850,7 @@ def save(
                 )
             else:
                 obj = obj.opts(toolbar=None, backend="bokeh", clone=True)
-        elif not toolbar and (
-            fmt == "png" or (isinstance(filename, str) and filename.endswith("png"))
-        ):
+        elif fmt == "png" or (isinstance(filename, str) and filename.endswith("png")):
             obj = obj.opts(toolbar=None, backend="bokeh", clone=True)
     if kwargs:
         renderer_obj = renderer_obj.instance(**kwargs)
