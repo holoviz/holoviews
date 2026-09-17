@@ -15,6 +15,8 @@ from panel.io.state import state
 from param.parameterized import bothmethod
 
 from ...core import HoloMap, Store
+from ...core.util.dependencies import _is_installed
+from ...util.warnings import warn
 from ..plot import Plot
 from ..renderer import HTML_TAGS, MIME_TYPES, Renderer
 from .util import BOKEH_GE_3_10_0, compute_plot_size
@@ -104,19 +106,28 @@ class BokehRenderer(Renderer):
         logger = logging.getLogger(bokeh.core.validation.check.__file__)
         logger.disabled = True
 
+        if BOKEH_GE_3_10_0:
+            if _is_installed("selenium") and not _is_installed("playwright"):
+                warn("Selenium is deprecated in favor of Playwright from Bokeh 3.10")
+                export_kwargs = {}
+            else:
+                export_kwargs = {"backend": "playwright"}
+        else:
+            export_kwargs = {}
+
         data = None
-        # Selenium is deprecated in favor of Playwright from Bokeh 3.10
-        export_kwargs = {"backend": "playwright"} if BOKEH_GE_3_10_0 else {}
         if fmt == "gif":
             from bokeh.io.export import get_screenshot_as_png
 
-            if BOKEH_GE_3_10_0 or state.webdriver is not None:
+            if export_kwargs or state.webdriver is not None:
                 # The Playwright backend reuses its browser between screenshots
                 webdriver = state.webdriver
+                created_webdriver = False
             else:
                 from bokeh.io.webdriver import webdriver_control
 
                 webdriver = webdriver_control.create()
+                created_webdriver = True
 
             nframes = len(plot)
             frames = []
@@ -124,7 +135,7 @@ class BokehRenderer(Renderer):
                 plot.update(i)
                 img = get_screenshot_as_png(plot.state, driver=webdriver, **export_kwargs)
                 frames.append(img)
-            if not BOKEH_GE_3_10_0 and state.webdriver is not None:
+            if created_webdriver:
                 webdriver.close()
 
             bio = BytesIO()
