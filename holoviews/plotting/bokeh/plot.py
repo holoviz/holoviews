@@ -1353,7 +1353,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                             toolbar_location=self.toolbar,
                             sizing_mode=sizing_mode,
                         )
-                        self._set_flexbox_sizing_for_grid(grid)
+                        self._set_grid_track_sizing(grid)
                         if self.merge_tools:
                             grid.toolbar = merge_tools(children, autohide=self.autohide_toolbar)
                     tab_plots.append((title, grid))
@@ -1394,7 +1394,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                 merge_tools=False,
                 sizing_mode=sizing_mode,
             )
-            self._set_flexbox_sizing_for_grid(layout_plot)
+            self._set_grid_track_sizing(layout_plot)
             if self.sync_legends:
                 sync_legends(layout_plot)
             if self.merge_tools:
@@ -1435,7 +1435,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             self.handles["title"] = title
 
     @staticmethod
-    def _set_flexbox_sizing_for_grid(grid):
+    def _set_grid_track_sizing(grid):
         """Marks rows/columns containing a responsive child as flexible ('1fr'),
         since Bokeh otherwise sizes GridPlot tracks to content and leaves no
         room for a responsive child to stretch into.
