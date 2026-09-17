@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import pytest
 
 import holoviews as hv
 from holoviews.operation.timeseries import resample, rolling, rolling_outlier_std
@@ -34,6 +35,34 @@ class TimeseriesOperationTests:
         rolled = rolling(self.int_curve, rolling_window=2)
         rolled_vals = [np.nan, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5]
         assert_element_equal(rolled, hv.Curve(rolled_vals))
+
+    def test_roll_with_nan_and_min_periods(self):
+        curve = hv.Curve([1, np.nan, 3, 4])
+        rolled = rolling(curve, rolling_window=2, min_periods=1, center=False)
+        assert_element_equal(rolled, hv.Curve([1, np.nan, np.nan, 3.5]))
+
+    def test_roll_with_std_function(self):
+        rolled = rolling(self.int_curve, rolling_window=3, function=np.std, center=False)
+        std = np.std([1, 2, 3])
+        assert_element_equal(rolled, hv.Curve([np.nan, np.nan, std, std, std, std, std]))
+
+    @pytest.mark.parametrize(
+        "function",
+        [np.sum, np.mean, np.nanmean, np.median, np.max, np.min, np.std, np.var, max],
+    )
+    def test_roll_function_with_nan(self, function):
+        values = [1, 4, 2, np.nan, 5, 3, 8, 6]
+        rolled = rolling(hv.Curve(values), rolling_window=3, function=function, center=False)
+        windows = [values[i - 2 : i + 1] for i in range(2, len(values))]
+        expected = [np.nan, np.nan] + [
+            np.nan if np.isnan(w).any() else function(np.array(w)) for w in windows
+        ]
+        assert_element_equal(rolled, hv.Curve(expected))
+
+    @scipy_skip
+    def test_roll_ints_with_window_type_unsupported_function(self):
+        with pytest.raises(ValueError, match="only supports mean and sum"):
+            rolling(self.int_curve, rolling_window=3, window_type="triang", function=np.std)
 
     @scipy_skip
     def test_roll_date_with_window_type(self):
