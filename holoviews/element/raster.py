@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import colorsys
 from collections.abc import Mapping
 from copy import deepcopy
 from operator import itemgetter
@@ -14,6 +13,7 @@ from ..core.data import ImageInterface
 from ..core.data.interface import DataError
 from ..core.dimension import dimension_name
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
+from ..core.util import hsv_to_rgb
 from .chart import Curve
 from .graphs import TriMesh
 from .selection import Selection2DExpr
@@ -859,22 +859,23 @@ class HSV(RGB):
         is automatically appended to this list.""",
     )
 
-    hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
-
     @property
     def rgb(self):
         """Conversion from HSV to RGB."""
         coords = tuple(self.dimension_values(d, expanded=False) for d in self.kdims)
         data = [self.dimension_values(d, flat=False) for d in self.vdims]
 
-        hsv = self.hsv_to_rgb(*data[:3])
+        rgb = hsv_to_rgb(np.dstack(data[:3]))
+        channels = tuple(rgb[..., i] for i in range(3))
+        vdims = deepcopy(RGB.vdims)
         if len(self.vdims) == 4:
-            hsv += (data[3],)
+            channels += (data[3],)
+            vdims.append(self.alpha_dimension)
 
         params = util.get_param_values(self)
-        del params["vdims"]
+        params["vdims"] = vdims
         return RGB(
-            coords + hsv,
+            coords + channels,
             bounds=self.bounds,
             xdensity=self.xdensity,
             ydensity=self.ydensity,
