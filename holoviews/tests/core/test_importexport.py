@@ -5,6 +5,7 @@ Unit test of the (non-rendering) exporters and importers.
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 import holoviews as hv
 from holoviews.core.io import Deserializer, Pickler, Serializer, Unpickler
@@ -215,3 +216,20 @@ class TestPicklerAdvanced:
             tmp_path / "test_pickler_save_load_single_layout.hvz", entries=["Image.I(L)"]
         )
         assert_element_equal(single_layout, loaded)
+
+
+@pytest.mark.parametrize(
+    "obj",
+    [
+        hv.Overlay([hv.Curve([1, 2])]),
+        hv.Layout([hv.Curve([1, 2])]),
+        hv.Curve([1, 2]) * hv.Curve([2, 3]),
+        hv.Scatter([1, 2]) + hv.Curve([1, 2]),
+        (hv.Scatter([1, 2]) * hv.Curve([1, 2])) + hv.Curve([1, 2]),
+    ],
+    ids=["overlay", "layout", "same_type_overlay", "layout_two", "nested"],
+)
+def test_roundtrip_does_not_duplicate_children(obj):
+    loaded = hv.Store.loads(hv.Store.dumps(obj))
+    assert list(loaded.data) == list(obj.data)
+    assert loaded.children == obj.children
