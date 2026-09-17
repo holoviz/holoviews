@@ -24,6 +24,33 @@ from .util import BOKEH_GE_3_10_0, compute_plot_size
 default_theme = Theme(json={"attrs": {"Title": {"text_color": "black", "text_font_size": "12pt"}}})
 
 
+def _export_kwargs():
+    if not BOKEH_GE_3_10_0:
+        return {}
+
+    from bokeh.settings import settings
+
+    # Respect an explicit BOKEH_EXPORT_BACKEND
+    if settings.export_backend() != "auto":
+        return {}
+    if _is_installed("playwright"):
+        return {"backend": "playwright"}
+    if _is_installed("selenium"):
+        warn("Selenium is deprecated in favor of Playwright from Bokeh 3.10")
+    return {}
+
+
+def _uses_playwright(export_kwargs):
+    if export_kwargs.get("backend") == "playwright":
+        return True
+    if not BOKEH_GE_3_10_0:
+        return False
+
+    from bokeh.settings import settings
+
+    return settings.export_backend() == "playwright"
+
+
 class BokehRenderer(Renderer):
     backend = param.String(default="bokeh", doc="The backend name.")
 
@@ -106,20 +133,12 @@ class BokehRenderer(Renderer):
         logger = logging.getLogger(bokeh.core.validation.check.__file__)
         logger.disabled = True
 
-        if BOKEH_GE_3_10_0:
-            if _is_installed("selenium") and not _is_installed("playwright"):
-                warn("Selenium is deprecated in favor of Playwright from Bokeh 3.10")
-                export_kwargs = {}
-            else:
-                export_kwargs = {"backend": "playwright"}
-        else:
-            export_kwargs = {}
-
         data = None
         if fmt == "gif":
             from bokeh.io.export import get_screenshot_as_png
 
-            if export_kwargs or state.webdriver is not None:
+            export_kwargs = _export_kwargs()
+            if _uses_playwright(export_kwargs) or state.webdriver is not None:
                 # The Playwright backend reuses its browser between screenshots
                 webdriver = state.webdriver
                 created_webdriver = False
@@ -153,7 +172,7 @@ class BokehRenderer(Renderer):
         elif fmt == "png":
             from bokeh.io.export import get_screenshot_as_png
 
-            img = get_screenshot_as_png(plot.state, driver=state.webdriver, **export_kwargs)
+            img = get_screenshot_as_png(plot.state, driver=state.webdriver, **_export_kwargs())
             imgByteArr = BytesIO()
             img.save(imgByteArr, format="PNG")
             data = imgByteArr.getvalue()
