@@ -133,10 +133,7 @@ class RGBPlot(RasterBasePlot, LegendPlot):
         handles = super().init_artists(ax, plot_args, plot_kwargs)
         if "holoviews.operation.datashader" not in sys.modules or not self.show_legend:
             return handles
-        try:
-            legend = categorical_legend(self.current_frame, backend=self.backend)
-        except Exception:
-            return handles
+        legend = categorical_legend(self.current_frame, backend=self.backend)
         if legend is None:
             return handles
         legend_params = {k: v for k, v in self.param.values().items() if k.startswith("legend")}
