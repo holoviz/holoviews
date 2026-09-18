@@ -57,3 +57,11 @@ repos:
             --option,
             "indent_string=    ",
           ]
+  - repo: local
+    hooks:
+      - id: pixi
+        name: check pixi
+        entry: pixi lock --check
+        language: system
+        files: ^pixi
+        pass_filenames: false
