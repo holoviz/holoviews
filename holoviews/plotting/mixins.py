@@ -325,6 +325,24 @@ class AreaMixin:
         return super().get_extents(element, ranges, range_type)
 
 
+class HistogramMixin:
+    def get_extents(self, element, ranges, range_type="combined", **kwargs):
+        vdims = element.vdims[:2]
+        vdim = vdims[0].label
+        if element._stacked and len(vdims) > 1:
+            new_range = {}
+            for r in ranges[vdim]:
+                if r != "values":
+                    new_range[r] = util.max_range([ranges[vd.label][r] for vd in vdims])
+            ranges[vdim] = new_range
+        else:
+            s0, s1 = ranges[vdim]["soft"]
+            s0 = min(s0, 0) if util.isfinite(s0) else 0
+            s1 = max(s1, 0) if util.isfinite(s1) else 0
+            ranges[vdim]["soft"] = (s0, s1)
+        return super().get_extents(element, ranges, range_type)
+
+
 class BarsMixin:
     def _baseline_dimensions(self, element):
         """Resolve the (top, bottom) value dimensions for floating bars.
