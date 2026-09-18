@@ -1701,6 +1701,25 @@ def test_rasterize_overlay_seeds_range_streams():
 
 
 @pytest.mark.usefixtures("bokeh_backend")
+def test_rasterize_dynspread_per_element_overlay_seeds_range_streams():
+    # Test for https://github.com/holoviz/holoviews/issues/6954
+    s1 = hv.Scatter((np.array([0, 10]), np.array([0, 0])), "x", "y", label="s1")
+    s2 = hv.Scatter((np.array([0, 10]), np.array([5, 5])), "x", "y", label="s2")
+
+    d1 = dynspread(rasterize(s1), max_px=2, threshold=1)
+    d2 = dynspread(rasterize(s2), max_px=2, threshold=1)
+    overlay = hv.Overlay([d1, d2]).collate().opts(padding=0.1)
+
+    plot = hv.renderer("bokeh").get_plot(overlay)
+
+    for subplot in plot.subplots.values():
+        stream = next((s for s in subplot.source_streams if isinstance(s, RangeXY)), None)
+        assert stream
+        assert stream.x_range == (-1.0, 11.0)
+        assert stream.y_range == (-0.5, 5.5)
+
+
+@pytest.mark.usefixtures("bokeh_backend")
 def test_selector_single_categorical():
     # Test for https://github.com/holoviz/holoviews/issues/6595
     plot = hv.Points(([0, 1], [0, 1], ["A", "A"]), ["X", "Y"], "C")
