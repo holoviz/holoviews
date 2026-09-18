@@ -16,7 +16,7 @@ from param.parameterized import bothmethod
 from ...core import HoloMap
 from ...core.options import Store
 from ..renderer import HTML_TAGS, MIME_TYPES, Renderer
-from .util import get_old_rcparams, get_tight_bbox
+from .util import _ensure_agg_canvas, get_old_rcparams, get_tight_bbox
 
 # <format name> : (animation writer, format,  anim_kwargs, extra_args)
 ANIMATION_OPTS = {
@@ -252,8 +252,6 @@ class MPLRenderer(Renderer):
         the figure dimensions and axes positions so that all content fits
         within the figure bounds without clipping.
         """
-        from matplotlib.backends.backend_agg import FigureCanvasAgg
-
         fig = plot.state
 
         traverse_fn = lambda x: x.handles.get("bbox_extra_artists", None)
@@ -265,12 +263,7 @@ class MPLRenderer(Renderer):
 
         pad = mpl.rcParams["savefig.pad_inches"]
 
-        # Ensure we have a non-interactive canvas for rendering, since
-        # the figure may have been closed (plt.close) but still retain
-        # a Tk/Qt canvas that errors on resize operations.
-        if type(fig.canvas) is not FigureCanvasAgg:
-            fig.canvas.manager = None
-            FigureCanvasAgg(fig)
+        _ensure_agg_canvas(fig)
 
         dpi = self.dpi or fig.dpi
         fig.set_dpi(dpi)
