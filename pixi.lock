@@ -2327,7 +2327,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/nbsite-0.10.0a3-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/nbsite-0.10.0a4-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0a0-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
@@ -2750,7 +2750,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hf451053_7.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/nbsite-0.10.0a3-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/nbsite-0.10.0a4-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0a0-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
@@ -3148,7 +3148,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_7.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/nbsite-0.10.0a3-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/nbsite-0.10.0a4-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0a0-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
@@ -31217,9 +31217,9 @@ packages:
   license: BSD-3-Clause
   size: 9613451
   timestamp: 1779176961385
-- conda: https://conda.anaconda.org/pyviz/label/dev/noarch/nbsite-0.10.0a3-py_0.tar.bz2
-  sha256: 5a8c606fffb0e586c7509524fc8adf338579e2b309c665b36166a92503f6b951
-  md5: 6dd5fa3549bc3a84866276f64a06ffc2
+- conda: https://conda.anaconda.org/pyviz/label/dev/noarch/nbsite-0.10.0a4-py_0.tar.bz2
+  sha256: 80ab019772678d62f7b18f7b81f81337624cdc5ed125cdfb3b0de76796ce5f8d
+  md5: 573db5a1c7a88ce748d383cdaaf4f519
   depends:
   - beautifulsoup4
   - ipykernel
@@ -31244,8 +31244,8 @@ packages:
   - sphinx-design
   - sphinxext-rediraffe
   license: BSD
-  size: 124203
-  timestamp: 1789734151043
+  size: 124260
+  timestamp: 1789737978948
 - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
   sha256: cc82fc8611f159d88ee32ee5a59129848ac0d8156d64c52c89e132860f455c5d
   md5: 683f90bfc99ed01d4e4b9e0d1eec3593
