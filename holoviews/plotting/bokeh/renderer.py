@@ -15,11 +15,40 @@ from panel.io.state import state
 from param.parameterized import bothmethod
 
 from ...core import HoloMap, Store
+from ...core.util.dependencies import _is_installed
+from ...util.warnings import warn
 from ..plot import Plot
 from ..renderer import HTML_TAGS, MIME_TYPES, Renderer
-from .util import compute_plot_size
+from .util import BOKEH_GE_3_10_0, compute_plot_size
 
 default_theme = Theme(json={"attrs": {"Title": {"text_color": "black", "text_font_size": "12pt"}}})
+
+
+def _export_kwargs():
+    if not BOKEH_GE_3_10_0:
+        return {}
+
+    from bokeh.settings import settings
+
+    # Respect an explicit BOKEH_EXPORT_BACKEND
+    if settings.export_backend() != "auto":
+        return {}
+    if _is_installed("playwright"):
+        return {"backend": "playwright"}
+    if _is_installed("selenium"):
+        warn("Selenium is deprecated in favor of Playwright from Bokeh 3.10")
+    return {}
+
+
+def _uses_playwright(export_kwargs):
+    if export_kwargs.get("backend") == "playwright":
+        return True
+    if not BOKEH_GE_3_10_0:
+        return False
+
+    from bokeh.settings import settings
+
+    return settings.export_backend() == "playwright"
 
 
 class BokehRenderer(Renderer):
@@ -107,20 +136,25 @@ class BokehRenderer(Renderer):
         data = None
         if fmt == "gif":
             from bokeh.io.export import get_screenshot_as_png
-            from bokeh.io.webdriver import webdriver_control
 
-            if state.webdriver is None:
-                webdriver = webdriver_control.create()
-            else:
+            export_kwargs = _export_kwargs()
+            if _uses_playwright(export_kwargs) or state.webdriver is not None:
+                # The Playwright backend reuses its browser between screenshots
                 webdriver = state.webdriver
+                created_webdriver = False
+            else:
+                from bokeh.io.webdriver import webdriver_control
+
+                webdriver = webdriver_control.create()
+                created_webdriver = True
 
             nframes = len(plot)
             frames = []
             for i in range(nframes):
                 plot.update(i)
-                img = get_screenshot_as_png(plot.state, driver=webdriver)
+                img = get_screenshot_as_png(plot.state, driver=webdriver, **export_kwargs)
                 frames.append(img)
-            if state.webdriver is not None:
+            if created_webdriver:
                 webdriver.close()
 
             bio = BytesIO()
@@ -138,7 +172,7 @@ class BokehRenderer(Renderer):
         elif fmt == "png":
             from bokeh.io.export import get_screenshot_as_png
 
-            img = get_screenshot_as_png(plot.state, driver=state.webdriver)
+            img = get_screenshot_as_png(plot.state, driver=state.webdriver, **_export_kwargs())
             imgByteArr = BytesIO()
             img.save(imgByteArr, format="PNG")
             data = imgByteArr.getvalue()
