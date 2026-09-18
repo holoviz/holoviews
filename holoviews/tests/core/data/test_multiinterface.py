@@ -34,6 +34,18 @@ class GeomTests:
         for i, array in enumerate(mds.split(datatype="array")):
             assert_data_equal(array, arrays[i])
 
+    def test_empty_dtype(self):
+        path = hv.Path([], ["x", "y"], datatype=[self.datatype])
+        assert path.interface.dtype(path, "x") == np.dtype("float")
+
+    def test_dtype_matches_subpath(self):
+        dicts = [{"x": np.arange(3), "y": np.linspace(0, 1, 3)} for _ in range(2)]
+        path = hv.Path(dicts, ["x", "y"], datatype=[self.datatype])
+        assert path.interface is self.interface
+        subpath = path.split()[0]
+        for dim in ["x", "y"]:
+            assert path.interface.dtype(path, dim) == subpath.interface.dtype(subpath, dim)
+
     def test_dict_dataset(self):
         dicts = [{"x": np.arange(i, i + 2), "y": np.arange(i, i + 2)} for i in range(2)]
         mds = hv.Path(dicts, kdims=["x", "y"], datatype=[self.datatype])
