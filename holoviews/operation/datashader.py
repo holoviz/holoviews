@@ -1498,14 +1498,14 @@ class shade(LinkableOperation):
             # DataArray, either by selecting the singular value
             # dimension or by adding a z-dimension
             if not element.interface.packed(element):
-                if vdim:
-                    array = array[vdim]
-                else:
-                    array = array.to_array("z")
-                    # If data is 3D then we have one extra constant dimension
-                    if array.ndim > 3:
-                        drop = set(array.dims) - {*main_dims, "z"}
-                        array = array.squeeze(dim=drop)
+                # Keep the stack axis even for a single level: selecting the
+                # lone value dimension returns 2D, and _process still passes a
+                # color_key, so datashader would read x as the category axis.
+                array = array.to_array("z")
+                # If data is 3D then we have one extra constant dimension
+                if array.ndim > 3:
+                    drop = set(array.dims) - {*main_dims, "z"}
+                    array = array.squeeze(dim=drop)
             array = array.transpose(*main_dims, ...)
         else:
             array = element.data[vdim]
@@ -1536,7 +1536,12 @@ class shade(LinkableOperation):
         # Dask is not supported by shade so materialize it
         array = array.compute()
 
-        if array.shape[-1] == 1:
+        # Set before the squeeze below, which must not collapse a categorical
+        # aggregate: a single-category (h, w, 1) array would become 2D while
+        # still being shaded with a color_key.
+        is_categorical = element.ndims > 2 or isinstance(element, ImageStack)
+
+        if array.shape[-1] == 1 and not is_categorical:
             array = array[..., 0]
 
         shade_opts = dict(how=self.p.cnorm, min_alpha=self.p.min_alpha, alpha=self.p.alpha)
@@ -1545,7 +1550,6 @@ class shade(LinkableOperation):
 
         # Compute shading options depending on whether
         # it is a categorical or regular aggregate
-        is_categorical = element.ndims > 2 or isinstance(element, ImageStack)
         if is_categorical:
             kdims = element.kdims if isinstance(element, ImageStack) else element.kdims[1:]
             categories = array.shape[-1]
@@ -1970,11 +1974,10 @@ class SpreadingOperation(LinkableOperation):
                 ) in enumerate("RGBA"):
                     new_data[k].data = img[:, :, idx]
             elif isinstance(element, ImageStack):
-                if len(element.vdims) == 1:
-                    new_data[element.vdims[0].name].data = array
-                else:
-                    for k in map(str, element.vdims):
-                        new_data[k].data = array.sel(z=k)
+                # _extract_data keeps the z axis even for one level, so a
+                # single-vdim stack selects the same way as a multi-vdim one.
+                for k in map(str, element.vdims):
+                    new_data[k].data = array.sel(z=k)
             elif isinstance(element, Image):
                 new_data[element.vdims[0].name].data = array
             else:
