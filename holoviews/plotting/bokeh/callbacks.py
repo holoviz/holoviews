@@ -718,7 +718,10 @@ class PopupMixin:
             return
         self._selection_event = event
         self._processed_event = not event.final
-        if event.final and self._skipped_partial_event:
+        if not event.final:
+            self._skipped_partial_event = True
+            return
+        if self._skipped_partial_event:
             if (
                 self.plot.document.session_context
                 and self.plot.document.session_context.server_context
@@ -729,8 +732,13 @@ class PopupMixin:
 
     async def on_msg(self, msg):
         await super().on_msg(msg)
-        if hasattr(self, "_panel"):
-            await self._process_selection_event()
+        if not hasattr(self, "_panel"):
+            return
+        event = self._selection_event
+        if event is not None and not getattr(event, "final", True):
+            self._skipped_partial_event = True
+            return
+        await self._process_selection_event()
 
     async def _process_selection_event(self):
         event = self._selection_event

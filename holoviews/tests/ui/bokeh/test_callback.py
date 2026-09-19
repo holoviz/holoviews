@@ -565,6 +565,50 @@ class TestPopup:
 
         self._verify_popup_position(distances, popup_position)
 
+    def test_popup_skips_partial_selection_event(self, serve_hv, points):
+        # Regression test for https://github.com/holoviz/holoviews/issues/6548
+        popup_updates = []
+        lasso_updates = []
+
+        def popup_form(index):
+            if index:
+                popup_updates.append(list(index))
+                return f"# selection\n{len(index)}"
+
+        lasso = Lasso(source=points)
+        lasso.add_subscriber(lambda **kwargs: lasso_updates.append(kwargs.get("geometry")))
+        hv.streams.Selection1D(source=points, popup=popup_form)
+        points.opts(tools=["lasso_select"], active_tools=["lasso_select"])
+
+        page, hv_plot = self._serve_plot(serve_hv, points)
+        box = hv_plot.bounding_box()
+
+        start_x, start_y = box["x"] + 1, box["y"] + box["height"] - 1
+        mid_x, mid_y = box["x"] + 1, box["y"] + 1
+        end_x, end_y = box["x"] + box["width"] - 1, box["y"] + 1
+
+        page.mouse.move(start_x, start_y)
+        hv_plot.click()
+        page.mouse.down()
+        page.mouse.move(mid_x, mid_y, steps=5)
+        page.mouse.move((start_x + end_x) / 2, mid_y, steps=5)
+
+        page.wait_for_timeout(200)
+        expect(page.locator(".markdown")).to_have_count(0)
+        assert popup_updates == []
+        assert lasso_updates == []
+        assert lasso.geometry is None
+
+        page.mouse.move(end_x, end_y, steps=5)
+        page.mouse.up()
+
+        wait_until(lambda: lasso.geometry is not None, page)
+        wait_until(lambda: len(popup_updates) == 1, page)
+        assert len(lasso_updates) == 1
+
+        locator = self._locate_popup(page)
+        expect(locator).not_to_have_text("selection\n0")
+
 
 @pytest.mark.usefixtures("bokeh_backend")
 @pytest.mark.parametrize("start_value", ["Points", "Polygons"])
