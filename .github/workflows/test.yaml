@@ -112,7 +112,7 @@ jobs:
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
 
   pixi_lock_diff:
-    name: pixi:diff
+    name: pixi-diff
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -137,8 +137,13 @@ jobs:
             pipx run scripts/pixi-diff.py
             echo 'PIXI_LOCK_DIFF_EOF'
           } >> "$GITHUB_OUTPUT"
+      - name: Write summary
+        if: steps.diff.outputs.body != ''
+        env:
+          BODY: ${{ steps.diff.outputs.body }}
+        run: echo "${BODY}" >> "$GITHUB_STEP_SUMMARY"
       - name: Create or update comment
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
@@ -217,11 +222,8 @@ jobs:
           pixi update ${UPSTREAM_PACKAGES} -e "${ENV}"
       - name: Test UI
         run: |
-          # Create a .uicoveragerc file to set the concurrency library to greenlet
-          # https://github.com/microsoft/playwright-python/issues/313
-          echo "[run]\nconcurrency = greenlet" > .uicoveragerc
           FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
-          pixi run -e "${ENV}" test-ui $COV --cov-config=.uicoveragerc $FAIL
+          pixi run -e "${ENV}" test-ui $COV $FAIL
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
