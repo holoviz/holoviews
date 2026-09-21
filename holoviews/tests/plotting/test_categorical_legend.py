@@ -9,7 +9,7 @@ from holoviews.plotting.util import categorical_legend
 from .._deps import ds
 
 if not ds:
-    pytest.skip("datashader not installed", allow_module_level=True)
+    pytest.skip("datashader not installed", allow_module_level=True)  # pragma: no cover
 
 from holoviews.operation.datashader import datashade, rasterize
 
