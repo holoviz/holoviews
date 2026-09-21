@@ -50,7 +50,6 @@ if system == "Windows" and os.environ.get("GITHUB_RUN_ID"):
         "user_guide/Plotting_with_Matplotlib.ipynb",
     ]
 
-# 2024-05: Numpy 2.0
 if find_spec("datashader") is None:
     collect_ignore_glob += [
         "reference/elements/matplotlib/ImageStack.ipynb",
@@ -70,6 +69,40 @@ if find_spec("scikit-image") is None:
 if find_spec("tsdownsample") is None:
     collect_ignore_glob += [
         "gallery/demos/bokeh/multichannel_timeseries_viewer.ipynb",
+    ]
+
+if find_spec("scipy") is None:
+    collect_ignore_glob += [
+        "gallery/demos/bokeh/autompg_violins.ipynb",
+        "gallery/demos/bokeh/hextile_movie_ratings.ipynb",
+        "gallery/demos/bokeh/histogram_example.ipynb",
+        "gallery/demos/bokeh/iris_density_grid.ipynb",
+        "gallery/demos/bokeh/iris_grouped_grid.ipynb",
+        "gallery/demos/bokeh/life_expectancy_split_violin.ipynb",
+        "gallery/demos/bokeh/lorenz_attractor_example.ipynb",
+        "gallery/demos/bokeh/point_draw_triangulate.ipynb",
+        "gallery/demos/matplotlib/hextile_movie_ratings.ipynb",
+        "gallery/demos/matplotlib/histogram_example.ipynb",
+        "gallery/demos/matplotlib/iris_density_grid.ipynb",
+        "gallery/demos/matplotlib/iris_grouped_grid.ipynb",
+        "gallery/demos/matplotlib/lorenz_attractor_example.ipynb",
+        "reference/elements/bokeh/Bivariate.ipynb",
+        "reference/elements/bokeh/Dendrogram.ipynb",
+        "reference/elements/bokeh/Distribution.ipynb",
+        "reference/elements/bokeh/HexTiles.ipynb",
+        "reference/elements/bokeh/TriMesh.ipynb",
+        "reference/elements/bokeh/Violin.ipynb",
+        "reference/elements/bokeh/Waterfall.ipynb",
+        "reference/elements/matplotlib/Bivariate.ipynb",
+        "reference/elements/matplotlib/Dendrogram.ipynb",
+        "reference/elements/matplotlib/Distribution.ipynb",
+        "reference/elements/matplotlib/HexTiles.ipynb",
+        "reference/elements/matplotlib/TriMesh.ipynb",
+        "reference/elements/matplotlib/Waterfall.ipynb",
+        "reference/elements/plotly/Distribution.ipynb",
+        "reference/streams/bokeh/Selection1D_tap.ipynb",
+        "user_guide/09-Gridded_Datasets.ipynb",
+        "user_guide/11-Transforming_Elements.ipynb",
     ]
 
 
