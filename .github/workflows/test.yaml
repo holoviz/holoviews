@@ -42,7 +42,7 @@ jobs:
     name: pre-commit
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pre-commit@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@0d2b48d28d94714bf566148cd050233ec875a92d # v1.0.13
         env:
           SKIP: pixi
 
@@ -181,7 +181,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@0d2b48d28d94714bf566148cd050233ec875a92d # v1.0.13
         with:
           environments: ${{ matrix.environment }}
       - name: Update upstream packages
@@ -213,7 +213,7 @@ jobs:
       PANEL_LOG_LEVEL: info
       ENV: ${{ matrix.environment }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@0d2b48d28d94714bf566148cd050233ec875a92d # v1.0.13
         with:
           environments: ${{ matrix.environment }}
       - name: Update upstream packages
@@ -248,7 +248,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@0d2b48d28d94714bf566148cd050233ec875a92d # v1.0.13
         with:
           environments: ${{ matrix.environment }}
       - name: Update upstream packages
@@ -273,7 +273,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 5
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@0d2b48d28d94714bf566148cd050233ec875a92d # v1.0.13
         with:
           environments: ${{ matrix.environment }}
       - name: Update upstream packages
