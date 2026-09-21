@@ -7026,7 +7026,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pcre2-10.47-h8b3dc9c_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pillow-12.3.0-py315he03b8a5_4.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pixman-0.46.4-h54a6638_3.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/polars-runtime-32-1.44.2-py311hb519a9e_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/psutil-7.2.2-py315hd4e796c_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pthread-stubs-0.4-h7cc23a3_1004.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pugixml-1.15-h3f63f65_0.conda
@@ -7165,7 +7164,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/platformdirs-4.11.11-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/plotly-7.0.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pluggy-1.6.0-pyhf9edf01_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/polars-1.44.2-pyh3138b34_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pooch-1.9.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prometheus_client-0.26.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prompt-toolkit-3.0.53-pyha770c72_0.conda
@@ -7221,7 +7219,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc2-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0a0-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda_source: holoviews[413d71b8] @ .
       osx-arm64:
@@ -7323,7 +7321,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/platformdirs-4.11.11-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/plotly-7.0.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pluggy-1.6.0-pyhf9edf01_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/polars-1.44.2-pyh3138b34_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pooch-1.9.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prometheus_client-0.26.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prompt-toolkit-3.0.53-pyha770c72_0.conda
@@ -7504,7 +7501,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pcre2-10.47-he63d830_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pillow-12.3.0-py315habfe37a_4.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pixman-0.46.4-h784d473_3.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/polars-runtime-32-1.44.2-py311h1c79744_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/psutil-7.2.2-py315hc6682d9_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pthread-stubs-0.4-hb001647_1004.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pugixml-1.15-hd3d436d_0.conda
@@ -7539,7 +7535,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc2-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0a0-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda_source: holoviews[00fbfdfb] @ .
       win-64:
@@ -7639,7 +7635,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/platformdirs-4.11.11-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/plotly-7.0.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pluggy-1.6.0-pyhf9edf01_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/polars-1.44.2-pyh3138b34_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pooch-1.9.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prometheus_client-0.26.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prompt-toolkit-3.0.53-pyha770c72_0.conda
@@ -7790,7 +7785,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/pcre2-10.47-h8466c1e_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pillow-12.3.0-py315heb953bd_4.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pixman-0.46.4-h5112557_3.conda
-      - conda: https://conda.anaconda.org/conda-forge/win-64/polars-runtime-32-1.44.2-py311hb4e3305_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/psutil-7.2.2-py315h37d93b3_3.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/python-3.15.0rc2-h53f6dd8_102_cp315.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/python-duckdb-1.5.5-py315h97e5094_1.conda
@@ -7822,7 +7816,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc2-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0a0-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda_source: holoviews[850fdd1b] @ .
   test-core:
@@ -34101,14 +34095,6 @@ packages:
   license: BSD-3-Clause
   size: 203403
   timestamp: 1788880637903
-- conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
-  sha256: 3c28fc5dc21a323b885148a11264759dfe54a62a3db6e751e492c9237557dc1d
-  md5: 179f79f324134d00c36f3e8829b39682
-  depends:
-  - python >=3.11
-  license: BSD-3-Clause
-  size: 238173
-  timestamp: 1789987452613
 - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
   sha256: 51686716600e5bdfeae99b9f1e8b29202deae0bccd7764a279cd7d200e59f85f
   md5: 0797de9b6ac6ebee5fa1a7fbf7a6c2d3

@@ -52,6 +52,7 @@ class _DataComparison:
             cls.equality_funcs[pd.Series] = cls.compare_pandas_series
             cls.equality_funcs[pd.DataFrame] = cls.compare_pandas_dataframe
             cls.equality_funcs[pd.arrays.ArrowStringArray] = cls.compare_pandas_array
+            cls.equality_funcs[pd.arrays.StringArray] = cls.compare_pandas_array
 
         if _is_installed("dask"):
             import dask.array as da
