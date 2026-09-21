@@ -2017,7 +2017,13 @@ class GridSpace(Layoutable, UniformNdMapping):
             return keys
         dim1_keys = list(dict.fromkeys(k[0] for k in keys))
         dim2_keys = list(dict.fromkeys(k[1] for k in keys))
-        return [(d1, d2) for d1 in dim1_keys for d2 in dim2_keys]
+        grid_keys = [(d1, d2) for d1 in dim1_keys for d2 in dim2_keys]
+        if self.sort:
+            grid = dict.fromkeys(grid_keys)
+            grid_keys = [
+                k for k, _ in util.dimension_sort(grid, self.kdims, [], range(self.ndims))
+            ]
+        return grid_keys
 
     @property
     def last(self):
