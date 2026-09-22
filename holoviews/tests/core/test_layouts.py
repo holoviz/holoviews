@@ -230,6 +230,12 @@ class GridTest(CompositeTest):
         grid = hv.GridSpace(zip(keys, vals, strict=True))
         assert_element_equal(grid[0.1, 0.1], self.view1)
 
+    def test_grid_keys_full_grid_sparse_sorted(self):
+        keys = [(0, 2), (0, 1), (1, 1), (1, 0), (2, 0)]
+        grid = hv.GridSpace(dict.fromkeys(keys, self.view1))
+        expected = [(d1, d2) for d1 in range(3) for d2 in range(3)]
+        assert grid.keys(full_grid=True) == expected
+
     def test_grid_index_strings(self):
         vals = [self.view1, self.view2, self.view3, self.view2]
         keys = [("A", 0), ("B", 1), ("C", 0), ("D", 1)]

@@ -27,7 +27,6 @@ from .cudf import cuDFInterface  # noqa: F401
 from .dask import DaskInterface  # noqa: F401
 from .dictionary import DictInterface  # noqa: F401
 from .grid import GridInterface  # noqa: TC001
-from .ibis import IbisInterface  # noqa: F401
 from .image import ImageInterface  # noqa: F401
 from .interface import Interface, iloc, ndloc
 from .multipath import MultiInterface  # noqa: F401
@@ -51,7 +50,6 @@ datatypes = [
     "cuDF",
     "array",
     "narwhals",
-    "ibis",
 ]
 
 

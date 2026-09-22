@@ -42,7 +42,9 @@ jobs:
     name: pre-commit
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pre-commit@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@0d2b48d28d94714bf566148cd050233ec875a92d # v1.0.13
+        env:
+          SKIP: pixi
 
   setup:
     name: setup:test
@@ -89,7 +91,8 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "environment": ["test-312", "test-314"]
+              "environment": ["test-312", "test-314"],
+              "include": [{"os": "ubuntu-latest", "environment": "test-315"}]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'full' option
@@ -97,7 +100,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "environment": ["test-312", "test-313", "test-314"]
+              "environment": ["test-312", "test-313", "test-314", "test-315"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'downstream' option
@@ -110,7 +113,7 @@ jobs:
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
 
   pixi_lock_diff:
-    name: pixi:diff
+    name: pixi-diff
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -135,8 +138,13 @@ jobs:
             pipx run scripts/pixi-diff.py
             echo 'PIXI_LOCK_DIFF_EOF'
           } >> "$GITHUB_OUTPUT"
+      - name: Write summary
+        if: steps.diff.outputs.body != ''
+        env:
+          BODY: ${{ steps.diff.outputs.body }}
+        run: echo "${BODY}" >> "$GITHUB_STEP_SUMMARY"
       - name: Create or update comment
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
@@ -174,7 +182,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@0d2b48d28d94714bf566148cd050233ec875a92d # v1.0.13
         with:
           environments: ${{ matrix.environment }}
       - name: Update upstream packages
@@ -206,7 +214,7 @@ jobs:
       PANEL_LOG_LEVEL: info
       ENV: ${{ matrix.environment }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@0d2b48d28d94714bf566148cd050233ec875a92d # v1.0.13
         with:
           environments: ${{ matrix.environment }}
       - name: Update upstream packages
@@ -215,11 +223,8 @@ jobs:
           pixi update ${UPSTREAM_PACKAGES} -e "${ENV}"
       - name: Test UI
         run: |
-          # Create a .uicoveragerc file to set the concurrency library to greenlet
-          # https://github.com/microsoft/playwright-python/issues/313
-          echo "[run]\nconcurrency = greenlet" > .uicoveragerc
           FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
-          pixi run -e "${ENV}" test-ui $COV --cov-config=.uicoveragerc $FAIL
+          pixi run -e "${ENV}" test-ui $COV $FAIL
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
@@ -244,7 +249,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@0d2b48d28d94714bf566148cd050233ec875a92d # v1.0.13
         with:
           environments: ${{ matrix.environment }}
       - name: Update upstream packages
@@ -269,7 +274,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 5
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@0d2b48d28d94714bf566148cd050233ec875a92d # v1.0.13
         with:
           environments: ${{ matrix.environment }}
       - name: Update upstream packages

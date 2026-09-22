@@ -1,10 +1,6 @@
 [workspace]
 name = "holoviews"
-channels = [
-    "pyviz/label/dev",
-    "bokeh/label/rc",
-    { channel = "conda-forge", priority = 0, exclude-newer = "2d" },
-]
+channels = ["pyviz/label/dev", "bokeh/label/rc", "conda-forge"]
 platforms = ["linux-64", "osx-arm64", "win-64"]
 preview = ["pixi-build"]
 requires-pixi = ">=0.68.1"
@@ -44,6 +40,10 @@ no-default-feature = true
 
 [environments.test-314]
 features = ["required", "py314", "optional", "test-core", "test-example", "test-unit-task"]
+no-default-feature = true
+
+[environments.test-315]
+features = ["required", "py315", "optional-315", "test-core", "test-example", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-ui]
@@ -106,6 +106,13 @@ python = "3.13.*"
 [feature.py314.dependencies]
 python = "3.14.*"
 
+[feature.py315]
+channels = ["conda-forge/label/python_rc"]
+
+[feature.py315.dependencies]
+python = "3.15.*"
+_python_rc = "*"
+
 [feature.optional.dependencies]
 bokeh_sampledata = "*"
 cftime = "*"
@@ -132,6 +139,33 @@ selenium = "*"
 shapely = "*"
 spatialpandas = "*"
 tsdownsample = "*"
+xarray = ">=0.10.4"
+xyzservices = "*"
+
+[feature.optional-315.dependencies]
+bokeh_sampledata = "*"
+cftime = "*"
+contourpy = "*"
+# dask-core = "*"
+# datashader = ">=0.11.1"
+ffmpeg = "*"
+ipython = ">=5.4.0"
+matplotlib-base = ">=3"
+nbconvert-core = "*"
+netcdf4 = "*"
+networkx = "*"
+notebook = "*"
+pillow = "*"
+plotly = ">=4.0"
+# polars = "*"  https://github.com/pola-rs/polars/issues/29419
+pooch = "*"
+# pyarrow = "*"
+python-duckdb = "*"
+# scikit-image = "*"
+# scipy = "*"
+shapely = "*"
+# spatialpandas = "*"
+# tsdownsample = "*"
 xarray = ">=0.10.4"
 xyzservices = "*"
 

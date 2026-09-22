@@ -57,12 +57,12 @@ jobs:
     name: build:docs
     needs: [setup]
     if: needs.setup.outputs.run == 'true'
-    runs-on: "macos-latest"
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@ba69594cc0818936bdf628134c86267016a4ef6d # v1.0.8
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@0d2b48d28d94714bf566148cd050233ec875a92d # v1.0.13
         with:
           environments: docs
       - name: Build documentation
@@ -76,7 +76,7 @@ jobs:
 
   docs_publish:
     name: publish:docs
-    runs-on: "ubuntu-latest"
+    runs-on: ubuntu-latest
     needs: [docs_build]
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
