@@ -59,18 +59,6 @@ with contextlib.suppress(ImportError):
     mpl.use("agg")
 
 
-@pytest.fixture
-def ibis_sqlite_backend():
-    try:
-        import ibis
-    except ImportError:
-        yield None
-    else:
-        ibis.set_backend("sqlite")
-        yield
-        ibis.set_backend(None)
-
-
 def _plotting_backend(backend):
     pytest.importorskip(backend)
     if not hv.extension._loaded:

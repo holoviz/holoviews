@@ -1708,10 +1708,6 @@ def is_cupy_array(data) -> bool:
     return cp and isinstance(data, cp.ndarray)
 
 
-def is_ibis_expr(data) -> bool:
-    return ibis and isinstance(data, ibis.expr.types.ColumnExpr)  # ty:ignore[possibly-missing-submodule]
-
-
 def get_param_values(data):
     params = dict(kdims=data.kdims, vdims=data.vdims, label=data.label)
     if data.group != data.param.objects(False)["group"].default and not isinstance(
