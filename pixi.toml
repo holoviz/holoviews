@@ -160,6 +160,8 @@ netcdf4 = "*"
 networkx = "*"
 notebook = "*"
 pillow = "*"
+playwright = ">=1.61.0"
+playwright-python = ">=1.61.0"
 plotly = ">=4.0"
 # polars = "*"  https://github.com/pola-rs/polars/issues/29419
 pooch = "*"
@@ -172,6 +174,9 @@ shapely = "*"
 # tsdownsample = "*"
 xarray = ">=0.10.4"
 xyzservices = "*"
+
+[feature.optional-315.tasks]
+_install-playwright = 'playwright install chromium'
 
 [feature.dev.dependencies]
 jupyterlab = "*"

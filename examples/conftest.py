@@ -72,6 +72,7 @@ if find_spec("scipy") is None:
         "reference/streams/bokeh/Selection1D_tap.ipynb",
         "user_guide/09-Gridded_Datasets.ipynb",
         "user_guide/11-Transforming_Elements.ipynb",
+        "user_guide/Plotting_with_Bokeh.ipynb",
     ]
 
 
