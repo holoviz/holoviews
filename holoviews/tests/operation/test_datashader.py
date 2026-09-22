@@ -1713,13 +1713,7 @@ def test_selector_single_categorical():
 @pytest.mark.parametrize("use_selector", [False, True], ids=["no_selector", "selector"])
 @pytest.mark.parametrize("ncat", [1, 2], ids=["one_category", "two_categories"])
 def test_datashade_count_cat_single_category_not_transparent(ncat, use_selector):
-    """Shading a count_cat aggregate with one category must leave visible pixels.
-
-    A one-category aggregate lost its trailing axis while is_categorical stayed
-    True, so a color_key reached tf.shade with a 2D array and the image came out
-    fully transparent. test_selector_single_categorical covers the selector path
-    for #6595, but asserts only that rendering raises nothing.
-    """
+    """Shading a count_cat aggregate with one category must leave visible pixels."""
     cats = ["A", "B"][:ncat]
     df = pd.DataFrame(
         {
