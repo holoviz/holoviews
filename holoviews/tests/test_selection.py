@@ -6,6 +6,7 @@ import pytest
 
 import holoviews as hv
 from holoviews.plotting.util import linear_gradient
+from holoviews.selection import OverlaySelectionDisplay
 from holoviews.streams import SelectionXY
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 
@@ -314,6 +315,17 @@ class TestLinkSelections:
             current_obj[()].RGB.II,
             dynspread(datashade(points.iloc[1:], cmap=lnk_sel.selected_cmap, alpha=255))[()],
         )
+
+    @ds_skip
+    def test_datashade_colormap_pipeline_is_cached(self):
+        points = hv.Points(self.data)
+        pipeline = datashade(points, dynamic=False).pipeline
+        cache = {}
+
+        first = OverlaySelectionDisplay._inject_cmap_in_pipeline(pipeline, ["#ff0000"], cache)
+        second = OverlaySelectionDisplay._inject_cmap_in_pipeline(pipeline, ["#ff0000"], cache)
+
+        assert first is second
 
     def test_points_selection_streaming(self):
         buffer = hv.streams.Buffer(self.data.iloc[:2], index=False)
