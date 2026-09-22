@@ -53,16 +53,21 @@ def get_array_types():
     return array_types
 
 
+def dask_array_module():
+    deprecated("1.25.0", "dask_array_module")
+    return da if da else None
+
+
+def is_dask(array):
+    deprecated("1.25.0", "is_dask")
+    return da and isinstance(array, da.Array)
+
+
 def is_array_type(array) -> TypeIs[np.ndarray | da.Array]:
     array_types = (np.ndarray,)
     if da:
         array_types += (da.Array,)
     return isinstance(array, array_types)
-
-
-def dask_array_module():
-    deprecated("1.25.0", "dask_array_module")
-    return da if da else None
 
 
 def cached(method):

@@ -225,9 +225,12 @@ class PipelineMeta(ParameterizedMetaclass):
             if inst._in_method:
                 return method_fn(*args, **kwargs)
 
+            inst_pipeline = copy.copy(getattr(inst, "_pipeline", None))
+            if inst_pipeline is None:
+                return method_fn(*args, **kwargs)
+
             from ...operation.element import method as method_op
 
-            inst_pipeline = copy.copy(getattr(inst, "_pipeline", None))
             inst._in_method = True
             try:
                 result = method_fn(*args, **kwargs)
@@ -242,13 +245,13 @@ class PipelineMeta(ParameterizedMetaclass):
                         kwargs=kwargs,
                     )
 
-                if is_dataset and inst_pipeline is not None:
+                if is_dataset:
                     result._pipeline = inst_pipeline.instance(
                         operations=[*inst_pipeline.operations, op],
                         output_type=type(result),
                     )
 
-                elif is_multidim and inst_pipeline is not None:
+                elif is_multidim:
                     for key, element in result.items():
                         if isinstance(element, Dataset):
                             getitem_op = method_op.instance(
