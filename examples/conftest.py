@@ -27,6 +27,7 @@ if find_spec("datashader") is None:
         "reference/elements/plotly/ImageStack.ipynb",
         "user_guide/15-Large_Data.ipynb",
         "user_guide/16-Streaming_Data.ipynb",
+        "user_guide/17-Dashboards.ipynb",
         "user_guide/Interactive_Hover_for_Big_Data.ipynb",
         "user_guide/Linked_Brushing.ipynb",
         "user_guide/Network_Graphs.ipynb",
