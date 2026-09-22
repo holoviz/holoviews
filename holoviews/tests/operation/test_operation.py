@@ -10,7 +10,6 @@ import pytest
 
 import holoviews as hv
 from holoviews.core.data.grid import GridInterface
-from holoviews.core.data.ibis import IBIS_VERSION
 from holoviews.core.options import Compositor, SkipRendering
 from holoviews.operation.element import (
     categorical_agg,
@@ -33,8 +32,6 @@ from .._deps import (
     da_skip,
     dd,
     dd_skip,
-    ibis,
-    ibis_skip,
     mpl_skip,
     pl,
     pl_skip,
@@ -237,41 +234,6 @@ class OperationTests:
 
         hist = hv.Histogram(([0, 3, 6, 9], [0.022222, 0.088889, 0.222222]), vdims="y")
         assert isinstance(op_hist.data["y"], da.Array)
-        assert_element_equal(op_hist, hist)
-
-    @ibis_skip
-    @pytest.mark.usefixtures("ibis_sqlite_backend")
-    def test_dataset_histogram_ibis(self):
-        df = pd.DataFrame(dict(x=np.arange(10)))
-        t = ibis.memtable(df, **({} if IBIS_VERSION >= (11, 0, 0) else {"name": "t"}))
-        ds = hv.Dataset(t, vdims="x")
-        op_hist = histogram(ds, dimension="x", num_bins=3, normed=True)
-
-        hist = hv.Histogram(
-            ([0, 3, 6, 9], [0.1, 0.1, 0.133333]), vdims=("x_frequency", "Frequency")
-        )
-        assert_element_equal(op_hist, hist)
-
-    @ibis_skip
-    @pytest.mark.usefixtures("ibis_sqlite_backend")
-    def test_dataset_cumulative_histogram_ibis(self):
-        df = pd.DataFrame(dict(x=np.arange(10)))
-        t = ibis.memtable(df, **({} if IBIS_VERSION >= (11, 0, 0) else {"name": "t"}))
-        ds = hv.Dataset(t, vdims="x")
-        op_hist = histogram(ds, num_bins=3, cumulative=True, normed=True)
-
-        hist = hv.Histogram(([0, 3, 6, 9], [0.3, 0.6, 1]), vdims=("x_frequency", "Frequency"))
-        assert_element_equal(op_hist, hist)
-
-    @ibis_skip
-    @pytest.mark.usefixtures("ibis_sqlite_backend")
-    def test_dataset_histogram_explicit_bins_ibis(self):
-        df = pd.DataFrame(dict(x=np.arange(10)))
-        t = ibis.memtable(df, **({} if IBIS_VERSION >= (11, 0, 0) else {"name": "t"}))
-        ds = hv.Dataset(t, vdims="x")
-        op_hist = histogram(ds, bins=[0, 1, 3], normed=False)
-
-        hist = hv.Histogram(([0, 1, 3], [1, 3]), vdims=("x_count", "Count"))
         assert_element_equal(op_hist, hist)
 
     @pytest.mark.gpu

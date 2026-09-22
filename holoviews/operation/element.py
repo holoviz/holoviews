@@ -38,7 +38,6 @@ from ..core.util import (
     group_sanitizer,
     is_cupy_array,
     is_dask_array,
-    is_ibis_expr,
     isdatetime,
     isfinite,
     label_sanitizer,
@@ -969,21 +968,7 @@ class histogram(Operation):
                 is_finite = cp.isfinite
 
         # Mask data
-        if is_ibis_expr(data):
-            from ..core.data.ibis import IBIS_GE_5_0_0, IBIS_GE_9_5_0
-
-            mask = data.notnull()
-            if self.p.nonzero:
-                mask = mask & (data != 0)
-            if IBIS_GE_5_0_0:
-                data = data.as_table()
-            else:
-                # to_projection removed in ibis 5.0.0
-                data = data.to_projection()
-            data = data.filter(mask) if IBIS_GE_9_5_0 else data[mask]
-            no_data = not len(data.head(1).execute())
-            data = data[dim.name]
-        elif isinstance(data, (nw.DataFrame, nw.LazyFrame, nw.Series)):
+        if isinstance(data, (nw.DataFrame, nw.LazyFrame, nw.Series)):
             if isinstance(data, nw.Series):
                 data = data.to_frame()
             data = data.filter(nw.all().is_finite()).filter(~nw.all().is_null())
