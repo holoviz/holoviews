@@ -701,13 +701,14 @@ class OverlaySelectionDisplay(SelectionDisplay):
         # Build region layer
         if region_stream is not None and self.supports_region:
 
-            def update_region(element, region_element, colors, **kwargs):
+            def update_region(element, exprs, colors, **kwargs):
                 unselected_color = colors[0]
+                region_element = region_stream.region_element
                 if region_element is None:
                     region_element = element._empty_region()
                 return self._style_region_element(region_element, unselected_color)
 
-            streams = [region_stream, selection_streams.style_stream]
+            streams = [selection_streams.exprs_stream, selection_streams.style_stream]
             region = hvobj.clone(link=False).apply(update_region, streams, link_dataset=False)
 
             eltype = hvobj.type if isinstance(hvobj, DynamicMap) else type(hvobj)
