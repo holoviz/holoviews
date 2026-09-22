@@ -1,39 +1,82 @@
+from __future__ import annotations
+
+import datetime as dt
+import json
+import os
+import re
 import sys
-from datetime import date, datetime, timedelta
 from importlib.metadata import version
+from subprocess import DEVNULL, check_output
 
-import requests
-from packaging.version import Version
+PYTHON_VERSION = sys.version_info[:2]
+PLATFORM = {"linux": "linux-64", "darwin": "osx-arm64", "win32": "win-64"}[sys.platform]
+TODAY = dt.datetime.now(tz=dt.UTC).date()
 
-if sys.stdout.isatty():
+if sys.stdout.isatty() or os.environ.get("GITHUB_ACTIONS"):
     GREEN, RED, RESET = "\033[92m", "\033[91m", "\033[0m"
 else:
     GREEN = RED = RESET = ""
 
+
+def convert_int(x: str) -> tuple[int, ...]:
+    return tuple(map(int, re.findall(r"\d+", x)))
+
+
+def python_check(item):
+    py_version = [
+        py
+        for py in item["depends"]
+        if py.lower().startswith("python") and not py.lower().startswith("python-")
+    ]
+
+    if len(py_version) == 1:
+        return PYTHON_VERSION >= convert_int(py_version[0])
+    if len(py_version) == 2:
+        # For compiled: python_abi 3.12.* *_cp312
+        idx = int("abi" not in py_version[0])
+        return PYTHON_VERSION == convert_int(py_version[idx].split("*")[0])
+    return False
+
+
+def get_data(package):
+    out = check_output(
+        ["pixi", "search", package, "--json", "--channel", "conda-forge", "--platform", PLATFORM],
+        stderr=DEVNULL,
+    )
+    raw = json.loads(out)
+    return [*raw.get("noarch", ()), *raw.get(PLATFORM, ())]
+
+
+def in_cooldown(item) -> bool:
+    ts = item.get("timestamp")
+    if ts is None:
+        return False
+    released = dt.datetime.fromtimestamp(ts / 1000, tz=dt.UTC).date()
+    return TODAY - released < dt.timedelta(days=7 + 2)
+
+
+def full_release(item) -> bool:
+    v = item.get("version")
+    return "a" not in v and "b" not in v and "rc" not in v
+
+
 def main(*packages):
-    allowed_date = date.today() - timedelta(days=5)
     all_latest = True
     for package in sorted(packages):
-        url = f"https://pypi.org/pypi/{package}/json"
-        resp = requests.get(url, timeout=20).json()
-        latest = resp["info"]["version"]
+        data = get_data(package)
+        versions = {
+            item["version"]
+            for item in data
+            if python_check(item) and not in_cooldown(item) and full_release(item)
+        }
+        latest = max(versions, key=convert_int)
         current = version(package)
-
-        latest_release_date = datetime.fromisoformat(
-            resp["releases"][latest][0]["upload_time_iso_8601"]
-        ).date()
-        current_release_date = datetime.fromisoformat(
-            resp["releases"][current][0]["upload_time_iso_8601"]
-        ).date()
-
-        version_check = Version(current) >= Version(latest)
-        date_check = current_release_date >= allowed_date
-        is_latest = version_check or date_check
+        is_latest = convert_int(current) >= convert_int(latest)
         all_latest &= is_latest
 
         text_color = GREEN if is_latest else RED
         print(
-            f"{text_color}Package: {package:<10} Current: {current:<7} ({current_release_date})\tLatest: {latest:<7} ({latest_release_date}){RESET}"
+            f"{text_color}Package: {package:<16} Current: {current:<16}\tLatest: {latest}{RESET}"
         )
 
     if not all_latest:

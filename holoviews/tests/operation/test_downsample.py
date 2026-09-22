@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -5,10 +7,7 @@ import pytest
 import holoviews as hv
 from holoviews.operation.downsample import _ALGORITHMS, downsample1d
 
-try:
-    import tsdownsample
-except ImportError:
-    tsdownsample = None
+from .._deps import tsdownsample_skip
 
 algorithms = _ALGORITHMS.copy()
 algorithms.pop("viewport", None)  # viewport return slice(len(data)) no matter the width
@@ -30,6 +29,18 @@ def test_downsample1d_multi(plottype):
             assert value.size == downsample1d.width
 
 
+@tsdownsample_skip
+@pytest.mark.parametrize("algorithm", algorithms)
+def test_downsample1d_non_contiguous(algorithm):
+    x = np.arange(20)
+    y = np.arange(40).reshape(1, 40)[0, ::2]
+
+    downsampled = downsample1d(
+        hv.Curve((x, y), datatype=["array"]), dynamic=False, width=10, algorithm=algorithm
+    )
+    assert len(downsampled)
+
+
 def test_downsample1d_shared_data():
     runs = [0]
 
@@ -49,8 +60,6 @@ def test_downsample1d_shared_data():
     assert runs[0] == 1
 
 
-# Should be fixed when https://github.com/holoviz/holoviews/pull/6061 is merged
-@pytest.mark.xfail(reason="This will make a copy of the data")
 def test_downsample1d_shared_data_index():
     runs = [0]
 
@@ -71,10 +80,10 @@ def test_downsample1d_shared_data_index():
 
 
 @pytest.mark.parametrize("algorithm", algorithms.values(), ids=algorithms)
-def test_downsample_algorithm(algorithm, unimport):
+def test_downsample_algorithm(algorithm, unimport, rng):
     unimport("tsdownsample")
     x = np.arange(1000)
-    y = np.random.rand(1000)
+    y = rng.random(1000)
     width = 20
     try:
         result = algorithm(x, y, width)
@@ -86,11 +95,11 @@ def test_downsample_algorithm(algorithm, unimport):
         assert result.size == width
 
 
-@pytest.mark.skipif(not tsdownsample, reason="tsdownsample not installed")
+@tsdownsample_skip
 @pytest.mark.parametrize("algorithm", algorithms.values(), ids=algorithms)
-def test_downsample_algorithm_with_tsdownsample(algorithm):
+def test_downsample_algorithm_with_tsdownsample(algorithm, rng):
     x = np.arange(1000)
-    y = np.random.rand(1000)
+    y = rng.random(1000)
     width = 20
     result = algorithm(x, y, width)
     if isinstance(result, slice):

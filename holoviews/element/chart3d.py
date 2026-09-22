@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import param
 
 from ..core import Dimension, Element3D
@@ -7,8 +9,7 @@ from .raster import Image
 
 
 class Surface(Image, Element3D):
-    """
-    A Surface represents a regularly sampled 2D grid with associated
+    """A Surface represents a regularly sampled 2D grid with associated
     values defining the height along the z-axis. The key dimensions of
     a Surface represent the 2D coordinates along the x- and y-axes
     while the value dimension declares the height at each grid
@@ -17,21 +18,31 @@ class Surface(Image, Element3D):
     The data of a Surface is usually defined as a 2D array of values
     and either a bounds tuple defining the extent in the 2D space or
     explicit x- and y-coordinate arrays.
+
     """
 
-    extents = param.Tuple(default=(None, None, None, None, None, None), doc="""
+    extents = param.Tuple(
+        default=(None, None, None, None, None, None),
+        doc="""
         Allows overriding the extents of the Element in 3D space
-        defined as (xmin, ymin, zmin, xmax, ymax, zmax).""")
+        defined as (xmin, ymin, zmin, xmax, ymax, zmax).""",
+    )
 
-    group = param.String(default='Surface', constant=True)
+    group = param.String(default="Surface", constant=True)
 
-    kdims = param.List(default=[Dimension('x'), Dimension('y')],
-                       bounds=(2,2), doc="""
+    kdims = param.List(
+        default=[Dimension("x"), Dimension("y")],
+        bounds=(2, 2),
+        doc="""
         The Surface x and y dimensions of the space defined
-        by the supplied extent.""")
+        by the supplied extent.""",
+    )
 
-    vdims = param.List(default=[Dimension('z')], bounds=(1,1), doc="""
-        The Surface height dimension.""")
+    vdims = param.List(
+        default=[Dimension("z")],
+        bounds=(1, 1),
+        doc="The Surface height dimension.",
+    )
 
     def __init__(self, data, kdims=None, vdims=None, extents=None, **params):
         extents = extents if extents else (None, None, None, None, None, None)
@@ -43,39 +54,45 @@ class Surface(Image, Element3D):
 
 
 class TriSurface(Element3D, Points):
-    """
-    TriSurface represents a set of coordinates in 3D space which
+    """TriSurface represents a set of coordinates in 3D space which
     define a surface via a triangulation algorithm (usually Delauney
     triangulation). They key dimensions of a TriSurface define the
     position of each point along the x-, y- and z-axes, while value
     dimensions can provide additional information about each point.
+
     """
 
-    group = param.String(default='TriSurface', constant=True)
+    group = param.String(default="TriSurface", constant=True)
 
-    kdims = param.List(default=[
-        Dimension('x'), Dimension('y'), Dimension('z')], bounds=(3, 3), doc="""
+    kdims = param.List(
+        default=[Dimension("x"), Dimension("y"), Dimension("z")],
+        bounds=(3, 3),
+        doc="""
         The key dimensions of a TriSurface represent the 3D coordinates
-        of each point.""")
+        of each point.""",
+    )
 
-    vdims = param.List(default=[], doc="""
+    vdims = param.List(
+        default=[],
+        doc="""
         The value dimensions of a TriSurface can provide additional
-        information about each 3D coordinate.""")
+        information about each 3D coordinate.""",
+    )
 
     def __getitem__(self, slc):
         return Points.__getitem__(self, slc)
 
 
 class Scatter3D(Element3D, Points):
-    """
-    Scatter3D is a 3D element representing the position of a collection
+    """Scatter3D is a 3D element representing the position of a collection
     of coordinates in a 3D space. The key dimensions represent the
     position of each coordinate along the x-, y- and z-axis.
 
     Scatter3D is not available for the default Bokeh backend.
 
-    Example - Matplotlib
-    --------------------
+    Examples
+    --------
+    Matplotlib
 
     .. code-block::
 
@@ -94,8 +111,7 @@ class Scatter3D(Element3D, Points):
             marker='^'
         )
 
-    Example - Plotly
-    ----------------
+    Plotly
 
     .. code-block::
 
@@ -114,38 +130,40 @@ class Scatter3D(Element3D, Points):
             colorbar=True,
             marker="circle",
         )
+
     """
 
-    kdims = param.List(default=[Dimension('x'),
-                                Dimension('y'),
-                                Dimension('z')], bounds=(3, 3))
+    kdims = param.List(default=[Dimension("x"), Dimension("y"), Dimension("z")], bounds=(3, 3))
 
-    vdims = param.List(default=[], doc="""
+    vdims = param.List(
+        default=[],
+        doc="""
         Scatter3D can have optional value dimensions,
-        which may be mapped onto color and size.""")
+        which may be mapped onto color and size.""",
+    )
 
-    group = param.String(default='Scatter3D', constant=True)
+    group = param.String(default="Scatter3D", constant=True)
 
     def __getitem__(self, slc):
         return Points.__getitem__(self, slc)
 
 
 class Path3D(Element3D, Path):
-    """
-    Path3D is a 3D element representing a line through 3D space. The
+    """Path3D is a 3D element representing a line through 3D space. The
     key dimensions represent the position of each coordinate along the
     x-, y- and z-axis while the value dimensions can optionally supply
     additional information.
+
     """
 
-    kdims = param.List(default=[Dimension('x'),
-                                Dimension('y'),
-                                Dimension('z')], bounds=(3, 3))
+    kdims = param.List(default=[Dimension("x"), Dimension("y"), Dimension("z")], bounds=(3, 3))
 
-    vdims = param.List(default=[], doc="""
-        Path3D can have optional value dimensions.""")
+    vdims = param.List(
+        default=[],
+        doc="Path3D can have optional value dimensions.",
+    )
 
-    group = param.String(default='Path3D', constant=True)
+    group = param.String(default="Path3D", constant=True)
 
     def __getitem__(self, slc):
         return Path.__getitem__(self, slc)
