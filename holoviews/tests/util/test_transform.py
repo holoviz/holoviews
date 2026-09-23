@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import pickle
 import warnings
+from importlib import import_module
 
 import numpy as np
 import pandas as pd
@@ -38,7 +39,7 @@ class TestDimTransforms:
             ["int", "float", "negative", "categories", "booleans"],
         )
 
-        if dask is not None:
+        if dd is not None:
             ddf = dd.from_pandas(self.dataset.data, npartitions=2)
             self.dataset_dask = self.dataset.clone(data=ddf)
 
@@ -65,7 +66,7 @@ class TestDimTransforms:
             assert expr.apply(self.dataset, keep_index=False) == expected
             assert expr.apply(self.dataset, keep_index=True) == expected
 
-            if dask is None:
+            if dd is None:
                 return
 
             # Dask input
@@ -85,7 +86,7 @@ class TestDimTransforms:
             expr.apply(self.dataset, keep_index=True), expected, check_names=False
         )
 
-        if skip_dask or dask is None:
+        if skip_dask or dd is None:
             return
 
         # Check using dataset backed by Dask DataFrame,
@@ -472,6 +473,7 @@ def test_dataset_transform_by_spatial_select_expr_index_not_0_based(unimport, mo
     Use 'spatial_select' defined by four nodes to select index 104, 105.
     Apply expression to dataset.transform to generate new 'flag' column where True
     for the two indexes."""
+    import_module(module)
     unimport("spatialpandas" if module == "shapely" else "shapely")
     df = pd.DataFrame(
         {"a": [7, 3, 0.5, 2, 1, 1], "b": [3, 4, 3, 2, 2, 1]}, index=list(range(101, 107))

@@ -197,6 +197,7 @@ class OperationTests:
             assert (h.data["xy_count"] == 5).all()
 
     @da_skip
+    @dd_skip
     def test_dataset_histogram_dask(self):
         ds = hv.Dataset(
             (da.from_array(np.array(range(10), dtype="f"), chunks=(3)),), ["x"], datatype=["dask"]
@@ -210,6 +211,7 @@ class OperationTests:
         assert_element_equal(op_hist, hist)
 
     @da_skip
+    @dd_skip
     def test_dataset_cumulative_histogram_dask(self):
         ds = hv.Dataset(
             (da.from_array(np.array(range(10), dtype="f"), chunks=(3)),), ["x"], datatype=["dask"]
@@ -221,6 +223,7 @@ class OperationTests:
         assert_element_equal(op_hist, hist)
 
     @da_skip
+    @dd_skip
     def test_dataset_weighted_histogram_dask(self):
         ds = hv.Dataset(
             (
