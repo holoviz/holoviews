@@ -77,6 +77,13 @@ if find_spec("scipy") is None:
         "user_guide/11-Transforming_Elements.ipynb",
     ]
 
+if find_spec("polars") is None:
+    collect_ignore_glob += [
+        "reference/elements/bokeh/Waterfall.ipynb",
+        "reference/elements/matplotlib/Waterfall.ipynb",
+        "reference/elements/plotly/Waterfall.ipynb",
+    ]
+
 
 def pytest_runtest_makereport(item, call):
     """
