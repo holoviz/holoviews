@@ -9,6 +9,7 @@ import param
 import pytest
 
 import holoviews as hv
+from holoviews.core.util.dependencies import PARAM_VERSION
 from holoviews.operation import histogram
 from holoviews.plotting.util import initialize_dynamic
 from holoviews.streams import (
@@ -900,21 +901,20 @@ class TestDynamicCallableMemoize:
         assert_element_equal(dmap[()], hv.Curve([1, 1, 1, 2, 2, 2]))
 
 
-class TestDynamicMapRX:
-    def test_dynamic_rx(self):
-        freq = param.rx(1)
-        rx_curve = param.rx(sine_array)(0, freq).rx.pipe(hv.Curve)
-        dmap = hv.DynamicMap(rx_curve)
-        assert len(dmap.streams) == 1
-        pstream = dmap.streams[0]
-        assert isinstance(pstream, Params)
-        assert len(pstream.parameters) == 2
-        fn_param, freq_param = pstream.parameters
-        assert getattr(fn_param.owner, fn_param.name) == sine_array
-        assert getattr(freq_param.owner, freq_param.name) == 1
-        assert_element_equal(dmap[()], hv.Curve(sine_array(0, 1)))
-        freq.rx.value = 2
-        assert_element_equal(dmap[()], hv.Curve(sine_array(0, 2)))
+def test_dynamic_rx():
+    freq = param.rx(1)
+    rx_curve = param.rx(sine_array)(0, freq).rx.pipe(hv.Curve)
+    dmap = hv.DynamicMap(rx_curve)
+    assert len(dmap.streams) == 1
+    pstream = dmap.streams[0]
+    assert isinstance(pstream, Params)
+    assert len(pstream.parameters) == (4 if PARAM_VERSION >= (2, 5, 0) else 2)
+    fn_param, freq_param, *_ = pstream.parameters
+    assert getattr(fn_param.owner, fn_param.name) == sine_array
+    assert getattr(freq_param.owner, freq_param.name) == 1
+    assert_element_equal(dmap[()], hv.Curve(sine_array(0, 1)))
+    freq.rx.value = 2
+    assert_element_equal(dmap[()], hv.Curve(sine_array(0, 2)))
 
 
 class TestStreamSubscribersAddandClear:
