@@ -89,9 +89,9 @@ python-dateutil = ">=2.8.2"
 pyviz_comms = ">=2.1"
 
 [feature.required.tasks]
-check-latest-packages = 'python scripts/check_latest_packages.py'
-download-data = 'python scripts/download_data.py'
-sync-git-tags = 'python scripts/sync_git_tags.py holoviews'
+check-latest-packages = { cmd = 'python scripts/check_latest_packages.py', description = "Check that installed packages are the latest conda-forge releases" }
+download-data = { cmd = 'python scripts/download_data.py', description = "Download sample data used by tests and examples" }
+sync-git-tags = { cmd = 'python scripts/sync_git_tags.py holoviews', description = "Sync git tags from upstream to your fork" }
 
 [feature.required.activation.env]
 PYTHONIOENCODING = "utf-8"
@@ -176,8 +176,11 @@ pip = "*"
 setuptools_scm = "*"
 
 [feature.dev.tasks]
-lab = 'jupyter lab'
-setup-dev = { depends-on = ["download-data", "lint-install"] }
+lab = { cmd = 'jupyter lab', description = "Start JupyterLab" }
+setup-dev = { depends-on = [
+    "download-data",
+    "lint-install",
+], description = "Set up the development environment" }
 
 # =============================================
 # =================== TESTS ===================
@@ -192,10 +195,10 @@ pytest-rerunfailures = "*"
 pytest-xdist = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-gpu + test-ui environment
-test-unit = 'pytest holoviews/tests -n logical --dist loadgroup'
+test-unit = { cmd = 'pytest holoviews/tests -n logical --dist loadgroup', description = "Run the unit tests" }
 
 [feature.test-example.tasks]
-test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
+test-example = { cmd = 'pytest -n logical --dist loadscope --nbval-lax examples', description = "Run the example notebooks" }
 
 [feature.test-example.dependencies]
 nbval = "*"
@@ -210,6 +213,7 @@ _install-ui = 'playwright install chromium'
 
 [feature.test-ui.tasks.test-ui]
 cmd = 'pytest holoviews/tests/ui --ui --browser chromium'
+description = "Run the UI tests with Playwright"
 depends-on = ["_install-ui"]
 
 [feature.test-gpu]
@@ -228,7 +232,7 @@ librmm = { version = "*", channel = "rapidsai" }
 rmm = { version = "*", channel = "rapidsai" }
 
 [feature.test-gpu.tasks]
-test-gpu = "pytest holoviews/tests --gpu"
+test-gpu = { cmd = "pytest holoviews/tests --gpu", description = "Run the GPU tests" }
 
 # =============================================
 # =================== DOCS ====================
@@ -257,6 +261,7 @@ _docs_markdown = 'python -m nbsite build-llms --config scripts/llms_config.py'
 
 [feature.doc.tasks.docs-build]
 depends-on = ['_docs-generate-rst', '_docs-refmanual', '_docs-generate', '_docs_markdown']
+description = "Build the documentation"
 
 # =============================================
 # ================== BUILD ====================
@@ -267,8 +272,8 @@ conda-build = "*"
 conda-libmamba-solver = "*"
 
 [feature.build.tasks]
-build-conda = 'bash scripts/conda/build.sh'
-build-pip = 'python -m build .'
+build-conda = { cmd = 'bash scripts/conda/build.sh', description = "Build the conda package" }
+build-pip = { cmd = 'python -m build .', description = "Build the sdist and wheel" }
 
 # =============================================
 # =================== LINT ====================
@@ -277,8 +282,8 @@ build-pip = 'python -m build .'
 prek = "*"
 
 [feature.lint.tasks]
-lint = 'prek run --all-files'
-lint-install = 'prek install'
+lint = { cmd = 'prek run --all-files', description = "Run the linters on all files" }
+lint-install = { cmd = 'prek install', description = "Install the pre-commit hooks" }
 
 # =============================================
 # =================== TYPE ====================
@@ -290,4 +295,4 @@ typing-extensions = "*"
 param = ">=2.4.0"
 
 [feature.type-task.tasks]
-type-ty = 'ty check .'
+type-ty = { cmd = 'ty check .', description = "Type check with TY" }
