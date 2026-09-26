@@ -624,7 +624,7 @@ class Buffer(Pipe):
     )
 
     def __init__(self, data, length=1000, index=True, following=True, **params):
-        if pd and isinstance(data, pd.DataFrame):
+        if bool(pd) and isinstance(data, pd.DataFrame):
             example = data
         elif isinstance(data, np.ndarray):
             if data.ndim != 2:
@@ -662,7 +662,9 @@ class Buffer(Pipe):
                     f"Streamed array data expected to have {self.data.shape[1]} columns, "
                     f"got {x.shape[1]}."
                 )
-        elif pd and isinstance(x, pd.DataFrame) and list(x.columns) != list(self.data.columns):
+        elif (
+            bool(pd) and isinstance(x, pd.DataFrame) and list(x.columns) != list(self.data.columns)
+        ):
             raise IndexError(
                 f"Input expected to have columns {list(self.data.columns)}, got {list(x.columns)}"
             )
@@ -678,7 +680,7 @@ class Buffer(Pipe):
         """Clears the data in the stream"""
         if isinstance(self.data, np.ndarray):
             data = self.data[:, :0]
-        elif pd and isinstance(self.data, pd.DataFrame):
+        elif bool(pd) and isinstance(self.data, pd.DataFrame):
             data = self.data.iloc[:0]
         elif isinstance(self.data, dict):
             data = {k: v[:0] for k, v in self.data.items()}
@@ -700,7 +702,7 @@ class Buffer(Pipe):
                 data = np.concatenate([prev_chunk, data])
             elif data_length > self.length:
                 data = data[-self.length :]
-        elif pd and isinstance(data, pd.DataFrame):
+        elif bool(pd) and isinstance(data, pd.DataFrame):
             data_length = len(data)
             if not self.length:
                 data = pd.concat([self.data, data])

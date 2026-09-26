@@ -225,7 +225,7 @@ class HashableJSON(json.JSONEncoder):
                 o = state.choice(o.flat, size=_ARRAY_SAMPLE_SIZE)
             h.update(o.tobytes())
             return h.hexdigest()
-        if pd and isinstance(o, (pd.Series, pd.DataFrame)):
+        if bool(pd) and isinstance(o, (pd.Series, pd.DataFrame)):
             if len(o) > _DATAFRAME_ROWS_LARGE:
                 o = o.sample(n=_DATAFRAME_SAMPLE_SIZE, random_state=0)
             try:
@@ -950,7 +950,7 @@ def isnat(val):
         isinstance(val, np.ndarray) and dtype_kind(val) == "M"
     ):
         return np.isnat(val)
-    elif pd and val is pd.NaT:
+    elif bool(pd) and val is pd.NaT:
         return True
     elif isinstance(val, (pandas_datetime_types, pandas_timedelta_types)):
         return pd.isna(val)
@@ -969,7 +969,7 @@ def isfinite(val):
             return ~val._mask & isfinite(val._data)
         val = asarray(val, strict=False)
 
-    isnan = pd.isna if pd else np.isnan
+    isnan = pd.isna if bool(pd) else np.isnan
     if val is None:
         return False
     elif is_dask:
@@ -991,7 +991,7 @@ def isfinite(val):
     elif isinstance(val, (nw.DataFrame, nw.LazyFrame)):
         return val.select(nw.all().is_finite())
     finite = np.isfinite(val)
-    if pd and finite is pd.NA:
+    if bool(pd) and finite is pd.NA:
         return False
     return finite & ~isnan(np.asarray(val))
 
@@ -1115,7 +1115,7 @@ def max_range(ranges, combined=True):
             ):
                 converted = []
                 for l, h in values:
-                    if pd and isinstance(l, pd.Period) and isinstance(h, pd.Period):
+                    if bool(pd) and isinstance(l, pd.Period) and isinstance(h, pd.Period):
                         l = l.to_timestamp().to_datetime64()
                         h = h.to_timestamp().to_datetime64()
                     elif isinstance(l, datetime_types) and isinstance(h, datetime_types):
@@ -1319,7 +1319,7 @@ def unique_zip(*args, strict: bool = False):
 
 def _unique(arr):
     """Returns an array of unique values in the input order."""
-    if pd:
+    if bool(pd):
         return pd.unique(arr)
     try:
         arr = np.asanyarray(arr)
@@ -1354,7 +1354,7 @@ def unique_array(arr):
     for v in arr:
         if isinstance(v, datetime_types) and not isinstance(v, cftime_types):
             v = parse_datetime(v)
-        elif pd and isinstance(getattr(v, "dtype", None), pd.CategoricalDtype):
+        elif bool(pd) and isinstance(getattr(v, "dtype", None), pd.CategoricalDtype):
             v = v.dtype.categories
         values.append(v)
     return _unique(np.asarray(values).ravel())
@@ -1683,9 +1683,9 @@ def get_spec(obj):
 def is_dataframe(data) -> TypeIs[pd.DataFrame | dd.DataFrame]:
     """Checks whether the supplied data is of DataFrame type."""
     types = []
-    if pd:
+    if bool(pd):
         types.append(pd.DataFrame)
-    if dd:
+    if bool(dd):
         types.append(dd.DataFrame)
     return isinstance(data, tuple(types))
 
@@ -1693,9 +1693,9 @@ def is_dataframe(data) -> TypeIs[pd.DataFrame | dd.DataFrame]:
 def is_series(data) -> TypeIs[pd.Series | dd.Series]:
     """Checks whether the supplied data is of Series type."""
     types = []
-    if pd:
+    if bool(pd):
         types.append(pd.Series)
-    if dd:
+    if bool(dd):
         types.append(dd.Series)
     return isinstance(data, tuple(types))
 
@@ -1705,7 +1705,7 @@ def is_dask_array(data) -> TypeIs[da.Array]:
 
 
 def is_cupy_array(data) -> TypeIs[cp.ndarray]:
-    return cp and isinstance(data, cp.ndarray)
+    return bool(cp) and isinstance(data, cp.ndarray)
 
 
 def get_param_values(data):
@@ -2068,7 +2068,7 @@ class ndmapping_groupby(param.ParameterizedFunction):
     sort = param.Boolean(default=False, doc="Whether to apply a sorted groupby")
 
     def __call__(self, ndmapping, dimensions, container_type, group_type, sort=False, **kwargs):
-        fn = self.groupby_pandas if pd else self.groupby_python
+        fn = self.groupby_pandas if bool(pd) else self.groupby_python
         return fn(ndmapping, dimensions, container_type, group_type, sort=sort, **kwargs)
 
     @staticmethod
@@ -2207,7 +2207,7 @@ def is_nan(x):
     try:
         # Using pd.isna instead of np.isnan as np.isnan(pd.NA) returns pd.NA!
         # Call bool() to raise an error if x is pd.NA, an array, etc.
-        if pd:
+        if bool(pd):
             return bool(pd.isna(x))
         else:
             return bool(np.isnan(x))
@@ -2284,7 +2284,7 @@ def date_range(start, end, length, time_unit="us"):
 
     """
     step = 1.0 / compute_density(start, end, length, time_unit)
-    if pd and isinstance(start, pd.Timestamp):
+    if bool(pd) and isinstance(start, pd.Timestamp):
         start = start.to_datetime64()
     step = np.timedelta64(round(step), time_unit)
     return start + step / 2.0 + np.arange(length) * step
@@ -2292,7 +2292,7 @@ def date_range(start, end, length, time_unit="us"):
 
 def parse_datetime(date):
     """Parses dates specified as string or integer or pandas Timestamp"""
-    if pd:
+    if bool(pd):
         return pd.to_datetime(date).to_datetime64()
 
     match date:
@@ -2337,9 +2337,9 @@ def parse_datetime_selection(sel):
 
 def dt_to_int(value, time_unit="us"):
     """Converts a datetime type to an integer with the supplied time unit."""
-    if pd and isinstance(value, pd.Period):
+    if bool(pd) and isinstance(value, pd.Period):
         value = value.to_timestamp()
-    if pd and isinstance(value, pd.Timestamp):
+    if bool(pd) and isinstance(value, pd.Timestamp):
         try:
             value = value.to_datetime64()
         except Exception:
