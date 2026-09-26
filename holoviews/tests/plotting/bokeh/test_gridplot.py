@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 from bokeh.layouts import Column
-from bokeh.models import Div, Toolbar
+from bokeh.models import CustomJSTickFormatter, Div, Toolbar
 
 import holoviews as hv
 from holoviews.operation import gridmatrix
@@ -157,3 +158,21 @@ class TestGridPlot(TestBokehPlot):
         assert "test: 1" in plot.handles["title"].text
         plot.cleanup()
         assert stream._subscribers == []
+
+    @pytest.mark.parametrize("invert_xaxis", [False, True])
+    @pytest.mark.parametrize("invert_yaxis", [False, True])
+    def test_grid_invert_axis(self, invert_xaxis, invert_yaxis):
+        grid = hv.GridSpace({(x, y): hv.Curve([x, y]) for x in range(3) for y in range(2)}).opts(
+            invert_xaxis=invert_xaxis, invert_yaxis=invert_yaxis
+        )
+        plot = bokeh_renderer.get_plot(grid)
+        xs = [2, 1, 0] if invert_xaxis else [0, 1, 2]
+        ys = [1, 0] if invert_yaxis else [0, 1]
+        plots = plot.handles["plots"]
+        for r, y in enumerate(ys):
+            for c, x in enumerate(xs):
+                assert plots[r][c] is plot.subplots[(x, y)].state
+        labels = {
+            tuple(f.args["labels"]) for f in plot.state.select({"type": CustomJSTickFormatter})
+        }
+        assert labels == {tuple(map(str, xs)), tuple(map(str, ys))}
