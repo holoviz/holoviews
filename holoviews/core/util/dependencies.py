@@ -117,24 +117,15 @@ class _LazyModule:
         return self.__module and self.__module.__version__ or _get_version(self.__package_name)
 
 
-if t.TYPE_CHECKING:
-    import cftime
-    import cudf
-    import cupy as cp
-    import dask.array as da
-    import dask.dataframe as dd
-    import ibis
-    import pandas as pd
-    import polars as pl
-else:
-    cftime = _LazyModule("cftime")
-    cudf = _LazyModule("cudf")
-    cp = _LazyModule("cupy")
-    da = _LazyModule("dask.array")
-    dd = _LazyModule("dask.dataframe")
-    ibis = _LazyModule("ibis", "ibis-framework")
-    pd = _LazyModule("pandas")
-    pl = _LazyModule("polars")
+_lazy_import = import_module if t.TYPE_CHECKING else _LazyModule
+cftime = _lazy_import("cftime")
+cudf = _lazy_import("cudf")
+cp = _lazy_import("cupy")
+da = _lazy_import("dask.array")
+dd = _lazy_import("dask.dataframe")
+ibis = _lazy_import("ibis", "ibis-framework")
+pd = _lazy_import("pandas")
+pl = _lazy_import("polars")
 
 # Versions
 NUMPY_VERSION = _no_import_version("numpy")

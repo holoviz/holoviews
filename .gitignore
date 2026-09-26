@@ -18,7 +18,8 @@
 /doc/_build
 /doc/Reference_Manual/*
 !/doc/Reference_Manual/index.rst
-examples/user_guide/*.{png,html}
+examples/user_guide/*.html
+examples/user_guide/*.png
 builtdocs/
 .ipynb_checkpoints
 .coverage
