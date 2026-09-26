@@ -85,7 +85,7 @@ generator_types = (zip, range, GeneratorType)
 
 @gen_types
 def pandas_datetime_types() -> t.Iterator[type[_PdDatetimeT]]:
-    if pd:
+    if bool(pd):
         from pandas.core.dtypes.dtypes import DatetimeTZDtype
 
         yield from (pd.Timestamp, pd.Period, DatetimeTZDtype)
@@ -93,7 +93,7 @@ def pandas_datetime_types() -> t.Iterator[type[_PdDatetimeT]]:
 
 @gen_types
 def pandas_timedelta_types() -> t.Iterator[type[_PdTimedeltaT]]:
-    if pd:
+    if bool(pd):
         yield pd.Timedelta
 
 
@@ -119,7 +119,7 @@ def timedelta_types() -> t.Iterator[type[_TimedeltaT]]:
 @gen_types
 def arraylike_types() -> t.Iterator[type[_ArraylikeT]]:
     yield from (np.ndarray, nw.Series)
-    if pd:
+    if bool(pd):
         from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries
 
         yield from (ABCIndex, ABCSeries, ABCExtensionArray)
@@ -129,7 +129,7 @@ def arraylike_types() -> t.Iterator[type[_ArraylikeT]]:
 def masked_types():
     yield np.ma.core.MaskedArray
 
-    if pd:
+    if bool(pd):
         from pandas.core.arrays.masked import BaseMaskedArray
 
         yield BaseMaskedArray

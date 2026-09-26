@@ -16,7 +16,7 @@ import pytest
 import holoviews as hv
 from holoviews.testing import assert_element_equal
 
-from .._deps import da, dask, dd, shapely_skip, spd_skip, xr, xr_skip
+from .._deps import da, dask, dd, pa, shapely_skip, spd_skip, xr, xr_skip
 
 dask_conversion_warning = pytest.mark.filterwarnings(
     "ignore:Dask currently has limited support for converting pandas extension dtypes to arrays:UserWarning"
@@ -39,7 +39,7 @@ class TestDimTransforms:
             ["int", "float", "negative", "categories", "booleans"],
         )
 
-        if dd is not None:
+        if dd is not None and pa is not None:
             ddf = dd.from_pandas(self.dataset.data, npartitions=2)
             self.dataset_dask = self.dataset.clone(data=ddf)
 
@@ -66,7 +66,7 @@ class TestDimTransforms:
             assert expr.apply(self.dataset, keep_index=False) == expected
             assert expr.apply(self.dataset, keep_index=True) == expected
 
-            if dd is None:
+            if dd is None or pa is None:
                 return
 
             # Dask input
@@ -86,7 +86,7 @@ class TestDimTransforms:
             expr.apply(self.dataset, keep_index=True), expected, check_names=False
         )
 
-        if skip_dask or dd is None:
+        if skip_dask or dd is None or pa is None:
             return
 
         # Check using dataset backed by Dask DataFrame,

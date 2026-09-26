@@ -256,7 +256,6 @@ exclude = ["holoviews/*version.py"]
 
 [tool.ty.rules]
 unresolved-import = "ignore"
-redundant-condition = "ignore" # problems with _LazyModule
 
 # Add whole project for LSP features and diagnostics only for the type-checked files
 [[tool.ty.overrides]]
