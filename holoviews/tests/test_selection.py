@@ -6,6 +6,7 @@ import pytest
 
 import holoviews as hv
 from holoviews.plotting.util import linear_gradient
+from holoviews.selection import OverlaySelectionDisplay
 from holoviews.streams import SelectionXY
 from holoviews.testing import assert_data_equal, assert_dict_equal, assert_element_equal
 
@@ -314,6 +315,17 @@ class TestLinkSelections:
             current_obj[()].RGB.II,
             dynspread(datashade(points.iloc[1:], cmap=lnk_sel.selected_cmap, alpha=255))[()],
         )
+
+    @ds_skip
+    def test_datashade_colormap_pipeline_is_cached(self):
+        points = hv.Points(self.data)
+        pipeline = datashade(points, dynamic=False).pipeline
+        cache = {}
+
+        first = OverlaySelectionDisplay._inject_cmap_in_pipeline(pipeline, ["#ff0000"], cache)
+        second = OverlaySelectionDisplay._inject_cmap_in_pipeline(pipeline, ["#ff0000"], cache)
+
+        assert first is second
 
     def test_points_selection_streaming(self):
         buffer = hv.streams.Buffer(self.data.iloc[:2], index=False)
@@ -860,6 +872,34 @@ class TestLinkSelectionsPlotly(TestLinkSelections):
 
 class TestLinkSelectionsBokeh(TestLinkSelections):
     __test__ = True
+
+    def test_selection_updates_each_overlay_once(self, monkeypatch):
+        """Region and expression updates should share one plot refresh per overlay."""
+        from holoviews.plotting.bokeh.element import OverlayPlot
+        from holoviews.plotting.plot import Plot
+
+        points = hv.Points(self.data)
+        hist = hv.operation.histogram(points, dimension="x")
+        linker = hv.link_selections.instance()
+        pane = pn.pane.HoloViews(linker(points + hist))
+        root = pane.get_root()
+        selection = self.get_value_with_key_type(linker._selection_expr_streams, hv.Points)
+        selectionxy = selection.input_streams[0].input_stream.input_streams[0]
+
+        updates = []
+        original = Plot._trigger_refresh
+
+        def count_updates(plot, key):
+            if isinstance(plot, OverlayPlot):
+                updates.append(id(plot))
+            return original(plot, key)
+
+        try:
+            monkeypatch.setattr(Plot, "_trigger_refresh", count_updates)
+            selectionxy.event(bounds=(0, 1, 5, 5))
+            assert len(updates) == len(set(updates)) == 2
+        finally:
+            pane._cleanup(root)
 
     def setup_method(self):
         import holoviews.plotting.bokeh  # noqa: F401
