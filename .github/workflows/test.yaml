@@ -118,7 +118,7 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-diff@efc2b69e20b1930a009b06b20b0d1e35cb88f935 # v1.0.14
+      - uses: holoviz-dev/holoviz_tasks/pixi-diff@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
 
   unit_test_suite:
     name: unit:${{ matrix.environment }}:${{ matrix.os }}
