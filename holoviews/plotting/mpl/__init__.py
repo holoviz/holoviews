@@ -21,6 +21,7 @@ from ...core.options import Cycle, Options, Palette, Store
 from ...core.overlay import NdOverlay, Overlay
 from ...element import (
     HSV,
+    OHLC,
     RGB,
     Area,
     Arrow,
@@ -104,6 +105,7 @@ from .chart import (
     DonutPlot,
     ErrorPlot,
     HistogramPlot,
+    OHLCPlot,
     PointPlot,
     SideAreaPlot,
     SideHistogramPlot,
@@ -222,6 +224,7 @@ Store.register(
         Waterfall: WaterfallPlot,
         Donut: DonutPlot,
         Histogram: HistogramPlot,
+        OHLC: OHLCPlot,
         Points: PointPlot,
         VectorField: VectorFieldPlot,
         ErrorBars: ErrorPlot,
@@ -368,6 +371,7 @@ options.Path3D = Options("plot", fig_size=150)
 options.Surface = Options("plot", fig_size=150)
 options.Surface = Options("style", cmap="fire")
 options.Spikes = Options("style", color="black", cmap=dflt_cmap)
+options.OHLC = Options("style", linewidth=1)
 options.Area = Options("style", facecolor=Cycle(), edgecolor="black")
 options.BoxWhisker = Options(
     "style", boxprops=dict(color="k", linewidth=1.5), whiskerprops=dict(color="k", linewidth=1.5)
