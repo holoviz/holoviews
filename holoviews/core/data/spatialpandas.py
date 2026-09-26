@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import numbers
 import sys
+import typing as t
 from collections import defaultdict
 
 import numpy as np
@@ -148,8 +150,8 @@ class SpatialPandasInterface(MultiInterface):
             )
 
     @classmethod
-    def dtype(cls, dataset, dimension):
-        dim = dataset.get_dimension(dimension, strict=True)
+    def dtype(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
         if dim in cls.geom_dims(dataset):
             col = cls.geo_column(dataset.data)
             return dataset.data[col].dtype.subtype
@@ -255,13 +257,11 @@ class SpatialPandasInterface(MultiInterface):
         )
 
     @classmethod
-    def aggregate(cls, columns, dimensions, function, **kwargs):
+    def aggregate(cls, dataset, dimensions, function, **kwargs):
         raise NotImplementedError
 
     @classmethod
-    def sample(cls, columns, samples=None):
-        if samples is None:
-            samples = []
+    def sample(cls, dataset, samples=None):
         raise NotImplementedError
 
     @classmethod
@@ -309,13 +309,13 @@ class SpatialPandasInterface(MultiInterface):
         return cls.base_interface.redim(dataset, dimensions)
 
     @classmethod
-    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+    def add_dimension(cls, dataset, dim, dim_pos, values, vdim):
         data = dataset.data.copy()
         geom_col = cls.geo_column(dataset.data)
         if dim_pos >= list(data.columns).index(geom_col):
             dim_pos -= 1
-        if dimension.name not in data:
-            data.insert(dim_pos, dimension.name, values)
+        if dim.name not in data:
+            data.insert(dim_pos, dim.name, values)
         return data
 
     @classmethod
@@ -331,7 +331,7 @@ class SpatialPandasInterface(MultiInterface):
         if isinstance(cols, slice):
             cols = [d.name for d in dataset.dimensions()][cols]
         elif np.isscalar(cols):
-            scalar = np.isscalar(rows)
+            scalar = bool(np.isscalar(rows))
             cols = [dataset.get_dimension(cols).name]
         else:
             cols = [dataset.get_dimension(d).name for d in index[1]]
@@ -349,7 +349,7 @@ class SpatialPandasInterface(MultiInterface):
 
         if not isinstance(dataset.data[geom_col].dtype, MultiPointDtype):
             if scalar:
-                return dataset.data.iloc[rows[0], cols[0]]
+                return dataset.data.iloc[rows, cols[0]]
             elif isscalar(rows):
                 rows = [rows]
             return dataset.data.iloc[rows, cols]
@@ -359,7 +359,7 @@ class SpatialPandasInterface(MultiInterface):
         new_geoms, indexes = [], []
         for i, geom in enumerate(geoms):
             length = int(len(geom.buffer_values) / 2)
-            if np.isscalar(rows):
+            if isinstance(rows, numbers.Real):
                 if count <= rows < (count + length):
                     idx = (rows - count) * 2
                     data = geom.buffer_values[idx : idx + 2]
@@ -400,24 +400,24 @@ class SpatialPandasInterface(MultiInterface):
         return new
 
     @classmethod
-    def values(cls, dataset, dimension, expanded=True, flat=True, compute=True, keep_index=False):
-        dimension = dataset.get_dimension(dimension)
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
+        dim = dataset.get_dimension(dim)
         geom_dims = dataset.interface.geom_dims(dataset)
         data = dataset.data
-        isgeom = dimension in geom_dims
+        isgeom = dim in geom_dims
         geom_col = cls.geo_column(dataset.data)
         is_points = cls.geom_type(dataset) == "Point"
         if isgeom and keep_index:
             return data[geom_col]
         elif not isgeom:
             if is_points:
-                return data[dimension.name].values
-            return get_value_array(data, dimension, expanded, keep_index, geom_col, is_points)
+                return data[dim.name].values
+            return get_value_array(data, dim, expanded, keep_index, geom_col, is_points)
         elif not len(data):
             return np.array([])
 
         geom_type = cls.geom_type(dataset)
-        index = geom_dims.index(dimension)
+        index = geom_dims.index(dim)
         geom_series = data[geom_col]
         if compute and hasattr(geom_series, "compute"):
             geom_series = geom_series.compute()
@@ -710,7 +710,7 @@ def get_value_array(
         return np.array([a[0] for a in arrays])
     else:
         array = np.empty(len(arrays), dtype=object)
-        array[:] = [a[0] if s else a for s, a in zip(scalars, arrays, strict=None)]
+        array[:] = [a[0] if s else a for s, a in zip(scalars, arrays, strict=True)]
         return array
 
 
@@ -850,8 +850,8 @@ def to_spatialpandas(data, xdim, ydim, columns=None, geom="point"):
             array_type = single_array
 
     converted = defaultdict(list)
-    for geom_data, arrays, holes in zip(data, geom_arrays, hole_arrays, strict=None):
-        parts = []
+    for geom_data, arrays, holes in zip(data, geom_arrays, hole_arrays, strict=True):
+        parts: list[t.Any] = []
         for i, g in enumerate(arrays):
             if i != (len(arrays) - 1):
                 g = g[:-1]
@@ -870,22 +870,24 @@ def to_spatialpandas(data, xdim, ydim, columns=None, geom="point"):
             converted[c].append(v)
 
         if array_type is PointArray:
-            parts = parts[0].flatten()
+            geometry = parts[0].flatten()
         elif array_type is MultiPointArray:
-            parts = np.concatenate([sp.flatten() for sp in parts])
+            geometry = np.concatenate([sp.flatten() for sp in parts])
         elif array_type is multi_array:
-            parts = [[ssp.flatten() for ssp in sp] if poly else sp.flatten() for sp in parts]
+            geometry = [[ssp.flatten() for ssp in sp] if poly else sp.flatten() for sp in parts]
         else:
-            parts = [np.asarray(sp).flatten() for sp in parts[0]] if poly else parts[0].flatten()
-        converted["geometry"].append(parts)
+            geometry = (
+                [np.asarray(sp).flatten() for sp in parts[0]] if poly else parts[0].flatten()
+            )
+        converted["geometry"].append(geometry)
 
-    if converted:
+    if array_type is not None:
         geometries = converted["geometry"]
         if array_type is PointArray:
             geometries = np.concatenate(geometries)
         geom_array = array_type(geometries)
         if poly:
-            geom_array = geom_array.oriented()
+            geom_array = t.cast("PolygonArray | MultiPolygonArray", geom_array).oriented()
         converted["geometry"] = GeoSeries(geom_array)
     else:
         converted["geometry"] = GeoSeries(single_array([]))

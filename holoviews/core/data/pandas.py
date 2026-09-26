@@ -136,9 +136,9 @@ class PandasInterface(Interface, PandasAPI):
                     )
                 column_data = zip(
                     *((util.wrap_tuple(k) + util.wrap_tuple(v)) for k, v in column_data),
-                    strict=None,
+                    strict=True,
                 )
-                data = dict(zip(columns, column_data, strict=None))
+                data = dict(zip(columns, column_data, strict=True))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:
                     if eltype._auto_indexable_1d and len(kdims) + len(vdims) > 1:
@@ -160,7 +160,7 @@ class PandasInterface(Interface, PandasAPI):
                     )
                 elif not cls.expanded(data):
                     raise ValueError("PandasInterface expects data to be of uniform shape.")
-                data = pd.DataFrame(dict(zip(columns, data, strict=None)), columns=columns)
+                data = pd.DataFrame(dict(zip(columns, data, strict=False)), columns=columns)
             elif (isinstance(data, dict) and any(c not in data for c in columns)) or (
                 isinstance(data, list)
                 and any(isinstance(d, dict) and c not in d for d in data for c in columns)
@@ -173,13 +173,13 @@ class PandasInterface(Interface, PandasAPI):
         return data, {"kdims": kdims, "vdims": vdims}, {}
 
     @classmethod
-    def isscalar(cls, dataset, dim):
+    def isscalar(cls, dataset, dim, *, per_geom=False):
         name = dataset.get_dimension(dim, strict=True).name
         return len(dataset.data[name].unique()) == 1
 
     @classmethod
-    def dtype(cls, dataset, dimension):
-        dim = dataset.get_dimension(dimension, strict=True)
+    def dtype(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
         name = dim.name
         df = dataset.data
         if cls.isindex(dataset, dim):
@@ -199,18 +199,18 @@ class PandasInterface(Interface, PandasAPI):
         return index_names
 
     @classmethod
-    def isindex(cls, dataset, dimension):
-        dimension = dataset.get_dimension(dimension, strict=True)
-        if dimension.name in dataset.data.columns:
+    def isindex(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
+        if dim.name in dataset.data.columns:
             return False
-        return dimension.name in cls.indexes(dataset.data)
+        return dim.name in cls.indexes(dataset.data)
 
     @classmethod
-    def index_values(cls, dataset, dimension):
-        dimension = dataset.get_dimension(dimension, strict=True)
+    def index_values(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
         index = dataset.data.index
         if isinstance(index, pd.MultiIndex):
-            return index.get_level_values(dimension.name)
+            return index.get_level_values(dim.name)
         return index
 
     @classmethod
@@ -228,12 +228,12 @@ class PandasInterface(Interface, PandasAPI):
             )
 
     @classmethod
-    def range(cls, dataset, dimension):
-        dimension = dataset.get_dimension(dimension, strict=True)
-        if cls.isindex(dataset, dimension):
-            column = cls.index_values(dataset, dimension)
+    def range(cls, dataset, dim):
+        dim = dataset.get_dimension(dim, strict=True)
+        if cls.isindex(dataset, dim):
+            column = cls.index_values(dataset, dim)
         else:
-            column = dataset.data[dimension.name]
+            column = dataset.data[dim.name]
         if dtype_kind(column) == "O":
             if not isinstance(dataset.data, pd.DataFrame):
                 column = column.sort(inplace=False)
@@ -249,8 +249,8 @@ class PandasInterface(Interface, PandasAPI):
                 return column[0], column[-1]
             return column.iloc[0], column.iloc[-1]
         else:
-            if dimension.nodata is not None:
-                column = cls.replace_value(column, dimension.nodata)
+            if dim.nodata is not None:
+                column = cls.replace_value(column, dim.nodata)
             cmin, cmax = finite_range(column, column.min(), column.max())
             if dtype_kind(column) == "M" and getattr(column.dtype, "tz", None):
                 return (
@@ -268,7 +268,7 @@ class PandasInterface(Interface, PandasAPI):
         dataframes = []
         for key, ds in datasets:
             data = ds.data.copy()
-            for d, k in zip(dimensions, key, strict=None):
+            for d, k in zip(dimensions, key, strict=True):
                 data[d.name] = k
             dataframes.append(data)
         return cls.concat_fn(dataframes)
@@ -330,7 +330,7 @@ class PandasInterface(Interface, PandasAPI):
 
                 numeric_cols = [
                     c
-                    for c, d in zip(reindexed.columns, reindexed.dtypes, strict=None)
+                    for c, d in zip(reindexed.columns, reindexed.dtypes, strict=True)
                     if is_numeric_dtype(d) and c not in cols
                 ]
             groupby_kwargs = {"sort": False}
@@ -340,7 +340,7 @@ class PandasInterface(Interface, PandasAPI):
             df = grouped[numeric_cols].aggregate(fn, **kwargs).reset_index()
         else:
             agg = reindexed.apply(fn, **kwargs)
-            data = {col: [v] for col, v in zip(agg.index, agg.values, strict=None)}
+            data = {col: [v] for col, v in zip(agg.index, agg.values, strict=True)}
             df = pd.DataFrame(data, columns=list(agg.index))
 
         dropped = []
@@ -363,6 +363,9 @@ class PandasInterface(Interface, PandasAPI):
     def reindex(cls, dataset, kdims=None, vdims=None):
         data = dataset.data
         if isinstance(data.index, pd.MultiIndex):
+            if kdims is None:
+                msg = f"{cls.__name__}.reindex requires kdims to be specified."
+                raise TypeError(msg)
             kdims = [kdims] if isinstance(kdims, (str, Dimension)) else kdims
             data = data.reset_index().set_index(list(map(str, kdims)), drop=True)
         return data
@@ -510,10 +513,10 @@ class PandasInterface(Interface, PandasAPI):
         return data[mask]
 
     @classmethod
-    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+    def add_dimension(cls, dataset, dim, dim_pos, values, vdim):
         data = dataset.data.copy()
-        if dimension.name not in data:
-            data.insert(dim_pos, dimension.name, values)
+        if dim.name not in data:
+            data.insert(dim_pos, dim.name, values)
         return data
 
     @classmethod

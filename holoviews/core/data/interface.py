@@ -117,12 +117,12 @@ class ndloc(Accessor):
     """
 
     @classmethod
-    def _perform_getitem(cls, dataset, indices):
+    def _perform_getitem(cls, dataset, index):
         ds = dataset
-        indices = util.wrap_tuple(indices)
+        index = util.wrap_tuple(index)
         if not ds.interface.gridded:
             raise IndexError("Cannot use ndloc on non nd-dimensional datastructure")
-        selected = dataset.interface.ndloc(ds, indices)
+        selected = dataset.interface.ndloc(ds, index)
         if np.isscalar(selected):
             return selected
         params = {}
@@ -132,7 +132,7 @@ class ndloc(Accessor):
 
 
 class Interface(param.Parameterized):
-    interfaces: t.ClassVar[dict[str, Interface]] = {}
+    interfaces: t.ClassVar[dict[str, type[Interface]]] = {}
 
     datatype = None
 
@@ -146,6 +146,11 @@ class Interface(param.Parameterized):
 
     # Whether the interface stores the names of the underlying dimensions
     named = True
+
+    @classmethod
+    def init(cls, eltype, data, kdims, vdims):
+        msg = "Init should be defined on the Interface subclass to initialize the data and dimensions"
+        raise NotImplementedError(msg)
 
     @classmethod
     def loaded(cls):
@@ -357,7 +362,7 @@ class Interface(param.Parameterized):
         return not any(array.shape not in [arrays[0].shape, (1,)] for array in arrays[1:])
 
     @classmethod
-    def isscalar(cls, dataset, dim):
+    def isscalar(cls, dataset, dim, *, per_geom=False):
         """
         Whether the selected dimension is a scalar value.
 
@@ -398,12 +403,12 @@ class Interface(param.Parameterized):
             Whether the dimension is scalar
         """
         try:
-            return cls.isscalar(dataset, dim, per_geom)
+            return cls.isscalar(dataset, dim, per_geom=per_geom)
         except TypeError:
             return cls.isscalar(dataset, dim)
 
     @classmethod
-    def dtype(cls, dataset, dimension):
+    def dtype(cls, dataset, dim):
         """
         Returns the dtype for the selected dimension.
 
@@ -411,7 +416,7 @@ class Interface(param.Parameterized):
         ----------
         dataset : Dataset
             The dataset to query
-        dimension : str or Dimension
+        dim : str or Dimension
             Dimension to return the dtype for
 
         Returns
@@ -419,7 +424,7 @@ class Interface(param.Parameterized):
         numpy.dtype
             The dtype of the selected dimension
         """
-        name = dataset.get_dimension(dimension, strict=True).name
+        name = dataset.get_dimension(dim, strict=True).name
         data = dataset.data[name]
         if util.isscalar(data):
             return np.array([data]).dtype
@@ -536,7 +541,7 @@ class Interface(param.Parameterized):
         return all_scalar and all_kdims
 
     @classmethod
-    def values(cls, dataset, dimension, expanded=True, flat=True, compute=True, keep_index=False):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
         """
         Returns the values along a dimension of the dataset.
 
@@ -550,7 +555,7 @@ class Interface(param.Parameterized):
         ----------
         dataset : Dataset
             The dataset to query
-        dimension : str or Dimension
+        dim : str or Dimension
             Dimension to return the values for
         expanded : bool, default True
             When false returns unique values along the dimension
@@ -569,7 +574,7 @@ class Interface(param.Parameterized):
         raise NotImplementedError
 
     @classmethod
-    def range(cls, dataset, dimension):
+    def range(cls, dataset, dim):
         """
         Computes the minimum and maximum value along a dimension.
 
@@ -584,7 +589,7 @@ class Interface(param.Parameterized):
         ----------
         dataset : Dataset
             The dataset to query
-        dimension : str or Dimension
+        dim : str or Dimension
             Dimension to compute the range on
 
         Returns
@@ -592,7 +597,7 @@ class Interface(param.Parameterized):
         tuple[Any, Any]
             Tuple of (min, max) values
         """
-        column = dataset.dimension_values(dimension)
+        column = dataset.dimension_values(dim)
         if dtype_kind(column) == "M":
             return column.min(), column.max()
         elif len(column) == 0:
@@ -648,12 +653,12 @@ class Interface(param.Parameterized):
 
         datasets = template.interface.cast(datasets, datatype)
         template = datasets[0]
-        data = list(zip(keys, datasets, strict=None)) if keys else datasets
+        data = list(zip(keys, datasets, strict=False)) if keys else datasets
         concat_data = template.interface.concat(data, dimensions, vdims=template.vdims)
         return template.clone(concat_data, kdims=dimensions + template.kdims, new_type=new_type)
 
     @classmethod
-    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+    def add_dimension(cls, dataset, dim, dim_pos, values, vdim):
         """
         Returns a copy of the data with the dimension values added.
 
@@ -661,7 +666,7 @@ class Interface(param.Parameterized):
         ----------
         dataset : Dataset
             The Dataset to add the dimension to
-        dimension : Dimension
+        dim : Dimension
             The dimension to add
         dim_pos : int
             The position in the data to add it to
@@ -735,7 +740,7 @@ class Interface(param.Parameterized):
         raise NotImplementedError
 
     @classmethod
-    def aggregate(cls, dataset, kdims, function, **kwargs):
+    def aggregate(cls, dataset, dimensions, function, **kwargs):
         raise NotImplementedError
 
     @classmethod
@@ -856,25 +861,6 @@ class Interface(param.Parameterized):
             A pandas DataFrame containing the selected dimensions
         """
         return Element.dframe(dataset, dimensions)
-
-    @classmethod
-    def columns(cls, dataset, dimensions):
-        """
-        Returns the data as a dictionary of 1D arrays indexed by column name.
-
-        Parameters
-        ----------
-        dataset : Dataset
-            The dataset to convert
-        dimensions : list[str]
-            List of dimensions to include
-
-        Returns
-        -------
-        dict[str, np.ndarray]
-            Dictionary mapping column names to arrays
-        """
-        return Element.columns(dataset, dimensions)
 
     @classmethod
     def shape(cls, dataset):
@@ -1017,3 +1003,17 @@ class Interface(param.Parameterized):
             DataFrame representation of the data
         """
         return dataset.dframe()
+
+    @classmethod
+    def unpack_scalar(cls, dataset, data):
+        """Given a dataset object and data in the appropriate format for
+        the interface, return a simple scalar.
+        """
+        msg = f"Unpacking scalar is not supported for {cls.__name__}"
+        raise TypeError(msg)
+
+    @classmethod
+    def dimension_type(cls, dataset, dim):
+        """Given a dataset object and dimension, return the type of the dimension"""
+        msg = f"Getting dimension type is not supported for {cls.__name__}"
+        raise TypeError(msg)
