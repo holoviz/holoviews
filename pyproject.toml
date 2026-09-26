@@ -252,10 +252,7 @@ convention = "numpy"
 "re.match".msg = "Use re.search with '^' instead of re.match"
 
 [tool.ty]
-src.exclude = [
-    "holoviews/*version.py",
-    "holoviews/core/data/spatialpandas.py", # 16
-]
+src.exclude = ["holoviews/*version.py"]
 rules.unresolved-import = "ignore"
 
 # Add whole project for LSP features and diagnostics only for the type-checked files

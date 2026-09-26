@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import numbers
 import sys
+import typing as t
 from collections import defaultdict
 
 import numpy as np
@@ -255,13 +257,11 @@ class SpatialPandasInterface(MultiInterface):
         )
 
     @classmethod
-    def aggregate(cls, columns, dimensions, function, **kwargs):
+    def aggregate(cls, dataset, dimensions, function, **kwargs):
         raise NotImplementedError
 
     @classmethod
-    def sample(cls, columns, samples=None):
-        if samples is None:
-            samples = []
+    def sample(cls, dataset, samples=None):
         raise NotImplementedError
 
     @classmethod
@@ -331,7 +331,7 @@ class SpatialPandasInterface(MultiInterface):
         if isinstance(cols, slice):
             cols = [d.name for d in dataset.dimensions()][cols]
         elif np.isscalar(cols):
-            scalar = np.isscalar(rows)
+            scalar = bool(np.isscalar(rows))
             cols = [dataset.get_dimension(cols).name]
         else:
             cols = [dataset.get_dimension(d).name for d in index[1]]
@@ -349,7 +349,7 @@ class SpatialPandasInterface(MultiInterface):
 
         if not isinstance(dataset.data[geom_col].dtype, MultiPointDtype):
             if scalar:
-                return dataset.data.iloc[rows[0], cols[0]]
+                return dataset.data.iloc[rows, cols[0]]
             elif isscalar(rows):
                 rows = [rows]
             return dataset.data.iloc[rows, cols]
@@ -359,7 +359,7 @@ class SpatialPandasInterface(MultiInterface):
         new_geoms, indexes = [], []
         for i, geom in enumerate(geoms):
             length = int(len(geom.buffer_values) / 2)
-            if np.isscalar(rows):
+            if isinstance(rows, numbers.Real):
                 if count <= rows < (count + length):
                     idx = (rows - count) * 2
                     data = geom.buffer_values[idx : idx + 2]
@@ -851,7 +851,7 @@ def to_spatialpandas(data, xdim, ydim, columns=None, geom="point"):
 
     converted = defaultdict(list)
     for geom_data, arrays, holes in zip(data, geom_arrays, hole_arrays, strict=True):
-        parts = []
+        parts: list[t.Any] = []
         for i, g in enumerate(arrays):
             if i != (len(arrays) - 1):
                 g = g[:-1]
@@ -870,22 +870,24 @@ def to_spatialpandas(data, xdim, ydim, columns=None, geom="point"):
             converted[c].append(v)
 
         if array_type is PointArray:
-            parts = parts[0].flatten()
+            geometry = parts[0].flatten()
         elif array_type is MultiPointArray:
-            parts = np.concatenate([sp.flatten() for sp in parts])
+            geometry = np.concatenate([sp.flatten() for sp in parts])
         elif array_type is multi_array:
-            parts = [[ssp.flatten() for ssp in sp] if poly else sp.flatten() for sp in parts]
+            geometry = [[ssp.flatten() for ssp in sp] if poly else sp.flatten() for sp in parts]
         else:
-            parts = [np.asarray(sp).flatten() for sp in parts[0]] if poly else parts[0].flatten()
-        converted["geometry"].append(parts)
+            geometry = (
+                [np.asarray(sp).flatten() for sp in parts[0]] if poly else parts[0].flatten()
+            )
+        converted["geometry"].append(geometry)
 
-    if converted:
+    if array_type is not None:
         geometries = converted["geometry"]
         if array_type is PointArray:
             geometries = np.concatenate(geometries)
         geom_array = array_type(geometries)
         if poly:
-            geom_array = geom_array.oriented()
+            geom_array = t.cast("PolygonArray | MultiPolygonArray", geom_array).oriented()
         converted["geometry"] = GeoSeries(geom_array)
     else:
         converted["geometry"] = GeoSeries(single_array([]))
