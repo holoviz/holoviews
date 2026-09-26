@@ -203,7 +203,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda_source: holoviews[59c94a6f] @ .
       osx-arm64:
@@ -394,7 +394,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda_source: holoviews[cb7008fa] @ .
       win-64:
@@ -566,7 +566,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda_source: holoviews[9e708dd4] @ .
   default:
@@ -1039,7 +1039,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -1457,7 +1457,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -1850,7 +1850,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -2329,7 +2329,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/nbsite-0.10.0a4-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -2752,7 +2752,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/nbsite-0.10.0a4-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -3150,7 +3150,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/nbsite-0.10.0a4-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -3626,7 +3626,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -4025,7 +4025,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -4399,7 +4399,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -4854,7 +4854,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -5253,7 +5253,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -5627,7 +5627,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -6082,7 +6082,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -6481,7 +6481,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -6855,7 +6855,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -7227,7 +7227,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc2-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda_source: holoviews[413d71b8] @ .
       osx-arm64:
@@ -7551,7 +7551,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc2-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda_source: holoviews[00fbfdfb] @ .
       win-64:
@@ -7840,7 +7840,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc2-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda_source: holoviews[850fdd1b] @ .
   test-core:
@@ -7954,7 +7954,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda_source: holoviews[59c94a6f] @ .
       osx-arm64:
@@ -8060,7 +8060,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda_source: holoviews[cb7008fa] @ .
       win-64:
@@ -8159,7 +8159,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/colorcet-3.2.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda_source: holoviews[9e708dd4] @ .
   test-gpu:
@@ -8656,7 +8656,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -9127,7 +9127,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -9535,7 +9535,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -9917,7 +9917,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -10376,7 +10376,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -10777,7 +10777,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -11153,7 +11153,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/datashader-0.19.1-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-1.10.0a4-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/panel-material-ui-0.15.0rc1-py_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.5.0-py_0.tar.bz2
@@ -34175,14 +34175,14 @@ packages:
   license: BSD
   size: 1598479
   timestamp: 1789987750898
-- conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b0-py_0.conda
-  sha256: 3c28fc5dc21a323b885148a11264759dfe54a62a3db6e751e492c9237557dc1d
-  md5: 179f79f324134d00c36f3e8829b39682
+- conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b2-py_0.conda
+  sha256: 50cd2f25d39d8bce2141a0deb6a67f7fe592953902b3843a4b71857847df0c7f
+  md5: c9135de0ed1fc263a3944d29af20e28e
   depends:
   - python >=3.11
   license: BSD-3-Clause
-  size: 238173
-  timestamp: 1789987452613
+  size: 238829
+  timestamp: 1790348338343
 - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
   sha256: 51686716600e5bdfeae99b9f1e8b29202deae0bccd7764a279cd7d200e59f85f
   md5: 0797de9b6ac6ebee5fa1a7fbf7a6c2d3
