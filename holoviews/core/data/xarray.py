@@ -337,7 +337,7 @@ class XArrayInterface(GridInterface):
                 data = cls.replace_value(data, dim.nodata)
 
         if not len(data):
-            dmin, dmax = np.nan, np.nan
+            return np.nan, np.nan
         elif dtype_kind(data) == "M" or not edges:
             dmin, dmax = data.min(), data.max()
             if not edges:
@@ -566,12 +566,10 @@ class XArrayInterface(GridInterface):
     def concat_dim(cls, datasets, dim, vdims):
         import xarray as xr
 
-        concat_kwargs = {"dim": dim.name}
+        objs = [ds.assign_coords(**{dim.name: c}) for c, ds in datasets.items()]
         if XARRAY_VERSION >= (2025, 8, 0):
-            concat_kwargs["join"] = "outer"
-        return xr.concat(
-            [ds.assign_coords(**{dim.name: c}) for c, ds in datasets.items()], **concat_kwargs
-        )
+            return xr.concat(objs, dim=dim.name, join="outer")
+        return xr.concat(objs, dim=dim.name)
 
     @classmethod
     def redim(cls, dataset, dimensions):
@@ -783,8 +781,9 @@ class XArrayInterface(GridInterface):
             else:
                 vars[k] = (dims, cls.canonicalize(dataset, v, data_coords=dims))
 
-        if len(vars) == 1 and list(vars) == [vd.name for vd in dataset.vdims]:
-            data = vars[dataset.vdims[0].name]
+        vdim_var = vars.get(dataset.vdims[0].name) if len(dataset.vdims) == 1 else None
+        if list(vars) == [vd.name for vd in dataset.vdims] and isinstance(vdim_var, xr.DataArray):
+            data = vdim_var
             used_coords = set(data.coords)
         else:
             if vars:
