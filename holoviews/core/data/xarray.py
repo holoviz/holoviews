@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import numbers
 import sys
 import types
+import typing as t
 
 import numpy as np
 
@@ -16,6 +18,9 @@ from .interface import DataError, Interface
 from .util import finite_range
 
 XARRAY_VERSION = _no_import_version("xarray")
+
+if t.TYPE_CHECKING:
+    import xarray as xr
 
 
 def is_cupy(array):
@@ -71,7 +76,7 @@ class XArrayInterface(GridInterface):
         return tuple(shape_map.get(kd.name, np.nan) for kd in dataset.kdims[::-1])
 
     @classmethod
-    def init(cls, eltype, data, kdims, vdims):
+    def init(cls, eltype, data: xr.DataArray | xr.Dataset, kdims, vdims):
         import xarray as xr
 
         element_params = eltype.param.objects()
@@ -142,7 +147,10 @@ class XArrayInterface(GridInterface):
             # lengths, please use `Dataset.sizes`.
             data_info = data.sizes if hasattr(data, "sizes") else data.dims
             if not data.coords:
-                data = data.assign_coords(**{k: range(v) for k, v in data_info.items()})
+                data = data.assign_coords(
+                    coords=None,
+                    **{str(k): range(v) for k, v in data_info.items()},
+                )
             if vdims is None:
                 vdims = list(data.data_vars)
             if kdims is None:
@@ -431,7 +439,16 @@ class XArrayInterface(GridInterface):
         return data.values if isinstance(data, xr.DataArray) else data
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
+    def values(
+        cls,
+        dataset,
+        dim,
+        expanded=True,
+        flat=True,
+        compute=True,
+        keep_index=False,
+        canonicalize=True,
+    ):
         dim = dataset.get_dimension(dim, strict=True)
         packed = cls.packed(dataset) and dim in dataset.vdims
         if packed:
@@ -505,7 +522,7 @@ class XArrayInterface(GridInterface):
             slice_dims.append(dim)
             ncoords = len(coords)
             if np.all(coords[1:] < coords[:-1]):
-                if np.isscalar(ind):
+                if isinstance(ind, numbers.Real):
                     ind = ncoords - ind - 1
                 elif isinstance(ind, slice):
                     start = None if ind.stop is None else ncoords - ind.stop
@@ -563,6 +580,9 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def reindex(cls, dataset, kdims=None, vdims=None):
+        if kdims is None:
+            msg = f"{cls.__name__}.reindex requires both kdims and vdims to be specified."
+            raise TypeError(msg)
         dropped_kdims = [kd for kd in dataset.kdims if kd not in kdims]
         constant = {}
         for kd in dropped_kdims:
@@ -589,17 +609,17 @@ class XArrayInterface(GridInterface):
         return dataset
 
     @classmethod
-    def mask(cls, dataset, mask, mask_val=np.nan):
+    def mask(cls, dataset, mask, mask_value=np.nan):
         packed = cls.packed(dataset)
         masked = dataset.data.copy()
         if packed:
             data_coords = list(dataset.data.dims)[:-1]
             mask = cls.canonicalize(dataset, mask, data_coords)
             try:
-                masked.values[mask] = mask_val
+                masked.values[mask] = mask_value
             except ValueError:
                 masked = masked.astype("float")
-                masked.values[mask] = mask_val
+                masked.values[mask] = mask_value
         else:
             orig_mask = mask
             for vd in dataset.vdims:
@@ -613,7 +633,7 @@ class XArrayInterface(GridInterface):
                     inds = [dims.index(d) for d in data_coords]
                     mask = mask.transpose(inds)
                 masked[vd.name] = marr = masked[vd.name].astype("float")
-                marr.values[mask] = mask_val
+                marr.values[mask] = mask_value
         return masked
 
     @classmethod

@@ -255,7 +255,6 @@ convention = "numpy"
 src.exclude = [
     "holoviews/*version.py",
     "holoviews/core/data/spatialpandas.py", # 16
-    "holoviews/core/data/xarray.py", # 25
 ]
 rules.unresolved-import = "ignore"
 
