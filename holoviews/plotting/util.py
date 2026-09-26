@@ -1505,9 +1505,12 @@ class categorical_legend(Operation):
             return None
         hvds = element.dataset
         input_el = element.pipeline.operations[0](hvds)
-        agg = rasterize_op._get_aggregator(input_el, rasterize_op.aggregator)
+        agg_spec = rasterize_op.aggregator
+        if isinstance(agg_spec, str) and agg_spec != "count_cat":
+            return None
+        agg = rasterize_op._get_aggregator(input_el, agg_spec)
         if not isinstance(agg, (ds.count_cat, ds.by)):
-            return
+            return None
         column = agg.column
         if hasattr(hvds.data, "dtypes") and hasattr(hvds.data.dtypes[column], "categories"):
             try:
