@@ -172,6 +172,8 @@ class cuDFInterface(PandasInterface):
 
         # Update the kwargs appropriately for Element group types
         group_kwargs = {}
+        if group_type == "raw":
+            raise NotImplementedError(f"{cls.__name__} does not support 'raw' group_type.")
         if issubclass(group_type, Element):
             group_kwargs.update(util.get_param_values(dataset))
             group_kwargs["kdims"] = kdims

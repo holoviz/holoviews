@@ -76,7 +76,7 @@ class GridInterface(DictInterface):
             isinstance(data, tuple(t for t in interface.types if t is not None))
             for interface in cls.interfaces.values()
         ):
-            data = dict(zip(dimensions, zip(*data, strict=True), strict=True))
+            data = dict(zip(dimensions, zip(*data, strict=False), strict=False))
         elif isinstance(data, np.ndarray):
             if data.shape == (0, 0) and len(vdims) == 1:
                 array = data
@@ -469,6 +469,8 @@ class GridInterface(DictInterface):
 
         # Update the kwargs appropriately for Element group types
         group_kwargs = {}
+        if group_type == "raw":
+            raise NotImplementedError(f"{cls.__name__} does not support 'raw' group_type.")
         if issubclass(group_type, Element):
             group_kwargs.update(util.get_param_values(dataset))
         else:

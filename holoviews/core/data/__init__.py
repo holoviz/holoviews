@@ -746,8 +746,8 @@ class Dataset(Element, metaclass=PipelineMeta):
         gridded = self.interface.gridded
         scalars = []
         if gridded:
-            self.interface = t.cast("type[GridInterface]", self.interface)
-            coords = [(d, self.interface.coords(self, d.name)) for d in self.kdims]
+            interface = t.cast("type[GridInterface]", self.interface)
+            coords = [(d, interface.coords(self, d.name)) for d in self.kdims]
             scalars = [d for d, vs in coords if len(vs) == 1]
 
         if kdims is None:
@@ -868,7 +868,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             for dim, val in kwargs.items():
                 sample[self.get_dimension_index(dim)] = val
             samples = [tuple(sample)]
-        elif self.ndims == 1 and isinstance(samples, (float, int)):
+        elif self.ndims == 1 and isinstance(samples, (int, np.integer)):
             xlim = self.range(0)
             lower, upper = (xlim[0], xlim[1]) if bounds is None else bounds
             edges = np.linspace(lower, upper, samples + 1)
@@ -890,7 +890,13 @@ class Dataset(Element, metaclass=PipelineMeta):
             Y, X = np.meshgrid(ysamples, xsamples)
             linsamples = list(zip(X.flat, Y.flat, strict=False))
             samples = list(core_util.unique_iterator(self.closest(linsamples)))
-        elif isinstance(samples, (int, float, tuple)):
+        elif isinstance(samples, (int, np.integer, tuple)):
+            if self.ndims in (1, 2):
+                expected = "an integer" if self.ndims == 1 else "a (rows, cols) tuple"
+                raise TypeError(
+                    f"Regular sampling of a {self.ndims}D element requires {expected}, "
+                    f"got {type(samples).__name__}."
+                )
             raise NotImplementedError(
                 "Regular sampling not implemented for elements with more than two dimensions."
             )

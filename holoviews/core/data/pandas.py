@@ -136,9 +136,9 @@ class PandasInterface(Interface, PandasAPI):
                     )
                 column_data = zip(
                     *((util.wrap_tuple(k) + util.wrap_tuple(v)) for k, v in column_data),
-                    strict=True,
+                    strict=False,
                 )
-                data = dict(zip(columns, column_data, strict=True))
+                data = dict(zip(columns, column_data, strict=False))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:
                     if eltype._auto_indexable_1d and len(kdims) + len(vdims) > 1:

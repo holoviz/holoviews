@@ -353,14 +353,14 @@ class Graph(Dataset, Element2D):
         else:
             return self.edgepaths.clone(split_path(self.edgepaths))
 
-    def range(self, dimension, data_range=True, dimension_range=True):
-        if self.nodes and dimension in self.nodes.dimensions():
-            node_range = self.nodes.range(dimension, data_range, dimension_range)
+    def range(self, dim, data_range=True, dimension_range=True):
+        if self.nodes and dim in self.nodes.dimensions():
+            node_range = self.nodes.range(dim, data_range, dimension_range)
             if self._edgepaths:
-                path_range = self._edgepaths.range(dimension, data_range, dimension_range)
+                path_range = self._edgepaths.range(dim, data_range, dimension_range)
                 return max_range([node_range, path_range])
             return node_range
-        return super().range(dimension, data_range, dimension_range)
+        return super().range(dim, data_range, dimension_range)
 
     def dimensions(self, selection="all", label=False):
         dimensions = super().dimensions(selection, label)

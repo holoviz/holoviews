@@ -107,8 +107,8 @@ class ImageInterface(GridInterface):
 
     @classmethod
     def reindex(cls, dataset, kdims=None, vdims=None):
-        if kdims is None or vdims is None:
-            msg = f"{cls.__name__}.reindex requires both kdims and vdims to be specified."
+        if kdims is None:
+            msg = f"{cls.__name__}.reindex requires kdims to be specified."
             raise TypeError(msg)
         data = dataset.data
         dropped_kdims = [kd for kd in dataset.kdims if kd not in kdims]
@@ -118,6 +118,9 @@ class ImageInterface(GridInterface):
             if len(vals) == 1:
                 constant[kd.name] = vals[0]
         if dropped_kdims or constant:
+            if vdims is None:
+                msg = f"{cls.__name__}.reindex requires vdims to be specified when dropping kdims."
+                raise TypeError(msg)
             return tuple(dataset.columns(kdims + vdims).values())
 
         if vdims is not None and vdims != dataset.vdims and len(dataset.vdims) > 1:
@@ -270,6 +273,8 @@ class ImageInterface(GridInterface):
 
         # Update the kwargs appropriately for Element group types
         group_kwargs = {}
+        if group_type == "raw":
+            raise NotImplementedError(f"{cls.__name__} does not support 'raw' group_type.")
         if issubclass(group_type, Element):
             group_kwargs.update(util.get_param_values(dataset))
             group_kwargs["kdims"] = kdims

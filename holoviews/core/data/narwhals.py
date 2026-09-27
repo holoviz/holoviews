@@ -385,8 +385,6 @@ class NarwhalsInterface(Interface):
                 if k.stop is not None:
                     masks.append(nw.col(name) < k.stop)
             elif isinstance(k, (set, list)):
-                if len(k) == 0:
-                    continue
                 iter_slc = None
                 for ik in k:
                     mask = nw.col(name) == ik

@@ -1350,7 +1350,7 @@ class Dimensioned(LabelledData):
 
         Parameters
         ----------
-        dimension
+        dim
             The dimension to compute the range on.
         data_range : bool
             Compute range from data values

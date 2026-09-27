@@ -68,16 +68,16 @@ class DictInterface(Interface):
             and any(isinstance(v, tuple) for v in data[0])
         ):
             dict_data = zip(
-                *((util.wrap_tuple(k) + util.wrap_tuple(v)) for k, v in data), strict=True
+                *((util.wrap_tuple(k) + util.wrap_tuple(v)) for k, v in data), strict=False
             )
-            data = {k: np.array(v) for k, v in zip(dimensions, dict_data, strict=True)}
+            data = {k: np.array(v) for k, v in zip(dimensions, dict_data, strict=False)}
         # Ensure that interface does not consume data of other types
         # with an iterator interface
         elif not any(
             isinstance(data, tuple(t for t in interface.types if t is not None))
             for interface in cls.interfaces.values()
         ):
-            data = dict(zip(dimensions, zip(*data, strict=True), strict=False))
+            data = dict(zip(dimensions, zip(*data, strict=False), strict=False))
         elif (
             isinstance(data, dict)
             and not any(isinstance(v, np.ndarray) for v in data.values())
@@ -96,7 +96,7 @@ class DictInterface(Interface):
                     "values."
                 )
             dict_data = zip(
-                *((util.wrap_tuple(k) + util.wrap_tuple(v)) for k, v in dict_data), strict=True
+                *((util.wrap_tuple(k) + util.wrap_tuple(v)) for k, v in dict_data), strict=False
             )
             data = {k: np.array(v) for k, v in zip(dimensions, dict_data, strict=False)}
 
@@ -310,6 +310,8 @@ class DictInterface(Interface):
 
         # Update the kwargs appropriately for Element group types
         group_kwargs = {}
+        if group_type == "raw":
+            raise NotImplementedError(f"{cls.__name__} does not support 'raw' group_type.")
         if issubclass(group_type, Element):
             group_kwargs.update(util.get_param_values(dataset))
             group_kwargs["kdims"] = kdims

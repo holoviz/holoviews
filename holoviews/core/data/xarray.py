@@ -76,14 +76,24 @@ class XArrayInterface(GridInterface):
         return tuple(shape_map.get(kd.name, np.nan) for kd in dataset.kdims[::-1])
 
     @classmethod
-    def init(cls, eltype, data: xr.DataArray | xr.Dataset, kdims, vdims):
+    def init(
+        cls,
+        eltype,
+        data: xr.DataArray
+        | xr.Dataset
+        | np.ndarray
+        | tuple[np.ndarray, ...]
+        | dict[str, np.ndarray],
+        kdims,
+        vdims,
+    ):
         import xarray as xr
 
         element_params = eltype.param.objects()
         kdim_param = element_params["kdims"]
         vdim_param = element_params["vdims"]
 
-        def retrieve_unit_and_label(dim):
+        def retrieve_unit_and_label(data: xr.DataArray | xr.Dataset, dim):
             if isinstance(dim, Dimension):
                 return dim
             dim = asdim(dim)
@@ -147,10 +157,7 @@ class XArrayInterface(GridInterface):
             # lengths, please use `Dataset.sizes`.
             data_info = data.sizes if hasattr(data, "sizes") else data.dims
             if not data.coords:
-                data = data.assign_coords(
-                    coords=None,
-                    **{str(k): range(v) for k, v in data_info.items()},
-                )
+                data = data.assign_coords({k: range(v) for k, v in data_info.items()})
             if vdims is None:
                 vdims = list(data.data_vars)
             if kdims is None:
@@ -169,8 +176,8 @@ class XArrayInterface(GridInterface):
                     for c in data.coords:
                         if c not in kdims and set(data[c].dims) == set(virtual_dims):
                             kdims.append(c)
-            kdims = [retrieve_unit_and_label(kd) for kd in kdims]
-            vdims = [retrieve_unit_and_label(vd) for vd in vdims]
+            kdims = [retrieve_unit_and_label(data, kd) for kd in kdims]
+            vdims = [retrieve_unit_and_label(data, vd) for vd in vdims]
         else:
             if kdims is None:
                 kdims = kdim_param.default
@@ -215,17 +222,17 @@ class XArrayInterface(GridInterface):
                 else:
                     coord = coord_vals
                 coords[kd.name] = coord
-            xr_kwargs = {"dims": dims if max(coord_dims) > 1 else list(coords)[::-1]}
+            xr_dims = dims if max(coord_dims) > 1 else list(coords)[::-1]
             if packed:
-                xr_kwargs["dims"] = [*list(coords)[::-1], "band"]
+                xr_dims = [*list(coords)[::-1], "band"]
                 coords["band"] = list(range(len(vdims)))
-                data = xr.DataArray(value_array, coords=coords, **xr_kwargs)
+                data = xr.DataArray(value_array, coords=coords, dims=xr_dims)
             else:
                 arrays = {}
                 for vdim in vdims:
                     arr = data[vdim.name]
                     if not isinstance(arr, xr.DataArray):
-                        arr = xr.DataArray(arr, coords=coords, **xr_kwargs)
+                        arr = xr.DataArray(arr, coords=coords, dims=xr_dims)
                     arrays[vdim.name] = arr
                 data = xr.Dataset(arrays)
 
@@ -579,7 +586,7 @@ class XArrayInterface(GridInterface):
     @classmethod
     def reindex(cls, dataset, kdims=None, vdims=None):
         if kdims is None:
-            msg = f"{cls.__name__}.reindex requires both kdims and vdims to be specified."
+            msg = f"{cls.__name__}.reindex requires kdims to be specified."
             raise TypeError(msg)
         dropped_kdims = [kd for kd in dataset.kdims if kd not in kdims]
         constant = {}
@@ -597,6 +604,9 @@ class XArrayInterface(GridInterface):
                 )
             return dropped
         elif dropped_kdims:
+            if vdims is None:
+                msg = f"{cls.__name__}.reindex requires vdims to be specified when dropping kdims."
+                raise TypeError(msg)
             return tuple(dataset.columns(kdims + vdims).values())
         return dataset.data
 

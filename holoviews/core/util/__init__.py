@@ -1701,7 +1701,7 @@ def is_series(data) -> TypeIs[pd.Series | dd.Series]:
 
 
 def is_dask_array(data) -> TypeIs[da.Array]:
-    return da and isinstance(data, da.Array)
+    return bool(da) and isinstance(data, da.Array)
 
 
 def is_cupy_array(data) -> TypeIs[cp.ndarray]:

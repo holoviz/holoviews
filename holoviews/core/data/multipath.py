@@ -269,7 +269,7 @@ class MultiInterface(Interface):
         if not dataset.data:
             return dataset.data
         elif selection_mask is not None:
-            return [d for b, d in zip(selection_mask, dataset.data, strict=True) if b]
+            return [d for b, d in zip(selection_mask, dataset.data, strict=False) if b]
         ds = cls._inner_dataset_template(dataset)
         skipped = (Polygons._hole_key,)
         if hasattr(ds.interface, "geo_column"):
@@ -338,8 +338,8 @@ class MultiInterface(Interface):
         keys = (tuple(vals[i] for vals in values) for i in range(len(vals)))
         grouped_data = []
         for unique_key in util.unique_iterator(keys):
-            mask = ds.interface.select_mask(ds, dict(zip(dimensions, unique_key, strict=True)))
-            selection = [data for data, m in zip(dataset.data, mask, strict=True) if m]
+            mask = ds.interface.select_mask(ds, dict(zip(dimensions, unique_key, strict=False)))
+            selection = [data for data, m in zip(dataset.data, mask, strict=False) if m]
             group_data = group_type(selection, **group_kwargs)
             grouped_data.append((unique_key, group_data))
 

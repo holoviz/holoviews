@@ -24,7 +24,7 @@ class ArrayInterface(Interface):
     named = False
 
     @classmethod
-    def dimension_type(cls, dataset: Dataset, dim: Dimension):
+    def dimension_type(cls, dataset: Dataset, dim: Dimension | str | int | None):
         return dataset.data.dtype.type
 
     @classmethod
@@ -45,7 +45,7 @@ class ArrayInterface(Interface):
         elif isinstance(data, dict) and not all(d in data for d in dimensions):
             dict_data = sorted(data.items())
             dataset = zip(
-                *((util.wrap_tuple(k) + util.wrap_tuple(v)) for k, v in dict_data), strict=True
+                *((util.wrap_tuple(k) + util.wrap_tuple(v)) for k, v in dict_data), strict=False
             )
             data = np.column_stack(list(dataset))
         elif isinstance(data, tuple):
@@ -132,7 +132,7 @@ class ArrayInterface(Interface):
     def values(
         cls,
         dataset: Dataset,
-        dim: Dimension,
+        dim: Dimension | str | int,
         expanded: bool = True,
         flat: bool = True,
         compute: bool = True,
@@ -148,7 +148,7 @@ class ArrayInterface(Interface):
         return values
 
     @classmethod
-    def mask(cls, dataset: Dataset, mask, mask_value: float = np.nan):
+    def mask(cls, dataset: Dataset, mask, mask_value=np.nan):
         masked = np.copy(dataset.data)
         masked[mask] = mask_value
         return masked
