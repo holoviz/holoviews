@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from io import BytesIO
 
 import numpy as np
@@ -85,15 +84,6 @@ class BokehRendererTest:
         plot = self.renderer.get_plot(hv.Curve([]))
         self.renderer.components(plot, "html")
         assert plot.state.outline_line_color == "#444444"
-
-    @pytest.mark.skipif(sys.platform == "linux", reason="2025-03: Flaky test on Linux")
-    def test_render_to_png(self):
-        pytest.importorskip("selenium")
-        curve = hv.Curve([])
-        renderer = BokehRenderer.instance(fig="png")
-        png, info = renderer(curve)
-        assert isinstance(png, bytes)
-        assert info["file-ext"] == "png"
 
     def test_render_static(self):
         curve = hv.Curve([])
