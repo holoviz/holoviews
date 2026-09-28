@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import numbers
 import typing as t
 from collections import defaultdict
 
@@ -364,9 +365,9 @@ class GridInterface(DictInterface):
         return data
 
     @classmethod
-    def invert_index(cls, index, length: int):
-        if np.isscalar(index):
-            return length - t.cast("float", index)
+    def invert_index(cls, index, length):
+        if isinstance(index, numbers.Real):
+            return length - index
         elif isinstance(index, slice):
             start, stop = t.cast("float", index.start), t.cast("float", index.stop)
             new_start, new_stop = None, None

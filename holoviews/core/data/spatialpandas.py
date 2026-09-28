@@ -331,7 +331,7 @@ class SpatialPandasInterface(MultiInterface):
         if isinstance(cols, slice):
             cols = [d.name for d in dataset.dimensions()][cols]
         elif np.isscalar(cols):
-            scalar = bool(np.isscalar(rows))
+            scalar = np.isscalar(rows)
             cols = [dataset.get_dimension(cols).name]
         else:
             cols = [dataset.get_dimension(d).name for d in index[1]]
