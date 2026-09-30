@@ -110,9 +110,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         xs = [0.1, 0.2, 0.3]
         ys = [0, 1]
         zs = np.array([[0, 1], [2, 3], [4, 5]])
-        da = xr.DataArray(
-            zs, coords=[("x_dim", xs), ("y_dim", ys)], name="data_name", dims=["y_dim", "x_dim"]
-        )
+        da = xr.DataArray(zs, coords=[("x_dim", xs), ("y_dim", ys)], name="data_name")
         da.attrs["long_name"] = "data long name"
         da.attrs["units"] = "array_unit"
         da.x_dim.attrs["units"] = "x_unit"
@@ -131,9 +129,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         xs = [0.1, 0.2, 0.3]
         ys = [0, 1]
         zs = np.array([[0, 1], [2, 3], [4, 5]])
-        da = xr.DataArray(
-            zs, coords=[("x_dim", xs), ("y_dim", ys)], name="data_name", dims=["y_dim", "x_dim"]
-        )
+        da = xr.DataArray(zs, coords=[("x_dim", xs), ("y_dim", ys)], name="data_name")
         da.attrs["long_name"] = "data long name"
         da.attrs["units"] = "array_unit"
         da.x_dim.attrs["units"] = "x_unit"
@@ -143,9 +139,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         dataset_from_ds = hv.Dataset(ds)
         assert_element_equal(dataset_from_da, dataset_from_ds)
         # same with reversed names:
-        da_rev = xr.DataArray(
-            zs, coords=[("x_dim", xs), ("y_dim", ys)], name="data_name", dims=["x_dim", "y_dim"]
-        )
+        da_rev = xr.DataArray(zs, coords=[("x_dim", xs), ("y_dim", ys)], name="data_name")
         da_rev.attrs["long_name"] = "data long name"
         da_rev.attrs["units"] = "array_unit"
         da_rev.x_dim.attrs["units"] = "x_unit"
@@ -159,9 +153,7 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         xs = [0.1, 0.2, 0.3]
         ys = [0, 1]
         zs = np.array([[0, 1], [2, 3], [4, 5]])
-        da = xr.DataArray(
-            zs, coords=[("x_dim", xs), ("y_dim", ys)], name="data_name", dims=["y_dim", "x_dim"]
-        )
+        da = xr.DataArray(zs, coords=[("x_dim", xs), ("y_dim", ys)], name="data_name")
         da.attrs["long_name"] = "data long name"
         da.attrs["units"] = "array_unit"
         da.x_dim.attrs["units"] = "x_unit"
