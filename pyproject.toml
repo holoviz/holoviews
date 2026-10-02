@@ -260,9 +260,7 @@ rules.unresolved-import = "ignore"
 [[tool.ty.overrides]]
 exclude = [
     "holoviews/*.py",
-    "holoviews/core/*.py",
-    "holoviews/core/data/*.py",
-    "holoviews/core/util/*.py",
+    "holoviews/core/",
     "holoviews/tests/_deps.py",
     "holoviews/util/*.py",
     "scripts/*.py",
