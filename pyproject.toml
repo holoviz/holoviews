@@ -258,12 +258,9 @@ src.exclude = [
     "holoviews/element/chart.py", # 7
     "holoviews/element/chart3d.py", # 5
     "holoviews/element/comparison.py", # 12
-    "holoviews/element/graphs.py", # 2
     "holoviews/element/path.py", # 5
     "holoviews/element/raster.py", # 24
-    "holoviews/element/sankey.py", # 2
     "holoviews/element/selection.py", # 32
-    "holoviews/element/stats.py", # 1
     "holoviews/element/tabular.py", # 4
     "holoviews/element/util.py", # 4
 ]
