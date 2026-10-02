@@ -233,7 +233,11 @@ class Plot(param.Parameterized):
             ]
 
             if self.document and self.document.session_context:
-                self.document.add_next_tick_callback(self.refresh)
+                # Route scheduled refreshes through Panel's exception handler
+                # so DynamicMap / stream errors surface via exception_handler.
+                self.document.add_next_tick_callback(
+                    state._handle_exception_wrapper(self.refresh)
+                )
                 return
 
         # Ensure that server based tick callbacks maintain stream triggering state
@@ -260,7 +264,7 @@ class Plot(param.Parameterized):
             if self.top_level:
                 self.push()
         except Exception as e:
-            raise e
+            state._handle_exception(e)
         finally:
             # Reset triggering state
             for s, _ in self._triggering:

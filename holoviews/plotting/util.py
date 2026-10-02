@@ -321,8 +321,18 @@ def get_plot_frame(map_obj, key_map, cached=False):
             return None
         except (StopIteration, CallbackError) as e:
             raise e
-        except Exception:
+        except Exception as e:
+            # Keep printing the traceback for notebooks / logs, but also
+            # forward to Panel's configured exception_handler when set.
+            # Otherwise DynamicMap callback failures are swallowed here and
+            # never reach pn.extension(exception_handler=...) (see #7010).
             print(traceback.format_exc())
+            from panel.config import config
+
+            if config.exception_handler is not None:
+                from panel.io.state import state
+
+                state._handle_exception(e)
             return None
 
 

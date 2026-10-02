@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from panel import config
 
 import holoviews as hv
 from holoviews.operation import operation
@@ -12,6 +13,7 @@ from holoviews.plotting.util import (
     compute_overlayable_zorders,
     get_axis_padding,
     get_min_distance,
+    get_plot_frame,
     get_range,
     initialize_dynamic,
     mplcmap_to_palette,
@@ -712,3 +714,38 @@ class TestRangeUtilities:
         assert drange == (-0.5, 2.5)
         assert srange == (-1, 4)
         assert hrange == (-1, 3)
+
+
+class TestGetPlotFrameExceptions:
+    def test_get_plot_frame_forwards_exception_to_panel_handler(self):
+        # DynamicMap callback errors used to be printed and swallowed in
+        # get_plot_frame, so pn.extension(exception_handler=...) never ran.
+        handled = []
+        old_handler = config.exception_handler
+        config.exception_handler = handled.append
+        try:
+
+            def boom():
+                raise ValueError("Error in plot")
+
+            dmap = hv.DynamicMap(boom, kdims=[])
+            frame = get_plot_frame(dmap, {})
+            assert frame is None
+            assert len(handled) == 1
+            assert isinstance(handled[0], ValueError)
+            assert str(handled[0]) == "Error in plot"
+        finally:
+            config.exception_handler = old_handler
+
+    def test_get_plot_frame_still_swallows_without_handler(self):
+        old_handler = config.exception_handler
+        config.exception_handler = None
+        try:
+
+            def boom():
+                raise ValueError("Error in plot")
+
+            dmap = hv.DynamicMap(boom, kdims=[])
+            assert get_plot_frame(dmap, {}) is None
+        finally:
+            config.exception_handler = old_handler
