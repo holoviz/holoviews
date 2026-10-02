@@ -64,7 +64,7 @@ jobs:
     needs: [setup]
     if: needs.setup.outputs.run == 'true'
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@0d2b48d28d94714bf566148cd050233ec875a92d # v1.0.13
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
         with:
           environments: "build"
           download-data: false
@@ -100,7 +100,7 @@ jobs:
     needs: [setup]
     if: needs.setup.outputs.run == 'true'
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@0d2b48d28d94714bf566148cd050233ec875a92d # v1.0.13
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
         with:
           environments: "build"
           download-data: false

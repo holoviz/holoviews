@@ -3,7 +3,7 @@
   extends: ["config:recommended", ":enablePreCommit"],
   enabledManagers: ["github-actions", "pre-commit", "pixi"],
   lockFileMaintenance: { enabled: true },
-  schedule: ["before 5am on the 1st day of the month"],
+  schedule: ["* * 1 * *"],
 
   automerge: true,
   commitMessagePrefix: "chore(bot):",
@@ -53,8 +53,6 @@
       matchUpdateTypes: ["lockFileMaintenance"],
       description: "Weekly update of Pixi Lock",
       schedule: ["before 5am on monday"],
-      automergeSchedule: ["after 5am on monday"], // avoid multiple PRs in the same day
-      platformAutomerge: false, // native automerge ignores automergeSchedule
       minimumReleaseAge: null,
       commitMessageAction: "Update",
       commitMessageTopic: "pixi.lock",
