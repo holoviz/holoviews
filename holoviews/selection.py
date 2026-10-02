@@ -7,7 +7,7 @@ import numpy as np
 import param
 from param.parameterized import bothmethod
 
-from .core.data import Dataset
+from .core.data import Dataset, disable_pipeline
 from .core.element import Element
 from .core.layout import AdjointLayout, Layout
 from .core.options import CallbackError, Store
@@ -682,40 +682,33 @@ class OverlaySelectionDisplay(SelectionDisplay):
 
         layers = []
         for layer_number in range(num_layers):
-            streams = [selection_streams.exprs_stream]
             obj = hvobj.clone(link=False) if layer_number == 1 else hvobj
             cmap_stream = selection_streams.cmap_streams[layer_number]
+            streams = [selection_streams.style_stream, cmap_stream]
+            callback = self._build_unselected_styled_layer_callback
+            if layer_number:
+                streams.insert(0, selection_streams.exprs_stream)
+                callback = self._build_styled_layer_callback
             layer = obj.apply(
-                self._build_layer_callback,
-                streams=[cmap_stream, *streams],
+                callback,
+                streams=streams,
                 layer_number=layer_number,
                 cache=cache,
                 per_element=True,
             )
             layers.append(layer)
 
-        for layer_number in range(num_layers):
-            layer = layers[layer_number]
-            cmap_stream = selection_streams.cmap_streams[layer_number]
-            streams = [selection_streams.style_stream, cmap_stream]
-            layer = layer.apply(
-                self._apply_style_callback,
-                layer_number=layer_number,
-                streams=streams,
-                per_element=True,
-            )
-            layers[layer_number] = layer
-
         # Build region layer
         if region_stream is not None and self.supports_region:
 
-            def update_region(element, region_element, colors, **kwargs):
+            def update_region(element, exprs, colors, **kwargs):
                 unselected_color = colors[0]
+                region_element = region_stream.region_element
                 if region_element is None:
                     region_element = element._empty_region()
                 return self._style_region_element(region_element, unselected_color)
 
-            streams = [region_stream, selection_streams.style_stream]
+            streams = [selection_streams.exprs_stream, selection_streams.style_stream]
             region = hvobj.clone(link=False).apply(update_region, streams, link_dataset=False)
 
             eltype = hvobj.type if isinstance(hvobj, DynamicMap) else type(hvobj)
@@ -726,23 +719,29 @@ class OverlaySelectionDisplay(SelectionDisplay):
         return Overlay(layers).collate()
 
     @classmethod
-    def _inject_cmap_in_pipeline(cls, pipeline, cmap):
+    def _inject_cmap_in_pipeline(cls, pipeline, cmap, cache):
+        cmap_pipelines = cache.setdefault("_cmap_pipelines", {})
+        cache_key = (id(pipeline), repr(cmap))
+        if cache_key in cmap_pipelines:
+            return cmap_pipelines[cache_key]
+
         operations = []
         for op in pipeline.operations:
             if hasattr(op, "cmap"):
                 op = op.instance(cmap=cmap)
             operations.append(op)
-        return pipeline.instance(operations=operations)
+        cmap_pipeline = pipeline.instance(operations=operations)
+        cmap_pipelines[cache_key] = cmap_pipeline
+        return cmap_pipeline
 
     def _build_layer_callback(self, element, exprs, layer_number, cmap, cache, **kwargs):
         selection = self._select(element, exprs[layer_number], cache)
         pipeline = element.pipeline
         if cmap is not None:
-            pipeline = self._inject_cmap_in_pipeline(pipeline, cmap)
+            pipeline = self._inject_cmap_in_pipeline(pipeline, cmap, cache)
         if element is selection:
             return pipeline(element.dataset)
-        else:
-            return pipeline(selection)
+        return pipeline(selection)
 
     def _apply_style_callback(self, element, layer_number, colors, cmap, alpha, **kwargs):
         opts = {}
@@ -753,7 +752,24 @@ class OverlaySelectionDisplay(SelectionDisplay):
         if cmap is not None:
             opts["cmap"] = cmap
         color = colors[layer_number] if colors else None
-        return self._build_element_layer(element, color, alpha, **opts)
+        # Display styling is temporary and must not extend user-visible provenance.
+        with disable_pipeline():
+            return self._build_element_layer(element, color, alpha, **opts)
+
+    def _build_styled_layer_callback(
+        self, element, exprs, layer_number, colors, cmap, alpha, cache, **kwargs
+    ):
+        layer = self._build_layer_callback(element, exprs, layer_number, cmap, cache)
+        return self._apply_style_callback(layer, layer_number, colors, cmap, alpha)
+
+    def _build_unselected_styled_layer_callback(
+        self, element, layer_number, colors, cmap, alpha, cache, **kwargs
+    ):
+        pipeline = element.pipeline
+        if cmap is not None:
+            pipeline = self._inject_cmap_in_pipeline(pipeline, cmap, cache)
+        layer = pipeline(element.dataset)
+        return self._apply_style_callback(layer, layer_number, colors, cmap, alpha)
 
     def _build_element_layer(self, element, layer_color, layer_alpha, selection_expr=True):
         raise NotImplementedError()
