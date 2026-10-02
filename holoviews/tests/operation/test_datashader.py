@@ -405,6 +405,19 @@ class DatashaderAggregateTests:
         img = aggregate(path, dynamic=False, x_range=(0, 1), y_range=(0, 1), width=2, height=2)
         assert_element_equal(img, expected)
 
+    def test_aggregate_path_does_not_split(self, monkeypatch):
+        # Splitting is very slow for many paths, e.g. Graph edgepaths
+        def split(*args, **kwargs):
+            raise AssertionError("Path should not be split")
+
+        monkeypatch.setattr(hv.core.data.MultiInterface, "split", split)
+        path = hv.Path([[(0.2, 0.3), (0.4, 0.7)], [(0.4, 0.7), (0.8, 0.99)]])
+        expected = hv.Image(
+            ([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 1]]), vdims=[hv.Dimension("Count", nodata=0)]
+        )
+        img = aggregate(path, dynamic=False, x_range=(0, 1), y_range=(0, 1), width=2, height=2)
+        assert_element_equal(img, expected)
+
     def test_aggregate_contours_with_vdim(self):
         contours = hv.Contours(
             [[(0.2, 0.3, 1), (0.4, 0.7, 1)], [(0.4, 0.7, 2), (0.8, 0.99, 2)]], vdims="z"
