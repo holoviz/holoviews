@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import typing as t
+
 import numpy as np
 import param
 
@@ -11,6 +13,9 @@ from .geom import (  # noqa: F401 backward compatible import
     VectorField,
 )
 from .selection import Selection1DExpr, SelectionBarsExpr
+
+if t.TYPE_CHECKING:
+    from ..core.data.grid import GridInterface
 
 
 class Chart(Dataset, Element2D):
@@ -63,8 +68,8 @@ class Chart(Dataset, Element2D):
             self.param.warning("Chart elements should only be supplied a single kdim")
         super().__init__(data, **params)
 
-    def __getitem__(self, index):
-        return super().__getitem__(index)
+    def __getitem__(self, key):
+        return super().__getitem__(key)
 
 
 class Scatter(Selection1DExpr, Chart):
@@ -201,7 +206,7 @@ class ErrorBars(Selection1DExpr, Chart):
         """
         dim_with_err = 0 if self.horizontal else 1
         didx = self.get_dimension_index(dim)
-        dim = self.get_dimension(dim)
+        dim = self.get_dimension(dim, strict=True)
         if didx == dim_with_err and data_range and len(self):
             mean = self.dimension_values(didx)
             neg_error = self.dimension_values(2)
@@ -273,6 +278,7 @@ class Histogram(Selection1DExpr, Chart):
     """
 
     datatype = param.List(default=["grid"])
+    interface: type[GridInterface]
 
     group = param.String(default="Histogram", constant=True)
 
@@ -350,7 +356,7 @@ class Area(Curve):
             areas = NdOverlay(dict(enumerate(areas)))
         df = areas.dframe(multi_index=True)
         levels = list(range(areas.ndims))
-        vdims = [[el.vdims[0], baseline_name] for el in areas]
+        vdims: list[tuple[Dimension, str]] = [(el.vdims[0], baseline_name) for el in areas]
         baseline = None
         stacked = areas.clone(shared_data=False)
         if len(levels) == 1:
