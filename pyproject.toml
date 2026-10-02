@@ -262,7 +262,6 @@ src.exclude = [
     "holoviews/element/raster.py", # 24
     "holoviews/element/selection.py", # 32
     "holoviews/element/tabular.py", # 4
-    "holoviews/element/util.py", # 4
 ]
 environment.extra-paths = ["typings"]
 rules.unresolved-import = "ignore"
