@@ -252,7 +252,15 @@ convention = "numpy"
 "re.match".msg = "Use re.search with '^' instead of re.match"
 
 [tool.ty]
-src.exclude = ["holoviews/*version.py"]
+src.exclude = [
+    "holoviews/*version.py",
+    "holoviews/element/annotation.py", # 11
+    "holoviews/element/chart3d.py", # 5
+    "holoviews/element/comparison.py", # deprecated
+    "holoviews/element/path.py", # 5
+    "holoviews/element/selection.py", # 32
+    "holoviews/element/tabular.py", # 4
+]
 environment.extra-paths = ["typings"]
 rules.unresolved-import = "ignore"
 
@@ -261,9 +269,10 @@ rules.unresolved-import = "ignore"
 exclude = [
     "holoviews/*.py",
     "holoviews/core/",
+    "holoviews/element/",
     "holoviews/tests/_deps.py",
-    "holoviews/util/*.py",
-    "scripts/*.py",
+    "holoviews/util/",
+    "scripts/",
 ]
 rules.all = "ignore"
 
