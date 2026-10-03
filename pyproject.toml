@@ -256,7 +256,7 @@ src.exclude = [
     "holoviews/*version.py",
     "holoviews/element/annotation.py", # 11
     "holoviews/element/chart3d.py", # 5
-    "holoviews/element/comparison.py", # 12
+    "holoviews/element/comparison.py", # deprecated
     "holoviews/element/path.py", # 5
     "holoviews/element/raster.py", # 24
     "holoviews/element/selection.py", # 32
@@ -272,8 +272,8 @@ exclude = [
     "holoviews/core/",
     "holoviews/element/",
     "holoviews/tests/_deps.py",
-    "holoviews/util/*.py",
-    "scripts/*.py",
+    "holoviews/util/",
+    "scripts/",
 ]
 rules.all = "ignore"
 
