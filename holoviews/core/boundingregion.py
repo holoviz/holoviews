@@ -66,6 +66,9 @@ class BoundingRegion:
         for k, v in state.items():
             setattr(self, k, v)
 
+    def lbrt(self) -> tuple[int, int, int, int]:
+        raise NotImplementedError
+
 
 class BoundingBox(BoundingRegion):
     """A rectangular bounding box defined either by two points forming
@@ -199,7 +202,7 @@ class BoundingBox(BoundingRegion):
     def aarect(self):
         return self._aarect
 
-    def lbrt(self):
+    def lbrt(self) -> tuple[int, int, int, int]:
         """Return left,bottom,right,top values for the BoundingBox."""
         return self._aarect.lbrt()
 
