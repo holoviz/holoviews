@@ -8,6 +8,7 @@ import param
 from IPython.display import clear_output
 
 from ..core.util import ProgressIndicator
+from ..util.warnings import deprecated
 
 
 class ProgressBar(ProgressIndicator):
@@ -229,6 +230,7 @@ def progress(iterator, enum=False, length=None):
     If enum=True, then equivalent to enumerate with a progress bar.
 
     """
+    deprecated("1.25.0", "holoviews.ipython.widgets.progress")
     progress = ProgressBar()
     length = len(iterator) if length is None else length
     gen = enumerate(iterator)
