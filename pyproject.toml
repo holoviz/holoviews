@@ -258,7 +258,6 @@ src.exclude = [
     "holoviews/element/chart3d.py", # 5
     "holoviews/element/comparison.py", # deprecated
     "holoviews/element/path.py", # 5
-    "holoviews/element/selection.py", # 32
     "holoviews/element/tabular.py", # 4
 ]
 environment.extra-paths = ["typings"]
