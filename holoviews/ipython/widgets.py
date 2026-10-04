@@ -65,21 +65,23 @@ class ProgressBar(ProgressIndicator):
         ProgressBar.current_progress.append(self)
         super().__init__(**params)
 
-    def __call__(self, percentage):
+    def __call__(self, percentage):  # ty: ignore[invalid-method-override]
         """Update the progress bar within the specified percent_range"""
         if self.start_time is None:
             self.start_time = time.time()
         span = self.percent_range[1] - self.percent_range[0]
         percentage = self.percent_range[0] + ((percentage / 100.0) * span)
+        label = self.label.lower() if self.label else ""
 
         if self.display == "disabled":
             return
         elif self.display == "stdout":
             if percentage == 100 and self.elapsed_time:
                 elapsed = time.time() - self.start_time
-                if clear_output:
-                    clear_output()
-                self.out = f"\r100% {self.label.lower()} {elapsed // 3600:02d}:{elapsed // 60:02d}:{elapsed % 60:02d}"
+                clear_output()
+                self.out = (
+                    f"\r100% {label} {elapsed // 3600:02d}:{elapsed // 60:02d}:{elapsed % 60:02d}"
+                )
                 output = "".join([pg.out for pg in self.current_progress])
                 sys.stdout.write(output)
             else:
@@ -92,11 +94,10 @@ class ProgressBar(ProgressIndicator):
             self.cache["socket"] = self._get_socket()
 
         if self.cache["socket"] is not None:
-            self.cache["socket"].send(f"{percentage}|{self.label}")
+            self.cache["socket"].send_string(f"{percentage}|{self.label}")
 
     def _stdout_display(self, percentage, display=True):
-        if clear_output:
-            clear_output()
+        clear_output()
         percent_per_char = 100.0 / self.width
         char_count = int(
             math.floor(percentage / percent_per_char) if percentage < 100.0 else self.width
@@ -148,18 +149,18 @@ class RemoteProgress(ProgressBar):
     def __init__(self, port, **params):
         super().__init__(port=port, **params)
 
-    def __call__(self):
+    def __call__(self):  # ty: ignore[invalid-method-override]
         import zmq
 
         context = zmq.Context()
         sock = context.socket(zmq.SUB)
-        sock.setsockopt(zmq.SUBSCRIBE, "")
+        sock.setsockopt(zmq.SUBSCRIBE, b"")
         sock.connect("tcp://" + self.hostname + ":" + str(self.port))
         # Get progress via socket
         percent = None
         while True:
             try:
-                message = sock.recv()
+                message = sock.recv_string()
                 [percent_str, label] = message.split("|")
                 percent = float(percent_str)
                 self.label = label
@@ -204,7 +205,7 @@ class RunProgress(ProgressBar):
     def __init__(self, **params):
         super().__init__(**params)
 
-    def __call__(self, value):
+    def __call__(self, value):  # ty: ignore[invalid-method-override]
         """Execute the run_hook to a total of value, breaking up progress
         updates by the value specified by interval.
 

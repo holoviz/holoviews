@@ -252,10 +252,7 @@ convention = "numpy"
 "re.match".msg = "Use re.search with '^' instead of re.match"
 
 [tool.ty]
-src.exclude = [
-    "holoviews/*version.py",
-    "holoviews/ipython/widgets.py", # 8
-]
+src.exclude = ["holoviews/*version.py"]
 environment.extra-paths = ["typings"]
 rules.unresolved-import = "ignore"
 
