@@ -254,7 +254,6 @@ convention = "numpy"
 [tool.ty]
 src.exclude = [
     "holoviews/*version.py",
-    "holoviews/element/annotation.py", # 11
     "holoviews/element/chart3d.py", # 5
     "holoviews/element/comparison.py", # deprecated
     "holoviews/element/path.py", # 5
