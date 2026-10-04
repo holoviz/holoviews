@@ -93,7 +93,7 @@ class notebook_extension(extension):
         super().__call__(*args, **params)
         # Abort if IPython not found
         try:
-            ip = params.pop("ip", None) or get_ipython()  # noqa: F821
+            ip = params.pop("ip", None) or get_ipython()  # noqa: F821  # ty: ignore[unresolved-reference]
         except Exception:
             return
 
@@ -121,7 +121,7 @@ class notebook_extension(extension):
         if p.case_sensitive_completion:
             from IPython.core import completer
 
-            completer.completions_sorting_key = self.completions_sorting_key
+            completer.completions_sorting_key = self.completions_sorting_key  # ty: ignore[invalid-assignment]
         if not p.allow_jedi_completion and hasattr(IPCompleter, "use_jedi"):
             ip.run_line_magic("config", "IPCompleter.use_jedi = False")
 
@@ -162,7 +162,7 @@ class notebook_extension(extension):
         from panel import config, extension as panel_extension
 
         if hasattr(config, "comms") and comms:
-            config.comms = comms
+            config._comms = comms
 
         same_cell_execution = published = getattr(self, "_repeat_execution_in_cell", False)
         for r in [r for r in resources if r != "holoviews"]:
@@ -191,8 +191,8 @@ class notebook_extension(extension):
                 plotly_logo=p.logo and ("plotly" in resources),
             )
 
-    @classmethod
-    def completions_sorting_key(cls, word):
+    @staticmethod
+    def completions_sorting_key(word):
         """Fixed version of IPython.completer.completions_sorting_key"""
         prio1, prio2 = 0, 0
         if word.startswith("__"):
