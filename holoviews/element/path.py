@@ -7,6 +7,8 @@ quickly draw common shapes.
 
 from __future__ import annotations
 
+import typing as t
+
 import numpy as np
 import param
 
@@ -62,7 +64,7 @@ class Path(SelectionPolyExpr, Geometry):
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple) and len(data) == 2:
             # Add support for (x, ys) where ys defines multiple paths
-            x, y = map(np.asarray, data)
+            x, y = np.asarray(data[0]), np.asarray(data[1])
             if y.ndim > 1:
                 if len(x) != y.shape[0]:
                     raise ValueError("Path x and y values must be the same length.")
@@ -173,7 +175,9 @@ class Path(SelectionPolyExpr, Geometry):
             else:
                 raise ValueError(f"{datatype} datatype not support")
             return [obj]
-        return self.interface.split(self, start, end, datatype, **kwargs)
+        return t.cast("type[MultiInterface]", self.interface).split(
+            self, start, end, datatype, **kwargs
+        )
 
 
 class Dendrogram(Path):
@@ -411,7 +415,7 @@ class Box(BaseShape):
             ]
         )
 
-        xs, ys = np.tensordot(rot, box.T, axes=[1, 0])
+        xs, ys = np.tensordot(rot, box.T, axes=(1, 0))
         self.data = [np.column_stack([xs + x, ys + y])]
 
 
@@ -461,7 +465,7 @@ class Ellipse(BaseShape):
         in cases where only the diameter value is set.""",
     )
 
-    samples = param.Number(default=100, doc="The sample count used to draw the ellipse.")
+    samples = param.Integer(default=100, doc="The sample count used to draw the ellipse.")
 
     group = param.String(default="Ellipse", constant=True, doc="The assigned group name.")
 
@@ -494,7 +498,7 @@ class Ellipse(BaseShape):
                 [np.sin(self.orientation), np.cos(self.orientation)],
             ]
         )
-        self.data = [np.tensordot(rot, ellipse.T, axes=[1, 0]).T + np.array([x, y])]
+        self.data = [np.tensordot(rot, ellipse.T, axes=(1, 0)).T + np.array([x, y])]
 
 
 class Bounds(BaseShape):

@@ -255,7 +255,6 @@ convention = "numpy"
 src.exclude = [
     "holoviews/*version.py",
     "holoviews/element/comparison.py", # deprecated
-    "holoviews/element/path.py", # 5
     "holoviews/element/tabular.py", # 4
 ]
 environment.extra-paths = ["typings"]
