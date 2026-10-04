@@ -254,7 +254,6 @@ convention = "numpy"
 [tool.ty]
 src.exclude = [
     "holoviews/*version.py",
-    "holoviews/ipython/archive.py", # 5
     "holoviews/ipython/widgets.py", # 8
 ]
 environment.extra-paths = ["typings"]
