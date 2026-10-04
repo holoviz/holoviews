@@ -255,7 +255,6 @@ convention = "numpy"
 src.exclude = [
     "holoviews/*version.py",
     "holoviews/element/comparison.py", # deprecated
-    "holoviews/element/tabular.py", # 4
 ]
 environment.extra-paths = ["typings"]
 rules.unresolved-import = "ignore"
