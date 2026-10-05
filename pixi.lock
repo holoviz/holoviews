@@ -906,7 +906,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyh4a3486f_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyha191276_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyh53cf698_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -1103,7 +1103,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyhdba7688_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyh01cf8df_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyh53cf698_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -1518,7 +1518,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyhe2676ad_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyh6dadd2b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyhe2676ad_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -2188,7 +2188,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/imagesize-2.0.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyh4a3486f_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyha191276_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyh53cf698_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -2388,7 +2388,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/imagesize-2.0.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyhdba7688_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyh01cf8df_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyh53cf698_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -2807,7 +2807,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/imagesize-2.0.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyhe2676ad_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyh6dadd2b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyhe2676ad_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -3492,7 +3492,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyh4a3486f_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyha191276_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyh53cf698_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -3674,7 +3674,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyhdba7688_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyh01cf8df_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyh53cf698_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -4070,7 +4070,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyhe2676ad_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyh6dadd2b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyhe2676ad_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -4714,7 +4714,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyh4a3486f_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyha191276_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyh53cf698_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -4896,7 +4896,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyhdba7688_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyh01cf8df_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyh53cf698_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -5292,7 +5292,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyhe2676ad_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyh6dadd2b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyhe2676ad_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -5936,7 +5936,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyh4a3486f_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyha191276_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyh53cf698_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -6119,7 +6119,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyhdba7688_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyh01cf8df_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyh53cf698_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -6515,7 +6515,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyhe2676ad_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyh6dadd2b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyhe2676ad_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -7090,7 +7090,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/idna-3.20-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyh4a3486f_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyha191276_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyh53cf698_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -7254,7 +7254,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/idna-3.20-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyhdba7688_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyh01cf8df_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyh53cf698_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -7578,7 +7578,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/idna-3.20-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyhe2676ad_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyh6dadd2b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyhe2676ad_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -8506,7 +8506,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyh4a3486f_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyha191276_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyh53cf698_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -8972,7 +8972,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyh4a3486f_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyha191276_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyh53cf698_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -9160,7 +9160,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyhdba7688_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyh01cf8df_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyh53cf698_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -9565,7 +9565,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyhe2676ad_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyh6dadd2b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyhe2676ad_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -10219,7 +10219,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyh4a3486f_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyha191276_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyh53cf698_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -10402,7 +10402,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyhdba7688_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyh01cf8df_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyh53cf698_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -10800,7 +10800,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/imageio-2.38.0-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyhe2676ad_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyh6dadd2b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyhe2676ad_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/isoduration-20.11.0-pyhd8ed1ab_1.conda
@@ -20008,34 +20008,9 @@ packages:
   run_exports: {}
   size: 13387
   timestamp: 1760831448842
-- conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyh4a3486f_0.conda
-  sha256: 9ea2c55f4a9aa9146f614f827412716c6f53cd08eace21297b687301b804bb97
-  md5: b30ccec6bab1c659917938b6a37d8463
-  depends:
-  - __linux
-  - comm >=0.1.1
-  - debugpy >=1.6.5
-  - ipython >=7.23.1
-  - jupyter_client >=8.9.0
-  - jupyter_core >=5.1,!=6.0.*
-  - matplotlib-inline >=0.1
-  - nest-asyncio2 >=1.7.0
-  - packaging >=22
-  - python >=3.11
-  - pyzmq >=25
-  - tornado >=6.5.7
-  - traitlets >=5.4.0
-  - python
-  constrains:
-  - appnope >=0.1.2
-  license: BSD-3-Clause
-  license_family: BSD
-  run_exports: {}
-  size: 144062
-  timestamp: 1790707928031
-- conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyhdba7688_0.conda
-  sha256: aca6de8e2e5ac459b1d1376d29954bb10d4b81b2c340f1d177d90664a6dfcd2a
-  md5: 80e7ac945214fbbe61c01d5c267532ec
+- conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyh01cf8df_0.conda
+  sha256: 994d3cb6b9b88a6533f567c50d20f2f6edc40ae3540ce2ee9629492182ab3403
+  md5: a1ddab91145f7f06eee769d2f3ac69cd
   depends:
   - appnope
   - __osx
@@ -20047,9 +20022,10 @@ packages:
   - matplotlib-inline >=0.1
   - nest-asyncio2 >=1.7.0
   - packaging >=22
-  - python >=3.11
+  - psutil >=5.7
+  - python >=3.10
   - pyzmq >=25
-  - tornado >=6.5.7
+  - tornado >=6.4.1
   - traitlets >=5.4.0
   - python
   constrains:
@@ -20057,11 +20033,11 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   run_exports: {}
-  size: 143014
-  timestamp: 1790708055777
-- conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.4.0-pyhe2676ad_0.conda
-  sha256: 62fd1c38dde050ef7aa78fdb9ad3efda7caa7bbe2b046b68d8da65b44536564e
-  md5: 35f0e8c8a12cd8e7253c2a4f078f3860
+  size: 137725
+  timestamp: 1781101860049
+- conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyh6dadd2b_0.conda
+  sha256: e3ff0b3d5db5c31830030406f50ac2c9a5c31b86f1c2cef87a6042f0a4c77eb7
+  md5: dd5c51d5c42381ba4a2e0ce32e02ba17
   depends:
   - __win
   - comm >=0.1.1
@@ -20072,9 +20048,10 @@ packages:
   - matplotlib-inline >=0.1
   - nest-asyncio2 >=1.7.0
   - packaging >=22
-  - python >=3.11
+  - psutil >=5.7
+  - python >=3.10
   - pyzmq >=25
-  - tornado >=6.5.7
+  - tornado >=6.4.1
   - traitlets >=5.4.0
   - python
   constrains:
@@ -20082,8 +20059,34 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   run_exports: {}
-  size: 143085
-  timestamp: 1790707935317
+  size: 138046
+  timestamp: 1781101760172
+- conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-7.3.0-pyha191276_0.conda
+  sha256: 305ad9226363ff5f259c404dd9a7508183a2e150739b2adc43db7d817234da66
+  md5: 2b47a10e4d98334f8171ff60aea05ff3
+  depends:
+  - __linux
+  - comm >=0.1.1
+  - debugpy >=1.6.5
+  - ipython >=7.23.1
+  - jupyter_client >=8.9.0
+  - jupyter_core >=5.1,!=6.0.*
+  - matplotlib-inline >=0.1
+  - nest-asyncio2 >=1.7.0
+  - packaging >=22
+  - psutil >=5.7
+  - python >=3.10
+  - pyzmq >=25
+  - tornado >=6.4.1
+  - traitlets >=5.4.0
+  - python
+  constrains:
+  - appnope >=0.1.2
+  license: BSD-3-Clause
+  license_family: BSD
+  run_exports: {}
+  size: 138635
+  timestamp: 1781101665847
 - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.17.1-pyh53cf698_0.conda
   sha256: 0fb38e0685e5065064ac007cf8317ee24b329373c9f80c31eb74c1bfcb0cfe24
   md5: 0e28933e51c1d05c179bfd595ead8aee
