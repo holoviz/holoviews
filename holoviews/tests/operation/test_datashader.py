@@ -15,13 +15,10 @@ from holoviews.operation import apply_when
 from holoviews.streams import RangeXY, Tap
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from .._deps import ds, pl, pl_skip, spd, spd_skip
+from .._deps import dd, dd_skip, ds, pl, pl_skip, spd, spd_skip, xr
 
 if not ds:
     pytest.skip("datashader not installed", allow_module_level=True)
-
-import dask.dataframe as dd
-import xarray as xr
 
 from holoviews.operation.datashader import (
     DATASHADER_VERSION,
@@ -270,6 +267,7 @@ class DatashaderAggregateTests:
         )
         assert_element_equal(img, expected)
 
+    @dd_skip
     def test_aggregate_curve_datetimes_dask(self):
         df = pd.DataFrame(
             data=np.arange(1000),
@@ -437,6 +435,7 @@ class DatashaderAggregateTests:
         )
         assert_element_equal(agg, expected)
 
+    @dd_skip
     def test_spikes_aggregate_count_dask(self):
         spikes = hv.Spikes([1, 2, 3], datatype=["dask"])
         agg = rasterize(spikes, width=5, dynamic=False, expand=False)
@@ -465,6 +464,7 @@ class DatashaderAggregateTests:
         )
         assert_element_equal(agg, expected)
 
+    @dd_skip
     def test_spikes_aggregate_dt_count_dask(self):
         spikes = hv.Spikes(
             [dt.datetime(2016, 1, 1), dt.datetime(2016, 1, 2), dt.datetime(2016, 1, 3)],
@@ -552,6 +552,7 @@ class DatashaderAggregateTests:
         assert_element_equal(agg.Image.I, expected_regrid)
         assert_element_equal(agg.Spikes.I, expected_spikes)
 
+    @dd_skip
     def test_spikes_aggregate_with_height_count_dask(self):
         spikes = hv.Spikes([(1, 0.2), (2, 0.8), (3, 0.4)], vdims="y", datatype=["dask"])
         agg = rasterize(spikes, width=5, height=5, y_range=(0, 1), dynamic=False)
@@ -563,6 +564,7 @@ class DatashaderAggregateTests:
         expected = hv.Image((xs, ys, arr), vdims=hv.Dimension("Count", nodata=0))
         assert_element_equal(agg, expected)
 
+    @dd_skip
     def test_spikes_aggregate_with_negative_height_count(self):
         spikes = hv.Spikes([(1, -0.2), (2, -0.8), (3, -0.4)], vdims="y", datatype=["dask"])
         agg = rasterize(spikes, width=5, height=5, y_range=(-1, 0), dynamic=False)
@@ -574,6 +576,7 @@ class DatashaderAggregateTests:
         expected = hv.Image((xs, ys, arr), vdims=hv.Dimension("Count", nodata=0))
         assert_element_equal(agg, expected)
 
+    @dd_skip
     def test_spikes_aggregate_with_positive_and_negative_height_count(self):
         spikes = hv.Spikes([(1, -0.2), (2, 0.8), (3, -0.4)], vdims="y", datatype=["dask"])
         agg = rasterize(spikes, width=5, height=5, y_range=(-1, 1), dynamic=False)
@@ -1253,6 +1256,7 @@ class DatashaderRasterizeTests:
         image = hv.Image(array, bounds=(0, 0, 1, 1))
         assert_element_equal(img, image)
 
+    @dd_skip
     def test_rasterize_dask_trimesh_implicit_nodes(self):
         simplex_df = pd.DataFrame(self.simplexes, columns=["v0", "v1", "v2"])
         vertex_df = pd.DataFrame(self.vertices_vdim, columns=["x", "y", "z"])
@@ -1276,6 +1280,7 @@ class DatashaderRasterizeTests:
         image = hv.Image(array, bounds=(0, 0, 1, 1))
         assert_element_equal(img, image)
 
+    @dd_skip
     def test_rasterize_dask_trimesh(self):
         simplex_df = pd.DataFrame(self.simplexes_vdim, columns=["v0", "v1", "v2", "z"])
         vertex_df = pd.DataFrame(self.vertices, columns=["x", "y"])
@@ -1298,6 +1303,7 @@ class DatashaderRasterizeTests:
         image = hv.Image(array, bounds=(0, 0, 1, 1))
         assert_element_equal(img, image)
 
+    @dd_skip
     def test_rasterize_dask_trimesh_with_node_vdims(self):
         simplex_df = pd.DataFrame(self.simplexes, columns=["v0", "v1", "v2"])
         vertex_df = pd.DataFrame(self.vertices_vdim, columns=["x", "y", "z"])
