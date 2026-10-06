@@ -3684,7 +3684,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         """Processes the list of tools to be supplied to the plot."""
         if callbacks is None:
             callbacks = []
-        hover_tools = {}
+        hover_tools, hover_keys = {}, {}
         zooms_subcoordy = {}
         _zoom_types = (tools.WheelZoomTool, tools.ZoomInTool, tools.ZoomOutTool)
         init_tools, tool_types = [], []
@@ -3702,6 +3702,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                             tooltips = tool.tooltips
                         else:
                             tooltips = tuple(tool.tooltips) if tool.tooltips else ()
+                        # Subplots may rewrite their tooltips later, e.g. to format datetime axes
+                        hover_keys[tool] = tooltips
                         if tooltips in hover_tools:
                             continue
                         else:
@@ -3723,6 +3725,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                         tool_types.append(tool_type)
                     init_tools.append(tool)
         self.handles["hover_tools"] = hover_tools
+        self.handles["hover_keys"] = hover_keys
         return init_tools
 
     def _merge_tools(self, subplot):
@@ -3731,7 +3734,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             self.handles["hover"] = subplot.handles["hover"]
         elif "hover" in subplot.handles and "hover_tools" in self.handles:
             hover = subplot.handles["hover"]
-            if hover.tooltips and isinstance(hover.tooltips, bokeh.models.dom.Div):
+            if hover in self.handles.get("hover_keys", {}):
+                tooltips = self.handles["hover_keys"][hover]
+            elif hover.tooltips and isinstance(hover.tooltips, bokeh.models.dom.Div):
                 tooltips = hover.tooltips
             elif hover.tooltips and not isinstance(hover.tooltips, str):
                 tooltips = tuple(
