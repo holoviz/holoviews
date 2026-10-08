@@ -156,7 +156,7 @@ networkx = "*"
 notebook = "*"
 pillow = "*"
 plotly = ">=4.0"
-# polars = "*"  https://github.com/pola-rs/polars/issues/29419
+polars = "*"
 pooch = "*"
 # pyarrow = "*"
 python-duckdb = "*"
