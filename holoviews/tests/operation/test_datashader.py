@@ -15,7 +15,7 @@ from holoviews.operation import apply_when
 from holoviews.streams import RangeXY, Tap
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from .._deps import dd, dd_skip, ds, pl, pl_skip, spd, spd_skip, xr
+from .._deps import dd, dd_skip, ds, pa_skip, pl, pl_skip, spd, spd_skip, xr
 
 if not ds:
     pytest.skip("datashader not installed", allow_module_level=True)
@@ -2143,6 +2143,7 @@ def test_datashade_count_cat_no_change_inplace():
 
 
 @pl_skip
+@pa_skip
 @pytest.mark.parametrize("lazy", [False, True])
 @pytest.mark.parametrize("op", [aggregate, rasterize, datashade])
 def test_points_polars(lazy, op):
