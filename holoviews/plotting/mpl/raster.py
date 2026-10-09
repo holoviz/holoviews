@@ -260,8 +260,6 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     default_span = param.Parameter(precedence=-1)
     hooks = param.Parameter(precedence=-1)
     invert_axes = param.Parameter(precedence=-1)
-    invert_xaxis = param.Parameter(precedence=-1)
-    invert_yaxis = param.Parameter(precedence=-1)
     invert_zaxis = param.Parameter(precedence=-1)
     labelled = param.Parameter(precedence=-1)
     legend_cols = param.Parameter(precedence=-1)
@@ -317,6 +315,10 @@ class RasterGridPlot(GridPlot, OverlayPlot):
             ykeys = [None]
         self._xkeys = list(dict.fromkeys(xkeys))
         self._ykeys = list(dict.fromkeys(ykeys))
+        if self.invert_xaxis:
+            self._xkeys = self._xkeys[::-1]
+        if self.invert_yaxis:
+            self._ykeys = self._ykeys[::-1]
 
         self._xticks, self._yticks = [], []
         self.rows, self.cols = layout.shape
@@ -341,6 +343,11 @@ class RasterGridPlot(GridPlot, OverlayPlot):
 
     def _get_frame(self, key):
         return GridPlot._get_frame(self, key)
+
+    def _set_axis_limits(self, axis, view, subplots, ranges):
+        # The grid is inverted by reordering the rasters, not the axis
+        with self.param.update(invert_xaxis=False, invert_yaxis=False):
+            super()._set_axis_limits(axis, view, subplots, ranges)
 
     @mpl_rc_context
     def initialize_plot(self, ranges=None):
@@ -434,6 +441,10 @@ class RasterGridPlot(GridPlot, OverlayPlot):
             height_extents = [max_range(self.layout.traverse(height_fn, [Element]))]
         widths = [extent[0] - extent[1] for extent in width_extents]
         heights = [extent[0] - extent[1] for extent in height_extents]
+        if self.invert_xaxis:
+            widths = widths[::-1]
+        if self.invert_yaxis:
+            heights = heights[::-1]
         width, height = np.sum(widths), np.sum(heights)
         border_width = (width * self.padding) / (len(widths) + 1)
         border_height = (height * self.padding) / (len(heights) + 1)
