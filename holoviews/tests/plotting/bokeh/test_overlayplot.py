@@ -90,6 +90,21 @@ class TestOverlayPlot(LoggingComparison, TestBokehPlot):
             ("y", "@{y}"),
         ]
 
+    def test_hover_tool_image_datetime_overlay_renderers(self):
+        # Regression test for https://github.com/holoviz/holoviews/issues/6912
+        x = np.array(["1970-01-01 12:00", "1970-01-02 12:00"], dtype="datetime64[ns]")
+        overlay = hv.Overlay(
+            [
+                hv.Image((x, [1, 3], [[7, 4], [2, 3]])),
+                hv.Image((x, [6, 8], [[8, 1], [5, 6]])),
+            ]
+        ).opts("Image", tools=["hover"])
+        plot = bokeh_renderer.get_plot(overlay)
+        hover = plot.handles["hover"]
+        assert hover.tooltips[0] == ("x", "$x{custom}")
+        renderers = [sp.handles["glyph_renderer"] for sp in plot.subplots.values()]
+        assert hover.renderers == renderers
+
     def test_overlay_empty_layers(self):
         overlay = hv.Curve(range(10)) * hv.NdOverlay()
         plot = bokeh_renderer.get_plot(overlay)
