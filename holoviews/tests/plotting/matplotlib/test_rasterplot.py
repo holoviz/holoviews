@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 from matplotlib.colors import ListedColormap
 
 import holoviews as hv
+from holoviews.core.options import AbbreviatedException
 from holoviews.plotting.mpl.raster import RGBPlot
 
-from ..._deps import ds_skip
+from ..._deps import ds, ds_skip
 from .test_plot import TestMPLPlot, mpl_renderer
 
 
@@ -89,3 +91,56 @@ class TestRasterPlot(TestMPLPlot):
         assert array.shape == (3, 3, 4)
         assert artist.get_extent() == [-0.5, 2.5, 4.5, 7.5]
         assert isinstance(plot, RGBPlot)
+
+
+@ds_skip
+class TestSyntheticLegendPlot(TestMPLPlot):
+    __test__ = True
+
+    def setup_method(self):
+        super().setup_method()
+
+        from holoviews.operation.datashader import datashade, rasterize
+
+        points = hv.Points([(0, 0, "A"), (1, 1, "B"), (2, 2, "C")], vdims=["Label"])
+        kwargs = dict(aggregator=ds.by("Label"), dynamic=False, width=10, height=10)
+        self.img_stack = rasterize(points, **kwargs).opts(show_legend=True)
+        self.rgb = datashade(points, **kwargs).opts(show_legend=True)
+
+    def test_rgb_legend(self):
+        plot = mpl_renderer.get_plot(self.rgb)
+        legend_labels = [t.get_text() for t in plot.handles["axis"].get_legend().texts]
+        assert legend_labels == ["A", "B", "C"]
+        assert plot._legend_plot is not None
+
+    def test_image_stack_legend(self):
+        plot = mpl_renderer.get_plot(self.img_stack)
+        legend_labels = [t.get_text() for t in plot.handles["axis"].get_legend().texts]
+        assert legend_labels == ["A", "B", "C"]
+        assert plot._legend_plot is not None
+
+    def test_rgb_legend_does_not_swallow_exception(self, monkeypatch):
+        def boom(*args, **kwargs):
+            raise RuntimeError("legend failed")
+
+        monkeypatch.setattr("holoviews.plotting.mpl.raster.categorical_legend", boom)
+        with pytest.raises(AbbreviatedException, match="legend failed"):
+            mpl_renderer.get_plot(self.rgb)
+
+    def test_image_stack_legend_does_not_swallow_exception(self, monkeypatch):
+        def boom(*args, **kwargs):
+            raise RuntimeError("legend failed")
+
+        monkeypatch.setattr("holoviews.plotting.mpl.raster.categorical_legend", boom)
+        with pytest.raises(AbbreviatedException, match="legend failed"):
+            mpl_renderer.get_plot(self.img_stack)
+
+    def test_non_categorical_datashade_with_legend_still_renders(self):
+        from holoviews.operation.datashader import datashade
+
+        rgb = datashade(hv.Points([(0, 0), (1, 1)]), dynamic=False, width=10, height=10).opts(
+            show_legend=True
+        )
+        plot = mpl_renderer.get_plot(rgb)
+        assert getattr(plot, "_legend_plot", None) is None
+        assert plot.handles["axis"].get_legend() is None

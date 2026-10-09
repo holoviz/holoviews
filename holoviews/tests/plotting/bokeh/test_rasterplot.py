@@ -499,3 +499,29 @@ class TestSyntheticLegendPlot(TestBokehPlot):
         glyph = plot._legend_plot.handles["glyph"]
         assert glyph.fill_color.field == "color"
         assert glyph.fill_color.transform is mapper
+
+    def test_rgb_legend_does_not_swallow_exception(self, monkeypatch):
+        def boom(*args, **kwargs):
+            raise RuntimeError("legend failed")
+
+        monkeypatch.setattr("holoviews.plotting.bokeh.raster.categorical_legend", boom)
+        with pytest.raises(RuntimeError, match="legend failed"):
+            bokeh_renderer.get_plot(self.rgb)
+
+    def test_image_stack_legend_does_not_swallow_exception(self, monkeypatch):
+        def boom(*args, **kwargs):
+            raise RuntimeError("legend failed")
+
+        monkeypatch.setattr("holoviews.plotting.bokeh.raster.categorical_legend", boom)
+        with pytest.raises(RuntimeError, match="legend failed"):
+            bokeh_renderer.get_plot(self.img_stack)
+
+    def test_non_categorical_datashade_with_legend_still_renders(self):
+        from holoviews.operation.datashader import datashade
+
+        rgb = datashade(hv.Points([(0, 0), (1, 1)]), dynamic=False, width=10, height=10).opts(
+            show_legend=True
+        )
+        plot = bokeh_renderer.get_plot(rgb)
+        assert "synthetic_color_mapper" not in plot.handles
+        assert getattr(plot, "_legend_plot", None) is None
