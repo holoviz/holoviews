@@ -6,15 +6,24 @@ from collections.abc import Callable, Iterable
 from functools import partial
 from typing import TYPE_CHECKING
 
-import datashader as ds
-import datashader.reductions as rd
-import datashader.transfer_functions as tf
+try:
+    import datashader as ds
+    import datashader.reductions as rd
+    import datashader.transfer_functions as tf
+    from datashader.colors import color_lookup
+except ModuleNotFoundError as exc:
+    raise ImportError(f"{exc.name} must be installed.") from exc
+
 import narwhals.stable.v2 as nw
 import numpy as np
 import pandas as pd
 import param
-import xarray as xr
-from datashader.colors import color_lookup
+
+try:
+    import xarray as xr
+except ModuleNotFoundError as exc:
+    raise ImportError(f"{exc.name} must be installed.") from exc
+
 from param.parameterized import bothmethod
 
 from ..core import (

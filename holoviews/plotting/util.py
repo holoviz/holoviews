@@ -1496,7 +1496,10 @@ class categorical_legend(Operation):
     )
 
     def _process(self, element, key=None):
-        import datashader as ds
+        try:
+            import datashader as ds
+        except ModuleNotFoundError as exc:
+            raise ImportError(f"{exc.name} must be installed.") from exc
 
         from ..operation.datashader import datashade, rasterize, shade
 
