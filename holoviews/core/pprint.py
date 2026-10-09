@@ -95,7 +95,7 @@ class InfoPrinter:
     headings = ["\x1b[1;35m%s\x1b[0m", "\x1b[1;32m%s\x1b[0m"]
     ansi_escape = re.compile(r"\x1b[^m]*m")
     ppager = ParamPager()
-    store: Store | None = None
+    store: type[Store] | None = None
     elements = []
 
     @classmethod

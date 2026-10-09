@@ -262,6 +262,7 @@ exclude = [
     "holoviews/*.py",
     "holoviews/core/",
     "holoviews/element/",
+    "holoviews/ipython/",
     "holoviews/tests/_deps.py",
     "holoviews/util/",
     "scripts/",
