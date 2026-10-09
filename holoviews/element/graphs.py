@@ -466,7 +466,7 @@ class Graph(Dataset, Element2D):
             node_info = dict(zip(node_columns[idx_dim], zip(*values, strict=True), strict=True))
         else:
             info_cols = []
-            node_info = None
+            node_info = {}
         node_columns = defaultdict(list)
 
         # Unpack node positions
@@ -686,7 +686,9 @@ class TriMesh(Graph):
         """Returns the EdgePaths by generating a triangle for each simplex."""
         return self._initialize_edgepaths()
 
-    def select(self, selection_expr=None, selection_specs=None, **selection):
+    def select(
+        self, selection_expr=None, selection_specs=None, selection_mode="nodes", **selection
+    ):
         """Allows selecting data by the slices, sets and scalar values
         along a particular dimension. The indices should be supplied as
         keywords mapping between the selected dimension and
@@ -700,7 +702,7 @@ class TriMesh(Graph):
         return super().select(
             selection_expr=selection_expr,
             selection_specs=selection_specs,
-            selection_mode="nodes",
+            selection_mode=selection_mode,
             **selection,
         )
 

@@ -297,7 +297,7 @@ class Dataset(Element, metaclass=PipelineMeta):
     _auto_indexable_1d = False
 
     # Define a class used to transform Datasets into other Element types
-    _conversion_interface = DataConversion
+    _conversion_interface: type[DataConversion] = DataConversion
 
     # Whether the key dimensions are specified as bins
     _binned = False

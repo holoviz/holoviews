@@ -57,22 +57,22 @@ class ElementConversion(DataConversion):
 
     """
 
-    def bars(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def bars(self, kdims=None, vdims=None, groupby=None, **kwargs) -> Bars:
         return self(Bars, kdims, vdims, groupby, **kwargs)
 
-    def box(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def box(self, kdims=None, vdims=None, groupby=None, **kwargs) -> BoxWhisker:
         return self(BoxWhisker, kdims, vdims, groupby, **kwargs)
 
-    def bivariate(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def bivariate(self, kdims=None, vdims=None, groupby=None, **kwargs) -> Bivariate:
         return self(Bivariate, kdims, vdims, groupby, **kwargs)
 
-    def curve(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def curve(self, kdims=None, vdims=None, groupby=None, **kwargs) -> Curve:
         return self(Curve, kdims, vdims, groupby, **kwargs)
 
-    def errorbars(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def errorbars(self, kdims=None, vdims=None, groupby=None, **kwargs) -> ErrorBars:
         return self(ErrorBars, kdims, vdims, groupby, **kwargs)
 
-    def distribution(self, dim=None, groupby=None, **kwargs):
+    def distribution(self, dim=None, groupby=None, **kwargs) -> Distribution | HoloMap:
         if groupby is None:
             groupby = []
         if dim is None:
@@ -94,63 +94,63 @@ class ElementConversion(DataConversion):
                 params["group"] = element.group
             return Distribution((element.dimension_values(dim),), **dict(params, **kwargs))
 
-    def donut(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def donut(self, kdims=None, vdims=None, groupby=None, **kwargs) -> Donut:
         return self(Donut, kdims, vdims, groupby, **kwargs)
 
-    def heatmap(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def heatmap(self, kdims=None, vdims=None, groupby=None, **kwargs) -> HeatMap:
         return self(HeatMap, kdims, vdims, groupby, **kwargs)
 
-    def image(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def image(self, kdims=None, vdims=None, groupby=None, **kwargs) -> Image:
         return self(Image, kdims, vdims, groupby, **kwargs)
 
-    def points(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def points(self, kdims=None, vdims=None, groupby=None, **kwargs) -> Points:
         return self(Points, kdims, vdims, groupby, **kwargs)
 
-    def raster(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def raster(self, kdims=None, vdims=None, groupby=None, **kwargs) -> Raster:
         heatmap = self.heatmap(kdims, vdims, **kwargs)
         return Raster(heatmap.data, **self._element.param.values(onlychanged=True))
 
-    def scatter(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def scatter(self, kdims=None, vdims=None, groupby=None, **kwargs) -> Scatter:
         return self(Scatter, kdims, vdims, groupby, **kwargs)
 
-    def scatter3d(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def scatter3d(self, kdims=None, vdims=None, groupby=None, **kwargs) -> Scatter3D:
         return self(Scatter3D, kdims, vdims, groupby, **kwargs)
 
-    def spikes(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def spikes(self, kdims=None, vdims=None, groupby=None, **kwargs) -> Spikes:
         return self(Spikes, kdims, vdims, groupby, **kwargs)
 
-    def spread(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def spread(self, kdims=None, vdims=None, groupby=None, **kwargs) -> Spread:
         return self(Spread, kdims, vdims, groupby, **kwargs)
 
-    def surface(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def surface(self, kdims=None, vdims=None, groupby=None, **kwargs) -> Surface:
         heatmap = self.heatmap(kdims, vdims, **kwargs)
-        return Surface(heatmap.data, **self._table.param.values(onlychanged=True))
+        return Surface(heatmap.data, **self._element.param.values(onlychanged=True))
 
-    def trisurface(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def trisurface(self, kdims=None, vdims=None, groupby=None, **kwargs) -> TriSurface:
         return self(TriSurface, kdims, vdims, groupby, **kwargs)
 
-    def vectorfield(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def vectorfield(self, kdims=None, vdims=None, groupby=None, **kwargs) -> VectorField:
         return self(VectorField, kdims, vdims, groupby, **kwargs)
 
-    def violin(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def violin(self, kdims=None, vdims=None, groupby=None, **kwargs) -> Violin:
         return self(Violin, kdims, vdims, groupby, **kwargs)
 
-    def waterfall(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def waterfall(self, kdims=None, vdims=None, groupby=None, **kwargs) -> Waterfall:
         return self(Waterfall, kdims, vdims, groupby, **kwargs)
 
-    def labels(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def labels(self, kdims=None, vdims=None, groupby=None, **kwargs) -> Labels:
         return self(Labels, kdims, vdims, groupby, **kwargs)
 
-    def chord(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def chord(self, kdims=None, vdims=None, groupby=None, **kwargs) -> Chord:
         return self(Chord, kdims, vdims, groupby, **kwargs)
 
-    def hextiles(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def hextiles(self, kdims=None, vdims=None, groupby=None, **kwargs) -> HexTiles:
         return self(HexTiles, kdims, vdims, groupby, **kwargs)
 
-    def area(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def area(self, kdims=None, vdims=None, groupby=None, **kwargs) -> Area:
         return self(Area, kdims, vdims, groupby, **kwargs)
 
-    def table(self, kdims=None, vdims=None, groupby=None, **kwargs):
+    def table(self, kdims=None, vdims=None, groupby=None, **kwargs) -> Table:
         return self(Table, kdims, vdims, groupby, **kwargs)
 
 

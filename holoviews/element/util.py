@@ -23,11 +23,9 @@ from ..core.util import (
 )
 
 if TYPE_CHECKING:
-    from typing import TypeVar
-
     import pandas as pd
 
-    Array = TypeVar("Array", np.ndarray, pd.api.extensions.ExtensionArray)
+    type Array = np.ndarray | pd.api.extensions.ExtensionArray
 
 
 def split_path(path):
@@ -240,24 +238,24 @@ class categorical_aggregate2d(Operation):
             data += (reindexed[vdim.name].values.reshape(shape).T,)
         return obj.clone(data, datatype=self.p.datatype, label=label)
 
-    def _process(self, obj, key=None):
+    def _process(self, element, key=None):
         """Generates a categorical 2D aggregate by inserting NaNs at all
         cross-product locations that do not already have a value assigned.
         Returns a 2D gridded Dataset object.
 
         """
-        if isinstance(obj, Dataset) and obj.interface.gridded:
-            return obj
-        elif obj.ndims > 2:
+        if isinstance(element, Dataset) and element.interface.gridded:
+            return element
+        elif element.ndims > 2:
             raise ValueError("Cannot aggregate more than two dimensions")
-        elif len(obj.dimensions()) < 3:
+        elif len(element.dimensions()) < 3:
             raise ValueError(
                 "Must have at two dimensions to aggregate over"
                 "and one value dimension to aggregate on."
             )
 
-        obj = Dataset(obj, datatype=["dataframe"])
-        return self._aggregate_dataset_pandas(obj)
+        element = Dataset(element, datatype=["dataframe"])
+        return self._aggregate_dataset_pandas(element)
 
 
 def circular_layout(nodes):
@@ -372,5 +370,5 @@ def sort_arr[T: Array](arr: T) -> T:
     import pandas as pd
 
     if isinstance(arr, pd.api.extensions.ExtensionArray):
-        return arr[arr.argsort()]
+        return arr.take(arr.argsort())
     return np.sort(arr)
