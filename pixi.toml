@@ -110,7 +110,6 @@ channels = ["conda-forge/label/python_rc"]
 
 [feature.py315.dependencies]
 python = "3.15.*"
-_python_rc = "*"
 
 [feature.optional.dependencies]
 bokeh_sampledata = "*"
