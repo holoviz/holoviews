@@ -1914,7 +1914,10 @@ class CDSStream(LinkedStream):
         path-like data).""",
     )
 
-    element: Dataset
+    if t.TYPE_CHECKING:
+
+        @property
+        def element(self) -> Dataset: ...
 
 
 class PointDraw(CDSStream):
