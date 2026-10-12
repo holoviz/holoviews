@@ -1041,7 +1041,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[0470f906] @ .
       osx-arm64:
       - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc2-py_0.tar.bz2
@@ -1459,7 +1459,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[ad5ce6c1] @ .
       win-64:
       - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc2-py_0.tar.bz2
@@ -1846,7 +1846,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[5a3a38fe] @ .
   docs:
     channels:
@@ -2323,7 +2323,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[0470f906] @ .
       osx-arm64:
       - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc2-py_0.tar.bz2
@@ -2744,7 +2744,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[ad5ce6c1] @ .
       win-64:
       - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc2-py_0.tar.bz2
@@ -3134,7 +3134,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[5a3a38fe] @ .
   lint:
     channels:
@@ -3610,7 +3610,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[0470f906] @ .
       osx-arm64:
       - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc2-py_0.tar.bz2
@@ -4009,7 +4009,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[ad5ce6c1] @ .
       win-64:
       - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc2-py_0.tar.bz2
@@ -4377,7 +4377,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[5a3a38fe] @ .
   test-313:
     channels:
@@ -4832,7 +4832,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[0470f906] @ .
       osx-arm64:
       - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc2-py_0.tar.bz2
@@ -5231,7 +5231,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[ad5ce6c1] @ .
       win-64:
       - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc2-py_0.tar.bz2
@@ -5599,7 +5599,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[5a3a38fe] @ .
   test-314:
     channels:
@@ -6054,7 +6054,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[0470f906] @ .
       osx-arm64:
       - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc2-py_0.tar.bz2
@@ -6453,7 +6453,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[ad5ce6c1] @ .
       win-64:
       - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc2-py_0.tar.bz2
@@ -6821,7 +6821,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[5a3a38fe] @ .
   test-315:
     channels:
@@ -8625,7 +8625,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/rapidsai/linux-64/cudf-26.10.00-cuda13_cp311_abi3_261008011827_f9305b32.conda
       - conda: https://conda.anaconda.org/rapidsai/linux-64/libcudf-26.10.00-cuda13_261008011827_f9305b32.conda
       - conda: https://conda.anaconda.org/rapidsai/linux-64/libkvikio-26.10.00-cuda13_261007164455_5530d767.conda
@@ -9096,7 +9096,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[0470f906] @ .
       osx-arm64:
       - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc2-py_0.tar.bz2
@@ -9504,7 +9504,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[ad5ce6c1] @ .
       win-64:
       - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc2-py_0.tar.bz2
@@ -9880,7 +9880,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[5a3a38fe] @ .
   type:
     channels:
@@ -10339,7 +10339,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[0470f906] @ .
       osx-arm64:
       - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc2-py_0.tar.bz2
@@ -10740,7 +10740,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[ad5ce6c1] @ .
       win-64:
       - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc2-py_0.tar.bz2
@@ -11110,7 +11110,7 @@ environments:
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/param-2.5.0b3-py_0.conda
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyct-0.6.0-py_0.tar.bz2
       - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/pyviz_comms-3.0.6-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
+      - conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
       - conda_source: holoviews[5a3a38fe] @ .
 packages:
 - conda: https://conda.anaconda.org/bokeh/label/rc/noarch/bokeh-3.10.1rc2-py_0.tar.bz2
@@ -34364,9 +34364,9 @@ packages:
   license_family: BSD
   size: 49425
   timestamp: 1750669964512
-- conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0a2-py_0.tar.bz2
-  sha256: 8f712fd9ef6a9f13d30f15e16672c2136933c54d2c15b892e7073dd419c10ead
-  md5: 42842cb88d3e9f339a43640f6e45210d
+- conda: https://conda.anaconda.org/pyviz/label/dev/noarch/spatialpandas-0.6.0-py_0.tar.bz2
+  sha256: 824b8b62c61bcd0db2a83b195ad611f7eb1d716973b79b425d9220c55c7daca4
+  md5: b957c63c813e77f9ff905183cdccf70f
   depends:
   - dask-core >=2025.1
   - fsspec >=2022.8
@@ -34377,8 +34377,8 @@ packages:
   - python >=3.12
   - retrying
   license: BSD-2-Clause
-  size: 84010
-  timestamp: 1790879159067
+  size: 83937
+  timestamp: 1791787819302
 - conda: https://conda.anaconda.org/rapidsai/linux-64/cudf-26.10.00-cuda13_cp311_abi3_261008011827_f9305b32.conda
   build_number: 0
   noarch: python
