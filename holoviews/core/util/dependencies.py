@@ -56,6 +56,7 @@ def _no_import_version(package_name) -> tuple[int, ...]:
 
 _MIN_SUPPORTED_VERSION = {
     "pandas": (1, 3, 0),
+    "datashader": (0, 16, 0),
 }
 
 
@@ -97,7 +98,12 @@ class _LazyModule:
                 if mod_version < min_version:
                     min_version_str = ".".join(map(str, min_version))
                     mod_version_str = ".".join(map(str, mod_version))
-                    msg = f"{self.__package_name} requires {min_version_str} or higher (found {mod_version_str})"
+                    msg = (
+                        f"Please upgrade the optional dependency {self.__package_name} "
+                        f"from {mod_version_str} to {min_version_str} or higher, "
+                        f'either with `pip install "{self.__package_name}>={min_version_str}"` '
+                        f'or `conda install "{self.__package_name}>={min_version_str}"`.'
+                    )
                     raise VersionError(msg, mod_version_str, min_version_str)
 
         return self.__module
