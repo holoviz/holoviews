@@ -6,15 +6,9 @@ from collections.abc import Callable, Iterable
 from functools import partial
 from typing import TYPE_CHECKING
 
-import datashader as ds
-import datashader.reductions as rd
-import datashader.transfer_functions as tf
 import narwhals.stable.v2 as nw
 import numpy as np
-import pandas as pd
 import param
-import xarray as xr
-from datashader.colors import color_lookup
 from param.parameterized import bothmethod
 
 from ..core import (
@@ -41,7 +35,7 @@ from ..core.util import (
     dtype_kind,
     get_param_values,
 )
-from ..core.util.dependencies import PANDAS_GE_3_0_0, _no_import_version, dd
+from ..core.util.dependencies import PANDAS_GE_3_0_0, _no_import_version, dd, ds, pd, xr
 from ..element import (
     RGB,
     Area,
@@ -64,6 +58,9 @@ from ..element import (
 from ..element.util import connect_tri_edges_pd
 from ..streams import PointerXY
 from .resample import LinkableOperation, ResampleOperation2D
+
+# Will error if datashader is not installed
+rd = ds.reductions
 
 DATASHADER_VERSION = _no_import_version("datashader")
 DATASHADER_GE_0_14_0 = DATASHADER_VERSION >= (0, 14, 0)
@@ -1564,6 +1561,8 @@ class shade(LinkableOperation):
             colors = [self.p.cmap(s) for s in np.linspace(0, 1, 256)]
             shade_opts["cmap"] = map(self.rgb2hex, colors)
         elif isinstance(self.p.cmap, str):
+            from datashader.colors import color_lookup
+
             if self.p.cmap.startswith("#") or self.p.cmap in color_lookup:
                 shade_opts["cmap"] = self.p.cmap
             else:
@@ -1609,6 +1608,8 @@ class shade(LinkableOperation):
                 img_data = self.add_selector_data(img_data=img_data, sel_data=element.data)
                 return RGB(img_data, **params)
             else:
+                import datashader.transfer_functions as tf
+
                 img = tf.shade(array, **shade_opts)
         img_data = self.uint32_to_uint8_xr(img)
         img_data = self.add_selector_data(img_data=img_data, sel_data=element.data)
@@ -1856,6 +1857,8 @@ class stack(Operation):
         return img.view(dtype=np.uint32).reshape((N, M))
 
     def _process(self, overlay, key=None):
+        import datashader.transfer_functions as tf
+
         if not isinstance(overlay, CompositeOverlay):
             return overlay
         elif len(overlay) == 1:
@@ -1928,6 +1931,8 @@ class SpreadingOperation(LinkableOperation):
         raise NotImplementedError
 
     def _preprocess_rgb(self, element):
+        import datashader.transfer_functions as tf
+
         rgbarray = np.dstack([element.dimension_values(vd, flat=False) for vd in element.vdims])
         if dtype_kind(rgbarray) == "f":
             rgbarray = rgbarray * 255
@@ -2012,6 +2017,8 @@ class spread(SpreadingOperation):
     )
 
     def _apply_spreading(self, array, how=None):
+        import datashader.transfer_functions as tf
+
         return tf.spread(array, px=self.p.px, how=how or self.p.how, shape=self.p.shape)
 
 
@@ -2045,6 +2052,8 @@ class dynspread(SpreadingOperation):
     )
 
     def _apply_spreading(self, array, how=None):
+        import datashader.transfer_functions as tf
+
         return tf.dynspread(
             array,
             max_px=self.p.max_px,

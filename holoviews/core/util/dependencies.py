@@ -82,7 +82,15 @@ class _LazyModule:
     @property
     def _module(self) -> ModuleType:
         if self.__module is None:
-            self.__module = import_module(self.__module_name)
+            try:
+                self.__module = import_module(self.__module_name)
+            except ImportError:
+                msg = (
+                    f"Please install the optional dependency, "
+                    f"either with `pip install {self.__package_name}` "
+                    f"or `conda install {self.__package_name}`."
+                )
+                raise ModuleNotFoundError(msg) from None
             if self.__package_name in _MIN_SUPPORTED_VERSION:
                 min_version = _MIN_SUPPORTED_VERSION[self.__package_name]
                 mod_version = _no_import_version(self.__package_name)
@@ -123,9 +131,11 @@ cudf = _lazy_import("cudf")
 cp = _lazy_import("cupy")
 da = _lazy_import("dask.array")
 dd = _lazy_import("dask.dataframe")
+ds = _lazy_import("datashader")
 ibis = _lazy_import("ibis", "ibis-framework")
 pd = _lazy_import("pandas")
 pl = _lazy_import("polars")
+xr = _lazy_import("xarray")
 
 # Versions
 NUMPY_VERSION = _no_import_version("numpy")
