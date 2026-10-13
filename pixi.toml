@@ -76,7 +76,6 @@ no-default-feature = true
 
 [feature.required.dependencies]
 nomkl = "*"
-python-gil = "*"
 holoviews = { path = "." }
 bokeh = ">=3.1"
 colorcet = "*"
@@ -104,12 +103,11 @@ python = "3.13.*"
 
 [feature.py314.dependencies]
 python = "3.14.*"
-
-[feature.py315]
-channels = ["conda-forge/label/python_rc"]
+python-gil = "*"
 
 [feature.py315.dependencies]
 python = "3.15.*"
+python-gil = "*"
 
 [feature.optional.dependencies]
 bokeh_sampledata = "*"
