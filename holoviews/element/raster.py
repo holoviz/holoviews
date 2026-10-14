@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing as t
 from collections.abc import Mapping
 from copy import deepcopy
 from operator import itemgetter
@@ -10,6 +11,7 @@ import param
 from ..core import Dataset, Dimension, Element2D, Overlay, config, util
 from ..core.boundingregion import BoundingBox, BoundingRegion
 from ..core.data import ImageInterface
+from ..core.data.grid import GridInterface
 from ..core.data.interface import DataError
 from ..core.dimension import dimension_name
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
@@ -19,6 +21,9 @@ from .graphs import TriMesh
 from .selection import Selection2DExpr
 from .tabular import Table
 from .util import categorical_aggregate2d, compute_slice_bounds
+
+if t.TYPE_CHECKING:
+    from ..core.data.grid import GridInterface
 
 
 class Raster(Element2D):
@@ -60,19 +65,19 @@ class Raster(Element2D):
             extents = (0, 0, d2, d1)
         super().__init__(data, kdims=kdims, vdims=vdims, extents=extents, **params)
 
-    def __getitem__(self, slices):
-        if slices in self.dimensions():
-            return self.dimension_values(slices)
-        slices = util.process_ellipses(self, slices)
-        if not isinstance(slices, tuple):
-            slices = (slices, slice(None))
-        elif len(slices) > (2 + self.depth):
+    def __getitem__(self, key):
+        if key in self.dimensions():
+            return self.dimension_values(key)
+        key = util.process_ellipses(self, key)
+        if not isinstance(key, tuple):
+            key = (key, slice(None))
+        elif len(key) > (2 + self.depth):
             raise KeyError(f"Can only slice {2 + self.depth} dimensions")
-        elif len(slices) == 3 and slices[-1] not in [self.vdims[0].name, slice(None)]:
+        elif len(key) == 3 and key[-1] not in [self.vdims[0].name, slice(None)]:
             raise KeyError(f"{self.vdims[0].name!r} is the only selectable value dimension")
 
-        slc_types = [isinstance(sl, slice) for sl in slices[:2]]
-        data = self.data.__getitem__(slices[:2][::-1])
+        slc_types = [isinstance(sl, slice) for sl in key[:2]]
+        data = self.data.__getitem__(key[:2][::-1])
         if all(slc_types):
             return self.clone(data, extents=None)
         elif not any(slc_types):
@@ -83,7 +88,7 @@ class Raster(Element2D):
     def range(self, dim, data_range=True, dimension_range=True):
         idx = self.get_dimension_index(dim)
         if data_range and idx == 2:
-            dimension = self.get_dimension(dim)
+            dimension = self.get_dimension(dim, strict=True)
             if self.data.size == 0:
                 return np.nan, np.nan
             lower, upper = np.nanmin(self.data), np.nanmax(self.data)
@@ -92,8 +97,8 @@ class Raster(Element2D):
             return util.dimension_range(lower, upper, dimension.range, dimension.soft_range)
         return super().range(dim, data_range, dimension_range)
 
-    def dimension_values(self, dim, expanded=True, flat=True):
-        dim_idx = self.get_dimension_index(dim)
+    def dimension_values(self, dimension, expanded=True, flat=True):
+        dim_idx = self.get_dimension_index(dimension)
         if not expanded and dim_idx == 0:
             return np.array(range(self.data.shape[1]))
         elif not expanded and dim_idx == 1:
@@ -105,9 +110,9 @@ class Raster(Element2D):
             arr = self.data.T
             return arr.flatten() if flat else arr
         else:
-            return super().dimension_values(dim)
+            return super().dimension_values(dimension)
 
-    def sample(self, samples=None, bounds=None, **sample_values):
+    def sample(self, samples=None, bounds=None, closest=False, **sample_values):
         """Sample the Raster along one or both of its dimensions,
         returning a reduced dimensionality type, which is either
         a ItemTable, Curve or Scatter. If two dimension samples
@@ -120,11 +125,11 @@ class Raster(Element2D):
             samples = []
         if isinstance(samples, tuple):
             X, Y = samples
-            samples = zip(X, Y, strict=False)
+            samples = list(zip(X, Y, strict=False))
 
         params = dict(self.param.values(onlychanged=True), vdims=self.vdims)
-        if len(sample_values) == self.ndims or len(samples):
-            if not len(samples):
+        if len(sample_values) == self.ndims or samples:
+            if not samples:
                 samples = zip(
                     *[
                         c if isinstance(c, list) else [c]
@@ -163,7 +168,7 @@ class Raster(Element2D):
             params["kdims"] = other_dimension
             return Curve(data, **params)
 
-    def reduce(self, dimensions=None, function=None, **reduce_map):
+    def reduce(self, dimensions=None, function=None, spreadfn=None, **reduce_map):
         """Reduces the Raster using functions provided via the
         kwargs, where the keyword is the dimension to be reduced.
         Optionally a label_prefix can be provided to prepend to
@@ -269,6 +274,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
     )
 
     _ndim = 2
+    interface: type[GridInterface]
 
     def __init__(
         self,
@@ -297,7 +303,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
             or (isinstance(data, np.ndarray) and data.size == 0)
         ):
             data = data if isinstance(data, np.ndarray) and data.ndim == 2 else np.zeros((0, 0))
-            bounds = 0
+            bounds = BoundingBox(radius=0)
             if not xdensity:
                 xdensity = 1
             if not ydensity:
@@ -417,7 +423,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
                 r = util.dt_to_int(r)
             if isinstance(c, util.datetime_types):
                 c = util.dt_to_int(c)
-            if util.isfinite(r) and not np.isclose(r, c, rtol=self.rtol):
+            if util.isfinite(r) and not np.isclose(r, c, rtol=t.cast("float", self.rtol)):
                 not_close = True
         if not_close:
             raise ValueError(
@@ -461,12 +467,11 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
                 Selections may be supplied as keyword arguments or as a positional
                 argument, never both.""")
             selection = selection_expr
-            selection_expr = None
         if selection_specs and not any(self.matches(sp) for sp in selection_specs):
             return self
 
         selection = {
-            self.get_dimension(k).name: slice(*sel) if isinstance(sel, tuple) else sel
+            self.get_dimension(k, strict=True).name: slice(*sel) if isinstance(sel, tuple) else sel
             for k, sel in selection.items()
             if k in self.kdims
         }
@@ -549,7 +554,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
 
     def range(self, dim, data_range=True, dimension_range=True):
         idx = self.get_dimension_index(dim)
-        dimension = self.get_dimension(dim)
+        dimension = self.get_dimension(dim, strict=True)
         if idx in [0, 1] and data_range and dimension.range == (None, None):
             l, b, r, t = self.bounds.lbrt()
             return (b, t) if idx else (l, r)
@@ -792,8 +797,8 @@ class RGB(Image):
 
         return False
 
-    def __getitem__(self, slices):
-        wrapped = util.wrap_tuple(slices)
+    def __getitem__(self, key):
+        wrapped = util.wrap_tuple(key)
         if Ellipsis in wrapped:
             if wrapped.count(Ellipsis) > 1:
                 msg = "Only a single ellipsis is allowed"
@@ -802,8 +807,8 @@ class RGB(Image):
             head = wrapped[:index]
             tail = wrapped[index + 1 :]
             padlen = max(self.ndims + 1 - len(head) - len(tail), 0)
-            slices = head + (slice(None),) * padlen + tail
-        return super().__getitem__(slices)
+            key = head + (slice(None),) * padlen + tail
+        return super().__getitem__(key)
 
 
 class HSV(RGB):
@@ -913,6 +918,7 @@ class QuadMesh(Selection2DExpr, Dataset, Element2D):
     vdims = param.List(default=[Dimension("z")], bounds=(1, None))
 
     _binned = True
+    interface: type[GridInterface]
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if data is None or isinstance(data, list) and data == []:

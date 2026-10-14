@@ -5,6 +5,7 @@ elements.
 
 from __future__ import annotations
 
+import typing as t
 from importlib.util import find_spec
 
 import numpy as np
@@ -17,7 +18,7 @@ from ..util.transform import dim
 from .annotation import HSpan, VSpan
 
 
-class SelectionIndexExpr:
+class SelectionIndexExpr(Dataset if t.TYPE_CHECKING else object):
     _selection_dims = None
 
     _selection_streams = (Selection1D,)
@@ -114,7 +115,7 @@ def _cuspatial_new(xvals, yvals, geometry):
 
 def spatial_select_columnar(xvals, yvals, geometry, geom_method=None):
     if cudf:
-        if isinstance(xvals, cudf.Series):
+        if isinstance(xvals, cudf.Series) and isinstance(yvals, cudf.Series):
             xvals = xvals.values.astype("float")
             yvals = yvals.values.astype("float")
             try:
@@ -126,7 +127,7 @@ def spatial_select_columnar(xvals, yvals, geometry, geom_method=None):
                 xvals = cp.asnumpy(xvals)
                 yvals = cp.asnumpy(yvals)
     if dd:
-        if isinstance(xvals, dd.Series):
+        if isinstance(xvals, dd.Series) and isinstance(yvals, dd.Series):
             try:
                 xvals.name = "xvals"
                 yvals.name = "yvals"
@@ -154,7 +155,7 @@ def spatial_select_columnar(xvals, yvals, geometry, geom_method=None):
             raise ImportError(msg) from None
     geom_function = {"spatialpandas": _mask_spatialpandas, "shapely": _mask_shapely}[geom_method]
     geom_mask = geom_function(masked_xvals, masked_yvals, geometry)
-    if isinstance(xvals, pd.Series):
+    if isinstance(sel_mask, pd.Series):
         sel_mask[sel_mask.index[np.where(sel_mask)[0]]] = geom_mask
     else:
         sel_mask[np.where(sel_mask)[0]] = geom_mask
@@ -280,7 +281,7 @@ class Selection2DExpr(SelectionIndexExpr):
             expr = dim(contains, np.reshape, get_shape)
         return expr
 
-    def _get_bounds_selection(self, xdim, ydim, **kwargs):
+    def _get_bounds_selection(self, xdim, ydim, *args, **kwargs):
         from .geom import Rectangles
 
         (x0, x1), xcats, (y0, y1), ycats = self._get_selection(**kwargs)
@@ -306,7 +307,7 @@ class Selection2DExpr(SelectionIndexExpr):
             region_element = Rectangles([(x0, y0, x1, y1)])
         return selection_expr, bbox, region_element
 
-    def _get_lasso_selection(self, xdim, ydim, geometry, **kwargs):
+    def _get_lasso_selection(self, xdim, ydim, geometry, *args, **kwargs):
         from .path import Path
 
         bbox = {xdim.name: geometry[:, 0], ydim.name: geometry[:, 1]}
@@ -407,7 +408,7 @@ class SelectionGeomExpr(Selection2DExpr):
             region_element = Rectangles([(x0, y0, x1, y1)])
         return selection_expr, bbox, region_element
 
-    def _get_lasso_selection(self, x0dim, y0dim, x1dim, y1dim, geometry, **kwargs):
+    def _get_lasso_selection(self, x0dim, y0dim, x1dim, y1dim, geometry, *args, **kwargs):
         from .path import Path
 
         bbox = {
@@ -438,7 +439,7 @@ class SelectionPolyExpr(Selection2DExpr):
             self._index_skip = False
         return skip
 
-    def _get_bounds_selection(self, xdim, ydim, **kwargs):
+    def _get_bounds_selection(self, xdim, ydim, *args, **kwargs):
         from .geom import Rectangles
 
         (x0, x1), _, (y0, y1), _ = self._get_selection(**kwargs)
@@ -452,7 +453,7 @@ class SelectionPolyExpr(Selection2DExpr):
             return selection_expr, bbox, None
         return expr, bbox, Rectangles([(x0, y0, x1, y1)])
 
-    def _get_lasso_selection(self, xdim, ydim, geometry, **kwargs):
+    def _get_lasso_selection(self, xdim, ydim, geometry, *args, **kwargs):
         from .path import Path
 
         bbox = {xdim.name: geometry[:, 0], ydim.name: geometry[:, 1]}

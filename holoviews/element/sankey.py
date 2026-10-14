@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import typing as t
 from functools import cmp_to_key
 from itertools import cycle
 
@@ -102,7 +103,12 @@ class _layout_sankey(Operation):
         else:
             values = cycle([()])
         for idx, vals in zip(element.nodes.dimension_values(index), values, strict=False):
-            node = {"index": idx, "sourceLinks": [], "targetLinks": [], "values": vals}
+            node: dict[str, t.Any] = {
+                "index": idx,
+                "sourceLinks": [],
+                "targetLinks": [],
+                "values": vals,
+            }
             graph["nodes"].append(node)
             node_map[idx] = node
 
