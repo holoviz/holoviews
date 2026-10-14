@@ -2342,7 +2342,17 @@ class GenericOverlayPlot(GenericElementPlot):
         # Should match what is done in ElementPlot.get_extents
         if not self.drawn:
             x_range, y_range = ((y0, y1), (x0, x1)) if self.invert_axes else ((x0, x1), (y0, y1))
-            for stream in getattr(self, "source_streams", []):
+            # Seed subplot streams: padding is only applied at the overlay
+            # level, so without this initial subplot callback sees an unpadded
+            # range. https://github.com/holoviz/holoviews/pull/6964
+            streams = list(getattr(self, "source_streams", []))
+            for subplot in self.subplots.values():
+                if subplot is None:
+                    continue
+                for stream in getattr(subplot, "source_streams", []):
+                    if stream not in streams:
+                        streams.append(stream)
+            for stream in streams:
                 if isinstance(stream, RangeX):
                     params = {"x_range": x_range}
                 elif isinstance(stream, RangeY):
