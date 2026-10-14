@@ -28,6 +28,7 @@ from ..core import (
 from ..core.data import (
     DaskInterface,
     Dataset,
+    MultiInterface,
     PandasInterface,
     XArrayInterface,
     cuDFInterface,
@@ -478,8 +479,10 @@ class aggregate(LineAggregationOperation):
         dims = obj.dimensions()[:2]
         if isinstance(obj, Path):
             glyph = "line"
-            for p in obj.split(datatype="dataframe"):
-                paths.append(p)
+            if obj.interface is MultiInterface:
+                paths.append(obj.dframe())
+            else:
+                paths.extend(obj.split(datatype="dataframe"))
         elif isinstance(obj, CompositeOverlay):
             element = None
             is_ndoverlay = isinstance(obj, NdOverlay)
