@@ -10,6 +10,7 @@ from ..core import Dataset, Dimension, Element2D
 from ..core.accessors import Redim
 from ..core.operation import Operation
 from ..core.util import dtype_kind, is_dataframe, max_range, search_indices
+from ..core.util.dependencies import _import_with_error
 from .geom import Points
 from .path import Path
 from .util import (
@@ -647,12 +648,11 @@ class TriMesh(Graph):
         each point.
 
         """
-        try:
-            from scipy.spatial import Delaunay
-        except ImportError:
-            raise ImportError(
-                "Generating triangles from points requires SciPy to be installed."
-            ) from None
+        _import_with_error(
+            "scipy", context="Generating triangles from points requires SciPy to be installed."
+        )
+        from scipy.spatial import Delaunay
+
         if not isinstance(data, Points):
             data = Points(data)
         if not len(data):

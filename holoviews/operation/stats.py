@@ -6,6 +6,7 @@ import param
 from ..core import Dataset, Dimension, NdOverlay
 from ..core.operation import Operation
 from ..core.util import cartesian_product, isfinite
+from ..core.util.dependencies import _import_with_error
 from ..element import Area, Bivariate, Contours, Curve, Distribution, Image, Polygons
 from .element import contours
 
@@ -85,13 +86,11 @@ class univariate_kde(Operation):
             self.p.groupby = None
             return grouped.map(self._process, Dataset)
 
-        try:
-            from scipy import stats
-            from scipy.linalg import LinAlgError
-        except ImportError:
-            raise ImportError(
-                f"{type(self).__name__} operation requires SciPy to be installed."
-            ) from None
+        _import_with_error(
+            "scipy", context=f"{type(self).__name__} operation requires SciPy to be installed."
+        )
+        from scipy import stats
+        from scipy.linalg import LinAlgError
 
         params = {}
         if isinstance(element, Distribution):
@@ -218,12 +217,10 @@ class bivariate_kde(Operation):
     _per_element = True
 
     def _process(self, element, key=None):
-        try:
-            from scipy import stats
-        except ImportError:
-            raise ImportError(
-                f"{type(self).__name__} operation requires SciPy to be installed."
-            ) from None
+        _import_with_error(
+            "scipy", context=f"{type(self).__name__} operation requires SciPy to be installed."
+        )
+        from scipy import stats
 
         if len(element.dimensions()) < 2:
             raise ValueError(

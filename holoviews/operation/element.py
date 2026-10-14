@@ -42,7 +42,7 @@ from ..core.util import (
     isfinite,
     label_sanitizer,
 )
-from ..core.util.dependencies import _no_import_version, cp
+from ..core.util.dependencies import _import_with_error, _no_import_version, cp
 from ..element.chart import Bars, Histogram, Scatter
 from ..element.path import Contours, Dendrogram, Polygons
 from ..element.raster import RGB, HeatMap, Image
@@ -1552,10 +1552,8 @@ class dendrogram(Operation):
     )
 
     def _compute_linkage(self, dataset, dim, vdim):
-        try:
-            from scipy.cluster.hierarchy import dendrogram, linkage
-        except ImportError:
-            raise ImportError("scipy is needed for the dendrogram operation") from None
+        _import_with_error("scipy", context="SciPy is needed for the dendrogram operation")
+        from scipy.cluster.hierarchy import dendrogram, linkage
 
         arrays, labels = [], []
         for k, v in dataset.groupby(dim, container_type=list, group_type=Dataset):

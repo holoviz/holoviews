@@ -60,6 +60,39 @@ _MIN_SUPPORTED_VERSION = {
 }
 
 
+def _import_with_error(
+    module_name: str, package_name: str | None = None, *, context: str | None = None
+) -> ModuleType:
+    """Import a module and raise an error if it is not installed or the version is too low."""
+    package_name = package_name or module_name
+    try:
+        module = import_module(module_name)
+    except ImportError:
+        msg = (
+            f"Please install the optional dependency, "
+            f"either with `pip install {package_name}` "
+            f"or `conda install {package_name}`."
+        )
+        if context:
+            msg = f"{context.rstrip('.')}. {msg}"
+        raise ModuleNotFoundError(msg) from None
+    if package_name in _MIN_SUPPORTED_VERSION:
+        min_version = _MIN_SUPPORTED_VERSION[package_name]
+        mod_version = _no_import_version(package_name)
+        if mod_version < min_version:
+            min_version_str = ".".join(map(str, min_version))
+            mod_version_str = ".".join(map(str, mod_version))
+            msg = (
+                f"Please upgrade the optional dependency {package_name} "
+                f"from {mod_version_str} to {min_version_str} or higher, "
+                f'either with `pip install "{package_name}>={min_version_str}"` '
+                f'or `conda install "{package_name}>={min_version_str}"`.'
+            )
+            raise VersionError(msg, mod_version_str, min_version_str)
+
+    return module
+
+
 class _LazyModule:
     def __init__(self, module_name: str, package_name: str | None = None):
         """
@@ -83,29 +116,7 @@ class _LazyModule:
     @property
     def _module(self) -> ModuleType:
         if self.__module is None:
-            try:
-                self.__module = import_module(self.__module_name)
-            except ImportError:
-                msg = (
-                    f"Please install the optional dependency, "
-                    f"either with `pip install {self.__package_name}` "
-                    f"or `conda install {self.__package_name}`."
-                )
-                raise ModuleNotFoundError(msg) from None
-            if self.__package_name in _MIN_SUPPORTED_VERSION:
-                min_version = _MIN_SUPPORTED_VERSION[self.__package_name]
-                mod_version = _no_import_version(self.__package_name)
-                if mod_version < min_version:
-                    min_version_str = ".".join(map(str, min_version))
-                    mod_version_str = ".".join(map(str, mod_version))
-                    msg = (
-                        f"Please upgrade the optional dependency {self.__package_name} "
-                        f"from {mod_version_str} to {min_version_str} or higher, "
-                        f'either with `pip install "{self.__package_name}>={min_version_str}"` '
-                        f'or `conda install "{self.__package_name}>={min_version_str}"`.'
-                    )
-                    raise VersionError(msg, mod_version_str, min_version_str)
-
+            self.__module = _import_with_error(self.__module_name, self.__package_name)
         return self.__module
 
     def __getattr__(self, attr):
