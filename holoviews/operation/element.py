@@ -663,10 +663,8 @@ class contours(Operation):
     _per_element = True
 
     def _process(self, element, key=None):
-        try:
-            from contourpy import FillType, LineType, contour_generator
-        except ImportError:
-            raise ImportError("contours operation requires contourpy.") from None
+        _import_with_error("contourpy", context="contours operation requires ContourPy")
+        from contourpy import FillType, LineType, contour_generator
 
         xs = element.dimension_values(0, True, flat=False)
         ys = element.dimension_values(1, True, flat=False)
@@ -692,12 +690,11 @@ class contours(Operation):
                     "for filled contour calculations."
                 )
 
-            try:
-                from matplotlib.dates import date2num, num2date
-            except ImportError:
-                raise ImportError(
-                    "contours operation using datetimes requires matplotlib."
-                ) from None
+            _import_with_error(
+                "matplotlib",
+                context="contours operation using datetimes requires Matplotlib",
+            )
+            from matplotlib.dates import date2num, num2date
 
             data = tuple(
                 date2num(d) if is_datetime else d
@@ -1552,7 +1549,7 @@ class dendrogram(Operation):
     )
 
     def _compute_linkage(self, dataset, dim, vdim):
-        _import_with_error("scipy", context="SciPy is needed for the dendrogram operation")
+        _import_with_error("scipy", context="dendrogram operation requires SciPy")
         from scipy.cluster.hierarchy import dendrogram, linkage
 
         arrays, labels = [], []

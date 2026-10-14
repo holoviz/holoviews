@@ -61,21 +61,23 @@ _MIN_SUPPORTED_VERSION = {
 
 
 def _import_with_error(
-    module_name: str, package_name: str | None = None, *, context: str | None = None
+    module_name: str,
+    package_name: str | None = None,
+    *,
+    context: str | None = None,
+    error_type: type[Exception] = ModuleNotFoundError,
 ) -> ModuleType:
     """Import a module and raise an error if it is not installed or the version is too low."""
     package_name = package_name or module_name
     try:
         module = import_module(module_name)
     except ImportError:
-        msg = (
-            f"Please install the optional dependency, "
-            f"either with `pip install {package_name}` "
-            f"or `conda install {package_name}`."
-        )
+        install = f"either with `pip install {package_name}` or `conda install {package_name}`."
         if context:
-            msg = f"{context.rstrip('.')}. {msg}"
-        raise ModuleNotFoundError(msg) from None
+            msg = f"{context.rstrip('.')}. Install it {install}"
+        else:
+            msg = f"Please install the optional dependency, {install}"
+        raise error_type(msg) from None
     if package_name in _MIN_SUPPORTED_VERSION:
         min_version = _MIN_SUPPORTED_VERSION[package_name]
         mod_version = _no_import_version(package_name)

@@ -86,9 +86,7 @@ class univariate_kde(Operation):
             self.p.groupby = None
             return grouped.map(self._process, Dataset)
 
-        _import_with_error(
-            "scipy", context=f"{type(self).__name__} operation requires SciPy to be installed."
-        )
+        _import_with_error("scipy", context=f"{type(self).__name__} operation requires SciPy")
         from scipy import stats
         from scipy.linalg import LinAlgError
 
@@ -217,9 +215,7 @@ class bivariate_kde(Operation):
     _per_element = True
 
     def _process(self, element, key=None):
-        _import_with_error(
-            "scipy", context=f"{type(self).__name__} operation requires SciPy to be installed."
-        )
+        _import_with_error("scipy", context=f"{type(self).__name__} operation requires SciPy")
         from scipy import stats
 
         if len(element.dimensions()) < 2:
