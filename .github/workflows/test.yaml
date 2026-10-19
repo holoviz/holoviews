@@ -210,6 +210,36 @@ jobs:
         run: |
           pixi run -e "${ENV}" test-unit
 
+  benchmark_test_suite:
+    name: benchmark:${{ matrix.environment }}:${{ matrix.os }}
+    needs: [pre_commit]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        environment: ["test-314"]
+    env:
+      ENV: ${{ matrix.environment }}
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
+        with:
+          environments: ${{ matrix.environment }}
+          download-data: false
+          pixi-activate-environment: ${{ matrix.environment }}
+      - name: Update upstream packages
+        if: github.event.inputs.cache == 'false'
+        run: |
+          pixi update ${UPSTREAM_PACKAGES} -e "${ENV}"
+      - name: Warm up
+        run: |
+          python -c "import holoviews as hv, holoviews.operation.datashader; hv.extension('bokeh', 'matplotlib', 'plotly')"
+      - name: Run import benchmarks
+        uses: CodSpeedHQ/action@821a40cd6c80e3cfe387caf55668287addd808da # v5.5.0
+        with:
+          mode: simulation
+          config: scripts/codspeed.yml
+
   type_suite:
     name: type:${{ matrix.environment }}:${{ matrix.os }}
     needs: [pre_commit, setup]
@@ -237,7 +267,14 @@ jobs:
 
   result_test_suite:
     name: result:test
-    needs: [unit_test_suite, ui_test_suite, core_test_suite, type_suite]
+    needs:
+      [
+        unit_test_suite,
+        ui_test_suite,
+        core_test_suite,
+        benchmark_test_suite,
+        type_suite,
+      ]
     if: always()
     runs-on: ubuntu-latest
     steps:
