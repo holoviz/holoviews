@@ -3,7 +3,6 @@ from __future__ import annotations
 import numpy as np
 import param
 from plotly import colors
-from plotly.figure_factory._trisurf import trisurf as trisurface
 
 from ...core.options import SkipRendering
 from .chart import CurvePlot, ScatterPlot
@@ -131,6 +130,7 @@ class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
         return {k: v for k, v in opts.items() if "legend" not in k and k != "name"}
 
     def init_graph(self, datum, options, index=0, **kwargs):
+        from plotly.figure_factory._trisurf import trisurf as trisurface
 
         # Pop colorbar options since these aren't accepted by the trisurf
         # figure factory.
