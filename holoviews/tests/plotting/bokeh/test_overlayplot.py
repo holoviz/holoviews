@@ -90,6 +90,21 @@ class TestOverlayPlot(LoggingComparison, TestBokehPlot):
             ("y", "@{y}"),
         ]
 
+    @pytest.mark.parametrize("new_hover", [False, True])
+    def test_hover_tool_dynamic_subplots(self, new_hover):
+        def get_plot(value):
+            plots = [hv.Curve([0, 1]).opts(tools=["hover"])]
+            if value == 1:
+                plots += [hv.Curve([2, 3]).opts(tools=["hover"] if new_hover else [])]
+            return hv.Overlay(plots)
+
+        dmap = hv.DynamicMap(get_plot, kdims=["value"]).redim.values(value=[0, 1])
+        plot = bokeh_renderer.get_plot(dmap)
+        plot.update((1,))
+        expected = [("Curve", "I"), ("Curve", "II")] if new_hover else [("Curve", "I")]
+        renderers = [plot.subplots[key].handles["glyph_renderer"] for key in expected]
+        assert plot.handles["hover"].renderers == renderers
+
     def test_overlay_empty_layers(self):
         overlay = hv.Curve(range(10)) * hv.NdOverlay()
         plot = bokeh_renderer.get_plot(overlay)
