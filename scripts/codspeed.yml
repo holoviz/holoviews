@@ -1,0 +1,14 @@
+---
+$schema: https://raw.githubusercontent.com/CodSpeedHQ/codspeed/refs/heads/main/schemas/codspeed.schema.json
+
+benchmarks:
+  - name: import holoviews
+    exec: python -I -c "import holoviews"
+  - name: import holoviews + bokeh
+    exec: python -I -c "import holoviews as hv; hv.extension('bokeh')"
+  - name: import holoviews + matplotlib
+    exec: python -I -c "import holoviews as hv; hv.extension('matplotlib')"
+  - name: import holoviews + plotly
+    exec: python -I -c "import holoviews as hv; hv.extension('plotly')"
+  - name: import holoviews + datashader
+    exec: python -I -c "import holoviews.operation.datashader"
