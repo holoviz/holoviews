@@ -275,7 +275,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
     )
 
     _ndim = 2
-    interface: type[GridInterface]
+    interface: type[GridInterface]  # ty: ignore[invalid-mutable-override]
 
     def __init__(
         self,
@@ -917,7 +917,7 @@ class QuadMesh(Selection2DExpr, Dataset, Element2D):
     vdims = param.List(default=[Dimension("z")], bounds=(1, None))
 
     _binned = True
-    interface: type[GridInterface]
+    interface: type[GridInterface]  # ty: ignore[invalid-mutable-override]
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if data is None or isinstance(data, list) and data == []:
