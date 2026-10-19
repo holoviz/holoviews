@@ -21,8 +21,6 @@ from .streams import BoxEdit, CDSStream, CurveEdit, PointDraw, PolyDraw, PolyEdi
 
 NoNone = False
 if t.TYPE_CHECKING:
-    from collections.abc import Callable
-
     from param.parameters import NoNone  # noqa: TC004, move up when 2.4 is lower pin
 
     _T = t.TypeVar("_T")
@@ -203,7 +201,7 @@ class annotate(param.ParameterizedFunction):
         return self.compose(*layers)
 
 
-class Annotator(PaneBase):
+class Annotator[S: CDSStream](PaneBase):
     """An Annotator allows drawing, editing and annotating a specific
     type of element. Each Annotator consists of the `plot` to draw and
     edit the element and the `editor`, which contains a list of tables,
@@ -271,19 +269,28 @@ class Annotator(PaneBase):
 
     priority = 0.7
 
-    _init_stream: Callable[[], None]
-    _process_element: Callable[[t.Any], Dataset]
-    _stream: CDSStream
+    _stream: S
     _selection: Selection1D
-    name: str
 
     @classmethod
     def applies(cls, object):
         return isinstance(object, cls.param.object.class_)
 
+    def _init_stream(self) -> None:
+        raise NotImplementedError
+
+    def _process_element(self, object, /) -> Dataset:
+        raise NotImplementedError
+
     @property
     def _element_type(self):
         return self.param.object.class_
+
+    @property
+    def _param_name(self) -> str:
+        if self.name is None:
+            raise ValueError(f"{type(self).__name__} must have a name.")
+        return param_name(self.name)
 
     @property
     def _object_name(self):
@@ -293,7 +300,7 @@ class Annotator(PaneBase):
         super().__init__(None, **params)
         self.object = self._process_element(object)
         self._table_row = Row()
-        self.editor = Tabs((f"{param_name(t.cast('str', self.name))}", self._table_row))
+        self.editor = Tabs((self._param_name, self._table_row))
         self.plot = DynamicMap(self._get_plot)
         self.plot.callback.inputs[:] = [self.object]
         self._tables = []
@@ -338,7 +345,7 @@ class Annotator(PaneBase):
         object = self.object
         for transform in self.table_transforms:
             object = transform(object)
-        self._table = Table(object, label=param_name(t.cast("str", self.name))).opts(
+        self._table = Table(object, label=self._param_name).opts(
             show_title=False, **self.table_opts
         )
         self._update_links()
@@ -381,7 +388,7 @@ class Annotator(PaneBase):
         return self.object.iloc[self._selection.index]
 
 
-class PathAnnotator(Annotator):
+class PathAnnotator(Annotator[PolyDraw]):
     """Annotator which allows drawing and editing Paths and associating
     values with each path and each vertex of a path using a table.
 
@@ -418,15 +425,13 @@ class PathAnnotator(Annotator):
 
     _triggers = ["annotations", "edit_vertices", "object", "table_opts", "vertex_annotations"]
 
-    _stream: PolyDraw
-
     def __init__(self, object=None, **params):
         self._vertex_table_row = Row()
         super().__init__(object, **params)
-        self.editor.append((f"{param_name(self.name)} Vertices", self._vertex_table_row))
+        self.editor.append((f"{self._param_name} Vertices", self._vertex_table_row))
 
     def _init_stream(self):
-        name = param_name(self.name)
+        name = self._param_name
         self._stream = PolyDraw(
             source=self.plot,
             data={},
@@ -506,7 +511,7 @@ class PathAnnotator(Annotator):
                 self.object = element
 
     def _update_table(self):
-        name = param_name(self.name)
+        name = self._param_name
         annotations = list(self.annotations)
         table = self.object
         for transform in self.table_transforms:
@@ -541,7 +546,7 @@ class PolyAnnotator(PathAnnotator):
     )
 
 
-class _GeomAnnotator(Annotator):
+class _GeomAnnotator(Annotator[CDSStream]):
     default_opts = param.Dict(
         default={"responsive": True, "min_height": 400, "padding": 0.1, "framewise": True},
         doc="Opts to apply to the element.",
@@ -552,7 +557,7 @@ class _GeomAnnotator(Annotator):
     _stream_type: type[CDSStream]
 
     def _init_stream(self):
-        name = param_name(self.name)
+        name = self._param_name
         self._stream = self._stream_type(
             source=self.plot,
             data={},
@@ -630,7 +635,7 @@ class CurveAnnotator(_GeomAnnotator):
     _stream_type = CurveEdit
 
     def _init_stream(self):
-        name = param_name(self.name)
+        name = self._param_name
         self._stream = self._stream_type(
             source=self.plot, data={}, tooltip=f"{name} Tool", style=self.vertex_style
         )
