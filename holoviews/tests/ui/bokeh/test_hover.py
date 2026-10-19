@@ -258,7 +258,7 @@ def test_hover_tooltips_rasterize_server_hover(serve_hv, rng):
 
     # Hover over the plot, first time the hovertool only have null
     # we then timeout and hover again to get hovertool with actual values
-    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    hv_plot.hover()
     page.mouse.up()
 
     expect(page.locator(".bk-Tooltip")).to_have_count(1)
@@ -310,7 +310,7 @@ def test_hover_tooltips_rasterize_server_hover_selector_ux(
 
     # Hover over the plot, first time the hovertool only have null
     # we then timeout and hover again to get hovertool with actual values
-    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    hv_plot.hover()
     page.mouse.up()
 
     expect(page.locator(".bk-Tooltip")).to_have_count(1)
@@ -368,7 +368,7 @@ def test_hover_tooltips_rasterize_server_datetime_axis(serve_hv, rng, convert_x,
 
     # Hover over the plot, first time the hovertool only have null
     # we then timeout and hover again to get hovertool with actual values
-    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    hv_plot.hover()
     page.mouse.up()
 
     expect(page.locator(".bk-Tooltip")).to_have_count(1)
@@ -483,7 +483,7 @@ def test_hover_tooltips_rasterize_server_hover_filter(serve_hv, rng, hover_toolt
 
     # Hover over the plot, first time the hovertool only have null
     # we then timeout and hover again to get hovertool with actual values
-    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    hv_plot.hover()
     page.mouse.up()
 
     expect(page.locator(".bk-Tooltip")).to_have_count(1)
