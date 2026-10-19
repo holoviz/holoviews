@@ -211,7 +211,7 @@ jobs:
           pixi run -e "${ENV}" test-unit
 
   benchmark_test_suite:
-    name: benchmark:${{ matrix.environment }}:${{ matrix.os }}
+    name: benchmark:${{ matrix.environment }}:${{ matrix.benchmark }}
     needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -219,8 +219,10 @@ jobs:
       matrix:
         os: ["ubuntu-latest"]
         environment: ["test-314"]
+        benchmark: ["core", "bokeh", "matplotlib", "plotly", "datashader"]
     env:
       ENV: ${{ matrix.environment }}
+      BENCHMARK: ${{ matrix.benchmark }}
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi-install@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
         with:
@@ -231,11 +233,17 @@ jobs:
         if: github.event.inputs.cache == 'false'
         run: |
           pixi update ${UPSTREAM_PACKAGES} -e "${ENV}"
-      - name: Run import benchmarks
+      - name: Select benchmark
+        run: |
+          yq '.benchmarks |= map(select(.name == strenv(BENCHMARK)))' scripts/codspeed.yml > codspeed-shard.yml
+      - name: Warm up caches
+        run: |
+          yq '.benchmarks[0].exec' codspeed-shard.yml | bash
+      - name: Run import benchmark
         uses: CodSpeedHQ/action@821a40cd6c80e3cfe387caf55668287addd808da # v5.5.0
         with:
           mode: simulation
-          config: scripts/codspeed.yml
+          config: codspeed-shard.yml
 
   type_suite:
     name: type:${{ matrix.environment }}:${{ matrix.os }}
