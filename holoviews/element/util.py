@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING
+import typing as t
 
 import numpy as np
 import param
@@ -22,7 +22,7 @@ from ..core.util import (
     sort_topologically,
 )
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import pandas as pd
 
     type Array = np.ndarray | pd.api.extensions.ExtensionArray
