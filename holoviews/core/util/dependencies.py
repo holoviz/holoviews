@@ -56,7 +56,43 @@ def _no_import_version(package_name) -> tuple[int, ...]:
 
 _MIN_SUPPORTED_VERSION = {
     "pandas": (1, 3, 0),
+    "datashader": (0, 16, 0),
 }
+
+
+def _import_with_error(
+    module_name: str,
+    package_name: str | None = None,
+    *,
+    context: str | None = None,
+    error_type: type[Exception] = ModuleNotFoundError,
+) -> ModuleType:
+    """Import a module and raise an error if it is not installed or the version is too low."""
+    package_name = package_name or module_name
+    try:
+        module = import_module(module_name)
+    except ImportError:
+        install = f"either with `pip install {package_name}` or `conda install {package_name}`."
+        if context:
+            msg = f"{context.rstrip('.')}. Install it {install}"
+        else:
+            msg = f"Please install the optional dependency, {install}"
+        raise error_type(msg) from None
+    if package_name in _MIN_SUPPORTED_VERSION:
+        min_version = _MIN_SUPPORTED_VERSION[package_name]
+        mod_version = _no_import_version(package_name)
+        if mod_version < min_version:
+            min_version_str = ".".join(map(str, min_version))
+            mod_version_str = ".".join(map(str, mod_version))
+            msg = (
+                f"Please upgrade the optional dependency {package_name} "
+                f"from {mod_version_str} to {min_version_str} or higher, "
+                f'either with `pip install "{package_name}>={min_version_str}"` '
+                f'or `conda install "{package_name}>={min_version_str}"`.'
+            )
+            raise VersionError(msg, mod_version_str, min_version_str)
+
+    return module
 
 
 class _LazyModule:
@@ -82,16 +118,7 @@ class _LazyModule:
     @property
     def _module(self) -> ModuleType:
         if self.__module is None:
-            self.__module = import_module(self.__module_name)
-            if self.__package_name in _MIN_SUPPORTED_VERSION:
-                min_version = _MIN_SUPPORTED_VERSION[self.__package_name]
-                mod_version = _no_import_version(self.__package_name)
-                if mod_version < min_version:
-                    min_version_str = ".".join(map(str, min_version))
-                    mod_version_str = ".".join(map(str, mod_version))
-                    msg = f"{self.__package_name} requires {min_version_str} or higher (found {mod_version_str})"
-                    raise VersionError(msg, mod_version_str, min_version_str)
-
+            self.__module = _import_with_error(self.__module_name, self.__package_name)
         return self.__module
 
     def __getattr__(self, attr):
@@ -123,9 +150,11 @@ cudf = _lazy_import("cudf")
 cp = _lazy_import("cupy")
 da = _lazy_import("dask.array")
 dd = _lazy_import("dask.dataframe")
+ds = _lazy_import("datashader")
 ibis = _lazy_import("ibis", "ibis-framework")
 pd = _lazy_import("pandas")
 pl = _lazy_import("polars")
+xr = _lazy_import("xarray")
 
 # Versions
 NUMPY_VERSION = _no_import_version("numpy")

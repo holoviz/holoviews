@@ -38,6 +38,7 @@ import param
 
 from ..core import NdOverlay, Overlay
 from ..core.util import dtype_kind
+from ..core.util.dependencies import _import_with_error
 from ..element.chart import Area
 from .resample import ResampleOperation1D
 
@@ -185,35 +186,37 @@ def _viewport(x, y, n_out, **kwargs):
 
 
 def _min_max(x, y, n_out, **kwargs):
-    try:
-        from tsdownsample import MinMaxDownsampler
-    except ModuleNotFoundError:
-        raise NotImplementedError(
-            "The min-max downsampling algorithm requires the tsdownsample library to be installed."
-        ) from None
+    _import_with_error(
+        "tsdownsample",
+        context="The min-max downsampling algorithm requires tsdownsample",
+        error_type=NotImplementedError,
+    )
+    from tsdownsample import MinMaxDownsampler
+
     x, y = _ensure_contiguous(x, y)
     return MinMaxDownsampler().downsample(x, y, n_out=n_out, **kwargs)
 
 
 def _min_max_lttb(x, y, n_out, **kwargs):
-    try:
-        from tsdownsample import MinMaxLTTBDownsampler
-    except ModuleNotFoundError:
-        raise NotImplementedError(
-            "The minmax-lttb downsampling algorithm requires the tsdownsample "
-            "library to be installed."
-        ) from None
+    _import_with_error(
+        "tsdownsample",
+        context="The minmax-lttb downsampling algorithm requires tsdownsample",
+        error_type=NotImplementedError,
+    )
+    from tsdownsample import MinMaxLTTBDownsampler
+
     x, y = _ensure_contiguous(x, y)
     return MinMaxLTTBDownsampler().downsample(x, y, n_out=n_out, **kwargs)
 
 
 def _m4(x, y, n_out, **kwargs):
-    try:
-        from tsdownsample import M4Downsampler
-    except ModuleNotFoundError:
-        raise NotImplementedError(
-            "The m4 downsampling algorithm requires the tsdownsample library to be installed."
-        ) from None
+    _import_with_error(
+        "tsdownsample",
+        context="The m4 downsampling algorithm requires tsdownsample",
+        error_type=NotImplementedError,
+    )
+    from tsdownsample import M4Downsampler
+
     x, y = _ensure_contiguous(x, y)
     n_out = n_out - (n_out % 4)  # n_out must be a multiple of 4
     return M4Downsampler().downsample(x, y, n_out=n_out, **kwargs)
