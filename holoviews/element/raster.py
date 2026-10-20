@@ -14,6 +14,7 @@ from ..core.data.interface import DataError
 from ..core.dimension import dimension_name
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from ..core.util import hsv_to_rgb
+from ..core.util.dependencies import _import_with_error
 from .chart import Curve
 from .graphs import TriMesh
 from .selection import Selection2DExpr
@@ -718,10 +719,8 @@ class RGB(Image):
         -------
         RGB element or array
         """
-        try:
-            from PIL import Image
-        except ImportError:
-            raise ImportError(f"{cls.__name__}.load_image requires PIL (or Pillow).") from None
+        _import_with_error("PIL", "pillow", context=f"{cls.__name__}.load_image requires Pillow")
+        from PIL import Image
 
         with open(filename, "rb") as f:
             data = np.array(Image.open(f))
