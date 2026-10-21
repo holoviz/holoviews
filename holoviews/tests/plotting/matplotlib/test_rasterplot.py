@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import numpy as np
 from matplotlib.colors import ListedColormap
 
 import holoviews as hv
 from holoviews.plotting.mpl.raster import RGBPlot
+from holoviews.plotting.util import categorical_legend
 
 from ..._deps import ds_skip
+from ...utils import LoggingComparison
 from .test_plot import TestMPLPlot, mpl_renderer
 
 
@@ -89,3 +93,19 @@ class TestRasterPlot(TestMPLPlot):
         assert array.shape == (3, 3, 4)
         assert artist.get_extent() == [-0.5, 2.5, 4.5, 7.5]
         assert isinstance(plot, RGBPlot)
+
+
+@ds_skip
+class TestRGBCategoricalLegend(LoggingComparison, TestMPLPlot):
+    def test_legend_failure_warns(self):
+        from holoviews.operation.datashader import datashade
+
+        rgb = datashade(hv.Points([(0, 0), (1, 1)]), dynamic=False, width=2, height=2)
+        with patch.object(categorical_legend, "_process", side_effect=ValueError("legend failure")):
+            plot = mpl_renderer.get_plot(rgb.opts(show_legend=True))
+
+        self.log_handler.assert_contains(
+            "WARNING",
+            "Categorical legend could not be generated and will be omitted: ValueError: legend failure",
+        )
+        assert plot.handles["artist"].get_array().size > 0

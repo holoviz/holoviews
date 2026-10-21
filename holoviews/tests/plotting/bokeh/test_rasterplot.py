@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -8,8 +10,10 @@ from bokeh.models import CustomJSHover, HoverTool
 import holoviews as hv
 from holoviews.plotting.bokeh.raster import ImageStackPlot
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0
+from holoviews.plotting.util import categorical_legend
 
 from ..._deps import ds, ds_skip, xr, xr_skip
+from ...utils import LoggingComparison
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
@@ -465,7 +469,7 @@ class TestImageStackUneven2(_ImageStackBase):
 
 
 @ds_skip
-class TestSyntheticLegendPlot(TestBokehPlot):
+class TestSyntheticLegendPlot(LoggingComparison, TestBokehPlot):
     __test__ = True
 
     def setup_method(self):
@@ -499,3 +503,13 @@ class TestSyntheticLegendPlot(TestBokehPlot):
         glyph = plot._legend_plot.handles["glyph"]
         assert glyph.fill_color.field == "color"
         assert glyph.fill_color.transform is mapper
+
+    def test_legend_failure_warns(self):
+        with patch.object(categorical_legend, "_process", side_effect=ValueError("legend failure")):
+            plot = bokeh_renderer.get_plot(self.rgb)
+
+        self.log_handler.assert_contains(
+            "WARNING",
+            "Categorical legend could not be generated and will be omitted: ValueError: legend failure",
+        )
+        assert "synthetic_color_mapper" not in plot.handles
