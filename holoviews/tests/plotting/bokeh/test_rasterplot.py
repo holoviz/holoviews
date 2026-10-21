@@ -505,7 +505,9 @@ class TestSyntheticLegendPlot(LoggingComparison, TestBokehPlot):
         assert glyph.fill_color.transform is mapper
 
     def test_legend_failure_warns(self):
-        with patch.object(categorical_legend, "_process", side_effect=ValueError("legend failure")):
+        with patch.object(
+            categorical_legend, "_process", side_effect=ValueError("legend failure")
+        ):
             plot = bokeh_renderer.get_plot(self.rgb)
 
         self.log_handler.assert_contains(

@@ -101,7 +101,9 @@ class TestRGBCategoricalLegend(LoggingComparison, TestMPLPlot):
         from holoviews.operation.datashader import datashade
 
         rgb = datashade(hv.Points([(0, 0), (1, 1)]), dynamic=False, width=2, height=2)
-        with patch.object(categorical_legend, "_process", side_effect=ValueError("legend failure")):
+        with patch.object(
+            categorical_legend, "_process", side_effect=ValueError("legend failure")
+        ):
             plot = mpl_renderer.get_plot(rgb.opts(show_legend=True))
 
         self.log_handler.assert_contains(
