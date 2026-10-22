@@ -42,7 +42,7 @@ jobs:
     name: pre-commit
     runs-on: "ubuntu-latest"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pre-commit@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@v1.0.15
         env:
           SKIP: pixi
 
@@ -61,7 +61,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Check for code changes
-        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        uses: dorny/paths-filter@v4.0.3
         id: filter
         with:
           filters: |
@@ -118,7 +118,7 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-diff@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
+      - uses: holoviz-dev/holoviz_tasks/pixi-diff@v1.0.15
 
   unit_test_suite:
     name: unit:${{ matrix.environment }}:${{ matrix.os }}
@@ -132,7 +132,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@v1.0.15
         with:
           environments: ${{ matrix.environment }}
       - name: Update upstream packages
@@ -145,7 +145,7 @@ jobs:
       - name: Test Examples
         run: |
           pixi run -e "${ENV}" test-example
-      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+      - uses: codecov/codecov-action@v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -164,7 +164,7 @@ jobs:
       PANEL_LOG_LEVEL: info
       ENV: ${{ matrix.environment }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@v1.0.15
         with:
           environments: ${{ matrix.environment }}
       - name: Update upstream packages
@@ -175,13 +175,13 @@ jobs:
         run: |
           FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
           pixi run -e "${ENV}" test-ui $COV $FAIL
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@v7.0.1
         if: always()
         with:
           name: ui_screenshots_${{ runner.os }}
           path: ./ui_screenshots
           if-no-files-found: ignore
-      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+      - uses: codecov/codecov-action@v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -199,7 +199,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 120
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@v1.0.15
         with:
           environments: ${{ matrix.environment }}
       - name: Update upstream packages
@@ -222,7 +222,7 @@ jobs:
     env:
       ENV: ${{ matrix.environment }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@v1.0.15
         with:
           environments: ${{ matrix.environment }}
           download-data: false
@@ -235,7 +235,7 @@ jobs:
         run: |
           python -c "import holoviews as hv, holoviews.operation.datashader; hv.extension('bokeh', 'matplotlib', 'plotly')"
       - name: Run import benchmarks
-        uses: CodSpeedHQ/action@821a40cd6c80e3cfe387caf55668287addd808da # v5.5.0
+        uses: CodSpeedHQ/action@v5.5.0
         with:
           mode: simulation
           config: scripts/codspeed.yml
@@ -254,7 +254,7 @@ jobs:
       ENV: ${{ matrix.environment }}
     timeout-minutes: 5
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@v1.0.15
         with:
           environments: ${{ matrix.environment }}
       - name: Update upstream packages
