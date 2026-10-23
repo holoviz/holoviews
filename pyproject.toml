@@ -261,9 +261,10 @@ rules.unresolved-import = "ignore"
 exclude = [
     "holoviews/*.py",
     "holoviews/core/",
+    "holoviews/element/",
     "holoviews/tests/_deps.py",
-    "holoviews/util/*.py",
-    "scripts/*.py",
+    "holoviews/util/",
+    "scripts/",
 ]
 rules.all = "ignore"
 

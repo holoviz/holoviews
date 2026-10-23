@@ -559,11 +559,7 @@ class TestBarPlot(TestBokehPlot):
 
         np.testing.assert_equal(
             x_factors,
-            [
-                ("read", "~1M"),
-                ("read", "~10M"),
-                ("read", "~100M"),
-            ],
+            [("read", "~1M"), ("read", "~10M"), ("read", "~100M")],
         )
 
     def test_bars_group(self, rng):
