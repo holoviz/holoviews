@@ -35,7 +35,7 @@ env:
   DISPLAY: ":99.0"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   COV: "--cov=./holoviews --cov-report=xml"
-  UPSTREAM_PACKAGES: "panel param"
+  UPSTREAM_PACKAGES: "panel param colorcet"
 
 jobs:
   pre_commit:
