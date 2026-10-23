@@ -167,6 +167,7 @@ class BoxWhiskerPlot(MultiDistributionMixin, CompositeElementPlot, ColorbarPlot,
         elif is_dask:
             percentile = da.percentile
         else:
+            vals = np.asarray(vals)
             percentile = np.percentile
 
         vals = vals[is_finite(vals)]
@@ -508,7 +509,11 @@ class ViolinPlot(BoxWhiskerPlot):
 
         bars, segments, scatter = defaultdict(list), defaultdict(list), {}
         values = el.dimension_values(vdim)
-        values = values[isfinite(values)]
+        if element.interface.name == "NarwhalsInterface":
+            values = values.filter(isfinite(values))
+        else:
+            values = values[isfinite(values)]
+
         if not len(values):
             pass
         elif self.inner == "quartiles":
