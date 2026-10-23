@@ -263,6 +263,45 @@ class Waterfall(Selection1DExpr, Chart):
     vdims = param.List(default=[Dimension("y")], bounds=(1, 1))
 
 
+class OHLC(Chart):
+    """OHLC is a Chart element representing the open, high, low and
+    close prices of a financial instrument over a sequence of
+    timestamps, drawn as a candlestick chart. The key dimension maps
+    the timestamps (or any continuous/numeric coordinate) onto the
+    x-axis, while the four value dimensions define, in order, the
+    open, high, low and close values that determine each candle.
+
+    Each candle is composed of a body spanning the open and close
+    values and a high-low wick; the body color encodes whether the
+    close was at or above (up) or below (down) the open. Any
+    additional value dimensions beyond the first four are carried
+    through unchanged, e.g. for use in hover tooltips.
+
+    """
+
+    group = param.String(default="OHLC", constant=True)
+
+    kdims = param.List(default=[Dimension("x")], bounds=(1, 1))
+
+    vdims = param.List(
+        default=[
+            Dimension("open"),
+            Dimension("high"),
+            Dimension("low"),
+            Dimension("close"),
+        ],
+        bounds=(4, None),
+        doc="""
+        The value dimensions of the OHLC element, supplied in the order
+        open, high, low and close. Any further value dimensions are
+        retained for use in e.g. hover tooltips.""",
+    )
+
+    # Disable 1D auto-indexing: OHLC always carries an explicit x kdim
+    # plus four value columns, so there is no 1D array to index.
+    _auto_indexable_1d = False
+
+
 class Histogram(Selection1DExpr, Chart):
     """Histogram is a Chart element representing a number of bins in a 1D
     coordinate system. The key dimension represents the binned values,

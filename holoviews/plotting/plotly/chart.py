@@ -5,7 +5,7 @@ import param
 
 from ...element import Tiles
 from ...operation import interpolate_curve
-from ..mixins import AreaMixin, BarsMixin
+from ..mixins import AreaMixin, BarsMixin, OHLCMixin
 from .element import ColorbarPlot, ElementPlot
 from .selection import PlotlyOverlaySelectionDisplay
 from .util import PLOTLY_SCATTERMAP
@@ -371,4 +371,62 @@ class HistogramPlot(ElementPlot):
     def init_layout(self, key, element, ranges, **kwargs):
         layout = super().init_layout(key, element, ranges)
         layout["barmode"] = "overlay"
+        return layout
+
+
+class OHLCPlot(OHLCMixin, ElementPlot):
+    """Renders an OHLC element as a candlestick chart using Plotly's
+    native candlestick trace, colored by direction (a close at or above
+    the open is "up", a close below the open is "down").
+    """
+
+    neg_color = param.String(
+        default="#e44e4e",
+        doc="""
+        Body color for down candles, where the close is below the open.""",
+    )
+
+    pos_color = param.String(
+        default="#3eaf7c",
+        doc="""
+        Body color for up candles, where the close is at or above the open.""",
+    )
+
+    show_legend = param.Boolean(
+        default=False,
+        doc="Whether to show a legend for the plot.",
+    )
+
+    wick_color = param.String(
+        default="black",
+        doc="""
+        Color of the high-low wick and candle outline. Plotly ties the two
+        together, so this colors both.""",
+    )
+
+    style_opts = ["visible"]
+
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {"type": "candlestick"}
+
+    def get_data(self, element, ranges, style, is_geo=False, **kwargs):
+        x = element.dimension_values(element.kdims[0])
+        open_, high, low, close = (element.dimension_values(element.vdims[i]) for i in range(4))
+        return [{"x": x, "open": open_, "high": high, "low": low, "close": close}]
+
+    def graph_options(self, element, ranges, style, is_geo=False, **kwargs):
+        opts = super().graph_options(element, ranges, style, is_geo=is_geo, **kwargs)
+        # Direction sets the fill; the wick/outline color is shared across both.
+        opts["increasing"] = {"line": {"color": self.wick_color}, "fillcolor": self.pos_color}
+        opts["decreasing"] = {"line": {"color": self.wick_color}, "fillcolor": self.neg_color}
+        return opts
+
+    def init_layout(self, key, element, ranges, is_geo=False):
+        layout = super().init_layout(key, element, ranges, is_geo=is_geo)
+        # Candlestick traces add an x-axis range slider by default; hide it
+        # so the chart renders cleanly inline.
+        xaxis = layout.get("xaxis")
+        if isinstance(xaxis, dict):
+            xaxis["rangeslider"] = {"visible": False}
         return layout
