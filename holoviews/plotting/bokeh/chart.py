@@ -1059,7 +1059,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 group_dim,
                 group_type=Dataset,
                 container_type=dict,
-                datatype=["dataframe", "dictionary"],
+                datatype=["dataframe", "dictionary", "narwhals"],
             )
 
         width = abs(width)
