@@ -79,8 +79,8 @@ class TriSurface(Element3D, Points):
         information about each 3D coordinate.""",
     )
 
-    def __getitem__(self, slc):
-        return Points.__getitem__(self, slc)
+    def __getitem__(self, key):
+        return Points.__getitem__(self, key)
 
 
 class Scatter3D(Element3D, Points):
@@ -144,8 +144,8 @@ class Scatter3D(Element3D, Points):
 
     group = param.String(default="Scatter3D", constant=True)
 
-    def __getitem__(self, slc):
-        return Points.__getitem__(self, slc)
+    def __getitem__(self, key):
+        return Points.__getitem__(self, key)
 
 
 class Path3D(Element3D, Path):
@@ -165,5 +165,5 @@ class Path3D(Element3D, Path):
 
     group = param.String(default="Path3D", constant=True)
 
-    def __getitem__(self, slc):
-        return Path.__getitem__(self, slc)
+    def __getitem__(self, key):
+        return Path.__getitem__(self, key)

@@ -75,8 +75,8 @@ class StatisticsElement(Dataset, Element2D):
         iskdim = self.get_dimension(dim) not in self.vdims
         return super().range(dim, iskdim, dimension_range)
 
-    def dimension_values(self, dim, expanded=True, flat=True):
-        dim = self.get_dimension(dim, strict=True)
+    def dimension_values(self, dimension, expanded=True, flat=True):
+        dim = self.get_dimension(dimension, strict=True)
         if dim in self.vdims:
             return np.full(len(self), np.nan)
         return self.interface.values(self, dim, expanded, flat)
