@@ -542,7 +542,7 @@ class aggregate(LineAggregationOperation):
         else:
             category_check = False
         if category_check or any(
-            (not is_custom and len(df[d.name]) and isinstance(df[d.name].values[0], cftime_types))
+            (not is_custom and len(df[d.name]) and isinstance(df[d.name].iloc[0], cftime_types))
             or dtype_kind(df[d.name]) in ["M", "u"]
             for d in (x, y)
         ):
@@ -552,7 +552,7 @@ class aggregate(LineAggregationOperation):
 
         for d in (x, y):
             vals = df[d.name]
-            if not is_custom and len(vals) and isinstance(vals.values[0], cftime_types):
+            if not is_custom and len(vals) and isinstance(vals.iloc[0], cftime_types):
                 vals = cftime_to_timestamp(vals, "ns")
             elif dtype_kind(vals) == "M":
                 if getattr(vals.dtype, "tz", None):
