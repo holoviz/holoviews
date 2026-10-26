@@ -52,24 +52,24 @@ class DaskSpatialPandasInterface(SpatialPandasInterface):
         return data, dims, params
 
     @classmethod
-    def partition_values(cls, df, dataset, dimension, expanded, flat):
+    def partition_values(cls, df, dataset, dim, expanded, flat):
         ds = dataset.clone(df, datatype=["spatialpandas"])
-        return ds.interface.values(ds, dimension, expanded, flat)
+        return ds.interface.values(ds, dim, expanded, flat)
 
     @classmethod
-    def values(cls, dataset, dimension, expanded=True, flat=True, compute=True, keep_index=False):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
         if compute and not keep_index:
-            dtype = cls.dtype(dataset, dimension)
+            dtype = cls.dtype(dataset, dim)
             meta = np.array([], dtype="O" if dtype_kind(dtype) == "O" else dtype.base)
             return dataset.data.map_partitions(
                 cls.partition_values,
                 meta=meta,
                 dataset=dataset,
-                dimension=dimension,
+                dim=dim,
                 expanded=expanded,
                 flat=flat,
             ).compute()
-        values = super().values(dataset, dimension, expanded, flat, compute, keep_index)
+        values = super().values(dataset, dim, expanded, flat, compute, keep_index)
         if compute and not keep_index and hasattr(values, "compute"):
             return values.compute()
         return values
@@ -87,8 +87,8 @@ class DaskSpatialPandasInterface(SpatialPandasInterface):
         return super().iloc(dataset, index)
 
     @classmethod
-    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
-        return cls.base_interface.add_dimension(dataset, dimension, dim_pos, values, vdim)
+    def add_dimension(cls, dataset, dim, dim_pos, values, vdim):
+        return cls.base_interface.add_dimension(dataset, dim, dim_pos, values, vdim)
 
     @classmethod
     def dframe(cls, dataset, dimensions):
