@@ -241,6 +241,7 @@ class DaskNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
 
 
 @ibis_skip
+@pytest.mark.filterwarnings(r"ignore:The 'future\.infer_string' option is deprecated")
 class IbisNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     __test__ = True
     narwhals_backend = "pyarrow"
