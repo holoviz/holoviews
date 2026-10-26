@@ -62,12 +62,12 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@v1.0.15
         with:
           environments: docs
       - name: Build documentation
         run: pixi run -e docs docs-build
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@v7.0.1
         if: always()
         with:
           name: docs
