@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing as t
 from collections import defaultdict, namedtuple
+from weakref import WeakKeyDictionary
 
 import numpy as np
 import param
@@ -720,18 +721,19 @@ class OverlaySelectionDisplay(SelectionDisplay):
 
     @classmethod
     def _inject_cmap_in_pipeline(cls, pipeline, cmap, cache):
-        cmap_pipelines = cache.setdefault("_cmap_pipelines", {})
-        cache_key = (id(pipeline), repr(cmap))
-        if cache_key in cmap_pipelines:
-            return cmap_pipelines[cache_key]
+        # Weak keys release entries once a pipeline is collected and avoid id() reuse.
+        cmap_pipelines = cache.setdefault("_cmap_pipelines", WeakKeyDictionary())
+        pipeline_cache = cmap_pipelines.setdefault(pipeline, {})
+        cache_key = repr(cmap)
+        if cache_key in pipeline_cache:
+            return pipeline_cache[cache_key]
 
         operations = []
         for op in pipeline.operations:
             if hasattr(op, "cmap"):
                 op = op.instance(cmap=cmap)
             operations.append(op)
-        cmap_pipeline = pipeline.instance(operations=operations)
-        cmap_pipelines[cache_key] = cmap_pipeline
+        pipeline_cache[cache_key] = cmap_pipeline = pipeline.instance(operations=operations)
         return cmap_pipeline
 
     def _build_layer_callback(self, element, exprs, layer_number, cmap, cache, **kwargs):

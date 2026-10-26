@@ -874,15 +874,13 @@ class TestLinkSelectionsBokeh(TestLinkSelections):
     __test__ = True
 
     def test_selection_updates_each_overlay_once(self, monkeypatch):
-        """Region and expression updates should share one plot refresh per overlay."""
         from holoviews.plotting.bokeh.element import OverlayPlot
         from holoviews.plotting.plot import Plot
 
         points = hv.Points(self.data)
         hist = hv.operation.histogram(points, dimension="x")
         linker = hv.link_selections.instance()
-        pane = pn.pane.HoloViews(linker(points + hist))
-        root = pane.get_root()
+        hv.renderer("bokeh").get_plot(linker(points + hist))
         selection = self.get_value_with_key_type(linker._selection_expr_streams, hv.Points)
         selectionxy = selection.input_streams[0].input_stream.input_streams[0]
 
@@ -894,12 +892,9 @@ class TestLinkSelectionsBokeh(TestLinkSelections):
                 updates.append(id(plot))
             return original(plot, key)
 
-        try:
-            monkeypatch.setattr(Plot, "_trigger_refresh", count_updates)
-            selectionxy.event(bounds=(0, 1, 5, 5))
-            assert len(updates) == len(set(updates)) == 2
-        finally:
-            pane._cleanup(root)
+        monkeypatch.setattr(Plot, "_trigger_refresh", count_updates)
+        selectionxy.event(bounds=(0, 1, 5, 5))
+        assert len(updates) == len(set(updates)) == 2
 
     def setup_method(self):
         import holoviews.plotting.bokeh  # noqa: F401
