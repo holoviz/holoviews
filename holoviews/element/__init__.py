@@ -20,6 +20,7 @@ from .annotation import (
     VSpans,
 )
 from .chart import (
+    OHLC,
     Area,
     Bars,
     Chart,  # noqa: F401
@@ -159,6 +160,7 @@ Dataset._conversion_interface = ElementConversion
 
 __all__ = [
     "HSV",
+    "OHLC",
     "RGB",
     "Annotation",
     "Area",
