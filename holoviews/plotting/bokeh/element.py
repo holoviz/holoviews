@@ -2684,8 +2684,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         renderer = self.handles.get("glyph_renderer", None)
         visible = element is not None
+        # Avoid undoing legend-driven hiding on every frame update. A subplot
+        # missing from one frame must disappear temporarily and then resume its
+        # prior visible state when it returns.
         if hasattr(renderer, "visible"):
-            renderer.visible = visible
+            if not visible:
+                if "_visible_before_missing" not in self.handles:
+                    self.handles["_visible_before_missing"] = renderer.visible
+                renderer.visible = False
+            elif "_visible_before_missing" in self.handles:
+                renderer.visible = self.handles.pop("_visible_before_missing")
 
         if (
             (self.batched and not element)

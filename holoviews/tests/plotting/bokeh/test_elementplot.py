@@ -192,6 +192,40 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         plot = bokeh_renderer.get_plot(curve)
         assert plot.state.title.text == "Called"
 
+    def test_dynamic_element_keeps_hidden_renderer_on_update(self):
+        dmap = hv.DynamicMap(
+            lambda frame: hv.Curve([(0, frame), (1, frame + 1)]),
+            kdims=["frame"],
+        ).redim.values(frame=[0, 1])
+        plot = bokeh_renderer.get_plot(dmap)
+        renderer = plot.handles["glyph_renderer"]
+
+        renderer.visible = False  # A legend click with click_policy="hide".
+        plot.update((1,))
+
+        assert renderer.visible is False
+
+    @pytest.mark.parametrize("initially_hidden", [False, True])
+    def test_dynamic_subplot_recovers_previous_visibility(self, initially_hidden):
+        def elements(frame):
+            key = "A" if frame != 1 else "B"
+            return hv.NdOverlay(
+                {key: hv.Curve([(0, frame), (1, frame + 1)])}, kdims="series"
+            )
+
+        dmap = hv.DynamicMap(elements, kdims=["frame"]).redim.values(
+            frame=[0, 1, 2]
+        )
+        plot = bokeh_renderer.get_plot(dmap)
+        renderer = plot.subplots[("A",)].handles["glyph_renderer"]
+        renderer.visible = not initially_hidden
+
+        plot.update((1,))
+        assert renderer.visible is False
+
+        plot.update((2,))
+        assert renderer.visible is not initially_hidden
+
     def test_element_update_visible(self):
         checkbox = pn.widgets.Checkbox(value=True)
         scatter = hv.Scatter([]).apply.opts(visible=checkbox)
