@@ -68,17 +68,20 @@ class PathPlot(ColorbarPlot):
         dims = element.kdims
         xdim, ydim = dims
         generic_dt_format = Dimension.type_formatters[np.datetime64]
-        paths, cvals, dims = [], [], {}
+        paths, cvals = [], []
+        # `_get_axis_labels` indexes both positions, so a formatted dimension has to travel with
+        # the ones that need no formatting instead of replacing the whole pair.
+        dims = list(element.kdims)
         for path in element.split(datatype="columns"):
             xarr, yarr = path[xdim.name], path[ydim.name]
             if util.isdatetime(xarr):
                 dt_format = Dimension.type_formatters.get(type(xarr[0]), generic_dt_format)
                 xarr = date2num(xarr)
-                dims[0] = xdim(value_format=DateFormatter(dt_format))
+                dims[0] = xdim.clone(value_format=DateFormatter(dt_format))
             if util.isdatetime(yarr):
                 dt_format = Dimension.type_formatters.get(type(yarr[0]), generic_dt_format)
                 yarr = date2num(yarr)
-                dims[1] = ydim(value_format=DateFormatter(dt_format))
+                dims[1] = ydim.clone(value_format=DateFormatter(dt_format))
             arr = np.column_stack([xarr, yarr])
             # If not array-style mapping is present, keep whole paths;
             # otherwise, segment into (len(x)-1) segments for correct mapping.

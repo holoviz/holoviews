@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import datetime as dt
+
 import numpy as np
+import pandas as pd
 import pytest
+from matplotlib.dates import date2num
 
 import holoviews as hv
 from holoviews.core.options import AbbreviatedException
@@ -120,6 +124,20 @@ class TestPathPlot(TestMPLPlot):
         assert artist.get_cmap() is not None
         # Check color limits span the full range
         assert artist.get_clim() == (0, 40)
+
+    def test_path_datetime_xaxis(self):
+        dates = [np.datetime64(dt.datetime(2016, 1, i)) for i in range(1, 4)]
+        path = hv.Path([{"x": dates, "y": [1.0, 2.0, 3.0]}])
+        vertices = mpl_renderer.get_plot(path).handles["artist"].get_paths()[0].vertices
+        np.testing.assert_array_equal(vertices[:, 0], date2num(np.array(dates)))
+        np.testing.assert_array_equal(vertices[:, 1], np.array([1.0, 2.0, 3.0]))
+
+    def test_path_datetime_yaxis(self):
+        dates = pd.to_datetime(["2016-01-01", "2016-01-02", "2016-01-03"])
+        path = hv.Path([{"x": [0.0, 1.0, 2.0], "y": dates}])
+        vertices = mpl_renderer.get_plot(path).handles["artist"].get_paths()[0].vertices
+        np.testing.assert_array_equal(vertices[:, 0], np.array([0.0, 1.0, 2.0]))
+        np.testing.assert_array_equal(vertices[:, 1], date2num(dates.to_numpy()))
 
 
 class TestPolygonPlot(TestMPLPlot):
