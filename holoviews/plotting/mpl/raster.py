@@ -135,7 +135,11 @@ class RGBPlot(RasterBasePlot, LegendPlot):
             return handles
         try:
             legend = categorical_legend(self.current_frame, backend=self.backend)
-        except Exception:
+        except Exception as e:
+            self.param.warning(
+                "Categorical legend could not be generated and will be omitted: "
+                f"{type(e).__name__}: {e}"
+            )
             return handles
         if legend is None:
             return handles
