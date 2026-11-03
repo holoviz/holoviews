@@ -86,7 +86,7 @@ class NotebookArchive(FileArchive):
             raise ImportError("HoloViews does not seem to be imported")
         matches = [
             k
-            for k, v in get_ipython().user_ns.items()  # noqa: F821
+            for k, v in get_ipython().user_ns.items()  # noqa: F821  # ty: ignore[unresolved-reference]
             if not k.startswith("_") and v is sys.modules["holoviews"]
         ]
         if len(matches) == 0:
@@ -136,7 +136,7 @@ class NotebookArchive(FileArchive):
             )
         )
 
-    def export(self, timestamp=None):
+    def export(self, timestamp=None, info=None):
         """Get the current notebook data and export."""
         if self._timestamp is None:
             raise RuntimeError("No timestamp set. Has the archive been initialized?")
@@ -171,7 +171,7 @@ class NotebookArchive(FileArchive):
         )
         display(Javascript(cmd))
 
-    def add(self, obj=None, filename=None, data=None, info=None, html=None):
+    def add(self, obj=None, filename=None, data=None, info=None, html=None, **kwargs):
         """Similar to FileArchive.add but accepts html strings for substitution"""
         if info is None:
             info = {}
@@ -210,7 +210,9 @@ class NotebookArchive(FileArchive):
         """Computes substitutions before using nbconvert with preprocessors"""
         self.export_success = False
         try:
-            tstamp = time.strftime(self.timestamp_format, self._timestamp)
+            tstamp = time.strftime(
+                self.timestamp_format, self._timestamp or tuple(time.localtime())
+            )
             substitutions = {}
             for (basename, ext), entry in self._files.items():
                 (_, info) = entry
@@ -258,7 +260,7 @@ class NotebookArchive(FileArchive):
 
     def _get_notebook_node(self):  # pragma: no cover
         """Load captured notebook node"""
-        size = len(self._notebook_data)
+        size = len(self._notebook_data or [])
         if size == 0:
             raise RuntimeError("Captured buffer size for notebook node is zero.")
         node = reader.reads(self._notebook_data)

@@ -1513,6 +1513,10 @@ class ProgressIndicator(param.Parameterized):
         doc="The label of the current progress bar.",
     )
 
+    def __init__(self, **params):
+        deprecated("1.25.0", f"{type(self).__module__}.{type(self).__qualname__}")
+        super().__init__(**params)
+
     def __call__(self, completion):
         raise NotImplementedError
 

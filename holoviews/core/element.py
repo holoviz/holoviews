@@ -6,6 +6,7 @@ from itertools import groupby
 import numpy as np
 import param
 
+from ..util.warnings import deprecated
 from .dimension import Dimensioned, ViewableElement, asdim
 from .layout import Composable, Layout, NdLayout
 from .ndmapping import NdMapping
@@ -466,6 +467,8 @@ class Collator(NdMapping):
         to be ignored can be supplied.
 
         """
+        if self.progress_bar is not None:
+            deprecated("1.25.0", "Collator.progress_bar")
         constant_dims = self.static_dimensions
         ndmapping = NdMapping(kdims=self.kdims)
 
