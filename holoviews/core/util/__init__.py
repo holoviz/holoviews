@@ -2335,7 +2335,7 @@ def parse_datetime_selection(sel):
     return sel
 
 
-def dt_to_int(value, time_unit="us"):
+def dt_to_int(value, time_unit="us") -> int:
     """Converts a datetime type to an integer with the supplied time unit."""
     if bool(pd) and isinstance(value, pd.Period):
         value = value.to_timestamp()

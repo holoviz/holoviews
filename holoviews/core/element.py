@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing as t
 from itertools import groupby
 
 import numpy as np
@@ -12,6 +13,9 @@ from .overlay import CompositeOverlay, NdOverlay, Overlayable
 from .spaces import GridSpace, HoloMap
 from .tree import AttrTree
 from .util import dtype_kind, get_param_values
+
+if t.TYPE_CHECKING:
+    from ..core.data.grid import GridInterface
 
 
 class Element(ViewableElement, Composable, Overlayable):
@@ -358,6 +362,7 @@ class Element2D(Element):
     )
 
     __abstract = True
+    interface: type[GridInterface]
 
 
 class Element3D(Element2D):

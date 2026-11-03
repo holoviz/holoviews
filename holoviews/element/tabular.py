@@ -57,13 +57,13 @@ class ItemTable(Element):
         str_keys = {dimension_name(k): v for (k, v) in data.items()}
         super().__init__(str_keys, **params)
 
-    def __getitem__(self, heading):
+    def __getitem__(self, key):
         """Get the value associated with the given heading (key)."""
-        if heading == ():
+        if key == ():
             return self
-        if heading not in self.vdims:
-            raise KeyError(f"{heading!r} not in available headings.")
-        return np.array(self.data.get(heading, np.nan))
+        if key not in self.vdims:
+            raise KeyError(f"{key!r} not in available headings.")
+        return np.array(self.data.get(key, np.nan))
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         dimension = self.get_dimension(dimension, strict=True).name
@@ -72,7 +72,7 @@ class ItemTable(Element):
         else:
             return super().dimension_values(dimension)
 
-    def sample(self, samples=None):
+    def sample(self, samples=None, bounds=None, closest=False, **sample_values):
         if samples is None:
             samples = []
         if callable(samples):
@@ -81,8 +81,10 @@ class ItemTable(Element):
             sampled_data = {s: self.data.get(s, np.nan) for s in samples}
         return self.clone(sampled_data)
 
-    def reduce(self, dimensions=None, function=None, **reduce_map):
-        raise NotImplementedError("ItemTables are for heterogeneous data, whichcannot be reduced.")
+    def reduce(self, dimensions=None, function=None, spreadfn=None, **reduction):
+        raise NotImplementedError(
+            "ItemTables are for heterogeneous data, which cannot be reduced."
+        )
 
     def pprint_cell(self, row, col):
         """Get the formatted cell value for the given row and column indices."""
@@ -93,7 +95,7 @@ class ItemTable(Element):
         elif col == 0:
             return self.dimensions("value")[row].pprint_label
         else:
-            dim = self.get_dimension(row)
+            dim = self.get_dimension(row, strict=True)
             heading = self.vdims[row]
             return dim.pprint_value(self.data.get(heading.name, np.nan))
 
