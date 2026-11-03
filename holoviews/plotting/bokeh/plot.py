@@ -520,6 +520,16 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         doc="Whether to merge all the tools into a single toolbar",
     )
 
+    invert_xaxis = param.Boolean(
+        default=False,
+        doc="Whether to reverse the order of the columns of the grid.",
+    )
+
+    invert_yaxis = param.Boolean(
+        default=False,
+        doc="Whether to reverse the order of the rows of the grid.",
+    )
+
     shared_xaxis = param.Boolean(
         default=False,
         doc="""
@@ -597,6 +607,14 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 "an offset."
             )
 
+    def _grid_position(self, i):
+        r, c = i % self.rows, i // self.rows
+        if self.invert_xaxis:
+            c = self.cols - 1 - c
+        if self.invert_yaxis:
+            r = self.rows - 1 - r
+        return r, c
+
     def _create_subplots(self, layout, ranges):
         if isinstance(self.plot_size, tuple):
             width, height = self.plot_size
@@ -609,8 +627,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         frame_ranges = {key: self.compute_ranges(layout, key, frame_ranges) for key in keys}
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         for i, coord in enumerate(layout.keys(full_grid=True)):
-            r = i % self.rows
-            c = i // self.rows
+            r, c = self._grid_position(i)
 
             if not isinstance(coord, tuple):
                 coord = (coord,)
@@ -690,8 +707,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         passed_plots = list(plots)
         plots = [[None for c in range(self.cols)] for r in range(self.rows)]
         for i, coord in enumerate(self.layout.keys(full_grid=True)):
-            r = i % self.rows
-            c = i // self.rows
+            r, c = self._grid_position(i)
             subplot = self.subplots.get(wrap_tuple(coord), None)
             if subplot is not None:
                 plot = subplot.initialize_plot(ranges=ranges, plots=passed_plots)
@@ -968,6 +984,8 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             lsize = self._fontsize("xlabel").get("fontsize")
             tsize = self._fontsize("xticks", common=False).get("fontsize")
             xfactors = list(unique_iterator([wrap_tuple(k)[0] for k in keys]))
+            if self.invert_xaxis:
+                xfactors = xfactors[::-1]
             x_axis, x_ticker = self._make_axis(
                 "x",
                 width,
@@ -984,6 +1002,8 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             lsize = self._fontsize("ylabel").get("fontsize")
             tsize = self._fontsize("yticks", common=False).get("fontsize")
             yfactors = list(unique_iterator([k[1] for k in keys]))
+            if self.invert_yaxis:
+                yfactors = yfactors[::-1]
             y_axis, y_ticker = self._make_axis(
                 "y",
                 height,

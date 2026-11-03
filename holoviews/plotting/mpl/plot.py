@@ -399,6 +399,16 @@ class GridPlot(CompositePlot):
         doc="The amount of padding as a fraction of the total Grid size",
     )
 
+    invert_xaxis = param.Boolean(
+        default=False,
+        doc="Whether to reverse the order of the columns of the grid.",
+    )
+
+    invert_yaxis = param.Boolean(
+        default=False,
+        doc="Whether to reverse the order of the rows of the grid.",
+    )
+
     shared_xaxis = param.Boolean(
         default=False,
         doc="""
@@ -490,6 +500,14 @@ class GridPlot(CompositePlot):
             fig_inches = (self.fig_inches,) * 2
             return (scale_factor * cols * fig_inches[0], scale_factor * rows * fig_inches[1])
 
+    def _grid_position(self, i):
+        r, c = i % self.rows, i // self.rows
+        if self.invert_xaxis:
+            c = self.cols - 1 - c
+        if self.invert_yaxis:
+            r = self.rows - 1 - r
+        return r, c
+
     def _create_subplots(self, layout, axis, ranges, create_axes):
         norm_opts = self._traverse_options(layout, "norm", ["axiswise"], [Element])
         axiswise = all(norm_opts.get("axiswise", []))
@@ -500,8 +518,8 @@ class GridPlot(CompositePlot):
         keys = self.keys[:1] if self.dynamic else self.keys
         frame_ranges = {key: self.compute_ranges(layout, key, frame_ranges) for key in keys}
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
-        r, c = (0, 0)
-        for coord in layout.keys(full_grid=True):
+        for i, coord in enumerate(layout.keys(full_grid=True)):
+            r, c = self._grid_position(i)
             if not isinstance(coord, tuple):
                 coord = (coord,)
             view = layout.data.get(coord, None)
@@ -582,11 +600,6 @@ class GridPlot(CompositePlot):
                 subplots[(r, c)] = subplot
             elif subax is not None:
                 subax.set_visible(False)
-            if r != self.rows - 1:
-                r += 1
-            else:
-                r = 0
-                c += 1
         if create_axes:
             self.handles["axis"] = self._layout_axis(layout, axis)
             self._adjust_subplots(self.handles["axis"], subaxes)
@@ -665,16 +678,20 @@ class GridPlot(CompositePlot):
             (plot_height / 2) + (r * (plot_height + border_height)) for r in range(self.rows)
         ]
 
+        xlabels = [dims[0].pprint_value(l) for l in sorted(set(dim1_keys))]
+        if self.invert_xaxis:
+            xlabels = xlabels[::-1]
         layout_axis.set_xticks(xticks)
-        layout_axis.set_xticklabels([dims[0].pprint_value(l) for l in sorted(set(dim1_keys))])
+        layout_axis.set_xticklabels(xlabels)
         for tick in layout_axis.get_xticklabels():
             tick.set_rotation(self.xrotation)
 
         ydim = dims[1] if layout.ndims > 1 else None
+        ylabels = [ydim.pprint_value(l) if ydim else "" for l in sorted(set(dim2_keys))]
+        if self.invert_yaxis:
+            ylabels = ylabels[::-1]
         layout_axis.set_yticks(yticks)
-        layout_axis.set_yticklabels(
-            [ydim.pprint_value(l) if ydim else "" for l in sorted(set(dim2_keys))]
-        )
+        layout_axis.set_yticklabels(ylabels)
         for tick in layout_axis.get_yticklabels():
             tick.set_rotation(self.yrotation)
 
@@ -722,15 +739,9 @@ class GridPlot(CompositePlot):
         ax_w = (w - (width_padding if self.cols > 1 else 0)) / self.cols
         ax_h = (h - (height_padding if self.rows > 1 else 0)) / self.rows
 
-        r, c = (0, 0)
-        for ax in subaxes.values():
+        for (r, c), ax in subaxes.items():
             xpos = l + (c * ax_w) + (c * b_w)
             ypos = b + (r * ax_h) + (r * b_h)
-            if r != self.rows - 1:
-                r += 1
-            else:
-                r = 0
-                c += 1
             if ax is not None:
                 ax.set_position([xpos, ypos, ax_w, ax_h])
 
