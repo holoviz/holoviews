@@ -17,6 +17,9 @@ def finite_range(column, cmin, cmax):
         max_inf = False
     if min_inf or max_inf:
         column = column[np.isfinite(column)]
+        if is_dask(column):
+            # Boolean indexing leaves dask chunk sizes unknown, so len() would fail
+            column = column.compute_chunk_sizes()
         if len(column):
             cmin = np.nanmin(column) if min_inf else cmin
             cmax = np.nanmax(column) if max_inf else cmax

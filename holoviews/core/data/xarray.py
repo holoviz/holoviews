@@ -349,6 +349,12 @@ class XArrayInterface(GridInterface):
         if getattr(data.dtype, "tz", None):
             dmin = dmin.replace(tzinfo=None)
             dmax = dmax.replace(tzinfo=None)
+        import xarray as xr
+
+        if isinstance(data, xr.DataArray):
+            # finite_range indexes with a boolean mask, which a DataArray
+            # doesn't support when it has more than one dimension.
+            data = data.data
         return finite_range(data, dmin, dmax)
 
     @classmethod

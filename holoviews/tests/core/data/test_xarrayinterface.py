@@ -241,6 +241,16 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         assert np.isnan(z0)
         assert np.isnan(z1)
 
+    def test_infinite_values_range(self):
+        data = np.arange(12.0).reshape(3, 4)
+        data[0, 0] = np.inf
+        data[2, 3] = -np.inf
+        xrarr = xr.DataArray(
+            data, dims=("y", "x"), coords={"y": np.arange(3.0), "x": np.arange(4.0)}, name="A"
+        )
+        assert hv.Dataset(xrarr).range("A") == (1.0, 10.0)
+        assert hv.Image(xrarr).range("A") == (1.0, 10.0)
+
     def test_datetime_bins_range(self, rng):
         xs = [dt.datetime(2018, 1, i) for i in range(1, 11)]
         ys = np.arange(10)
@@ -420,6 +430,18 @@ class DaskXArrayInterfaceTest(XArrayInterfaceTests):
         assert canonical.ndim == 2
         expected = np.array([[0, 1], [2, 3], [4, 5]])
         assert_data_equal(canonical, expected)
+
+    def test_infinite_values_range_dask(self):
+        data = np.arange(12.0).reshape(3, 4)
+        data[0, 0] = np.inf
+        data[2, 3] = -np.inf
+        xrarr = xr.DataArray(
+            da.from_array(data, 2),
+            dims=("y", "x"),
+            coords={"y": np.arange(3.0), "x": np.arange(4.0)},
+            name="A",
+        )
+        assert hv.Dataset(xrarr).range("A") == (1.0, 10.0)
 
 
 @pytest.mark.gpu
