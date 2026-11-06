@@ -24,6 +24,8 @@ from holoviews.plotting.mpl import CurvePlot, MPLRenderer
 from holoviews.plotting.renderer import Renderer
 from holoviews.streams import Stream
 
+from ..._deps import jupyter_skip
+
 
 class MPLRendererTest:
     """
@@ -38,7 +40,9 @@ class MPLRendererTest:
         self.map1 = hv.HoloMap({1: self.image1, 2: self.image2}, label="TestMap")
 
         self.unicode_table = hv.ItemTable(
-            [("β", "Δ1"), ("°C", "3×4")], label="Poincaré", group="α Festkörperphysik"
+            [("β", "Δ1"), ("°C", "3×4")],  # noqa: RUF001
+            label="Poincaré",
+            group="α Festkörperphysik",  # noqa: RUF001
         )
 
         self.renderer = MPLRenderer.instance()
@@ -242,27 +246,27 @@ class TestAnimationBbox:
         png_w, png_h = self._png_size(obj)
         return gif_w >= png_w and gif_h >= png_h
 
-    def test_gif_single_plot_not_clipped(self):
-        hmap = hv.HoloMap({i: hv.Curve(np.random.rand(10)) for i in range(3)})
+    def test_gif_single_plot_not_clipped(self, rng):
+        hmap = hv.HoloMap({i: hv.Curve(rng.random(10)) for i in range(3)})
         assert self._all_labels_visible(hmap)
 
-    def test_gif_layout_not_clipped(self):
-        hmap = hv.HoloMap({i: hv.Curve(np.random.rand(10)) for i in range(3)})
+    def test_gif_layout_not_clipped(self, rng):
+        hmap = hv.HoloMap({i: hv.Curve(rng.random(10)) for i in range(3)})
         layout = hmap + hmap
         assert self._all_labels_visible(layout)
 
-    def test_gif_with_long_labels_not_clipped(self):
+    def test_gif_with_long_labels_not_clipped(self, rng):
         hmap = hv.HoloMap(
             {
-                i: hv.Curve(np.random.rand(10), "long x-axis label", "long y-axis label")
+                i: hv.Curve(rng.random(10), "long x-axis label", "long y-axis label")
                 for i in range(3)
             },
             kdims=["parameter with a very long name"],
         )
         assert self._all_labels_visible(hmap)
 
-    def test_video_has_even_dimensions(self):
-        hmap = hv.HoloMap({i: hv.Curve(np.random.rand(10)) for i in range(3)})
+    def test_video_has_even_dimensions(self, rng):
+        hmap = hv.HoloMap({i: hv.Curve(rng.random(10)) for i in range(3)})
         plot = self.renderer.get_plot(hmap)
         self.renderer._adjust_figure_for_anim(plot, "mp4")
         fig = plot.state
@@ -271,3 +275,35 @@ class TestAnimationBbox:
         h_px = int(fig.get_size_inches()[1] * dpi)
         assert w_px % 2 == 0
         assert h_px % 2 == 0
+
+
+@jupyter_skip
+@pytest.mark.skipif(sys.platform == "win32", reason="zmq does not work with Proactor event loop")
+@pytest.mark.parametrize(
+    "cell_code",
+    [
+        """
+        import matplotlib as mpl
+        print(mpl.get_backend())
+        """,
+        """
+        import matplotlib as mpl
+        import holoviews as hv
+        hv.extension("matplotlib")
+        print(mpl.get_backend())
+        """,
+    ],
+    ids=["plain", "with_holoviews"],
+)
+def test_backend_jupyter_default(cell_code):
+    import nbformat
+    from nbclient import NotebookClient
+
+    nb = nbformat.v4.new_notebook()
+    nb.cells = [nbformat.v4.new_code_cell(cell_code)]
+
+    client = NotebookClient(nb)
+    client.execute()
+
+    output = nb.cells[0].outputs[-1]["text"].strip()
+    assert output == "module://matplotlib_inline.backend_inline"

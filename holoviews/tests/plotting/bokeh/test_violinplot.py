@@ -14,8 +14,8 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 @scipy_skip
 class TestBokehViolinPlot(TestBokehPlot):
-    def test_violin_simple(self):
-        values = np.random.rand(100)
+    def test_violin_simple(self, rng):
+        values = rng.random(100)
         violin = hv.Violin(values).opts(violin_width=0.7)
         _qmin, q1, q2, q3, _qmax = (np.percentile(values, q=q) for q in range(0, 125, 25))
         iqr = q3 - q1
@@ -45,9 +45,11 @@ class TestBokehViolinPlot(TestBokehPlot):
         assert patch_source.data["xs"] == [kde["y"]]
         np.testing.assert_array_equal(patch_source.data["ys"], [kde["x"]])
 
-    def test_violin_multi_level(self):
+    def test_violin_multi_level(self, rng):
         box = hv.Violin(
-            (["A", "B"] * 15, [3, 10, 1] * 10, np.random.randn(30)), ["Group", "Category"], "Value"
+            (["A", "B"] * 15, [3, 10, 1] * 10, rng.standard_normal(30)),
+            ["Group", "Category"],
+            "Value",
         )
         plot = bokeh_renderer.get_plot(box)
         x_range = plot.handles["x_range"]
@@ -60,8 +62,8 @@ class TestBokehViolinPlot(TestBokehPlot):
             ("B", "10"),
         ]
 
-    def test_violin_inner_quartiles(self):
-        values = np.random.rand(100)
+    def test_violin_inner_quartiles(self, rng):
+        values = rng.random(100)
         violin = hv.Violin(values).opts(inner="quartiles")
         kde = univariate_kde(violin, cut=5)
         xs = kde.dimension_values(0)
@@ -72,8 +74,8 @@ class TestBokehViolinPlot(TestBokehPlot):
         y0, y1, y2 = (xs[np.argmin(np.abs(xs - v))] for v in (q1, q2, q3))
         assert_data_equal(seg_source.data["x"], np.array([y0, y1, y2]))
 
-    def test_violin_inner_stick(self):
-        values = np.random.rand(100)
+    def test_violin_inner_stick(self, rng):
+        values = rng.random(100)
         violin = hv.Violin(values).opts(inner="stick")
         kde = univariate_kde(violin, cut=5)
         xs = kde.dimension_values(0)
@@ -82,8 +84,8 @@ class TestBokehViolinPlot(TestBokehPlot):
         segments = np.array([xs[np.argmin(np.abs(xs - v))] for v in values])
         assert_data_equal(plot.handles["segment_1_source"].data["x"], segments)
 
-    def test_violin_multi(self):
-        violin = hv.Violin((np.random.randint(0, 2, 100), np.random.rand(100)), kdims=["A"]).sort()
+    def test_violin_multi(self, rng):
+        violin = hv.Violin((rng.integers(0, 2, 100), rng.random(100)), kdims=["A"]).sort()
         plot = bokeh_renderer.get_plot(violin)
         assert plot.handles["x_range"].factors == ["0", "1"]
 

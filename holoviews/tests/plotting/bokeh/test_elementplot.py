@@ -8,13 +8,18 @@ import param
 import pytest
 from bokeh.document import Document
 from bokeh.models import (
+    CategoricalAxis,
+    CategoricalScale,
     EqHistColorMapper,
+    FactorRange,
     FixedTicker,
+    LinearAxis,
     LinearColorMapper,
     LogColorMapper,
     LogTicker,
     NumeralTickFormatter,
     PrintfTickFormatter,
+    Range1d,
     tools,
 )
 
@@ -258,6 +263,14 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
     def test_element_ylabel_override(self):
         curve = hv.Curve(range(10)).opts(ylabel="custom y-label")
         plot = bokeh_renderer.get_plot(curve).state
+        assert plot.yaxis[0].axis_label == "custom y-label"
+
+    def test_element_invert_axes_custom_labels_visual_axes(self):
+        curve = hv.Curve(range(10)).opts(
+            invert_axes=True, xlabel="custom x-label", ylabel="custom y-label"
+        )
+        plot = bokeh_renderer.get_plot(curve).state
+        assert plot.xaxis[0].axis_label == "custom x-label"
         assert plot.yaxis[0].axis_label == "custom y-label"
 
     def test_element_labelled_x_disabled(self):
@@ -530,6 +543,19 @@ class TestElementPlot(LoggingComparison, TestBokehPlot):
         plot = bokeh_renderer.get_plot(curve)
         x_range = plot.handles["x_range"]
         assert x_range.factors == []
+
+    def test_numeric_dimension_values_not_categorical(self):
+        curve = hv.Curve([(1, 1), (2, 3)]).redim.values(x=[1, 2, 3])
+        plot = bokeh_renderer.get_plot(curve)
+        assert isinstance(plot.handles["x_range"], Range1d)
+        assert isinstance(plot.handles["xaxis"], LinearAxis)
+
+    def test_categorical_axis_ignores_log(self):
+        curve = hv.Curve([("C", 1), ("B", 3)]).opts(logx=True)
+        plot = bokeh_renderer.get_plot(curve)
+        assert isinstance(plot.handles["x_range"], FactorRange)
+        assert isinstance(plot.handles["xaxis"], CategoricalAxis)
+        assert isinstance(plot.state.x_scale, CategoricalScale)
 
     def test_style_map_dimension_object(self):
         x = hv.Dimension("x")
@@ -1258,27 +1284,27 @@ class TestOverlayPlot(TestBokehPlot):
         assert plot.state.xgrid[0].grid_line_color == "blue"
         assert plot.state.xgrid[0].grid_line_width == 2
 
-    def test_ndoverlay_legend_muted(self):
-        overlay = hv.NdOverlay({i: hv.Curve(np.random.randn(10).cumsum()) for i in range(5)}).opts(
-            legend_muted=True
-        )
-        plot = bokeh_renderer.get_plot(overlay)
-        for sp in plot.subplots.values():
-            assert sp.handles["glyph_renderer"].muted
-
-    def test_overlay_legend_muted(self):
-        overlay = (
-            hv.Curve(np.random.randn(10).cumsum(), label="A")
-            * hv.Curve(np.random.randn(10).cumsum(), label="B")
+    def test_ndoverlay_legend_muted(self, rng):
+        overlay = hv.NdOverlay(
+            {i: hv.Curve(rng.standard_normal(10).cumsum()) for i in range(5)}
         ).opts(legend_muted=True)
         plot = bokeh_renderer.get_plot(overlay)
         for sp in plot.subplots.values():
             assert sp.handles["glyph_renderer"].muted
 
-    def test_overlay_legend_opts(self):
+    def test_overlay_legend_muted(self, rng):
         overlay = (
-            hv.Curve(np.random.randn(10).cumsum(), label="A")
-            * hv.Curve(np.random.randn(10).cumsum(), label="B")
+            hv.Curve(rng.standard_normal(10).cumsum(), label="A")
+            * hv.Curve(rng.standard_normal(10).cumsum(), label="B")
+        ).opts(legend_muted=True)
+        plot = bokeh_renderer.get_plot(overlay)
+        for sp in plot.subplots.values():
+            assert sp.handles["glyph_renderer"].muted
+
+    def test_overlay_legend_opts(self, rng):
+        overlay = (
+            hv.Curve(rng.standard_normal(10).cumsum(), label="A")
+            * hv.Curve(rng.standard_normal(10).cumsum(), label="B")
         ).opts(legend_opts={"background_fill_alpha": 0.5, "background_fill_color": "red"})
         plot = bokeh_renderer.get_plot(overlay)
         legend = plot.state.legend
@@ -1333,8 +1359,8 @@ class TestOverlayPlot(TestBokehPlot):
         x_range = plot.handles["x_range"]
         assert x_range.factors == ["A", "C"]
 
-    def test_clim_percentile(self):
-        arr = np.random.rand(10, 10)
+    def test_clim_percentile(self, rng):
+        arr = rng.random((10, 10))
         arr[0, 0] = -100
         arr[-1, -1] = 100
         im = hv.Image(arr).opts(clim_percentile=True)
@@ -1420,13 +1446,13 @@ class TestApplyHardBounds(TestBokehPlot):
             dt_to_int(dt.datetime(2020, 1, 10)),
         )
 
-    def test_dynamic_map_bounds_update(self):
+    def test_dynamic_map_bounds_update(self, rng):
         """Test that `apply_hard_bounds` applies correctly when DynamicMap is updated."""
 
         def curve_data(choice):
             datasets = {
-                "set1": (np.linspace(0, 5, 100), np.random.rand(100)),
-                "set2": (np.linspace(0, 20, 100), np.random.rand(100)),
+                "set1": (np.linspace(0, 5, 100), rng.random(100)),
+                "set2": (np.linspace(0, 20, 100), rng.random(100)),
             }
             x, y = datasets[choice]
             return hv.Curve((x, y))

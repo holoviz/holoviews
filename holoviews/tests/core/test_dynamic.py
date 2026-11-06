@@ -9,6 +9,7 @@ import param
 import pytest
 
 import holoviews as hv
+from holoviews.core.util.dependencies import PARAM_VERSION
 from holoviews.operation import histogram
 from holoviews.plotting.util import initialize_dynamic
 from holoviews.streams import (
@@ -788,7 +789,7 @@ class DynamicTestOverlay:
         overlaid = hv.Image(sine_array(0, 5)) * hv.Image(sine_array(0, 10))
         assert_element_equal(dynamic_overlay[5], overlaid)
 
-    def test_dynamic_overlay_memoization(self):
+    def test_dynamic_overlay_memoization(self, rng):
         """Tests that Callable memoizes unchanged callbacks"""
 
         def fn(x, y):
@@ -800,7 +801,7 @@ class DynamicTestOverlay:
 
         def fn2(x, y):
             counter[0] += 1
-            return hv.Image(np.random.rand(10, 10))
+            return hv.Image(rng.random((10, 10)))
 
         dmap2 = hv.DynamicMap(fn2, kdims=[], streams=[PointerXY()])
 
@@ -900,59 +901,40 @@ class TestDynamicCallableMemoize:
         assert_element_equal(dmap[()], hv.Curve([1, 1, 1, 2, 2, 2]))
 
 
-class TestDynamicMapRX:
-    def test_dynamic_rx(self):
-        freq = param.rx(1)
-        rx_curve = param.rx(sine_array)(0, freq).rx.pipe(hv.Curve)
-        dmap = hv.DynamicMap(rx_curve)
-        assert len(dmap.streams) == 1
-        pstream = dmap.streams[0]
-        assert isinstance(pstream, Params)
-        assert len(pstream.parameters) == 2
-        fn_param, freq_param = pstream.parameters
-        assert getattr(fn_param.owner, fn_param.name) == sine_array
-        assert getattr(freq_param.owner, freq_param.name) == 1
-        assert_element_equal(dmap[()], hv.Curve(sine_array(0, 1)))
-        freq.rx.value = 2
-        assert_element_equal(dmap[()], hv.Curve(sine_array(0, 2)))
+def test_dynamic_rx():
+    freq = param.rx(1)
+    rx_curve = param.rx(sine_array)(0, freq).rx.pipe(hv.Curve)
+    dmap = hv.DynamicMap(rx_curve)
+    assert len(dmap.streams) == 1
+    pstream = dmap.streams[0]
+    assert isinstance(pstream, Params)
+    assert len(pstream.parameters) == (4 if PARAM_VERSION >= (2, 5, 0) else 2)
+    fn_param, freq_param, *_ = pstream.parameters
+    assert getattr(fn_param.owner, fn_param.name) == sine_array
+    assert getattr(freq_param.owner, freq_param.name) == 1
+    assert_element_equal(dmap[()], hv.Curve(sine_array(0, 1)))
+    freq.rx.value = 2
+    assert_element_equal(dmap[()], hv.Curve(sine_array(0, 2)))
 
 
 class TestStreamSubscribersAddandClear:
-    def setup_method(self):
+    @pytest.mark.parametrize(
+        ("policy", "remaining"),
+        [("all", []), ("user", ["fn3", "fn4"]), ("internal", ["fn1", "fn2"])],
+    )
+    def test_subscriber_clear(self, policy, remaining):
         self.fn1 = lambda x: x
         self.fn2 = lambda x: x**2
         self.fn3 = lambda x: x**3
         self.fn4 = lambda x: x**4
-
-    def test_subscriber_clear_all(self):
         pointerx = PointerX(x=2)
         pointerx.add_subscriber(self.fn1, precedence=0)
         pointerx.add_subscriber(self.fn2, precedence=1)
         pointerx.add_subscriber(self.fn3, precedence=1.5)
         pointerx.add_subscriber(self.fn4, precedence=10)
         assert pointerx.subscribers == [self.fn1, self.fn2, self.fn3, self.fn4]
-        pointerx.clear("all")
-        assert pointerx.subscribers == []
-
-    def test_subscriber_clear_user(self):
-        pointerx = PointerX(x=2)
-        pointerx.add_subscriber(self.fn1, precedence=0)
-        pointerx.add_subscriber(self.fn2, precedence=1)
-        pointerx.add_subscriber(self.fn3, precedence=1.5)
-        pointerx.add_subscriber(self.fn4, precedence=10)
-        assert pointerx.subscribers == [self.fn1, self.fn2, self.fn3, self.fn4]
-        pointerx.clear("user")
-        assert pointerx.subscribers == [self.fn3, self.fn4]
-
-    def test_subscriber_clear_internal(self):
-        pointerx = PointerX(x=2)
-        pointerx.add_subscriber(self.fn1, precedence=0)
-        pointerx.add_subscriber(self.fn2, precedence=1)
-        pointerx.add_subscriber(self.fn3, precedence=1.5)
-        pointerx.add_subscriber(self.fn4, precedence=10)
-        assert pointerx.subscribers == [self.fn1, self.fn2, self.fn3, self.fn4]
-        pointerx.clear("internal")
-        assert pointerx.subscribers == [self.fn1, self.fn2]
+        pointerx.clear(policy)
+        assert pointerx.subscribers == [getattr(self, name) for name in remaining]
 
 
 class TestDynamicStreamReset:

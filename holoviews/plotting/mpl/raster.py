@@ -311,7 +311,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         self.overlaid = False
         self.hmap = layout
         if layout.ndims > 1:
-            xkeys, ykeys = zip(*layout.keys(), strict=None)
+            xkeys, ykeys = zip(*layout.keys(), strict=True)
         else:
             xkeys = layout.keys()
             ykeys = [None]
@@ -361,7 +361,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                 pane = vmap.select(
                     **{
                         d.name: val
-                        for d, val in zip(self.dimensions, key, strict=None)
+                        for d, val in zip(self.dimensions, key, strict=False)
                         if d in vmap.kdims
                     }
                 )

@@ -103,7 +103,7 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
             # to create the correct subaxes for all plots in the layout
             layout_key, _ = layout_items.get((r, c), (None, None))
             if isinstance(layout, NdLayout) and layout_key:
-                layout_dimensions = dict(zip(layout_dimensions, layout_key, strict=None))
+                layout_dimensions = dict(zip(layout_dimensions, layout_key, strict=True))
 
             # Generate the axes and create the subplots with the appropriate
             # axis objects, handling any Empty objects.

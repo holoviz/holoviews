@@ -80,10 +80,10 @@ def test_downsample1d_shared_data_index():
 
 
 @pytest.mark.parametrize("algorithm", algorithms.values(), ids=algorithms)
-def test_downsample_algorithm(algorithm, unimport):
+def test_downsample_algorithm(algorithm, unimport, rng):
     unimport("tsdownsample")
     x = np.arange(1000)
-    y = np.random.rand(1000)
+    y = rng.random(1000)
     width = 20
     try:
         result = algorithm(x, y, width)
@@ -97,9 +97,9 @@ def test_downsample_algorithm(algorithm, unimport):
 
 @tsdownsample_skip
 @pytest.mark.parametrize("algorithm", algorithms.values(), ids=algorithms)
-def test_downsample_algorithm_with_tsdownsample(algorithm):
+def test_downsample_algorithm_with_tsdownsample(algorithm, rng):
     x = np.arange(1000)
-    y = np.random.rand(1000)
+    y = rng.random(1000)
     width = 20
     result = algorithm(x, y, width)
     if isinstance(result, slice):

@@ -13,39 +13,39 @@ from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestCurvePlot(TestMPLPlot):
-    def test_curve_datetime64(self):
+    def test_curve_datetime64(self, rng):
         dates = [np.datetime64(dt.datetime(2016, 1, i)) for i in range(1, 11)]
-        curve = hv.Curve((dates, np.random.rand(10)))
+        curve = hv.Curve((dates, rng.random(10)))
         plot = mpl_renderer.get_plot(curve)
         assert plot.handles["axis"].get_xlim() == (16801.0, 16810.0)
 
-    def test_curve_pandas_timestamps(self):
+    def test_curve_pandas_timestamps(self, rng):
         dates = pd.date_range("2016-01-01", "2016-01-10", freq="D")
-        curve = hv.Curve((dates, np.random.rand(10)))
+        curve = hv.Curve((dates, rng.random(10)))
         plot = mpl_renderer.get_plot(curve)
         assert plot.handles["axis"].get_xlim() == (16801.0, 16810.0)
 
-    def test_curve_dt_datetime(self):
+    def test_curve_dt_datetime(self, rng):
         dates = [dt.datetime(2016, 1, i) for i in range(1, 11)]
-        curve = hv.Curve((dates, np.random.rand(10)))
+        curve = hv.Curve((dates, rng.random(10)))
         plot = mpl_renderer.get_plot(curve)
         assert tuple(map(round, plot.handles["axis"].get_xlim())) == (16801.0, 16810.0)
 
-    def test_curve_heterogeneous_datetime_types_overlay(self):
+    def test_curve_heterogeneous_datetime_types_overlay(self, rng):
         dates64 = [np.datetime64(dt.datetime(2016, 1, i)) for i in range(1, 11)]
         dates = [dt.datetime(2016, 1, i) for i in range(2, 12)]
-        curve_dt64 = hv.Curve((dates64, np.random.rand(10)))
-        curve_dt = hv.Curve((dates, np.random.rand(10)))
+        curve_dt64 = hv.Curve((dates64, rng.random(10)))
+        curve_dt = hv.Curve((dates, rng.random(10)))
         plot = mpl_renderer.get_plot(curve_dt * curve_dt64)
         assert tuple(map(round, plot.handles["axis"].get_xlim())) == (16801.0, 16811.0)
 
-    def test_curve_heterogeneous_datetime_types_with_pd_overlay(self):
+    def test_curve_heterogeneous_datetime_types_with_pd_overlay(self, rng):
         dates_pd = pd.date_range("2016-01-04", "2016-01-13", freq="D")
         dates64 = [np.datetime64(dt.datetime(2016, 1, i)) for i in range(1, 11)]
         dates = [dt.datetime(2016, 1, i) for i in range(2, 12)]
-        curve_dt64 = hv.Curve((dates64, np.random.rand(10)))
-        curve_dt = hv.Curve((dates, np.random.rand(10)))
-        curve_pd = hv.Curve((dates_pd, np.random.rand(10)))
+        curve_dt64 = hv.Curve((dates64, rng.random(10)))
+        curve_dt = hv.Curve((dates, rng.random(10)))
+        curve_pd = hv.Curve((dates_pd, rng.random(10)))
         plot = mpl_renderer.get_plot(curve_dt * curve_dt64 * curve_pd)
         assert plot.handles["axis"].get_xlim() == (16801.0, 16813.0)
 

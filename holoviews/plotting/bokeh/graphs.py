@@ -153,13 +153,13 @@ class GraphPlot(GraphMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
             index = np.array([node_indices[n] for n in nodes], dtype=np.int32)
             layout = {
                 node_indices[k]: (y, x) if self.invert_axes else (x, y)
-                for k, (x, y) in zip(nodes, node_positions, strict=None)
+                for k, (x, y) in zip(nodes, node_positions, strict=True)
             }
         else:
             index = nodes.astype(np.int32)
             layout = {
                 k: (y, x) if self.invert_axes else (x, y)
-                for k, (x, y) in zip(index, node_positions, strict=None)
+                for k, (x, y) in zip(index, node_positions, strict=True)
             }
 
         point_data = {"index": index}

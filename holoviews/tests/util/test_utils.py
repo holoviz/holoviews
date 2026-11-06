@@ -11,14 +11,14 @@ from holoviews.core.options import OptionTree
 from holoviews.plotting import bokeh
 from holoviews.util import OutputSettings
 
-from .._deps import mpl_skip, notebook_skip
+from .._deps import jupyter_skip, mpl_skip
 from ..utils import LoggingComparison
 
 BACKENDS = ["matplotlib", "bokeh"]
 
 
 @mpl_skip
-@notebook_skip
+@jupyter_skip
 class TestOutputUtil:
     def setup_method(self):
         from holoviews.ipython import notebook_extension

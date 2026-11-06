@@ -30,7 +30,7 @@ from .settings import OutputSettings, list_backends, list_formats
 
 Store.output_settings = OutputSettings
 
-_BackendT: t.TypeAlias = t.Literal["bokeh", "matplotlib", "plotly"]
+type _BackendT = t.Literal["bokeh", "matplotlib", "plotly"]
 
 _STR_OPTIONS_ERR = (
     "String-based options specification is no longer supported. "
@@ -80,18 +80,18 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
     way (in appropriate environments such as Jupyter notebooks) using
     completers such as `opts.Curve`, `opts.Image`, `opts.Overlay`, etc.
 
-    To set opts globally you can pass these option objects into `opts.defaults`:
+    To set opts globally you can pass these option objects into `opts.defaults`::
 
         opts.defaults(*options)
 
-    For instance:
+    For instance::
 
         opts.defaults(opts.Curve(color='red'))
 
     To set opts on a specific object, you can supply these option
     objects to the `.options` method.
 
-    For instance:
+    For instance::
 
         curve = hv.Curve([1,2,3])
         curve.options(opts.Curve(color='red'))
@@ -209,7 +209,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
         'style', and 'norm').
 
         If the options are to be set directly on the object a
-        simple format may be used, e.g.:
+        simple format may be used, e.g.::
 
             opts.apply_groups(
                 obj,
@@ -218,7 +218,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             )
 
         If the object is nested the options must be qualified using
-        a type[.group][.label] specification, e.g.:
+        a type[.group][.label] specification, e.g.::
 
             opts.apply_groups(
                 obj,
@@ -850,9 +850,7 @@ def save(
                 )
             else:
                 obj = obj.opts(toolbar=None, backend="bokeh", clone=True)
-        elif not toolbar and (
-            fmt == "png" or (isinstance(filename, str) and filename.endswith("png"))
-        ):
+        elif fmt == "png" or (isinstance(filename, str) and filename.endswith("png")):
             obj = obj.opts(toolbar=None, backend="bokeh", clone=True)
     if kwargs:
         renderer_obj = renderer_obj.instance(**kwargs)

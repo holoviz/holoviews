@@ -349,7 +349,7 @@ def get_nested_plot_frame(obj, key_map, cached=False):
 
     # Ensure that DynamicMaps in the cloned frame have
     # identical callback inputs to allow memoization to work
-    for it1, it2 in zip(obj.traverse(lambda x: x), clone.traverse(lambda x: x), strict=None):
+    for it1, it2 in zip(obj.traverse(lambda x: x), clone.traverse(lambda x: x), strict=True):
         if isinstance(it1, DynamicMap):
             with disable_constant(it2.callback):
                 it2.callback.inputs = it1.callback.inputs
@@ -517,7 +517,7 @@ def get_dynamic_mode(composite):
 
 def initialize_unbounded(obj, dimensions, key):
     """Initializes any DynamicMaps in unbounded mode."""
-    select = dict(zip([d.name for d in dimensions], key, strict=None))
+    select = dict(zip([d.name for d in dimensions], key, strict=True))
     try:
         obj.select(selection_specs=[DynamicMap], **select)
     except KeyError:
@@ -784,12 +784,17 @@ def _list_cmaps(provider=None, records=False):
 def register_cmaps(category, provider, source, bg, names):
     """Maintain descriptions of colormaps that include the following information:
 
-    name     - string name for the colormap
-    category - intended use or purpose, mostly following matplotlib
-    provider - package providing the colormap directly
-    source   - original source or creator of the colormaps
-    bg       - base/background color expected for the map
-               ('light','dark','medium','any' (unknown or N/A))
+    name
+        string name for the colormap
+    category
+        intended use or purpose, mostly following matplotlib
+    provider
+        package providing the colormap directly
+    source
+        original source or creator of the colormaps
+    bg
+        base/background color expected for the map
+        ('light', 'dark', 'medium', 'any' (unknown or N/A))
 
     """
     for name in names:
@@ -1051,9 +1056,9 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
     elif isinstance(cmap, list):
         palette = cmap
     elif isinstance(cmap, str):
+        cet_cmaps = _list_cmaps("colorcet")  # first to register colorcet colormaps with matplotlib
         mpl_cmaps = _list_cmaps("matplotlib")
         bk_cmaps = _list_cmaps("bokeh")
-        cet_cmaps = _list_cmaps("colorcet")
         if provider == "matplotlib" or (
             provider is None and (cmap in mpl_cmaps or cmap.lower() in mpl_cmaps)
         ):
@@ -1116,7 +1121,7 @@ def color_intervals(colors, levels, clip=None, N=255):
     cmin, cmax = min(levels), max(levels)
     interval = cmax - cmin
     cmap = []
-    for intv, c in zip(intervals, colors, strict=None):
+    for intv, c in zip(intervals, colors, strict=True):
         cmap += [c] * round(N * (intv / interval))
     if clip is not None:
         clmin, clmax = clip
@@ -1163,7 +1168,7 @@ def attach_streams(plot, obj, precedence=1.1):
 
     def append_refresh(dmap):
         for stream in get_nested_streams(dmap):
-            if plot.refresh not in stream._subscribers:
+            if plot.refresh not in stream.subscribers:
                 stream.add_subscriber(plot.refresh, precedence)
 
     return obj.traverse(append_refresh, [DynamicMap])

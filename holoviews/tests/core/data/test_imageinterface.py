@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import colorsys
 import datetime as dt
 
 import numpy as np
@@ -93,9 +94,9 @@ class BaseImageElementInterfaceTests(InterfaceTests):
         with pytest.raises(DataError):
             hv.Image((ys, xs, array))
 
-    def test_bounds_mismatch(self):
+    def test_bounds_mismatch(self, rng):
         with pytest.raises(ValueError):  # noqa: PT011
-            hv.Image((range(10), range(10), np.random.rand(10, 10)), bounds=0.5)
+            hv.Image((range(10), range(10), rng.random((10, 10))), bounds=0.5)
 
     def test_init_data_datetime_xaxis(self):
         start = np.datetime64(dt.datetime.today())
@@ -337,7 +338,7 @@ class BaseRGBElementInterfaceTests(InterfaceTests):
     def init_grid_data(self):
         self.xs = np.linspace(-9, 9, 10)
         self.ys = np.linspace(0.5, 9.5, 10)
-        self.rgb_array = np.random.rand(10, 10, 3)
+        self.rgb_array = np.random.default_rng(1).random((10, 10, 3))
 
     def init_data(self):
         self.rgb = hv.RGB(self.rgb_array[::-1], bounds=(-10, 0, 10, 10))
@@ -485,6 +486,22 @@ class BaseHSVElementInterfaceTests(InterfaceTests):
         assert R[0, 0] == 1
         assert G[0, 0] == 0
         assert B[0, 0] == 0
+
+    @pytest.mark.parametrize("nchannels", [3, 4])
+    def test_hsv_rgb_non_square(self, nchannels, rng):
+        xs = np.linspace(-9, 9, 4)
+        ys = np.linspace(0.5, 9.5, 3)
+        array = rng.random((3, 4, nchannels))
+        vdims = [*hv.HSV.vdims, hv.HSV.alpha_dimension][:nchannels]
+        hsv = hv.HSV((xs, ys, *(array[:, :, i] for i in range(nchannels))), vdims=vdims)
+        assert len(hsv.vdims) == nchannels
+        h, s, v, *alpha = (hsv.dimension_values(d, flat=False) for d in hsv.vdims)
+        expected = [*np.vectorize(colorsys.hsv_to_rgb)(h, s, v), *alpha]
+
+        rgb = hsv.rgb
+        assert len(rgb.vdims) == nchannels
+        for vdim, values in zip(rgb.vdims, expected, strict=True):
+            assert_data_equal(rgb.dimension_values(vdim, flat=False), values)
 
 
 class HSVElement_ImageInterfaceTests(BaseHSVElementInterfaceTests):

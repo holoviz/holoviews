@@ -146,11 +146,11 @@ class PathPlot(LegendPlot, ColorbarPlot):
 
             xpaths += [
                 xs[s1 : s2 + 1]
-                for (s1, s2) in zip(range(alen - 1), range(1, alen + 1), strict=None)
+                for (s1, s2) in zip(range(alen - 1), range(1, alen + 1), strict=False)
             ]
             ypaths += [
                 ys[s1 : s2 + 1]
-                for (s1, s2) in zip(range(alen - 1), range(1, alen + 1), strict=None)
+                for (s1, s2) in zip(range(alen - 1), range(1, alen + 1), strict=False)
             ]
             if not hover:
                 continue
@@ -172,14 +172,14 @@ class PathPlot(LegendPlot, ColorbarPlot):
         data = defaultdict(list)
 
         zorders = self._updated_zorders(element)
-        for (key, el), zorder in zip(element.data.items(), zorders, strict=None):
+        for (key, el), zorder in zip(element.data.items(), zorders, strict=True):
             el_opts = self.lookup_options(el, "plot").options
             self.param.update(
                 **{k: v for k, v in el_opts.items() if k not in OverlayPlot._propagate_options}
             )
             style = self.lookup_options(el, "style")
             style = style.max_cycles(len(self.ordering))[zorder]
-            self.overlay_dims = dict(zip(element.kdims, key, strict=None))
+            self.overlay_dims = dict(zip(element.kdims, key, strict=True))
             eldata, elmapping, style = self.get_data(el, ranges, style)
             for k, eld in eldata.items():
                 data[k].extend(eld)

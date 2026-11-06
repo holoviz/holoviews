@@ -26,7 +26,6 @@ from .cudf import cuDFInterface  # noqa: F401
 from .dask import DaskInterface  # noqa: F401
 from .dictionary import DictInterface  # noqa: F401
 from .grid import GridInterface  # noqa: F401
-from .ibis import IbisInterface  # noqa: F401
 from .image import ImageInterface  # noqa: F401
 from .interface import Interface, iloc, ndloc
 from .multipath import MultiInterface  # noqa: F401
@@ -50,7 +49,6 @@ datatypes = [
     "cuDF",
     "array",
     "narwhals",
-    "ibis",
 ]
 
 
@@ -222,44 +220,45 @@ class PipelineMeta(ParameterizedMetaclass):
             if PipelineMeta.disable:
                 return method_fn(*args, **kwargs)
 
+            inst = args[0]
+            if inst._in_method:
+                return method_fn(*args, **kwargs)
+
             from ...operation.element import method as method_op
 
-            inst = args[0]
             inst_pipeline = copy.copy(getattr(inst, "_pipeline", None))
-            in_method = inst._in_method
-            if not in_method:
-                inst._in_method = True
-
+            inst._in_method = True
             try:
                 result = method_fn(*args, **kwargs)
+                is_dataset = isinstance(result, Dataset)
+                is_multidim = isinstance(result, MultiDimensionalMapping)
 
-                op = method_op.instance(
-                    input_type=type(inst),
-                    method_name=method_name,
-                    args=list(args[1:]),
-                    kwargs=kwargs,
-                )
+                if is_dataset or is_multidim:
+                    op = method_op.instance(
+                        input_type=type(inst),
+                        method_name=method_name,
+                        args=list(args[1:]),
+                        kwargs=kwargs,
+                    )
 
-                if not in_method:
-                    if isinstance(result, Dataset):
-                        result._pipeline = inst_pipeline.instance(
-                            operations=[*inst_pipeline.operations, op],
-                            output_type=type(result),
-                        )
+                if is_dataset:
+                    result._pipeline = inst_pipeline.instance(
+                        operations=[*inst_pipeline.operations, op],
+                        output_type=type(result),
+                    )
 
-                    elif isinstance(result, MultiDimensionalMapping):
-                        for key, element in result.items():
-                            if isinstance(element, Dataset):
-                                getitem_op = method_op.instance(
-                                    input_type=type(result), method_name="__getitem__", args=[key]
-                                )
-                                element._pipeline = inst_pipeline.instance(
-                                    operations=[*inst_pipeline.operations, op, getitem_op],
-                                    output_type=type(result),
-                                )
+                elif is_multidim:
+                    for key, element in result.items():
+                        if isinstance(element, Dataset):
+                            getitem_op = method_op.instance(
+                                input_type=type(result), method_name="__getitem__", args=[key]
+                            )
+                            element._pipeline = inst_pipeline.instance(
+                                operations=[*inst_pipeline.operations, op, getitem_op],
+                                output_type=type(result),
+                            )
             finally:
-                if not in_method:
-                    inst._in_method = False
+                inst._in_method = False
             return result
 
         return pipelined_fn
@@ -626,28 +625,30 @@ class Dataset(Element, metaclass=PipelineMeta):
         Selections may select a specific value, slice or set of values:
 
         * value: Scalar values will select rows along with an exact
-        match, e.g.:
+          match, e.g.::
 
-            ds.select(x=3)
+              ds.select(x=3)
 
         * slice: Slices may be declared as tuples of the upper and
-        lower bound, e.g.:
+          lower bound, e.g.::
 
-            ds.select(x=(0, 3))
+              ds.select(x=(0, 3))
 
         * values: A list of values may be selected using a list or
-        set, e.g.:
+          set, e.g.::
 
-            ds.select(x=[0, 1, 2])
+              ds.select(x=[0, 1, 2])
 
-        * predicate expression: A holoviews.dim expression, e.g.:
+        * predicate expression: A holoviews.dim expression, e.g.::
 
-            from holoviews import dim
-            ds.select(selection_expr=dim('x') % 2 == 0)
+              from holoviews import dim
+              ds.select(selection_expr=dim('x') % 2 == 0)
 
         * selections dictionary: A dictionary of selections per dimension
 
-            ds.select({x: 3})
+          .. code-block:: python
+
+              ds.select({x: 3})
 
         Parameters
         ----------

@@ -1,4 +1,4 @@
-from datetime import date, datetime
+import datetime as dt
 
 import numpy as np
 
@@ -32,8 +32,8 @@ Dimension.type_formatters[float] = "%.5g"
 Dimension.type_formatters[np.float32] = "%.5g"
 Dimension.type_formatters[np.float64] = "%.5g"
 Dimension.type_formatters[np.datetime64] = "%Y-%m-%d %H:%M:%S"
-Dimension.type_formatters[datetime] = "%Y-%m-%d %H:%M:%S"
-Dimension.type_formatters[date] = "%Y-%m-%d"
+Dimension.type_formatters[dt.datetime] = "%Y-%m-%d %H:%M:%S"
+Dimension.type_formatters[dt.date] = "%Y-%m-%d"
 # First one is for Pandas <3 and second for Pandas 3+
 Dimension.type_formatters["pandas._libs.tslibs.timestamps.Timestamp"] = "%Y-%m-%d %H:%M:%S"
 Dimension.type_formatters["pandas.Timestamp"] = "%Y-%m-%d %H:%M:%S"

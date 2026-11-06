@@ -9,7 +9,7 @@ from holoviews.core import Apply, Redim
 from holoviews.operation import function, histogram
 from holoviews.testing import assert_element_equal
 
-from .._deps import dask, dask_skip, dd, ds, ds_skip
+from .._deps import dask, dd, dd_skip, ds, ds_skip
 
 if ds:
     from holoviews.operation.datashader import datashade, dynspread, rasterize
@@ -109,7 +109,7 @@ class ToTestCase(DatasetPropertyTestCase):
             # execute pipeline
             assert_element_equal(curve.pipeline(curve.dataset), curve)
 
-    @dask_skip
+    @dd_skip
     def test_to_holomap_dask(self):
         with dask.config.set({"dataframe.convert-string": False}):
             ddf = dd.from_pandas(self.df, npartitions=2)

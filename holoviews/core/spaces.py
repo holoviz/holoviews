@@ -696,7 +696,7 @@ class Generator(Callable):
 
     """
 
-    callable = param.ClassSelector(
+    callable = param.ClassSelector(  # ty: ignore[invalid-attribute-override]
         class_=types.GeneratorType,
         allow_None=NoNone,
         constant=True,
@@ -1381,17 +1381,15 @@ class DynamicMap(HoloMap):
 
         Selections may select a specific value, slice or set of values:
 
-        * value: Scalar values will select rows along with an exact match,
-        e.g.:
+        * value: Scalar values will select rows along with an exact match, e.g.::
 
             ds.select(x=3)
 
-        * slice: Slices may be declared as tuples of the upper and lower bound,
-        e.g.:
+        * slice: Slices may be declared as tuples of the upper and lower bound, e.g.::
 
             ds.select(x=(0, 3))
 
-        * values: A list of values may be selected using a list or set, e.g.:
+        * values: A list of values may be selected using a list or set, e.g.::
 
             ds.select(x=[0, 1, 2])
 
@@ -2019,7 +2017,13 @@ class GridSpace(Layoutable, UniformNdMapping):
             return keys
         dim1_keys = list(dict.fromkeys(k[0] for k in keys))
         dim2_keys = list(dict.fromkeys(k[1] for k in keys))
-        return [(d1, d2) for d1 in dim1_keys for d2 in dim2_keys]
+        grid_keys = [(d1, d2) for d1 in dim1_keys for d2 in dim2_keys]
+        if self.sort:
+            grid = dict.fromkeys(grid_keys)
+            grid_keys = [
+                k for k, _ in util.dimension_sort(grid, self.kdims, [], range(self.ndims))
+            ]
+        return grid_keys
 
     @property
     def last(self):

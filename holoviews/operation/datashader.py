@@ -6,15 +6,9 @@ from collections.abc import Callable, Iterable
 from functools import partial
 from typing import TYPE_CHECKING
 
-import datashader as ds
-import datashader.reductions as rd
-import datashader.transfer_functions as tf
 import narwhals.stable.v2 as nw
 import numpy as np
-import pandas as pd
 import param
-import xarray as xr
-from datashader.colors import color_lookup
 from param.parameterized import bothmethod
 
 from ..core import (
@@ -28,6 +22,7 @@ from ..core import (
 from ..core.data import (
     DaskInterface,
     Dataset,
+    MultiInterface,
     PandasInterface,
     XArrayInterface,
     cuDFInterface,
@@ -41,7 +36,7 @@ from ..core.util import (
     dtype_kind,
     get_param_values,
 )
-from ..core.util.dependencies import PANDAS_GE_3_0_0, _no_import_version, dd
+from ..core.util.dependencies import PANDAS_GE_3_0_0, _no_import_version, dd, ds, pd, xr
 from ..element import (
     RGB,
     Area,
@@ -65,10 +60,10 @@ from ..element.util import connect_tri_edges_pd
 from ..streams import PointerXY
 from .resample import LinkableOperation, ResampleOperation2D
 
+# Will error if datashader is not installed or old version
+rd = ds.reductions
+
 DATASHADER_VERSION = _no_import_version("datashader")
-DATASHADER_GE_0_14_0 = DATASHADER_VERSION >= (0, 14, 0)
-DATASHADER_GE_0_15_1 = DATASHADER_VERSION >= (0, 15, 1)
-DATASHADER_GE_0_16_0 = DATASHADER_VERSION >= (0, 16, 0)
 DATASHADER_GE_0_18_1 = DATASHADER_VERSION >= (0, 18, 1)
 
 if TYPE_CHECKING:
@@ -223,10 +218,7 @@ class AggregationOperation(ResampleOperation2D):
 
     @classmethod
     def _get_aggregator(cls, element, agg, add_field=True):
-        if DATASHADER_GE_0_15_1:
-            agg_types = (rd.count, rd.any, rd.where)
-        else:
-            agg_types = (rd.count, rd.any)
+        agg_types = (rd.count, rd.any, rd.where)
 
         if isinstance(agg, str):
             if agg not in cls._agg_methods:
@@ -329,7 +321,7 @@ class AggregationOperation(ResampleOperation2D):
         sel_fn = getattr(self.p, "selector", None)
         agg_state = AggState.get_state(agg_fn, sel_fn)
 
-        if DATASHADER_GE_0_15_1 and sel_fn and sel_fn.column is None:
+        if sel_fn and sel_fn.column is None:
             sel_fn = type(sel_fn)(column=rd.SpecialColumn.RowIndex)
         if AggState.has_by(agg_state) and self.p.element_type is Image:
             self.p.element_type = ImageStack
@@ -357,10 +349,8 @@ class AggregationOperation(ResampleOperation2D):
         return agg
 
     def _apply_where_summary(self, dfdata, x_name, y_name, agg_fn, agg, agg_state):
-        is_where_index = (
-            DATASHADER_GE_0_15_1
-            and isinstance(agg_fn, ds.where)
-            and isinstance(agg_fn.column, rd.SpecialColumn)
+        is_where_index = isinstance(agg_fn, ds.where) and isinstance(
+            agg_fn.column, rd.SpecialColumn
         )
         is_summary_index = AggState.has_sel(agg_state)
         if is_where_index or is_summary_index:
@@ -478,8 +468,10 @@ class aggregate(LineAggregationOperation):
         dims = obj.dimensions()[:2]
         if isinstance(obj, Path):
             glyph = "line"
-            for p in obj.split(datatype="dataframe"):
-                paths.append(p)
+            if obj.interface is MultiInterface:
+                paths.append(obj.dframe())
+            else:
+                paths.extend(obj.split(datatype="dataframe"))
         elif isinstance(obj, CompositeOverlay):
             element = None
             is_ndoverlay = isinstance(obj, NdOverlay)
@@ -488,7 +480,7 @@ class aggregate(LineAggregationOperation):
                 dims = (x, y)
                 df = PandasInterface.as_dframe(element)
                 if is_ndoverlay:
-                    df = df.assign(**dict(zip(obj.dimensions("key", True), key, strict=None)))
+                    df = df.assign(**dict(zip(obj.dimensions("key", True), key, strict=False)))
                 paths.append(df)
 
             is_wide, ydims = cls._overlay_wide_mapping(obj, obj.values())
@@ -550,7 +542,7 @@ class aggregate(LineAggregationOperation):
         else:
             category_check = False
         if category_check or any(
-            (not is_custom and len(df[d.name]) and isinstance(df[d.name].values[0], cftime_types))
+            (not is_custom and len(df[d.name]) and isinstance(df[d.name].iloc[0], cftime_types))
             or dtype_kind(df[d.name]) in ["M", "u"]
             for d in (x, y)
         ):
@@ -560,7 +552,7 @@ class aggregate(LineAggregationOperation):
 
         for d in (x, y):
             vals = df[d.name]
-            if not is_custom and len(vals) and isinstance(vals.values[0], cftime_types):
+            if not is_custom and len(vals) and isinstance(vals.iloc[0], cftime_types):
                 vals = cftime_to_timestamp(vals, "ns")
             elif dtype_kind(vals) == "M":
                 if getattr(vals.dtype, "tz", None):
@@ -635,7 +627,7 @@ class aggregate(LineAggregationOperation):
 
     def _apply_datashader(self, dfdata, cvs_fn, agg_fn, x, y, agg_state: AggState):
         agg_kwargs = {}
-        if getattr(cvs_fn, "__name__", None) == "line" and DATASHADER_GE_0_14_0:
+        if getattr(cvs_fn, "__name__", None) == "line":
             agg_kwargs["line_width"] = self.p.line_width
 
         # Suppress numpy warning emitted by dask:
@@ -901,12 +893,10 @@ class spikes_aggregate(LineAggregationOperation):
 
         cvs = ds.Canvas(plot_width=width, plot_height=height, x_range=x_range, y_range=y_range)
 
-        agg_kwargs = {}
-        if DATASHADER_GE_0_14_0:
-            agg_kwargs["line_width"] = self.p.line_width
-
         rename_dict = {k: v for k, v in rename_dict.items() if k != v}
-        agg = cvs.line(df, x.name, yagg, agg_fn, axis=1, **agg_kwargs).rename(rename_dict)
+        agg = cvs.line(df, x.name, yagg, agg_fn, axis=1, line_width=self.p.line_width).rename(
+            rename_dict
+        )
         if xtype == "datetime":
             agg[x.name] = agg[x.name].astype("datetime64[ns]")
 
@@ -980,11 +970,7 @@ class segments_aggregate(geom_aggregate, LineAggregationOperation):
     """Aggregates Segments elements."""
 
     def _aggregate(self, cvs, df, x0, y0, x1, y1, agg_fn):
-        agg_kwargs = {}
-        if DATASHADER_GE_0_14_0:
-            agg_kwargs["line_width"] = self.p.line_width
-
-        return cvs.line(df, [x0, x1], [y0, y1], agg_fn, axis=1, **agg_kwargs)
+        return cvs.line(df, [x0, x1], [y0, y1], agg_fn, axis=1, line_width=self.p.line_width)
 
 
 class rectangle_aggregate(geom_aggregate):
@@ -1206,7 +1192,7 @@ class trimesh_rasterize(aggregate):
                 )
             simplices = element.dframe(simplex_dims)
             verts = element.nodes.dframe(vert_dims)
-        for c, dtype in zip(simplices.columns[:3], simplices.dtypes, strict=None):
+        for c, dtype in zip(simplices.columns[:3], simplices.dtypes, strict=False):
             if dtype_kind(dtype) != "i":
                 simplices[c] = simplices[c].astype("int")
         mesh = mesh(verts, simplices)
@@ -1280,7 +1266,7 @@ class trimesh_rasterize(aggregate):
 
         cvs = ds.Canvas(plot_width=width, plot_height=height, x_range=x_range, y_range=y_range)
         if wireframe:
-            rename_dict = {k: v for k, v in zip("xy", (x.name, y.name), strict=None) if k != v}
+            rename_dict = {k: v for k, v in zip("xy", (x.name, y.name), strict=True) if k != v}
             agg = cvs.line(
                 segments, x=["x0", "x1", "x2", "x0"], y=["y0", "y1", "y2", "y0"], axis=1, agg=agg
             ).rename(rename_dict)
@@ -1498,14 +1484,11 @@ class shade(LinkableOperation):
             # DataArray, either by selecting the singular value
             # dimension or by adding a z-dimension
             if not element.interface.packed(element):
-                if vdim:
-                    array = array[vdim]
-                else:
-                    array = array.to_array("z")
-                    # If data is 3D then we have one extra constant dimension
-                    if array.ndim > 3:
-                        drop = set(array.dims) - {*main_dims, "z"}
-                        array = array.squeeze(dim=drop)
+                array = array.to_array("z")
+                # If data is 3D then we have one extra constant dimension
+                if array.ndim > 3:
+                    drop = set(array.dims) - {*main_dims, "z"}
+                    array = array.squeeze(dim=drop)
             array = array.transpose(*main_dims, ...)
         else:
             array = element.data[vdim]
@@ -1536,16 +1519,21 @@ class shade(LinkableOperation):
         # Dask is not supported by shade so materialize it
         array = array.compute()
 
-        if array.shape[-1] == 1:
+        is_categorical = element.ndims > 2 or isinstance(element, ImageStack)
+
+        if array.shape[-1] == 1 and not is_categorical:
             array = array[..., 0]
 
-        shade_opts = dict(how=self.p.cnorm, min_alpha=self.p.min_alpha, alpha=self.p.alpha)
-        if DATASHADER_GE_0_14_0:
-            shade_opts["rescale_discrete_levels"] = self.p.rescale_discrete_levels
+        shade_opts = dict(
+            how=self.p.cnorm,
+            min_alpha=self.p.min_alpha,
+            alpha=self.p.alpha,
+            rescale_discrete_levels=self.p.rescale_discrete_levels,
+        )
 
         # Compute shading options depending on whether
         # it is a categorical or regular aggregate
-        if element.ndims > 2 or isinstance(element, ImageStack):
+        if is_categorical:
             kdims = element.kdims if isinstance(element, ImageStack) else element.kdims[1:]
             categories = array.shape[-1]
             if not self.p.color_key:
@@ -1554,7 +1542,7 @@ class shade(LinkableOperation):
                 shade_opts["color_key"] = self.p.color_key
             elif isinstance(self.p.color_key, Iterable):
                 shade_opts["color_key"] = [
-                    c for _, c in zip(range(categories), self.p.color_key, strict=None)
+                    c for _, c in zip(range(categories), self.p.color_key, strict=False)
                 ]
             else:
                 colors = [self.p.color_key(s) for s in np.linspace(0, 1, categories)]
@@ -1565,6 +1553,8 @@ class shade(LinkableOperation):
             colors = [self.p.cmap(s) for s in np.linspace(0, 1, 256)]
             shade_opts["cmap"] = map(self.rgb2hex, colors)
         elif isinstance(self.p.cmap, str):
+            from datashader.colors import color_lookup
+
             if self.p.cmap.startswith("#") or self.p.cmap in color_lookup:
                 shade_opts["cmap"] = self.p.cmap
             else:
@@ -1589,7 +1579,16 @@ class shade(LinkableOperation):
         )
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", r"invalid value encountered in true_divide")
-            if np.isnan(array.data).all():
+            invalid = array.isnull().data
+            if isinstance(element, ImageStack):
+                for i, vdim in enumerate(element.vdims):
+                    if vdim.nodata is not None:
+                        invalid[..., i] |= array.data[..., i] == vdim.nodata
+            else:
+                nodata = element.vdims[0].nodata if element.vdims else None
+                if nodata is not None:
+                    invalid |= array.data == nodata
+            if invalid.all():
                 xd, yd = kdims[:2]
                 arr = np.zeros((*array.data.shape[:2], 4), dtype=np.uint8)
                 coords = {
@@ -1601,6 +1600,8 @@ class shade(LinkableOperation):
                 img_data = self.add_selector_data(img_data=img_data, sel_data=element.data)
                 return RGB(img_data, **params)
             else:
+                import datashader.transfer_functions as tf
+
                 img = tf.shade(array, **shade_opts)
         img_data = self.uint32_to_uint8_xr(img)
         img_data = self.add_selector_data(img_data=img_data, sel_data=element.data)
@@ -1654,7 +1655,7 @@ class geometry_rasterize(LineAggregationOperation):
             data, col = self._precomputed[element._plot_id]
         else:
             if ("spatialpandas" not in element.interface.datatype) and (
-                not (DATASHADER_GE_0_16_0 and "geodataframe" in element.interface.datatype)
+                "geodataframe" not in element.interface.datatype
             ):
                 element = element.clone(datatype=["spatialpandas"])
             data = element.data
@@ -1671,12 +1672,12 @@ class geometry_rasterize(LineAggregationOperation):
         if isinstance(element, Polygons):
             agg = cvs.polygons(data, **agg_kwargs)
         elif isinstance(element, Path):
-            if self.p.line_width and DATASHADER_GE_0_14_0:
+            if self.p.line_width:
                 agg_kwargs["line_width"] = self.p.line_width
             agg = cvs.line(data, **agg_kwargs)
         elif isinstance(element, Points):
             agg = cvs.points(data, **agg_kwargs)
-        rename_dict = {k: v for k, v in zip("xy", (xdim.name, ydim.name), strict=None) if k != v}
+        rename_dict = {k: v for k, v in zip("xy", (xdim.name, ydim.name), strict=True) if k != v}
         agg = agg.rename(rename_dict)
 
         if agg.ndim == 2:
@@ -1848,6 +1849,8 @@ class stack(Operation):
         return img.view(dtype=np.uint32).reshape((N, M))
 
     def _process(self, overlay, key=None):
+        import datashader.transfer_functions as tf
+
         if not isinstance(overlay, CompositeOverlay):
             return overlay
         elif len(overlay) == 1:
@@ -1920,6 +1923,8 @@ class SpreadingOperation(LinkableOperation):
         raise NotImplementedError
 
     def _preprocess_rgb(self, element):
+        import datashader.transfer_functions as tf
+
         rgbarray = np.dstack([element.dimension_values(vd, flat=False) for vd in element.vdims])
         if dtype_kind(rgbarray) == "f":
             rgbarray = rgbarray * 255
@@ -1960,11 +1965,8 @@ class SpreadingOperation(LinkableOperation):
                 ) in enumerate("RGBA"):
                     new_data[k].data = img[:, :, idx]
             elif isinstance(element, ImageStack):
-                if len(element.vdims) == 1:
-                    new_data[element.vdims[0].name].data = array
-                else:
-                    for k in map(str, element.vdims):
-                        new_data[k].data = array.sel(z=k)
+                for k in map(str, element.vdims):
+                    new_data[k].data = array.sel(z=k)
             elif isinstance(element, Image):
                 new_data[element.vdims[0].name].data = array
             else:
@@ -2007,6 +2009,8 @@ class spread(SpreadingOperation):
     )
 
     def _apply_spreading(self, array, how=None):
+        import datashader.transfer_functions as tf
+
         return tf.spread(array, px=self.p.px, how=how or self.p.how, shape=self.p.shape)
 
 
@@ -2040,6 +2044,8 @@ class dynspread(SpreadingOperation):
     )
 
     def _apply_spreading(self, array, how=None):
+        import datashader.transfer_functions as tf
+
         return tf.dynspread(
             array,
             max_px=self.p.max_px,

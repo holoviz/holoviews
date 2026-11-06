@@ -59,7 +59,7 @@ class _SyntheticAnnotationPlot(ColorbarPlot):
         data = element.columns(element.kdims)
         self._get_hover_data(data, element)
         default = self._element_default[self.invert_axes].kdims
-        mapping = {str(d): str(k) for d, k in zip(default, element.kdims, strict=None)}
+        mapping = {str(d): str(k) for d, k in zip(default, element.kdims, strict=True)}
         return data, mapping, style
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
@@ -74,7 +74,7 @@ class _SyntheticAnnotationPlot(ColorbarPlot):
             return figure
         labels = [self.xlabel or "x", self.ylabel or "y"]
         labels = labels[::-1] if self.invert_axes else labels
-        for ax, label in zip(figure.axis, labels, strict=None):
+        for ax, label in zip(figure.axis, labels, strict=False):
             ax.axis_label = label
         return figure
 
@@ -152,7 +152,7 @@ class TextPlot(ElementPlot, AnnotationPlot):
     def get_batched_data(self, element, ranges=None):
         data = defaultdict(list)
         zorders = self._updated_zorders(element)
-        for (_key, el), zorder in zip(element.data.items(), zorders, strict=None):
+        for (_key, el), zorder in zip(element.data.items(), zorders, strict=True):
             style = self.lookup_options(element.last, "style")
             style = style.max_cycles(len(self.ordering))[zorder]
             eldata, elmapping, style = self.get_data(el, ranges, style)
@@ -354,7 +354,7 @@ class SplinePlot(ElementPlot, AnnotationPlot):
                 skipped = len(vs) > 1
                 continue
             for x, y, xl, yl in zip(
-                vs[:, 0], vs[:, 1], data_attrs[::2], data_attrs[1::2], strict=None
+                vs[:, 0], vs[:, 1], data_attrs[::2], data_attrs[1::2], strict=True
             ):
                 data[xl].append(x)
                 data[yl].append(y)
@@ -364,7 +364,7 @@ class SplinePlot(ElementPlot, AnnotationPlot):
                 "splines were skipped during plotting."
             )
         data = {da: data[da] for da in data_attrs}
-        return (data, dict(zip(data_attrs, data_attrs, strict=None)), style)
+        return (data, dict(zip(data_attrs, data_attrs, strict=True)), style)
 
 
 class ArrowPlot(CompositeElementPlot, AnnotationPlot):

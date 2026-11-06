@@ -22,7 +22,7 @@ In addition to backwards-compatibility options, `hv.config` holds some global op
 
 - `image_rtol`: The tolerance used to enforce regular sampling for regular, gridded data. Used to validate `Image` data.
 
-This option allows you to set the `rtol` parameter of [`Image`](../reference/elements/bokeh/Image.ipynb) elements globally.
+This option allows you to set the `rtol` parameter of [`Image`](../reference/elements/bokeh/Image) elements globally.
 
 ## Improved tab-completion
 

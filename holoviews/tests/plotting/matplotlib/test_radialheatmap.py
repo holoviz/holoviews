@@ -71,11 +71,11 @@ class RadialHeatMapPlotTests(TestMPLPlot):
             assert circle.radius == r
 
     @mpl_skip
-    def test_heatmap_holomap(self):
+    def test_heatmap_holomap(self, rng):
         hm = hv.HoloMap(
             {
-                "A": hv.HeatMap(np.random.randint(0, 10, (100, 3))),
-                "B": hv.HeatMap(np.random.randint(0, 10, (100, 3))),
+                "A": hv.HeatMap(rng.integers(0, 10, (100, 3))),
+                "B": hv.HeatMap(rng.integers(0, 10, (100, 3))),
             }
         )
         plot = mpl_renderer.get_plot(hm.opts(radial=True))

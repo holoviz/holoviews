@@ -290,14 +290,14 @@ class TestStoreInheritanceDynamic:
         assert direct_kws == expected
         assert inherited_kws == expected
 
-    def test_specification_general_to_specific_group(self):
+    def test_specification_general_to_specific_group(self, rng):
         """
         Test order of specification starting with general and moving
         to specific
         """
         options = self.initialize_option_tree()
 
-        obj = hv.Image(np.random.rand(10, 10), group="SomeGroup")
+        obj = hv.Image(rng.random((10, 10)), group="SomeGroup")
 
         options.Image = hv.Options("style", cmap="viridis")
         options.Image.SomeGroup = hv.Options("style", alpha=0.2)
@@ -313,14 +313,14 @@ class TestStoreInheritanceDynamic:
         assert node1.kwargs == {"cmap": "viridis", "interpolation": "nearest"}
         assert node2.kwargs == {"alpha": 0.2}
 
-    def test_specification_general_to_specific_group_and_label(self):
+    def test_specification_general_to_specific_group_and_label(self, rng):
         """
         Test order of specification starting with general and moving
         to specific
         """
         options = self.initialize_option_tree()
 
-        obj = hv.Image(np.random.rand(10, 10), group="SomeGroup", label="SomeLabel")
+        obj = hv.Image(rng.random((10, 10)), group="SomeGroup", label="SomeLabel")
 
         options.Image = hv.Options("style", cmap="viridis")
         options.Image.SomeGroup.SomeLabel = hv.Options("style", alpha=0.2)
@@ -336,7 +336,7 @@ class TestStoreInheritanceDynamic:
         assert node1.kwargs == {"cmap": "viridis", "interpolation": "nearest"}
         assert node2.kwargs == {"alpha": 0.2}
 
-    def test_specification_specific_to_general_group(self):
+    def test_specification_specific_to_general_group(self, rng):
         """
         Test order of specification starting with a specific option and
         then specifying a general one
@@ -344,7 +344,7 @@ class TestStoreInheritanceDynamic:
         options = self.initialize_option_tree()
         options.Image.SomeGroup = hv.Options("style", alpha=0.2)
 
-        obj = hv.Image(np.random.rand(10, 10), group="SomeGroup")
+        obj = hv.Image(rng.random((10, 10)), group="SomeGroup")
         options.Image = hv.Options("style", cmap="viridis")
 
         expected = {"alpha": 0.2, "cmap": "viridis", "interpolation": "nearest"}
@@ -358,14 +358,14 @@ class TestStoreInheritanceDynamic:
         assert node1.kwargs == {"cmap": "viridis", "interpolation": "nearest"}
         assert node2.kwargs == {"alpha": 0.2}
 
-    def test_specification_specific_to_general_group_and_label(self):
+    def test_specification_specific_to_general_group_and_label(self, rng):
         """
         Test order of specification starting with general and moving
         to specific
         """
         options = self.initialize_option_tree()
         options.Image.SomeGroup.SomeLabel = hv.Options("style", alpha=0.2)
-        obj = hv.Image(np.random.rand(10, 10), group="SomeGroup", label="SomeLabel")
+        obj = hv.Image(rng.random((10, 10)), group="SomeGroup", label="SomeLabel")
 
         options.Image = hv.Options("style", cmap="viridis")
         expected = {"alpha": 0.2, "cmap": "viridis", "interpolation": "nearest"}
@@ -379,7 +379,7 @@ class TestStoreInheritanceDynamic:
         assert node1.kwargs == {"cmap": "viridis", "interpolation": "nearest"}
         assert node2.kwargs == {"alpha": 0.2}
 
-    def test_backend_opts_to_default_inheritance(self):
+    def test_backend_opts_to_default_inheritance(self, rng):
         """
         Checks customs inheritance backs off to default tree correctly
         using .opts.
@@ -387,7 +387,7 @@ class TestStoreInheritanceDynamic:
         options = self.initialize_option_tree()
         options.Image.A.B = hv.Options("style", alpha=0.2)
 
-        obj = hv.Image(np.random.rand(10, 10), group="A", label="B")
+        obj = hv.Image(rng.random((10, 10)), group="A", label="B")
         expected_obj = {"alpha": 0.2, "cmap": "hot", "interpolation": "nearest"}
         obj_lookup = hv.Store.lookup_options("matplotlib", obj, "style")
         assert obj_lookup.kwargs == expected_obj
@@ -398,7 +398,7 @@ class TestStoreInheritanceDynamic:
         custom_obj_lookup = hv.Store.lookup_options("matplotlib", custom_obj, "style")
         assert custom_obj_lookup.kwargs == expected_custom_obj
 
-    def test_custom_magic_to_default_inheritance(self):
+    def test_custom_magic_to_default_inheritance(self, rng):
         """
         Checks customs inheritance backs off to default tree correctly
         simulating the %%opts cell magic.
@@ -406,7 +406,7 @@ class TestStoreInheritanceDynamic:
         options = self.initialize_option_tree()
         options.Image.A.B = hv.Options("style", alpha=0.2)
 
-        obj = hv.Image(np.random.rand(10, 10), group="A", label="B")
+        obj = hv.Image(rng.random((10, 10)), group="A", label="B")
 
         # Before customizing...
         expected_obj = {"alpha": 0.2, "cmap": "hot", "interpolation": "nearest"}
@@ -448,7 +448,7 @@ class TestStoreInheritance:
         self.default_style = dict(style1="style1", style2="style2")
         options.Histogram = hv.Options("style", **self.default_style)
 
-        data = [np.random.normal() for i in range(10000)]
+        data = np.random.default_rng(1).normal(size=10000)
         frequencies, edges = np.histogram(data, 20)
         self.hist = hv.Histogram((edges, frequencies))
 
@@ -525,16 +525,16 @@ class TestOptionsMethod:
     def lookup_options(self, obj, group):
         return hv.Store.lookup_options(self.backend, obj, group)
 
-    def test_plot_options_keywords(self):
-        im = hv.Image(np.random.rand(10, 10))
+    def test_plot_options_keywords(self, rng):
+        im = hv.Image(rng.random((10, 10)))
         styled_im = im.options(interpolation="nearest", cmap="jet")
         assert self.lookup_options(im, "plot").options == {}
         assert self.lookup_options(styled_im, "style").options == dict(
             cmap="jet", interpolation="nearest"
         )
 
-    def test_plot_options_one_object(self):
-        im = hv.Image(np.random.rand(10, 10))
+    def test_plot_options_one_object(self, rng):
+        im = hv.Image(rng.random((10, 10)))
         imopts = hv.opts.Image(interpolation="nearest", cmap="jet")
         styled_im = im.options(imopts)
         assert self.lookup_options(im, "plot").options == {}
@@ -542,8 +542,8 @@ class TestOptionsMethod:
             cmap="jet", interpolation="nearest"
         )
 
-    def test_plot_options_two_object(self):
-        im = hv.Image(np.random.rand(10, 10))
+    def test_plot_options_two_object(self, rng):
+        im = hv.Image(rng.random((10, 10)))
         imopts1 = hv.opts.Image(interpolation="nearest")
         imopts2 = hv.opts.Image(cmap="hsv")
         styled_im = im.options(imopts1, imopts2)
@@ -552,8 +552,8 @@ class TestOptionsMethod:
             cmap="hsv", interpolation="nearest"
         )
 
-    def test_plot_options_object_list(self):
-        im = hv.Image(np.random.rand(10, 10))
+    def test_plot_options_object_list(self, rng):
+        im = hv.Image(rng.random((10, 10)))
         imopts1 = hv.opts.Image(interpolation="nearest")
         imopts2 = hv.opts.Image(cmap="summer")
         styled_im = im.options([imopts1, imopts2])
@@ -578,8 +578,8 @@ class TestOptsMethod:
     def lookup_options(self, obj, group):
         return hv.Store.lookup_options(self.backend, obj, group)
 
-    def test_simple_clone_disabled(self):
-        im = hv.Image(np.random.rand(10, 10))
+    def test_simple_clone_disabled(self, rng):
+        im = hv.Image(rng.random((10, 10)))
         styled_im = im.opts(interpolation="nearest", cmap="jet", clone=False)
 
         assert self.lookup_options(im, "plot").options == {}
@@ -591,8 +591,8 @@ class TestOptsMethod:
             "interpolation": "nearest",
         }
 
-    def test_simple_opts_clone_enabled(self):
-        im = hv.Image(np.random.rand(10, 10))
+    def test_simple_opts_clone_enabled(self, rng):
+        im = hv.Image(rng.random((10, 10)))
         styled_im = im.opts(interpolation="nearest", cmap="jet", clone=True)
 
         assert self.lookup_options(im, "plot").options == {}
@@ -604,8 +604,8 @@ class TestOptsMethod:
         styled_im_lookup = self.lookup_options(styled_im, "style").options
         assert styled_im_lookup["cmap"] == "jet"
 
-    def test_opts_method_with_utility(self):
-        im = hv.Image(np.random.rand(10, 10))
+    def test_opts_method_with_utility(self, rng):
+        im = hv.Image(rng.random((10, 10)))
         imopts = hv.opts.Image(cmap="Blues")
         styled_im = im.opts(imopts)
 
@@ -621,8 +621,8 @@ class TestOptsMethod:
         assert retval is not dmap
         assert self.lookup_options(retval[0], "plot").options == {"padding": 1}
 
-    def test_opts_clear(self):
-        im = hv.Image(np.random.rand(10, 10))
+    def test_opts_clear(self, rng):
+        im = hv.Image(rng.random((10, 10)))
         styled_im = hv.opts.apply_groups(
             im,
             style=dict(cmap="jet", interpolation="nearest", option1="A", option2="B"),
@@ -636,8 +636,8 @@ class TestOptsMethod:
         cleared_options = self.lookup_options(cleared, "style").options
         assert not any(k in ["option1", "option2"] for k in cleared_options.keys())
 
-    def test_opts_clear_clone(self):
-        im = hv.Image(np.random.rand(10, 10))
+    def test_opts_clear_clone(self, rng):
+        im = hv.Image(rng.random((10, 10)))
         styled_im = hv.opts.apply_groups(
             im,
             style=dict(cmap="jet", interpolation="nearest", option1="A", option2="B"),
@@ -760,8 +760,8 @@ class TestCrossBackendOptions:
         if self.plotly_options is not None:
             hv.Store._options["plotly"] = self.plotly_options
 
-    def test_mpl_bokeh_mpl(self):
-        img = hv.Image(np.random.rand(10, 10))
+    def test_mpl_bokeh_mpl(self, rng):
+        img = hv.Image(rng.random((10, 10)))
         # Use blue in matplotlib
         hv.Store.current_backend = "matplotlib"
         hv.StoreOptions.set_options(img, style={"Image": {"cmap": "Blues"}})
@@ -781,8 +781,8 @@ class TestCrossBackendOptions:
         bokeh_opts = hv.Store.lookup_options("bokeh", img, "style").options
         assert bokeh_opts == {"cmap": "Purple"}
 
-    def test_mpl_bokeh_offset_mpl(self):
-        img = hv.Image(np.random.rand(10, 10))
+    def test_mpl_bokeh_offset_mpl(self, rng):
+        img = hv.Image(rng.random((10, 10)))
         # Use blue in matplotlib
         hv.Store.current_backend = "matplotlib"
         hv.StoreOptions.set_options(img, style={"Image": {"cmap": "Blues"}})
@@ -790,7 +790,7 @@ class TestCrossBackendOptions:
         assert mpl_opts == {"cmap": "Blues"}
         # Switch to bokeh and style a random object...
         hv.Store.current_backend = "bokeh"
-        img2 = hv.Image(np.random.rand(10, 10))
+        img2 = hv.Image(rng.random((10, 10)))
         hv.StoreOptions.set_options(img2, style={"Image": {"cmap": "Reds"}})
         img2_opts = hv.Store.lookup_options("bokeh", img2, "style").options
         assert img2_opts == {"cmap": "Reds"}
@@ -946,8 +946,8 @@ class TestCrossBackendOptionSpecification:
         bokeh_output_lookup = hv.Store.lookup_options("bokeh", obj, "output").options
         assert bokeh_output_lookup == {}
 
-    def test_mpl_bokeh_mpl_via_option_objects_opts_method(self):
-        img = hv.Image(np.random.rand(10, 10))
+    def test_mpl_bokeh_mpl_via_option_objects_opts_method(self, rng):
+        img = hv.Image(rng.random((10, 10)))
         mpl_opts = hv.Options("Image", cmap="Blues", backend="matplotlib")
         bokeh_opts = hv.Options("Image", cmap="Purple", backend="bokeh")
         assert mpl_opts.kwargs["backend"] == "matplotlib"
@@ -959,8 +959,8 @@ class TestCrossBackendOptionSpecification:
         assert bokeh_lookup["cmap"] == "Purple"
         self.assert_output_options_group_empty(img)
 
-    def test_mpl_bokeh_mpl_via_builders_opts_method(self):
-        img = hv.Image(np.random.rand(10, 10))
+    def test_mpl_bokeh_mpl_via_builders_opts_method(self, rng):
+        img = hv.Image(rng.random((10, 10)))
         mpl_opts = hv.opts.Image(cmap="Blues", backend="matplotlib")
         bokeh_opts = hv.opts.Image(cmap="Purple", backend="bokeh")
         assert mpl_opts.kwargs["backend"] == "matplotlib"
@@ -981,8 +981,8 @@ class TestCrossBackendOptionSpecification:
         bokeh_lookup = hv.Store.lookup_options("bokeh", styled, "style")
         assert bokeh_lookup.kwargs["color"] == "green"
 
-    def test_mpl_bokeh_mpl_via_builders_opts_method_implicit_backend(self):
-        img = hv.Image(np.random.rand(10, 10))
+    def test_mpl_bokeh_mpl_via_builders_opts_method_implicit_backend(self, rng):
+        img = hv.Image(rng.random((10, 10)))
         hv.Store.set_current_backend("matplotlib")
         mpl_opts = hv.opts.Image(cmap="Blues")
         bokeh_opts = hv.opts.Image(cmap="Purple", backend="bokeh")
@@ -995,8 +995,8 @@ class TestCrossBackendOptionSpecification:
         assert bokeh_lookup["cmap"] == "Purple"
         self.assert_output_options_group_empty(img)
 
-    def test_mpl_bokeh_mpl_via_builders_opts_method_literal_implicit_backend(self):
-        img = hv.Image(np.random.rand(10, 10))
+    def test_mpl_bokeh_mpl_via_builders_opts_method_literal_implicit_backend(self, rng):
+        img = hv.Image(rng.random((10, 10)))
         curve = hv.Curve([1, 2, 3])
         overlay = img * curve
         hv.Store.set_current_backend("matplotlib")
@@ -1018,8 +1018,8 @@ class TestCrossBackendOptionSpecification:
         bokeh_img_lookup = hv.Store.lookup_options("bokeh", styled.Image.I, "style")
         assert bokeh_img_lookup.kwargs["cmap"] == "jet"
 
-    def test_mpl_bokeh_mpl_via_builders_opts_method_literal_explicit_backend(self):
-        img = hv.Image(np.random.rand(10, 10))
+    def test_mpl_bokeh_mpl_via_builders_opts_method_literal_explicit_backend(self, rng):
+        img = hv.Image(rng.random((10, 10)))
         curve = hv.Curve([1, 2, 3])
         overlay = img * curve
         hv.Store.set_current_backend("matplotlib")
@@ -1066,7 +1066,7 @@ class TestCrossBackendOptionSpecification:
 class TestCrossBackendOptionPickling(TestCrossBackendOptions):
     def setup_method(self):
         super().setup_method()
-        self.raw = hv.Image(np.random.rand(10, 10))
+        self.raw = hv.Image(np.random.default_rng(1).random((10, 10)))
         hv.Store.current_backend = "matplotlib"
         hv.StoreOptions.set_options(self.raw, style={"Image": {"cmap": "Blues"}})
         hv.Store.current_backend = "bokeh"

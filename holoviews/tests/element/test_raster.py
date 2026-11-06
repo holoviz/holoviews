@@ -30,8 +30,8 @@ class TestRaster:
             hv.Curve(np.array([(0, 0), (1, 1), (2, 2)]), kdims=["x"], vdims=["z"]),
         )
 
-    def test_raster_range_masked(self):
-        arr = np.random.rand(10, 10) - 0.5
+    def test_raster_range_masked(self, rng):
+        arr = rng.random((10, 10)) - 0.5
         arr = np.ma.masked_where(arr <= 0, arr)
         rrange = hv.Raster(arr).range(2)
         assert rrange == (np.min(arr), np.max(arr))
@@ -39,7 +39,7 @@ class TestRaster:
 
 class TestRGB:
     def setup_method(self):
-        self.rgb_array = np.random.randint(0, 255, (3, 3, 4))
+        self.rgb_array = np.random.default_rng(1).integers(0, 255, (3, 3, 4))
 
     def test_construct_from_array_with_alpha(self):
         rgb = hv.RGB(self.rgb_array)
@@ -87,7 +87,7 @@ class TestRGB:
 
 class TestHSV:
     def setup_method(self):
-        self.hsv_array = np.random.randint(0, 255, (3, 3, 4))
+        self.hsv_array = np.random.default_rng(1).integers(0, 255, (3, 3, 4))
 
     def test_not_using_class_variables_vdims(self):
         init_vdims = hv.HSV(self.hsv_array).vdims

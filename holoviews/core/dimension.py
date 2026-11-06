@@ -44,8 +44,6 @@ class redim(Redim):
 
 
 if t.TYPE_CHECKING:
-    from typing_extensions import Self
-
     _LabelledDataT = t.TypeVar("_LabelledDataT", bound="LabelledData")
 
 
@@ -566,6 +564,7 @@ class LabelledData(param.Parameterized):
     )
 
     _deep_indexable = False
+    _streams = None
 
     def __init__(self, data, id=None, plot_id=None, **params):
         """All LabelledData subclasses must supply data to the
@@ -620,7 +619,7 @@ class LabelledData(param.Parameterized):
         link: bool = ...,
         *args,
         **overrides,
-    ) -> Self: ...
+    ) -> t.Self: ...
     @t.overload
     def clone(
         self,
@@ -639,7 +638,7 @@ class LabelledData(param.Parameterized):
         link=True,
         *args,
         **overrides,
-    ) -> LabelledData | Self:
+    ) -> LabelledData | t.Self:
         """Clones the object, overriding data and parameters.
 
         Parameters
@@ -722,7 +721,7 @@ class LabelledData(param.Parameterized):
         ----------
         spec : A function, spec or type to check for a match
             * A 'type[[.group].label]' string which is compared
-            against the type, group and label of this object.
+              against the type, group and label of this object.
 
             * A function which is given the object and returns a boolean.
 
@@ -847,6 +846,7 @@ class LabelledData(param.Parameterized):
     def __getstate__(self):
         """Ensures pickles save options applied to this objects."""
         obj_dict = self.__dict__.copy()
+        obj_dict.pop("_streams", None)
         try:
             if Store.save_option_state and (obj_dict.get("_id", None) is not None):
                 custom_key = "_custom_option_{}".format(obj_dict["_id"])
@@ -1547,12 +1547,14 @@ class ViewableTree(AttrTree, Dimensioned):
         return items
 
     def __setstate__(self, state):
-        """Ensure that object does not try to reference its parent during
-        unpickling.
+        """Ensure that object does not try to reference its parent or children
+        during unpickling.
         """
         parent = state.pop("parent", None)
         state["parent"] = None
+        children = {c: state.pop(c) for c in state.get("children", []) if c in state}
         super(AttrTree, self).__setstate__(state)
+        self.__dict__.update(children)
         self.__dict__["parent"] = parent
 
     @classmethod

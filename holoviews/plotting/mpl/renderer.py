@@ -16,7 +16,7 @@ from param.parameterized import bothmethod
 from ...core import HoloMap
 from ...core.options import Store
 from ..renderer import HTML_TAGS, MIME_TYPES, Renderer
-from .util import get_old_rcparams, get_tight_bbox
+from .util import _ensure_agg_canvas, get_old_rcparams, get_tight_bbox
 
 # <format name> : (animation writer, format,  anim_kwargs, extra_args)
 ANIMATION_OPTS = {
@@ -30,6 +30,12 @@ ANIMATION_OPTS = {
     "gif": ("pillow", "gif", {"fps": 10}, []),
     "scrubber": ("html", None, {"fps": 5}, None),
 }
+
+_MPL_BACKENDS_ALLOWLIST = [
+    "agg",
+    "module://ipykernel.pylab.backend_inline",
+    "module://matplotlib_inline.backend_inline",
+]
 
 
 class MPLRenderer(Renderer):
@@ -246,8 +252,6 @@ class MPLRenderer(Renderer):
         the figure dimensions and axes positions so that all content fits
         within the figure bounds without clipping.
         """
-        from matplotlib.backends.backend_agg import FigureCanvasAgg
-
         fig = plot.state
 
         traverse_fn = lambda x: x.handles.get("bbox_extra_artists", None)
@@ -259,12 +263,7 @@ class MPLRenderer(Renderer):
 
         pad = mpl.rcParams["savefig.pad_inches"]
 
-        # Ensure we have a non-interactive canvas for rendering, since
-        # the figure may have been closed (plt.close) but still retain
-        # a Tk/Qt canvas that errors on resize operations.
-        if type(fig.canvas) is not FigureCanvasAgg:
-            fig.canvas.manager = None
-            FigureCanvasAgg(fig)
+        _ensure_agg_canvas(fig)
 
         dpi = self.dpi or fig.dpi
         fig.set_dpi(dpi)
@@ -272,15 +271,16 @@ class MPLRenderer(Renderer):
         bbox_inches = get_tight_bbox(fig, extra_artists, pad=pad)
 
         orig_w, orig_h = fig.get_size_inches()
-        new_w = bbox_inches.width
-        new_h = bbox_inches.height
+
+        # Use round to avoid floating point error
+        pw, ph = round(bbox_inches.width * dpi), round(bbox_inches.height * dpi)
 
         # Video codecs like libx264 require even pixel dimensions.
         # Round up to the nearest even number of pixels for video formats.
         if fmt in ("mp4", "webm"):
-            pw, ph = int(new_w * dpi), int(new_h * dpi)
-            new_w = (pw + pw % 2) / dpi
-            new_h = (ph + ph % 2) / dpi
+            pw, ph = pw + pw % 2, ph + ph % 2
+
+        new_w, new_h = pw / dpi, ph / dpi
 
         # Compute how to transform positions from old figure coordinates
         # to new figure coordinates. The tight bbox defines the visible
@@ -326,5 +326,5 @@ class MPLRenderer(Renderer):
         import matplotlib.pyplot as plt
 
         backend = plt.get_backend()
-        if backend not in ["agg", "module://ipykernel.pylab.backend_inline"]:
+        if backend not in _MPL_BACKENDS_ALLOWLIST:
             plt.switch_backend("agg")

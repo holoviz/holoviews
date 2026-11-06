@@ -35,8 +35,8 @@ class TestImage(LoggingComparison):
             hv.Curve(np.array([(-0.333333, 0), (0, 1), (0.333333, 2)]), kdims=["x"], vdims=["z"]),
         )
 
-    def test_image_range_masked(self):
-        arr = np.random.rand(10, 10) - 0.5
+    def test_image_range_masked(self, rng):
+        arr = rng.random((10, 10)) - 0.5
         arr = np.ma.masked_where(arr <= 0, arr)
         rrange = hv.Image(arr).range(2)
         assert rrange == (np.min(arr), np.max(arr))
@@ -47,8 +47,8 @@ class TestImage(LoggingComparison):
         hv.Image(np.array([]))
         hv.Image(np.zeros((0, 0)))
 
-    def test_image_rtol_failure(self):
-        vals = np.random.rand(20, 20)
+    def test_image_rtol_failure(self, rng):
+        vals = rng.random((20, 20))
         xs = np.linspace(0, 10, 20)
         ys = np.linspace(0, 10, 20)
         ys[-1] += 0.1
@@ -59,15 +59,15 @@ class TestImage(LoggingComparison):
         )
         self.log_handler.assert_endswith("WARNING", substr)
 
-    def test_image_rtol_constructor(self):
-        vals = np.random.rand(20, 20)
+    def test_image_rtol_constructor(self, rng):
+        vals = rng.random((20, 20))
         xs = np.linspace(0, 10, 20)
         ys = np.linspace(0, 10, 20)
         ys[-1] += 0.01
         hv.Image({"vals": vals, "xs": xs, "ys": ys}, ["xs", "ys"], "vals", rtol=10e-2)
 
-    def test_image_rtol_config(self):
-        vals = np.random.rand(20, 20)
+    def test_image_rtol_config(self, rng):
+        vals = rng.random((20, 20))
         xs = np.linspace(0, 10, 20)
         ys = np.linspace(0, 10, 20)
         ys[-1] += 0.001
@@ -99,8 +99,8 @@ class TestImage(LoggingComparison):
         hv.Image((x, [0, 1], np.zeros((2, 2))))
         assert len(self.log_handler.tail("WARNING", n=1)) == 0
 
-    def test_image_clone(self):
-        vals = np.random.rand(20, 20)
+    def test_image_clone(self, rng):
+        vals = rng.random((20, 20))
         xs = np.linspace(0, 10, 20)
         ys = np.linspace(0, 10, 20)
         ys[-1] += 0.001

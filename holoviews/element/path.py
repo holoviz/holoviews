@@ -73,7 +73,7 @@ class Path(SelectionPolyExpr, Geometry):
             paths = []
             for path in data:
                 if path.kdims != kdims:
-                    redim = {okd.name: nkd for okd, nkd in zip(path.kdims, kdims, strict=None)}
+                    redim = {okd.name: nkd for okd, nkd in zip(path.kdims, kdims, strict=True)}
                     path = path.redim(**redim)
                 if path.interface.multi and isinstance(path.data, list):
                     paths += path.data
@@ -109,21 +109,19 @@ class Path(SelectionPolyExpr, Geometry):
 
         Selections may select a specific value, slice or set of values:
 
-        * value: Scalar values will select rows along with an exact match,
-        e.g.:
+        * value: Scalar values will select rows along with an exact match, e.g.::
 
             ds.select(x=3)
 
-        * slice: Slices may be declared as tuples of the upper and lower bound,
-        e.g.:
+        * slice: Slices may be declared as tuples of the upper and lower bound, e.g.::
 
             ds.select(x=(0, 3))
 
-        * values: A list of values may be selected using a list or set, e.g.:
+        * values: A list of values may be selected using a list or set, e.g.::
 
             ds.select(x=[0, 1, 2])
 
-        * predicate expression: A holoviews.dim expression, e.g.:
+        * predicate expression: A holoviews.dim expression, e.g.::
 
             from holoviews import dim
             ds.select(selection_expr=dim('x') % 2 == 0)
@@ -487,7 +485,7 @@ class Ellipse(BaseShape):
         half_height = self.height / 2.0
         # create points
         ellipse = np.array(
-            list(zip(half_width * np.sin(angles), half_height * np.cos(angles), strict=None))
+            list(zip(half_width * np.sin(angles), half_height * np.cos(angles), strict=True))
         )
         # rotate ellipse and add offset
         rot = np.array(

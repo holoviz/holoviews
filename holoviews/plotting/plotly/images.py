@@ -4,6 +4,7 @@ import numpy as np
 from plotly.graph_objs.layout import Image as _Image
 
 from ...core.util import VersionError, dtype_kind
+from ...core.util.dependencies import _import_with_error
 from ...element import Tiles
 from .element import ElementPlot
 from .selection import PlotlyOverlaySelectionDisplay
@@ -51,11 +52,13 @@ class RGBPlot(ElementPlot):
             return dict(images=[image], traces=[dummy_trace])
 
     def get_data(self, element, ranges, style, is_geo=False, **kwargs):
-        try:
-            import PIL.Image
-        except ImportError:
-            raise VersionError("""\
-Rendering RGB elements with the plotly backend requires the Pillow package""") from None
+        _import_with_error(
+            "PIL",
+            "pillow",
+            context="Rendering RGB elements with the plotly backend requires Pillow",
+            error_type=VersionError,
+        )
+        import PIL.Image
 
         img = np.flip(
             np.dstack([element.dimension_values(d, flat=False) for d in element.vdims]), axis=0

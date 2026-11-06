@@ -48,8 +48,8 @@ class BasePandasInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         ds = hv.Scatter(pd.DataFrame([1, 2, 3], columns=["A"]))
         assert_element_equal(ds, hv.Scatter(([0, 1, 2], [1, 2, 3]), "index", "A"))
 
-    def test_dataset_df_duplicate_columns_raises(self):
-        df = pd.DataFrame(np.random.randint(-100, 100, size=(100, 2)), columns=list("AB"))
+    def test_dataset_df_duplicate_columns_raises(self, rng):
+        df = pd.DataFrame(rng.integers(-100, 100, size=(100, 2)), columns=list("AB"))
         with pytest.raises(DataError):
             hv.Dataset(df[["A", "A"]])
 
@@ -168,13 +168,13 @@ class BasePandasInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         )
         assert_element_equal(scatters, hmap)
 
-    def test_dataset_from_multi_index(self):
-        df = pd.DataFrame({"x": np.arange(10), "y": np.arange(10), "z": np.random.rand(10)})
+    def test_dataset_from_multi_index(self, rng):
+        df = pd.DataFrame({"x": np.arange(10), "y": np.arange(10), "z": rng.random(10)})
         ds = hv.Dataset(df.groupby(["x", "y"]).mean(), ["x", "y"])
         assert_element_equal(ds, hv.Dataset(df, ["x", "y"]))
 
-    def test_dataset_from_multi_index_tuple_dims(self):
-        df = pd.DataFrame({"x": np.arange(10), "y": np.arange(10), "z": np.random.rand(10)})
+    def test_dataset_from_multi_index_tuple_dims(self, rng):
+        df = pd.DataFrame({"x": np.arange(10), "y": np.arange(10), "z": rng.random(10)})
         ds = hv.Dataset(df.groupby(["x", "y"]).mean(), [("x", "X"), ("y", "Y")])
         assert_element_equal(ds, hv.Dataset(df, [("x", "X"), ("y", "Y")]))
 
@@ -218,9 +218,9 @@ class PandasInterfaceTests(BasePandasInterfaceTests):
         assert ds.keys() == ["A", "B"]
 
     @pytest.mark.xfail(reason="Breaks hvplot")
-    def test_reindex(self):
+    def test_reindex(self, rng):
         ds = hv.Dataset(
-            pd.DataFrame({"x": np.arange(10), "y": np.arange(10), "z": np.random.rand(10)})
+            pd.DataFrame({"x": np.arange(10), "y": np.arange(10), "z": rng.random(10)})
         )
         df = ds.interface.reindex(ds, ["x"])
         assert df.index.names == ["x"]

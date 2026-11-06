@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import numpy as np
-
 import holoviews as hv
 from holoviews.plotting.mpl.util import MPL_GE_3_9_0
 from holoviews.testing import assert_data_equal
@@ -10,8 +8,8 @@ from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestMPLBoxWhiskerPlot(TestMPLPlot):
-    def test_boxwhisker_simple(self):
-        values = np.random.rand(100)
+    def test_boxwhisker_simple(self, rng):
+        values = rng.random(100)
         boxwhisker = hv.BoxWhisker(values)
         plot = mpl_renderer.get_plot(boxwhisker)
         data, style, _axis_opts = plot.get_data(boxwhisker, {}, {})
@@ -21,8 +19,8 @@ class TestMPLBoxWhiskerPlot(TestMPLPlot):
         else:
             assert style["labels"] == [""]
 
-    def test_boxwhisker_simple_overlay(self):
-        values = np.random.rand(100)
+    def test_boxwhisker_simple_overlay(self, rng):
+        values = rng.random(100)
         boxwhisker = hv.BoxWhisker(values) * hv.BoxWhisker(values)
         plot = mpl_renderer.get_plot(boxwhisker)
         p1, p2 = plot.subplots.values()

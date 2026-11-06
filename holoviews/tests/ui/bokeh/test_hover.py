@@ -10,7 +10,7 @@ import pytest
 import holoviews as hv
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_7_0, BOKEH_GE_3_8_0
 
-from .. import expect
+from .. import expect, wait_until
 
 pytestmark = pytest.mark.ui
 
@@ -19,8 +19,8 @@ bokeh_3_8_0 = pytest.mark.skipif(not BOKEH_GE_3_8_0, reason="Added in Bokeh 3.8"
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-def test_hover_tooltips_list(serve_hv):
-    hv_image = hv.Image(np.random.rand(10, 10), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]).opts(
+def test_hover_tooltips_list(serve_hv, rng):
+    hv_image = hv.Image(rng.random((10, 10)), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]).opts(
         hover_tooltips=["$x", "xc", "@yc", "@z"]
     )
 
@@ -64,8 +64,8 @@ def test_hover_tooltips_unit_format(serve_hv):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-def test_hover_tooltips_list_mix_tuple_string(serve_hv):
-    hv_image = hv.Image(np.random.rand(10, 10), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]).opts(
+def test_hover_tooltips_list_mix_tuple_string(serve_hv, rng):
+    hv_image = hv.Image(rng.random((10, 10)), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]).opts(
         hover_tooltips=[("xs", "($x, @xc)"), "yc", "z"]
     )
 
@@ -87,9 +87,9 @@ def test_hover_tooltips_list_mix_tuple_string(serve_hv):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-def test_hover_tooltips_label_group(serve_hv):
+def test_hover_tooltips_label_group(serve_hv, rng):
     hv_image = hv.Image(
-        np.random.rand(10, 10),
+        rng.random((10, 10)),
         bounds=(0, 0, 1, 1),
         kdims=["xc", "yc"],
         label="Image Label",
@@ -122,8 +122,8 @@ def test_hover_tooltips_label_group(serve_hv):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-def test_hover_tooltips_missing(serve_hv):
-    hv_image = hv.Image(np.random.rand(10, 10), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]).opts(
+def test_hover_tooltips_missing(serve_hv, rng):
+    hv_image = hv.Image(rng.random((10, 10)), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]).opts(
         hover_tooltips=["abc"]
     )
 
@@ -142,8 +142,8 @@ def test_hover_tooltips_missing(serve_hv):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-def test_hover_tooltips_html_string(serve_hv):
-    hv_image = hv.Image(np.random.rand(10, 10), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]).opts(
+def test_hover_tooltips_html_string(serve_hv, rng):
+    hv_image = hv.Image(rng.random((10, 10)), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]).opts(
         hover_tooltips="<b>x</b>: $x<br>y: @yc"
     )
 
@@ -164,8 +164,8 @@ def test_hover_tooltips_html_string(serve_hv):
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-def test_hover_tooltips_formatters(serve_hv):
-    hv_image = hv.Image(np.random.rand(10, 10), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]).opts(
+def test_hover_tooltips_formatters(serve_hv, rng):
+    hv_image = hv.Image(rng.random((10, 10)), bounds=(0, 0, 1, 1), kdims=["xc", "yc"]).opts(
         hover_tooltips=[("X", "($x, @xc{%0.3f})")], hover_formatters={"@xc": "printf"}
     )
 
@@ -258,7 +258,7 @@ def test_hover_tooltips_rasterize_server_hover(serve_hv, rng):
 
     # Hover over the plot, first time the hovertool only have null
     # we then timeout and hover again to get hovertool with actual values
-    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    hv_plot.hover()
     page.mouse.up()
 
     expect(page.locator(".bk-Tooltip")).to_have_count(1)
@@ -310,7 +310,7 @@ def test_hover_tooltips_rasterize_server_hover_selector_ux(
 
     # Hover over the plot, first time the hovertool only have null
     # we then timeout and hover again to get hovertool with actual values
-    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    hv_plot.hover()
     page.mouse.up()
 
     expect(page.locator(".bk-Tooltip")).to_have_count(1)
@@ -368,7 +368,7 @@ def test_hover_tooltips_rasterize_server_datetime_axis(serve_hv, rng, convert_x,
 
     # Hover over the plot, first time the hovertool only have null
     # we then timeout and hover again to get hovertool with actual values
-    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    hv_plot.hover()
     page.mouse.up()
 
     expect(page.locator(".bk-Tooltip")).to_have_count(1)
@@ -386,19 +386,19 @@ def test_hover_tooltips_rasterize_server_datetime_axis(serve_hv, rng, convert_x,
 
 @bokeh_3_7_0
 @pytest.mark.usefixtures("bokeh_backend")
-def test_hover_tooltips_selector_update_plot(serve_panel):
+def test_hover_tooltips_selector_update_plot(serve_panel, rng):
     import datashader as ds
 
     from holoviews.operation.datashader import rasterize
 
     N_OBS = 1000
-    x_data = np.random.random((N_OBS, N_OBS))
+    x_data = rng.random((N_OBS, N_OBS))
 
     def get_plot(color_by):
         if color_by == "option1":
-            color_data = np.random.choice(["A", "B", "C", "D"], size=N_OBS)
+            color_data = rng.choice(["A", "B", "C", "D"], size=N_OBS)
         else:
-            color_data = np.random.choice(["a", "b", "c", "d"], size=N_OBS)
+            color_data = rng.choice(["a", "b", "c", "d"], size=N_OBS)
 
         dataset = hv.Dataset(
             (x_data[:, 0], x_data[:, 1], color_data),
@@ -483,7 +483,7 @@ def test_hover_tooltips_rasterize_server_hover_filter(serve_hv, rng, hover_toolt
 
     # Hover over the plot, first time the hovertool only have null
     # we then timeout and hover again to get hovertool with actual values
-    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
+    hv_plot.hover()
     page.mouse.up()
 
     expect(page.locator(".bk-Tooltip")).to_have_count(1)
@@ -494,7 +494,9 @@ def test_hover_tooltips_rasterize_server_hover_filter(serve_hv, rng, hover_toolt
 
     # Move to no data part of the plot
     page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] * 3 / 4)
-    page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] * 3 / 4)
+    # The filter only re-runs on mouse move, so move again once the server has answered
+    wait_until(lambda: hover_models[0].data["__index__"] == -1, page)
+    page.mouse.move(bbox["x"] + bbox["width"] / 2 + 1, bbox["y"] + bbox["height"] * 3 / 4)
     page.mouse.up()
 
     # Should not show anything
@@ -559,6 +561,7 @@ def test_hover_across_dynamicmaps(serve_panel):
 
     for i, cat in enumerate(("A", "B")):
         widget.value = [cat]
+        page.wait_for_timeout(200)
         page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
         page.mouse.up()
         tooltip = page.locator(".bk-Tooltip")
@@ -566,6 +569,7 @@ def test_hover_across_dynamicmaps(serve_panel):
         expect(tooltip.first).to_contain_text(f"category: {cat} x: {i} y: {i}")
 
     widget.value = ["A", "B"]
+    page.wait_for_timeout(200)
     page.mouse.move(bbox["x"] + bbox["width"] / 2, bbox["y"] + bbox["height"] / 2)
     page.mouse.up()
     tooltip = page.locator(".bk-Tooltip")

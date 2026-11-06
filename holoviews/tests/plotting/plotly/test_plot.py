@@ -37,8 +37,8 @@ def test_overlay_plot_stream_cleanup():
 
     plot = plotly_renderer.get_plot(dmap1 * dmap2)
 
-    assert len(stream1._subscribers) == 4
-    assert len(stream2._subscribers) == 4
+    assert stream1.subscribers == [plot.refresh]
+    assert stream2.subscribers == [plot.refresh]
 
     plot.cleanup()
 

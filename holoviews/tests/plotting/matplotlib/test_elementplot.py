@@ -10,6 +10,7 @@ from matplotlib.projections import PolarAxes
 from matplotlib.ticker import FormatStrFormatter, FuncFormatter, PercentFormatter
 
 import holoviews as hv
+from holoviews.plotting.mpl.util import MPL_GE_3_11_0
 from holoviews.streams import Stream
 from holoviews.testing import assert_data_equal
 
@@ -109,6 +110,14 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
         axes = mpl_renderer.get_plot(element).handles["axis"]
         assert axes.get_ylabel() == "custom y-label"
 
+    def test_element_invert_axes_custom_labels_visual_axes(self):
+        element = hv.Curve(range(10)).opts(
+            invert_axes=True, xlabel="custom x-label", ylabel="custom y-label"
+        )
+        axes = mpl_renderer.get_plot(element).handles["axis"]
+        assert axes.get_xlabel() == "custom x-label"
+        assert axes.get_ylabel() == "custom y-label"
+
     def test_element_xformatter_string(self):
         curve = hv.Curve(range(10)).opts(xformatter="%d")
         plot = mpl_renderer.get_plot(curve)
@@ -195,6 +204,17 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
         ax = plot.handles["axis"]
         assert isinstance(ax, PolarAxes)
         assert ax.get_xlim() == (0, 2 * np.pi)
+
+    def test_element_tick_label_rotation(self):
+        heat_map = hv.HeatMap([(1, 2, 3), (2, 3, 4), (3, 4, 5)]).opts(xrotation=30, yrotation=60)
+        plot = mpl_renderer.get_plot(heat_map)
+        ax = plot.handles["axis"]
+        assert {ticklabel.get_rotation() for ticklabel in ax.get_xticklabels()} == {30}
+        assert {ticklabel.get_rotation() for ticklabel in ax.get_yticklabels()} == {60}
+        if not MPL_GE_3_11_0:
+            return
+        assert {ticklabel.get_rotation_mode() for ticklabel in ax.get_xticklabels()} == {"xtick"}
+        assert {ticklabel.get_rotation_mode() for ticklabel in ax.get_yticklabels()} == {"ytick"}
 
     #################################################################
     # Custom opts tests
@@ -311,10 +331,10 @@ class TestElementPlot(LoggingComparison, TestMPLPlot):
         self.log_handler.assert_contains("WARNING", "valid method on the specified model")
 
     ### Aspect ratio ###
-    def test_aspect_non_matching_types(self):
+    def test_aspect_non_matching_types(self, rng):
         X = pd.date_range(start="1/1/2018", end="1/08/2018", periods=100)
         Y = np.linspace(1, 100, 100)
-        Z = np.random.randn(100, 100)
+        Z = rng.standard_normal((100, 100))
         qm = hv.QuadMesh((X, Y, Z)).opts(aspect="equal")
         msg = (
             "The aspect is set to 'equal', but the axes does not have the same type: "
@@ -555,8 +575,8 @@ class TestColorbarPlot(TestMPLPlot):
         colorbar = plot.handles["cax"]
         assert colorbar.get_label() == ""
 
-    def test_colorbar_label_style_mapping(self):
-        scatter = hv.Scatter(np.random.rand(100, 3), vdims=["y", "color"]).opts(
+    def test_colorbar_label_style_mapping(self, rng):
+        scatter = hv.Scatter(rng.random((100, 3)), vdims=["y", "color"]).opts(
             color="color", colorbar=True
         )
         plot = mpl_renderer.get_plot(scatter)
@@ -573,10 +593,10 @@ class TestColorbarPlot(TestMPLPlot):
 
 
 class TestOverlayPlot(TestMPLPlot):
-    def test_overlay_legend_opts(self):
+    def test_overlay_legend_opts(self, rng):
         overlay = (
-            hv.Curve(np.random.randn(10).cumsum(), label="A")
-            * hv.Curve(np.random.randn(10).cumsum(), label="B")
+            hv.Curve(rng.standard_normal(10).cumsum(), label="A")
+            * hv.Curve(rng.standard_normal(10).cumsum(), label="B")
         ).opts(legend_opts={"framealpha": 0.5, "facecolor": "red"})
         plot = mpl_renderer.get_plot(overlay)
         legend_frame = plot.handles["legend"].get_frame()

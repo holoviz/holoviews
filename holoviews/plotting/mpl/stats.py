@@ -101,7 +101,7 @@ class BoxPlot(MultiDistributionMixin, ChartPlot):
         for key, group in groups:
             if element.kdims:
                 label = ",".join(
-                    [d.pprint_value(v) for d, v in zip(element.kdims, key, strict=None)]
+                    [d.pprint_value(v) for d, v in zip(element.kdims, key, strict=True)]
                 )
             else:
                 label = key
@@ -243,7 +243,7 @@ class ViolinPlot(BoxPlot):
                 **labels,
             )
             artists.update(box)
-        for body, color in zip(artists["bodies"], facecolors, strict=None):
+        for body, color in zip(artists["bodies"], facecolors, strict=False):
             body.set_facecolors(color)
             body.set_edgecolors(edgecolors)
             body.set_alpha(alpha)
@@ -265,7 +265,7 @@ class ViolinPlot(BoxPlot):
         for i, (key, group) in enumerate(groups):
             if element.kdims:
                 label = ",".join(
-                    [d.pprint_value(v) for d, v in zip(element.kdims, key, strict=None)]
+                    [d.pprint_value(v) for d, v in zip(element.kdims, key, strict=True)]
                 )
             else:
                 label = key

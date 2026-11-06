@@ -90,20 +90,20 @@ class TestHexTilesPlot(TestBokehPlot):
     #    Styling mapping      #
     ###########################
 
-    def test_hex_tile_line_width_op(self):
-        hextiles = hv.HexTiles(np.random.randn(1000, 2)).opts(line_width="Count")
+    def test_hex_tile_line_width_op(self, rng):
+        hextiles = hv.HexTiles(rng.standard_normal((1000, 2))).opts(line_width="Count")
         plot = bokeh_renderer.get_plot(hextiles)
         glyph = plot.handles["glyph"]
         assert property_to_dict(glyph.line_width) == {"field": "line_width"}
 
-    def test_hex_tile_alpha_op(self):
-        hextiles = hv.HexTiles(np.random.randn(1000, 2)).opts(alpha="Count")
+    def test_hex_tile_alpha_op(self, rng):
+        hextiles = hv.HexTiles(rng.standard_normal((1000, 2))).opts(alpha="Count")
         plot = bokeh_renderer.get_plot(hextiles)
         glyph = plot.handles["glyph"]
         assert property_to_dict(glyph.fill_alpha) == {"field": "alpha"}
 
-    def test_hex_tile_scale_op(self):
-        hextiles = hv.HexTiles(np.random.randn(1000, 2)).opts(scale="Count")
+    def test_hex_tile_scale_op(self, rng):
+        hextiles = hv.HexTiles(rng.standard_normal((1000, 2))).opts(scale="Count")
         plot = bokeh_renderer.get_plot(hextiles)
         glyph = plot.handles["glyph"]
         assert property_to_dict(glyph.scale) == {"field": "scale"}

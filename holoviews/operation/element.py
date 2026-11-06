@@ -38,12 +38,11 @@ from ..core.util import (
     group_sanitizer,
     is_cupy_array,
     is_dask_array,
-    is_ibis_expr,
     isdatetime,
     isfinite,
     label_sanitizer,
 )
-from ..core.util.dependencies import _no_import_version, cp
+from ..core.util.dependencies import _import_with_error, _no_import_version, cp
 from ..element.chart import Bars, Histogram, Scatter
 from ..element.path import Contours, Dendrogram, Polygons
 from ..element.raster import RGB, HeatMap, Image
@@ -416,7 +415,7 @@ class image_overlay(Operation):
     @classmethod
     def _match(cls, el, spec):
         """Return the strength of the match (None if no match)"""
-        spec_dict = dict(zip(["type", "group", "label"], spec.split("."), strict=None))
+        spec_dict = dict(zip(["type", "group", "label"], spec.split("."), strict=False))
         if not isinstance(el, Image) or spec_dict["type"] != "Image":
             raise NotImplementedError("Only Image currently supported")
 
@@ -461,9 +460,9 @@ class image_overlay(Operation):
 
         completed = []
         strongest = ordering[np.argmax(strengths)]
-        for el, spec in zip(ordering, specs, strict=None):
+        for el, spec in zip(ordering, specs, strict=True):
             if el is None:
-                spec_dict = dict(zip(["type", "group", "label"], spec.split("."), strict=None))
+                spec_dict = dict(zip(["type", "group", "label"], spec.split("."), strict=False))
                 el = Image(
                     np.ones(strongest.data.shape) * self.p.fill,
                     group=spec_dict.get("group", "Image"),
@@ -664,10 +663,8 @@ class contours(Operation):
     _per_element = True
 
     def _process(self, element, key=None):
-        try:
-            from contourpy import FillType, LineType, contour_generator
-        except ImportError:
-            raise ImportError("contours operation requires contourpy.") from None
+        _import_with_error("contourpy", context="contours operation requires ContourPy")
+        from contourpy import FillType, LineType, contour_generator
 
         xs = element.dimension_values(0, True, flat=False)
         ys = element.dimension_values(1, True, flat=False)
@@ -693,16 +690,15 @@ class contours(Operation):
                     "for filled contour calculations."
                 )
 
-            try:
-                from matplotlib.dates import date2num, num2date
-            except ImportError:
-                raise ImportError(
-                    "contours operation using datetimes requires matplotlib."
-                ) from None
+            _import_with_error(
+                "matplotlib",
+                context="contours operation using datetimes requires Matplotlib",
+            )
+            from matplotlib.dates import date2num, num2date
 
             data = tuple(
                 date2num(d) if is_datetime else d
-                for d, is_datetime in zip(data, data_is_datetime, strict=None)
+                for d, is_datetime in zip(data, data_is_datetime, strict=True)
             )
 
         xdim, ydim = element.dimensions("key", label=True)
@@ -969,21 +965,7 @@ class histogram(Operation):
                 is_finite = cp.isfinite
 
         # Mask data
-        if is_ibis_expr(data):
-            from ..core.data.ibis import IBIS_GE_5_0_0, IBIS_GE_9_5_0
-
-            mask = data.notnull()
-            if self.p.nonzero:
-                mask = mask & (data != 0)
-            if IBIS_GE_5_0_0:
-                data = data.as_table()
-            else:
-                # to_projection removed in ibis 5.0.0
-                data = data.to_projection()
-            data = data.filter(mask) if IBIS_GE_9_5_0 else data[mask]
-            no_data = not len(data.head(1).execute())
-            data = data[dim.name]
-        elif isinstance(data, (nw.DataFrame, nw.LazyFrame, nw.Series)):
+        if isinstance(data, (nw.DataFrame, nw.LazyFrame, nw.Series)):
             if isinstance(data, nw.Series):
                 data = data.to_frame()
             data = data.filter(nw.all().is_finite()).filter(~nw.all().is_null())
@@ -1567,10 +1549,8 @@ class dendrogram(Operation):
     )
 
     def _compute_linkage(self, dataset, dim, vdim):
-        try:
-            from scipy.cluster.hierarchy import dendrogram, linkage
-        except ImportError:
-            raise ImportError("scipy is needed for the dendrogram operation") from None
+        _import_with_error("scipy", context="dendrogram operation requires SciPy")
+        from scipy.cluster.hierarchy import dendrogram, linkage
 
         arrays, labels = [], []
         for k, v in dataset.groupby(dim, container_type=list, group_type=Dataset):

@@ -13,11 +13,6 @@ from bokeh.core.properties import (
     Size,
 )
 
-try:
-    from matplotlib import cm, colors
-except ImportError:
-    cm, colors = None, None
-
 from ...core.options import abbreviated_exception
 from ...core.util import arraylike_types
 from ...util.transform import dim

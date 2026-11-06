@@ -97,6 +97,10 @@ These guides provide detail about specific additional features in HoloViews:
 
 : Information about configuration options.
 
+[Using HoloViews with an AI assistant]
+
+: How to give an AI assistant up-to-date HoloViews documentation context.
+
 [Customizing Plots]
 
 : How to customize plots including their titles, axis labels, ranges, ticks and more.
@@ -145,10 +149,6 @@ These guides provide detail about specific additional features in HoloViews:
 
 : Explains how to use interactive hover tools with large datasets.
 
-[Notebook Magics]
-
-: IPython magics supported in Jupyter Notebooks.
-
 ```{toctree}
 :hidden: true
 :maxdepth: 2
@@ -186,7 +186,7 @@ These guides provide detail about specific additional features in HoloViews:
  Annotators <Annotators>
  Exporting and Archiving <Exporting_and_Archiving>
  Continuous Coordinates <Continuous_Coordinates>
- Notebook Magics <Notebook_Magics>
+ Using HoloViews with an AI assistant <use_llms>
 ```
 
 [annotating your data]: Annotating_Data.html
@@ -211,7 +211,6 @@ These guides provide detail about specific additional features in HoloViews:
 [interactive hover for big data]: Interactive_Hover_for_Big_Data.html
 [linking bokeh plots]: Linking_Plots.html
 [live data]: Live_Data.html
-[notebook magics]: Notebook_Magics.html
 [plotting with bokeh]: Plotting_with_Bokeh.html
 [plotting with matplotlib]: Plotting_with_Matplotlib.html
 [reference gallery]: ../reference/index.html
@@ -224,3 +223,4 @@ These guides provide detail about specific additional features in HoloViews:
 [working with large data]: Large_Data.html
 [working with renderers and plots]: Plots_and_Renderers.html
 [working with streaming data]: Streaming_Data.html
+[using holoviews with an ai assistant]: use_llms.html
