@@ -233,3 +233,55 @@ class TestDonutPlot(TestBokehPlot):
         d = hv.Donut([("A", 30), ("B", -10)], vdims=["Amount"])
         with pytest.raises(ValueError, match=r"non-negative.*'Amount'"):
             bokeh_renderer.get_plot(d)
+
+    def test_donut_layout_colors_consistent(self):
+        layout = hv.Donut([("A", 1), ("B", 2)]) + hv.Donut([("A", 1), ("C", 2)])
+        plot = bokeh_renderer.get_plot(layout)
+        cmappers = [sp.handles["color_mapper"] for sp in plot.traverse(specs=[DonutPlot])]
+        colors = [dict(zip(cm.factors, cm.palette, strict=True)) for cm in cmappers]
+        assert colors[0]["A"] == colors[1]["A"]
+        assert colors[0]["B"] != colors[1]["C"]
+
+    def test_donut_holomap_colors_consistent(self):
+        hmap = hv.HoloMap({0: hv.Donut([("A", 1), ("B", 2)]), 1: hv.Donut([("C", 2)])})
+        plot = bokeh_renderer.get_plot(hmap)
+        cmapper = plot.handles["color_mapper"]
+        assert set(cmapper.factors) == {"A", "B", "C"}
+        plot.update((1,))
+        assert set(cmapper.factors) == {"A", "B", "C"}
+
+    def test_donut_duplicated_category_one_factor(self):
+        plot = bokeh_renderer.get_plot(hv.Donut([("A", 1), ("B", 2), ("A", 3)]))
+        assert plot.handles["color_mapper"].factors == ["A", "B"]
+
+    def test_donut_missing_category_takes_no_color(self):
+        plot = bokeh_renderer.get_plot(hv.Donut([(None, 1), ("A", 2), ("B", 3)]))
+        assert plot.handles["color_mapper"].factors == ["A", "B"]
+
+    def test_donut_layout_of_holomaps_colors_by_category(self):
+        layout = hv.NdLayout(
+            {
+                0: hv.Donut([("Rent", 1), ("Food", 2)]),
+                1: hv.Donut([("Travel", 1), ("Misc", 2), ("Rent", 3)]),
+                2: hv.Donut([("Misc", 1), ("Gym", 2)]),
+            }
+        )
+        plot = bokeh_renderer.get_plot(layout)
+        cmappers = [sp.handles["color_mapper"] for sp in plot.traverse(specs=[DonutPlot])]
+        assert len({tuple(cm.factors) for cm in cmappers}) == 1
+        assert len({tuple(cm.palette) for cm in cmappers}) == 1
+        assert len(set(cmappers[0].factors)) == 5
+
+    def test_donut_holomap_colors_by_category(self):
+        hmap = hv.HoloMap(
+            {
+                0: hv.Donut([("Rent", 1), ("Food", 2)]),
+                1: hv.Donut([("Travel", 1), ("Misc", 2), ("Rent", 3)]),
+            }
+        )
+        plot = bokeh_renderer.get_plot(hmap)
+        cmapper = plot.handles["color_mapper"]
+        rent = cmapper.palette[cmapper.factors.index("Rent")]
+        plot.update((1,))
+        assert cmapper.palette[cmapper.factors.index("Rent")] == rent
+        assert {"Rent", "Food", "Travel", "Misc"} <= set(cmapper.factors)

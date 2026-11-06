@@ -1606,20 +1606,26 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
             dimensions=[kdim, vdim],
         )
 
-    def _get_colors(self, labels, style, n):
-        """Resolve colors for n wedges from cmap or Cycle."""
+    def _get_colors(self, element, ranges, labels, display_labels, style):
+        """Resolve one color per wedge from cmap or Cycle, mapped by category."""
         cmap = style.pop("cmap", None)
-        if cmap and n > 0:
-            if isinstance(cmap, dict):
-                return [
-                    cmap.get(label, cmap.get("NaN", f"C{i}")) for i, label in enumerate(labels)
-                ]
-            return process_cmap(cmap, n, provider="matplotlib", categorical=True)
-
-        if n > 0:
+        factors = self._get_donut_factors(element, ranges, display_labels)
+        n = len(factors)
+        if n == 0:
+            return []
+        if isinstance(cmap, dict):
+            fallback = {f: f"C{i}" for i, f in enumerate(factors)}
+            return [
+                cmap.get(label, cmap.get("NaN", fallback[display]))
+                for label, display in zip(labels, display_labels, strict=True)
+            ]
+        if cmap:
+            palette = process_cmap(cmap, n, provider="matplotlib", categorical=True)
+        else:
             cycle = self.style.max_cycles(n)
-            return [cycle[i].get("facecolor", cycle[i].get("color", f"C{i}")) for i in range(n)]
-        return []
+            palette = [cycle[i].get("facecolor", cycle[i].get("color", f"C{i}")) for i in range(n)]
+        colors = dict(zip(factors, palette, strict=True))
+        return [colors[label] for label in display_labels]
 
     def _create_wedges(self, axis, element, ranges, style):
         """Build Wedge patch artists."""
@@ -1632,7 +1638,7 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         display_labels = dd["display_labels"]
 
         n = len(values)
-        colors = self._get_colors(labels, style, n)
+        colors = self._get_colors(element, ranges, labels, display_labels, style)
         width = self.outer_radius - self.inner_radius
 
         wedge_style = {
@@ -1692,10 +1698,11 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
 
         # Legend
         if self.show_legend and n > 0:
+            # One entry per category, duplicated categories share a color.
+            legend_colors = dict(zip(display_labels, colors, strict=True))
             handles = [
-                Patch(facecolor=colors[i], edgecolor="none", label=display_labels[i])
-                for i in range(n)
-                if i < len(colors)
+                Patch(facecolor=color, edgecolor="none", label=label)
+                for label, color in legend_colors.items()
             ]
             if handles:
                 axis.legend(handles=handles, **self._legend_opts)

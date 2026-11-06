@@ -159,3 +159,57 @@ class TestDonutPlot(TestMPLPlot):
         d = hv.Donut([("A", 30), ("B", -10)], vdims=["Amount"])
         with pytest.raises(ValueError, match=r"non-negative.*'Amount'"):
             mpl_renderer.get_plot(d)
+
+    def test_donut_duplicated_category_same_color(self):
+        plot, patches = self._get_patches(hv.Donut([("A", 1), ("B", 2), ("A", 3)]))
+        colors = [p.get_facecolor() for p in patches]
+        assert colors[0] == colors[2] != colors[1]
+        texts = [t.get_text() for t in plot.handles["axis"].get_legend().get_texts()]
+        assert texts == ["A", "B"]
+
+    def test_donut_missing_category_takes_no_color(self):
+        _, patches = self._get_patches(hv.Donut([(None, 1), ("A", 2), ("B", 3)]))
+        _, expected = self._get_patches(hv.Donut([("A", 2), ("B", 3)]))
+        assert [p.get_facecolor() for p in patches] == [p.get_facecolor() for p in expected]
+
+    @pytest.mark.parametrize("cmap", [None, "Set2"])
+    def test_donut_layout_colors_consistent(self, cmap):
+        d1 = hv.Donut([("A", 1), ("B", 2)])
+        d2 = hv.Donut([("A", 1), ("C", 2)])
+        layout = (d1 + d2).opts(hv.opts.Donut(cmap=cmap)) if cmap else d1 + d2
+        plot = mpl_renderer.get_plot(layout)
+        p1, p2 = (sp.handles["artist"] for sp in plot.traverse(specs=[hv.plotting.mpl.DonutPlot]))
+        assert p1[0].get_facecolor() == p2[0].get_facecolor()
+        assert p1[1].get_facecolor() != p2[1].get_facecolor()
+
+    def test_donut_dict_cmap_duplicated_category(self):
+        d = hv.Donut([("A", 1), ("B", 2), ("A", 3), ("C", 4)]).opts(cmap={"B": "red"})
+        _, patches = self._get_patches(d)
+        colors = [p.get_facecolor() for p in patches]
+        assert colors[0] == colors[2]
+        assert colors[1] == (1.0, 0.0, 0.0, 1.0)
+
+    def test_donut_layout_colors_by_category(self):
+        layout = hv.NdLayout(
+            {
+                0: hv.Donut([("Rent", 1), ("Food", 2)]),
+                1: hv.Donut([("Travel", 1), ("Misc", 2), ("Rent", 3)]),
+            }
+        )
+        plot = mpl_renderer.get_plot(layout)
+        p1, p2 = (sp.handles["artist"] for sp in plot.traverse(specs=[hv.plotting.mpl.DonutPlot]))
+        # Rent is the first wedge of p1 and the last one of p2
+        assert p1[0].get_facecolor() == p2[2].get_facecolor()
+        assert p1[1].get_facecolor() not in [p.get_facecolor() for p in p2]
+
+    def test_donut_holomap_colors_by_category(self):
+        hmap = hv.HoloMap(
+            {
+                0: hv.Donut([("Rent", 1), ("Food", 2)]),
+                1: hv.Donut([("Travel", 1), ("Misc", 2), ("Rent", 3)]),
+            }
+        )
+        plot = mpl_renderer.get_plot(hmap)
+        rent = plot.handles["artist"][0].get_facecolor()
+        plot.update((1,))
+        assert plot.handles["artist"][2].get_facecolor() == rent

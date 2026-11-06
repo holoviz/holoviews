@@ -136,6 +136,11 @@ class Donut(Selection1DExpr, Chart):
     the categorical label for each slice and the value dimension
     represents the size of each slice, which must be non-negative.
 
+    Rows sharing a category are not aggregated: each is drawn as its
+    own wedge, and all of them share one color and one legend entry.
+    To get a single wedge per category, aggregate the data first, for
+    example with ``donut.aggregate("x", function=np.sum)``.
+
     """
 
     group = param.String(default="Donut", constant=True)

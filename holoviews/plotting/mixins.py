@@ -234,11 +234,19 @@ class DonutMixin:
             valid=valid,
         )
 
+    def _get_donut_factors(self, element, ranges, display_labels):
+        """Return the categories to map to colors, in a stable order."""
+        import pandas as pd
+
+        # Without framewise the ranges hold the categories of the whole object
+        factors = ranges.get(element.kdims[0].label, {}).get("factors", [])
+        # The ranges turn a missing category into the string "nan", which must not take a color
+        factors = [f for f in factors if not pd.isna(f) and f != "nan"]
+        factors = self._format_donut_labels(element, factors)
+        return list(dict.fromkeys([*factors, *display_labels]))
+
     def get_extents(self, element, ranges, range_type="combined", **kwargs):
         """Fixed radial extents for a donut chart."""
-        for _d, rs in ranges.items():
-            rs.pop("factors", None)
-
         r = self.outer_radius
         if self.show_labels and self.label_radius > 1.0:
             r = self.outer_radius * self.label_radius

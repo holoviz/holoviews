@@ -1521,7 +1521,7 @@ class DonutPlot(DonutMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
                 "option, e.g. .opts(cmap='Category20') or "
                 ".opts(cmap={{'Rent': 'blue', 'Food': 'orange'}})."
             )
-        factors = list(dict.fromkeys(display_labels))
+        factors = self._get_donut_factors(element, ranges, display_labels)
         cmapper = self._get_colormapper(kdim, element, ranges, style, factors=factors)
 
         # --- annular wedge data & mapping --------------------------------
