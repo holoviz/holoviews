@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from itertools import groupby
+from typing import TYPE_CHECKING
 
 import numpy as np
 import param
@@ -9,12 +10,14 @@ from bokeh.core.property.validation import validate
 from bokeh.layouts import gridplot
 from bokeh.models import (
     Axis,
+    CDSView,
     ColorBar,
     Column,
     ColumnDataSource,
     CustomJS,
     CustomJSTickFormatter,
     Div,
+    GlyphRenderer,
     Legend,
     Row,
     Title,
@@ -24,6 +27,9 @@ from bokeh.models.plots import GridPlot as BkGridPlot
 from bokeh.models.ranges import Range1d
 from bokeh.models.tickers import FixedTicker
 from bokeh.plotting import figure
+
+if TYPE_CHECKING:
+    from bokeh.models import LayoutDOM
 
 from ...core import (
     AdjointLayout,
@@ -490,6 +496,17 @@ class CompositePlot(BokehPlot):
         return [self.handles["title"]] if "title" in self.handles else []
 
 
+def _estimate_legend_height(legend: Legend) -> int:
+    """Height a vertical legend needs; bokeh can't size a plot to its side panel's content."""
+    # shortcut: assumes labels no taller than glyphs and a ~25px title, measure text if that's off
+    n = len(legend.items)
+    rows = -(-n // legend.ncols) if isinstance(legend.ncols, int) else n
+    label = legend.label_height if isinstance(legend.label_height, int) else 0
+    item = max(legend.glyph_height, label)
+    title = 25 if legend.title else 0
+    return rows * item + (rows - 1) * legend.spacing + 2 * (legend.padding + legend.margin) + title
+
+
 class GridPlot(CompositePlot, GenericCompositePlot):
     """Plot a group of elements in a grid layout based on a GridSpace element
     object.
@@ -716,9 +733,11 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 else next(c for c in plot.children if isinstance(c, BkGridPlot))
             )
             grid.toolbar = merge_tools(plots, hide_toolbar=True)
+        if self.show_legend and plots[-1][-1] is not None:
+            plot = self._make_legend_panel(plot, plots[-1][-1])
         title = self._get_title_div(self.keys[-1])
         if title:
-            children = plot.children if isinstance(plot, (Row, Column)) else [plot]
+            children = plot.children if isinstance(plot, Column) else [plot]
             plot = Column(title, *children)
             self.handles["title"] = title
 
@@ -956,6 +975,45 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         for fig in figs:
             fig.js_on_change("outer_width", callback)
             fig.js_on_change("outer_height", callback)
+
+    def _make_legend_panel(self, plot: LayoutDOM, fig: figure) -> LayoutDOM:
+        """Move legends and colorbars of the top-right subplot into a figure as tall as the grid."""
+        annotations = [a for a in fig.right if isinstance(a, (Legend, ColorBar))]
+        if not annotations:
+            return plot
+        _, height = self.renderer.get_size(plot)
+        for legend in annotations:
+            if isinstance(legend, Legend):
+                height = max(height, _estimate_legend_height(legend))
+        panel = figure(
+            height=height,
+            frame_width=0,
+            min_border=0,
+            outline_line_color=None,
+            toolbar_location=None,
+            x_axis_type=None,
+            y_axis_type=None,
+        )
+        # shortcut: legend items added by later dynamic updates won't show, revisit if needed
+        for annotation in annotations:
+            fig.right.remove(annotation)
+            panel.add_layout(annotation, "right")
+            for item in getattr(annotation, "items", []):
+                # BokehJS only draws swatches for renderers in the legend's own figure,
+                # so add proxies there (their data is hidden by the zero-width frame).
+                proxies = [
+                    GlyphRenderer(
+                        data_source=r.data_source,
+                        glyph=r.glyph,
+                        view=CDSView(filter=r.view.filter),
+                    )
+                    for r in item.renderers
+                    if isinstance(r, GlyphRenderer)
+                ]
+                panel.renderers += proxies
+                item.renderers += proxies
+        self.handles["legend_panel"] = panel
+        return Row(plot, panel)
 
     def _make_axes(self, plot, plots):
         width, height = self.renderer.get_size(plot)
