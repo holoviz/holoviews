@@ -771,6 +771,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             axis_props["major_label_text_font_size"] = tick_size
 
         rotation = np.radians(rotation)
+        # 1px borders across the axis: an axis line on the canvas edge would be clipped.
         if axis == "x":
             align = "center"
             opts = dict(
@@ -779,6 +780,8 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 width=size,
                 height=None,
                 frame_height=0,
+                min_border_top=1,
+                min_border_bottom=1,
             )
         else:
             align = "left" if flip else "right"
@@ -787,6 +790,8 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 height=size,
                 width=None,
                 frame_width=0,
+                min_border_left=1,
+                min_border_right=1,
             )
 
         p = figure(

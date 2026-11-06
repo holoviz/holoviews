@@ -100,7 +100,7 @@ class TestGridPlot(TestBokehPlot):
         )
         plot = bokeh_renderer.get_plot(grid)
         size = bokeh_renderer.get_size(plot.state)
-        assert size == (252, 252)
+        assert size == (254, 254)
 
     def test_grid_shared_source_synced_update(self, rng):
         hmap = hv.HoloMap(
