@@ -164,6 +164,19 @@ class TestRasterPlot(TestBokehPlot):
         hover = plot.handles["hover"]
         assert hover.formatters == hover_tool.formatters
 
+    @xr_skip
+    def test_nonfinite_xarray(self):
+        """xarray inputs containing nonfinite values must not crash,
+        and default clims should be computed from the finite values, only.
+        Regression test for https://github.com/holoviz/holoviews/issues/7140
+        """
+        data = np.array([[-np.inf, np.nan, 4], [-3, 2, np.inf]])
+        da = xr.DataArray(data, dims=("x", "y"))
+        img = hv.Image(da, kdims=["x", "y"])
+        plot = bokeh_renderer.get_plot(img)
+        cmapper = plot.handles["color_mapper"]
+        assert (cmapper.low, cmapper.high) == (-3, 4)
+
 
 class _ImageStackBase(TestRasterPlot):
     __test__ = False
