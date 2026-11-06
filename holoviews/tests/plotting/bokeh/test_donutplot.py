@@ -3,8 +3,10 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
+from bokeh.models import Range1d
 
 import holoviews as hv
+from holoviews.plotting.bokeh.chart import DonutPlot
 
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -204,3 +206,24 @@ class TestDonutPlot(TestBokehPlot):
         )
         _, source = self._get_plot_source(d)
         np.testing.assert_array_equal(source.data["extra"], [100, 300])
+
+    def test_donut_axes_not_categorical(self):
+        plot = bokeh_renderer.get_plot(hv.Donut([("A", 30), ("B", 70)]))
+        assert isinstance(plot.state.x_range, Range1d)
+        assert isinstance(plot.state.y_range, Range1d)
+        assert (plot.state.x_range.start, plot.state.x_range.end) == (-1.1, 1.1)
+
+    @pytest.mark.parametrize(
+        "sibling", [hv.Curve([(-5, 1), (5, 2)]), hv.Bars([("A", 1), ("B", 2)])]
+    )
+    def test_donut_ranges_not_shared_with_layout_siblings(self, sibling):
+        plot = bokeh_renderer.get_plot(hv.Donut([("A", 30), ("B", 70)]) + sibling)
+        donut_plot = plot.traverse(specs=[DonutPlot])[0]
+        x_range = donut_plot.state.x_range
+        assert isinstance(x_range, Range1d)
+        assert (x_range.start, x_range.end) == (-1.1, 1.1)
+
+    def test_donut_overlay_axes_not_categorical(self):
+        plot = bokeh_renderer.get_plot(hv.Donut([("A", 30), ("B", 70)]) * hv.Text(0, 0, "total"))
+        assert isinstance(plot.state.x_range, Range1d)
+        assert (plot.state.x_range.start, plot.state.x_range.end) == (-1, 1)

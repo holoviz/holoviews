@@ -158,11 +158,12 @@ class DonutMixin:
         return starts, ends, fracs
 
     def _get_axis_dims(self, element):
-        return (element.kdims[0], element.vdims[0])
+        # No Cartesian axes: a string kdim would make the x-axis categorical.
+        return (None, None)
 
     def _format_donut_labels(self, element, labels):
         """Format donut labels for display using the key dimension formatter."""
-        kdim = self._get_axis_dims(element)[0]
+        kdim = element.kdims[0]
         return [label if isinstance(label, str) else kdim.pprint_value(label) for label in labels]
 
     def _label_value_for_template(self, label):
@@ -184,7 +185,7 @@ class DonutMixin:
         if show is False or show is None:
             return None
 
-        kdim, vdim = self._get_axis_dims(element)
+        kdim, vdim = element.kdims[0], element.vdims[0]
         labels = [
             show.format(
                 **{
