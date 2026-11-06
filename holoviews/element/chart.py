@@ -134,7 +134,7 @@ class Donut(Selection1DExpr, Chart):
     """Donut is a Chart element representing proportional data as
     wedges of an annular (ring) shape. The key dimension represents
     the categorical label for each slice and the value dimension
-    represents the size of each slice.
+    represents the size of each slice, which must be non-negative.
 
     """
 

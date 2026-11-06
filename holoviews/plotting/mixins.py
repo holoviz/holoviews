@@ -215,6 +215,11 @@ class DonutMixin:
         labels, values, valid = self._filter_donut_data(
             element.dimension_values(0), element.dimension_values(1)
         )
+        if np.any(values < 0):
+            raise ValueError(
+                "Donut values must be non-negative, found negative values "
+                f"in the {element.vdims[0].pprint_label!r} dimension."
+            )
         starts, ends, fracs = self._compute_donut_data(values)
         starts = starts + self.start_angle
         ends = ends + self.start_angle

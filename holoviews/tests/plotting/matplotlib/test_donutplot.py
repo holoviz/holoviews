@@ -24,6 +24,7 @@ class TestDonutPlot(TestMPLPlot):
             ([("A", 10), ("B", 20), ("C", 30)], [1 / 6, 1 / 3, 1 / 2]),
             ([("Only", 42)], [1.0]),
             ([("A", 0), ("B", 0)], [0.0, 0.0]),
+            ([("A", 3), ("B", 0), ("C", 1)], [0.75, 0.0, 0.25]),
             ([("A", 1), ("B", pd.NA), ("C", 3)], [0.25, 0.75]),
             ([("Rent", pd.NA), (None, 1200), ("Food", 400), ("Transport", 200)], [2 / 3, 1 / 3]),
         ],
@@ -153,3 +154,8 @@ class TestDonutPlot(TestMPLPlot):
         assert len(patches) == 3
         colors = [p.get_facecolor() for p in patches]
         assert len(set(map(tuple, colors))) > 1
+
+    def test_donut_negative_values_raise(self):
+        d = hv.Donut([("A", 30), ("B", -10)], vdims=["Amount"])
+        with pytest.raises(ValueError, match=r"non-negative.*'Amount'"):
+            mpl_renderer.get_plot(d)

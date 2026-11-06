@@ -34,6 +34,7 @@ class TestDonutPlot(TestBokehPlot):
             ([("A", 25), ("B", 50), ("C", 25)], [0.25, 0.5, 0.25], ["A", "B", "C"]),
             ([("Only", 100)], [1.0], ["Only"]),
             ([("A", 0), ("B", 0)], [0.0, 0.0], ["A", "B"]),
+            ([("A", 3), ("B", 0), ("C", 1)], [0.75, 0.0, 0.25], ["A", "B", "C"]),
             ([("A", 1), ("B", pd.NA), ("C", 3)], [0.25, 0.75], ["A", "C"]),
             (
                 [("Rent", pd.NA), (None, 1200), ("Food", 400), ("Transport", 200)],
@@ -227,3 +228,8 @@ class TestDonutPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(hv.Donut([("A", 30), ("B", 70)]) * hv.Text(0, 0, "total"))
         assert isinstance(plot.state.x_range, Range1d)
         assert (plot.state.x_range.start, plot.state.x_range.end) == (-1, 1)
+
+    def test_donut_negative_values_raise(self):
+        d = hv.Donut([("A", 30), ("B", -10)], vdims=["Amount"])
+        with pytest.raises(ValueError, match=r"non-negative.*'Amount'"):
+            bokeh_renderer.get_plot(d)
