@@ -213,7 +213,7 @@ class DonutMixin:
             valid  : boolean mask used to filter rows from the element
         """
         labels, values, valid = self._filter_donut_data(
-            element.dimension_values(0), element.dimension_values(1)
+            np.asarray(element.dimension_values(0)), np.asarray(element.dimension_values(1))
         )
         if np.any(values < 0):
             raise ValueError(

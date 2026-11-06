@@ -6,6 +6,7 @@ import pytest
 
 import holoviews as hv
 
+from ..._deps import pl, pl_skip
 from .test_plot import TestMPLPlot, mpl_renderer
 
 
@@ -213,3 +214,9 @@ class TestDonutPlot(TestMPLPlot):
         rent = plot.handles["artist"][0].get_facecolor()
         plot.update((1,))
         assert plot.handles["artist"][2].get_facecolor() == rent
+
+    @pl_skip
+    def test_donut_polars(self):
+        df = pl.DataFrame({"x": ["A", None, "C"], "y": [10, 20, 30]})
+        _, patches = self._get_patches(hv.Donut(df, kdims="x", vdims="y"))
+        assert len(patches) == 2

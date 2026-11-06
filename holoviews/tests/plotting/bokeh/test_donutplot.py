@@ -8,6 +8,7 @@ from bokeh.models import Range1d
 import holoviews as hv
 from holoviews.plotting.bokeh.chart import DonutPlot
 
+from ..._deps import ibis, ibis_skip, pl, pl_skip
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
@@ -257,6 +258,23 @@ class TestDonutPlot(TestBokehPlot):
     def test_donut_missing_category_takes_no_color(self):
         plot = bokeh_renderer.get_plot(hv.Donut([(None, 1), ("A", 2), ("B", 3)]))
         assert plot.handles["color_mapper"].factors == ["A", "B"]
+
+    @pl_skip
+    @pytest.mark.parametrize("lazy", [False, True])
+    def test_donut_polars(self, lazy):
+        df = pl.DataFrame({"x": ["A", None, "C"], "y": [10, 20, 30], "extra": [1, 2, 3]})
+        d = hv.Donut(df.lazy() if lazy else df, kdims="x", vdims=["y", "extra"])
+        _, source = self._get_plot_source(d)
+        assert list(source.data["x"]) == ["A", "C"]
+        np.testing.assert_array_equal(source.data["extra"], [1, 3])
+
+    @ibis_skip
+    # Raised by ibis' default backend with pandas 3
+    @pytest.mark.filterwarnings(r"ignore:The 'future\.infer_string' option is deprecated")
+    def test_donut_ibis(self):
+        df = pd.DataFrame({"x": ["A", None, "C"], "y": [10, 20, 30]})
+        _, source = self._get_plot_source(hv.Donut(ibis.memtable(df), kdims="x", vdims="y"))
+        assert list(source.data["x"]) == ["A", "C"]
 
     def test_donut_layout_of_holomaps_colors_by_category(self):
         layout = hv.NdLayout(

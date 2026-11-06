@@ -1531,7 +1531,7 @@ class DonutPlot(DonutMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
             percentage=fracs * 100,
             **{kdim_san: display_labels, dimension_sanitizer(vdim.name): values},
             **{
-                dimension_sanitizer(vd.name): element.dimension_values(vd)[valid]
+                dimension_sanitizer(vd.name): np.asarray(element.dimension_values(vd))[valid]
                 for vd in element.vdims[1:]
             },
         )
