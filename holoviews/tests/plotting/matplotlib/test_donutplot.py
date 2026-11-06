@@ -48,6 +48,10 @@ class TestDonutPlot(TestMPLPlot):
         assert len(patches) == 2
         np.testing.assert_almost_equal(patches[0].width, 1.0)
 
+    def test_donut_inner_radius_default(self):
+        _, patches = self._get_patches(hv.Donut([("A", 30), ("B", 70)]))
+        np.testing.assert_almost_equal(patches[0].width, 0.2)
+
     def test_donut_wedge_angles(self):
         """Wedge angles should span the full 360 degrees."""
         _, patches = self._get_patches(hv.Donut([("A", 25), ("B", 75)]))
@@ -189,6 +193,26 @@ class TestDonutPlot(TestMPLPlot):
         colors = [p.get_facecolor() for p in patches]
         assert colors[0] == colors[2]
         assert colors[1] == (1.0, 0.0, 0.0, 1.0)
+
+    @pytest.mark.parametrize(
+        ("opts", "radius"),
+        [
+            ({}, np.sqrt((0.8**2 + 1) / 2)),
+            ({"inner_radius": 0}, np.sqrt(0.5)),
+            ({"label_radius": 1.2}, 1.2),
+        ],
+    )
+    def test_donut_label_radius(self, opts, radius):
+        d = hv.Donut([("A", 1), ("B", 1)]).opts(show_labels=True, **opts)
+        plot = mpl_renderer.get_plot(d)
+        radii = [np.hypot(*t.get_position()) for t in plot.handles["axis"].texts]
+        np.testing.assert_almost_equal(radii, [radius, radius])
+
+    def test_donut_labels_centered_inside(self):
+        d = hv.Donut([("A", 1), ("B", 1)]).opts(inner_radius=0, show_labels=True)
+        plot = mpl_renderer.get_plot(d)
+        aligns = {(t.get_ha(), t.get_va()) for t in plot.handles["axis"].texts}
+        assert aligns == {("center", "center")}
 
     def test_donut_layout_colors_by_category(self):
         layout = hv.NdLayout(

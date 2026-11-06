@@ -1509,9 +1509,10 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
     )
 
     inner_radius = param.Number(
-        default=0.4,
+        default=0.8,
         bounds=(0, 1),
-        doc="Inner radius of the annulus. Set to 0 for a pie chart.",
+        doc="""Inner radius of the annulus, in the same units as outer_radius.
+        Set to 0 for a pie chart.""",
     )
 
     label_font_size = param.Number(
@@ -1520,23 +1521,26 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
     )
 
     label_radius = param.Number(
-        default=0.7,
+        default=None,
+        allow_None=True,
         bounds=(0, None),
         doc="""Radial distance of wedge labels as a multiple of outer_radius.
         1.0 places labels exactly at the outer edge; values above 1
-        push them outside the ring.""",
+        push them outside the ring. None places them at the radius
+        that halves the ring area (about 0.71 for a pie).""",
     )
 
     label_text_align = param.Selector(
         default="center",
         objects=["auto", "left", "right", "center"],
-        doc="""Horizontal alignment of wedge labels. 'auto' chooses
-        left/right based on angular position and whether labels are
-        inside or outside the ring.""",
+        doc="""Horizontal alignment of wedge labels. 'auto' centers the
+        labels inside the ring, and aligns the labels outside the ring
+        (label_radius >= 1) away from it: left on the right side, right
+        on the left side.""",
     )
 
     label_text_baseline = param.Selector(
-        default="bottom",
+        default="center",
         objects=["top", "bottom", "center", "baseline", "center_baseline"],
         doc="Vertical alignment of wedge labels.",
     )
@@ -1557,7 +1561,8 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
         class_=(bool, str),
         doc="""Whether and how to draw text labels next to each wedge.
         Can be a boolean or a template string using dimension names
-        (e.g. '{Category}: {Amount}').""",
+        (e.g. '{Category}: {Amount}') and 'fraction', the share of the
+        total (e.g. '{fraction:.0%}').""",
     )
 
     show_legend = param.Boolean(

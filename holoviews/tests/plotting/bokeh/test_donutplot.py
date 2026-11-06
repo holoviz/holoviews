@@ -259,6 +259,36 @@ class TestDonutPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(hv.Donut([(None, 1), ("A", 2), ("B", 3)]))
         assert plot.handles["color_mapper"].factors == ["A", "B"]
 
+    def test_donut_inner_radius_default(self):
+        plot = bokeh_renderer.get_plot(hv.Donut([("A", 30), ("B", 70)]))
+        assert DonutPlot.inner_radius == 0.8
+        assert plot.handles["annular_wedge_1_glyph"].inner_radius == 0.8
+
+    @pytest.mark.parametrize(
+        ("opts", "radius"),
+        [
+            ({}, np.sqrt((0.8**2 + 1) / 2)),
+            ({"inner_radius": 0}, np.sqrt(0.5)),
+            ({"label_radius": 1.2}, 1.2),
+        ],
+    )
+    def test_donut_label_radius(self, opts, radius):
+        d = hv.Donut([("A", 1), ("B", 1)]).opts(show_labels=True, **opts)
+        plot = bokeh_renderer.get_plot(d)
+        data = plot.handles["text_1_source"].data
+        np.testing.assert_almost_equal(np.hypot(data["x"], data["y"]), [radius, radius])
+
+    def test_donut_labels_centered_inside(self):
+        d = hv.Donut([("A", 1), ("B", 1), ("C", 1)]).opts(show_labels=True)
+        plot = bokeh_renderer.get_plot(d)
+        assert plot.handles["text_1_source"].data["text_align"] == ["center"] * 3
+        assert plot.handles["text_1_glyph"].text_baseline == "middle"
+
+    def test_donut_labels_aligned_outside(self):
+        d = hv.Donut([("A", 1), ("B", 1), ("C", 1)]).opts(show_labels=True, label_radius=1.2)
+        plot = bokeh_renderer.get_plot(d)
+        assert plot.handles["text_1_source"].data["text_align"] == ["left", "right", "left"]
+
     @pl_skip
     @pytest.mark.parametrize("lazy", [False, True])
     def test_donut_polars(self, lazy):

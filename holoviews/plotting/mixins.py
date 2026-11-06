@@ -109,10 +109,14 @@ class DonutMixin:
         xs, ys : ndarray
             Label x/y co-ordinates.
         aligns : list[str]
-            Per-label ``text_align`` values (``"left"`` or ``"right"``).
+            Per-label ``text_align`` values (``"left"``, ``"right"`` or ``"center"``).
         """
         mid = (starts + ends) / 2
-        r = self.outer_radius * self.label_radius
+        if self.label_radius is None:
+            # Radius halving the ring area: about 0.71 for a pie, near the middle of a donut ring.
+            r = np.sqrt((self.inner_radius**2 + self.outer_radius**2) / 2)
+        else:
+            r = self.outer_radius * self.label_radius
         xs = r * np.cos(mid)
         ys = r * np.sin(mid)
         a = mid % (2 * np.pi)
@@ -120,12 +124,12 @@ class DonutMixin:
         if self.label_text_align == "auto":
             # Determine auto-alignment based on position.
             # Outside: left-align on right side, right-align on left.
-            # Inside: flip so text "hugs" the wedge boundary.
+            # Inside: centered on the wedge, like Matplotlib's autopct.
             right_half = (a < np.pi / 2) | (a > 3 * np.pi / 2)
-            if self.label_radius >= 1.0:
+            if r >= self.outer_radius:
                 aligns = np.where(right_half, "left", "right")
             else:
-                aligns = np.where(right_half, "right", "left")
+                aligns = np.full(len(mid), "center")
         else:
             aligns = np.full(len(mid), self.label_text_align)
 
@@ -248,7 +252,7 @@ class DonutMixin:
     def get_extents(self, element, ranges, range_type="combined", **kwargs):
         """Fixed radial extents for a donut chart."""
         r = self.outer_radius
-        if self.show_labels and self.label_radius > 1.0:
+        if self.show_labels and self.label_radius is not None and self.label_radius > 1.0:
             r = self.outer_radius * self.label_radius
 
         if range_type == "data":
