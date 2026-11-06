@@ -141,6 +141,12 @@ class Donut(Selection1DExpr, Chart):
     To get a single wedge per category, aggregate the data first, for
     example with ``donut.aggregate("x", function=np.sum)``.
 
+    The donut is always round, so the ``aspect`` option is ignored. To
+    size it, set ``frame_width`` or ``frame_height`` (the frame is then
+    square), or both ``width`` and ``height``. With only ``width`` or
+    ``height``, Bokeh uses it for both frame dimensions and logs a
+    warning.
+
     """
 
     group = param.String(default="Donut", constant=True)

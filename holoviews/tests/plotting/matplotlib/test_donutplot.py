@@ -194,6 +194,14 @@ class TestDonutPlot(TestMPLPlot):
         assert colors[0] == colors[2]
         assert colors[1] == (1.0, 0.0, 0.0, 1.0)
 
+    def test_donut_round(self):
+        plot = mpl_renderer.get_plot(hv.Donut([("A", 30), ("B", 70)]).opts(aspect=2))
+        np.testing.assert_almost_equal(plot.handles["axis"].get_aspect(), 1.0)
+
+    def test_donut_wedge_edges(self):
+        _, patches = self._get_patches(hv.Donut([("A", 30), ("B", 70)]))
+        assert patches[0].get_edgecolor() == (0.0, 0.0, 0.0, 1.0)
+
     @pytest.mark.parametrize(
         ("opts", "radius"),
         [

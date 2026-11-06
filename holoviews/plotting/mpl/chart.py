@@ -1668,8 +1668,6 @@ class DonutPlot(DonutMixin, ColorbarPlot, LegendPlot):
             axis.add_patch(wedge)
             wedges.append(wedge)
 
-        axis.set_aspect("equal")
-
         # Wedge text labels
         if self.show_labels and n > 0:
             xs, ys, aligns = self._compute_label_geometry(starts, ends)

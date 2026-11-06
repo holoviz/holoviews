@@ -235,6 +235,12 @@ class TestDonutPlot(TestBokehPlot):
         with pytest.raises(ValueError, match=r"non-negative.*'Amount'"):
             bokeh_renderer.get_plot(d)
 
+    def test_donut_pan_zoom_not_active(self):
+        plot = bokeh_renderer.get_plot(hv.Donut([("A", 30), ("B", 70)]))
+        toolbar = plot.state.toolbar
+        assert toolbar.active_drag is None
+        assert toolbar.active_scroll == "auto"
+
     def test_donut_layout_colors_consistent(self):
         layout = hv.Donut([("A", 1), ("B", 2)]) + hv.Donut([("A", 1), ("C", 2)])
         plot = bokeh_renderer.get_plot(layout)
@@ -258,6 +264,18 @@ class TestDonutPlot(TestBokehPlot):
     def test_donut_missing_category_takes_no_color(self):
         plot = bokeh_renderer.get_plot(hv.Donut([(None, 1), ("A", 2), ("B", 3)]))
         assert plot.handles["color_mapper"].factors == ["A", "B"]
+
+    def test_donut_round(self):
+        plot = bokeh_renderer.get_plot(
+            hv.Donut([("A", 30), ("B", 70)]).opts(width=600, height=300)
+        )
+        assert plot.data_aspect == 1
+        x, y = plot.state.x_range, plot.state.y_range
+        assert (x.end - x.start) == 2 * (y.end - y.start)
+
+    def test_donut_aspect_ignored(self):
+        state = bokeh_renderer.get_plot(hv.Donut([("A", 30), ("B", 70)]).opts(aspect=2)).state
+        assert state.frame_width == state.frame_height
 
     def test_donut_inner_radius_default(self):
         plot = bokeh_renderer.get_plot(hv.Donut([("A", 30), ("B", 70)]))

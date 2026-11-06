@@ -274,8 +274,10 @@ options.Donut = Options(
     xaxis=None,
     yaxis=None,
     tools=["hover"],
+    active_tools=[],
     show_frame=False,
     legend_position="center",
+    data_aspect=1,
 )
 options.Donut = Options(
     "style",
