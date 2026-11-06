@@ -64,7 +64,6 @@ from .util import (
     decode_bytes,
     empty_plot,
     filter_toolboxes,
-    font_size_to_pixels,
     get_default,
     merge_tools,
     select_legends,
@@ -745,18 +744,18 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         rotation=0,
         label_size=None,
         tick_size=None,
-        axis_height=35,
     ):
         """Builds a toolbar-less, dataless figure used to draw a categorical
         axis shared across a GridPlot's grid of subplots.
 
-        ``size`` is only an initial estimate; the true length and tick
-        positions are set later by _bind_dynamic_axis_sizing once the grid
+        The figure has a zero-size frame, so it consists of the axis only
+        and bokeh sizes it to fit the labels.
+        ``size`` is only an initial estimate of the axis length; the true length
+        and tick positions are set later by _bind_dynamic_axis_sizing once the grid
         has actually rendered. Returns (figure, ticker).
 
         """
         factors = list(map(dim.pprint_value, factors))
-        nchars = np.max([len(f) for f in factors])
         axis_label = dim_axis_label(dim)
 
         ticker = FixedTicker(ticks=[])
@@ -771,53 +770,38 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         if tick_size:
             axis_props["major_label_text_font_size"] = tick_size
 
-        tick_px = font_size_to_pixels(tick_size)
-        if tick_px is None:
-            tick_px = 8
-        label_px = font_size_to_pixels(label_size)
-        if label_px is None:
-            label_px = 10
-
         rotation = np.radians(rotation)
+        # 1px borders across the axis: an axis line on the canvas edge would be clipped.
         if axis == "x":
             align = "center"
-            # Adjust height to compensate for label rotation
-            height = (
-                int(axis_height + np.abs(np.sin(rotation)) * ((nchars * tick_px) * 0.82))
-                + tick_px
-                + label_px
-            )
             opts = dict(
                 x_axis_type="auto",
                 x_axis_label=axis_label,
-                x_range=Range1d(start=0, end=1),
-                y_range=Range1d(start=0, end=1),
-                height=height,
                 width=size,
-                min_border_left=0,
-                min_border_right=0,
+                height=None,
+                frame_height=0,
+                min_border_top=1,
+                min_border_bottom=1,
             )
         else:
-            # Adjust width to compensate for label rotation
             align = "left" if flip else "right"
-            width = (
-                int(axis_height + np.abs(np.cos(rotation)) * ((nchars * tick_px) * 0.82))
-                + tick_px
-                + label_px
-            )
             opts = dict(
                 y_axis_label=axis_label,
-                x_range=Range1d(start=0, end=1),
-                y_range=Range1d(start=0, end=1),
                 height=size,
-                width=width,
-                min_border_top=0,
-                min_border_bottom=0,
+                width=None,
+                frame_width=0,
+                min_border_left=1,
+                min_border_right=1,
             )
 
-        p = figure(toolbar_location=None, tools=[], **opts)
-        p.outline_line_alpha = 0
-        p.grid.grid_line_alpha = 0
+        p = figure(
+            toolbar_location=None,
+            tools=[],
+            x_range=Range1d(start=0, end=1),
+            y_range=Range1d(start=0, end=1),
+            min_border=0,
+            **opts,
+        )
 
         if axis == "x":
             p.align = "start"

@@ -23,44 +23,46 @@ _MEASURE_JS = """() => {
         if (model == null || model.type !== "Figure") continue
         const inner = view.frame_view ? view.frame_view.bbox : null
         if (inner == null) continue
-        const xTicks = fixedTicks([...(model.above || []), ...(model.below || [])])
-        const yTicks = fixedTicks([...(model.left || []), ...(model.right || [])])
-        if (xTicks || yTicks) {
-            const outerRect = view.el.getBoundingClientRect()
-            out.push({
-                start_x: outerRect.x + inner.x0,
-                start_y: outerRect.y + inner.y0,
-                width: inner.x1 - inner.x0,
-                height: inner.y1 - inner.y0,
-                ticks_x: xTicks,
-                ticks_y: yTicks,
-            })
-        }
+        const outerRect = view.el.getBoundingClientRect()
+        out.push({
+            start_x: outerRect.x + inner.x0,
+            start_y: outerRect.y + inner.y0,
+            width: inner.x1 - inner.x0,
+            height: inner.y1 - inner.y0,
+            ticks_x: fixedTicks([...(model.above || []), ...(model.below || [])]),
+            ticks_y: fixedTicks([...(model.left || []), ...(model.right || [])]),
+        })
     }
     return out
 }"""
 
 
-def assert_axes(page, x=None, y=None) -> None:
-    wait_until(lambda: bool(page.evaluate(_MEASURE_JS)), page)
-    axes = page.evaluate(_MEASURE_JS)
-    assert len(axes) == bool(x) + bool(y)
+def _measure_axes(page):
+    figs = page.evaluate(_MEASURE_JS)
+    axes = [f for f in figs if f["ticks_x"] or f["ticks_y"]]
+    return axes, [f for f in figs if f not in axes]
 
-    if x is not None:
-        start, *ticks, end = x
-        entry = next(a for a in axes if a["ticks_x"])
-        assert entry["start_x"] == pytest.approx(start, abs=2)
-        assert entry["start_x"] + entry["width"] == pytest.approx(end, abs=2)
-        tick_px = entry["start_x"] + np.array(entry["ticks_x"]) * entry["width"]
-        np.testing.assert_allclose(tick_px, ticks, atol=2)
 
-    if y is not None:
-        start, *ticks, end = y
-        entry = next(a for a in axes if a["ticks_y"])
-        assert entry["start_y"] == pytest.approx(start, abs=2)
-        assert entry["start_y"] + entry["height"] == pytest.approx(end, abs=2)
-        tick_px = entry["start_y"] + np.array(entry["ticks_y"]) * entry["height"]
-        np.testing.assert_allclose(tick_px, ticks, atol=2)
+def assert_axes(page, x=False, y=False) -> None:
+    """Check that the GridSpace's x/y axis spans its subplots' frames, with a tick at each column/row center."""
+    wait_until(lambda: len(_measure_axes(page)[0]) == x + y, page)
+    axes, cells = _measure_axes(page)
+
+    for dim, start, size, present in [("x", "start_x", "width", x), ("y", "start_y", "height", y)]:
+        if not present:
+            continue
+        entry = next(a for a in axes if a[f"ticks_{dim}"])
+        lo = min(c[start] for c in cells)
+        hi = max(c[start] + c[size] for c in cells)
+        assert entry[start] == pytest.approx(lo, abs=2)
+        assert entry[start] + entry[size] == pytest.approx(hi, abs=2)
+        # one tick per column/row: unique frame centers, merging subpixel differences
+        centers = np.unique(np.round([c[start] + c[size] / 2 for c in cells]))
+        centers = centers[np.insert(np.diff(centers) > 2, 0, True)]
+        ticks = np.array(entry[f"ticks_{dim}"])
+        if dim == "y":  # bokeh y ticks count from the bottom, page coordinates from the top
+            ticks = 1 - ticks
+        np.testing.assert_allclose(np.sort(entry[start] + ticks * entry[size]), centers, atol=2)
 
 
 @pytest.mark.usefixtures("bokeh_backend")
@@ -70,7 +72,7 @@ def test_gridspace(serve_hv):
     gridspace = hv.GridSpace(plots, kdims=["x", "y"])
 
     page = serve_hv(gridspace)
-    assert_axes(page, x=(71, 131, 257, 317), y=(33, 93, 219, 279))
+    assert_axes(page, x=True, y=True)
 
 
 @pytest.mark.usefixtures("bokeh_backend")
@@ -80,7 +82,7 @@ def test_gridspace_legend_alignment(serve_hv):
     gridspace = hv.GridSpace(plots, kdims=["x", "y"]).opts(show_legend=True)
 
     page = serve_hv(gridspace)
-    assert_axes(page, x=(71, 131, 257, 383, 443), y=(33, 93, 219, 345, 405))
+    assert_axes(page, x=True, y=True)
 
 
 @pytest.mark.usefixtures("bokeh_backend")
@@ -91,7 +93,7 @@ def test_gridspace_colorbar_alignment(serve_hv):
     gridspace = hv.GridSpace(dict.fromkeys(range(5), img), kdims=["t"])
 
     page = serve_hv(gridspace)
-    assert_axes(page, x=(3, 63, 271, 479, 687, 895, 955))
+    assert_axes(page, x=True)
 
 
 @pytest.mark.usefixtures("bokeh_backend")
@@ -106,36 +108,8 @@ def test_gridspace_axis_alignment(serve_hv, xaxis, yaxis, shared_xaxis, shared_y
         shared_xaxis=shared_xaxis, shared_yaxis=shared_yaxis
     )
 
-    match shared_yaxis, yaxis:
-        case False, None:
-            x = (71, 131, 257, 317)
-        case False, "left":
-            x = (120, 180, 355, 415)
-        case False, "right":
-            x = (71, 131, 306, 366)
-        case True, None:
-            x = (3, 63, 189, 249)
-        case True, "left":
-            x = (52, 112, 287, 347)
-        case True, "right":
-            x = (3, 63, 238, 298)
-
-    match shared_xaxis, xaxis:
-        case False, None:
-            y = (33, 93, 219, 345, 405)
-        case False, "bottom":
-            y = (33, 93, 261, 429, 489)
-        case False, "top":
-            y = (75, 135, 303, 471, 531)
-        case True, None:
-            y = (92, 152, 278, 404, 464)
-        case True, "bottom":
-            y = (92, 152, 320, 488, 548)
-        case True, "top":
-            y = (134, 194, 362, 530, 590)
-
     page = serve_hv(gridspace)
-    assert_axes(page, x=x, y=y)
+    assert_axes(page, x=True, y=True)
 
 
 @pytest.mark.usefixtures("bokeh_backend")
