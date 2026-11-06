@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import numpy as np
 
 from holoviews.core.data.util import finite_range
 
 from ..._deps import xr, xr_skip
+
 
 @xr_skip
 def test_finite_range_on_nonfinite_2D_xarray():
