@@ -94,7 +94,14 @@ class DonutMixin:
         }
         if label == "total":
             return str(total)
-        return label.format(**context)
+        try:
+            return label.format(**context)
+        except KeyError as e:
+            keys = ", ".join(repr(k) for k in dict.fromkeys(context))
+            raise ValueError(
+                f"center_label template {label!r} refers to unknown key {e}, "
+                f"the available keys are {keys}."
+            ) from e
 
     def _compute_label_geometry(self, starts, ends):
         """Compute label positions and text-alignment strings for wedge labels.
@@ -190,17 +197,23 @@ class DonutMixin:
             return None
 
         kdim, vdim = element.kdims[0], element.vdims[0]
-        labels = [
-            show.format(
-                **{
-                    kdim.name: self._label_value_for_template(label),
-                    vdim.name: val,
-                    "fraction": frac,
-                }
-            )
-            for label, val, frac in zip(labels, values, fractions, strict=True)
-        ]
-        return labels
+        try:
+            return [
+                show.format(
+                    **{
+                        kdim.name: self._label_value_for_template(label),
+                        vdim.name: val,
+                        "fraction": frac,
+                    }
+                )
+                for label, val, frac in zip(labels, values, fractions, strict=True)
+            ]
+        except KeyError as e:
+            keys = ", ".join(repr(k) for k in (kdim.name, vdim.name, "fraction"))
+            raise ValueError(
+                f"show_labels template {show!r} refers to unknown key {e}, "
+                f"the available keys are {keys}."
+            ) from e
 
     def _prepare_donut_data(self, element):
         """Extract and compute all backend-agnostic donut data.

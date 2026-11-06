@@ -235,6 +235,22 @@ class TestDonutPlot(TestBokehPlot):
         with pytest.raises(ValueError, match=r"non-negative.*'Amount'"):
             bokeh_renderer.get_plot(d)
 
+    @pytest.mark.parametrize("color", ["red", hv.Cycle(["red", "blue"])])
+    def test_donut_color_error_message(self, color):
+        d = hv.Donut([("A", 30), ("B", 70)]).opts(color=color)
+        with pytest.raises(ValueError, match=r"^Setting color on a Donut .*cmap=\{'Rent'"):
+            bokeh_renderer.get_plot(d)
+
+    def test_donut_show_labels_unknown_key(self):
+        d = hv.Donut([("A", 30), ("B", 70)]).opts(show_labels="{value}")
+        with pytest.raises(ValueError, match=r"unknown key 'value'.*'x', 'y', 'fraction'"):
+            bokeh_renderer.get_plot(d)
+
+    def test_donut_center_label_unknown_key(self):
+        d = hv.Donut([("A", 30), ("B", 70)]).opts(center_label="{sum}")
+        with pytest.raises(ValueError, match=r"unknown key 'sum'.*'total', 'y'"):
+            bokeh_renderer.get_plot(d)
+
     def test_donut_pan_zoom_not_active(self):
         plot = bokeh_renderer.get_plot(hv.Donut([("A", 30), ("B", 70)]))
         toolbar = plot.state.toolbar

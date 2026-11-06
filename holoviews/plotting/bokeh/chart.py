@@ -1518,13 +1518,11 @@ class DonutPlot(DonutMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         kdim_san = dimension_sanitizer(kdim.name)
 
         # Color mapper
-        color_style = style.pop("color", None)
-        if color_style is not None:
+        if style.pop("color", None) is not None:
             raise ValueError(
-                f"Setting color={color_style!r} on a Donut plot is not "
-                "supported. To control wedge colors use the 'cmap' "
-                "option, e.g. .opts(cmap='Category20') or "
-                ".opts(cmap={{'Rent': 'blue', 'Food': 'orange'}})."
+                "Setting color on a Donut plot is not supported. To control "
+                "wedge colors use the 'cmap' option, e.g. .opts(cmap='Category20') or "
+                ".opts(cmap={'Rent': 'blue', 'Food': 'orange'})."
             )
         factors = self._get_donut_factors(element, ranges, display_labels)
         cmapper = self._get_colormapper(kdim, element, ranges, style, factors=factors)

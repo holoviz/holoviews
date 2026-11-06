@@ -222,6 +222,16 @@ class TestDonutPlot(TestMPLPlot):
         aligns = {(t.get_ha(), t.get_va()) for t in plot.handles["axis"].texts}
         assert aligns == {("center", "center")}
 
+    def test_donut_show_labels_unknown_key(self):
+        d = hv.Donut([("A", 30), ("B", 70)]).opts(show_labels="{percent}")
+        with pytest.raises(ValueError, match=r"unknown key 'percent'"):
+            mpl_renderer.get_plot(d)
+
+    def test_donut_center_label_unknown_key(self):
+        d = hv.Donut([("A", 30), ("B", 70)]).opts(center_label="{sum}")
+        with pytest.raises(ValueError, match=r"unknown key 'sum'.*'total', 'y'"):
+            mpl_renderer.get_plot(d)
+
     def test_donut_layout_colors_by_category(self):
         layout = hv.NdLayout(
             {
