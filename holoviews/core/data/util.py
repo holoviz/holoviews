@@ -19,10 +19,12 @@ def finite_range(column, cmin, cmax):
         if xr and isinstance(column, xr.DataArray):
             column = column.data
         column = column[np.isfinite(column)]
+        if is_dask_column := is_dask(column):
+            column = column.compute_chunk_sizes()
         if len(column):
             cmin = np.nanmin(column) if min_inf else cmin
             cmax = np.nanmax(column) if max_inf else cmax
-            if is_dask(column):
+            if is_dask_column:
                 if min_inf and max_inf:
                     cmin, cmax = da.compute(cmin, cmax)
                 elif min_inf:
