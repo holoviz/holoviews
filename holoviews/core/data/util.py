@@ -17,8 +17,6 @@ def finite_range(column, cmin, cmax):
         max_inf = False
     if min_inf or max_inf:
         if xr and isinstance(column, xr.DataArray):
-            # xarray DataArrays don't support 2D+ boolean indexing,
-            # so column[np.isfinite(column)] fails without this.
             column = column.data
         column = column[np.isfinite(column)]
         if len(column):

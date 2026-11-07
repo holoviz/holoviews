@@ -9,10 +9,6 @@ from ..._deps import xr, xr_skip
 
 @xr_skip
 def test_finite_range_on_nonfinite_2D_xarray():
-    """finite_range must not crash on 2D xarray input with non-finite values,
-    and results must be computed from the finite values, only.
-    Regression test for https://github.com/holoviz/holoviews/issues/7140
-    """
     pos_inf = xr.DataArray([[0, 1, 2], [3, np.inf, 5]])
     assert finite_range(pos_inf, -np.inf, np.inf) == (0, 5)
     neg_inf = xr.DataArray([[0, 1, -np.inf], [3, 4, 5]])

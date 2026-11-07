@@ -166,10 +166,6 @@ class TestRasterPlot(TestBokehPlot):
 
     @xr_skip
     def test_nonfinite_xarray(self):
-        """xarray inputs containing nonfinite values must not crash,
-        and default clims should be computed from the finite values, only.
-        Regression test for https://github.com/holoviz/holoviews/issues/7140
-        """
         data = np.array([[-np.inf, np.nan, 4], [-3, 2, np.inf]])
         da = xr.DataArray(data, dims=("x", "y"))
         img = hv.Image(da, kdims=["x", "y"])
