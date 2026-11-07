@@ -5,6 +5,7 @@ import typing as t
 import warnings
 
 import numpy as np
+import pandas as pd
 import param
 
 from .. import util
@@ -997,7 +998,7 @@ class Interface(param.Parameterized):
             List of list of arrays representing geometry holes
         """
         coords = cls.values(dataset, dataset.kdims[0])
-        splits = np.where(np.isnan(coords.astype("float")))[0]
+        splits = np.where(pd.isna(coords))[0]
         return [[[]] * (len(splits) + 1)]
 
     @classmethod
