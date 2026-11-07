@@ -17,7 +17,7 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: a56c0b927e6465d37cae3e97d35d4d18ab2b96cd # frozen: v0.16.9
+    rev: f368fb366ff7f2f808dd324b83a6d32267799e19 # frozen: v0.17.2
     hooks:
       - id: ruff-check
       - id: ruff-format
@@ -27,7 +27,7 @@ repos:
       - id: clean-notebook
         args: [--strip-trailing-newlines, --ignore, tags]
   - repo: https://github.com/crate-ci/typos
-    rev: 512fc24f32f44ab01972217aaaf3dc86ec234d53 # frozen: v1.50.2
+    rev: 7f9d0819ca1c008ade73f4b41fa9d258d48f605b # frozen: v1.51.1
     hooks:
       - id: typos
   - repo: https://github.com/shellcheck-py/shellcheck-py
@@ -35,7 +35,7 @@ repos:
     hooks:
       - id: shellcheck
   - repo: https://github.com/hoxbro/prettier-pre-commit
-    rev: f2fe865d9b280380f8c25ca9e5f4b1c76013df23 # frozen: v3.9.9
+    rev: 1b134e04ec20e9fccbc0629189f6e3f8d6ec61f6 # frozen: v3.9.10
     hooks:
       - id: prettier
         exclude: conda.recipe/meta.yaml|pull_request_template.md

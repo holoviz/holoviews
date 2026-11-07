@@ -35,7 +35,7 @@ env:
   DISPLAY: ":99.0"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   COV: "--cov=./holoviews --cov-report=xml"
-  UPSTREAM_PACKAGES: "panel param"
+  UPSTREAM_PACKAGES: "panel param colorcet"
 
 jobs:
   pre_commit:
@@ -175,7 +175,7 @@ jobs:
         run: |
           FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
           pixi run -e "${ENV}" test-ui $COV $FAIL
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: ui_screenshots_${{ runner.os }}
@@ -235,7 +235,7 @@ jobs:
         run: |
           python -c "import holoviews as hv, holoviews.operation.datashader; hv.extension('bokeh', 'matplotlib', 'plotly')"
       - name: Run import benchmarks
-        uses: CodSpeedHQ/action@821a40cd6c80e3cfe387caf55668287addd808da # v5.5.0
+        uses: CodSpeedHQ/action@78102a468f96d8e0ccb92d0ec49425753fc42062 # v5.6.0
         with:
           mode: simulation
           config: scripts/codspeed.yml

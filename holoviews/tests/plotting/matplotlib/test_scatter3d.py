@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 import holoviews as hv
 
 from .test_plot import TestMPLPlot, mpl_renderer
@@ -102,3 +104,13 @@ class TestPointPlot(TestMPLPlot):
         assert y_range[1] == 3.2
         assert z_range[0] == 1.8660659830736146
         assert z_range[1] == 4.2870938501451725
+
+    @pytest.mark.parametrize("axis", ["x", "y", "z"])
+    def test_scatter3d_hide_axis(self, axis):
+        scatter3d = hv.Scatter3D([(0, 1, 2), (1, 2, 3), (2, 3, 4)]).opts(**{f"{axis}axis": None})
+        ax = mpl_renderer.get_plot(scatter3d).handles["axis"]
+        for name in "xyz":
+            mpl_axis = getattr(ax, f"{name}axis")
+            hidden = name == axis
+            assert (mpl_axis.line.get_linewidth() == 0) is hidden
+            assert (mpl_axis.label.get_text() == "") is hidden
