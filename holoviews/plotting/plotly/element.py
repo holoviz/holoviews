@@ -650,7 +650,9 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     def _get_ticks(self, axis, ticker):
         axis_props = {}
         if isinstance(ticker, (tuple, list)):
-            if all(isinstance(t, tuple) for t in ticker):
+            if not ticker:
+                axis_props["tickvals"] = []
+            elif all(isinstance(t, tuple) for t in ticker):
                 ticks, labels = zip(*ticker, strict=False)
                 labels = [l if isinstance(l, str) else str(l) for l in labels]
                 axis_props["tickvals"] = ticks

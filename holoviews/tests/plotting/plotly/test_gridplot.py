@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 import holoviews as hv
+from holoviews.operation import gridmatrix
 from holoviews.testing import assert_data_equal
 
 from .test_plot import TestPlotlyPlot
@@ -90,3 +91,10 @@ class TestGridPlot(TestPlotlyPlot):
         assert_data_equal(state["data"][3]["y"], np.array([1, 1]))
         assert state["data"][3]["xaxis"] == "x2"
         assert state["data"][3]["yaxis"] == "y2"
+
+    def test_gridmatrix_diagonal_left_edge_labelled_with_row_dimension(self, rng):
+        ds = hv.Dataset({k: rng.random(10) for k in "abc"}, kdims=list("abc"))
+        state = self._get_plot_state(gridmatrix(ds))
+
+        assert state["layout"]["yaxis"]["title"]["text"] == "a"
+        assert state["layout"]["yaxis"]["tickvals"] == []

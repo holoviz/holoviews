@@ -157,3 +157,21 @@ class TestGridPlot(TestBokehPlot):
         assert "test: 1" in plot.handles["title"].text
         plot.cleanup()
         assert stream._subscribers == []
+
+    def test_gridmatrix_diagonal_left_edge_labelled_with_row_dimension(self, rng):
+        ds = hv.Dataset({k: rng.random(10) for k in "abc"}, kdims=list("abc"))
+        plot = bokeh_renderer.get_plot(gridmatrix(ds))
+
+        axis = plot.subplots[("a", "a")].state.yaxis[0]
+        assert axis.axis_label == "a"
+        assert axis.ticker.ticks == []
+        assert plot.subplots[("a", "b")].state.yaxis[0].axis_label == "b"
+
+    def test_gridmatrix_diagonal_left_edge_respects_user_options(self, rng):
+        ds = hv.Dataset({k: rng.random(10) for k in "abc"}, kdims=list("abc"))
+        gmatrix = gridmatrix(ds).opts(hv.opts.Histogram(ylabel="Custom", yticks=3))
+        plot = bokeh_renderer.get_plot(gmatrix)
+
+        axis = plot.subplots[("a", "a")].state.yaxis[0]
+        assert axis.axis_label == "Custom"
+        assert axis.ticker.desired_num_ticks == 3
