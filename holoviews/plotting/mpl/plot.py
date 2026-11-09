@@ -36,7 +36,7 @@ from ..plot import (
     GenericElementPlot,
     GenericLayoutPlot,
 )
-from ..util import attach_streams, collate, displayable
+from ..util import attach_streams, collate, displayable, gridmatrix_diagonal_kwargs
 from .util import MPL_GE_3_11_0, compute_ratios, fix_aspect, get_old_rcparams
 
 
@@ -555,6 +555,8 @@ class GridPlot(CompositePlot):
             ):
                 kwargs["show_legend"] = self.show_legend
                 kwargs["legend_position"] = "right"
+            if isinstance(self.layout, GridMatrix) and c == 0:
+                kwargs.update(gridmatrix_diagonal_kwargs(view, coord, opts))
             if not isinstance(self.layout, GridMatrix) and not (
                 (c == self.cols // 2 and r == 0) or (c == 0 and r == self.rows // 2)
             ):

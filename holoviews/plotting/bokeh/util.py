@@ -1290,7 +1290,7 @@ def get_ticker_axis_props(ticker):
     elif isinstance(ticker, int):
         axis_props["ticker"] = BasicTicker(desired_num_ticks=ticker)
     elif isinstance(ticker, (tuple, list)):
-        if all(isinstance(t, tuple) for t in ticker):
+        if ticker and all(isinstance(t, tuple) for t in ticker):
             ticks, labels = zip(*ticker, strict=False)
             # Ensure floats which are integers are serialized as ints
             # because in JS the lookup fails otherwise
