@@ -255,7 +255,7 @@ convention = "numpy"
 exclude = ["holoviews/*version.py"]
 
 [tool.ty.rules]
-unresolved-import = "ignore"
+import-not-found = "ignore"
 
 # Add whole project for LSP features and diagnostics only for the type-checked files
 [[tool.ty.overrides]]
