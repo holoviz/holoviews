@@ -307,3 +307,41 @@ def test_backend_jupyter_default(cell_code):
 
     output = nb.cells[0].outputs[-1]["text"].strip()
     assert output == "module://matplotlib_inline.backend_inline"
+
+
+class TestHighDPI:
+    def setup_method(self):
+        self.renderer = MPLRenderer.instance()
+        self.curve = hv.Curve([1, 2, 3])
+
+    def _inline_png(self, renderer, **kwargs):
+        html = renderer.components(self.curve, "png", **kwargs)[0]["text/html"]
+        b64 = re.search(r"base64,([^'\"]+)", html).group(1)
+        return html, Image.open(BytesIO(base64.b64decode(b64))).size
+
+    def _saved_png_width(self, renderer=None):
+        renderer = renderer or self.renderer
+        data = renderer(renderer.get_plot(self.curve), "png")[0]
+        return Image.open(BytesIO(data)).size[0]
+
+    def test_inline_png_rendered_at_twice_dpi(self):
+        _, (width, _) = self._inline_png(self.renderer)
+        assert width == self._saved_png_width(self.renderer.instance(dpi=144))
+
+    def test_inline_png_displayed_at_dpi_size(self):
+        html, _ = self._inline_png(self.renderer)
+        displayed = int(re.search(r"[^-]width: (\d+)px;", html).group(1))
+        assert abs(displayed - self._saved_png_width()) <= 2
+
+    def test_inline_png_explicit_dpi_rendered_at_twice_dpi(self):
+        _, (width, _) = self._inline_png(self.renderer, dpi=100)
+        assert width == self._saved_png_width(self.renderer.instance(dpi=200))
+
+    def test_inline_png_high_dpi_disabled(self):
+        html, (width, _) = self._inline_png(self.renderer.instance(high_dpi=False))
+        assert width == self._saved_png_width()
+        assert not re.search(r"[^-]width:", html)
+
+    def test_inline_svg_not_affected(self):
+        html = self.renderer.components(self.curve, "svg")[0]["text/html"]
+        assert not re.search(r"[^-]width:", html)
