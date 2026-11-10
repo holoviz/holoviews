@@ -31,6 +31,13 @@ class TestCurvePlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(curve)
         assert tuple(map(round, plot.handles["axis"].get_xlim())) == (16801.0, 16810.0)
 
+    @pytest.mark.filterwarnings("error")
+    def test_curve_datetime_linestyle_no_warning(self, rng):
+        dates = pd.date_range("2016-01-01", "2016-01-10", freq="D")
+        curve = hv.Curve((dates, rng.random(10))).opts(linestyle="--")
+        plot = mpl_renderer.get_plot(curve)
+        assert plot.handles["artist"].get_linestyle() == "--"
+
     def test_curve_heterogeneous_datetime_types_overlay(self, rng):
         dates64 = [np.datetime64(dt.datetime(2016, 1, i)) for i in range(1, 11)]
         dates = [dt.datetime(2016, 1, i) for i in range(2, 12)]
