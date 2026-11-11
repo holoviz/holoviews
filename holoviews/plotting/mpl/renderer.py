@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import os
+import struct
 from contextlib import contextmanager, suppress
 from io import BytesIO
 from itertools import chain
@@ -12,7 +13,6 @@ import numpy as np
 import param
 from matplotlib import pyplot as plt
 from param.parameterized import bothmethod
-from PIL import Image
 
 from ...core import HoloMap
 from ...core.options import Store
@@ -206,7 +206,13 @@ class MPLRenderer(Renderer):
             b64 = base64.b64encode(data).decode("utf-8")
             (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
             src = HTML_TAGS["base64"].format(mime_type=mime_type, b64=b64)
-            css = f"width: {Image.open(BytesIO(data)).width // 2}px;" if high_dpi else ""
+            if high_dpi:
+                # Read the width from the PNG header (IHDR chunk, right after
+                # the 8-byte signature) rather than decoding the image
+                width = struct.unpack(">I", data[16:20])[0]
+                css = f"width: {width // 2}px;"
+            else:
+                css = ""
             html = tag.format(src=src, mime_type=mime_type, css=css)
             return html
         if fmt == "svg":
