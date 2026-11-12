@@ -207,8 +207,7 @@ class MPLRenderer(Renderer):
             (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
             src = HTML_TAGS["base64"].format(mime_type=mime_type, b64=b64)
             if high_dpi:
-                # Read the width from the PNG header (IHDR chunk, right after
-                # the 8-byte signature) rather than decoding the image
+                # read the width from the PNG header
                 width = struct.unpack(">I", data[16:20])[0]
                 css = f"width: {width // 2}px;"
             else:
