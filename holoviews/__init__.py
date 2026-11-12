@@ -102,6 +102,7 @@ from .core.overlay import NdOverlay, Overlay
 from .core.spaces import Callable, DynamicMap, GridMatrix, GridSpace, HoloMap
 from .element import (
     HSV,
+    OHLC,
     RGB,
     Annotation,
     Area,
@@ -263,6 +264,7 @@ def __getattr__(name):
 
 __all__ = [
     "HSV",
+    "OHLC",
     "RGB",
     "AdjointLayout",
     "Annotation",
