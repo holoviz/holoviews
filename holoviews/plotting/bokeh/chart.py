@@ -1421,25 +1421,29 @@ class DonutPlot(DonutMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
     )
 
     inner_radius = param.Number(
-        default=0.4,
+        default=0.8,
         bounds=(0, 1),
-        doc="Inner radius of the annulus. Set to 0 for a pie chart.",
+        doc="""Inner radius of the annulus, in the same units as outer_radius.
+        Set to 0 for a pie chart.""",
     )
 
     label_radius = param.Number(
-        default=0.7,
+        default=None,
+        allow_None=True,
         bounds=(0, None),
         doc="""Radial distance of wedge labels as a multiple of outer_radius.
         1.0 places labels exactly at the outer edge; values above 1
-        push them outside the ring.""",
+        push them outside the ring. None places them at the radius
+        that halves the ring area (about 0.71 for a pie).""",
     )
 
     label_text_align = param.Selector(
         default="auto",
         objects=["auto", "left", "right", "center"],
-        doc="""Horizontal alignment of wedge labels. 'auto' chooses
-        left/right based on angular position and whether labels are
-        inside or outside the ring.""",
+        doc="""Horizontal alignment of wedge labels. 'auto' centers the
+        labels inside the ring, and aligns the labels outside the ring
+        (label_radius >= 1) away from it: left on the right side, right
+        on the left side.""",
     )
 
     outer_radius = param.Number(
@@ -1458,7 +1462,8 @@ class DonutPlot(DonutMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         class_=(bool, str),
         doc="""Whether and how to draw text labels next to each wedge.
         Can be a boolean or a template string using dimension names
-        (e.g. '{Category}: {Amount}').""",
+        (e.g. '{Category}: {Amount}') and 'fraction', the share of the
+        total (e.g. '{fraction:.0%}').""",
     )
 
     start_angle = param.Number(
@@ -1513,15 +1518,13 @@ class DonutPlot(DonutMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
         kdim_san = dimension_sanitizer(kdim.name)
 
         # Color mapper
-        color_style = style.pop("color", None)
-        if color_style is not None:
+        if style.pop("color", None) is not None:
             raise ValueError(
-                f"Setting color={color_style!r} on a Donut plot is not "
-                "supported. To control wedge colors use the 'cmap' "
-                "option, e.g. .opts(cmap='Category20') or "
-                ".opts(cmap={{'Rent': 'blue', 'Food': 'orange'}})."
+                "Setting color on a Donut plot is not supported. To control "
+                "wedge colors use the 'cmap' option, e.g. .opts(cmap='Category20') or "
+                ".opts(cmap={'Rent': 'blue', 'Food': 'orange'})."
             )
-        factors = list(dict.fromkeys(display_labels))
+        factors = self._get_donut_factors(element, ranges, display_labels)
         cmapper = self._get_colormapper(kdim, element, ranges, style, factors=factors)
 
         # --- annular wedge data & mapping --------------------------------
@@ -1531,7 +1534,7 @@ class DonutPlot(DonutMixin, CompositeElementPlot, ColorbarPlot, LegendPlot):
             percentage=fracs * 100,
             **{kdim_san: display_labels, dimension_sanitizer(vdim.name): values},
             **{
-                dimension_sanitizer(vd.name): element.dimension_values(vd)[valid]
+                dimension_sanitizer(vd.name): np.asarray(element.dimension_values(vd))[valid]
                 for vd in element.vdims[1:]
             },
         )
