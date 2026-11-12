@@ -8,7 +8,7 @@ from bokeh.models import FactorRange, FixedTicker, HoverTool, Range1d, Span
 
 import holoviews as hv
 from holoviews.plotting.bokeh.util import property_to_dict
-from holoviews.streams import Pipe, Stream, Tap
+from holoviews.streams import BoxEdit, Pipe, Stream, Tap
 from holoviews.testing import assert_data_equal
 from holoviews.util import Dynamic
 
@@ -437,6 +437,21 @@ class TestOverlayPlot(LoggingComparison, TestBokehPlot):
             ydata = new_data[y_range.name]
             assert y_range.start == ydata.min()
             assert y_range.end == ydata.max()
+
+    async def test_dynamicmap_overlay_second_plot_uses_current_stream_data(self):
+        curve = hv.DynamicMap(hv.Curve, streams=[Pipe(data=[(0, 0), (9, 9)])])
+        rpipe = Pipe(data=[])
+        rects = hv.DynamicMap(hv.Rectangles, streams=[rpipe])
+        box = BoxEdit(source=rects)
+        dmap = curve * rects
+
+        plot = bokeh_renderer.get_plot(dmap)
+        rpipe.send([(1, 1, 3, 3)])
+        assert list(plot.subplots[("Rectangles", "I")].handles["source"].data["left"]) == [1]
+
+        plot2 = bokeh_renderer.get_plot(dmap)
+        assert list(plot2.subplots[("Rectangles", "I")].handles["source"].data["left"]) == [1]
+        assert list(box.data["x0"]) == [1]
 
 
 @pytest.mark.parametrize("order", [("str", "date"), ("date", "str")])

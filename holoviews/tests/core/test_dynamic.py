@@ -16,6 +16,7 @@ from holoviews.streams import (
     Buffer,
     LinkedStream,
     Params,
+    Pipe,
     PointerX,
     PointerXY,
     PointerY,
@@ -574,6 +575,16 @@ class TestDynamicMapUnboundedProperty:
         dmap = hv.DynamicMap(fn, kdims=[hv.Dimension("dim", range=(0, 10))])
         assert_element_equal(dmap, dmap.clone())
         assert dmap.unbounded == []
+
+    def test_clone_shared_data_false_evaluates_through_original(self):
+        pipe = Pipe(data=[(0, 0), (1, 1)])
+        dmap = hv.DynamicMap(hv.Curve, streams=[pipe])
+        dmap[()]
+        clone = dmap.clone(shared_data=False)
+        updated = [(0, 0), (1, 1), (2, 2)]
+        pipe.send(updated)
+        assert_element_equal(clone[()], hv.Curve(updated))
+        assert_element_equal(dmap.last, hv.Curve(updated))
 
     def test_sampled_unbounded_init(self):
         fn = lambda i: hv.Image(sine_array(0, i))
