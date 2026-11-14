@@ -1119,8 +1119,6 @@ def multi_polygons_data(element):
     correct list of holes is assigned to each sub-polygon.
 
     """
-    import pandas as pd
-
     xs, ys = (element.dimension_values(kd, expanded=False) for kd in element.kdims)
     holes = element.holes()
     xsh, ysh = [], []
@@ -1128,7 +1126,7 @@ def multi_polygons_data(element):
         xhs = [[h[:, 0] for h in hole] for hole in multi_hole]
         yhs = [[h[:, 1] for h in hole] for hole in multi_hole]
         # Kept separate as numpy cannot stack mixed dtypes (e.g. datetime x, float y)
-        splits = np.where(pd.isna(x) | pd.isna(y))[0]
+        splits = np.where(util.isnan_array(x) | util.isnan_array(y))[0]
         if len(splits):
             x_parts, y_parts = np.split(x, splits + 1), np.split(y, splits + 1)
         else:

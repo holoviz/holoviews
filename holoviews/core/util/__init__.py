@@ -2215,6 +2215,17 @@ def is_nan(x):
         return False
 
 
+def isnan_array(arr):
+    """Elementwise NaN check which also handles NaT and None in datetime and object arrays."""
+    arr = np.asarray(arr)
+    kind = dtype_kind(arr)
+    if kind in "biufc":
+        return np.isnan(arr)
+    elif kind in "mM":
+        return np.isnat(arr)
+    return pd.isna(arr)
+
+
 def bound_range(vals, density, time_unit="us"):
     """Computes a bounding range and density from a number of samples
     assumed to be evenly spaced. Density is rounded to machine precision
