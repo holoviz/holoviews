@@ -2216,12 +2216,29 @@ def is_nan(x):
 
 
 def isnan_array(arr):
-    """Elementwise NaN check which also handles NaT and None in datetime and object arrays."""
+    """Elementwise NaN check which also handles NaT and None in datetime and object arrays.
+
+    Parameters
+    ----------
+    arr : array-like
+    A NumPy array, a pandas Series or Index, or anything array-like.
+
+    Returns
+    -------
+    mask : np.ndarray
+    Boolean array which is True wherever the value is NaN, NaT, None or pd.NA.
+    """
+    if not isinstance(arr, np.ndarray) and hasattr(arr, "dtype"):
+        # pandas objects and extension arrays know how to do this themselves.
+        # Converting first would box tz-aware datetimes into Python objects,
+        # which is orders of magnitude slower for the same answer.
+        return np.asarray(pd.isna(arr))
     arr = np.asarray(arr)
     kind = dtype_kind(arr)
     if kind in "biufc":
         return np.isnan(arr)
     elif kind in "mM":
+        # Not util.isnat, which returns a scalar False for timedelta64 arrays.
         return np.isnat(arr)
     return pd.isna(arr)
 
