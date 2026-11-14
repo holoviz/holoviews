@@ -273,6 +273,10 @@ class _base_link_selections(param.ParameterizedFunction):
             chart = Store.registry[Store.current_backend][type(hvobj)]
             if getattr(chart, "selection_display", None):
                 element = hvobj.clone(link=self.link_inputs)
+                # Without link_inputs the clone gets a new plot id, so streams
+                # attached to the input would never get a plotting callback.
+                for stream in hvobj._streams or []:
+                    stream._attach(element)
                 self._register(element, hvobj if origin is None else origin)
                 return chart.selection_display(element).build_selection(
                     self._selection_streams,
