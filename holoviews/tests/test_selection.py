@@ -906,3 +906,23 @@ class TestLinkSelectionsBokeh(TestLinkSelections):
 
         hv.renderer("bokeh").get_plot(a + b)
         checkboxes.value = ["A"]
+
+    @pytest.mark.parametrize("stream_type", [hv.streams.Tap, hv.streams.Selection1D])
+    @pytest.mark.parametrize("layout", [False, True], ids=["element", "layout"])
+    def test_stream_attached_to_input_gets_callback(self, stream_type, layout):
+        # Test for https://github.com/holoviz/holoviews/issues/6348
+        points = hv.Points(self.data).opts(tools=["tap"])
+        stream = stream_type(source=points)
+        obj = points + hv.Curve(self.data) if layout else points
+
+        linked = hv.link_selections.instance()(obj)
+        plot = hv.renderer("bokeh").get_plot(linked)
+
+        callback_streams = [
+            s
+            for p in plot.traverse(lambda x: x)
+            for cb in getattr(p, "callbacks", [])
+            for s in cb.streams
+        ]
+        assert stream in callback_streams
+        assert stream.source is points
