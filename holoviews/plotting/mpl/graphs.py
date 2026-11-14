@@ -9,6 +9,7 @@ from matplotlib.collections import LineCollection, PolyCollection
 from ...core.data import Dataset
 from ...core.options import abbreviated_exception
 from ...core.util import dtype_kind, is_number, isscalar
+from ...element.util import connect_edges_pd
 from ...util.transform import dim
 from ..mixins import ChordMixin, GraphMixin
 from ..util import get_directed_graph_paths
@@ -97,6 +98,8 @@ class GraphPlot(GraphMixin, ColorbarPlot):
                 np.hypot(y_range[1] - y_range[0], x_range[1] - x_range[0]) * self.arrowhead_length
             )
             paths = get_directed_graph_paths(element, arrow_len)
+        elif element._edgepaths is None:
+            paths = connect_edges_pd(element)
         else:
             paths = element._split_edgepaths.split(
                 datatype="array", dimensions=element.edgepaths.kdims

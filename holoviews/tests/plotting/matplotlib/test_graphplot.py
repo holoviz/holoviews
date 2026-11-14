@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import numpy as np
 import pytest
 from matplotlib.collections import LineCollection, PolyCollection
@@ -37,6 +39,53 @@ class TestMplGraphPlot(TestMPLPlot):
             np.array([p.vertices for p in edges.get_paths()]),
             [p.array() for p in self.graph.edgepaths.split()],
         )
+
+    @pytest.mark.parametrize("indices", [[4, 9, 2], ["c", "a", "b"]])
+    @pytest.mark.parametrize("invert_axes", [False, True])
+    def test_graph_implicit_edgepaths(self, indices, invert_axes):
+        nodes = hv.Nodes(([1, 3, 5], [2, 4, 6], indices))
+        graph = hv.Graph(([(indices[2], indices[0]), (indices[0], indices[1])], nodes))
+        graph = graph.opts(invert_axes=invert_axes)
+        with patch.object(hv.Graph, "edge_type", wraps=hv.EdgePaths) as edge_type:
+            plot = mpl_renderer.get_plot(graph)
+        edge_type.assert_not_called()
+        expected = np.array([[[5, 6], [1, 2]], [[1, 2], [3, 4]]])
+        if invert_axes:
+            expected = expected[:, :, ::-1]
+        assert_data_equal(np.array(plot.handles["edges"].get_segments()), expected)
+
+    @pytest.mark.parametrize("packed", [False, True])
+    def test_graph_explicit_edgepaths(self, packed):
+        paths = [np.array([[0, 0], [0.5, 2], [1, 1]]), np.array([[1, 1], [2, 0]])]
+        edgepaths = [np.vstack([paths[0], [[np.nan, np.nan]], paths[1]])] if packed else paths
+        nodes = hv.Nodes([(0, 0, 0), (1, 1, 1), (2, 0, 2)])
+        graph = hv.Graph(([(0, 1), (1, 2)], nodes, edgepaths))
+        plot = mpl_renderer.get_plot(graph)
+        for actual, expected in zip(plot.handles["edges"].get_segments(), paths, strict=True):
+            assert_data_equal(actual, expected)
+
+    def test_graph_empty_edges(self):
+        graph = hv.Graph(([], hv.Nodes([(0, 0, 0)])))
+        plot = mpl_renderer.get_plot(graph)
+        assert plot.handles["edges"].get_segments() == []
+
+    def test_graph_implicit_edgepaths_update(self):
+        nodes = hv.Nodes([(0, 0, 0), (1, 1, 1), (2, 0, 2)])
+        graphs = hv.HoloMap({0: hv.Graph(([(0, 1)], nodes)), 1: hv.Graph(([(2, 0)], nodes))})
+        plot = mpl_renderer.get_plot(graphs)
+        plot.update((0,))
+        assert_data_equal(plot.handles["edges"].get_segments()[0], np.array([[0, 0], [1, 1]]))
+        plot.update((1,))
+        assert_data_equal(plot.handles["edges"].get_segments()[0], np.array([[2, 0], [0, 0]]))
+
+    def test_graph_directed_edgepaths(self):
+        graph = hv.Graph(([(0, 1)], hv.Nodes([(0, 0, 0), (1, 1, 1)]))).opts(directed=True)
+        plot = mpl_renderer.get_plot(graph)
+        vertices = plot.handles["edges"].get_paths()[0].vertices
+        assert vertices.shape == (6, 2)
+        assert_data_equal(vertices[:2], np.array([[0, 0], [1, 1]]))
+        assert np.isnan(vertices[2]).all()
+        assert_data_equal(vertices[4], np.array([1, 1]))
 
     ###########################
     #    Styling mapping      #
