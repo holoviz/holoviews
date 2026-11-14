@@ -525,7 +525,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         if xdim and not is_geo:
             try:
                 if any(np.isnan([r, l])):
-                    r, l = 0, 1
+                    l, r = (1, 10) if self.logx else (0, 1)
             except TypeError:
                 # r and l not numeric, don't change anything
                 pass
@@ -562,7 +562,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         if ydim and not is_geo:
             try:
                 if any(np.isnan([b, t])):
-                    b, t = 0, 1
+                    b, t = (1, 10) if self.logy else (0, 1)
             except TypeError:
                 # b and t not numeric, don't change anything
                 pass
