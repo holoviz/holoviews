@@ -353,7 +353,11 @@ class SyntheticLegendMixin(LegendPlot):
                 # Only adding if it not None to not overwrite the default
                 **({"cmap": cmap} if cmap else {}),
             )
-        except Exception:
+        except Exception as e:
+            self.param.warning(
+                "Categorical legend could not be generated and will be omitted: "
+                f"{type(e).__name__}: {e}"
+            )
             return
         if legend is None:
             return
