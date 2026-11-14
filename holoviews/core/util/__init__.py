@@ -1454,7 +1454,7 @@ def is_number(obj):
         return True
     elif isinstance(obj, np.str_):
         return False
-    elif not NUMPY_GE_2_0_0 and isinstance(obj, np.unicode_):  # noqa: NPY201  # ty: ignore[unresolved-attribute]
+    elif not NUMPY_GE_2_0_0 and isinstance(obj, np.unicode_):  # noqa: NPY201  # ty: ignore[missing-attribute]
         return False
     # The extra check is for classes that behave like numbers, such as those
     # found in numpy, gmpy, etc.
