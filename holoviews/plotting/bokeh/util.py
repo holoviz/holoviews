@@ -1125,15 +1125,19 @@ def multi_polygons_data(element):
     for x, y, multi_hole in zip(xs, ys, holes, strict=True):
         xhs = [[h[:, 0] for h in hole] for hole in multi_hole]
         yhs = [[h[:, 1] for h in hole] for hole in multi_hole]
-        array = np.column_stack([x, y])
-        splits = np.where(np.isnan(array[:, :2].astype("float")).sum(axis=1))[0]
-        arrays = np.split(array, splits + 1) if len(splits) else [array]
+        # Kept separate as numpy cannot stack mixed dtypes (e.g. datetime x, float y)
+        splits = np.where(util.isnan_array(x) | util.isnan_array(y))[0]
+        if len(splits):
+            x_parts, y_parts = np.split(x, splits + 1), np.split(y, splits + 1)
+        else:
+            x_parts, y_parts = [x], [y]
         multi_xs, multi_ys = [], []
-        for i, (path, hx, hy) in enumerate(zip(arrays, xhs, yhs, strict=False)):
-            if i != (len(arrays) - 1):
-                path = path[:-1]
-            multi_xs.append([path[:, 0], *hx])
-            multi_ys.append([path[:, 1], *hy])
+        n = len(x_parts)
+        for i, (px, py, hx, hy) in enumerate(zip(x_parts, y_parts, xhs, yhs, strict=False)):
+            if i != (n - 1):
+                px, py = px[:-1], py[:-1]
+            multi_xs.append([px, *hx])
+            multi_ys.append([py, *hy])
         xsh.append(multi_xs)
         ysh.append(multi_ys)
     return xsh, ysh
