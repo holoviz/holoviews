@@ -450,6 +450,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                                 )
                                 msg = f"Missing color(s) for categories: {missing}"
                                 raise ValueError(msg)
+                            if len(style["cmap"]) == 1:  # plotly colorscales need >= 2 colors
+                                style["cmap"] *= 2
 
                         copts = self.get_color_opts(v, element, ranges, style)
                         copts.update({"cmin": 0, "cmax": len(categories) - 1, "cauto": False})
