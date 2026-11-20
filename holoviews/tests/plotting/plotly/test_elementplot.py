@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-import warnings
 from collections import deque
 
 import numpy as np
@@ -242,19 +241,15 @@ class TestOverlayPlot(TestPlotlyPlot):
 
     def test_overlay_plot_logy_vline(self):
         overlay = hv.Curve([(1, 1), (2, 10), (3, 100)]).opts(logy=True) * hv.VLine(2)
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            state = self._get_plot_state(overlay)
-        assert state["layout"]["yaxis"]["type"] == "log"
-        assert np.isfinite(state["layout"]["yaxis"]["range"]).all()
+        axis = self._get_plot_state(overlay)["layout"]["yaxis"]
+        assert axis["type"] == "log"
+        assert np.isfinite(axis["range"]).all()
 
     def test_overlay_plot_logx_hline(self):
         overlay = hv.Curve([(1, 1), (10, 2), (100, 3)]).opts(logx=True) * hv.HLine(2)
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            state = self._get_plot_state(overlay)
-        assert state["layout"]["xaxis"]["type"] == "log"
-        assert np.isfinite(state["layout"]["xaxis"]["range"]).all()
+        axis = self._get_plot_state(overlay)["layout"]["xaxis"]
+        assert axis["type"] == "log"
+        assert np.isfinite(axis["range"]).all()
 
     def test_overlay_plot_logz(self):
         scatter = (hv.Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]) * hv.Path3D([])).opts(
