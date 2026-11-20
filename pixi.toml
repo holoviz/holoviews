@@ -264,7 +264,7 @@ description = "Build the documentation"
 # =============================================
 [feature.build.dependencies]
 python-build = "*"
-conda-build = "*"
+conda-build = ">=26.9"
 conda-libmamba-solver = "*"
 
 [feature.build.tasks]
