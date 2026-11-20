@@ -256,7 +256,11 @@ class categorical_aggregate2d(Operation):
                 "and one value dimension to aggregate on."
             )
 
-        obj = Dataset(obj, datatype=["dataframe"])
+        if obj.interface.name == "NarwhalsInterface":
+            # TODO: Add _aggregate_dataset_narwhals method
+            obj = obj.clone(data=obj.data.to_pandas(), datatype=["dataframe"])
+        else:
+            obj = Dataset(obj, datatype=["dataframe"])
         return self._aggregate_dataset_pandas(obj)
 
 

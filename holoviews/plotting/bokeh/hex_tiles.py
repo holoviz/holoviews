@@ -62,8 +62,12 @@ class hex_binning(Operation):
         x, y = (element.dimension_values(i) for i in indexes)
         if not len(x):
             return element.clone([])
-        finite = isfinite(x) & isfinite(y)
-        x, y = x[finite], y[finite]
+        if element.interface.name == "NarwhalsInterface":
+            finite = x.is_finite() & y.is_finite()
+            x, y = x.filter(finite), y.filter(finite)
+        else:
+            finite = isfinite(x) & isfinite(y)
+            x, y = x[finite], y[finite]
         q, r = cartesian_to_axial(x, y, size, orientation + "top", scale)
         coords = q, r
 
