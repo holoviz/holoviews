@@ -15,6 +15,7 @@ from ...core import (
 from ...core.options import Cycle, Options, Store
 from ...core.util.dependencies import VersionError, _no_import_version
 from ...element import (
+    OHLC,
     RGB,
     Area,
     Bars,
@@ -60,6 +61,7 @@ from .chart import (
     CurvePlot,
     ErrorBarsPlot,
     HistogramPlot,
+    OHLCPlot,
     ScatterPlot,
     SpreadPlot,
 )
@@ -102,6 +104,7 @@ Store.register(
         Area: AreaPlot,
         Spread: SpreadPlot,
         ErrorBars: ErrorBarsPlot,
+        OHLC: OHLCPlot,
         # Statistics elements
         Bivariate: BivariatePlot,
         Distribution: DistributionPlot,
@@ -172,6 +175,7 @@ options.Area = Options("style", color=Cycle(), line_width=2)
 options.Spread = Options("style", color=Cycle(), line_width=2)
 options.TriSurface = Options("style", cmap=dflt_cmap)
 options.Histogram = Options("style", color=Cycle(), line_width=1, line_color="black")
+options.OHLC = Options("plot", padding=(0.05, 0.1))
 
 # Rasters
 options.Image = Options("style", cmap=config.default_gridded_cmap)

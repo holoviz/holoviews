@@ -18,6 +18,7 @@ from ...core import (
 from ...core.options import Cycle, Options, Palette
 from ...element import (
     HSV,
+    OHLC,
     RGB,
     Area,
     Arrow,
@@ -98,6 +99,7 @@ from .chart import (
     DonutPlot,
     ErrorPlot,
     HistogramPlot,
+    OHLCPlot,
     PointPlot,
     SideHistogramPlot,
     SideSpikesPlot,
@@ -148,6 +150,7 @@ associations = {
     Area: AreaPlot,
     VectorField: VectorFieldPlot,
     Histogram: HistogramPlot,
+    OHLC: OHLCPlot,
     # Rasters
     Image: RasterPlot,
     RGB: RGBPlot,
@@ -282,6 +285,7 @@ options.Donut = Options(
     "style", cmap="Category20", wedge_line_color="black", label_text_font_size="9pt"
 )
 options.Spikes = Options("style", color="black", cmap=dflt_cmap, muted_alpha=0.2)
+options.OHLC = Options("style", bar_line_color="black", wick_line_color="black", bar_line_width=1)
 options.Area = Options("style", color=Cycle(), alpha=1, line_color="black", muted_alpha=0.2)
 options.VectorField = Options("style", color="black", muted_alpha=0.2)
 

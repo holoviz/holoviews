@@ -630,3 +630,64 @@ class WaterfallMixin:
                 self.logy,
             )
         return (x0, y0, x1, y1)
+
+
+class OHLCMixin:
+    """Shared mixin for OHLC (candlestick) plot classes across backends.
+
+    Provides the high-low value-axis envelope, the per-candle direction
+    colors, and the candle body half-width derived from the smallest
+    spacing between adjacent x-coordinates. Concrete plots are expected
+    to define ``bar_width``, ``pos_color`` and ``neg_color`` params.
+    """
+
+    @staticmethod
+    def _half_width(xvals, bar_width):
+        """Half the candle body width, in x-axis units.
+
+        The delta is kept in the native dtype so datetime64 coordinates
+        yield timedelta64 offsets that add back onto datetime64 bounds.
+        Zero gaps (duplicate x) are dropped so they cannot collapse the
+        width, and coarse timedelta units are promoted to nanoseconds so
+        a fractional ``bar_width`` does not truncate the width to zero.
+        """
+        diffs = np.diff(np.sort(xvals)) if len(xvals) > 1 else np.array([])
+        diffs = diffs[diffs.astype(bool)] if len(diffs) else diffs
+        if not len(diffs):
+            return 0
+        delta = diffs.min()
+        if np.issubdtype(diffs.dtype, np.timedelta64):
+            delta = delta.astype("timedelta64[ns]")
+        return delta * (bar_width / 2.0)
+
+    def _ohlc_colors(self, element):
+        """Per-candle body colors: down when close < open, else up."""
+        open_ = element.dimension_values(element.vdims[0])
+        close = element.dimension_values(element.vdims[3])
+        return np.where(close < open_, self.neg_color, self.pos_color)
+
+    def get_extents(self, element, ranges, range_type="combined", **kwargs):
+        """Envelope the value axis around the full high-low span.
+
+        A Chart defaults the value axis to its first value dimension
+        (open); OHLC must instead span low -> high so candles are never
+        clipped at their wicks. Extents are returned in natural
+        (x=time, y=price) data space; the backend applies invert_axes
+        downstream, so we never swap here.
+        """
+        hdim, ldim = element.vdims[1], element.vdims[2]
+        extents = super().get_extents(element, ranges, range_type, ydim=hdim)
+        if range_type not in ("combined", "data"):
+            return extents
+        l, _, r, _ = extents
+        key = "data" if range_type == "data" else "combined"
+        y0, y1 = util.max_range([ranges[hdim.label][key], ranges[ldim.label][key]])
+        if range_type == "data":
+            return (l, y0, r, y1)
+        padding = 0 if self.overlaid else self.padding
+        _, ypad, _ = get_axis_padding(padding)
+        y0, y1 = util.dimension_range(
+            y0, y1, ranges[hdim.label]["hard"], ranges[hdim.label]["soft"], ypad, self.logy
+        )
+        y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
+        return (l, y0, r, y1)
