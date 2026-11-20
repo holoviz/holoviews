@@ -3,9 +3,12 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
+from bokeh.models import Range1d
 
 import holoviews as hv
+from holoviews.plotting.bokeh.chart import DonutPlot
 
+from ..._deps import ibis, ibis_skip, pl, pl_skip
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
@@ -32,6 +35,7 @@ class TestDonutPlot(TestBokehPlot):
             ([("A", 25), ("B", 50), ("C", 25)], [0.25, 0.5, 0.25], ["A", "B", "C"]),
             ([("Only", 100)], [1.0], ["Only"]),
             ([("A", 0), ("B", 0)], [0.0, 0.0], ["A", "B"]),
+            ([("A", 3), ("B", 0), ("C", 1)], [0.75, 0.0, 0.25], ["A", "B", "C"]),
             ([("A", 1), ("B", pd.NA), ("C", 3)], [0.25, 0.75], ["A", "C"]),
             (
                 [("Rent", pd.NA), (None, 1200), ("Food", 400), ("Transport", 200)],
@@ -204,3 +208,162 @@ class TestDonutPlot(TestBokehPlot):
         )
         _, source = self._get_plot_source(d)
         np.testing.assert_array_equal(source.data["extra"], [100, 300])
+
+    def test_donut_axes_not_categorical(self):
+        plot = bokeh_renderer.get_plot(hv.Donut([("A", 30), ("B", 70)]))
+        assert isinstance(plot.state.x_range, Range1d)
+        assert isinstance(plot.state.y_range, Range1d)
+        assert (plot.state.x_range.start, plot.state.x_range.end) == (-1.1, 1.1)
+
+    @pytest.mark.parametrize(
+        "sibling", [hv.Curve([(-5, 1), (5, 2)]), hv.Bars([("A", 1), ("B", 2)])]
+    )
+    def test_donut_ranges_not_shared_with_layout_siblings(self, sibling):
+        plot = bokeh_renderer.get_plot(hv.Donut([("A", 30), ("B", 70)]) + sibling)
+        donut_plot = plot.traverse(specs=[DonutPlot])[0]
+        x_range = donut_plot.state.x_range
+        assert isinstance(x_range, Range1d)
+        assert (x_range.start, x_range.end) == (-1.1, 1.1)
+
+    def test_donut_overlay_axes_not_categorical(self):
+        plot = bokeh_renderer.get_plot(hv.Donut([("A", 30), ("B", 70)]) * hv.Text(0, 0, "total"))
+        assert isinstance(plot.state.x_range, Range1d)
+        assert (plot.state.x_range.start, plot.state.x_range.end) == (-1, 1)
+
+    def test_donut_negative_values_raise(self):
+        d = hv.Donut([("A", 30), ("B", -10)], vdims=["Amount"])
+        with pytest.raises(ValueError, match=r"non-negative.*'Amount'"):
+            bokeh_renderer.get_plot(d)
+
+    @pytest.mark.parametrize("color", ["red", hv.Cycle(["red", "blue"])])
+    def test_donut_color_error_message(self, color):
+        d = hv.Donut([("A", 30), ("B", 70)]).opts(color=color)
+        with pytest.raises(ValueError, match=r"^Setting color on a Donut .*cmap=\{'Rent'"):
+            bokeh_renderer.get_plot(d)
+
+    def test_donut_show_labels_unknown_key(self):
+        d = hv.Donut([("A", 30), ("B", 70)]).opts(show_labels="{value}")
+        with pytest.raises(ValueError, match=r"unknown key 'value'.*'x', 'y', 'fraction'"):
+            bokeh_renderer.get_plot(d)
+
+    def test_donut_center_label_unknown_key(self):
+        d = hv.Donut([("A", 30), ("B", 70)]).opts(center_label="{sum}")
+        with pytest.raises(ValueError, match=r"unknown key 'sum'.*'total', 'y'"):
+            bokeh_renderer.get_plot(d)
+
+    def test_donut_pan_zoom_not_active(self):
+        plot = bokeh_renderer.get_plot(hv.Donut([("A", 30), ("B", 70)]))
+        toolbar = plot.state.toolbar
+        assert toolbar.active_drag is None
+        assert toolbar.active_scroll == "auto"
+
+    def test_donut_layout_colors_consistent(self):
+        layout = hv.Donut([("A", 1), ("B", 2)]) + hv.Donut([("A", 1), ("C", 2)])
+        plot = bokeh_renderer.get_plot(layout)
+        cmappers = [sp.handles["color_mapper"] for sp in plot.traverse(specs=[DonutPlot])]
+        colors = [dict(zip(cm.factors, cm.palette, strict=True)) for cm in cmappers]
+        assert colors[0]["A"] == colors[1]["A"]
+        assert colors[0]["B"] != colors[1]["C"]
+
+    def test_donut_holomap_colors_consistent(self):
+        hmap = hv.HoloMap({0: hv.Donut([("A", 1), ("B", 2)]), 1: hv.Donut([("C", 2)])})
+        plot = bokeh_renderer.get_plot(hmap)
+        cmapper = plot.handles["color_mapper"]
+        assert set(cmapper.factors) == {"A", "B", "C"}
+        plot.update((1,))
+        assert set(cmapper.factors) == {"A", "B", "C"}
+
+    def test_donut_duplicated_category_one_factor(self):
+        plot = bokeh_renderer.get_plot(hv.Donut([("A", 1), ("B", 2), ("A", 3)]))
+        assert plot.handles["color_mapper"].factors == ["A", "B"]
+
+    def test_donut_missing_category_takes_no_color(self):
+        plot = bokeh_renderer.get_plot(hv.Donut([(None, 1), ("A", 2), ("B", 3)]))
+        assert plot.handles["color_mapper"].factors == ["A", "B"]
+
+    def test_donut_round(self):
+        plot = bokeh_renderer.get_plot(
+            hv.Donut([("A", 30), ("B", 70)]).opts(width=600, height=300)
+        )
+        assert plot.data_aspect == 1
+        x, y = plot.state.x_range, plot.state.y_range
+        assert (x.end - x.start) == 2 * (y.end - y.start)
+
+    def test_donut_aspect_ignored(self):
+        state = bokeh_renderer.get_plot(hv.Donut([("A", 30), ("B", 70)]).opts(aspect=2)).state
+        assert state.frame_width == state.frame_height
+
+    def test_donut_inner_radius_default(self):
+        plot = bokeh_renderer.get_plot(hv.Donut([("A", 30), ("B", 70)]))
+        assert DonutPlot.inner_radius == 0.8
+        assert plot.handles["annular_wedge_1_glyph"].inner_radius == 0.8
+
+    @pytest.mark.parametrize(
+        ("opts", "radius"),
+        [
+            ({}, np.sqrt((0.8**2 + 1) / 2)),
+            ({"inner_radius": 0}, np.sqrt(0.5)),
+            ({"label_radius": 1.2}, 1.2),
+        ],
+    )
+    def test_donut_label_radius(self, opts, radius):
+        d = hv.Donut([("A", 1), ("B", 1)]).opts(show_labels=True, **opts)
+        plot = bokeh_renderer.get_plot(d)
+        data = plot.handles["text_1_source"].data
+        np.testing.assert_almost_equal(np.hypot(data["x"], data["y"]), [radius, radius])
+
+    def test_donut_labels_centered_inside(self):
+        d = hv.Donut([("A", 1), ("B", 1), ("C", 1)]).opts(show_labels=True)
+        plot = bokeh_renderer.get_plot(d)
+        assert plot.handles["text_1_source"].data["text_align"] == ["center"] * 3
+        assert plot.handles["text_1_glyph"].text_baseline == "middle"
+
+    def test_donut_labels_aligned_outside(self):
+        d = hv.Donut([("A", 1), ("B", 1), ("C", 1)]).opts(show_labels=True, label_radius=1.2)
+        plot = bokeh_renderer.get_plot(d)
+        assert plot.handles["text_1_source"].data["text_align"] == ["left", "right", "left"]
+
+    @pl_skip
+    @pytest.mark.parametrize("lazy", [False, True])
+    def test_donut_polars(self, lazy):
+        df = pl.DataFrame({"x": ["A", None, "C"], "y": [10, 20, 30], "extra": [1, 2, 3]})
+        d = hv.Donut(df.lazy() if lazy else df, kdims="x", vdims=["y", "extra"])
+        _, source = self._get_plot_source(d)
+        assert list(source.data["x"]) == ["A", "C"]
+        np.testing.assert_array_equal(source.data["extra"], [1, 3])
+
+    @ibis_skip
+    # Raised by ibis' default backend with pandas 3
+    @pytest.mark.filterwarnings(r"ignore:The 'future\.infer_string' option is deprecated")
+    def test_donut_ibis(self):
+        df = pd.DataFrame({"x": ["A", None, "C"], "y": [10, 20, 30]})
+        _, source = self._get_plot_source(hv.Donut(ibis.memtable(df), kdims="x", vdims="y"))
+        assert list(source.data["x"]) == ["A", "C"]
+
+    def test_donut_layout_of_holomaps_colors_by_category(self):
+        layout = hv.NdLayout(
+            {
+                0: hv.Donut([("Rent", 1), ("Food", 2)]),
+                1: hv.Donut([("Travel", 1), ("Misc", 2), ("Rent", 3)]),
+                2: hv.Donut([("Misc", 1), ("Gym", 2)]),
+            }
+        )
+        plot = bokeh_renderer.get_plot(layout)
+        cmappers = [sp.handles["color_mapper"] for sp in plot.traverse(specs=[DonutPlot])]
+        assert len({tuple(cm.factors) for cm in cmappers}) == 1
+        assert len({tuple(cm.palette) for cm in cmappers}) == 1
+        assert len(set(cmappers[0].factors)) == 5
+
+    def test_donut_holomap_colors_by_category(self):
+        hmap = hv.HoloMap(
+            {
+                0: hv.Donut([("Rent", 1), ("Food", 2)]),
+                1: hv.Donut([("Travel", 1), ("Misc", 2), ("Rent", 3)]),
+            }
+        )
+        plot = bokeh_renderer.get_plot(hmap)
+        cmapper = plot.handles["color_mapper"]
+        rent = cmapper.palette[cmapper.factors.index("Rent")]
+        plot.update((1,))
+        assert cmapper.palette[cmapper.factors.index("Rent")] == rent
+        assert {"Rent", "Food", "Travel", "Misc"} <= set(cmapper.factors)

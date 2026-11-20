@@ -134,7 +134,18 @@ class Donut(Selection1DExpr, Chart):
     """Donut is a Chart element representing proportional data as
     wedges of an annular (ring) shape. The key dimension represents
     the categorical label for each slice and the value dimension
-    represents the size of each slice.
+    represents the size of each slice, which must be non-negative.
+
+    Rows sharing a category are not aggregated: each is drawn as its
+    own wedge, and all of them share one color and one legend entry.
+    To get a single wedge per category, aggregate the data first, for
+    example with ``donut.aggregate("x", function=np.sum)``.
+
+    The donut is always round, so the ``aspect`` option is ignored. To
+    size it, set ``frame_width`` or ``frame_height`` (the frame is then
+    square), or both ``width`` and ``height``. With only ``width`` or
+    ``height``, Bokeh uses it for both frame dimensions and logs a
+    warning.
 
     """
 
