@@ -22,7 +22,7 @@ jobs:
         downstream_repo: [hvplot, geoviews]
       fail-fast: false
     steps:
-      - uses: holoviz-dev/holoviz_tasks/downstream-tests@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
+      - uses: holoviz-dev/holoviz_tasks/downstream-tests@v1.0.15
         with:
           downstream_repo: ${{ matrix.downstream_repo }}
           github_token: ${{ secrets.ACCESS_TOKEN }}
