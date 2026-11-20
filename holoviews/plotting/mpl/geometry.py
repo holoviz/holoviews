@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import numpy as np
 from matplotlib.collections import LineCollection, PatchCollection
+from matplotlib.dates import DateFormatter, date2num
 from matplotlib.patches import Rectangle
 
+from ...core.dimension import Dimension
 from ...core.options import abbreviated_exception
+from ...core.util import isdatetime
 from ..mixins import GeomMixin
 from .element import ColorbarPlot
 from .path import PathPlot, PolygonPlot
@@ -36,10 +39,16 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
     def get_data(self, element, ranges, style):
         inds = (1, 0, 3, 2) if self.invert_axes else (0, 1, 2, 3)
         dims = element.dimensions()
-        data = [
-            [(x0, y0), (x1, y1)]
-            for x0, y0, x1, y1 in zip(*(element.dimension_values(d) for d in inds), strict=True)
-        ]
+        generic_dt_format = Dimension.type_formatters[np.datetime64]
+        values = []
+        for d in inds:
+            vs = element.dimension_values(d)
+            if isdatetime(vs):
+                dt_format = Dimension.type_formatters.get(type(vs[0]), generic_dt_format)
+                vs = date2num(vs)
+                dims[d] = dims[d].clone(value_format=DateFormatter(dt_format))
+            values.append(vs)
+        data = [[(x0, y0), (x1, y1)] for x0, y0, x1, y1 in zip(*values, strict=True)]
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
         return (data,), style, {"dimensions": dims}
