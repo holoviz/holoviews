@@ -35,6 +35,7 @@ from holoviews.core.util import (
     is_null_or_na_scalar,
     isdatetime,
     isfinite,
+    isnan_array,
     make_path_unique,
     max_range,
     merge_dimensions,
@@ -1257,3 +1258,42 @@ def test_isdatetime_pyarrow():
     ser = pd.to_datetime(["2024-01-01", "2024-01-02"]).astype("date32[pyarrow]")
     assert isinstance(ser.dtype, pd.core.dtypes.dtypes.ArrowDtype)
     assert isdatetime(ser)
+
+
+class TestIsnanArray:
+    """isnan_array must find the gaps that separate multi-part geometries,
+    whatever dtype the coordinates happen to have."""
+
+    @pytest.mark.parametrize(("values", "expected"), [
+        (np.array([1.0, np.nan]), [False, True]),
+        (np.array([1, 2]), [False, False]),
+        (np.array([True, False]), [False, False]),
+        (np.array([1 + 1j, complex("nan")]), [False, True]),
+        (np.array(["2024-01-01", "NaT"], dtype="datetime64[ns]"), [False, True]),
+        (np.array([1, "NaT"], dtype="timedelta64[ns]"), [False, True]),
+        (np.array([dt.datetime(2024, 1, 1), None], dtype=object), [False, True]),
+        (np.array(["a", "b"]), [False, False]),
+        (np.array([]), []),
+    ])
+    def test_dtypes(self, values, expected):
+        assert_data_equal(np.asarray(isnan_array(values)), np.array(expected, dtype=bool))
+
+    def test_two_dimensional_object_array(self):
+        geom = np.array([[1.0, np.datetime64("2024-01-01", "ns")],
+                         [np.nan, np.datetime64("NaT", "ns")]], dtype=object)
+        assert_data_equal(np.asarray(isnan_array(geom)),
+                          np.array([[False, False], [True, True]]))
+
+    def test_pandas_series(self):
+        assert_data_equal(np.asarray(isnan_array(pd.Series([1.0, None]))),
+                          np.array([False, True]))
+
+    def test_tz_aware_index_is_not_boxed(self):
+        """A tz-aware index must not go through np.asarray, which would box
+        every value into a Python object and is thousands of times slower."""
+        idx = pd.DatetimeIndex(["2024-01-01", None], tz="UTC")
+        assert_data_equal(np.asarray(isnan_array(idx)), np.array([False, True]))
+
+    def test_nullable_extension_array(self):
+        assert_data_equal(np.asarray(isnan_array(pd.array([1, None], dtype="Int64"))),
+                          np.array([False, True]))

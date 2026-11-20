@@ -130,7 +130,7 @@ class MultiInterface(Interface):
                     raise DataError("Polygons holes must be declared as a list-of-lists.", cls)
                 subholes = holes[0]
                 coords = ds.data[ds.kdims[0].name]
-                splits = np.isnan(coords.astype("float")).sum()
+                splits = util.isnan_array(coords).sum()
                 if len(subholes) != (splits + 1):
                     raise DataError(
                         "Polygons with holes containing multi-geometries "
@@ -634,7 +634,7 @@ def ensure_ring(geom, values=None):
     if values is None:
         values = geom
 
-    breaks = np.where(np.isnan(geom.astype("float")).sum(axis=1))[0]
+    breaks = np.where(util.isnan_array(geom).sum(axis=1))[0]
     starts = [0, *(breaks + 1)]
     ends = [*(breaks - 1), len(geom) - 1]
     zipped = zip(geom[starts], geom[ends], ends, values[starts], strict=None)
