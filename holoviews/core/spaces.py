@@ -1197,14 +1197,24 @@ class DynamicMap(HoloMap):
         )
 
         # Ensure the clone references this object to ensure
-        # stream sources are inherited
+        # stream sources are inherited. The callable indexes the
+        # original so shared callbacks keep its cache current.
         if clone.callback is self.callback:
             from ..operation import function
+
+            def eval_original(*key, **kwargs):
+                if self._posarg_keys and not key:
+                    key = tuple(kwargs[k] for k in self._posarg_keys)
+                return self[key]
 
             with util.disable_constant(clone):
                 op = function.instance(fn=lambda x, **kwargs: x)
                 clone.callback = clone.callback.clone(
-                    inputs=[self], link_inputs=link, operation=op, operation_kwargs={}
+                    callable=eval_original,
+                    inputs=[self],
+                    link_inputs=link,
+                    operation=op,
+                    operation_kwargs={},
                 )
         return clone
 
