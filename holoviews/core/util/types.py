@@ -14,7 +14,7 @@ from .dependencies import cftime, pd
 if t.TYPE_CHECKING:
     from pandas.core.arrays.masked import BaseMaskedArray
     from pandas.core.dtypes.dtypes import DatetimeTZDtype
-    from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries
+    from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries  # ty: ignore[missing-module-member]
 
     type _PdDatetimeT = pd.Timestamp | pd.Period | DatetimeTZDtype
     type _PdTimedeltaT = pd.Timedelta
@@ -120,7 +120,7 @@ def timedelta_types() -> t.Iterator[type[_TimedeltaT]]:
 def arraylike_types() -> t.Iterator[type[_ArraylikeT]]:
     yield from (np.ndarray, nw.Series)
     if bool(pd):
-        from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries
+        from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries  # ty: ignore[missing-module-member]
 
         yield from (ABCIndex, ABCSeries, ABCExtensionArray)
 
