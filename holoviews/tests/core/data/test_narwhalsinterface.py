@@ -231,6 +231,7 @@ class PolarsNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
 
 
 @dd_skip
+@pytest.mark.filterwarnings("ignore:Dask support is moving out of Narwhals")
 class DaskNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     __test__ = True
     narwhals_backend = "pandas"
