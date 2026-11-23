@@ -189,6 +189,8 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
         *border_properties,
         "cmap",
         "angle",
+        "x_offset",
+        "y_offset",
         "text_outline_color",
         *(("text_outline_width",) if BOKEH_GE_3_9_0 else ()),
     ]
