@@ -241,6 +241,17 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         assert np.isnan(z0)
         assert np.isnan(z1)
 
+    def test_boolean_coordinate_dimension_values(self):
+        da = xr.DataArray(
+            [[1.5, 1.6], [0.01, -0.02]],
+            coords={"power_on": [True, False], "sample_num": [1, 2]},
+            name="voltage",
+        )
+        ds = hv.Dataset(da)
+        assert_data_equal(ds.dimension_values("power_on"), np.array([False, False, True, True]))
+        assert_data_equal(ds.dimension_values("sample_num"), np.array([1, 2, 1, 2]))
+        assert_data_equal(ds.dimension_values("voltage"), np.array([0.01, -0.02, 1.5, 1.6]))
+
     def test_datetime_bins_range(self, rng):
         xs = [dt.datetime(2018, 1, i) for i in range(1, 11)]
         ys = np.arange(10)

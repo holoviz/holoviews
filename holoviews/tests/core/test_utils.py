@@ -1056,6 +1056,12 @@ def test_search_indices_dtype_object():
     search_indices(values, source)
 
 
+def test_cartesian_product_boolean_array():
+    xs, ys = util.cartesian_product([np.array([True, False]), np.array([1, 2, 3])])
+    assert_data_equal(np.array(xs), np.array([True, True, True, False, False, False]))
+    assert_data_equal(np.array(ys), np.array([1, 2, 3, 1, 2, 3]))
+
+
 def test_unique_array_categorial(rng):
     ser = pd.Series(rng.choice(["a", "b", "c"], 100)).astype("category")
     res = unique_array([ser])

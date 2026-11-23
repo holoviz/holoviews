@@ -2126,7 +2126,13 @@ def cartesian_product(arrays, flat=True, copy=False):
     views can be turned into regular arrays with the copy flag.
 
     """
-    arrays = np.broadcast_arrays(*np.ix_(*arrays))
+    ndim = len(arrays)
+    arrays = np.broadcast_arrays(
+        *(
+            np.asarray(arr).reshape((1,) * i + (-1,) + (1,) * (ndim - i - 1))
+            for i, arr in enumerate(arrays)
+        )
+    )
     if flat:
         return tuple(arr.flatten() if copy else arr.flat for arr in arrays)
     return tuple(arr.copy() if copy else arr for arr in arrays)
