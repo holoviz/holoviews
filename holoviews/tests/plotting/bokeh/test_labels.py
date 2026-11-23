@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
 import holoviews as hv
@@ -59,6 +60,62 @@ class TestLabelsPlot(TestBokehPlot):
         assert glyph.x == "y"
         assert glyph.y == "x"
         assert glyph.text == "Label"
+
+    @pytest.mark.parametrize("invert_axes", [False, True])
+    def test_labels_screen_offsets(self, invert_axes):
+        labels = hv.Labels([(1, 2, "A"), (3, 4, "B")]).opts(
+            x_offset=8, y_offset=-6, invert_axes=invert_axes
+        )
+        plot = bokeh_renderer.get_plot(labels)
+        glyph = plot.handles["glyph"]
+
+        assert glyph.x_offset == 8
+        assert glyph.y_offset == -6
+        assert glyph.x == ("y" if invert_axes else "x")
+        assert glyph.y == ("x" if invert_axes else "y")
+        np.testing.assert_array_equal(plot.handles["source"].data["x"], [1, 3])
+        np.testing.assert_array_equal(plot.handles["source"].data["y"], [2, 4])
+
+    def test_labels_screen_and_data_offsets(self):
+        labels = hv.Labels([(1, 2, "A")]).opts(xoffset=0.2, yoffset=-0.3, x_offset=8, y_offset=-6)
+        plot = bokeh_renderer.get_plot(labels)
+        glyph = plot.handles["glyph"]
+
+        assert glyph.x_offset == 8
+        assert glyph.y_offset == -6
+        assert property_to_dict(glyph.x)["transform"].value == 0.2
+        assert property_to_dict(glyph.y)["transform"].value == -0.3
+
+    def test_labels_screen_offsets_from_dimensions(self):
+        labels = hv.Labels(
+            [(1, 2, "A", 8, -3), (3, 4, "B", -4, 5)], vdims=["text", "dx", "dy"]
+        ).opts(x_offset="dx", y_offset=hv.dim("dy") * 2)
+        plot = bokeh_renderer.get_plot(labels)
+        glyph = plot.handles["glyph"]
+        source = plot.handles["source"]
+
+        assert property_to_dict(glyph.x_offset) == {"field": "x_offset"}
+        assert property_to_dict(glyph.y_offset) == {"field": "y_offset"}
+        np.testing.assert_array_equal(source.data["x_offset"], [8, -4])
+        np.testing.assert_array_equal(source.data["y_offset"], [-6, 10])
+
+    def test_labels_screen_offsets_update(self):
+        labels = hv.Labels([(1, 2, "A")])
+        hmap = hv.HoloMap(
+            {
+                0: labels.opts(x_offset=8, y_offset=-6, clone=True),
+                1: labels.opts(x_offset=-4, y_offset=10, clone=True),
+            }
+        )
+        plot = bokeh_renderer.get_plot(hmap)
+        glyph = plot.handles["glyph"]
+        plot.update((0,))
+        assert glyph.x_offset == 8
+        assert glyph.y_offset == -6
+
+        plot.update((1,))
+        assert glyph.x_offset == -4
+        assert glyph.y_offset == 10
 
     ###########################
     #    Styling mapping      #
