@@ -22,6 +22,19 @@ elif BOKEH_GE_3_3_0:
     from bokeh.models.coordinates import Node
 
 
+_INVERTED = {"x": "y", "y": "x"}
+
+
+def _categorical_curve(categorical):
+    data = [("a", 1), ("b", 3), ("c", 2)]
+    return hv.Curve(data if categorical == "x" else [(v, k) for k, v in data])
+
+
+def _factors(plot, axis):
+    axis_range = getattr(plot.state, f"{axis}_range")
+    return list(axis_range.factors) if hasattr(axis_range, "factors") else None
+
+
 class TestHVLinePlot(TestBokehPlot):
     def test_hline_invert_axes(self):
         hline = hv.HLine(1.1).opts(invert_axes=True)
@@ -401,6 +414,52 @@ class TestHVLinesPlot(TestBokehPlot):
         np.testing.assert_allclose(data["alpha"], [0, 0.5, 1])
         assert data["line_dash"] == ["dashed", "solid", "solid"]
 
+    @pytest.mark.parametrize("invert_axes", [False, True])
+    @pytest.mark.parametrize(
+        ("annotation", "categorical"),
+        [(hv.VLines, "y"), (hv.HLines, "x"), (hv.VLines, "x"), (hv.HLines, "y")],
+    )
+    def test_lines_overlay_categorical_axis(self, annotation, categorical, invert_axes):
+        overlay = (_categorical_curve(categorical) * annotation([1.5, 2.5])).opts(
+            invert_axes=invert_axes
+        )
+        plot = bokeh_renderer.get_plot(overlay)
+
+        axis = _INVERTED[categorical] if invert_axes else categorical
+        assert _factors(plot, axis) == ["a", "b", "c"]
+        assert _factors(plot, _INVERTED[axis]) is None
+
+    @pytest.mark.parametrize("invert_axes", [False, True])
+    @pytest.mark.parametrize(("annotation", "axis"), [(hv.VLines, "x"), (hv.HLines, "y")])
+    def test_lines_categorical_values_extend_factors(self, annotation, axis, invert_axes):
+        curve = hv.Curve([("a", 1), ("b", 3)] if axis == "x" else [(1, "a"), (3, "b")])
+        plot = bokeh_renderer.get_plot((curve * annotation(["c"])).opts(invert_axes=invert_axes))
+
+        factor_axis = _INVERTED[axis] if invert_axes else axis
+        assert _factors(plot, factor_axis) == ["a", "b", "c"]
+        assert _factors(plot, _INVERTED[factor_axis]) is None
+
+    @pytest.mark.parametrize("invert_axes", [False, True])
+    @pytest.mark.parametrize(("annotation", "axis"), [(hv.VLines, "x"), (hv.HLines, "y")])
+    def test_lines_categorical_standalone(self, annotation, axis, invert_axes):
+        plot = bokeh_renderer.get_plot(annotation(["a", "b"]).opts(invert_axes=invert_axes))
+
+        factor_axis = _INVERTED[axis] if invert_axes else axis
+        assert _factors(plot, factor_axis) == ["a", "b"]
+        assert _factors(plot, _INVERTED[factor_axis]) is None
+
+    @pytest.mark.parametrize(
+        ("annotation", "axis"),
+        [(hv.VLines, "x"), (hv.HLines, "y")],
+    )
+    def test_lines_nondefault_kdim_categorical(self, annotation, axis):
+        curve = hv.Curve([("a", 1), ("b", 3)] if axis == "x" else [(1, "a"), (3, "b")])
+        lines = annotation({"extra": ["c"]}, kdims=["extra"])
+        plot = bokeh_renderer.get_plot(curve * lines)
+
+        assert _factors(plot, axis) == ["a", "b", "c"]
+        assert _factors(plot, _INVERTED[axis]) is None
+
 
 class TestHVSpansPlot(TestBokehPlot):
     def setup_class(self):
@@ -605,3 +664,55 @@ class TestHVSpansPlot(TestBokehPlot):
         plot_el = bokeh_renderer.get_plot(spans * fig)
         assert plot_el.handles["x_range"].start == 0
         assert plot_el.handles["x_range"].end == 3
+
+    @pytest.mark.parametrize("invert_axes", [False, True])
+    @pytest.mark.parametrize(("annotation", "axis"), [(hv.HSpans, "y"), (hv.VSpans, "x")])
+    @pytest.mark.parametrize(
+        ("spans", "expected"),
+        [
+            pytest.param([("d", "a")], ["a", "b", "c", "d"], id="start-only"),
+            pytest.param([("a", "d")], ["a", "b", "c", "d"], id="end-only"),
+            pytest.param([("d", "e")], ["a", "b", "c", "d", "e"], id="both"),
+            pytest.param([("e", "d")], ["a", "b", "c", "e", "d"], id="both-reversed"),
+        ],
+    )
+    def test_spans_categorical_endpoints_extend_factors(
+        self, annotation, axis, spans, expected, invert_axes
+    ):
+        overlay = _categorical_curve(axis) * annotation(spans)
+        plot = bokeh_renderer.get_plot(overlay.opts(invert_axes=invert_axes))
+
+        factor_axis = _INVERTED[axis] if invert_axes else axis
+        assert _factors(plot, factor_axis) == expected
+        assert _factors(plot, _INVERTED[factor_axis]) is None
+
+    @pytest.mark.parametrize("invert_axes", [False, True])
+    @pytest.mark.parametrize(("annotation", "axis"), [(hv.HSpans, "y"), (hv.VSpans, "x")])
+    def test_spans_numeric_values_keep_categorical_factors(self, annotation, axis, invert_axes):
+        overlay = _categorical_curve(axis) * annotation([(1, 2)])
+        plot = bokeh_renderer.get_plot(overlay.opts(invert_axes=invert_axes))
+
+        factor_axis = _INVERTED[axis] if invert_axes else axis
+        assert _factors(plot, factor_axis) == ["a", "b", "c"]
+        assert _factors(plot, _INVERTED[factor_axis]) is None
+
+    @pytest.mark.parametrize("invert_axes", [False, True])
+    @pytest.mark.parametrize(
+        ("annotation", "axis", "glyphs"),
+        [(hv.HSpans, "y", ("HStrip", "VStrip")), (hv.VSpans, "x", ("VStrip", "HStrip"))],
+    )
+    def test_spans_categorical_endpoints_in_glyph_data(
+        self, annotation, axis, glyphs, invert_axes
+    ):
+        spans = annotation([("b", "d")])
+        overlay = (_categorical_curve(axis) * spans).opts(invert_axes=invert_axes)
+        plot = bokeh_renderer.get_plot(overlay)
+
+        spans_plot = next(
+            sp for sp in plot.subplots.values() if isinstance(sp.current_frame, annotation)
+        )
+        assert type(spans_plot.handles["glyph"]).__name__ == glyphs[invert_axes]
+        data = spans_plot.handles["glyph_renderer"].data_source.data
+        start, end = (str(d) for d in spans.kdims)
+        assert list(data[start]) == ["b"]
+        assert list(data[end]) == ["d"]

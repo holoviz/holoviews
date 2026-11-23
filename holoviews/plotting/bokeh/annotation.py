@@ -10,7 +10,7 @@ from bokeh.models import Arrow, BoxAnnotation, NormalHead, Slope, Span, TeeHead
 from bokeh.transform import dodge
 from panel.models import HTML
 
-from ...core.util import datetime_types, dimension_sanitizer
+from ...core.util import datetime_types, dimension_sanitizer, unique_iterator
 from ...element import HLine, HLines, HSpans, VLine, VLines, VSpan, VSpans
 from ..plot import GenericElementPlot
 from .element import AnnotationPlot, ColorbarPlot, CompositeElementPlot, ElementPlot
@@ -50,6 +50,20 @@ class _SyntheticAnnotationPlot(ColorbarPlot):
         if isinstance(element, (HLines, HSpans)):
             return None, element.kdims[0], None
         return element.kdims[0], None, None
+
+    def _get_factors(self, element, ranges):
+        # All kdims sit on a single axis (spans have a start and an end), so
+        # the base class's one-kdim-per-axis unpacking does not apply
+        factors = list(
+            unique_iterator(
+                itertools.chain.from_iterable(
+                    self._get_dimension_factors(element, ranges, dim) for dim in element.kdims
+                )
+            )
+        )
+        on_y = self._get_axis_dims(element)[1] is not None
+        coords = ([], factors) if on_y else (factors, [])
+        return coords[::-1] if self.invert_axes else coords
 
     def _init_glyph(self, plot, mapping, properties):
         self._plot_methods = {"single": self._methods[self.invert_axes]}
