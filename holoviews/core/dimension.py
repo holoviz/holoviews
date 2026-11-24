@@ -409,9 +409,11 @@ class Dimension(param.Parameterized):
         """Implements equals operator including sanitized comparison."""
         if isinstance(other, Dimension):
             return self.label == other.label
-
-        # For comparison to strings. Name may be sanitized.
-        return other in [self.name, self.label, util.dimension_sanitizer(self.name)]
+        try:
+            # For comparison to strings. Name may be sanitized.
+            return other in [self.name, self.label, util.dimension_sanitizer(self.name)]
+        except Exception:
+            return False
 
     def __ne__(self, other):
         """Implements not equal operator including sanitized comparison."""
