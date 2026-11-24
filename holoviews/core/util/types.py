@@ -14,7 +14,7 @@ from .dependencies import cftime, pd
 if t.TYPE_CHECKING:
     from pandas.core.arrays.masked import BaseMaskedArray
     from pandas.core.dtypes.dtypes import DatetimeTZDtype
-    from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries
+    from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries  # ty: ignore[missing-module-member]
 
     type _PdDatetimeT = pd.Timestamp | pd.Period | DatetimeTZDtype
     type _PdTimedeltaT = pd.Timedelta
@@ -85,7 +85,7 @@ generator_types = (zip, range, GeneratorType)
 
 @gen_types
 def pandas_datetime_types() -> t.Iterator[type[_PdDatetimeT]]:
-    if pd:
+    if bool(pd):
         from pandas.core.dtypes.dtypes import DatetimeTZDtype
 
         yield from (pd.Timestamp, pd.Period, DatetimeTZDtype)
@@ -93,7 +93,7 @@ def pandas_datetime_types() -> t.Iterator[type[_PdDatetimeT]]:
 
 @gen_types
 def pandas_timedelta_types() -> t.Iterator[type[_PdTimedeltaT]]:
-    if pd:
+    if bool(pd):
         yield pd.Timedelta
 
 
@@ -119,8 +119,8 @@ def timedelta_types() -> t.Iterator[type[_TimedeltaT]]:
 @gen_types
 def arraylike_types() -> t.Iterator[type[_ArraylikeT]]:
     yield from (np.ndarray, nw.Series)
-    if pd:
-        from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries
+    if bool(pd):
+        from pandas.core.dtypes.generic import ABCExtensionArray, ABCIndex, ABCSeries  # ty: ignore[missing-module-member]
 
         yield from (ABCIndex, ABCSeries, ABCExtensionArray)
 
@@ -129,7 +129,7 @@ def arraylike_types() -> t.Iterator[type[_ArraylikeT]]:
 def masked_types():
     yield np.ma.core.MaskedArray
 
-    if pd:
+    if bool(pd):
         from pandas.core.arrays.masked import BaseMaskedArray
 
         yield BaseMaskedArray

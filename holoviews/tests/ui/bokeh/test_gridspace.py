@@ -139,13 +139,7 @@ def test_gridspace_axis_alignment(serve_hv, xaxis, yaxis, shared_xaxis, shared_y
 
 
 @pytest.mark.usefixtures("bokeh_backend")
-@pytest.mark.parametrize(
-    "id",
-    [
-        ".bk-Canvas",
-        pytest.param(".bk-CartesianFrame", marks=pytest.mark.xfail(reason="bokeh#14492")),
-    ],
-)
+@pytest.mark.parametrize("id", [".bk-Canvas", ".bk-CartesianFrame"])
 def test_gridmatrix_alignment(serve_hv, id):
     ds = hv.Dataset({"a": [0, 1, 2], "b": [0, 50000, 100000]}, kdims=["a", "b"])
     grid = gridmatrix(ds, chart_type=hv.Points)

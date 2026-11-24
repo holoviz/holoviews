@@ -786,6 +786,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         return copied_tools
 
+    @property
+    def _has_hover_tool(self):
+        if self.hover_tooltips:
+            return True
+        cb_models = [m for cb in self.callbacks for m in cb.models]
+        return any(
+            tool in ("hover", "vline", "hline") or isinstance(tool, tools.HoverTool)
+            for tool in cb_models + self.default_tools + self.tools
+        )
+
     def _update_hover(self, element):
         tool = self.handles["hover"]
         if "hv_created" in tool.tags:
@@ -4057,8 +4067,13 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 if overlay_hover.renderers == "auto":
                     overlay_hover.renderers = []
                 for k, _ in items:
-                    if k in self.subplots and "glyph_renderer" in self.subplots[k].handles:
-                        renderer = self.subplots[k].handles["glyph_renderer"]
+                    subplot = self.subplots.get(k)
+                    if (
+                        subplot is not None
+                        and "glyph_renderer" in subplot.handles
+                        and subplot._has_hover_tool
+                    ):
+                        renderer = subplot.handles["glyph_renderer"]
                         if renderer not in overlay_hover.renderers:
                             overlay_hover.renderers.append(renderer)
             if not self.overlaid and not self.tabs:

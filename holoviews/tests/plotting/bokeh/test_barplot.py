@@ -13,6 +13,7 @@ from bokeh.models import (
 )
 
 import holoviews as hv
+from holoviews.core.util.dependencies import PARAM_VERSION
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.testing import assert_data_equal
 
@@ -271,7 +272,10 @@ class TestBarPlot(TestBokehPlot):
         assert_data_equal(source.data["Value"], np.array([1, 2, 3]))
         assert glyph.bottom == 0.01
         assert y_range.start == 0.01
-        assert y_range.end == 3.348369522101713
+        if PARAM_VERSION >= (2, 5, 0):
+            assert y_range.end == 3
+        else:
+            assert y_range.end == 3.348369522101713
 
     def test_bars_logy_explicit_range(self):
         bars = hv.Bars(

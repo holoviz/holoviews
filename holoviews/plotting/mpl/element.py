@@ -574,7 +574,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         if isinstance(ticks, np.ndarray):
             ticks = list(ticks)
-        if isinstance(ticks, (list, tuple)) and all(isinstance(l, list) for l in ticks):
+        if isinstance(ticks, (list, tuple)) and ticks and all(isinstance(l, list) for l in ticks):
             axis.set_ticks(ticks[0])
             axis.set_ticklabels(ticks[1])
         elif isinstance(ticks, ticker.Locator):

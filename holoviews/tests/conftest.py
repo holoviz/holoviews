@@ -48,27 +48,13 @@ def pytest_collection_modifyitems(config, items):
             skipped.append(item)
 
     config.hook.pytest_deselected(items=skipped)
-    # Sorted because pytest 8.4.0 and pytest-playwright
-    # https://github.com/microsoft/playwright-pytest/pull/284
-    items[:] = sorted(selected, key=lambda x: x.path)
+    items[:] = selected
 
 
 with contextlib.suppress(ImportError):
     import matplotlib as mpl
 
     mpl.use("agg")
-
-
-@pytest.fixture
-def ibis_sqlite_backend():
-    try:
-        import ibis
-    except ImportError:
-        yield None
-    else:
-        ibis.set_backend("sqlite")
-        yield
-        ibis.set_backend(None)
 
 
 def _plotting_backend(backend):

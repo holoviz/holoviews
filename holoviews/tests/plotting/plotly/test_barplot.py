@@ -5,11 +5,14 @@ import pandas as pd
 import pytest
 
 import holoviews as hv
+from holoviews.core.util.dependencies import PARAM_VERSION
 from holoviews.plotting.plotly.util import PLOTLY_VERSION
 from holoviews.testing import assert_data_equal
 
 from ...utils import LoggingComparison
 from .test_plot import TestPlotlyPlot
+
+PARAM_GE_2_5_0 = PARAM_VERSION >= (2, 5, 0)
 
 
 class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
@@ -21,7 +24,7 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
         assert state["data"][0]["type"] == "bar"
         assert state["layout"]["xaxis"]["range"] == [None, None]
         assert state["layout"]["xaxis"]["title"]["text"] == "x"
-        assert state["layout"]["yaxis"]["range"] == [0, 3.2]
+        assert state["layout"]["yaxis"]["range"] == [0, 3 if PARAM_GE_2_5_0 else 3.2]
         assert state["layout"]["yaxis"]["title"]["text"] == "y"
 
     def test_bars_plot_inverted(self):
@@ -30,7 +33,7 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
         assert state["data"][0]["y"] == [0, 1, 2]
         assert_data_equal(state["data"][0]["x"], np.array([3, 2, 1]))
         assert state["data"][0]["type"] == "bar"
-        assert state["layout"]["xaxis"]["range"] == [0, 3.2]
+        assert state["layout"]["xaxis"]["range"] == [0, 3 if PARAM_GE_2_5_0 else 3.2]
         assert state["layout"]["xaxis"]["title"]["text"] == "y"
         assert state["layout"]["yaxis"]["range"] == [None, None]
         assert state["layout"]["yaxis"]["title"]["text"] == "x"
@@ -44,7 +47,7 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
         assert state["layout"]["barmode"] == "group"
         assert state["layout"]["xaxis"]["range"] == [None, None]
         assert state["layout"]["xaxis"]["title"]["text"] == "A, B"
-        assert state["layout"]["yaxis"]["range"] == [0, 4.3]
+        assert state["layout"]["yaxis"]["range"] == [0, 4 if PARAM_GE_2_5_0 else 4.3]
         assert state["layout"]["yaxis"]["title"]["text"] == "y"
 
     def test_bars_grouped_inverted(self):
@@ -58,7 +61,7 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
         assert state["layout"]["barmode"] == "group"
         assert state["layout"]["yaxis"]["range"] == [None, None]
         assert state["layout"]["yaxis"]["title"]["text"] == "A, B"
-        assert state["layout"]["xaxis"]["range"] == [0, 4.3]
+        assert state["layout"]["xaxis"]["range"] == [0, 4 if PARAM_GE_2_5_0 else 4.3]
         assert state["layout"]["xaxis"]["title"]["text"] == "y"
 
     def test_bars_stacked(self):
@@ -75,7 +78,7 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
         assert state["layout"]["barmode"] == "stack"
         assert state["layout"]["xaxis"]["range"] == [None, None]
         assert state["layout"]["xaxis"]["title"]["text"] == "A"
-        assert state["layout"]["yaxis"]["range"] == [0, 7.6]
+        assert state["layout"]["yaxis"]["range"] == [0, 7 if PARAM_GE_2_5_0 else 7.6]
         assert state["layout"]["yaxis"]["title"]["text"] == "y"
 
     def test_bars_stacked_inverted(self):
@@ -92,7 +95,7 @@ class TestBarsPlot(LoggingComparison, TestPlotlyPlot):
         assert state["layout"]["barmode"] == "stack"
         assert state["layout"]["yaxis"]["range"] == [None, None]
         assert state["layout"]["yaxis"]["title"]["text"] == "A"
-        assert state["layout"]["xaxis"]["range"] == [0, 7.6]
+        assert state["layout"]["xaxis"]["range"] == [0, 7 if PARAM_GE_2_5_0 else 7.6]
         assert state["layout"]["xaxis"]["title"]["text"] == "y"
 
     def test_visible(self):

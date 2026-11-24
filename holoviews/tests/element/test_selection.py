@@ -4,6 +4,8 @@ Test cases for the Comparisons class over the Chart elements
 
 from __future__ import annotations
 
+from importlib import import_module
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -319,6 +321,7 @@ class TestSelection2DExpr:
         ],
     )
     def test_points_selection_geom(self, unimport, module):
+        import_module(module)
         unimport("spatialpandas" if module == "shapely" else "shapely")
         points = hv.Points([3, 2, 1, 3, 4])
         geom = np.array([(-0.1, -0.1), (1.4, 0), (1.4, 2.2), (-0.1, 2.2)])
@@ -337,6 +340,7 @@ class TestSelection2DExpr:
         ],
     )
     def test_points_selection_geom_inverted(self, unimport, module):
+        import_module(module)
         unimport("spatialpandas" if module == "shapely" else "shapely")
         points = hv.Points([3, 2, 1, 3, 4]).opts(invert_axes=True)
         geom = np.array([(-0.1, -0.1), (1.4, 0), (1.4, 2.2), (-0.1, 2.2)])

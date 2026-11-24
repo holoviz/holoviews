@@ -1,10 +1,6 @@
 [workspace]
 name = "holoviews"
-channels = [
-    "pyviz/label/dev",
-    "bokeh/label/rc",
-    { channel = "conda-forge", priority = 0, exclude-newer = "2d" },
-]
+channels = ["pyviz/label/dev", "bokeh/label/rc", "conda-forge"]
 platforms = ["linux-64", "osx-arm64", "win-64"]
 preview = ["pixi-build"]
 requires-pixi = ">=0.68.1"
@@ -46,6 +42,10 @@ no-default-feature = true
 features = ["required", "py314", "optional", "test-core", "test-example", "test-unit-task"]
 no-default-feature = true
 
+[environments.test-315]
+features = ["required", "py315", "optional-315", "test-core", "test-example", "test-unit-task"]
+no-default-feature = true
+
 [environments.test-ui]
 features = ["required", "py314", "optional", "test-core", "test-ui"]
 no-default-feature = true
@@ -76,7 +76,6 @@ no-default-feature = true
 
 [feature.required.dependencies]
 nomkl = "*"
-python-gil = "*"
 holoviews = { path = "." }
 bokeh = ">=3.1"
 colorcet = "*"
@@ -89,9 +88,8 @@ python-dateutil = ">=2.8.2"
 pyviz_comms = ">=2.1"
 
 [feature.required.tasks]
-check-latest-packages = 'python scripts/check_latest_packages.py'
-download-data = 'python scripts/download_data.py'
-sync-git-tags = 'python scripts/sync_git_tags.py holoviews'
+download-data = { cmd = 'python scripts/download_data.py', description = "Download sample data used by tests and examples" }
+sync-git-tags = { cmd = 'python scripts/sync_git_tags.py holoviews', description = "Sync git tags from upstream to your fork" }
 
 [feature.required.activation.env]
 PYTHONIOENCODING = "utf-8"
@@ -105,17 +103,23 @@ python = "3.13.*"
 
 [feature.py314.dependencies]
 python = "3.14.*"
+python-gil = "*"
+
+[feature.py315.dependencies]
+python = "3.15.*"
+python-gil = "*"
 
 [feature.optional.dependencies]
 bokeh_sampledata = "*"
 cftime = "*"
 contourpy = "*"
 dask-core = "*"
-datashader = ">=0.11.1"
+datashader = ">=0.16.0"
 ffmpeg = "*"
 ibis-sqlite = "*"
 ipython = ">=5.4.0"
 matplotlib-base = ">=3"
+# narwhals-dask = "*"
 nbconvert-core = "*"
 netcdf4 = "*"
 networkx = "*"
@@ -135,6 +139,34 @@ tsdownsample = "*"
 xarray = ">=0.10.4"
 xyzservices = "*"
 
+[feature.optional-315.dependencies]
+bokeh_sampledata = "*"
+cftime = "*"
+contourpy = "*"
+dask-core = "*"
+datashader = ">=0.16.0"
+ffmpeg = "*"
+ipython = ">=5.4.0"
+matplotlib-base = ">=3"
+# narwhals-dask = "*"
+nbconvert-core = "*"
+netcdf4 = "*"
+networkx = "*"
+notebook = "*"
+pillow = "*"
+plotly = ">=4.0"
+polars = "*"
+pooch = "*"
+pyarrow = "*"
+python-duckdb = "*"
+# scikit-image = "*"
+scipy = "*"
+shapely = "*"
+spatialpandas = "*"
+tsdownsample = "*"
+xarray = ">=0.10.4"
+xyzservices = "*"
+
 [feature.dev.dependencies]
 jupyterlab = "*"
 jupyterlab-myst = "*"
@@ -142,8 +174,11 @@ pip = "*"
 setuptools_scm = "*"
 
 [feature.dev.tasks]
-lab = 'jupyter lab'
-setup-dev = { depends-on = ["download-data", "lint-install"] }
+lab = { cmd = 'jupyter lab', description = "Start JupyterLab" }
+setup-dev = { depends-on = [
+    "download-data",
+    "lint-install",
+], description = "Set up the development environment" }
 
 # =============================================
 # =================== TESTS ===================
@@ -158,10 +193,10 @@ pytest-rerunfailures = "*"
 pytest-xdist = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-gpu + test-ui environment
-test-unit = 'pytest holoviews/tests -n logical --dist loadgroup'
+test-unit = { cmd = 'pytest holoviews/tests -n logical --dist loadgroup', description = "Run the unit tests" }
 
 [feature.test-example.tasks]
-test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
+test-example = { cmd = 'pytest -n logical --dist loadscope --nbval-lax examples', description = "Run the example notebooks" }
 
 [feature.test-example.dependencies]
 nbval = "*"
@@ -176,6 +211,7 @@ _install-ui = 'playwright install chromium'
 
 [feature.test-ui.tasks.test-ui]
 cmd = 'pytest holoviews/tests/ui --ui --browser chromium'
+description = "Run the UI tests with Playwright"
 depends-on = ["_install-ui"]
 
 [feature.test-gpu]
@@ -187,14 +223,14 @@ NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS = "0"
 
 [feature.test-gpu.dependencies]
 cuda-version = "13.3.*"
-cudf = "26.08.*"
+cudf = "26.10.*"
 cupy = "*"
 # cuspatial = "*"  # Paused development: https://docs.rapids.ai/notices/rsn0045/
 librmm = { version = "*", channel = "rapidsai" }
 rmm = { version = "*", channel = "rapidsai" }
 
 [feature.test-gpu.tasks]
-test-gpu = "pytest holoviews/tests --gpu"
+test-gpu = { cmd = "pytest holoviews/tests --gpu", description = "Run the GPU tests" }
 
 # =============================================
 # =================== DOCS ====================
@@ -223,18 +259,19 @@ _docs_markdown = 'python -m nbsite build-llms --config scripts/llms_config.py'
 
 [feature.doc.tasks.docs-build]
 depends-on = ['_docs-generate-rst', '_docs-refmanual', '_docs-generate', '_docs_markdown']
+description = "Build the documentation"
 
 # =============================================
 # ================== BUILD ====================
 # =============================================
 [feature.build.dependencies]
 python-build = "*"
-conda-build = "*"
+conda-build = ">=26.9"
 conda-libmamba-solver = "*"
 
 [feature.build.tasks]
-build-conda = 'bash scripts/conda/build.sh'
-build-pip = 'python -m build .'
+build-conda = { cmd = 'bash scripts/conda/build.sh', description = "Build the conda package" }
+build-pip = { cmd = 'python -m build .', description = "Build the sdist and wheel" }
 
 # =============================================
 # =================== LINT ====================
@@ -243,8 +280,8 @@ build-pip = 'python -m build .'
 prek = "*"
 
 [feature.lint.tasks]
-lint = 'prek run --all-files'
-lint-install = 'prek install'
+lint = { cmd = 'prek run --all-files', description = "Run the linters on all files" }
+lint-install = { cmd = 'prek install', description = "Install the pre-commit hooks" }
 
 # =============================================
 # =================== TYPE ====================
@@ -256,4 +293,4 @@ typing-extensions = "*"
 param = ">=2.4.0"
 
 [feature.type-task.tasks]
-type-ty = 'ty check .'
+type-ty = { cmd = 'ty check .', description = "Type check with TY" }

@@ -11,6 +11,7 @@ import param
 from ..core.data import PandasInterface
 from ..core.dimension import Dimension
 from ..core.util import dtype_kind, flatten, resolve_dependent_value, unique_iterator
+from ..core.util.dependencies import _import_with_error
 
 if t.TYPE_CHECKING:
 
@@ -1137,12 +1138,9 @@ class xr_dim(dim):
     _accessor = "xr"
 
     def __init__(self, obj, *args, **kwargs):
-        try:
-            import xarray as xr
-        except ImportError:
-            raise ImportError(
-                "XArray could not be imported, dim().xr requires the xarray to be available."
-            ) from None
+        _import_with_error("xarray", context="dim().xr requires xarray")
+        import xarray as xr
+
         super().__init__(obj, *args, **kwargs)
         self._ns = xr.DataArray
 

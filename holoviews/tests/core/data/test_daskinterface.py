@@ -11,11 +11,11 @@ from holoviews.core.util.dependencies import (
 )
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from ..._deps import dask, dask_skip, dd
+from ..._deps import dask, dd, dd_skip
 from .test_pandasinterface import BasePandasInterfaceTests
 
 
-@dask_skip
+@dd_skip
 class DaskDatasetTest(BasePandasInterfaceTests):
     """
     Test of the pandas DaskDataset interface.

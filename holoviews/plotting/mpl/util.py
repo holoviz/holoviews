@@ -257,6 +257,18 @@ def resolve_rows(rows):
         return resolve_rows(merged_rows)
 
 
+def _ensure_agg_canvas(fig):
+    """Ensure the figure has a non-interactive Agg canvas for rendering."""
+    from matplotlib.backends.backend_agg import FigureCanvasAgg
+
+    # The figure may have been closed (plt.close) and either retain a
+    # Tk/Qt canvas that errors on resize operations, or have been reset
+    # to a FigureCanvasBase which cannot render.
+    if type(fig.canvas) is not FigureCanvasAgg:
+        fig.canvas.manager = None
+        FigureCanvasAgg(fig)
+
+
 def fix_aspect(fig, nrows, ncols, title=None, extra_artists=None, vspace=0.2, hspace=0.2):
     """Calculate heights and widths of axes and adjust
     the size of the figure to match the aspect.
@@ -264,6 +276,7 @@ def fix_aspect(fig, nrows, ncols, title=None, extra_artists=None, vspace=0.2, hs
     """
     if extra_artists is None:
         extra_artists = []
+    _ensure_agg_canvas(fig)
     fig.canvas.draw()
     w, _h = fig.get_size_inches()
 

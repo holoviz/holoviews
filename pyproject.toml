@@ -20,6 +20,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Operating System :: OS Independent",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
@@ -254,8 +255,7 @@ convention = "numpy"
 exclude = ["holoviews/*version.py"]
 
 [tool.ty.rules]
-unresolved-import = "ignore"
-redundant-condition = "ignore" # problems with _LazyModule
+import-not-found = "ignore"
 
 # Add whole project for LSP features and diagnostics only for the type-checked files
 [[tool.ty.overrides]]

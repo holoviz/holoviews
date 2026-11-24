@@ -5,6 +5,8 @@ import platform
 import sys
 from importlib.metadata import version
 
+from ..core.util.dependencies import _MIN_SUPPORTED_VERSION, _convert_int
+
 __all__ = ("show_versions",)
 
 PACKAGES = [
@@ -12,7 +14,6 @@ PACKAGES = [
     "cudf",
     "cupy",
     "dask",
-    "dask-expr",
     "duckdb",
     "ibis-framework",
     "narwhals",
@@ -64,7 +65,13 @@ def show_versions():
 
 def _package_version(p):
     try:
-        print(f"{p.replace('_', '-'):20}:  {version(p)}")
+        pversion = version(p)
+        if p in _MIN_SUPPORTED_VERSION and _convert_int(pversion) < _MIN_SUPPORTED_VERSION[p]:
+            print(
+                f"{p.replace('_', '-'):20}:  {pversion} (unsupported, minimum supported is {'.'.join(map(str, _MIN_SUPPORTED_VERSION[p]))})"
+            )
+        else:
+            print(f"{p.replace('_', '-'):20}:  {pversion}")
     except ImportError:
         print(f"{p.replace('_', '-'):20}:  -")
 

@@ -15,13 +15,10 @@ from holoviews.operation import apply_when
 from holoviews.streams import RangeXY, Tap
 from holoviews.testing import assert_data_equal, assert_element_equal
 
-from .._deps import ds, pl, pl_skip, spd, spd_skip
+from .._deps import dd, dd_skip, ds, pa_skip, pl, pl_skip, spd, spd_skip, xr
 
 if not ds:
     pytest.skip("datashader not installed", allow_module_level=True)
-
-import dask.dataframe as dd
-import xarray as xr
 
 from holoviews.operation.datashader import (
     DATASHADER_VERSION,
@@ -270,6 +267,7 @@ class DatashaderAggregateTests:
         )
         assert_element_equal(img, expected)
 
+    @dd_skip
     def test_aggregate_curve_datetimes_dask(self):
         df = pd.DataFrame(
             data=np.arange(1000),
@@ -405,6 +403,19 @@ class DatashaderAggregateTests:
         img = aggregate(path, dynamic=False, x_range=(0, 1), y_range=(0, 1), width=2, height=2)
         assert_element_equal(img, expected)
 
+    def test_aggregate_path_does_not_split(self, monkeypatch):
+        # Splitting is very slow for many paths, e.g. Graph edgepaths
+        def split(*args, **kwargs):
+            raise AssertionError("Path should not be split")
+
+        monkeypatch.setattr(hv.core.data.MultiInterface, "split", split)
+        path = hv.Path([[(0.2, 0.3), (0.4, 0.7)], [(0.4, 0.7), (0.8, 0.99)]])
+        expected = hv.Image(
+            ([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 1]]), vdims=[hv.Dimension("Count", nodata=0)]
+        )
+        img = aggregate(path, dynamic=False, x_range=(0, 1), y_range=(0, 1), width=2, height=2)
+        assert_element_equal(img, expected)
+
     def test_aggregate_contours_with_vdim(self):
         contours = hv.Contours(
             [[(0.2, 0.3, 1), (0.4, 0.7, 1)], [(0.4, 0.7, 2), (0.8, 0.99, 2)]], vdims="z"
@@ -437,6 +448,7 @@ class DatashaderAggregateTests:
         )
         assert_element_equal(agg, expected)
 
+    @dd_skip
     def test_spikes_aggregate_count_dask(self):
         spikes = hv.Spikes([1, 2, 3], datatype=["dask"])
         agg = rasterize(spikes, width=5, dynamic=False, expand=False)
@@ -465,6 +477,7 @@ class DatashaderAggregateTests:
         )
         assert_element_equal(agg, expected)
 
+    @dd_skip
     def test_spikes_aggregate_dt_count_dask(self):
         spikes = hv.Spikes(
             [dt.datetime(2016, 1, 1), dt.datetime(2016, 1, 2), dt.datetime(2016, 1, 3)],
@@ -552,6 +565,7 @@ class DatashaderAggregateTests:
         assert_element_equal(agg.Image.I, expected_regrid)
         assert_element_equal(agg.Spikes.I, expected_spikes)
 
+    @dd_skip
     def test_spikes_aggregate_with_height_count_dask(self):
         spikes = hv.Spikes([(1, 0.2), (2, 0.8), (3, 0.4)], vdims="y", datatype=["dask"])
         agg = rasterize(spikes, width=5, height=5, y_range=(0, 1), dynamic=False)
@@ -563,6 +577,7 @@ class DatashaderAggregateTests:
         expected = hv.Image((xs, ys, arr), vdims=hv.Dimension("Count", nodata=0))
         assert_element_equal(agg, expected)
 
+    @dd_skip
     def test_spikes_aggregate_with_negative_height_count(self):
         spikes = hv.Spikes([(1, -0.2), (2, -0.8), (3, -0.4)], vdims="y", datatype=["dask"])
         agg = rasterize(spikes, width=5, height=5, y_range=(-1, 0), dynamic=False)
@@ -574,6 +589,7 @@ class DatashaderAggregateTests:
         expected = hv.Image((xs, ys, arr), vdims=hv.Dimension("Count", nodata=0))
         assert_element_equal(agg, expected)
 
+    @dd_skip
     def test_spikes_aggregate_with_positive_and_negative_height_count(self):
         spikes = hv.Spikes([(1, -0.2), (2, 0.8), (3, -0.4)], vdims="y", datatype=["dask"])
         agg = rasterize(spikes, width=5, height=5, y_range=(-1, 1), dynamic=False)
@@ -1253,6 +1269,7 @@ class DatashaderRasterizeTests:
         image = hv.Image(array, bounds=(0, 0, 1, 1))
         assert_element_equal(img, image)
 
+    @dd_skip
     def test_rasterize_dask_trimesh_implicit_nodes(self):
         simplex_df = pd.DataFrame(self.simplexes, columns=["v0", "v1", "v2"])
         vertex_df = pd.DataFrame(self.vertices_vdim, columns=["x", "y", "z"])
@@ -1276,6 +1293,7 @@ class DatashaderRasterizeTests:
         image = hv.Image(array, bounds=(0, 0, 1, 1))
         assert_element_equal(img, image)
 
+    @dd_skip
     def test_rasterize_dask_trimesh(self):
         simplex_df = pd.DataFrame(self.simplexes_vdim, columns=["v0", "v1", "v2", "z"])
         vertex_df = pd.DataFrame(self.vertices, columns=["x", "y"])
@@ -1298,6 +1316,7 @@ class DatashaderRasterizeTests:
         image = hv.Image(array, bounds=(0, 0, 1, 1))
         assert_element_equal(img, image)
 
+    @dd_skip
     def test_rasterize_dask_trimesh_with_node_vdims(self):
         simplex_df = pd.DataFrame(self.simplexes, columns=["v0", "v1", "v2"])
         vertex_df = pd.DataFrame(self.vertices_vdim, columns=["x", "y", "z"])
@@ -1710,6 +1729,35 @@ def test_selector_single_categorical():
     hv.renderer("bokeh").get_plot(plot)
 
 
+@pytest.mark.parametrize("use_selector", [False, True], ids=["no_selector", "selector"])
+@pytest.mark.parametrize("ncat", [1, 2], ids=["one_category", "two_categories"])
+def test_datashade_count_cat_single_category_not_transparent(ncat, use_selector):
+    """Shading a count_cat aggregate with one category must leave visible pixels."""
+    cats = ["A", "B"][:ncat]
+    df = pd.DataFrame(
+        {
+            "X": np.linspace(-0.5, 0.5, ncat),
+            "Y": np.linspace(-0.5, 0.5, ncat),
+            "C": pd.Categorical(cats, categories=cats),
+        }
+    )
+    kwargs = dict(
+        dynamic=False,
+        x_range=(-1, 1),
+        y_range=(-1, 1),
+        width=4,
+        height=4,
+        aggregator=ds.count_cat("C"),
+        color_key=dict(zip(cats, ["#ff0000", "#00ff00"], strict=False)),
+    )
+    if use_selector:
+        kwargs["selector"] = ds.first("X")
+
+    img = datashade(hv.Points(df, ["X", "Y"], ["C"]), **kwargs)
+
+    assert (img.dimension_values("A") > 0).any()
+
+
 def test_geom_aggregate_with_summary():
     rects = hv.Rectangles(
         [
@@ -2108,6 +2156,7 @@ def test_datashade_count_cat_no_change_inplace():
 
 
 @pl_skip
+@pa_skip
 @pytest.mark.parametrize("lazy", [False, True])
 @pytest.mark.parametrize("op", [aggregate, rasterize, datashade])
 def test_points_polars(lazy, op):

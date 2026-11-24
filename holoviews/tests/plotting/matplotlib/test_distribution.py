@@ -4,7 +4,10 @@ import pytest
 
 import holoviews as hv
 
+from ..._deps import scipy_skip
 
+
+@scipy_skip
 @pytest.mark.usefixtures("mpl_backend")
 def test_distribution_legend(rng):
     normal = rng.normal(1000)

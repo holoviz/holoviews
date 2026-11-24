@@ -72,6 +72,7 @@ class GridInterface(DictInterface):
                     data[vdim_tuple] = np.zeros((0, 0, len(vdims)))
         elif not any(
             isinstance(data, tuple(t for t in interface.types if t is not None))
+            or interface.applies(data)
             for interface in cls.interfaces.values()
         ):
             data = dict(zip(dimensions, zip(*data, strict=None), strict=None))

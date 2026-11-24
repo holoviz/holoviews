@@ -231,6 +231,7 @@ class PolarsNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
 
 
 @dd_skip
+@pytest.mark.filterwarnings("ignore:Dask support is moving out of Narwhals")
 class DaskNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     __test__ = True
     narwhals_backend = "pandas"
@@ -241,6 +242,7 @@ class DaskNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
 
 
 @ibis_skip
+@pytest.mark.filterwarnings(r"ignore:The 'future\.infer_string' option is deprecated")
 class IbisNarwhalsLazyInterfaceTests(BaseNarwhalsLazyInterfaceTests):
     __test__ = True
     narwhals_backend = "pyarrow"

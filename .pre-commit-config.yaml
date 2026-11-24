@@ -17,7 +17,7 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 1f1e8bf348ff38fc88619a38d3ca4d9c56abea49 # frozen: v0.16.5
+    rev: f368fb366ff7f2f808dd324b83a6d32267799e19 # frozen: v0.17.2
     hooks:
       - id: ruff-check
       - id: ruff-format
@@ -27,7 +27,7 @@ repos:
       - id: clean-notebook
         args: [--strip-trailing-newlines, --ignore, tags]
   - repo: https://github.com/crate-ci/typos
-    rev: 4d9c206a77c041268485162b8e2579ad7a5cb9a3 # frozen: v1.50.0
+    rev: 7f9d0819ca1c008ade73f4b41fa9d258d48f605b # frozen: v1.51.1
     hooks:
       - id: typos
   - repo: https://github.com/shellcheck-py/shellcheck-py
@@ -35,7 +35,7 @@ repos:
     hooks:
       - id: shellcheck
   - repo: https://github.com/hoxbro/prettier-pre-commit
-    rev: 542048186c045692b23a08adfbc3191ef44ca017 # frozen: v3.9.6
+    rev: 1b134e04ec20e9fccbc0629189f6e3f8d6ec61f6 # frozen: v3.9.10
     hooks:
       - id: prettier
         exclude: conda.recipe/meta.yaml|pull_request_template.md
@@ -57,3 +57,11 @@ repos:
             --option,
             "indent_string=    ",
           ]
+  - repo: local
+    hooks:
+      - id: pixi
+        name: check pixi
+        entry: pixi lock --check
+        language: system
+        files: ^pixi
+        pass_filenames: false

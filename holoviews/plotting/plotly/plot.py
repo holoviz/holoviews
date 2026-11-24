@@ -14,7 +14,7 @@ from ..plot import (
     GenericElementPlot,
     GenericLayoutPlot,
 )
-from ..util import attach_streams
+from ..util import attach_streams, gridmatrix_diagonal_kwargs
 from .util import configure_matching_axes_from_dims, figure_grid
 
 
@@ -318,7 +318,8 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
         frame_ranges = self.compute_ranges(layout, None, ranges)
         frame_ranges = {key: self.compute_ranges(layout, key, frame_ranges) for key in self.keys}
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
-        for coord in layout.keys(full_grid=True):
+        for i, coord in enumerate(layout.keys(full_grid=True)):
+            c = i // self.rows
             if not isinstance(coord, tuple):
                 coord = (coord,)
             view = layout.data.get(coord, None)
@@ -334,6 +335,8 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
             if isinstance(layout, GridMatrix):
                 if view.traverse(lambda x: x, [Histogram]):
                     kwargs["shared_axes"] = False
+                if c == 0:
+                    kwargs.update(gridmatrix_diagonal_kwargs(view, coord, opts))
 
             # Create subplot
             plotting_class = Store.registry[self.renderer.backend].get(vtype, None)

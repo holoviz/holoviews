@@ -29,6 +29,7 @@ from ...core import (
     AdjointLayout,
     Element,
     Empty,
+    GridMatrix,
     GridSpace,
     HoloMap,
     Layout,
@@ -57,7 +58,13 @@ from ..plot import (
     GenericLayoutPlot,
     GenericOverlayPlot,
 )
-from ..util import attach_streams, collate, dim_axis_label, displayable
+from ..util import (
+    attach_streams,
+    collate,
+    dim_axis_label,
+    displayable,
+    gridmatrix_diagonal_kwargs,
+)
 from .links import LinkCallback
 from .util import (
     cds_column_replace,
@@ -640,6 +647,9 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             if r != 0 and c != 0:
                 kwargs["xaxis"] = None
                 kwargs["yaxis"] = None
+
+            if isinstance(layout, GridMatrix) and c == 0:
+                kwargs.update(gridmatrix_diagonal_kwargs(view, coord, opts))
 
             if "border" not in kwargs:
                 kwargs["border"] = 3
@@ -1351,6 +1361,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                             toolbar_location=self.toolbar,
                             sizing_mode=sizing_mode,
                         )
+                        self._set_grid_track_sizing(grid)
                         if self.merge_tools:
                             grid.toolbar = merge_tools(children, autohide=self.autohide_toolbar)
                     tab_plots.append((title, grid))
@@ -1391,6 +1402,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                 merge_tools=False,
                 sizing_mode=sizing_mode,
             )
+            self._set_grid_track_sizing(layout_plot)
             if self.sync_legends:
                 sync_legends(layout_plot)
             if self.merge_tools:
@@ -1429,6 +1441,37 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         title = self._get_title_div(key)
         if title:
             self.handles["title"] = title
+
+    @staticmethod
+    def _set_grid_track_sizing(grid):
+        """Marks rows/columns containing a responsive child as flexible ('1fr'),
+        since Bokeh otherwise sizes GridPlot tracks to content and leaves no
+        room for a responsive child to stretch into.
+
+        Parameters
+        ----------
+        grid : bokeh.models.plots.GridPlot
+            Grid plot whose rows/cols to mark as flexible.
+        """
+        stretch_width_modes = ("stretch_width", "stretch_both", "scale_width")
+        stretch_height_modes = ("stretch_height", "stretch_both", "scale_height")
+
+        col_stretch, row_stretch = set(), set()
+        ncols = nrows = 0
+        for child, r, c, *span in grid.children:
+            rowspan, colspan, *_ = *span, 1, 1
+            sizing_mode = getattr(child, "sizing_mode", None) or ""
+            if sizing_mode in stretch_width_modes:
+                col_stretch.update(range(c, c + colspan))
+            if sizing_mode in stretch_height_modes:
+                row_stretch.update(range(r, r + rowspan))
+            ncols = max(ncols, c + colspan)
+            nrows = max(nrows, r + rowspan)
+
+        if grid.cols is None and col_stretch:
+            grid.cols = {i: "1fr" if i in col_stretch else "auto" for i in range(ncols)}
+        if grid.rows is None and row_stretch:
+            grid.rows = {i: "1fr" if i in row_stretch else "auto" for i in range(nrows)}
 
 
 class AdjointLayoutPlot(BokehPlot, GenericAdjointLayoutPlot):
