@@ -216,14 +216,19 @@ def compute_plot_size(plot):
         widths, heights = zip(*[compute_plot_size(child) for child in plot.children], strict=True)
         return w_agg(widths), h_agg(heights)
     elif isinstance(plot, figure):
+
+        def border(side: str) -> int:
+            b = getattr(plot, f"min_border_{side}")
+            return (plot.min_border or 0) if b is None else b
+
         if plot.width:
             width = plot.width
         else:
-            width = plot.frame_width + plot.min_border_right + plot.min_border_left
+            width = plot.frame_width + border("right") + border("left")
         if plot.height:
             height = plot.height
         else:
-            height = plot.frame_height + plot.min_border_bottom + plot.min_border_top
+            height = plot.frame_height + border("bottom") + border("top")
         return width, height
     elif isinstance(plot, (Plot, DataTable, Spacer)):
         return plot.width, plot.height

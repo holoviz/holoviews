@@ -64,7 +64,7 @@ class BokehRendererTest:
         grid = hv.GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
         plot = self.renderer.get_plot(grid)
         w, h = self.renderer.get_size(plot)
-        assert (w, h) == (446, 437)
+        assert (w, h) == (380, 380)
 
     def test_get_size_table(self):
         table = hv.Table(range(10), kdims=["x"])

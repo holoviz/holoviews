@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 from bokeh.layouts import Column
 from bokeh.models import Div, Toolbar
+from bokeh.plotting import figure
 
 import holoviews as hv
 from holoviews.operation import gridmatrix
@@ -13,6 +14,15 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestGridPlot(TestBokehPlot):
+    def test_grid_axes_have_no_frame(self):
+        # https://github.com/holoviz/holoviews/issues/7143
+        grid = hv.GridSpace({(i, j): hv.Curve([1, 2]) for i in range(2) for j in "ab"})
+        plot = bokeh_renderer.get_plot(grid)
+        figures = list(plot.state.select({"type": figure}))
+        assert len(figures) == 6
+        assert sum(f.frame_width == 0 for f in figures) == 1
+        assert sum(f.frame_height == 0 for f in figures) == 1
+
     def test_grid_title(self, rng):
         grid = hv.GridSpace(
             {
@@ -90,7 +100,7 @@ class TestGridPlot(TestBokehPlot):
         )
         plot = bokeh_renderer.get_plot(grid)
         size = bokeh_renderer.get_size(plot.state)
-        assert size == (320, 311)
+        assert size == (254, 254)
 
     def test_grid_shared_source_synced_update(self, rng):
         hmap = hv.HoloMap(
