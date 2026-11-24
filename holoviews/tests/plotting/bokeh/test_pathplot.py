@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 from bokeh.models import (
     CategoricalColorMapper,
+    DatetimeAxis,
     LinearColorMapper,
     MultiPolygons,
     Patches,
@@ -526,6 +527,45 @@ class TestPolygonPlot(TestBokehPlot):
         glyph = plot.handles["glyph"]
         assert not plot._has_holes
         assert isinstance(glyph, Patches)
+
+    def test_polygons_datetime_x(self):
+        xs = pd.to_datetime(["2024-01-01", "2024-01-05", "2024-01-03"])
+        ys = [1.0, 2.0, 3.0]
+        poly = hv.Polygons([{"x": xs, "y": ys}])
+        plot = bokeh_renderer.get_plot(poly)
+        assert isinstance(plot.state.xaxis[0], DatetimeAxis)
+        source = plot.handles["source"]
+        expected_xs = np.array(xs[[0, 1, 2, 0]], dtype="datetime64[ns]")
+        (x,) = source.data["xs"][0][0]
+        np.testing.assert_array_equal(x.astype("datetime64[ns]"), expected_xs)
+        (y,) = source.data["ys"][0][0]
+        np.testing.assert_array_equal(y, [1.0, 2.0, 3.0, 1.0])
+
+    def test_polygons_datetime_x_multi_part(self):
+        xs = np.array(
+            [
+                "2024-01-01",
+                "2024-01-05",
+                "2024-01-03",
+                "NaT",
+                "2024-02-01",
+                "2024-02-05",
+                "2024-02-03",
+            ],
+            dtype="datetime64[ns]",
+        )
+        ys = [1.0, 2.0, 3.0, np.nan, 4.0, 5.0, 6.0]
+        poly = hv.Polygons([{"x": xs, "y": ys}])
+        plot = bokeh_renderer.get_plot(poly)
+        assert isinstance(plot.state.xaxis[0], DatetimeAxis)
+        source = plot.handles["source"]
+        parts_x = [p[0] for p in source.data["xs"][0]]
+        parts_y = [p[0] for p in source.data["ys"][0]]
+        assert len(parts_x) == 2
+        np.testing.assert_array_equal(parts_x[0], xs[[0, 1, 2, 0]])
+        np.testing.assert_array_equal(parts_x[1], xs[[4, 5, 6, 4]])
+        np.testing.assert_array_equal(parts_y[0], [1.0, 2.0, 3.0, 1.0])
+        np.testing.assert_array_equal(parts_y[1], [4.0, 5.0, 6.0, 4.0])
 
 
 class TestContoursPlot(TestBokehPlot):
