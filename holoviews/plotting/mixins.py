@@ -94,7 +94,14 @@ class DonutMixin:
         }
         if label == "total":
             return str(total)
-        return label.format(**context)
+        try:
+            return label.format(**context)
+        except KeyError as e:
+            keys = ", ".join(repr(k) for k in dict.fromkeys(context))
+            raise ValueError(
+                f"center_label template {label!r} refers to unknown key {e}, "
+                f"the available keys are {keys}."
+            ) from e
 
     def _compute_label_geometry(self, starts, ends):
         """Compute label positions and text-alignment strings for wedge labels.
@@ -109,10 +116,14 @@ class DonutMixin:
         xs, ys : ndarray
             Label x/y co-ordinates.
         aligns : list[str]
-            Per-label ``text_align`` values (``"left"`` or ``"right"``).
+            Per-label ``text_align`` values (``"left"``, ``"right"`` or ``"center"``).
         """
         mid = (starts + ends) / 2
-        r = self.outer_radius * self.label_radius
+        if self.label_radius is None:
+            # Radius halving the ring area: about 0.71 for a pie, near the middle of a donut ring.
+            r = np.sqrt((self.inner_radius**2 + self.outer_radius**2) / 2)
+        else:
+            r = self.outer_radius * self.label_radius
         xs = r * np.cos(mid)
         ys = r * np.sin(mid)
         a = mid % (2 * np.pi)
@@ -120,12 +131,12 @@ class DonutMixin:
         if self.label_text_align == "auto":
             # Determine auto-alignment based on position.
             # Outside: left-align on right side, right-align on left.
-            # Inside: flip so text "hugs" the wedge boundary.
+            # Inside: centered on the wedge, like Matplotlib's autopct.
             right_half = (a < np.pi / 2) | (a > 3 * np.pi / 2)
-            if self.label_radius >= 1.0:
+            if r >= self.outer_radius:
                 aligns = np.where(right_half, "left", "right")
             else:
-                aligns = np.where(right_half, "right", "left")
+                aligns = np.full(len(mid), "center")
         else:
             aligns = np.full(len(mid), self.label_text_align)
 
@@ -158,11 +169,12 @@ class DonutMixin:
         return starts, ends, fracs
 
     def _get_axis_dims(self, element):
-        return (element.kdims[0], element.vdims[0])
+        # No Cartesian axes: a string kdim would make the x-axis categorical.
+        return (None, None)
 
     def _format_donut_labels(self, element, labels):
         """Format donut labels for display using the key dimension formatter."""
-        kdim = self._get_axis_dims(element)[0]
+        kdim = element.kdims[0]
         return [label if isinstance(label, str) else kdim.pprint_value(label) for label in labels]
 
     def _label_value_for_template(self, label):
@@ -184,18 +196,24 @@ class DonutMixin:
         if show is False or show is None:
             return None
 
-        kdim, vdim = self._get_axis_dims(element)
-        labels = [
-            show.format(
-                **{
-                    kdim.name: self._label_value_for_template(label),
-                    vdim.name: val,
-                    "fraction": frac,
-                }
-            )
-            for label, val, frac in zip(labels, values, fractions, strict=True)
-        ]
-        return labels
+        kdim, vdim = element.kdims[0], element.vdims[0]
+        try:
+            return [
+                show.format(
+                    **{
+                        kdim.name: self._label_value_for_template(label),
+                        vdim.name: val,
+                        "fraction": frac,
+                    }
+                )
+                for label, val, frac in zip(labels, values, fractions, strict=True)
+            ]
+        except KeyError as e:
+            keys = ", ".join(repr(k) for k in (kdim.name, vdim.name, "fraction"))
+            raise ValueError(
+                f"show_labels template {show!r} refers to unknown key {e}, "
+                f"the available keys are {keys}."
+            ) from e
 
     def _prepare_donut_data(self, element):
         """Extract and compute all backend-agnostic donut data.
@@ -212,8 +230,13 @@ class DonutMixin:
             valid  : boolean mask used to filter rows from the element
         """
         labels, values, valid = self._filter_donut_data(
-            element.dimension_values(0), element.dimension_values(1)
+            np.asarray(element.dimension_values(0)), np.asarray(element.dimension_values(1))
         )
+        if np.any(values < 0):
+            raise ValueError(
+                "Donut values must be non-negative, found negative values "
+                f"in the {element.vdims[0].pprint_label!r} dimension."
+            )
         starts, ends, fracs = self._compute_donut_data(values)
         starts = starts + self.start_angle
         ends = ends + self.start_angle
@@ -228,13 +251,21 @@ class DonutMixin:
             valid=valid,
         )
 
+    def _get_donut_factors(self, element, ranges, display_labels):
+        """Return the categories to map to colors, in a stable order."""
+        import pandas as pd
+
+        # Without framewise the ranges hold the categories of the whole object
+        factors = ranges.get(element.kdims[0].label, {}).get("factors", [])
+        # The ranges turn a missing category into the string "nan", which must not take a color
+        factors = [f for f in factors if not pd.isna(f) and f != "nan"]
+        factors = self._format_donut_labels(element, factors)
+        return list(dict.fromkeys([*factors, *display_labels]))
+
     def get_extents(self, element, ranges, range_type="combined", **kwargs):
         """Fixed radial extents for a donut chart."""
-        for _d, rs in ranges.items():
-            rs.pop("factors", None)
-
         r = self.outer_radius
-        if self.show_labels and self.label_radius > 1.0:
+        if self.show_labels and self.label_radius is not None and self.label_radius > 1.0:
             r = self.outer_radius * self.label_radius
 
         if range_type == "data":

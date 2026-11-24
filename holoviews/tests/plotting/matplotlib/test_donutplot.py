@@ -6,6 +6,7 @@ import pytest
 
 import holoviews as hv
 
+from ..._deps import pl, pl_skip
 from .test_plot import TestMPLPlot, mpl_renderer
 
 
@@ -24,6 +25,7 @@ class TestDonutPlot(TestMPLPlot):
             ([("A", 10), ("B", 20), ("C", 30)], [1 / 6, 1 / 3, 1 / 2]),
             ([("Only", 42)], [1.0]),
             ([("A", 0), ("B", 0)], [0.0, 0.0]),
+            ([("A", 3), ("B", 0), ("C", 1)], [0.75, 0.0, 0.25]),
             ([("A", 1), ("B", pd.NA), ("C", 3)], [0.25, 0.75]),
             ([("Rent", pd.NA), (None, 1200), ("Food", 400), ("Transport", 200)], [2 / 3, 1 / 3]),
         ],
@@ -45,6 +47,10 @@ class TestDonutPlot(TestMPLPlot):
         _, patches = self._get_patches(d)
         assert len(patches) == 2
         np.testing.assert_almost_equal(patches[0].width, 1.0)
+
+    def test_donut_inner_radius_default(self):
+        _, patches = self._get_patches(hv.Donut([("A", 30), ("B", 70)]))
+        np.testing.assert_almost_equal(patches[0].width, 0.2)
 
     def test_donut_wedge_angles(self):
         """Wedge angles should span the full 360 degrees."""
@@ -153,3 +159,106 @@ class TestDonutPlot(TestMPLPlot):
         assert len(patches) == 3
         colors = [p.get_facecolor() for p in patches]
         assert len(set(map(tuple, colors))) > 1
+
+    def test_donut_negative_values_raise(self):
+        d = hv.Donut([("A", 30), ("B", -10)], vdims=["Amount"])
+        with pytest.raises(ValueError, match=r"non-negative.*'Amount'"):
+            mpl_renderer.get_plot(d)
+
+    def test_donut_duplicated_category_same_color(self):
+        plot, patches = self._get_patches(hv.Donut([("A", 1), ("B", 2), ("A", 3)]))
+        colors = [p.get_facecolor() for p in patches]
+        assert colors[0] == colors[2] != colors[1]
+        texts = [t.get_text() for t in plot.handles["axis"].get_legend().get_texts()]
+        assert texts == ["A", "B"]
+
+    def test_donut_missing_category_takes_no_color(self):
+        _, patches = self._get_patches(hv.Donut([(None, 1), ("A", 2), ("B", 3)]))
+        _, expected = self._get_patches(hv.Donut([("A", 2), ("B", 3)]))
+        assert [p.get_facecolor() for p in patches] == [p.get_facecolor() for p in expected]
+
+    @pytest.mark.parametrize("cmap", [None, "Set2"])
+    def test_donut_layout_colors_consistent(self, cmap):
+        d1 = hv.Donut([("A", 1), ("B", 2)])
+        d2 = hv.Donut([("A", 1), ("C", 2)])
+        layout = (d1 + d2).opts(hv.opts.Donut(cmap=cmap)) if cmap else d1 + d2
+        plot = mpl_renderer.get_plot(layout)
+        p1, p2 = (sp.handles["artist"] for sp in plot.traverse(specs=[hv.plotting.mpl.DonutPlot]))
+        assert p1[0].get_facecolor() == p2[0].get_facecolor()
+        assert p1[1].get_facecolor() != p2[1].get_facecolor()
+
+    def test_donut_dict_cmap_duplicated_category(self):
+        d = hv.Donut([("A", 1), ("B", 2), ("A", 3), ("C", 4)]).opts(cmap={"B": "red"})
+        _, patches = self._get_patches(d)
+        colors = [p.get_facecolor() for p in patches]
+        assert colors[0] == colors[2]
+        assert colors[1] == (1.0, 0.0, 0.0, 1.0)
+
+    def test_donut_round(self):
+        plot = mpl_renderer.get_plot(hv.Donut([("A", 30), ("B", 70)]).opts(aspect=2))
+        np.testing.assert_almost_equal(plot.handles["axis"].get_aspect(), 1.0)
+
+    def test_donut_wedge_edges(self):
+        _, patches = self._get_patches(hv.Donut([("A", 30), ("B", 70)]))
+        assert patches[0].get_edgecolor() == (0.0, 0.0, 0.0, 1.0)
+
+    @pytest.mark.parametrize(
+        ("opts", "radius"),
+        [
+            ({}, np.sqrt((0.8**2 + 1) / 2)),
+            ({"inner_radius": 0}, np.sqrt(0.5)),
+            ({"label_radius": 1.2}, 1.2),
+        ],
+    )
+    def test_donut_label_radius(self, opts, radius):
+        d = hv.Donut([("A", 1), ("B", 1)]).opts(show_labels=True, **opts)
+        plot = mpl_renderer.get_plot(d)
+        radii = [np.hypot(*t.get_position()) for t in plot.handles["axis"].texts]
+        np.testing.assert_almost_equal(radii, [radius, radius])
+
+    def test_donut_labels_centered_inside(self):
+        d = hv.Donut([("A", 1), ("B", 1)]).opts(inner_radius=0, show_labels=True)
+        plot = mpl_renderer.get_plot(d)
+        aligns = {(t.get_ha(), t.get_va()) for t in plot.handles["axis"].texts}
+        assert aligns == {("center", "center")}
+
+    def test_donut_show_labels_unknown_key(self):
+        d = hv.Donut([("A", 30), ("B", 70)]).opts(show_labels="{percent}")
+        with pytest.raises(ValueError, match=r"unknown key 'percent'"):
+            mpl_renderer.get_plot(d)
+
+    def test_donut_center_label_unknown_key(self):
+        d = hv.Donut([("A", 30), ("B", 70)]).opts(center_label="{sum}")
+        with pytest.raises(ValueError, match=r"unknown key 'sum'.*'total', 'y'"):
+            mpl_renderer.get_plot(d)
+
+    def test_donut_layout_colors_by_category(self):
+        layout = hv.NdLayout(
+            {
+                0: hv.Donut([("Rent", 1), ("Food", 2)]),
+                1: hv.Donut([("Travel", 1), ("Misc", 2), ("Rent", 3)]),
+            }
+        )
+        plot = mpl_renderer.get_plot(layout)
+        p1, p2 = (sp.handles["artist"] for sp in plot.traverse(specs=[hv.plotting.mpl.DonutPlot]))
+        # Rent is the first wedge of p1 and the last one of p2
+        assert p1[0].get_facecolor() == p2[2].get_facecolor()
+        assert p1[1].get_facecolor() not in [p.get_facecolor() for p in p2]
+
+    def test_donut_holomap_colors_by_category(self):
+        hmap = hv.HoloMap(
+            {
+                0: hv.Donut([("Rent", 1), ("Food", 2)]),
+                1: hv.Donut([("Travel", 1), ("Misc", 2), ("Rent", 3)]),
+            }
+        )
+        plot = mpl_renderer.get_plot(hmap)
+        rent = plot.handles["artist"][0].get_facecolor()
+        plot.update((1,))
+        assert plot.handles["artist"][2].get_facecolor() == rent
+
+    @pl_skip
+    def test_donut_polars(self):
+        df = pl.DataFrame({"x": ["A", None, "C"], "y": [10, 20, 30]})
+        _, patches = self._get_patches(hv.Donut(df, kdims="x", vdims="y"))
+        assert len(patches) == 2

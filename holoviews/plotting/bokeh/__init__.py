@@ -274,12 +274,17 @@ options.Donut = Options(
     xaxis=None,
     yaxis=None,
     tools=["hover"],
+    active_tools=[],
     show_frame=False,
     legend_position="center",
-    inner_radius=0.8,
+    data_aspect=1,
 )
 options.Donut = Options(
-    "style", cmap="Category20", wedge_line_color="black", label_text_font_size="9pt"
+    "style",
+    cmap="Category20",
+    wedge_line_color="black",
+    label_text_font_size="9pt",
+    label_text_baseline="middle",
 )
 options.Spikes = Options("style", color="black", cmap=dflt_cmap, muted_alpha=0.2)
 options.Area = Options("style", color=Cycle(), alpha=1, line_color="black", muted_alpha=0.2)
