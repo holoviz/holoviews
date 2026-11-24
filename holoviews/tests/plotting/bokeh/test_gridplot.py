@@ -92,6 +92,22 @@ class TestGridPlot(TestBokehPlot):
         size = bokeh_renderer.get_size(plot.state)
         assert size == (320, 311)
 
+    def test_grid_legend_spans_grid_height(self, rng):
+        overlay = hv.NdOverlay({g: hv.Curve(rng.random(10)) for g in "abcde"}, "group")
+        grid = hv.GridSpace({(0, t): overlay for t in range(4)}, kdims=["col", "track"]).opts(
+            show_legend=True, plot_size=(300, 20)
+        )
+        plot = bokeh_renderer.get_plot(grid)
+        panel = plot.handles["legend_panel"]
+        # taller than the 4x20px grid, so the 5 entries aren't clipped
+        assert panel.height > bokeh_renderer.get_size(plot.state.children[0])[1]
+        assert not any(sp.state.legend for sp in plot.subplots.values())
+        (legend,) = panel.legend
+        assert [item.label["value"] for item in legend.items] == list("abcde")
+        # each item mutes the original curve and has a swatch renderer in the panel
+        for item in legend.items:
+            assert {r in panel.renderers for r in item.renderers} == {True, False}
+
     def test_grid_shared_source_synced_update(self, rng):
         hmap = hv.HoloMap(
             {
