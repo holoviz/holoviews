@@ -1513,6 +1513,13 @@ class categorical_legend(Operation):
     """,
     )
 
+    legend_labels = param.Dict(
+        default={},
+        doc="""
+        Mapping from category values to legend labels, unmapped categories
+        keep their original label.""",
+    )
+
     def _process(self, element, key=None):
         import datashader as ds
 
@@ -1544,11 +1551,13 @@ class categorical_legend(Operation):
             shade_op = rasterize_op
         else:
             shade_op = element.pipeline.find(shade, skip_nonlinked=False)
+        legend_labels = self.p.legend_labels or {}
+        labels = [legend_labels.get(cat, cat) for cat in cats]
         if shade_op is None:
             colors = process_cmap(self.p.cmap, ncolors=len(cats), categorical=True)
         else:
             colors = shade_op.color_key or self.p.cmap
-        color_data = [(0, 0, cat) for cat in cats]
+        color_data = [(0, 0, label) for label in labels]
         if isinstance(colors, list):
             ncolors = len(colors)
             cat_colors = {cat: colors[i % ncolors] for i, cat in enumerate(cats)}
@@ -1558,7 +1567,7 @@ class categorical_legend(Operation):
         for cat, color in cat_colors.items():
             if isinstance(color, tuple):
                 color = rgb2hex([v / 256 for v in color[:3]])
-            cmap[cat] = color
+            cmap[legend_labels.get(cat, cat)] = color
         return Points(color_data, vdims=["category"]).opts(
             cmap=cmap, color="category", show_legend=True, backend=self.p.backend, visible=False
         )
