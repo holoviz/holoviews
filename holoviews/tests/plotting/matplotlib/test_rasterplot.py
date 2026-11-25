@@ -6,7 +6,7 @@ from matplotlib.colors import ListedColormap
 import holoviews as hv
 from holoviews.plotting.mpl.raster import RGBPlot
 
-from ..._deps import ds_skip
+from ..._deps import ds, ds_skip
 from .test_plot import TestMPLPlot, mpl_renderer
 
 
@@ -89,3 +89,23 @@ class TestRasterPlot(TestMPLPlot):
         assert array.shape == (3, 3, 4)
         assert artist.get_extent() == [-0.5, 2.5, 4.5, 7.5]
         assert isinstance(plot, RGBPlot)
+
+
+@ds_skip
+class TestSyntheticLegendPlot(TestMPLPlot):
+    __test__ = True
+
+    def setup_method(self):
+        super().setup_method()
+
+        from holoviews.operation.datashader import datashade
+
+        points = hv.Points([(0, 0, "A"), (1, 1, "B"), (2, 2, "C")], vdims=["Label"])
+        kwargs = dict(aggregator=ds.by("Label"), dynamic=False, width=10, height=10)
+        self.rgb = datashade(points, **kwargs).opts(show_legend=True)
+
+    def test_rgb_legend_with_legend_labels(self):
+        self.rgb.opts(legend_labels={"A": "Alpha", "B": "Beta", "C": "Gamma"})
+        plot = mpl_renderer.get_plot(self.rgb)
+        legend = plot._legend_plot.state.axes[0].get_legend()
+        assert [t.get_text() for t in legend.get_texts()] == ["Alpha", "Beta", "Gamma"]
