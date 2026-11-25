@@ -350,6 +350,7 @@ class SyntheticLegendMixin(LegendPlot):
             legend = categorical_legend(
                 element,
                 backend=self.backend,
+                legend_labels=self.legend_labels or {},
                 # Only adding if it not None to not overwrite the default
                 **({"cmap": cmap} if cmap else {}),
             )
@@ -357,7 +358,12 @@ class SyntheticLegendMixin(LegendPlot):
             return
         if legend is None:
             return
-        legend_params = {k: v for k, v in self.param.values().items() if k.startswith("legend")}
+        # The operation already applied legend_labels to the derived labels.
+        legend_params = {
+            k: v
+            for k, v in self.param.values().items()
+            if k.startswith("legend") and k != "legend_labels"
+        }
         self._legend_plot = PointPlot(legend, keys=[], overlaid=1, **legend_params)
         self._legend_plot.initialize_plot(plot=plot)
         self._legend_plot.handles["glyph_renderer"].tags.append("hv_legend")
