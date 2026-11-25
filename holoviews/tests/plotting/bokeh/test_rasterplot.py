@@ -512,3 +512,11 @@ class TestSyntheticLegendPlot(TestBokehPlot):
         glyph = plot._legend_plot.handles["glyph"]
         assert glyph.fill_color.field == "color"
         assert glyph.fill_color.transform is mapper
+
+    def test_rgb_legend_with_legend_labels(self):
+        self.rgb.opts(legend_labels={"A": "Alpha", "B": "Beta", "C": "Gamma"})
+        plot = bokeh_renderer.get_plot(self.rgb)
+        mapper = plot.handles["synthetic_color_mapper"]
+        assert mapper.factors == ["Alpha", "Beta", "Gamma"]
+        source = plot._legend_plot.handles["source"]
+        np.testing.assert_equal(source.data["color"], ["Alpha", "Beta", "Gamma"])
