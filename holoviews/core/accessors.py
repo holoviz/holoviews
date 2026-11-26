@@ -553,6 +553,37 @@ class Redim(metaclass=AccessorPipelineMeta):
         return self._redim("unit", specs, **values)
 
     def values(self, specs=None, **ranges):
+        """Set the allowed values of one or more dimensions.
+
+        For a categorical dimension, the order of the values also sets
+        the order in which the categories are plotted, for example the
+        order of the bars in a ``Bars`` element.
+
+        Parameters
+        ----------
+        specs : str or list of str, optional
+            Only apply the change to objects matching these specs.
+        **ranges
+            Dimension names mapped to lists of values. Names must match
+            exactly, including case; a name that matches no dimension is
+            ignored without an error.
+
+        Examples
+        --------
+        ``Bars`` sorts categories by default. Use ``redim.values`` to
+        keep the order of a dictionary::
+
+            import holoviews as hv
+
+            data = {'b': 2, 'a': 1, 'c': 3}
+            hv.Bars(data)                             # a, b, c
+            hv.Bars(data).redim.values(x=list(data))  # b, a, c
+
+        Dimension names that are not valid Python identifiers can be
+        passed with ``**``::
+
+            bars.redim.values(**{'Car occupants': ['three', 'two', 'one']})
+        """
         return self._redim("values", specs, **ranges)
 
 
