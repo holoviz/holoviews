@@ -377,7 +377,7 @@ class SelectionGeomExpr(Selection2DExpr):
             x0dim, x1dim, y0dim, y1dim = y0dim, y1dim, x0dim, x1dim
         return (x0dim, y0dim, x1dim, y1dim)
 
-    def _get_bounds_selection(self, x0dim, y0dim, x1dim, y1dim, **kwargs):
+    def _get_bounds_selection(self, x0dim, y0dim, x1dim, y1dim, **kwargs):  # ty:ignore[incompatible-method-override]
         from .geom import Rectangles
 
         (x0, x1), xcats, (y0, y1), ycats = self._get_selection(**kwargs)
@@ -399,7 +399,7 @@ class SelectionGeomExpr(Selection2DExpr):
             region_element = Rectangles([(x0, y0, x1, y1)])
         return selection_expr, bbox, region_element
 
-    def _get_lasso_selection(self, x0dim, y0dim, x1dim, y1dim, geometry, *args, **kwargs):
+    def _get_lasso_selection(self, x0dim, y0dim, x1dim, y1dim, geometry, *args, **kwargs):  # ty:ignore[incompatible-method-override]
         from .path import Path
 
         bbox = {

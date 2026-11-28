@@ -275,7 +275,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
     )
 
     _ndim = 2
-    interface: type[GridInterface]  # ty: ignore[invalid-mutable-override]
+    interface: type[GridInterface]  # ty: ignore[incompatible-mutable-override]
 
     def __init__(
         self,
@@ -424,7 +424,9 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
                 r = util.dt_to_int(r)
             if isinstance(c, util.datetime_types):
                 c = util.dt_to_int(c)
-            if util.isfinite(r) and not np.isclose(r, c, rtol=t.cast("float", self.rtol)):
+            if util.isfinite(r) and not np.isclose(
+                r, t.cast("float", c), rtol=t.cast("float", self.rtol)
+            ):
                 not_close = True
         if not_close:
             raise ValueError(
@@ -917,7 +919,7 @@ class QuadMesh(Selection2DExpr, Dataset, Element2D):
     vdims = param.List(default=[Dimension("z")], bounds=(1, None))
 
     _binned = True
-    interface: type[GridInterface]  # ty: ignore[invalid-mutable-override]
+    interface: type[GridInterface]  # ty: ignore[incompatible-mutable-override]
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if data is None or isinstance(data, list) and data == []:

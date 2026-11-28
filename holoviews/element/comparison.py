@@ -850,7 +850,7 @@ class Comparison(ComparisonInterface):
         cls.assertEqual(cycle1.values, cycle2.values)
 
 
-class ComparisonTestCase(Comparison, TestCase):  # ty: ignore[invalid-method-override]
+class ComparisonTestCase(Comparison, TestCase):
     """Class to integrate the Comparison class with unittest.TestCase."""
 
     def __init__(self, *args, **kwargs):

@@ -278,7 +278,7 @@ class Histogram(Selection1DExpr, Chart):
     """
 
     datatype = param.List(default=["grid"])
-    interface: type[GridInterface]  # ty: ignore[invalid-mutable-override]
+    interface: type[GridInterface]  # ty: ignore[incompatible-mutable-override]
 
     group = param.String(default="Histogram", constant=True)
 
