@@ -5,6 +5,7 @@ Unit tests of Raster elements
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 import holoviews as hv
 from holoviews.testing import assert_data_equal, assert_element_equal
@@ -28,6 +29,25 @@ class TestRaster:
         assert_element_equal(
             raster.sample(y=0),
             hv.Curve(np.array([(0, 0), (1, 1), (2, 2)]), kdims=["x"], vdims=["z"]),
+        )
+
+    @pytest.mark.parametrize(
+        "samples",
+        [[(0, 0), (2, 1)], ([0, 2], [0, 1]), np.array([[0, 0], [2, 1]])],
+        ids=["list", "tuple", "ndarray"],
+    )
+    def test_raster_sample_points(self, samples):
+        raster = hv.Raster(self.array1)
+        assert_element_equal(
+            raster.sample(samples),
+            hv.Table([(0, 0, 0), (2, 1, 5)], kdims=["x", "y"], vdims=["z"]),
+        )
+
+    def test_raster_sample_all_dimensions(self):
+        raster = hv.Raster(self.array1)
+        assert_element_equal(
+            raster.sample(x=2, y=1),
+            hv.Table([(2, 1, 5)], kdims=["x", "y"], vdims=["z"]),
         )
 
     def test_raster_range_masked(self, rng):

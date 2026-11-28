@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing as t
 from itertools import groupby
 
 import numpy as np
@@ -12,6 +13,9 @@ from .overlay import CompositeOverlay, NdOverlay, Overlayable
 from .spaces import GridSpace, HoloMap
 from .tree import AttrTree
 from .util import dtype_kind, get_param_values
+
+if t.TYPE_CHECKING:
+    from .data.interface import iloc as _iloc
 
 
 class Element(ViewableElement, Composable, Overlayable):
@@ -285,8 +289,10 @@ class Tabular(Element):
 
     __abstract = True
 
-    # Defined in Dataset
-    iloc: property
+    if t.TYPE_CHECKING:
+
+        @property
+        def iloc(self) -> _iloc: ...  # Defined in Dataset
 
     def __len__(self):
         # Defined in Dataset

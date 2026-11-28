@@ -10,9 +10,17 @@ File originally part of the Topographica project.
 ###
 from __future__ import annotations
 
+import typing as t
+
 from param.parameterized import get_occupied_slots
 
 from .util import datetime_types
+
+if t.TYPE_CHECKING:
+    from .util.types import _DatetimeT
+
+    type _BoundT = float | _DatetimeT
+    type _BoundTupleT = tuple[_BoundT, _BoundT, _BoundT, _BoundT]
 
 
 class BoundingRegion:
@@ -65,6 +73,9 @@ class BoundingRegion:
     def __setstate__(self, state):
         for k, v in state.items():
             setattr(self, k, v)
+
+    def lbrt(self) -> _BoundTupleT:
+        raise NotImplementedError
 
 
 class BoundingBox(BoundingRegion):
@@ -199,7 +210,7 @@ class BoundingBox(BoundingRegion):
     def aarect(self):
         return self._aarect
 
-    def lbrt(self):
+    def lbrt(self) -> _BoundTupleT:
         """Return left,bottom,right,top values for the BoundingBox."""
         return self._aarect.lbrt()
 

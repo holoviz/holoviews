@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing as t
 from numbers import Number
 
 import numpy as np
@@ -8,6 +9,22 @@ import param
 from ..core import Dimension, Element, Element2D
 from ..core.data import Dataset
 from ..core.util import datetime_types
+from ..core.util.types import gen_types
+
+if t.TYPE_CHECKING:
+    from ..core.util.types import _DatetimeT
+
+
+@gen_types
+def _numeric_types() -> t.Iterator[type[Number | _DatetimeT]]:
+    yield Number
+    yield from datetime_types
+
+
+@gen_types
+def _numeric_str_types() -> t.Iterator[type[Number | str | _DatetimeT]]:
+    yield from (Number, str)
+    yield from datetime_types
 
 
 class VectorizedAnnotation(Dataset, Element2D):
@@ -110,7 +127,7 @@ class VLine(Annotation):
 
     x = param.ClassSelector(
         default=0,
-        class_=(Number, datetime_types),
+        class_=_numeric_types,
         doc="The x-position of the VLine which make be numeric or a timestamp.",
     )
 
@@ -138,7 +155,7 @@ class HLine(Annotation):
 
     y = param.ClassSelector(
         default=0,
-        class_=(Number, datetime_types),
+        class_=_numeric_types,
         doc="The y-position of the HLine which make be numeric or a timestamp.",
     )
 
@@ -210,14 +227,14 @@ class VSpan(Annotation):
 
     x1 = param.ClassSelector(
         default=0,
-        class_=(Number, datetime_types),
+        class_=_numeric_types,
         allow_None=True,
         doc="The start x-position of the VSpan which must be numeric or a timestamp.",
     )
 
     x2 = param.ClassSelector(
         default=0,
-        class_=(Number, datetime_types),
+        class_=_numeric_types,
         allow_None=True,
         doc="The end x-position of the VSpan which must be numeric or a timestamp.",
     )
@@ -244,14 +261,14 @@ class HSpan(Annotation):
 
     y1 = param.ClassSelector(
         default=0,
-        class_=(Number, datetime_types),
+        class_=_numeric_types,
         allow_None=True,
         doc="The start y-position of the VSpan which must be numeric or a timestamp.",
     )
 
     y2 = param.ClassSelector(
         default=0,
-        class_=(Number, datetime_types),
+        class_=_numeric_types,
         allow_None=True,
         doc="The end y-position of the VSpan which must be numeric or a timestamp.",
     )
@@ -334,13 +351,13 @@ class Arrow(Annotation):
 
     x = param.ClassSelector(
         default=0,
-        class_=(Number, datetime_types),
+        class_=_numeric_types,
         doc="The x-position of the arrow which make be numeric or a timestamp.",
     )
 
     y = param.ClassSelector(
         default=0,
-        class_=(Number, datetime_types),
+        class_=_numeric_types,
         doc="The y-position of the arrow which make be numeric or a timestamp.",
     )
 
@@ -382,12 +399,12 @@ class Arrow(Annotation):
             **params,
         )
 
-    def __setstate__(self, d):
+    def __setstate__(self, state):
         """Add compatibility for unpickling old Arrow types with different
         .data format.
 
         """
-        super().__setstate__(d)
+        super().__setstate__(state)
         if len(self.data) == 5:
             direction, text, (x, y), points, arrowstyle = self.data
             self.data = (x, y, text, direction, points, arrowstyle)
@@ -410,13 +427,13 @@ class Text(Annotation):
 
     x = param.ClassSelector(
         default=0,
-        class_=(Number, str, datetime_types),
+        class_=_numeric_str_types,
         doc="The x-position of the arrow which make be numeric or a timestamp.",
     )
 
     y = param.ClassSelector(
         default=0,
-        class_=(Number, str, datetime_types),
+        class_=_numeric_str_types,
         doc="The y-position of the arrow which make be numeric or a timestamp.",
     )
 
