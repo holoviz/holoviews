@@ -162,7 +162,7 @@ class notebook_extension(extension):
         from panel import config, extension as panel_extension
 
         if hasattr(config, "comms") and comms:
-            config._comms = comms
+            config.comms = comms  # ty:ignore[invalid-assignment]
 
         same_cell_execution = published = getattr(self, "_repeat_execution_in_cell", False)
         for r in [r for r in resources if r != "holoviews"]:

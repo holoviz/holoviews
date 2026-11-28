@@ -66,7 +66,7 @@ class ProgressBar(ProgressIndicator):
         ProgressBar.current_progress.append(self)
         super().__init__(**params)
 
-    def __call__(self, percentage):  # ty: ignore[invalid-method-override]
+    def __call__(self, percentage):  # ty: ignore[lost-keyword-for-regular-parameter]
         """Update the progress bar within the specified percent_range"""
         if self.start_time is None:
             self.start_time = time.time()
@@ -150,7 +150,7 @@ class RemoteProgress(ProgressBar):
     def __init__(self, port, **params):
         super().__init__(port=port, **params)
 
-    def __call__(self):  # ty: ignore[invalid-method-override]
+    def __call__(self):  # ty: ignore[incompatible-method-override]
         import zmq
 
         context = zmq.Context()
@@ -206,7 +206,7 @@ class RunProgress(ProgressBar):
     def __init__(self, **params):
         super().__init__(**params)
 
-    def __call__(self, value):  # ty: ignore[invalid-method-override]
+    def __call__(self, value):  # ty: ignore[lost-keyword-for-regular-parameter]
         """Execute the run_hook to a total of value, breaking up progress
         updates by the value specified by interval.
 
