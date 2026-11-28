@@ -49,7 +49,7 @@ from holoviews.core.util.types import masked_types
 from holoviews.streams import PointerXY
 from holoviews.testing import assert_data_equal
 
-from .._deps import pa_skip, pl, pl_skip
+from .._deps import cftime, cftime_skip, pa_skip, pl, pl_skip
 
 NW_VERSION = _no_import_version("narwhals")
 
@@ -790,6 +790,15 @@ class TestDatetimeUtils:
     def test_timestamp_to_s_int(self):
         value = pd.Timestamp(dt.datetime(2017, 1, 1))
         assert dt_to_int(value, "s") == 1483228800.0
+
+    @cftime_skip
+    @pytest.mark.parametrize(
+        ("time_unit", "expected"), [("us", 1483228800000000), ("s", 1483228800)]
+    )
+    def test_cftime_to_int(self, time_unit, expected):
+        result = dt_to_int(cftime.DatetimeGregorian(2017, 1, 1), time_unit)
+        assert result == expected
+        assert isinstance(result, int)
 
     def test_date_range_1_hour(self):
         start = np.datetime64(dt.datetime(2017, 1, 1))

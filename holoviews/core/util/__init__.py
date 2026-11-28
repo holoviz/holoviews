@@ -2345,7 +2345,7 @@ def dt_to_int(value, time_unit="us") -> int:
         except Exception:
             value = np.datetime64(value.to_pydatetime())
     if isinstance(value, cftime_types):
-        return cftime_to_timestamp(value, time_unit)
+        return int(cftime_to_timestamp(value, time_unit))
 
     # Handle datetime64 separately
     if isinstance(value, np.datetime64):

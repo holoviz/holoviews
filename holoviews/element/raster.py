@@ -11,7 +11,6 @@ import param
 from ..core import Dataset, Dimension, Element2D, Overlay, config, util
 from ..core.boundingregion import BoundingBox, BoundingRegion
 from ..core.data import ImageInterface
-from ..core.data.grid import GridInterface
 from ..core.data.interface import DataError
 from ..core.dimension import dimension_name
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
@@ -129,8 +128,8 @@ class Raster(Element2D):
             samples = list(zip(X, Y, strict=False))
 
         params = dict(self.param.values(onlychanged=True), vdims=self.vdims)
-        if len(sample_values) == self.ndims or samples:
-            if not samples:
+        if len(sample_values) == self.ndims or len(samples) > 0:
+            if len(samples) == 0:
                 samples = zip(
                     *[
                         c if isinstance(c, list) else [c]
@@ -141,6 +140,7 @@ class Raster(Element2D):
                     strict=False,
                 )
             table_data = [(*c, self._zdata[self._coord2matrix(c)]) for c in samples]
+            params = {k: v for k, v in params.items() if k in Table.param}
             params["kdims"] = self.kdims
             return Table(table_data, **params)
         else:
