@@ -7,6 +7,7 @@ import pytest
 
 import holoviews as hv
 from holoviews.core.options import Keywords, OptionTree
+from holoviews.util.warnings import HoloviewsDeprecationWarning
 
 from ..utils import LoggingComparison
 
@@ -271,3 +272,21 @@ class TestGetSetState:
         roundtrip_curve = pickle.loads(pickle.dumps(curve))
         assert curve.kdims == roundtrip_curve.kdims
         assert curve.vdims == roundtrip_curve.vdims
+
+
+@pytest.mark.parametrize(
+    "obj",
+    [
+        hv.HoloMap({0: hv.Curve([1, 2, 3])}),
+        hv.Curve([1, 2, 3]) * hv.Curve([2, 3, 4]),
+        hv.Graph(([(0, 1), (1, 2)],)),
+    ],
+    ids=["holomap", "overlay", "graph"],
+)
+def test_range_dimension_kwarg_deprecated(obj):
+    expected = obj.range("x")
+    with pytest.warns(HoloviewsDeprecationWarning, match=r"range\(dimension=\.\.\.\)"):
+        assert obj.range(dimension="x") == expected
+
+    with pytest.raises(TypeError, match="got values for both 'dimension' and 'dim'"):
+        obj.range(dim="y", dimension="x")

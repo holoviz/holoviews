@@ -1,9 +1,16 @@
 from __future__ import annotations
 
+import typing as t
+
 import numpy as np
 
+from ...util.warnings import deprecated
+from ..util import is_dask_array
 from ..util.dependencies import da, xr
 from ..util.types import datetime_types
+
+if t.TYPE_CHECKING:
+    from typing_extensions import TypeIs
 
 
 def finite_range(column, cmin, cmax):
@@ -19,7 +26,7 @@ def finite_range(column, cmin, cmax):
         if xr and isinstance(column, xr.DataArray):
             column = column.data
         column = column[np.isfinite(column)]
-        if is_dask_column := is_dask(column):
+        if is_dask_column := is_dask_array(column):
             column = column.compute_chunk_sizes()
         if len(column):
             cmin = np.nanmin(column) if min_inf else cmin
@@ -43,6 +50,7 @@ def finite_range(column, cmin, cmax):
 
 
 def get_array_types():
+    deprecated("1.25.0", "get_array_types", "is_array_type")
     array_types = (np.ndarray,)
     if da:
         array_types += (da.Array,)
@@ -50,11 +58,20 @@ def get_array_types():
 
 
 def dask_array_module():
+    deprecated("1.25.0", "dask_array_module")
     return da if da else None
 
 
 def is_dask(array):
+    deprecated("1.25.0", "is_dask")
     return da and isinstance(array, da.Array)
+
+
+def is_array_type(array) -> TypeIs[np.ndarray | da.Array]:
+    array_types = (np.ndarray,)
+    if da:
+        array_types += (da.Array,)
+    return isinstance(array, array_types)
 
 
 def cached(method):

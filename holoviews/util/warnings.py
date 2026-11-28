@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import functools
 import inspect
 import os
 import sys
+import types
 import typing as t
 import warnings
 
@@ -89,6 +91,33 @@ def deprecated(remove_version, old, new=None, extra=None, *, repr_old=True, repr
         message += " " + extra.strip()
 
     warn(message, HoloviewsDeprecationWarning)
+
+
+def _deprecated_kwarg[F: t.Callable[..., object]](
+    remove_version: str, old: str, new: str
+) -> t.Callable[[F], F]:
+    def decorator(func: F) -> F:
+        name = func.__qualname__ if isinstance(func, types.FunctionType) else repr(func)
+
+        @functools.wraps(func)
+        def wrapper(*args: object, **kwargs: object) -> object:
+            if old in kwargs:
+                if new in kwargs:
+                    msg = f"{name}() got values for both {old!r} and {new!r}"
+                    raise TypeError(msg)
+                deprecated(
+                    remove_version,
+                    f"{name}({old}=...)",
+                    f"{name}({new}=...)",
+                    repr_old=False,
+                    repr_new=False,
+                )
+                kwargs[new] = kwargs.pop(old)
+            return func(*args, **kwargs)
+
+        return t.cast("F", wrapper)
+
+    return decorator
 
 
 class HoloviewsDeprecationWarning(DeprecationWarning):
