@@ -401,7 +401,7 @@ class PandasInterface(Interface, PandasAPI):
     @classmethod
     def sort_depth(cls, df):
         try:
-            from pandas.core.indexes.multi import _lexsort_depth
+            from pandas.core.indexes.multi import _lexsort_depth  # ty:ignore[missing-module-member]
 
             return _lexsort_depth(df.index.codes, df.index.nlevels)
         except (ImportError, AttributeError):

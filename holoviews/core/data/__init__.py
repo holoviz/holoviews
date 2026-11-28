@@ -618,7 +618,7 @@ class Dataset(Element, metaclass=PipelineMeta):
             data = self.interface.add_dimension(self, dimension, dim_pos, dim_val, vdim)
         return self.clone(data, **dimensions)
 
-    def select(self, selection_expr=None, selection_specs=None, **selection):  # ty:ignore[invalid-method-override]
+    def select(self, selection_expr=None, selection_specs=None, **selection):  # ty:ignore[incompatible-method-override]
         """Applies selection by dimension name
 
         Applies a selection along the dimensions of the object using

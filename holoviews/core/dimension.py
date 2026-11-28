@@ -20,6 +20,7 @@ from operator import itemgetter
 import numpy as np
 import param
 
+from ..util.warnings import _deprecated_kwarg
 from . import util
 from .accessors import Apply, Opts, Redim
 from .options import Options, Store, cleanup_custom_options
@@ -1345,6 +1346,7 @@ class Dimensioned(LabelledData):
         else:
             raise KeyError(f"Dimension {dimension} not found in {self.__class__.__name__}.")
 
+    @_deprecated_kwarg("1.25.0", "dimension", "dim")
     def range(self, dim, data_range=True, dimension_range=True):
         """Return the lower and upper bounds of values along dimension.
 

@@ -11,6 +11,7 @@ from ..core.accessors import Redim
 from ..core.operation import Operation
 from ..core.util import dtype_kind, is_dataframe, max_range, search_indices
 from ..core.util.dependencies import _import_with_error
+from ..util.warnings import _deprecated_kwarg
 from .geom import Points
 from .path import Path
 from .util import (
@@ -354,6 +355,7 @@ class Graph(Dataset, Element2D):
         else:
             return self.edgepaths.clone(split_path(self.edgepaths))
 
+    @_deprecated_kwarg("1.25.0", "dimension", "dim")
     def range(self, dim, data_range=True, dimension_range=True):
         if self.nodes and dim in self.nodes.dimensions():
             node_range = self.nodes.range(dim, data_range, dimension_range)
