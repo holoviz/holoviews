@@ -239,6 +239,18 @@ class TestOverlayPlot(TestPlotlyPlot):
         state = self._get_plot_state(curve)
         assert state["layout"]["yaxis"]["type"] == "log"
 
+    def test_overlay_plot_logy_vline(self):
+        overlay = hv.Curve([(1, 1), (2, 10), (3, 100)]).opts(logy=True) * hv.VLine(2)
+        axis = self._get_plot_state(overlay)["layout"]["yaxis"]
+        assert axis["type"] == "log"
+        assert np.isfinite(axis["range"]).all()
+
+    def test_overlay_plot_logx_hline(self):
+        overlay = hv.Curve([(1, 1), (10, 2), (100, 3)]).opts(logx=True) * hv.HLine(2)
+        axis = self._get_plot_state(overlay)["layout"]["xaxis"]
+        assert axis["type"] == "log"
+        assert np.isfinite(axis["range"]).all()
+
     def test_overlay_plot_logz(self):
         scatter = (hv.Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]) * hv.Path3D([])).opts(
             logz=True

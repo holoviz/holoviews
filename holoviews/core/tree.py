@@ -237,7 +237,7 @@ class AttrTree:
 
         """
         try:
-            return super().__getattr__(identifier)  # ty:ignore[unresolved-attribute]
+            return super().__getattr__(identifier)  # ty:ignore[missing-attribute]
         except AttributeError:
             pass
 

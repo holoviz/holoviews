@@ -696,7 +696,7 @@ class Generator(Callable):
 
     """
 
-    callable = param.ClassSelector(  # ty: ignore[invalid-attribute-override]
+    callable = param.ClassSelector(  # ty: ignore[incompatible-attribute-override]
         class_=types.GeneratorType,
         allow_None=NoNone,
         constant=True,

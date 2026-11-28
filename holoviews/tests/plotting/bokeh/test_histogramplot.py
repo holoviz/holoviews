@@ -3,13 +3,16 @@ from __future__ import annotations
 import datetime as dt
 
 import numpy as np
+import pytest
 from bokeh.models import CategoricalColorMapper, DatetimeAxis, LinearColorMapper
 
 import holoviews as hv
+from holoviews.core.data.interface import DataError
 from holoviews.operation import histogram
 from holoviews.plotting.bokeh.util import property_to_dict
 from holoviews.testing import assert_data_equal, assert_element_equal
 
+from ..._deps import pd, pd_skip, pl, pl_skip
 from ...utils import LoggingComparison
 from .test_plot import TestBokehPlot, bokeh_renderer
 
@@ -281,3 +284,14 @@ class TestSideHistogramPlot(LoggingComparison, TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay)
         for subplot, color in zip(plot.subplots.values(), colors, strict=True):
             assert subplot.handles["glyph"].fill_color == color
+
+
+@pytest.mark.parametrize("mod", [pytest.param(pl, marks=pl_skip), pytest.param(pd, marks=pd_skip)])
+@pytest.mark.parametrize(
+    "data",
+    [{"speed": [72.0, 68.5, 75.0]}, {"edges": [0, 1, 2], "freq": [5, 3, 1]}],
+)
+def test_bad_data_raises(mod, data):
+    df = mod.DataFrame(data)
+    with pytest.raises(DataError):
+        hv.Histogram(df)

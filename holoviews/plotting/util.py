@@ -1248,6 +1248,24 @@ def dim_range_key(eldim):
     return dim_name
 
 
+def gridmatrix_diagonal_kwargs(view, coord, opts):
+    """Plot options for a diagonal panel on the left edge of a GridMatrix.
+
+    The diagonal panels show the distribution of a single variable, so their
+    y axis is a count or density. Labelling it with that value type next to
+    the scatter panels, which are labelled with the row variable, is
+    misleading. The panel is labelled with the row variable instead and
+    its y ticks are hidden, unless the user set these options explicitly.
+    """
+    if view is None or len(coord) != 2 or coord[0] != coord[1]:
+        return {}
+    row_name = coord[1]
+    element = view.last if isinstance(view, HoloMap) else view
+    dimension = element.get_dimension(row_name)
+    kwargs = {"ylabel": dimension.pprint_label if dimension else row_name, "yticks": []}
+    return {k: v for k, v in kwargs.items() if k not in opts}
+
+
 def hex2rgb(hex):
     """Convert hex code to RGB integers
     "#FFFFFF" -> [255,255,255]

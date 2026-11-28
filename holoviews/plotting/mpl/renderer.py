@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import os
+import struct
 from contextlib import contextmanager, suppress
 from io import BytesIO
 from itertools import chain
@@ -59,6 +60,14 @@ class MPLRenderer(Renderer):
     dpi = param.Integer(
         default=72,
         doc="The render resolution in dpi (dots per inch)",
+    )
+
+    high_dpi = param.Boolean(
+        default=True,
+        doc="""
+        Whether to render inline PNG output at twice the dpi and display
+        it at the size given by dpi, so it is sharp on high-DPI displays.
+        SVG output, animations and saved files are not affected.""",
     )
 
     fig = param.Selector(
@@ -156,6 +165,7 @@ class MPLRenderer(Renderer):
         any IPython dependency.
 
         """
+        high_dpi = as_script and fmt == "png" and self.high_dpi
         if fmt in ["gif", "mp4", "webm"]:
             with mpl.rc_context(rc=plot.fig_rcparams):
                 if bbox_inches == "tight":
@@ -181,6 +191,8 @@ class MPLRenderer(Renderer):
                 bbox_extra_artists=extra_artists,
             )
             kw.update(kwargs)
+            if high_dpi:
+                kw["dpi"] *= 2
 
             with np.errstate(invalid="ignore"):
                 with suppress(Exception):
@@ -194,7 +206,13 @@ class MPLRenderer(Renderer):
             b64 = base64.b64encode(data).decode("utf-8")
             (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
             src = HTML_TAGS["base64"].format(mime_type=mime_type, b64=b64)
-            html = tag.format(src=src, mime_type=mime_type, css="")
+            if high_dpi:
+                # read the width from the PNG header
+                width = struct.unpack(">I", data[16:20])[0]
+                css = f"width: {width // 2}px;"
+            else:
+                css = ""
+            html = tag.format(src=src, mime_type=mime_type, css=css)
             return html
         if fmt == "svg":
             data = data.decode("utf-8")

@@ -98,14 +98,14 @@ class Plot3D(ColorbarPlot):
             axis.dist = self.distance
 
         if self.xaxis is None:
-            axis.w_xaxis.line.set_lw(0.0)
-            axis.w_xaxis.label.set_text("")
+            axis.xaxis.line.set_lw(0.0)
+            axis.xaxis.label.set_text("")
         if self.yaxis is None:
-            axis.w_yaxis.line.set_lw(0.0)
-            axis.w_yaxis.label.set_text("")
+            axis.yaxis.line.set_lw(0.0)
+            axis.yaxis.label.set_text("")
         if self.zaxis is None:
-            axis.w_zaxis.line.set_lw(0.0)
-            axis.w_zaxis.label.set_text("")
+            axis.zaxis.line.set_lw(0.0)
+            axis.zaxis.label.set_text("")
         if self.disable_axes:
             axis.set_axis_off()
 

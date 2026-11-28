@@ -29,6 +29,7 @@ from ...core import (
     AdjointLayout,
     Element,
     Empty,
+    GridMatrix,
     GridSpace,
     HoloMap,
     Layout,
@@ -57,7 +58,13 @@ from ..plot import (
     GenericLayoutPlot,
     GenericOverlayPlot,
 )
-from ..util import attach_streams, collate, dim_axis_label, displayable
+from ..util import (
+    attach_streams,
+    collate,
+    dim_axis_label,
+    displayable,
+    gridmatrix_diagonal_kwargs,
+)
 from .links import LinkCallback
 from .util import (
     cds_column_replace,
@@ -640,6 +647,9 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             if r != 0 and c != 0:
                 kwargs["xaxis"] = None
                 kwargs["yaxis"] = None
+
+            if isinstance(layout, GridMatrix) and c == 0:
+                kwargs.update(gridmatrix_diagonal_kwargs(view, coord, opts))
 
             if "border" not in kwargs:
                 kwargs["border"] = 3

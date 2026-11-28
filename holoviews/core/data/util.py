@@ -6,7 +6,7 @@ import numpy as np
 
 from ...util.warnings import deprecated
 from ..util import is_dask_array
-from ..util.dependencies import da
+from ..util.dependencies import da, xr
 from ..util.types import datetime_types
 
 if t.TYPE_CHECKING:
@@ -23,11 +23,15 @@ def finite_range(column, cmin, cmax):
     except TypeError:
         max_inf = False
     if min_inf or max_inf:
+        if xr and isinstance(column, xr.DataArray):
+            column = column.data
         column = column[np.isfinite(column)]
+        if is_dask_column := is_dask_array(column):
+            column = column.compute_chunk_sizes()
         if len(column):
             cmin = np.nanmin(column) if min_inf else cmin
             cmax = np.nanmax(column) if max_inf else cmax
-            if is_dask_array(column):
+            if is_dask_column:
                 if min_inf and max_inf:
                     cmin, cmax = da.compute(cmin, cmax)
                 elif min_inf:

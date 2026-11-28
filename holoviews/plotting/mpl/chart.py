@@ -111,7 +111,7 @@ class CurvePlot(ChartPlot):
         xs, ys = plot_args
         if isdatetime(xs):
             if MPL_GE_3_9_0:
-                artist = ax.plot(xs, ys, "-", **plot_kwargs)[0]
+                artist = ax.plot(xs, ys, **plot_kwargs)[0]
             else:
                 artist = ax.plot_date(xs, ys, "-", **plot_kwargs)[0]
         else:

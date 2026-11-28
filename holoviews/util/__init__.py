@@ -62,7 +62,7 @@ class OptsMeta(param.parameterized.ParameterizedMetaclass):
 
     def __getattr__(self, attr):
         try:
-            return super().__getattr__(attr)  # ty:ignore[unresolved-attribute]
+            return super().__getattr__(attr)  # ty:ignore[missing-attribute]
         except AttributeError:
             msg = (
                 f"No entry for {attr!r} registered; this name may not refer to a valid object "
@@ -526,7 +526,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             [Parameter("spec", Parameter.POSITIONAL_OR_KEYWORD)]
             + [Parameter(kw, Parameter.KEYWORD_ONLY) for kw in sorted_kw_set]
         )
-        builder.__signature__ = signature  # ty:ignore[unresolved-attribute]
+        builder.__signature__ = signature  # ty:ignore[missing-attribute]
         return classmethod(builder)
 
     @classmethod
@@ -570,7 +570,7 @@ class opts(param.ParameterizedFunction, metaclass=OptsMeta):
             [Parameter("args", Parameter.VAR_POSITIONAL)]
             + [Parameter(kw, Parameter.KEYWORD_ONLY) for kw in sorted_kw_set]
         )
-        cls.__init__.__signature__ = signature  # ty:ignore[unresolved-attribute]
+        cls.__init__.__signature__ = signature  # ty:ignore[missing-attribute]
 
 
 Store._backend_switch_hooks.append(opts._update_backend)
@@ -665,7 +665,7 @@ class output(param.ParameterizedFunction):
 
 
 output.__doc__ = Store.output_settings._generate_docstring(signature=False)
-output.__init__.__signature__ = Store.output_settings._generate_signature()  # ty:ignore[unresolved-attribute]
+output.__init__.__signature__ = Store.output_settings._generate_signature()  # ty:ignore[missing-attribute]
 
 
 def renderer(name: _BackendT):

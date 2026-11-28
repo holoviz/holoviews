@@ -27,6 +27,7 @@ def _optional_dependencies(name: str, package: str | None = None):
 optional_dependencies = import_module if TYPE_CHECKING else _optional_dependencies
 cftime = optional_dependencies("cftime")
 contourpy = optional_dependencies("contourpy")
+cp = optional_dependencies("cupy")
 dask = optional_dependencies("dask")
 da = optional_dependencies("dask.array")
 dd = optional_dependencies("dask.dataframe")
@@ -56,6 +57,7 @@ def _skip(module, name):
 
 cftime_skip = _skip(cftime, "cftime")
 contourpy_skip = _skip(contourpy, "contourpy")
+cp_skip = _skip(cp, "cupy")
 dask_skip = _skip(dask, "dask")
 da_skip = _skip(da, "dask.array")
 dd_skip = _skip([dd, pa], "dask.dataframe")

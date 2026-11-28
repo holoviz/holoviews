@@ -9,7 +9,7 @@ import holoviews as hv
 from holoviews.plotting.bokeh.raster import ImageStackPlot
 from holoviews.plotting.bokeh.util import BOKEH_GE_3_4_0
 
-from ..._deps import ds, ds_skip, xr, xr_skip
+from ..._deps import cp, da, da_skip, ds, ds_skip, xr, xr_skip
 from .test_plot import TestBokehPlot, bokeh_renderer
 
 
@@ -163,6 +163,19 @@ class TestRasterPlot(TestBokehPlot):
 
         hover = plot.handles["hover"]
         assert hover.formatters == hover_tool.formatters
+
+    @xr_skip
+    @pytest.mark.parametrize(
+        "xp",
+        [np, pytest.param(cp, marks=pytest.mark.gpu), pytest.param(da, marks=da_skip)],
+    )
+    def test_nonfinite_xarray(self, xp):
+        data = xp.array([[-np.inf, np.nan, 4], [-3, 2, np.inf]])
+        da = xr.DataArray(data, dims=("x", "y"))
+        img = hv.Image(da, kdims=["x", "y"])
+        plot = bokeh_renderer.get_plot(img)
+        cmapper = plot.handles["color_mapper"]
+        assert (cmapper.low, cmapper.high) == (-3, 4)
 
 
 class _ImageStackBase(TestRasterPlot):
