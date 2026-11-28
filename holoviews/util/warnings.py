@@ -13,7 +13,6 @@ import param
 __all__ = (
     "HoloviewsDeprecationWarning",
     "HoloviewsUserWarning",
-    "_deprecated_kwarg",
     "deprecated",
     "find_stack_level",
     "warn",
@@ -103,6 +102,9 @@ def _deprecated_kwarg[F: t.Callable[..., object]](
         @functools.wraps(func)
         def wrapper(*args: object, **kwargs: object) -> object:
             if old in kwargs:
+                if new in kwargs:
+                    msg = f"{name}() got values for both {old!r} and {new!r}"
+                    raise TypeError(msg)
                 deprecated(
                     remove_version,
                     f"{name}({old}=...)",

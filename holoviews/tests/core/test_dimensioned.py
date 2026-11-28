@@ -287,3 +287,6 @@ def test_range_dimension_kwarg_deprecated(obj):
     expected = obj.range("x")
     with pytest.warns(HoloviewsDeprecationWarning, match=r"range\(dimension=\.\.\.\)"):
         assert obj.range(dimension="x") == expected
+
+    with pytest.raises(TypeError, match="got values for both 'dimension' and 'dim'"):
+        obj.range(dim="y", dimension="x")
